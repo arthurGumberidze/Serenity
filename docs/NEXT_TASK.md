@@ -1,18 +1,18 @@
 # NEXT_TASK.md
 
-## Active task: U00 - Среда, Unity-проект и Git
+## Active task: U01 - Архитектура assemblies и слоёв
+
+### Prerequisite
+U00 DONE. Unity 6000.6.4f1 is the user-approved pinned Editor (D-008); use this version, not the original 6000.3 target. See docs/U00_HANDOFF.md for build/test evidence.
 
 ### Goal
-Create a Unity 6000.6.4f1 (user-approved override) 3D URP project, initialize Git/Git LFS, install/verify Windows build modules, place repository context files, and prove a clean checkout can open/build.
+Define assembly boundaries and layer ownership following the FRS technical profile and docs/TASK_GRAPH.md.
 
 ### Required output
-- Unity project is pinned to 6000.6.4f1 in ProjectVersion.txt.
-- URP project opens with zero compile errors.
-- Windows Development build succeeds.
-- Git initialized; Unity-appropriate .gitignore and LFS rules included.
-- Context package is present.
-- First commit created.
+- Domain, Simulation, ECS, Presentation, Infrastructure and Tests assembly boundaries with no circular references.
+- Replace the placeholder docs/ARCHITECTURE.md with actual dependencies, service ownership, data flow, scene strategy, save-state ownership, ECS bridges and testing strategy.
+- All assemblies compile; dependency graph documented.
+- Run project checks and complete the end-of-chat protocol.
 
 ### Do not do
-Do not implement gameplay systems in U00.
-
+Do not redo U00 or implement gameplay systems from U03 onward. U02 package/configuration work remains a separate task. This file selects the next chat; U01 was not started in the U00 chat.

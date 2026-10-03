@@ -4,7 +4,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 
 | ID | Status | Task | Depends on | Phase | Definition of Done |
 |---|---|---|---|---|---|
-| U00 | IN_PROGRESS | Среда, Unity-проект и Git | — | MVP | Проект открывается без ошибок, создаёт Windows Development build, первый commit создан. |
+| U00 | DONE | Среда, Unity-проект и Git | — | MVP | Проект открывается без ошибок, создаёт Windows Development build, первый commit создан. |
 | U01 | TODO | Архитектура assemblies и слоёв | U00 | MVP | Все assemblies компилируются; dependency graph задокументирован. |
 | U02 | TODO | Пакеты и базовая конфигурация | U00,U01 | MVP | Package restore стабилен; проект открывается на чистом checkout. |
 | U03 | TODO | Игровое время и календарь | U01 | MVP | Unit tests времени проходят; save/load времени работает. |

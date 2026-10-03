@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-03 12:53:20Z" end-time="2026-10-03 12:53:21Z" duration="0,1009992">
+  <test-suite type="TestSuite" id="1000" name="com.unity.template.urp-blank" fullname="com.unity.template.urp-blank" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-03 12:53:20Z" end-time="2026-10-03 12:53:21Z" duration="0.100999" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1005" name="U00.Environment.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/U00.Environment.Tests.dll" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-03 12:53:20Z" end-time="2026-10-03 12:53:21Z" duration="0.092875" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="31352" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1001" name="EnvironmentTests" fullname="EnvironmentTests" classname="EnvironmentTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-03 12:53:20Z" end-time="2026-10-03 12:53:21Z" duration="0.090973" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1003" name="DefaultAndQualityPipelinesUseUrp" fullname="EnvironmentTests.DefaultAndQualityPipelinesUseUrp" methodname="DefaultAndQualityPipelinesUseUrp" classname="EnvironmentTests" runstate="Runnable" seed="439403613" result="Passed" start-time="2026-10-03 12:53:20Z" end-time="2026-10-03 12:53:21Z" duration="0.022963" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1002" name="EditorAndWindowsSupportMatchTarget" fullname="EnvironmentTests.EditorAndWindowsSupportMatchTarget" methodname="EditorAndWindowsSupportMatchTarget" classname="EnvironmentTests" runstate="Runnable" seed="1907580511" result="Passed" start-time="2026-10-03 12:53:21Z" end-time="2026-10-03 12:53:21Z" duration="0.004359" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1004" name="EnabledScenesLoadWithCameraAndWithoutMissingScripts" fullname="EnvironmentTests.EnabledScenesLoadWithCameraAndWithoutMissingScripts" methodname="EnabledScenesLoadWithCameraAndWithoutMissingScripts" classname="EnvironmentTests" runstate="Runnable" seed="870298486" result="Passed" start-time="2026-10-03 12:53:21Z" end-time="2026-10-03 12:53:21Z" duration="0.045493" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Unity Technologies/com_unity_template_urp-blank\TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
