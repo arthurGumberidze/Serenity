@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="20" result="Passed" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="1,0920514">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="1.092051" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1021" name="Game.Tests.dll" fullname="C:/serenity_game-u02-clean/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="0.952948" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38644" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1022" name="Game" fullname="Game" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="0.951472" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1023" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="0.950690" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="ArchitectureTests" fullname="Game.Tests.ArchitectureTests" classname="Game.Tests.ArchitectureTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.668147" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1006" name="AllProjectAssemblyDefinitionsAreAcyclicAndLayersAreExplicit" fullname="Game.Tests.ArchitectureTests.AllProjectAssemblyDefinitionsAreAcyclicAndLayersAreExplicit" methodname="AllProjectAssemblyDefinitionsAreAcyclicAndLayersAreExplicit" classname="Game.Tests.ArchitectureTests" runstate="Runnable" seed="756266825" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.035346" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1005" name="CoreHasNoEngineOrEditorReferences" fullname="Game.Tests.ArchitectureTests.CoreHasNoEngineOrEditorReferences" classname="Game.Tests.ArchitectureTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.408368" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1003" name="CoreHasNoEngineOrEditorReferences(&quot;Game.Domain&quot;)" fullname="Game.Tests.ArchitectureTests.CoreHasNoEngineOrEditorReferences(&quot;Game.Domain&quot;)" methodname="CoreHasNoEngineOrEditorReferences" classname="Game.Tests.ArchitectureTests" runstate="Runnable" seed="801671784" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.209227" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1004" name="CoreHasNoEngineOrEditorReferences(&quot;Game.Simulation&quot;)" fullname="Game.Tests.ArchitectureTests.CoreHasNoEngineOrEditorReferences(&quot;Game.Simulation&quot;)" methodname="CoreHasNoEngineOrEditorReferences" classname="Game.Tests.ArchitectureTests" runstate="Runnable" seed="678254357" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.192268" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1002" name="PlayerAssembliesCompileWithOnlyApprovedDependencies" fullname="Game.Tests.ArchitectureTests.PlayerAssembliesCompileWithOnlyApprovedDependencies" methodname="PlayerAssembliesCompileWithOnlyApprovedDependencies" classname="Game.Tests.ArchitectureTests" runstate="Runnable" seed="1987092650" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.192356" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1007" name="PackageConfigurationTests" fullname="Game.Tests.PackageConfigurationTests" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="0.280627" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1020" name="BaselineSettingsMatchWindowsHybridProfile" fullname="Game.Tests.PackageConfigurationTests.BaselineSettingsMatchWindowsHybridProfile" methodname="BaselineSettingsMatchWindowsHybridProfile" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="944881789" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.006447" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1018" name="RequiredPackageIsInstalledAtPinnedVersion" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.027018" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1008" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.entities&quot;,&quot;6.6.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.entities&quot;,&quot;6.6.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1604607983" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.003215" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1009" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.burst&quot;,&quot;2.0.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.burst&quot;,&quot;2.0.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="846466004" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001825" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1010" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.collections&quot;,&quot;6.6.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.collections&quot;,&quot;6.6.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1393480011" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.003109" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1011" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.mathematics&quot;,&quot;1.4.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.mathematics&quot;,&quot;1.4.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1267181732" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001602" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1012" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.cinemachine&quot;,&quot;6.6.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.cinemachine&quot;,&quot;6.6.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1320376504" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.002186" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.addressables&quot;,&quot;2.11.2&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.addressables&quot;,&quot;2.11.2&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1370265430" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001832" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.inputsystem&quot;,&quot;1.20.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.inputsystem&quot;,&quot;1.20.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="655098777" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001627" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.ai.navigation&quot;,&quot;2.0.12&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.ai.navigation&quot;,&quot;2.0.12&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1883599287" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001998" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1016" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.render-pipelines.universal&quot;,&quot;17.6.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.render-pipelines.universal&quot;,&quot;17.6.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="925053067" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001552" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1017" name="RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.test-framework&quot;,&quot;1.8.0&quot;)" fullname="Game.Tests.PackageConfigurationTests.RequiredPackageIsInstalledAtPinnedVersion(&quot;com.unity.test-framework&quot;,&quot;1.8.0&quot;)" methodname="RequiredPackageIsInstalledAtPinnedVersion" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="917506191" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:45Z" duration="0.001804" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1019" name="RequiredRuntimePackageAssembliesParticipateInPlayerCompilation" fullname="Game.Tests.PackageConfigurationTests.RequiredRuntimePackageAssembliesParticipateInPlayerCompilation" methodname="RequiredRuntimePackageAssembliesParticipateInPlayerCompilation" classname="Game.Tests.PackageConfigurationTests" runstate="Runnable" seed="1147221358" result="Passed" start-time="2026-10-03 17:54:45Z" end-time="2026-10-03 17:54:46Z" duration="0.243661" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1028" name="U00.Environment.Tests.dll" fullname="C:/serenity_game-u02-clean/Library/ScriptAssemblies/U00.Environment.Tests.dll" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.114284" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38644" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1024" name="EnvironmentTests" fullname="EnvironmentTests" classname="EnvironmentTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.112897" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1026" name="DefaultAndQualityPipelinesUseUrp" fullname="EnvironmentTests.DefaultAndQualityPipelinesUseUrp" methodname="DefaultAndQualityPipelinesUseUrp" classname="EnvironmentTests" runstate="Runnable" seed="817432225" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.007006" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1025" name="EditorAndWindowsSupportMatchTarget" fullname="EnvironmentTests.EditorAndWindowsSupportMatchTarget" methodname="EditorAndWindowsSupportMatchTarget" classname="EnvironmentTests" runstate="Runnable" seed="1476574123" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.001032" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1027" name="EnabledScenesLoadWithCameraAndWithoutMissingScripts" fullname="EnvironmentTests.EnabledScenesLoadWithCameraAndWithoutMissingScripts" methodname="EnabledScenesLoadWithCameraAndWithoutMissingScripts" classname="EnvironmentTests" runstate="Runnable" seed="268462610" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.101923" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1031" name="Unity.Addressables.DocExampleCode.Editor.Tests.dll" fullname="C:/serenity_game-u02-clean/Library/ScriptAssemblies/Unity.Addressables.DocExampleCode.Editor.Tests.dll" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.007637" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38644" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1032" name="AddressableAssets" fullname="AddressableAssets" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.004065" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1033" name="DocExampleCode" fullname="AddressableAssets.DocExampleCode" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.003326" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1029" name="TestStub" fullname="AddressableAssets.DocExampleCode.TestStub" classname="AddressableAssets.DocExampleCode.TestStub" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.002523" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1030" name="RequiredTest" fullname="AddressableAssets.DocExampleCode.TestStub.RequiredTest" methodname="RequiredTest" classname="AddressableAssets.DocExampleCode.TestStub" runstate="Runnable" seed="448418489" result="Passed" start-time="2026-10-03 17:54:46Z" end-time="2026-10-03 17:54:46Z" duration="0.000540" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

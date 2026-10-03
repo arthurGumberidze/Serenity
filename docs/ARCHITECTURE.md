@@ -37,7 +37,7 @@ Domain and Simulation set noEngineReferences=true; both are pure C# with no Unit
 
 Infrastructure is deliberately the outermost composition layer: it may construct views and ECS adapters, while neither references Infrastructure. Persistence/configuration ports belong to Simulation, using Domain values. Infrastructure implements those ports and injects them when starting a session. This avoids a sixth runtime bootstrap assembly or dependency cycles. Editor authoring extensions will need a separate Editor-only assembly when introduced.
 
-Entities, Burst, Addressables and camera package dependencies are not added in U01. Game.ECS is a compiled boundary with metadata only. U02 will establish package versions; U12 will add required explicit ECS package references. Changing any edge requires updating this document and its architecture checks.
+U02 installs and pins the FRS package profile (see PACKAGES.md). Game.ECS remains a compiled boundary with metadata only; U12 will add required explicit ECS package references. No runtime dependency edge changes in U02. Changing any edge requires updating this document and its architecture checks.
 
 ## State ownership and execution flow
 The session owns the canonical Domain state across scene loads. Simulation controls writes and tick order; Presentation receives read models and submits commands, never modifies state through views. Definition assets are authored as ScriptableObjects in Infrastructure and converted into validated immutable Domain values at session creation. They are not mutable save-state.
