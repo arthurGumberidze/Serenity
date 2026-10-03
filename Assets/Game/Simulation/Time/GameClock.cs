@@ -12,6 +12,7 @@ namespace Game.Simulation.Time
         private readonly GameTimeSettings settings;
 
         public GameTimeState State { get; }
+        public int BiologicalMultiplier => settings.BiologicalMultiplier;
         public GameSpeed Speed => (GameSpeed)State.SpeedMultiplier;
         public bool IsPaused => State.IsPaused;
         public TimeSpan CalendarElapsed => TimeSpan.FromTicks(State.CalendarTicks);

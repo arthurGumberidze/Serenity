@@ -1,0 +1,32 @@
+C:\serenity_game\Logs\U04-tests.log:13:[Licensing::Module] LicensingClient has failed validation; ignoring
+C:\serenity_game\Logs\U04-tests.log:22:[Licensing::Module] Error: Access token is unavailable; failed to update
+C:\serenity_game\Logs\U04-tests.log:85:Failed to start primary listening socket at (0.0.0.0:55504-55512).
+C:\serenity_game\Logs\U04-tests.log:215:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:216:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:217:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:218:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:536:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:537:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-tests.log:538:'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-tests.log:539:'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-tests.log:540:'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-tests.log:541:'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-tests.log:658:Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+C:\serenity_game\Logs\U04-tests.log:659:Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+C:\serenity_game\Logs\U04-build.log:13:[Licensing::Module] LicensingClient has failed validation; ignoring
+C:\serenity_game\Logs\U04-build.log:22:[Licensing::Module] Error: Access token is unavailable; failed to update
+C:\serenity_game\Logs\U04-build.log:86:Failed to start primary listening socket at (0.0.0.0:55504-55512).
+C:\serenity_game\Logs\U04-build.log:217:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:218:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:219:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:220:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:229:Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:230:Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+C:\serenity_game\Logs\U04-build.log:231:'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-build.log:232:'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-build.log:233:'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-build.log:234:'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+C:\serenity_game\Logs\U04-build.log:314:Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+C:\serenity_game\Logs\U04-build.log:315:Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+C:\serenity_game\Logs\U04-build.log:12499:U00_BUILD_RESULT: Succeeded; errors=0; warnings=2
+C:\serenity_game\Logs\U04-build.log:12533:[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 0

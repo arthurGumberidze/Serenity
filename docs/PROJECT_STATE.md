@@ -1,38 +1,31 @@
 # PROJECT_STATE.md
 
 ## Engine
-Unity 6000.6.4f1 (12bfff696524), explicitly approved by user on 2026-10-03; URP 17.6.0.
+Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0. No version/package changes in U04.
 
-## Current milestone
-U03 DONE: deterministic calendar and biological clocks, supported speeds, active pause, calendar rollover and persistence-ready clock state are implemented in pure Domain/Simulation code.
-
-## Last completed task
-U03 - Игровое время и календарь.
+## Current milestone / last completed task
+U04 DONE — Stable IDs + Save/Load Core. StableEntityId, immutable versioned snapshots, SaveCoordinator, ISaveStore, strict XML serialization and atomic local file storage are implemented. U03 time round-trips without identity regeneration or partial restore.
 
 ## Active task
-U04 - Stable IDs + Save/Load Core (next chat only; not started).
+U04A — PostgreSQL Persistence Layer is next and has NOT started. No SQL, Npgsql, database schema, migrations, camera/input or Character Domain was added.
 
 ## Build status
-Windows x64 / Mono / Development succeeded after U03: exit 0, zero errors and the same two existing build warnings recorded after U02. Player: Builds/Windows/Serenity.exe, 667136 bytes. Exact command and evidence: docs/U03_HANDOFF.md.
+Windows x64 / Mono / Development succeeded: exit 0; errors=0; warnings=2. Player: Builds/Windows/Serenity.exe (667136 bytes). Compilation and assembly boundary checks pass. Diagnostics and exact commands: docs/U04_HANDOFF.md; full logs remain in Logs/U04-tests.log and Logs/U04-build.log.
 
 ## Test status
-35/35 EditMode tests passed in 1.180 s: the prior 20 checks plus 15 U03 clock/calendar tests. Coverage includes x1/x2/x3/x5/x10, pause/resume, speed switching, calendar rollover, separate biological time, persisted-state continuation, large-step equivalence, invalid input and overflow atomicity. No U03 warnings or C# compile errors. Result: docs/validation/U03-tests.xml.
+70/70 EditMode tests passed, 0 failed, 0 skipped, 2.3469298 seconds. Includes all prior 35 tests and 35 persistence tests. Evidence: docs/validation/U04-tests.xml. Test suite covers exact 64-bit ticks, stable IDs, settings continuation, all speeds, pause, invalid/corrupt/unknown saves, file overwrite and failed atomic replacement.
 
-## Known blockers
-None for U04. Biological acceleration defaults to 400x relative to calendar time per the explicit U03 requirement and remains configurable. The older FRS value of about nine real minutes per biological year implies a different coefficient and must be reconciled during Character/Dynasty balancing; pregnancy remains a separate future gameplay timer.
+## Known limitations / blockers
+No U04 blocker. Synchronous owner-thread checkpoint API requires a committed simulation barrier and a single writer per save directory. Successful Load replaces the clock; future composition must rebind consumers. Version 1 has no migrations, checksum, UI/autosave, game-content sections or PostgreSQL. Its 64 KiB size limit must evolve with future schema versions. Atomic replacement does not promise universal power-loss durability. Biological balance discrepancy described in D-011/U03_HANDOFF remains deferred.
 
 ## Architecture facts
-- C# primary language.
-- Tier1: important/nearby interactive NPCs with GameObject presentation backed by persistent domain state.
-- Tier2: simplified active-city NPCs via Unity Entities/DOTS.
-- Tier3: distant population as aggregate data, no GameObject-per-person.
-- Off-camera transitions deterministic; camera never rerolls world outcomes.
-- Stone-age MVP first.
-- Runtime boundaries are Game.Domain, Game.Simulation, Game.ECS, Game.Presentation and Game.Infrastructure; Game.Tests is Editor-only.
-- Domain has no project dependency. Simulation depends only on Domain. ECS and Presentation depend on Domain + Simulation. Infrastructure is the outer composition layer and may reference all four.
-- Domain and Simulation compile without UnityEngine/UnityEditor references. No gameplay services are implemented yet.
-- Infrastructure will own composition, persistence adapters and scene loading; Simulation owns orchestration/ticks; Domain owns canonical state and rules.
-- Direct package pins and baseline settings are recorded in docs/PACKAGES.md; package API references are added only with the task that first uses them.
-- Canonical game time is `GameTimeState` in Domain: integer `TimeSpan` ticks for calendar and biological elapsed time plus persisted speed and pause state.
-- `GameClock` in Simulation is advanced centrally with an explicit real delta. At x1, 24 real minutes equal one calendar day; supported multipliers are x1/x2/x3/x5/x10.
-- Pause returns zero advancement without changing clock values or selected speed. Biological time advances independently at a configurable default 400x calendar rate.
+- Domain and Simulation remain pure C#; assembly dependency graph unchanged.
+- Domain identity is a readonly non-empty GUID value object; canonical encoding is lowercase N format. GameObject/ECS handles are disposable projections, never persistent references.
+- Runtime state remains in RAM. GameTimeState is unchanged; GameClock gains only a read-only biological multiplier accessor.
+- SaveSnapshot version 1 contains session ID, calendar/biological ticks, selected speed, pause and biological multiplier. Slot ID is separate from session ID.
+- Simulation coordinates capture/validated replacement; Infrastructure implements XML and file storage through ISaveStore.
+- Definitions remain ScriptableObject/configuration; mutable canonical save-state is data-only.
+- D-012 and ARCHITECTURE document U04 contracts and failure behavior.
+
+## Working tree
+Pre-existing TutorialInfo edits, QualitySettings/URPProjectSettings changes, vendor assets and update/reference documents remain outside the U04 commit. Validation ran against this current working tree, not a clean checkout. Only explicitly staged U04 code, tests and documentation are committed.

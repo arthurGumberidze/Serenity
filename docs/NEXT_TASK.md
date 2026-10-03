@@ -1,18 +1,18 @@
 # NEXT_TASK.md
 
-## Active task: U04 - Stable IDs + Save/Load Core
+## Active task: U04A - PostgreSQL Persistence Layer
 
 ### Prerequisite
-U03 DONE. Unity 6000.6.4f1 is the user-approved pinned Editor (D-008). Preserve the pure Domain time state and Simulation clock contract introduced by U03. See docs/U03_HANDOFF.md for verification evidence.
+U04 DONE. Read docs/U04_HANDOFF.md and D-012. Unity remains pinned to 6000.6.4f1.
 
 ### Goal
-Implement StableEntityId and the versioned Save/Load core, including round-trip restoration of the U03 clock state.
+Implement PostgreSQL persistence behind the U04 ISaveStore boundary with runtime state remaining in RAM. Follow FRS_Unity_v0.3.docx Appendix A and docs/updates/2026-10-03_postgres_assets.md.
 
 ### Required output
-- Define stable persistent entity identifiers without Unity instance IDs or ECS Entity handles.
-- Define versioned save DTOs and persistence boundaries following docs/ARCHITECTURE.md.
-- Round-trip key state, including calendar ticks, biological ticks, selected speed and pause state.
-- Add automated tests, run a Windows Development build and complete the end-of-chat protocol.
+- Provider separated from gameplay, versioned schema migrations and transactional writes/rollback.
+- Secrets outside Git; integration tests against a separate test database.
+- Save-session creation and stable-ID round trips required by the U04A specification.
+- Preserve U04 local provider, time round trips and failure safety; complete mandatory tests/build.
 
-### Do not do
-Do not begin PostgreSQL U04A, U05 scene/camera/input or later gameplay tasks. Do not add SQL to Domain/Simulation and do not change the pinned Editor or package versions without a scoped decision. This file selects the next chat; U04 has not started.
+### Scope boundary
+U04A has not started. Do not begin U05, asset integration or Character gameplay as part of U04A without resolving its explicit scope. The U04 chat stops after its commit and report.
