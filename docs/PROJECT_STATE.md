@@ -4,22 +4,22 @@
 Unity 6000.6.4f1 (12bfff696524), explicitly approved by user on 2026-10-03; URP 17.6.0.
 
 ## Current milestone
-U00 DONE: URP environment initialized, Git/LFS configured, Windows Development build and clean-checkout verification passed.
+U01 DONE: project layer assemblies compile, their acyclic dependency graph and ownership rules are documented, and architecture checks plus the Windows Development build pass.
 
 ## Last completed task
-U00 - Среда, Unity-проект и Git.
+U01 - Архитектура assemblies и слоёв.
 
 ## Active task
-U01 - Архитектура assemblies и слоёв (next chat only; not started).
+U02 - Пакеты и базовая конфигурация (next chat only; not started).
 
 ## Build status
-Windows x64 / Mono / Development succeeded in the main workspace and clean clone of aa377bc. Both builds: exit 0, zero errors, two stripped debug shader warnings. Player: Builds/Windows/Serenity.exe.
+Windows x64 / Mono / Development succeeded after U01 in the main workspace: exit 0, zero errors, two existing stripped debug shader warnings. Player: Builds/Windows/Serenity.exe. Exact command and evidence: docs/U01_HANDOFF.md.
 
 ## Test status
-3/3 EditMode environment tests passed in both workspaces; no C# compile errors. Git LFS fsck passed. Exact commands, limitations and evidence: docs/U00_HANDOFF.md and docs/validation/.
+7/7 EditMode tests passed: three U00 environment checks and four U01 architecture checks. The checks verify compiled Player assemblies, approved project references, Editor-only test isolation, pure Domain/Simulation engine separation, explicit asmdefs and absence of cycles. No C# compile errors. Result: docs/validation/U01-main-tests.xml.
 
 ## Known blockers
-None for U01. No visual rendering check performed. Optional player auto-exit smoke check did not exit by itself and was stopped; startup had no logged exceptions. See handoff.
+None for U02. U01 does not validate DOTS behavior because package/configuration work is assigned to U02 and ECS implementation to U12. No visual rendering check was required for this architecture-only task.
 
 ## Architecture facts
 - C# primary language.
@@ -28,4 +28,7 @@ None for U01. No visual rendering check performed. Optional player auto-exit smo
 - Tier3: distant population as aggregate data, no GameObject-per-person.
 - Off-camera transitions deterministic; camera never rerolls world outcomes.
 - Stone-age MVP first.
-- U00 contains the stock URP sample and Editor-only environment/build checks. Gameplay and planned layer assemblies remain unimplemented.
+- Runtime boundaries are Game.Domain, Game.Simulation, Game.ECS, Game.Presentation and Game.Infrastructure; Game.Tests is Editor-only.
+- Domain has no project dependency. Simulation depends only on Domain. ECS and Presentation depend on Domain + Simulation. Infrastructure is the outer composition layer and may reference all four.
+- Domain and Simulation compile without UnityEngine/UnityEditor references. No gameplay services are implemented yet.
+- Infrastructure will own composition, persistence adapters and scene loading; Simulation owns orchestration/ticks; Domain owns canonical state and rules.

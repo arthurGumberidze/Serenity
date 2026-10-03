@@ -1,0 +1,10 @@
+{
+  "name": "Game.Simulation",
+  "rootNamespace": "Game.Simulation",
+  "references": [
+    "Game.Domain"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true,
+  "allowUnsafeCode": false
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Game.ECS",
+  "rootNamespace": "Game.ECS",
+  "references": [
+    "Game.Domain",
+    "Game.Simulation"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "allowUnsafeCode": false
+}

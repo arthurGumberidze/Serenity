@@ -1,0 +1,13 @@
+{
+  "name": "Game.Infrastructure",
+  "rootNamespace": "Game.Infrastructure",
+  "references": [
+    "Game.Domain",
+    "Game.Simulation",
+    "Game.ECS",
+    "Game.Presentation"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "allowUnsafeCode": false
+}

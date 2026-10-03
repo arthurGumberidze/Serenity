@@ -1,18 +1,18 @@
 # NEXT_TASK.md
 
-## Active task: U01 - Архитектура assemblies и слоёв
+## Active task: U02 - Пакеты и базовая конфигурация
 
 ### Prerequisite
-U00 DONE. Unity 6000.6.4f1 is the user-approved pinned Editor (D-008); use this version, not the original 6000.3 target. See docs/U00_HANDOFF.md for build/test evidence.
+U00 and U01 DONE. Unity 6000.6.4f1 is the user-approved pinned Editor (D-008). Follow the assembly dependency contract in docs/ARCHITECTURE.md and see docs/U01_HANDOFF.md for verification evidence.
 
 ### Goal
-Define assembly boundaries and layer ownership following the FRS technical profile and docs/TASK_GRAPH.md.
+Establish the Unity package set and baseline project configuration required by the FRS technical profile, with a stable restore on a clean checkout.
 
 ### Required output
-- Domain, Simulation, ECS, Presentation, Infrastructure and Tests assembly boundaries with no circular references.
-- Replace the placeholder docs/ARCHITECTURE.md with actual dependencies, service ownership, data flow, scene strategy, save-state ownership, ECS bridges and testing strategy.
-- All assemblies compile; dependency graph documented.
-- Run project checks and complete the end-of-chat protocol.
+- Add and pin the required Unity packages for the planned hybrid stack (including Entities/DOTS, Burst/Jobs/Collections/Mathematics, Cinemachine and Addressables where not already present).
+- Add only package references needed for assemblies to compile; preserve the dependency directions documented in docs/ARCHITECTURE.md.
+- Record package versions and relevant baseline project settings.
+- Verify package restore and project compilation from a clean checkout, run relevant tests and a Windows Development build, then complete the end-of-chat protocol.
 
 ### Do not do
-Do not redo U00 or implement gameplay systems from U03 onward. U02 package/configuration work remains a separate task. This file selects the next chat; U01 was not started in the U00 chat.
+Do not implement gameplay systems from U03 onward or the Tier2 ECS bootstrap from U12. Do not change the pinned Editor version or add Asset Store dependencies without explicit approval. This file selects the next chat; U02 has not started.

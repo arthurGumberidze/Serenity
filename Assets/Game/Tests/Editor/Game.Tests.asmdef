@@ -1,0 +1,18 @@
+{
+  "autoReferenced": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "Game.Domain",
+    "Game.Simulation",
+    "Game.ECS",
+    "Game.Presentation",
+    "Game.Infrastructure"
+  ],
+  "rootNamespace": "Game.Tests",
+  "name": "Game.Tests"
+}
