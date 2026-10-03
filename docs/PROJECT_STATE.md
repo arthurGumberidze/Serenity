@@ -4,22 +4,22 @@
 Unity 6000.6.4f1 (12bfff696524), explicitly approved by user on 2026-10-03; URP 17.6.0.
 
 ## Current milestone
-U02 DONE: the Unity hybrid-stack packages are pinned, their complete resolved graph is committed, baseline project settings are documented, and restore/tests/build pass from a clean checkout.
+U03 DONE: deterministic calendar and biological clocks, supported speeds, active pause, calendar rollover and persistence-ready clock state are implemented in pure Domain/Simulation code.
 
 ## Last completed task
-U02 - Пакеты и базовая конфигурация.
+U03 - Игровое время и календарь.
 
 ## Active task
-U03 - Игровое время и календарь (next chat only; not started).
+U04 - Stable IDs + Save/Load Core (next chat only; not started).
 
 ## Build status
-Windows x64 / Mono / Development succeeded after U02 from a clean detached worktree: exit 0, zero errors, two existing stripped debug shader warnings. Clean player: Builds/Windows/Serenity.exe, 667136 bytes. Exact commands and evidence: docs/U02_HANDOFF.md.
+Windows x64 / Mono / Development succeeded after U03: exit 0, zero errors and the same two existing build warnings recorded after U02. Player: Builds/Windows/Serenity.exe, 667136 bytes. Exact command and evidence: docs/U03_HANDOFF.md.
 
 ## Test status
-20/20 EditMode tests passed from a clean checkout: three U00 environment checks, four U01 architecture checks, twelve U02 package/configuration checks and one Addressables package test. U02 verifies direct pinned versions, installed paths, required Player assemblies/APIs, Mono, Linear color space, Force Text and Input System-only mode. No C# compile errors. Result: docs/validation/U02-clean-tests.xml.
+35/35 EditMode tests passed in 1.180 s: the prior 20 checks plus 15 U03 clock/calendar tests. Coverage includes x1/x2/x3/x5/x10, pause/resume, speed switching, calendar rollover, separate biological time, persisted-state continuation, large-step equivalence, invalid input and overflow atomicity. No U03 warnings or C# compile errors. Result: docs/validation/U03-tests.xml.
 
 ## Known blockers
-None for U03. U02 installs and validates the DOTS toolchain but does not implement ECS behavior; that remains U12. No gameplay or visual implementation was part of U02.
+None for U04. Biological acceleration defaults to 400x relative to calendar time per the explicit U03 requirement and remains configurable. The older FRS value of about nine real minutes per biological year implies a different coefficient and must be reconciled during Character/Dynasty balancing; pregnancy remains a separate future gameplay timer.
 
 ## Architecture facts
 - C# primary language.
@@ -33,3 +33,6 @@ None for U03. U02 installs and validates the DOTS toolchain but does not impleme
 - Domain and Simulation compile without UnityEngine/UnityEditor references. No gameplay services are implemented yet.
 - Infrastructure will own composition, persistence adapters and scene loading; Simulation owns orchestration/ticks; Domain owns canonical state and rules.
 - Direct package pins and baseline settings are recorded in docs/PACKAGES.md; package API references are added only with the task that first uses them.
+- Canonical game time is `GameTimeState` in Domain: integer `TimeSpan` ticks for calendar and biological elapsed time plus persisted speed and pause state.
+- `GameClock` in Simulation is advanced centrally with an explicit real delta. At x1, 24 real minutes equal one calendar day; supported multipliers are x1/x2/x3/x5/x10.
+- Pause returns zero advancement without changing clock values or selected speed. Biological time advances independently at a configurable default 400x calendar rate.

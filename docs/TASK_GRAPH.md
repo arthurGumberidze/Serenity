@@ -7,7 +7,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U00 | DONE | Среда, Unity-проект и Git | — | MVP | Проект открывается без ошибок, создаёт Windows Development build, первый commit создан. |
 | U01 | DONE | Архитектура assemblies и слоёв | U00 | MVP | Все assemblies компилируются; dependency graph задокументирован. |
 | U02 | DONE | Пакеты и базовая конфигурация | U00,U01 | MVP | Package restore стабилен; проект открывается на чистом checkout. |
-| U03 | TODO | Игровое время и календарь | U01 | MVP | Unit tests времени проходят; save/load времени работает. |
+| U03 | DONE | Игровое время и календарь | U01 | MVP | Unit tests времени проходят; save/load времени работает. |
 | U04 | TODO | Stable IDs и Save/Load | U01,U03 | MVP | Save→load восстанавливает идентичное состояние ключевых сущностей. |
 | U05 | TODO | Локальная сцена, RTS-камера и input | U02 | MVP | Камера/выбор/команды работают в test scene. |
 | U06 | TODO | Domain-модель персонажа Tier 1 | U03,U04 | MVP | EditMode tests модели; карточка NPC отображает данные. |
