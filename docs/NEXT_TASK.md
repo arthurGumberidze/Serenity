@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U06 — Domain-модель персонажа Tier 1
+## Active task: U07 — GameObject presentation Tier 1
 
 ### Prerequisites
-U03 and U04 are DONE. U05A is also DONE and supplies asset-readiness candidates only; it does not define character gameplay state.
+U05, U05A and U06 are DONE. U05 supplies the local scene/input boundary, U05A supplies licensed placeholder wrappers, and U06 supplies canonical Character Domain state.
 
 ### Goal
-Implement the pure/testable Tier 1 Character Domain model and its invariants according to `docs/TASK_GRAPH.md` and the relevant FRS sections. The acceptance target includes EditMode coverage for the model and presentation of character data in the NPC card without moving canonical state into a MonoBehaviour or vendor prefab.
+Implement Tier 1 GameObject presentation that binds a visible/animated character view to an existing U06 `Character` by `StableEntityId`. The view must not own or reroll canonical character state.
 
 ### Scope boundary
-U06 has not started. Before implementation, read the current project state, decisions, architecture, U05A handoff and Character Domain requirements. Preserve StableEntityId and persistence boundaries. Do not implement AI, needs scheduling, professions, building gameplay, combat, dynasty/inheritance, aging/pregnancy, Tier switching or mass-NPC update loops unless the actual U06 specification explicitly requires a narrow supporting contract.
+U07 has not started. Read `docs/U06_HANDOFF.md`, D-016 and the U06 architecture section before implementation. Do not move `CharacterState`, age, family, skills, health or relationship ownership into a MonoBehaviour, prefab, Animator or vendor hierarchy. AI, needs, work scheduling, combat, dynasty gameplay, persistence schema expansion and tier switching remain later tasks.
 
-### U05A handoff
-Read `docs/U05A_HANDOFF.md`, `docs/ASSET_REGISTRY.md`, D-015 and the U05A architecture section. Hodaart Characters 01/02 and the Tier 2 capsule are presentation/readiness placeholders only. Canonical character state must not depend on their vendor hierarchy, Animator, Unity instance IDs or scene lifetime.
+### Relevant handoffs
+Use `docs/U05A_HANDOFF.md` for wrapper/asset limitations and `docs/U06_HANDOFF.md` for the Character contract. Hodaart Characters 01/02 are placeholder presentation candidates only. Bind and unbind them without changing the domain identity or depending on Unity instance IDs.

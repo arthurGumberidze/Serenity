@@ -4,10 +4,19 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; Windows x64 Mono Development. U04A adds only the pinned PostgreSQL provider/tooling described below and does not change the Editor or scripting backend.
 
 ## Current milestone / last completed task
-U05A DONE — Asset Pipeline + Free Asset Acquisition. Selected licensed Stone Age source files now feed Serenity-owned runtime wrappers and a development-only gallery; `Assets/Scenes/LocalGameplay.unity` remains the sole enabled build scene and preserves the completed U05 RTS camera/input foundation.
+U06 DONE — Character Domain Tier 1. A pure `Game.Domain.Characters.Character` aggregate now owns persistent identity and foundational personal state independently of Unity presentation, ECS handles and PostgreSQL.
 
 ## Active task
-U06 — Character Domain Tier 1 is next and has NOT started. U05A stopped at asset readiness; Character Domain, NPC simulation, building gameplay, combat, third-person control and all other gameplay systems remain deferred.
+U07 — GameObject presentation Tier 1 is next and has NOT started. U06 stopped at domain state and tests; no character prefab binding, spawning, animation, navigation, AI, needs or tier switching was implemented.
+
+## U06 character domain
+- `Character.CreateNew` generates the existing U04 `StableEntityId`; `Character.Restore` requires and preserves a saved ID. `CharacterState` is a detached deterministic snapshot for future save/tier adapters.
+- Canonical age data is one biological birth tick. Completed years use U03-compatible biological `TimeSpan` ticks and a fixed 365-day year; death records a biological tick and freezes age. No wall/calendar/Unity clock or per-NPC timer is used.
+- Parentage is canonical on the child through stable-ID links that distinguish mother/father, biological/legal/adoptive and known/hidden status. Registry child queries derive the reverse relationship. Current spouse links are stable IDs and registry operations keep them symmetric.
+- Name and biological sex are typed and validated. Trait, skill and profession references use validated data-definition keys. Full NPCs require four or five unique traits; skills/attributes use 0–100 values.
+- Health foundation covers head, torso, left/right arms and left/right legs. Wealth and Influence are bounded 0–1000 values. Family/dynasty are optional stable-ID hooks; their gameplay remains U17/U32 scope.
+- `CharacterRegistry` is a session-owned RAM index with duplicate-ID rejection, deterministic listing/lookup, derived children and spouse linking. It is not a singleton or database repository.
+- U04 `SaveSnapshot` version 1 and migration 001 are unchanged. U06 adds no serializer, SQL, Npgsql dependency, scene object, prefab reference or new assembly edge.
 
 ## U05A asset foundation
 - External download staging is the ignored `serenity_games_assets` tree. Only seven selected WizardHat FBXs were copied into `Assets/Game/Art/ThirdParty`, each with explicit source/license records; unknown-provenance files remain quarantined.
@@ -34,12 +43,15 @@ U06 — Character Domain Tier 1 is next and has NOT started. U05A stopped at ass
 - Save is one fully parameterized atomic UPSERT. Load validates relational session/version metadata and the complete XML snapshot before `SaveCoordinator` can replace runtime state.
 
 ## Build status
-Windows x64 Mono Development succeeded after U05A: errors=0, warnings=2. Player output is `Builds/Windows/Serenity.exe` (667136 bytes). Exact commands and diagnostics are in `docs/U05A_HANDOFF.md`; the verifier reuses the inherited U04A build gate.
+Windows x64 Mono Development succeeded after U06: errors=0, warnings=2. Player output remains `Builds/Windows/Serenity.exe` (667136 bytes). Exact commands and diagnostics are in `docs/U06_HANDOFF.md`; `Tools/Verify-U06.ps1` runs every inherited gate.
 
 ## Test status
-97/97 EditMode tests passed (0 failed/skipped, 1.3318513 seconds), including six U05A prefab/importer/registry/build-scene validation tests and all inherited architecture/time/persistence/camera/input tests. 25/25 real PostgreSQL integration tests passed (0 failed/skipped, 15.727664 seconds). 2/2 PlayMode tests passed (0 failed/skipped, 0.2174304 seconds), revalidating LocalGameplay composition, Cinemachine, marker count, camera raycast and selection. Exact commands and evidence are in `docs/U05A_HANDOFF.md` and `docs/validation/`.
+126/126 EditMode tests passed (0 failed/skipped, 1.5383799 seconds), including 29 focused U06 cases and all inherited architecture/time/persistence/camera/input/asset tests. The separate U06 category passed 29/29 (0 failed/skipped, 0.1969921 seconds). 25/25 real PostgreSQL integration tests passed (0 failed/skipped, 17.1574365 seconds). 2/2 PlayMode tests passed (0 failed/skipped, 0.22748 seconds). Exact commands and evidence are in `docs/U06_HANDOFF.md` and `Logs/`.
 
 ## Architecture facts
+- Character identity and canonical personal state live only in the pure Domain aggregate. Presentation and future ECS representations bind through `StableEntityId` and are disposable projections.
+- `CharacterState` capture is deterministic and detached; new creation and restore are distinct. Parent, spouse, family, dynasty and relationship references are stable IDs rather than object/view references.
+- U06 did not implement an NPC-card UI despite the obsolete older task wording: the explicit U06 scope is domain-only, and presentation begins at U07. The snapshot exposes all U06 data needed by a later card/read model.
 - External staging, selected third-party source and Serenity runtime prefabs are separate ownership zones. Vendor files are never gameplay state owners, and package folder layout is not a gameplay API.
 - U05A importer automation is explicit and allow-listed. It normalizes registered FBXs to the one-unit/one-metre policy, creates project-owned URP material variants/wrappers and leaves unrelated vendor imports untouched.
 - Game.Presentation now directly references the pinned Unity Input System and Cinemachine package assemblies; project-layer dependency directions remain unchanged.
@@ -53,7 +65,7 @@ Windows x64 Mono Development succeeded after U05A: errors=0, warnings=2. Player 
 - Future normalized Character/Dynasty/City/HistoricalEvent storage remains deferred behind separate ports/migrations.
 
 ## Known limitations
-The U05A character and primitive-building selections are readiness placeholders, not the final semi-realistic Stone Age visual baseline. No selected content has authored LOD chains; human work/gather/attack/carry/death animation, primitive clothing, final buildings/crafting props and broader wildlife remain missing or license-blocked. U05 retains its fixed-pitch placeholder camera and rectangular bounds. U04A remains synchronous/local-development-only with its documented limitations.
+U06 provides foundations, not gameplay: needs, diseases/injuries, mortality scheduling, pregnancy/genetics, relationship events, marriage history, dynasty/succession, profession work, Wealth/Influence formulas, persistence schema integration and tier conversion remain deferred. The U05A characters/buildings remain readiness placeholders with the previously documented art/animation gaps. U04A remains synchronous/local-development-only.
 
 ## Working tree
-The U05A commit is allow-listed to the exact Hodaart dependencies used by two wrappers, seven licensed staging-derived FBXs, their evidence, Serenity content/tooling/tests, validation evidence and documentation. Pre-existing TutorialInfo edits, unselected vendor packs, `_Recovery`, unrelated ProjectSettings and update/reference documents remain uncommitted. The whole `serenity_games_assets` tree remains ignored and outside Git.
+The U06 commit is allow-listed to Character Domain code/tests, its verifier and documentation only. Pre-existing TutorialInfo edits, unselected vendor packs, `_Recovery`, unrelated ProjectSettings, reference/update files and U05A-generated working-tree noise remain uncommitted. The whole `serenity_games_assets` tree remains ignored and outside Git.
