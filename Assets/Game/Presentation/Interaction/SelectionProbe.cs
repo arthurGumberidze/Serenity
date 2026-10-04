@@ -1,3 +1,5 @@
+using Game.Domain;
+using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using UnityEngine;
 
@@ -10,6 +12,11 @@ namespace Game.Presentation.Interaction
 
         private ILocalGameplayInput input;
         public SelectableMarker Selected { get; private set; }
+        public CharacterPresenter SelectedCharacterPresenter { get; private set; }
+        public StableEntityId? SelectedCharacterId =>
+            SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
+                ? SelectedCharacterPresenter.CharacterId
+                : (StableEntityId?)null;
 
         public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster)
         {
@@ -43,8 +50,9 @@ namespace Game.Presentation.Interaction
                 return false;
             }
             var marker = hit.collider.GetComponentInParent<SelectableMarker>();
-            SetSelection(marker);
-            return marker != null;
+            var characterPresenter = hit.collider.GetComponentInParent<CharacterPresenter>();
+            SetSelection(marker, characterPresenter);
+            return marker != null || characterPresenter != null;
         }
 
         private void Subscribe()
@@ -67,13 +75,14 @@ namespace Game.Presentation.Interaction
             TrySelectAt(input.PointerPosition);
         }
 
-        private void SetSelection(SelectableMarker marker)
+        private void SetSelection(SelectableMarker marker, CharacterPresenter characterPresenter = null)
         {
-            if (Selected == marker)
+            if (Selected == marker && SelectedCharacterPresenter == characterPresenter)
                 return;
             if (Selected != null)
                 Selected.SetSelected(false);
             Selected = marker;
+            SelectedCharacterPresenter = characterPresenter;
             if (Selected != null)
                 Selected.SetSelected(true);
         }

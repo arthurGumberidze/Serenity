@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U07 — GameObject presentation Tier 1
+## Active task: U08 — Строительная сетка и blueprint-система
 
 ### Prerequisites
-U05, U05A and U06 are DONE. U05 supplies the local scene/input boundary, U05A supplies licensed placeholder wrappers, and U06 supplies canonical Character Domain state.
+U04, U05 and U05A are DONE. U07 is also DONE and provides the current LocalGameplay composition and selection integration that U08 must preserve.
 
 ### Goal
-Implement Tier 1 GameObject presentation that binds a visible/animated character view to an existing U06 `Character` by `StableEntityId`. The view must not own or reroll canonical character state.
+Implement the first data-driven building placement and construction foundation so a house can be planned as a blueprint, completed from explicit state and restored without making a scene GameObject the canonical building record.
 
 ### Scope boundary
-U07 has not started. Read `docs/U06_HANDOFF.md`, D-016 and the U06 architecture section before implementation. Do not move `CharacterState`, age, family, skills, health or relationship ownership into a MonoBehaviour, prefab, Animator or vendor hierarchy. AI, needs, work scheduling, combat, dynasty gameplay, persistence schema expansion and tier switching remain later tasks.
+U08 has not started. Read `docs/U07_HANDOFF.md`, the U04 persistence boundary, the U05 input/selection architecture and the U05A wrapper/license constraints before implementation. Do not implement resources/inventories (U09), worker AI (U10/U11), production (U15), combat/destruction (U20/U24), global-map streaming (U25) or full gameplay UI (U27).
 
 ### Relevant handoffs
-Use `docs/U05A_HANDOFF.md` for wrapper/asset limitations and `docs/U06_HANDOFF.md` for the Character contract. Hodaart Characters 01/02 are placeholder presentation candidates only. Bind and unbind them without changing the domain identity or depending on Unity instance IDs.
+Keep persistent identity and construction state in Domain/Simulation data, use presentation objects as replaceable projections, and preserve the explicit `LocalSceneCompositionRoot` dependency style. Existing primitive shelter assets are placeholders only and may be replaced through presentation/configuration without changing canonical building state.

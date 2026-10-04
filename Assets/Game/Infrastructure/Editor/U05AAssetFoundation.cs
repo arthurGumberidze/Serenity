@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Game.Presentation.Characters;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
@@ -41,6 +42,7 @@ namespace Game.Infrastructure.Editor
         private const string Spear = "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageWeapons/Models/StoneSpear.fbx";
         private const string Torch = "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageWeapons/Models/Torch.fbx";
         private const string Boar = "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageWildHunt/Models/Boar_Animations_V4.fbx";
+        private const string HumanoidAnimationRoot = "Assets/Hodaart/HodaartLowPolyCharacterCollection3/Animations/";
 
         private static readonly ModelRule[] ModelRules =
         {
@@ -254,12 +256,81 @@ namespace Game.Infrastructure.Editor
                 collider.height = Mathf.Max(0.5f, bounds.size.y);
                 collider.radius = Mathf.Max(0.15f, Mathf.Min(bounds.size.x, bounds.size.z) * 0.45f);
                 collider.center = new Vector3(0f, collider.height * 0.5f, 0f);
+
+                var animator = visual.GetComponentInChildren<Animator>(true);
+                if (animator == null || animator.avatar == null || !animator.avatar.isValid || !animator.avatar.isHuman)
+                    throw new InvalidDataException("Humanoid wrapper requires a valid humanoid Animator and Avatar: " + sourcePath);
+                animator.runtimeAnimatorController = CreateHumanoidController();
+                animator.applyRootMotion = false;
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+                var rightHand = CreateSocket(animator, HumanBodyBones.RightHand, "RightHandSocket", root.transform);
+                var leftHand = CreateSocket(animator, HumanBodyBones.LeftHand, "LeftHandSocket", root.transform);
+                var presenter = root.AddComponent<CharacterPresenter>();
+                presenter.Configure(animator, rightHand, leftHand);
                 PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(root);
             }
+        }
+
+        private static Transform CreateSocket(Animator animator, HumanBodyBones bone, string name, Transform fallback)
+        {
+            var parent = animator.GetBoneTransform(bone) ?? fallback;
+            var socket = new GameObject(name).transform;
+            socket.SetParent(parent, false);
+            return socket;
+        }
+
+        private static RuntimeAnimatorController CreateHumanoidController()
+        {
+            const string controllerPath = "Assets/Game/Art/Animation/CharacterTier1.controller";
+            Directory.CreateDirectory(Path.GetDirectoryName(controllerPath));
+            var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (controller == null)
+                controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+
+            foreach (var parameter in controller.parameters.ToArray())
+                controller.RemoveParameter(parameter);
+            controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            controller.AddParameter("Moving", AnimatorControllerParameterType.Bool);
+
+            var stateMachine = controller.layers[0].stateMachine;
+            foreach (var childState in stateMachine.states.ToArray())
+                stateMachine.RemoveState(childState.state);
+
+            var idle = stateMachine.AddState("Idle");
+            idle.motion = RequireAnimationClip("Idle.anim");
+            var walking = stateMachine.AddState("Walking");
+            walking.motion = RequireAnimationClip("Walking.anim");
+            var running = stateMachine.AddState("Running");
+            running.motion = RequireAnimationClip("Running.anim");
+            stateMachine.defaultState = idle;
+
+            AddSpeedTransition(idle, walking, AnimatorConditionMode.Greater, 0.05f);
+            AddSpeedTransition(walking, idle, AnimatorConditionMode.Less, 0.05f);
+            AddSpeedTransition(walking, running, AnimatorConditionMode.Greater, 1.5f);
+            AddSpeedTransition(running, walking, AnimatorConditionMode.Less, 1.5f);
+            EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
+        private static AnimationClip RequireAnimationClip(string fileName)
+        {
+            var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(HumanoidAnimationRoot + fileName);
+            if (clip == null) throw new FileNotFoundException("Required humanoid animation is missing.", fileName);
+            return clip;
+        }
+
+        private static void AddSpeedTransition(AnimatorState from, AnimatorState to,
+            AnimatorConditionMode mode, float threshold)
+        {
+            var transition = from.AddTransition(to);
+            transition.hasExitTime = false;
+            transition.duration = 0.15f;
+            transition.AddCondition(mode, threshold, "Speed");
         }
 
         private static void CreateTier2Humanoid(string prefabPath, Material material)

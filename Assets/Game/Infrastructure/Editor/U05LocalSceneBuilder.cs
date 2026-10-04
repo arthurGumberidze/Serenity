@@ -1,5 +1,6 @@
 using System.IO;
 using Game.Presentation.CameraControl;
+using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Unity.Cinemachine;
@@ -15,12 +16,16 @@ namespace Game.Infrastructure.Editor
     {
         public const string ScenePath = "Assets/Scenes/LocalGameplay.unity";
         public const string ActionsPath = "Assets/Game/Presentation/Input/LocalGameplay.inputactions";
+        public const string CharacterCatalogPath = "Assets/Game/Art/Config/CharacterPresentationCatalog.asset";
 
         public static void Build()
         {
             var actionAsset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ActionsPath);
             if (actionAsset == null)
                 throw new FileNotFoundException("Local gameplay input actions were not imported.", ActionsPath);
+            var characterCatalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(CharacterCatalogPath);
+            if (characterCatalog == null)
+                throw new FileNotFoundException("Character presentation catalog was not generated.", CharacterCatalogPath);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "LocalGameplay";
@@ -83,7 +88,7 @@ namespace Game.Infrastructure.Editor
 
             raycaster.Configure(outputCamera, Physics.DefaultRaycastLayers);
             selection.Configure(input, raycaster);
-            composition.Configure(input, controller, raycaster, selection);
+            composition.Configure(input, controller, raycaster, selection, characterCatalog);
 
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
             EditorSceneManager.SaveScene(scene, ScenePath);

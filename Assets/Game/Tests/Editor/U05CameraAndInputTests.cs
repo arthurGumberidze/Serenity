@@ -56,14 +56,13 @@ namespace Game.Tests
         }
 
         [Test]
-        public void LocalSceneIsTheBuildSceneAndHasNoVendorDependencies()
+        public void LocalSceneIsTheBuildSceneAndUsesOnlyApprovedVendorDependencies()
         {
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).ToArray();
             Assert.That(scenes.Select(scene => scene.path), Is.EqualTo(new[] { "Assets/Scenes/LocalGameplay.unity" }));
             var dependencies = AssetDatabase.GetDependencies(scenes[0].path, true);
             Assert.That(dependencies.Any(path => path.StartsWith("Assets/EmaceArt")
                 || path.StartsWith("Assets/EmbersStorm")
-                || path.StartsWith("Assets/Hodaart")
                 || path.StartsWith("Assets/Medieval Fortification")
                 || path.StartsWith("Assets/PolyOne")
                 || path.StartsWith("Assets/Stylized Nature Environment")
@@ -72,6 +71,17 @@ namespace Game.Tests
                 || path.StartsWith("Assets/TriForge Assets")
                 || path.StartsWith("Assets/URP GanzSe")
                 || path.StartsWith("Assets/Vefects")), Is.False);
+
+            var hodaartDependencies = dependencies
+                .Where(path => path.StartsWith("Assets/Hodaart/HodaartLowPolyCharacterCollection3/"))
+                .ToArray();
+            Assert.That(hodaartDependencies, Is.Not.Empty);
+            Assert.That(hodaartDependencies.Any(path => path.Contains("/Documents/")
+                || path.Contains("/Packages/") || path.Contains("/Scene/") || path.Contains("/Scripts/")
+                || path.Contains("Character 03") || path.Contains("Character 04")
+                || path.Contains("Character 05") || path.Contains("Character 06")
+                || path.Contains("Character 07") || path.Contains("Character 08")
+                || path.Contains("Character 09") || path.Contains("Character 10")), Is.False);
         }
     }
 }
