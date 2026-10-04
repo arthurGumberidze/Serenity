@@ -10,7 +10,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U03 | DONE | Игровое время и календарь | U01 | MVP | Unit tests времени проходят; save/load времени работает. |
 | U04 | DONE | Stable IDs и Save/Load | U01,U03 | MVP | Save→load восстанавливает идентичное состояние ключевых сущностей. |
 | U04A | DONE | PostgreSQL Persistence Layer | U04 | MVP | Persistence abstraction; versioned migrations; transactional save/rollback; stable-ID round trips; separate integration-test database. |
-| U05 | TODO | Локальная сцена, RTS-камера и input | U02 | MVP | Камера/выбор/команды работают в test scene. |
+| U05 | DONE | Локальная сцена, RTS-камера и input | U02 | MVP | Камера/выбор/команды работают в test scene. |
 | U05A | TODO | Asset Pipeline + Free Asset Acquisition | U02,U05 | MVP | Runtime/staging folders, asset registry, free/placeholder base set, import normalization and traceable licenses. |
 | U06 | TODO | Domain-модель персонажа Tier 1 | U03,U04 | MVP | EditMode tests модели; карточка NPC отображает данные. |
 | U07 | TODO | GameObject presentation Tier 1 | U05,U05A,U06 | MVP | Tier1 персонаж видим, двигается, взаимодействует; состояние не хранится только в View. |

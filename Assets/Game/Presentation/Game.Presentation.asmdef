@@ -3,7 +3,9 @@
   "rootNamespace": "Game.Presentation",
   "references": [
     "Game.Domain",
-    "Game.Simulation"
+    "Game.Simulation",
+    "Unity.InputSystem",
+    "Unity.Cinemachine"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,

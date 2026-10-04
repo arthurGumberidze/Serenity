@@ -34,6 +34,7 @@ namespace Game.Tests
                 Assert.That(assembly.flags.HasFlag(AssemblyFlags.EditorAssembly), Is.False, pair.Key);
             }
             Assert.That(assemblies.Any(a => a.name == "Game.Tests"), Is.False);
+            Assert.That(assemblies.Any(a => a.name == "Game.Infrastructure.Editor"), Is.False);
         }
 
         [TestCase("Game.Domain")]

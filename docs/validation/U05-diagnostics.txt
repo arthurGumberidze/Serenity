@@ -1,0 +1,12 @@
+U05 final validation — 2026-10-04 Europe/Moscow
+
+Command: ./Tools/Verify-U05.ps1 -ManagedTestCluster
+Result: PASS
+
+EditMode: 91 passed, 0 failed, 0 skipped; duration 1.2878448 s.
+PostgreSQL integration: 25 passed, 0 failed, 0 skipped; duration 16.4536168 s.
+PlayMode: 2 passed, 0 failed, 0 skipped; duration 0.1850961 s.
+Windows x64 Mono Development: Succeeded; errors=0; warnings=2.
+Player: Builds/Windows/Serenity.exe; 667136 bytes.
+
+The verifier uses the inherited U04A managed PostgreSQL/core/build gate, then runs the U05 PlayMode suite. The initial sandbox scene-builder attempt crashed in Unity BuildReportRestService socket initialization, matching the previously documented environment limitation. Outside-sandbox scene generation and final verification succeeded. No U05 compiler errors remain. The two BuildReport warning texts are not expanded by Unity in the batch log.

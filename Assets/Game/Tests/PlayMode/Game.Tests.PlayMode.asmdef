@@ -1,0 +1,14 @@
+{
+  "name": "Game.Tests.PlayMode",
+  "rootNamespace": "Game.Tests.PlayMode",
+  "references": [
+    "Game.Presentation",
+    "Game.Infrastructure",
+    "Unity.InputSystem",
+    "Unity.Cinemachine"
+  ],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "allowUnsafeCode": false
+}

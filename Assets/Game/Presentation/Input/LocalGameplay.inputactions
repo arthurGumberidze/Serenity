@@ -1,0 +1,50 @@
+{
+  "name": "LocalGameplay",
+  "maps": [
+    {
+      "name": "Camera",
+      "id": "7d160bf8-b34b-486a-9a62-4020974871d8",
+      "actions": [
+        { "name": "Move", "type": "Value", "id": "519b62e8-d3af-47b8-a071-4d79ae327492", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "Zoom", "type": "Value", "id": "2f28026c-7ad7-4fd3-8140-98a705734a48", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "Rotate", "type": "Value", "id": "7489304d-b8dd-4ff8-a743-1d6da9ecc765", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "Pan", "type": "PassThrough", "id": "3ab53d19-ce30-4c42-a1e6-75b49c64e509", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "PanModifier", "type": "Button", "id": "abcaed5d-8614-4fe9-acfc-80781b71db1f", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "WASD", "id": "7eebfe35-acde-475b-8c61-3917ab6d03ab", "path": "2DVector", "interactions": "", "processors": "", "groups": "", "action": "Move", "isComposite": true, "isPartOfComposite": false },
+        { "name": "up", "id": "aad1557f-b5ed-49ec-acab-64fb5fd2fb29", "path": "<Keyboard>/w", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "up", "id": "04545523-0e71-4e8f-bc28-c7fbcf80281f", "path": "<Keyboard>/upArrow", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "down", "id": "c32adb11-9885-4a19-8b64-3bb87204044d", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "down", "id": "4d6858d1-c513-431f-be66-635343f607c6", "path": "<Keyboard>/downArrow", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "left", "id": "71137089-a80a-4e72-9fe5-00c380319b18", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "left", "id": "e0d92ad4-e35f-4870-9845-3fae412c147d", "path": "<Keyboard>/leftArrow", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "right", "id": "b76eb76b-e9c4-4f75-970b-85bedcc895ad", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "right", "id": "c2d736a4-59dd-47fa-bcb4-f39e811b53da", "path": "<Keyboard>/rightArrow", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "", "id": "5615840f-bdf8-4763-a389-471a678149be", "path": "<Mouse>/scroll/y", "interactions": "", "processors": "scale(factor=0.01)", "groups": "Keyboard&Mouse", "action": "Zoom", "isComposite": false, "isPartOfComposite": false },
+        { "name": "Q E", "id": "b2831634-945d-4dcb-a031-45f0981f7bb7", "path": "1DAxis", "interactions": "", "processors": "", "groups": "", "action": "Rotate", "isComposite": true, "isPartOfComposite": false },
+        { "name": "negative", "id": "5d246de3-a92c-44bc-871c-02c6ab7ea3ca", "path": "<Keyboard>/q", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Rotate", "isComposite": false, "isPartOfComposite": true },
+        { "name": "positive", "id": "d6ca55cb-4dc4-4e5a-a105-8f27f33a05d4", "path": "<Keyboard>/e", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Rotate", "isComposite": false, "isPartOfComposite": true },
+        { "name": "", "id": "31d0d386-0b18-437e-b230-46589728d998", "path": "<Pointer>/delta", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Pan", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "bf440220-000a-4802-8756-2547a23be4fe", "path": "<Mouse>/middleButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "PanModifier", "isComposite": false, "isPartOfComposite": false }
+      ]
+    },
+    {
+      "name": "Pointer",
+      "id": "fd7a35cd-d3bd-4e84-8adc-2162536e6355",
+      "actions": [
+        { "name": "Position", "type": "PassThrough", "id": "43849077-da8b-4765-99d8-45330e263ca6", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "PrimaryClick", "type": "Button", "id": "c51f6ed7-9bd7-48aa-b1f4-4db206e70e29", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "SecondaryClick", "type": "Button", "id": "e460a082-8fc4-4411-a223-94df40c16499", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "", "id": "cae77d56-6f46-4a77-b176-88afc63d5633", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Position", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "00b9c18d-da40-4a2d-8769-90c6a67dc8b8", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "PrimaryClick", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "61ddb6c2-a1d8-42b0-9d78-e43ba81ae942", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "SecondaryClick", "isComposite": false, "isPartOfComposite": false }
+      ]
+    }
+  ],
+  "controlSchemes": [
+    { "name": "Keyboard&Mouse", "bindingGroup": "Keyboard&Mouse", "devices": [ { "devicePath": "<Keyboard>", "isOptional": false, "isOR": false }, { "devicePath": "<Mouse>", "isOptional": false, "isOR": false } ] }
+  ]
+}

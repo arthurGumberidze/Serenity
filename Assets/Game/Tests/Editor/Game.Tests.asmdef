@@ -13,7 +13,8 @@
     "Game.Simulation",
     "Game.ECS",
     "Game.Presentation",
-    "Game.Infrastructure"
+    "Game.Infrastructure",
+    "Unity.InputSystem"
   ],
   "rootNamespace": "Game.Tests",
   "name": "Game.Tests"

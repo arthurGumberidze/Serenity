@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U05 — Local Scene / RTS Camera / Input
+## Active task: U05A — Asset Pipeline + Free Asset Acquisition
 
 ### Prerequisites
-U02 DONE. U04A is also DONE and must remain isolated behind the persistence boundary. Unity stays pinned to 6000.6.4f1.
+U02 and U05 are DONE. Unity stays pinned to 6000.6.4f1. Existing vendor packs and staging content remain uncommitted user data until U05A deliberately inventories and processes them.
 
 ### Goal
-Implement the local test scene foundation, RTS camera, selection and input/command flow according to `docs/TASK_GRAPH.md`, the FRS and existing assembly architecture.
+Define the runtime/staging asset layout, registry and license traceability; inventory the approved free/vendor content; normalize only the selected imports; and prepare project-owned prefabs/content for later presentation tasks according to `docs/TASK_GRAPH.md`, the FRS and asset update documents.
 
 ### Scope boundary
-U05 has not started. Read the relevant FRS sections and create a dedicated U05 plan before changes. Do not fold U05A asset acquisition, Character Domain, NPC simulation, PostgreSQL expansion, buildings, combat or other later tasks into U05.
+U05A has not started. Read the asset update documents, registry template and relevant FRS/package constraints before changes. Do not rework the completed U05 input/camera foundation, implement Character Domain, gameplay systems, PostgreSQL expansion, buildings or combat.
 
-### U04A handoff
-Read `docs/U04A_HANDOFF.md`, D-013 and the U04A architecture section. Runtime remains authoritative in RAM. Do not add SQL to gameplay, Presentation or tick loops. Future composition must rebind GameClock consumers after successful load.
+### U05 handoff
+Read `docs/U05_HANDOFF.md`, D-014 and the U05 architecture section. Preserve `LocalGameplay` as the functional project-owned test scene while replacing placeholders only through explicit, traceable U05A asset decisions. Do not introduce vendor dependencies into camera/input code.

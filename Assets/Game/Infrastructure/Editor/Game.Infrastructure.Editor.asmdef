@@ -1,0 +1,14 @@
+{
+  "name": "Game.Infrastructure.Editor",
+  "rootNamespace": "Game.Infrastructure.Editor",
+  "references": [
+    "Game.Infrastructure",
+    "Game.Presentation",
+    "Unity.InputSystem",
+    "Unity.Cinemachine"
+  ],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "allowUnsafeCode": false
+}

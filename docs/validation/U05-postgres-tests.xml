@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="25" result="Passed" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16,4536168">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="116" result="Passed" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16.453617" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1133" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="112" result="Passed" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16.441497" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26540" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1134" name="Game" fullname="Game" runstate="Runnable" testcasecount="112" result="Passed" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16.438717" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1135" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="112" result="Passed" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16.436216" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1021" name="PostgresIntegrationTests" fullname="Game.Tests.PostgresIntegrationTests" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" testcasecount="25" result="Passed" start-time="2026-10-04 09:02:22Z" end-time="2026-10-04 09:02:39Z" duration="16.433046" total="25" passed="25" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PostgresIntegration" />
+            </properties>
+            <test-case id="1024" name="AlteredOrNewerMigrationHistoryIsRejected" fullname="Game.Tests.PostgresIntegrationTests.AlteredOrNewerMigrationHistoryIsRejected" methodname="AlteredOrNewerMigrationHistoryIsRejected" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1803609862" result="Passed" start-time="2026-10-04 09:02:23Z" end-time="2026-10-04 09:02:23Z" duration="0.296833" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="ConcurrentUpsertsProduceOneCompleteSnapshot" fullname="Game.Tests.PostgresIntegrationTests.ConcurrentUpsertsProduceOneCompleteSnapshot" methodname="ConcurrentUpsertsProduceOneCompleteSnapshot" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="826203493" result="Passed" start-time="2026-10-04 09:02:23Z" end-time="2026-10-04 09:02:24Z" duration="0.562668" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1022" name="ConnectionAndMigrationHistoryAreAvailable" fullname="Game.Tests.PostgresIntegrationTests.ConnectionAndMigrationHistoryAreAvailable" methodname="ConnectionAndMigrationHistoryAreAvailable" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="882068478" result="Passed" start-time="2026-10-04 09:02:24Z" end-time="2026-10-04 09:02:24Z" duration="0.547282" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PostgreSQL server version: 18.0
+]]></output>
+            </test-case>
+            <test-case id="1039" name="ConnectionFailureIsControlledAndPreservesRuntime" fullname="Game.Tests.PostgresIntegrationTests.ConnectionFailureIsControlledAndPreservesRuntime" methodname="ConnectionFailureIsControlledAndPreservesRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="746456774" result="Passed" start-time="2026-10-04 09:02:24Z" end-time="2026-10-04 09:02:29Z" duration="4.240766" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1049" name="CoordinatorRebindsOnlyAfterSuccessfulDatabaseLoad" fullname="Game.Tests.PostgresIntegrationTests.CoordinatorRebindsOnlyAfterSuccessfulDatabaseLoad" methodname="CoordinatorRebindsOnlyAfterSuccessfulDatabaseLoad" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1247806157" result="Passed" start-time="2026-10-04 09:02:29Z" end-time="2026-10-04 09:02:29Z" duration="0.414891" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1046" name="CorruptionCannotPartiallyRestoreRuntime" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-04 09:02:29Z" end-time="2026-10-04 09:02:32Z" duration="3.386661" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1040" name="CorruptionCannotPartiallyRestoreRuntime(&quot;xml&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;xml&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="645763743" result="Passed" start-time="2026-10-04 09:02:29Z" end-time="2026-10-04 09:02:30Z" duration="0.546604" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1041" name="CorruptionCannotPartiallyRestoreRuntime(&quot;id&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;id&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1722584943" result="Passed" start-time="2026-10-04 09:02:30Z" end-time="2026-10-04 09:02:30Z" duration="0.566260" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1042" name="CorruptionCannotPartiallyRestoreRuntime(&quot;ticks&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;ticks&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1287367407" result="Passed" start-time="2026-10-04 09:02:30Z" end-time="2026-10-04 09:02:31Z" duration="0.567264" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1043" name="CorruptionCannotPartiallyRestoreRuntime(&quot;version&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;version&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="24567574" result="Passed" start-time="2026-10-04 09:02:31Z" end-time="2026-10-04 09:02:31Z" duration="0.573338" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1044" name="CorruptionCannotPartiallyRestoreRuntime(&quot;metadataVersion&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;metadataVersion&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="351930309" result="Passed" start-time="2026-10-04 09:02:31Z" end-time="2026-10-04 09:02:32Z" duration="0.549935" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1045" name="CorruptionCannotPartiallyRestoreRuntime(&quot;metadataId&quot;)" fullname="Game.Tests.PostgresIntegrationTests.CorruptionCannotPartiallyRestoreRuntime(&quot;metadataId&quot;)" methodname="CorruptionCannotPartiallyRestoreRuntime" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="495339366" result="Passed" start-time="2026-10-04 09:02:32Z" end-time="2026-10-04 09:02:32Z" duration="0.567915" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1048" name="DatabaseFailureRollsBackPreviouslyWrittenPayload" fullname="Game.Tests.PostgresIntegrationTests.DatabaseFailureRollsBackPreviouslyWrittenPayload" methodname="DatabaseFailureRollsBackPreviouslyWrittenPayload" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1018057194" result="Passed" start-time="2026-10-04 09:02:32Z" end-time="2026-10-04 09:02:33Z" duration="0.709525" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1025" name="FailedMigrationRollsBackDdlAndHistory" fullname="Game.Tests.PostgresIntegrationTests.FailedMigrationRollsBackDdlAndHistory" methodname="FailedMigrationRollsBackDdlAndHistory" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="547779697" result="Passed" start-time="2026-10-04 09:02:33Z" end-time="2026-10-04 09:02:34Z" duration="0.568097" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1036" name="FutureEntityIdentityUsesSameUuidMapping" fullname="Game.Tests.PostgresIntegrationTests.FutureEntityIdentityUsesSameUuidMapping" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-04 09:02:34Z" end-time="2026-10-04 09:02:35Z" duration="1.082755" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1032" name="FutureEntityIdentityUsesSameUuidMapping(&quot;Character&quot;)" fullname="Game.Tests.PostgresIntegrationTests.FutureEntityIdentityUsesSameUuidMapping(&quot;Character&quot;)" methodname="FutureEntityIdentityUsesSameUuidMapping" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1972644903" result="Passed" start-time="2026-10-04 09:02:34Z" end-time="2026-10-04 09:02:34Z" duration="0.261334" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1033" name="FutureEntityIdentityUsesSameUuidMapping(&quot;Dynasty&quot;)" fullname="Game.Tests.PostgresIntegrationTests.FutureEntityIdentityUsesSameUuidMapping(&quot;Dynasty&quot;)" methodname="FutureEntityIdentityUsesSameUuidMapping" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="43728672" result="Passed" start-time="2026-10-04 09:02:34Z" end-time="2026-10-04 09:02:34Z" duration="0.274302" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1034" name="FutureEntityIdentityUsesSameUuidMapping(&quot;City&quot;)" fullname="Game.Tests.PostgresIntegrationTests.FutureEntityIdentityUsesSameUuidMapping(&quot;City&quot;)" methodname="FutureEntityIdentityUsesSameUuidMapping" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1954335728" result="Passed" start-time="2026-10-04 09:02:34Z" end-time="2026-10-04 09:02:34Z" duration="0.270102" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1035" name="FutureEntityIdentityUsesSameUuidMapping(&quot;HistoricalEvent&quot;)" fullname="Game.Tests.PostgresIntegrationTests.FutureEntityIdentityUsesSameUuidMapping(&quot;HistoricalEvent&quot;)" methodname="FutureEntityIdentityUsesSameUuidMapping" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1816921832" result="Passed" start-time="2026-10-04 09:02:34Z" end-time="2026-10-04 09:02:35Z" duration="0.272644" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1023" name="MigrationsAreIdempotentAndConcurrentSafe" fullname="Game.Tests.PostgresIntegrationTests.MigrationsAreIdempotentAndConcurrentSafe" methodname="MigrationsAreIdempotentAndConcurrentSafe" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="382523776" result="Passed" start-time="2026-10-04 09:02:35Z" end-time="2026-10-04 09:02:35Z" duration="0.670679" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="MissingSaveIsExplicit" fullname="Game.Tests.PostgresIntegrationTests.MissingSaveIsExplicit" methodname="MissingSaveIsExplicit" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1892756623" result="Passed" start-time="2026-10-04 09:02:35Z" end-time="2026-10-04 09:02:36Z" duration="0.268929" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="OverwriteIsAtomicAndKeepsCreationTimestamp" fullname="Game.Tests.PostgresIntegrationTests.OverwriteIsAtomicAndKeepsCreationTimestamp" methodname="OverwriteIsAtomicAndKeepsCreationTimestamp" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="272978036" result="Passed" start-time="2026-10-04 09:02:36Z" end-time="2026-10-04 09:02:37Z" duration="0.869413" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1031" name="SaveLoadSurvivesNewStoreAndConnection" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-04 09:02:37Z" end-time="2026-10-04 09:02:39Z" duration="2.258864" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1026" name="SaveLoadSurvivesNewStoreAndConnection(1,False)" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection(1,False)" methodname="SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1245121162" result="Passed" start-time="2026-10-04 09:02:37Z" end-time="2026-10-04 09:02:37Z" duration="0.417584" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="SaveLoadSurvivesNewStoreAndConnection(2,True)" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection(2,True)" methodname="SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1695377734" result="Passed" start-time="2026-10-04 09:02:37Z" end-time="2026-10-04 09:02:37Z" duration="0.445671" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1028" name="SaveLoadSurvivesNewStoreAndConnection(3,False)" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection(3,False)" methodname="SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="917868115" result="Passed" start-time="2026-10-04 09:02:37Z" end-time="2026-10-04 09:02:38Z" duration="0.543471" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="SaveLoadSurvivesNewStoreAndConnection(5,True)" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection(5,True)" methodname="SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="488907680" result="Passed" start-time="2026-10-04 09:02:38Z" end-time="2026-10-04 09:02:38Z" duration="0.415356" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1030" name="SaveLoadSurvivesNewStoreAndConnection(10,False)" fullname="Game.Tests.PostgresIntegrationTests.SaveLoadSurvivesNewStoreAndConnection(10,False)" methodname="SaveLoadSurvivesNewStoreAndConnection" classname="Game.Tests.PostgresIntegrationTests" runstate="Runnable" seed="1646852832" result="Passed" start-time="2026-10-04 09:02:38Z" end-time="2026-10-04 09:02:39Z" duration="0.431396" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
