@@ -1,0 +1,48 @@
+U04A final validation — 2026-10-04 Europe/Moscow
+
+Prerequisite:
+- HEAD/ancestor 71e8c9f U04: implement stable IDs and save/load core
+- U04 status DONE; NEXT_TASK selected U04A before work
+- ./Tools/Verify-U04.ps1: 70 passed, 0 failed, 0 skipped; Windows Development build exit 0
+
+Environment:
+- Unity 6000.6.4f1 (12bfff696524)
+- Windows x64, Mono Development
+- psql/PostgreSQL server 18.0 x64
+- Npgsql 8.0.9, netstandard2.1
+- NuGetForUnity UPM/CLI 4.5.0
+- .NET SDK 10.0.401, runtime 10.0.12 (CLI process uses Major roll-forward from net9)
+
+Final command:
+./Tools/Verify-U04A.ps1 -ManagedTestCluster
+
+Final component commands invoked by the script:
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Logs\U04A-core-tests.log -runTests -testPlatform EditMode -testCategory !PostgresIntegration -testResults C:\serenity_game\Logs\U04A-core-tests.xml
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Logs\U04A-postgres-tests.log -runTests -testPlatform EditMode -testCategory PostgresIntegration -testResults C:\serenity_game\Logs\U04A-postgres-tests.xml
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Logs\U04A-build.log -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment
+
+Results:
+- Fresh private SCRAM loopback cluster initialized successfully; no pre-existing serenity schema.
+- Core/EditMode: Passed; total=86, passed=86, failed=0, skipped=0; duration=1.9070593 seconds.
+- PostgreSQL integration: Passed; total=25, passed=25, failed=0, skipped=0; duration=22.1686577 seconds.
+- Integration server reported version 18.0.
+- Migration 001 applied on clean DB; repeated/concurrent apply retained exactly one ledger row.
+- Artificial migration failure SQLSTATE 22012 rolled back probe table and ledger row.
+- Save/load survived new PostgresSaveStore and new physical connection.
+- Concurrent UPSERT left one complete valid snapshot.
+- Windows x64 Mono Development: Build Finished, Result: Success; errors=0; warnings=2.
+- Builds/Windows/Serenity.exe: 667136 bytes. Its reused timestamp is not build evidence; BuildReport/log and rebuilt data are.
+
+Diagnostics/warnings:
+- Two nonfatal Hidden/ChartRasterizerHardware conservative-rasterization messages.
+- Nonfatal licensing token and package/import diagnostics consistent with prior tasks.
+- BuildReport reports two warnings without individual warning text in the log.
+- No U04A C# compiler errors or Npgsql provider warnings.
+- An initial final-run attempt lost a race for an ephemeral port. Verify-U04A now retries up to five loopback ports; the successful final run used the corrected script.
+- NuGetForUnity CLI 4.5.0 generated some analyzer importer metadata without serializedVersion; Restore-NuGet upgrades only those generated ignored metadata files for Unity 6000.6.
+
+Security checks:
+- Runtime and migration-history values use Npgsql parameters; version-controlled migration SQL is repository-owned static SQL.
+- Restored packages, local clusters/config, .env files and *.local.config are ignored.
+- Public configuration/error strings are redacted and integration-tested.
+- Final staged-content scan found no embedded credential/connection-string values. Matches were limited to environment-variable reads, a runtime-generated random password and Npgsql builder property names.

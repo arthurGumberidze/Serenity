@@ -7,6 +7,8 @@
     "Game.ECS",
     "Game.Presentation"
   ],
+  "overrideReferences": true,
+  "precompiledReferences": ["Npgsql.dll"],
   "autoReferenced": false,
   "noEngineReferences": false,
   "allowUnsafeCode": false

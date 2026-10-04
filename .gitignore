@@ -21,3 +21,11 @@
 /Unity Hub/
 /Codex_Unity_Context_Pack.zip
 /Validation/
+
+# U04A restored packages and local-only configuration/test cluster
+/Assets/Packages/
+/Assets/Packages.meta
+/.local/
+.env
+.env.*
+*.local.config

@@ -1,31 +1,39 @@
 # PROJECT_STATE.md
 
 ## Engine
-Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0. No version/package changes in U04.
+Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; Windows x64 Mono Development. U04A adds only the pinned PostgreSQL provider/tooling described below and does not change the Editor or scripting backend.
 
 ## Current milestone / last completed task
-U04 DONE — Stable IDs + Save/Load Core. StableEntityId, immutable versioned snapshots, SaveCoordinator, ISaveStore, strict XML serialization and atomic local file storage are implemented. U03 time round-trips without identity regeneration or partial restore.
+U04A DONE — PostgreSQL Persistence Layer. The U04 `ISaveStore`, `SaveCoordinator`, `SaveSnapshot`, `StableEntityId`, XML codec and FileSaveStore remain the architectural base. Infrastructure now provides local PostgreSQL configuration, checksummed transactional migrations and `PostgresSaveStore`. Runtime simulation remains in RAM.
 
 ## Active task
-U04A — PostgreSQL Persistence Layer is next and has NOT started. No SQL, Npgsql, database schema, migrations, camera/input or Character Domain was added.
+U05 — Local Scene / RTS Camera / Input is next and has NOT started. U05A asset work, Character Domain and other gameplay systems were not implemented by U04A.
+
+## Provider and schema
+- PostgreSQL detected/validated: 18.0 x64 on a private loopback test cluster.
+- Npgsql 8.0.9, netstandard2.1, no ORM. NuGetForUnity 4.5.0 restores a fully pinned dependency graph from nuget.org into ignored `Assets/Packages`.
+- Configuration uses local-only `DYNASTYGAME_PG_*` process environment variables. No credentials or complete connection strings are committed/logged.
+- Recommended databases: `dynasty_game_dev` and separate `dynasty_game_test`; schema `serenity`.
+- Migration 001 creates `save_sessions`; the migrator transactionally bootstraps `schema_migrations`, verifies version/name/SHA256 history, serializes concurrent migrators with an advisory transaction lock and rolls back failure.
+- StableEntityId round-trips through PostgreSQL UUID without regeneration. Canonical save data remains the strict U04 XML payload in BYTEA. Database schema version and save-format version are distinct.
+- Save is one fully parameterized atomic UPSERT. Load validates relational session/version metadata and the complete XML snapshot before `SaveCoordinator` can replace runtime state.
 
 ## Build status
-Windows x64 / Mono / Development succeeded: exit 0; errors=0; warnings=2. Player: Builds/Windows/Serenity.exe (667136 bytes). Compilation and assembly boundary checks pass. Diagnostics and exact commands: docs/U04_HANDOFF.md; full logs remain in Logs/U04-tests.log and Logs/U04-build.log.
+Windows x64 Mono Development succeeded: errors=0, warnings=2. Player output remains `Builds/Windows/Serenity.exe` (667136 bytes). Exact command and diagnostics are in `docs/U04A_HANDOFF.md`; full log is `Logs/U04A-build.log`.
 
 ## Test status
-70/70 EditMode tests passed, 0 failed, 0 skipped, 2.3469298 seconds. Includes all prior 35 tests and 35 persistence tests. Evidence: docs/validation/U04-tests.xml. Test suite covers exact 64-bit ticks, stable IDs, settings continuation, all speeds, pause, invalid/corrupt/unknown saves, file overwrite and failed atomic replacement.
-
-## Known limitations / blockers
-No U04 blocker. Synchronous owner-thread checkpoint API requires a committed simulation barrier and a single writer per save directory. Successful Load replaces the clock; future composition must rebind consumers. Version 1 has no migrations, checksum, UI/autosave, game-content sections or PostgreSQL. Its 64 KiB size limit must evolve with future schema versions. Atomic replacement does not promise universal power-loss durability. Biological balance discrepancy described in D-011/U03_HANDOFF remains deferred.
+86/86 core EditMode tests passed (0 failed/skipped, 1.9070593 seconds) without PostgreSQL; 25/25 real PostgreSQL integration tests passed (0 failed/skipped, 22.1686577 seconds). The managed verification creates a fresh ignored SCRAM-authenticated PostgreSQL 18 cluster and separate test database, then tests migration creation/idempotence/concurrency/rollback, save/load/overwrite/missing/corruption/version errors, UUID and all clock fields, connection recreation/failure, concurrent UPSERT and runtime failure safety. Exact commands and evidence are in `docs/U04A_HANDOFF.md` and `docs/validation/`.
 
 ## Architecture facts
-- Domain and Simulation remain pure C#; assembly dependency graph unchanged.
-- Domain identity is a readonly non-empty GUID value object; canonical encoding is lowercase N format. GameObject/ECS handles are disposable projections, never persistent references.
-- Runtime state remains in RAM. GameTimeState is unchanged; GameClock gains only a read-only biological multiplier accessor.
-- SaveSnapshot version 1 contains session ID, calendar/biological ticks, selected speed, pause and biological multiplier. Slot ID is separate from session ID.
-- Simulation coordinates capture/validated replacement; Infrastructure implements XML and file storage through ISaveStore.
-- Definitions remain ScriptableObject/configuration; mutable canonical save-state is data-only.
-- D-012 and ARCHITECTURE document U04 contracts and failure behavior.
+- Domain, Simulation, ECS and Presentation do not reference Npgsql; assembly dependency directions are unchanged. Infrastructure is the outer provider layer.
+- PostgreSQL calls are limited to explicit setup/migration and save/checkpoint boundaries. No per-frame, per-NPC, movement, AI or continuous-state SQL exists.
+- Timestamps are storage metadata. Calendar and biological ticks remain the only game time.
+- Provider errors are controlled/redacted. Missing and corrupt save semantics remain explicit. Failed load never replaces active state.
+- Successful load still creates a replacement GameClock. Future runtime composition/UI/DOTS consumers must rebind; the provider holds no GameClock reference.
+- Future normalized Character/Dynasty/City/HistoricalEvent storage remains deferred behind separate ports/migrations.
+
+## Known limitations
+U04A is synchronous, local-development-only and validates Windows Mono; other platforms/backends are unverified. It creates schemas/tables but never creates/drops a user's database. No connection pool, async save queue, history repositories, snapshot-format migrations, checksums beyond the strict XML/schema constraints, UI/autosave, cloud/remote production database or realtime SQL simulation are included. The U04 XML version-1 64 KiB limit remains. Managed validation keeps stopped ignored cluster directories for inspection rather than deleting them automatically.
 
 ## Working tree
-Pre-existing TutorialInfo edits, QualitySettings/URPProjectSettings changes, vendor assets and update/reference documents remain outside the U04 commit. Validation ran against this current working tree, not a clean checkout. Only explicitly staged U04 code, tests and documentation are committed.
+The U04A commit includes only provider/tool/package configuration, migrations, tests, validation evidence and required project documentation. Pre-existing TutorialInfo, imported asset packs, user ProjectSettings and update/reference documents remain uncommitted and outside the U04A commit. Validation runs against the current working tree, so existing third-party code warnings can appear in logs.

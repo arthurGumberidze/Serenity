@@ -1,4 +1,6 @@
 {
+  "overrideReferences": true,
+  "precompiledReferences": ["Npgsql.dll", "nunit.framework.dll"],
   "autoReferenced": false,
   "optionalUnityReferences": [
     "TestAssemblies"
