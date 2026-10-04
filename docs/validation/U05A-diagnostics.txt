@@ -1,0 +1,23 @@
+U05A final validation diagnostics
+Date: 2026-10-04
+Unity: 6000.6.4f1 (12bfff696524)
+Primary command: ./Tools/Verify-U05A.ps1 -ManagedTestCluster
+
+Scoped asset generation: succeeded
+EditMode: 97 passed, 0 failed, 0 skipped; duration 1.3318513 s
+PostgreSQL integration: 25 passed, 0 failed, 0 skipped; duration 15.727664 s
+PlayMode: 2 passed, 0 failed, 0 skipped; duration 0.2174304 s
+Windows x64 Mono Development: succeeded; errors=0; warnings=2
+Player executable: Builds/Windows/Serenity.exe; 667136 bytes
+Build scenes: Assets/Scenes/LocalGameplay.unity only
+Development gallery: Assets/Scenes/Development/StoneAgeAssetGallery.unity; excluded from Build Settings
+
+Final generation/capture/test/build logs matched no C# compiler errors, NullReferenceException,
+MissingReferenceException, missing-script diagnostics, or shader errors.
+
+Manual GPU-rendered gallery inspection:
+- humans normalized to 1.8 m and grounded;
+- spear 1.8 m, axe 0.7 m, torch 0.8 m;
+- boar, tree, rock, campfire, shelter and storage use plausible readiness scale;
+- no pink materials, missing meshes, exploded rigs or obvious broken pivots;
+- Hodaart characters and project primitives remain visibly placeholder-grade.

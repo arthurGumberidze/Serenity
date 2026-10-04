@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0,2174304">
+  <test-suite type="TestSuite" id="1011" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.217430" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1015" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.202130" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="28604" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1016" name="Game" fullname="Game" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.200648" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1017" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.199932" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1018" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.199239" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1012" name="LocalGameplaySceneTests" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.197516" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1014" name="PointerRaycastAndSelectionProbeHitMarker" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests.PointerRaycastAndSelectionProbeHitMarker" methodname="PointerRaycastAndSelectionProbeHitMarker" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" seed="1150016599" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.131060" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1013" name="SceneHasExplicitCompositionAndCinemachineCamera" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests.SceneHasExplicitCompositionAndCinemachineCamera" methodname="SceneHasExplicitCompositionAndCinemachineCamera" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" seed="449266518" result="Passed" start-time="2026-10-04 16:35:27Z" end-time="2026-10-04 16:35:27Z" duration="0.047630" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

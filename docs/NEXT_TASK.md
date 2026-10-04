@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U05A — Asset Pipeline + Free Asset Acquisition
+## Active task: U06 — Domain-модель персонажа Tier 1
 
 ### Prerequisites
-U02 and U05 are DONE. Unity stays pinned to 6000.6.4f1. Existing vendor packs and staging content remain uncommitted user data until U05A deliberately inventories and processes them.
+U03 and U04 are DONE. U05A is also DONE and supplies asset-readiness candidates only; it does not define character gameplay state.
 
 ### Goal
-Define the runtime/staging asset layout, registry and license traceability; inventory the approved free/vendor content; normalize only the selected imports; and prepare project-owned prefabs/content for later presentation tasks according to `docs/TASK_GRAPH.md`, the FRS and asset update documents.
+Implement the pure/testable Tier 1 Character Domain model and its invariants according to `docs/TASK_GRAPH.md` and the relevant FRS sections. The acceptance target includes EditMode coverage for the model and presentation of character data in the NPC card without moving canonical state into a MonoBehaviour or vendor prefab.
 
 ### Scope boundary
-U05A has not started. Read the asset update documents, registry template and relevant FRS/package constraints before changes. Do not rework the completed U05 input/camera foundation, implement Character Domain, gameplay systems, PostgreSQL expansion, buildings or combat.
+U06 has not started. Before implementation, read the current project state, decisions, architecture, U05A handoff and Character Domain requirements. Preserve StableEntityId and persistence boundaries. Do not implement AI, needs scheduling, professions, building gameplay, combat, dynasty/inheritance, aging/pregnancy, Tier switching or mass-NPC update loops unless the actual U06 specification explicitly requires a narrow supporting contract.
 
-### U05 handoff
-Read `docs/U05_HANDOFF.md`, D-014 and the U05 architecture section. Preserve `LocalGameplay` as the functional project-owned test scene while replacing placeholders only through explicit, traceable U05A asset decisions. Do not introduce vendor dependencies into camera/input code.
+### U05A handoff
+Read `docs/U05A_HANDOFF.md`, `docs/ASSET_REGISTRY.md`, D-015 and the U05A architecture section. Hodaart Characters 01/02 and the Tier 2 capsule are presentation/readiness placeholders only. Canonical character state must not depend on their vendor hierarchy, Animator, Unity instance IDs or scene lifetime.

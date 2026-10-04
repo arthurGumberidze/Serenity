@@ -1,0 +1,19 @@
+U05A asset validation report
+Generated: 2026-10-04T16:35:47Z
+Unity units: 1 unit = 1 meter
+Validation scene: Assets/Scenes/Development/StoneAgeAssetGallery.unity
+
+Assets/Game/Art/Prefabs/Characters/Serenity_Adult_A_Tier1.prefab | size=1.584x1.8x0.454 renderers=5 meshes=5 triangles=6112 materials=1 animator=True avatarValid=True avatarHuman=True missingScripts=0
+Assets/Game/Art/Prefabs/Characters/Serenity_Adult_B_Tier1.prefab | size=1.592x1.8x0.49 renderers=5 meshes=5 triangles=5252 materials=1 animator=True avatarValid=True avatarHuman=True missingScripts=0
+Assets/Game/Art/Prefabs/Characters/Serenity_Humanoid_Tier2.prefab | size=0.55x1.8x0.55 renderers=1 meshes=1 triangles=832 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Animals/Serenity_Boar.prefab | size=1.036x1.466x1.8 renderers=3 meshes=3 triangles=2983 materials=1 animator=True avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveShelter.prefab | size=4.48x3.49x3.5 renderers=5 meshes=1 triangles=12 materials=2 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Environment/Serenity_Tree.prefab | size=5.194x6x4.119 renderers=2 meshes=2 triangles=360 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Environment/Serenity_Rock.prefab | size=1.258x0.936x1.4 renderers=1 meshes=1 triangles=80 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Props/Serenity_Campfire.prefab | size=0.8x0.618x0.763 renderers=3 meshes=3 triangles=1984 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Props/Serenity_StorageBasket.prefab | size=1.1x0.9x0.8 renderers=1 meshes=1 triangles=12 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Tools/Serenity_Torch.prefab | size=0.125x0.8x0.132 renderers=1 meshes=1 triangles=1140 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Weapons/Serenity_StoneAxe.prefab | size=0.542x0.7x0.111 renderers=1 meshes=1 triangles=1186 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+Assets/Game/Art/Prefabs/Weapons/Serenity_StoneSpear.prefab | size=0.138x1.8x0.111 renderers=1 meshes=1 triangles=2932 materials=1 animator=False avatarValid=False avatarHuman=False missingScripts=0
+
+Boar clips: metarig|Attack, metarig|Idle1, metarig|Idle2, metarig|Run, metarig|Walk

@@ -4,10 +4,17 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; Windows x64 Mono Development. U04A adds only the pinned PostgreSQL provider/tooling described below and does not change the Editor or scripting backend.
 
 ## Current milestone / last completed task
-U05 DONE — Local Scene / RTS Camera / Input. `Assets/Scenes/LocalGameplay.unity` is the enabled build scene and uses project-owned primitives only. Presentation owns centralized Input System intent, bounded RTS navigation and pointer interaction; Infrastructure owns the explicit scene composition root.
+U05A DONE — Asset Pipeline + Free Asset Acquisition. Selected licensed Stone Age source files now feed Serenity-owned runtime wrappers and a development-only gallery; `Assets/Scenes/LocalGameplay.unity` remains the sole enabled build scene and preserves the completed U05 RTS camera/input foundation.
 
 ## Active task
-U05A — Asset Pipeline + Free Asset Acquisition is next and has NOT started. Character Domain, NPC simulation, buildings, combat, third-person control and other gameplay systems remain deferred.
+U06 — Character Domain Tier 1 is next and has NOT started. U05A stopped at asset readiness; Character Domain, NPC simulation, building gameplay, combat, third-person control and all other gameplay systems remain deferred.
+
+## U05A asset foundation
+- External download staging is the ignored `serenity_games_assets` tree. Only seven selected WizardHat FBXs were copied into `Assets/Game/Art/ThirdParty`, each with explicit source/license records; unknown-provenance files remain quarantined.
+- Gameplay-facing content lives in Serenity-owned prefabs under `Assets/Game/Art/Prefabs`; wrappers reference vendor/source content without putting Serenity state or code into vendor packages.
+- Selected Hodaart Characters 01/02 are the male/female Tier 1 placeholder candidates with valid Human Avatars and idle/walk/run coverage. A project-owned 832-triangle single-mesh Tier 2 placeholder is separate.
+- Stone Age readiness includes axe, spear, torch, animated boar, tree, rock and campfire plus primitive project-owned shelter/storage placeholders. Production Stone Age clothing, final characters/buildings, crafting props, broader wildlife and missing work/combat/carry/death animation remain documented gaps.
+- `StoneAgeAssetGallery` is development-only and excluded from Build Settings. Scoped editor tooling normalizes only registered files and never acts as a global AssetPostprocessor.
 
 ## U05 runtime
 - Camera input actions: WASD/arrows move, screen-edge scroll, middle-mouse drag pan, wheel zoom and Q/E yaw rotation. Bindings live in `LocalGameplay.inputactions` for future rebinding.
@@ -27,12 +34,14 @@ U05A — Asset Pipeline + Free Asset Acquisition is next and has NOT started. Ch
 - Save is one fully parameterized atomic UPSERT. Load validates relational session/version metadata and the complete XML snapshot before `SaveCoordinator` can replace runtime state.
 
 ## Build status
-Windows x64 Mono Development succeeded after U05: errors=0, warnings=2. Player output is `Builds/Windows/Serenity.exe` (667136 bytes). Exact command and diagnostics are in `docs/U05_HANDOFF.md`; full log is `Logs/U04A-build.log` because the U05 verifier reuses the inherited U04A build gate.
+Windows x64 Mono Development succeeded after U05A: errors=0, warnings=2. Player output is `Builds/Windows/Serenity.exe` (667136 bytes). Exact commands and diagnostics are in `docs/U05A_HANDOFF.md`; the verifier reuses the inherited U04A build gate.
 
 ## Test status
-91/91 EditMode tests passed (0 failed/skipped, 1.2878448 seconds), including inherited architecture/time/persistence tests and U05 camera/input/scene dependency tests. 25/25 real PostgreSQL integration tests passed (0 failed/skipped, 16.4536168 seconds). 2/2 PlayMode tests passed (0 failed/skipped, 0.1850961 seconds), validating scene composition, Cinemachine, marker count, camera raycast and selection. Exact commands and evidence are in `docs/U05_HANDOFF.md` and `docs/validation/`.
+97/97 EditMode tests passed (0 failed/skipped, 1.3318513 seconds), including six U05A prefab/importer/registry/build-scene validation tests and all inherited architecture/time/persistence/camera/input tests. 25/25 real PostgreSQL integration tests passed (0 failed/skipped, 15.727664 seconds). 2/2 PlayMode tests passed (0 failed/skipped, 0.2174304 seconds), revalidating LocalGameplay composition, Cinemachine, marker count, camera raycast and selection. Exact commands and evidence are in `docs/U05A_HANDOFF.md` and `docs/validation/`.
 
 ## Architecture facts
+- External staging, selected third-party source and Serenity runtime prefabs are separate ownership zones. Vendor files are never gameplay state owners, and package folder layout is not a gameplay API.
+- U05A importer automation is explicit and allow-listed. It normalizes registered FBXs to the one-unit/one-metre policy, creates project-owned URP material variants/wrappers and leaves unrelated vendor imports untouched.
 - Game.Presentation now directly references the pinned Unity Input System and Cinemachine package assemblies; project-layer dependency directions remain unchanged.
 - `LocalSceneCompositionRoot` uses explicit serialized references. Runtime code does not use scene-wide find/service-locator calls for composition.
 - Camera and pointer state are disposable presentation state and never enter saves, StableEntityId mappings or PostgreSQL.
@@ -44,7 +53,7 @@ Windows x64 Mono Development succeeded after U05: errors=0, warnings=2. Player o
 - Future normalized Character/Dynasty/City/HistoricalEvent storage remains deferred behind separate ports/migrations.
 
 ## Known limitations
-U05 has a fixed-pitch placeholder camera and rectangular bounds; it does not implement terrain-aware collision, production selection UI, orders, rebinding UI, touch/gamepad navigation, third-person control or global-map switching. U04A remains synchronous/local-development-only with the previously documented limitations. Managed verification keeps stopped ignored PostgreSQL cluster directories for inspection rather than deleting them automatically.
+The U05A character and primitive-building selections are readiness placeholders, not the final semi-realistic Stone Age visual baseline. No selected content has authored LOD chains; human work/gather/attack/carry/death animation, primitive clothing, final buildings/crafting props and broader wildlife remain missing or license-blocked. U05 retains its fixed-pitch placeholder camera and rectangular bounds. U04A remains synchronous/local-development-only with its documented limitations.
 
 ## Working tree
-The U05 commit includes only the local-scene/input/camera/interaction implementation, tests, verifier, validation evidence and required documentation. Pre-existing TutorialInfo edits, imported asset packs, unrelated ProjectSettings and update/reference documents remain uncommitted and outside the commit. Validation runs against the current working tree, so existing third-party diagnostics can appear in logs.
+The U05A commit is allow-listed to the exact Hodaart dependencies used by two wrappers, seven licensed staging-derived FBXs, their evidence, Serenity content/tooling/tests, validation evidence and documentation. Pre-existing TutorialInfo edits, unselected vendor packs, `_Recovery`, unrelated ProjectSettings and update/reference documents remain uncommitted. The whole `serenity_games_assets` tree remains ignored and outside Git.

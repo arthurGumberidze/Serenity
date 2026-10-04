@@ -10,3 +10,14 @@
 *.exr filter=lfs diff=lfs merge=lfs -text
 
 *.docx filter=lfs diff=lfs merge=lfs -text
+
+# Unity YAML intentionally serializes empty scalar values with a trailing space.
+*.meta -whitespace
+*.anim -whitespace
+*.controller -whitespace
+*.mat -whitespace
+*.prefab -whitespace
+*.unity -whitespace
+
+# Preserve third-party license evidence byte-for-byte.
+Assets/Game/Art/ThirdParty/**/License.txt -whitespace
