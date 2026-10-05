@@ -84,6 +84,9 @@ namespace Game.Infrastructure.Editor
             CreateModelPrefab(Torch, RequiredPrefabPaths[9], wood, PivotMode.Center, false);
             CreateModelPrefab(Axe, RequiredPrefabPaths[10], stone, PivotMode.Center, false);
             CreateModelPrefab(Spear, RequiredPrefabPaths[11], stone, PivotMode.Center, false);
+            if (AssetDatabase.LoadAssetAtPath<Game.Presentation.Buildings.BuildingPresentationCatalog>(
+                    U05LocalSceneBuilder.BuildingCatalogPath) != null)
+                U08BuildingFoundation.RefreshCatalogAndPrefabs();
             BuildValidationScene(ground);
 
             AssetDatabase.SaveAssets();

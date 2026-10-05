@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Game.Presentation.Buildings;
 using Game.Presentation.Characters;
 using UnityEditor;
 using UnityEngine;
@@ -31,6 +32,9 @@ namespace Game.Infrastructure.Editor
             catalog.Configure(male, female);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
+
+            if (AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(U05LocalSceneBuilder.BuildingCatalogPath) != null)
+                U08BuildingFoundation.RefreshCatalogAndPrefabs();
 
             U05LocalSceneBuilder.Build();
             Validate();

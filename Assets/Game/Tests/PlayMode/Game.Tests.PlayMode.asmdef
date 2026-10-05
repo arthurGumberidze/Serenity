@@ -3,6 +3,7 @@
   "rootNamespace": "Game.Tests.PlayMode",
   "references": [
     "Game.Domain",
+    "Game.Simulation",
     "Game.Presentation",
     "Game.Infrastructure",
     "Unity.InputSystem",

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1480ea08a019ce94bafe5b69f5bc2358, type: 3}
+  m_Name: BuildingPresentationCatalog
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Buildings.BuildingPresentationCatalog
+  entries:
+  - definitionId: primitive_shelter
+    displayName: Primitive Shelter
+    category: 0
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+  - definitionId: storage_basket
+    displayName: Storage Basket
+    category: 1
+    footprintWidth: 2
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 0
+    prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
+  defaultDefinitionId: primitive_shelter

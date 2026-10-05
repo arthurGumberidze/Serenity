@@ -3,6 +3,7 @@
   "rootNamespace": "Game.Infrastructure.Editor",
   "references": [
     "Game.Infrastructure",
+    "Game.Domain",
     "Game.Presentation",
     "Unity.InputSystem",
     "Unity.Cinemachine"

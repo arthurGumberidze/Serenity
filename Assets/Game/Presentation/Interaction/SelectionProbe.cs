@@ -11,6 +11,7 @@ namespace Game.Presentation.Interaction
         [SerializeField] private WorldPointerRaycaster raycaster;
 
         private ILocalGameplayInput input;
+        private LocalInteractionMode interactionMode;
         public SelectableMarker Selected { get; private set; }
         public CharacterPresenter SelectedCharacterPresenter { get; private set; }
         public StableEntityId? SelectedCharacterId =>
@@ -18,12 +19,14 @@ namespace Game.Presentation.Interaction
                 ? SelectedCharacterPresenter.CharacterId
                 : (StableEntityId?)null;
 
-        public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster)
+        public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
+            LocalInteractionMode mode = null)
         {
             Unsubscribe();
             inputSource = source;
             raycaster = worldRaycaster;
             input = source;
+            interactionMode = mode;
             Subscribe();
         }
 
@@ -72,6 +75,8 @@ namespace Game.Presentation.Interaction
 
         private void OnPrimaryClicked()
         {
+            if (interactionMode != null && interactionMode.IsBuildingPlacement)
+                return;
             TrySelectAt(input.PointerPosition);
         }
 

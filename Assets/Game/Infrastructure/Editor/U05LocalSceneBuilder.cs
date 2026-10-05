@@ -1,6 +1,7 @@
 using System.IO;
 using Game.Presentation.CameraControl;
 using Game.Presentation.Characters;
+using Game.Presentation.Buildings;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Unity.Cinemachine;
@@ -17,6 +18,7 @@ namespace Game.Infrastructure.Editor
         public const string ScenePath = "Assets/Scenes/LocalGameplay.unity";
         public const string ActionsPath = "Assets/Game/Presentation/Input/LocalGameplay.inputactions";
         public const string CharacterCatalogPath = "Assets/Game/Art/Config/CharacterPresentationCatalog.asset";
+        public const string BuildingCatalogPath = "Assets/Game/Art/Config/BuildingPresentationCatalog.asset";
 
         public static void Build()
         {
@@ -26,6 +28,9 @@ namespace Game.Infrastructure.Editor
             var characterCatalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(CharacterCatalogPath);
             if (characterCatalog == null)
                 throw new FileNotFoundException("Character presentation catalog was not generated.", CharacterCatalogPath);
+            var buildingCatalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(BuildingCatalogPath);
+            if (buildingCatalog == null)
+                throw new FileNotFoundException("Building presentation catalog was not generated.", BuildingCatalogPath);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "LocalGameplay";
@@ -35,11 +40,13 @@ namespace Game.Infrastructure.Editor
             input.Configure(actionAsset);
             var raycaster = compositionObject.AddComponent<WorldPointerRaycaster>();
             var selection = compositionObject.AddComponent<SelectionProbe>();
+            var buildingPlacement = compositionObject.AddComponent<BuildingPlacementController>();
             var composition = compositionObject.AddComponent<LocalSceneCompositionRoot>();
 
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground Placeholder";
             ground.transform.localScale = new Vector3(10f, 1f, 10f);
+            ground.AddComponent<BuildableGround>();
 
             CreateMarker(new Vector3(-8f, 1f, 2f), new Vector3(2f, 2f, 2f), "Selection Marker A");
             CreateMarker(new Vector3(0f, 1.5f, 8f), new Vector3(2.5f, 3f, 2.5f), "Selection Marker B");
@@ -88,7 +95,9 @@ namespace Game.Infrastructure.Editor
 
             raycaster.Configure(outputCamera, Physics.DefaultRaycastLayers);
             selection.Configure(input, raycaster);
-            composition.Configure(input, controller, raycaster, selection, characterCatalog);
+            buildingPlacement.Configure(input, raycaster, buildingCatalog, 1f, Vector3.zero);
+            composition.Configure(input, controller, raycaster, selection, characterCatalog, buildingCatalog,
+                buildingPlacement, 1f, Vector3.zero);
 
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
             EditorSceneManager.SaveScene(scene, ScenePath);

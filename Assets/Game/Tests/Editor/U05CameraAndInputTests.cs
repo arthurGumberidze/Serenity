@@ -45,14 +45,17 @@ namespace Game.Tests
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
                 "Assets/Game/Presentation/Input/LocalGameplay.inputactions");
             Assert.That(asset, Is.Not.Null);
-            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[] { "Camera", "Pointer" }));
+            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[] { "Camera", "Pointer", "Building" }));
             Assert.That(asset.FindActionMap("Camera").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "Move", "Zoom", "Rotate", "Pan", "PanModifier" }));
             Assert.That(asset.FindActionMap("Pointer").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "Position", "PrimaryClick", "SecondaryClick" }));
+            Assert.That(asset.FindActionMap("Building").actions.Select(action => action.name),
+                Is.EquivalentTo(new[] { "ToggleMode", "Confirm", "Cancel", "Rotate" }));
             Assert.That(asset.FindAction("Camera/Move").bindings.Any(binding => binding.path == "<Keyboard>/w"), Is.True);
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
+            Assert.That(asset.FindAction("Building/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/r"), Is.True);
         }
 
         [Test]

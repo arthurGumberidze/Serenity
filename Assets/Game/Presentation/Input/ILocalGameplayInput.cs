@@ -12,5 +12,9 @@ namespace Game.Presentation.Input
         bool IsPanPressed { get; }
         Vector2 PointerPosition { get; }
         event Action PrimaryClicked;
+        event Action BuildModeRequested;
+        event Action BuildConfirmed;
+        event Action BuildCancelled;
+        event Action BuildRotated;
     }
 }
