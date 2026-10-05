@@ -18,6 +18,7 @@ namespace Game.Presentation.Input
         private InputAction panModifierAction;
         private InputAction pointerPositionAction;
         private InputAction primaryClickAction;
+        private InputAction selectionModifierAction;
         private InputAction buildModeAction;
         private InputAction buildConfirmAction;
         private InputAction buildCancelAction;
@@ -28,6 +29,7 @@ namespace Game.Presentation.Input
         public float Rotate => ReadFloat(rotateAction);
         public Vector2 PanDelta => ReadVector2(panAction);
         public bool IsPanPressed => panModifierAction != null && panModifierAction.IsPressed();
+        public bool IsAdditiveSelectionPressed => selectionModifierAction != null && selectionModifierAction.IsPressed();
         public Vector2 PointerPosition => ReadVector2(pointerPositionAction);
 
         public event Action PrimaryClicked;
@@ -86,6 +88,7 @@ namespace Game.Presentation.Input
             panModifierAction = cameraMap.FindAction("PanModifier", true);
             pointerPositionAction = pointerMap.FindAction("Position", true);
             primaryClickAction = pointerMap.FindAction("PrimaryClick", true);
+            selectionModifierAction = pointerMap.FindAction("SelectionModifier", true);
             buildModeAction = buildingMap.FindAction("ToggleMode", true);
             buildConfirmAction = buildingMap.FindAction("Confirm", true);
             buildCancelAction = buildingMap.FindAction("Cancel", true);

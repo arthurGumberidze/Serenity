@@ -110,6 +110,33 @@ namespace Game.Simulation.AI
                 destination.Capacity - destination.TotalUnits, out claim);
         }
 
+        public bool TryClaimSpecified(Tier1AiAgentState agent, InventoryOwner sourceOwner,
+            InventoryOwner destinationOwner, ResourceId resourceId, ResourceQuantity quantity,
+            out HaulJobCandidate candidate, out HaulClaim claim)
+        {
+            if (agent == null) throw new ArgumentNullException(nameof(agent));
+            candidate = default;
+            claim = null;
+            if (sourceOwner.Kind != InventoryOwnerKind.WorldPile ||
+                destinationOwner.Kind != InventoryOwnerKind.BuildingStorage ||
+                !resourceId.IsValid || !quantity.IsPositive) return false;
+            if (!piles.TryGet(sourceOwner.Id, out var pile) || pile.ResourceId != resourceId ||
+                !buildings.TryGet(destinationOwner.Id, out var building) ||
+                building.ConstructionState != ConstructionState.Completed ||
+                !inventories.TryGet(sourceOwner, out var source) ||
+                !inventories.TryGet(destinationOwner, out var destination)) return false;
+            var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+            if (!inventories.TryGet(characterOwner, out var characterInventory) ||
+                characterInventory.Capacity - characterInventory.TotalUnits < quantity.Units ||
+                !source.CanRemove(resourceId, quantity) || !destination.CanAdd(resourceId, quantity)) return false;
+            if (!claims.TryClaim(agent.CharacterId, sourceOwner, destinationOwner, resourceId, quantity,
+                    source.GetAmount(resourceId).Units, destination.Capacity - destination.TotalUnits, out claim))
+                return false;
+            candidate = new HaulJobCandidate(sourceOwner, destinationOwner, resourceId, quantity,
+                ToWorld(pile.Coordinate), ToWorld(building.Coordinate));
+            return true;
+        }
+
         public bool TryFindDestinationForCarried(Tier1AiAgentState agent, ResourceId resourceId, long units,
             HaulClaim existingClaim, out InventoryOwner destination, out WorldPosition position)
         {

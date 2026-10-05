@@ -41,7 +41,9 @@ namespace Game.Domain.AI
     {
         Idle = 0,
         Rest = 1,
-        Haul = 2
+        Haul = 2,
+        ManualMove = 3,
+        ManualHaul = 4
     }
 
     public enum AiActionPhase
@@ -54,7 +56,8 @@ namespace Game.Domain.AI
         Dropoff = 5,
         Completed = 6,
         Failed = 7,
-        Unmaterialized = 8
+        Unmaterialized = 8,
+        MoveToTarget = 9
     }
 
     public sealed class Tier1Needs

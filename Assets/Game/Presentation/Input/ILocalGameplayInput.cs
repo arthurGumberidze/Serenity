@@ -10,6 +10,7 @@ namespace Game.Presentation.Input
         float Rotate { get; }
         Vector2 PanDelta { get; }
         bool IsPanPressed { get; }
+        bool IsAdditiveSelectionPressed { get; }
         Vector2 PointerPosition { get; }
         event Action PrimaryClicked;
         event Action BuildModeRequested;

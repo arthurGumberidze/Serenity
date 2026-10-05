@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Characters;
+using Game.Domain.Resources;
+using Game.Domain.Work;
 using Game.Simulation.Time;
+using Game.Simulation.Work;
 
 namespace Game.Simulation.AI
 {
@@ -32,6 +35,7 @@ namespace Game.Simulation.AI
         private readonly Tier1AiAgentRegistry agents;
         private readonly Tier1AiWorld world;
         private readonly Tier1AiSettings settings;
+        private readonly WorkManager work;
         private readonly List<Entry> entries = new List<Entry>();
         private readonly Dictionary<StableEntityId, Entry> byId = new Dictionary<StableEntityId, Entry>();
         private int thinkCursor;
@@ -40,18 +44,20 @@ namespace Game.Simulation.AI
         private long calendarTicks;
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
-            Tier1AiSettings settings = null)
+            Tier1AiSettings settings = null, WorkManager workManager = null)
         {
             this.characters = characters ?? throw new ArgumentNullException(nameof(characters));
             this.agents = agents ?? throw new ArgumentNullException(nameof(agents));
             this.world = world ?? throw new ArgumentNullException(nameof(world));
             this.settings = settings ?? Tier1AiSettings.Default;
+            work = workManager;
         }
 
         public int Count => entries.Count;
         public long CalendarTicks => calendarTicks;
         public Tier1AiSettings Settings => settings;
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
+        public const double CriticalRestEnergy = 0.10d;
 
         public void Register(Character character, Tier1AiAgentState agent, ITier1MovementDriver movement)
         {
@@ -179,6 +185,35 @@ namespace Game.Simulation.AI
             }
             if (entry.Action != null && !entry.Action.IsInterruptible) return;
 
+            // U11 precedence: a carrying phase is protected above; otherwise critical Energy wins.
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy)
+            {
+                if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest)
+                {
+                    entry.Action?.Cancel();
+                    entry.Action = null;
+                    Start(entry, UtilityActionKind.Rest);
+                }
+                return;
+            }
+
+            if (entry.Action != null && IsManual(entry.Action.Kind)) return;
+            if (work != null)
+            {
+                if (!work.TryGetAssigned(entry.Agent.CharacterId, out var assigned))
+                {
+                    work.TryAssignNext(entry.Agent.CharacterId, out _);
+                    work.TryGetAssigned(entry.Agent.CharacterId, out assigned);
+                }
+                if (assigned != null)
+                {
+                    entry.Action?.Cancel();
+                    entry.Action = null;
+                    StartManual(entry, assigned);
+                    return;
+                }
+            }
+
             var idle = new UtilityCandidate(UtilityActionKind.Idle, new UtilityScore(0.05d), true, 2);
             var rest = new UtilityCandidate(UtilityActionKind.Rest,
                 new UtilityScore(1d - entry.Agent.Needs.Energy), true, 0);
@@ -224,6 +259,45 @@ namespace Game.Simulation.AI
             }
             entry.LastActionTicks = calendarTicks;
         }
+
+        private void StartManual(Entry entry, WorkOrder job)
+        {
+            if (job.Type == WorkJobType.Move)
+            {
+                if (!entry.Movement.IsAvailable)
+                {
+                    work.Fail(job.Id);
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                }
+                else
+                {
+                    entry.Action = new ManualMoveActionExecution(entry.Agent, entry.Movement, work, job,
+                        settings.MovementTimeout);
+                }
+            }
+            else
+            {
+                var source = new InventoryOwner(InventoryOwnerKind.WorldPile, job.Target.EntityId);
+                var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage,
+                    job.Destination.Value.EntityId);
+                if (world.HaulJobs.TryClaimSpecified(entry.Agent, source, destination, job.ResourceId.Value,
+                        job.Quantity, out var candidate, out var claim))
+                {
+                    var haul = new HaulActionExecution(entry.Agent, entry.Movement, world, settings,
+                        candidate, claim, UtilityActionKind.ManualHaul);
+                    entry.Action = new ManualHaulActionExecution(haul, claim, work, job);
+                }
+                else
+                {
+                    work.Fail(job.Id);
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                }
+            }
+            entry.LastActionTicks = calendarTicks;
+        }
+
+        private static bool IsManual(UtilityActionKind kind) =>
+            kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul;
 
         private int FindInsertionIndex(StableEntityId id)
         {

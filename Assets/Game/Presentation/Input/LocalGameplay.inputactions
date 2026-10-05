@@ -35,12 +35,14 @@
       "actions": [
         { "name": "Position", "type": "PassThrough", "id": "43849077-da8b-4765-99d8-45330e263ca6", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
         { "name": "PrimaryClick", "type": "Button", "id": "c51f6ed7-9bd7-48aa-b1f4-4db206e70e29", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
-        { "name": "SecondaryClick", "type": "Button", "id": "e460a082-8fc4-4411-a223-94df40c16499", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+        { "name": "SecondaryClick", "type": "Button", "id": "e460a082-8fc4-4411-a223-94df40c16499", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "SelectionModifier", "type": "Button", "id": "7b5147f8-3ee5-4dfd-9b5b-708374505fe2", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": true }
       ],
       "bindings": [
         { "name": "", "id": "cae77d56-6f46-4a77-b176-88afc63d5633", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Position", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "00b9c18d-da40-4a2d-8769-90c6a67dc8b8", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "PrimaryClick", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "61ddb6c2-a1d8-42b0-9d78-e43ba81ae942", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "SecondaryClick", "isComposite": false, "isPartOfComposite": false }
+        { "name": "", "id": "61ddb6c2-a1d8-42b0-9d78-e43ba81ae942", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "SecondaryClick", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "85747775-aea7-49a3-ae44-8722e5826115", "path": "<Keyboard>/shift", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "SelectionModifier", "isComposite": false, "isPartOfComposite": false }
       ]
     },
     {

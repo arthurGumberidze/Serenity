@@ -4,10 +4,19 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U10 DONE — Utility AI Tier 1. Active Tier 1 characters now own engine-free AI/needs state, make deterministic batched utility decisions and execute explicit Rest or Haul actions through one central scheduler. Hauling uses U09 canonical world-pile, character-inventory and building-storage transfers.
+U11 DONE — Work groups and jobs. The player can form stable-ID work groups, select multiple characters, submit prioritized Move and Haul orders and observe their lifecycle while the centralized U10 scheduler remains the only Tier 1 decision/action authority.
 
 ## Active task
-U11 — Work groups and jobs is next and has NOT started.
+U12 — DOTS bootstrap Tier 2 is next and has NOT started.
+
+## U11 work-group and job foundation
+- `WorkGroupId` is a GUID-backed domain identity distinct from character IDs and session-local `JobId`. `WorkGroupRegistry` owns deterministic group state, optional commander and globally unique membership; every member is referenced by canonical character `StableEntityId`, so presenter destruction/respawn does not alter groups.
+- `WorkOrder` supports Move and Haul, Low/Normal/High/Urgent priorities, Queued/Assigned/Active/Completed/Cancelled/Failed lifecycle, stable-ID or world-position targets and explicit claim state. `WorkManager` is the session-owned command/query authority, prevents incompatible duplicate open work and reserves exclusive targets.
+- Group commands fan out deterministically into per-member jobs. Eligibility is an explicit Simulation policy hook; dead/unregistered members and already occupied workers are skipped so later profession/health/tier rules can replace the current minimal policy without changing group state.
+- U10's scheduler now applies the documented U11 precedence: a carrying phase is non-interruptible; critical Energy at or below 0.10 forces Rest; manual/group work then outranks interruptible autonomous work; otherwise normal utility AI runs. Critical rest requeues unfinished manual work instead of losing it.
+- Manual Haul reuses U10 quantity/capacity claims and U09 `ResourceTransferService`. Cancellation/failure releases reservations, and physical stock remains at its current canonical owner. Manual Move reuses the same `ITier1MovementDriver`/NavMesh path as autonomous movement.
+- `SelectionProbe` supports Shift additive/toggle multi-selection. The development-only work overlay can create groups, change membership/priority, issue Move/Haul orders, cancel work and inspect status/claims; Ctrl+1…9 assigns groups and 1…9 recalls them. It is a command surface, not canonical state or U27 production UI.
+- The implementation adds no per-NPC `Update`. The existing single `Tier1AiRuntimeDriver` advances all agents; automated coverage includes 128 registered characters across 8 groups with deterministic distribution and zero per-agent update ownership.
 
 ## U10 Utility AI foundation
 - Each active agent is keyed by its existing Character `StableEntityId`; `Tier1AiAgentState` and bounded Hunger/Energy needs live outside `CharacterPresenter`. Presenter loss explicitly unmaterializes/unregisters the active Tier 1 agent without deleting the Character or its inventory.
@@ -28,23 +37,23 @@ U11 — Work groups and jobs is next and has NOT started.
 
 ## Preserved architecture and scope
 - `Game.Domain` and `Game.Simulation` remain `noEngineReferences`; no NavMesh, GameObject, Animator, physics query or Unity random source enters decision or action logic.
-- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U10 task/claim execution is session-ephemeral; character, inventories and resource locations retain their existing snapshot-ready state boundaries.
-- U09 immediate construction funding remains unchanged. U10 does not add builders, player work groups, professions, production, farming, crafting, combat, DOTS or tier transitions.
-- No scene/prefab regeneration was needed for U10. Runtime composition avoids overwriting unrelated user-owned scene, prefab and imported-asset changes already present in the worktree.
+- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U11 group/job/claim execution is session-ephemeral; characters, inventories and resource locations retain their existing snapshot-ready state boundaries.
+- U09 immediate construction funding remains unchanged. U11 does not add professions, production, farming, crafting, combat, DOTS, tier transitions or U27 production UI.
+- No scene/prefab regeneration was needed for U11. Runtime composition avoids overwriting unrelated user-owned scene, prefab and imported-asset changes already present in the worktree.
 
 ## Validation status
-U10 validation completed on 2026-10-05:
+U11 validation completed on 2026-10-05 with:
 
-- baseline before U10: 148/148 non-PostgreSQL EditMode, 13/13 PlayMode and Windows Development build passed at `62a433cb0df0d8479c8c0f72cbc970938f3a3d19`;
-- 14/14 focused U10 EditMode and 5/5 focused U10 PlayMode passed headless;
-- 162/162 full non-PostgreSQL EditMode and 18/18 full PlayMode passed;
-- contained regressions passed: U07 4 EditMode + 4 PlayMode, U08 8 + 3, U09 10 + 4;
+`& 'C:\serenity_game\Tools\Verify-U11.ps1' -FullRegression -ManagedPostgres -GpuValidation`
+
+- 173/173 full non-PostgreSQL EditMode and 21/21 full PlayMode tests passed;
+- focused U11 passed 11/11 EditMode and 3/3 headless PlayMode;
+- contained regressions passed: U10 14 EditMode + 5 PlayMode and U09 10 + 4;
 - a fresh private loopback SCRAM PostgreSQL cluster passed 25/25 integration tests;
 - U05A asset/catalog validation passed;
-- GPU-enabled U10 PlayMode passed 5/5; `Logs/U10-utility-ai.png` confirms the LocalGameplay characters, resource piles, Storage Basket and movement slice without visible shader failure;
-- 100-agent pure scheduler validation processed all agents with a maximum decision batch of 8 in the test configuration, 0 per-agent AI Updates, 0 measured steady-loop thread allocations and 13.618 ms Stopwatch time (automated test measurement, not a Unity Profiler capture);
-- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; player entry executable remains 667136 bytes;
+- GPU-enabled U11 PlayMode passed 3/3; manual inspection of `Logs/U11-work-groups.png` confirmed both characters, piles, storage and order markers without visible shader failure;
+- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; the player entry executable remains 667136 bytes;
 - final log scan found no compiler error, failed assertion, missing script/reference diagnostic, runtime exception or shader error.
 
 ## Next action
-Start only U11 from `docs/NEXT_TASK.md`. U11 has not been implemented.
+Start only U12 from `docs/NEXT_TASK.md`. U12 has not been implemented.

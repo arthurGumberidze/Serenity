@@ -13,10 +13,13 @@ using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Simulation.Buildings;
 using Game.Domain.Resources;
+using Game.Domain.Work;
 using Game.Simulation.Resources;
 using Game.Simulation.AI;
 using Game.Simulation.Time;
 using Game.Presentation.Resources;
+using Game.Presentation.Work;
+using Game.Simulation.Work;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -69,6 +72,8 @@ namespace Game.Infrastructure
         public HaulClaimRegistry HaulClaims { get; private set; }
         public Tier1AiScheduler AiScheduler { get; private set; }
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
+        public WorkManager Work { get; private set; }
+        public WorkDebugOverlay WorkDebug { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
 
@@ -149,16 +154,19 @@ namespace Game.Infrastructure
             Clock = new GameClock(new GameTimeState(0, 0, 1, false));
             AiAgents = new Tier1AiAgentRegistry();
             HaulClaims = new HaulClaimRegistry();
+            Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers);
-            AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld);
+            AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims);
+            WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
+            WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings);
         }
 
         private void SpawnDemoStorage()

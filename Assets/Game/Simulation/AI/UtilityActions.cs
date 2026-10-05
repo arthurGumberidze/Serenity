@@ -54,22 +54,27 @@ namespace Game.Simulation.AI
         private readonly Tier1AiSettings settings;
         private HaulJobCandidate job;
         private readonly HaulClaim claim;
+        private readonly UtilityActionKind kind;
         private TimeSpan phaseElapsed;
 
         public HaulActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement, Tier1AiWorld world,
-            Tier1AiSettings settings, HaulJobCandidate job, HaulClaim claim)
+            Tier1AiSettings settings, HaulJobCandidate job, HaulClaim claim,
+            UtilityActionKind kind = UtilityActionKind.Haul)
         {
+            if (kind != UtilityActionKind.Haul && kind != UtilityActionKind.ManualHaul)
+                throw new ArgumentOutOfRangeException(nameof(kind));
             this.agent = agent;
             this.movement = movement;
             this.world = world;
             this.settings = settings;
             this.job = job;
             this.claim = claim;
+            this.kind = kind;
             SetPhase(AiActionPhase.MoveToSource);
             movement.MoveTo(job.SourcePosition, 0.85f);
         }
 
-        public UtilityActionKind Kind => UtilityActionKind.Haul;
+        public UtilityActionKind Kind => kind;
         public AiActionPhase Phase { get; private set; }
         public bool IsFinished { get; private set; }
         public bool Succeeded { get; private set; }
@@ -188,7 +193,7 @@ namespace Game.Simulation.AI
         {
             Phase = phase;
             phaseElapsed = TimeSpan.Zero;
-            agent.SetAction(UtilityActionKind.Haul, phase);
+            agent.SetAction(kind, phase);
         }
     }
 }

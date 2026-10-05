@@ -17,7 +17,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U08 | DONE | Строительная сетка и blueprint-система | U04,U05,U05A | MVP | Можно спроектировать и достроить дом; состояние сохраняется. |
 | U09 | DONE | Ресурсы, инвентари и склады | U06,U08 | MVP | Нет дублирования ресурсов; стройка требует реальный ресурс. |
 | U10 | DONE | Utility AI Tier 1 | U06,U07,U09 | MVP | 100 NPC выполняют потребности и работу без 100 Update-heavy scripts; dev selection читает live canonical resources/claims. |
-| U11 | TODO | Рабочие группы и задания | U10 | MVP | Игрок управляет >100 NPC через группы. |
+| U11 | DONE | Рабочие группы и задания | U10 | MVP | Игрок управляет >100 NPC через группы. |
 | U12 | TODO | DOTS bootstrap Tier 2 | U02,U06 | MVP | Тысячи тестовых entities обновляются без GameObject-per-entity. |
 | U13 | TODO | Tier manager 1↔2↔3 | U04,U07,U12 | MVP | Именованный NPC сохраняет ID/семью/здоровье при смене tier. |
 | U14 | TODO | Детерминированный off-camera simulation | U03,U04,U13 | MVP | Одинаковый seed даёт тот же итог; zoom не меняет результат. |

@@ -28,6 +28,9 @@ namespace Game.Presentation.Characters
         public Animator Animator => animator;
         public Transform RightHandSocket => rightHandSocket;
         public Transform LeftHandSocket => leftHandSocket;
+        public bool IsSelected { get; private set; }
+
+        public void SetSelected(bool selected) => IsSelected = selected;
 
         public void Configure(Animator targetAnimator, Transform rightHand, Transform leftHand)
         {
@@ -53,6 +56,7 @@ namespace Game.Presentation.Characters
         public void Unbind()
         {
             if (!IsBound) return;
+            IsSelected = false;
             registry?.Unregister(character.Id, this);
             character = null;
             registry = null;
