@@ -1,0 +1,19 @@
+# APPLY_UPDATE_PROMPT.txt
+
+Give this to Codex from the repository root AFTER it has finished the currently active task:
+
+Read AGENTS.md, docs/PROJECT_STATE.md, docs/TASK_GRAPH.md, docs/DECISIONS.md and
+docs/updates/2026-10-03_postgres_assets.md.
+
+Apply the update to the existing project planning files WITHOUT resetting or downgrading any existing task statuses.
+Preserve all completed work and current active task state.
+
+1. Add U04A PostgreSQL Persistence Layer and U05A Asset Pipeline + Free Asset Acquisition.
+2. Apply all dependency changes from the update document.
+3. Append the decisions from docs/DECISIONS_ADDENDUM_POSTGRES_ASSETS.md to docs/DECISIONS.md, avoiding duplicates.
+4. Merge AGENTS_ADDENDUM_POSTGRES_ASSETS.md into AGENTS.md, avoiding duplicates.
+5. Create docs/ASSET_REGISTRY.md from docs/ASSET_REGISTRY_TEMPLATE.md if it does not exist.
+6. Keep docs/POSTGRES_LOCAL_SETUP.md as the canonical local DB setup guide.
+7. Update docs/NEXT_TASK.md only if needed according to the current completed/active tasks and the revised dependency graph.
+8. Do not implement U04A or U05A unless one of them is the next unblocked active task.
+9. Show me the resulting task order and which task is next.

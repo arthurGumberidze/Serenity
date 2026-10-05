@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5652262532846186934}
   - component: {fileID: 8270552559233856001}
-  - component: {fileID: 7970372186724307670}
+  - component: {fileID: 7531688527102650404}
   m_Layer: 0
   m_Name: Serenity_StorageBasket
   m_TagString: Untagged
@@ -55,7 +55,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.1, y: 0.9, z: 0.8}
   m_Center: {x: 0, y: 0.45, z: 0}
---- !u!114 &7970372186724307670
+--- !u!114 &7531688527102650404
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f325004ce49a0f54fb3a8aa691fbdbf5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230391
+  packageName: Stylized Customizable Avatars FREE
+  packageVersion: 1.0
+  assetPath: Assets/SunboxGames/Avatars/Scripts/Editor/AvatarCustomizationEditor.cs
+  uploadId: 520443

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 6d9b04bfd3196eb4f8cd4828168cd15e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230391
+  packageName: Stylized Customizable Avatars FREE
+  packageVersion: 1.0
+  assetPath: Assets/SunboxGames/Avatars/Scripts/Slot.cs
+  uploadId: 520443

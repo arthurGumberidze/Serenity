@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 30650df60a2f3ac4a961ad12d6e5c43e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 230391
+  packageName: Stylized Customizable Avatars FREE
+  packageVersion: 1.0
+  assetPath: Assets/SunboxGames/Avatars/Scripts/UFacialHair.cs
+  uploadId: 520443

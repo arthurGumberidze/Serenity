@@ -459,8 +459,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7728862714953190273}
-  - component: {fileID: 380119089144099194}
-  - component: {fileID: 1139729296064712325}
+  - component: {fileID: 329977770067304237}
+  - component: {fileID: 4601548649496344306}
   m_Layer: 0
   m_Name: Serenity_PrimitiveShelter
   m_TagString: Untagged
@@ -488,7 +488,7 @@ Transform:
   - {fileID: 8083449304065321991}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &380119089144099194
+--- !u!114 &329977770067304237
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -500,7 +500,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56a4816c72981a64ea80be4cdaa36d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Buildings.BuildingPresenter
---- !u!65 &1139729296064712325
+--- !u!65 &4601548649496344306
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
