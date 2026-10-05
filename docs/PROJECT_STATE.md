@@ -4,10 +4,19 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U11 DONE — Work groups and jobs. The player can form stable-ID work groups, select multiple characters, submit prioritized Move and Haul orders and observe their lifecycle while the centralized U10 scheduler remains the only Tier 1 decision/action authority.
+U12 DONE — DOTS bootstrap Tier 2. A separate Entities world can materialize thousands of lightweight projections using existing character IDs and update them through one Burst/job-backed batched system without GameObject-per-entity.
 
 ## Active task
-U12 — DOTS bootstrap Tier 2 is next and has NOT started.
+U13 — Tier manager 1↔2↔3 is next and has NOT started.
+
+## U12 Tier 2 DOTS foundation
+- `Tier2TransferState` is the explicit U12 boundary from an existing `Character`/stable identity into the supported ECS subset and back. Materialization never calls `StableEntityId.NewId`; duplicate active IDs are rejected before entity creation.
+- `Tier2StableIdentity`, `Tier2BiologicalState`, `Tier2Position`, `Tier2Movement` and `Tier2SimulationProgress` are unmanaged, chunk-friendly components totalling 92 bytes per entity before ECS chunk overhead. No managed object, GameObject, Animator or NavMeshAgent is stored in hot components.
+- `Tier2Materializer` owns a boundary-side stable-ID index, bulk creation and extraction. ECS `Entity` handles are transient and never become canonical identity.
+- `Tier2SimulationSystem` schedules one `[BurstCompile] IJobEntity` across the active query. Movement, processed calendar ticks, processed biological ticks and step counts update in one parallel data-oriented pass; there is no per-agent `Update`.
+- `Tier2Runtime` owns a private explicit ECS `World` and consumes only U03 `GameTimeAdvance`. A paused/zero advance schedules no agents and mutates no projected state. The world is intentionally not registered with the default player loop; U13 owns automatic tier coordination.
+- Authority is field-scoped: Domain retains durable identity, biography, family, relationships, full health and other unprojected state. While a U12 projection is active, its supported position/movement/progress subset is authoritative until extraction at a completed-job barrier.
+- The performance bootstrap measured 1,000 entities and also validates safe creation/update of 10,000 entities. It creates zero Tier 2 GameObjects and contains no MonoBehaviour subtype in `Game.ECS`.
 
 ## U11 work-group and job foundation
 - `WorkGroupId` is a GUID-backed domain identity distinct from character IDs and session-local `JobId`. `WorkGroupRegistry` owns deterministic group state, optional commander and globally unique membership; every member is referenced by canonical character `StableEntityId`, so presenter destruction/respawn does not alter groups.
@@ -37,23 +46,24 @@ U12 — DOTS bootstrap Tier 2 is next and has NOT started.
 
 ## Preserved architecture and scope
 - `Game.Domain` and `Game.Simulation` remain `noEngineReferences`; no NavMesh, GameObject, Animator, physics query or Unity random source enters decision or action logic.
-- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U11 group/job/claim execution is session-ephemeral; characters, inventories and resource locations retain their existing snapshot-ready state boundaries.
-- U09 immediate construction funding remains unchanged. U11 does not add professions, production, farming, crafting, combat, DOTS, tier transitions or U27 production UI.
-- No scene/prefab regeneration was needed for U11. Runtime composition avoids overwriting unrelated user-owned scene, prefab and imported-asset changes already present in the worktree.
+- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U12 runtime state is exposed through extraction but is not silently added to persistence.
+- Tier 1 continues through Character Domain plus GameObject presentation and the U10/U11 scheduler. U12 does not transition real U07 characters, copy work-group/job authority, implement Tier 3, production, combat, global-map logic or production UI.
+- No scene/prefab/rendering changes were needed for U12. Entities Graphics remains deferred because the required proof is simulation, not rendering.
 
 ## Validation status
-U11 validation completed on 2026-10-05 with:
+U12 validation completed on 2026-10-05 with:
 
-`& 'C:\serenity_game\Tools\Verify-U11.ps1' -FullRegression -ManagedPostgres -GpuValidation`
+`& 'C:\serenity_game\Tools\Verify-U12.ps1' -FullRegression -ManagedPostgres -GpuValidation`
 
-- 173/173 full non-PostgreSQL EditMode and 21/21 full PlayMode tests passed;
-- focused U11 passed 11/11 EditMode and 3/3 headless PlayMode;
-- contained regressions passed: U10 14 EditMode + 5 PlayMode and U09 10 + 4;
+- 184/184 full non-PostgreSQL EditMode and 23/23 full PlayMode tests passed;
+- focused U12 passed 11/11 EditMode and 2/2 headless PlayMode; GPU-enabled U12 PlayMode also passed 2/2;
+- contained regressions passed: U11 11 EditMode + 3 PlayMode and U10 14 + 5;
 - a fresh private loopback SCRAM PostgreSQL cluster passed 25/25 integration tests;
 - U05A asset/catalog validation passed;
-- GPU-enabled U11 PlayMode passed 3/3; manual inspection of `Logs/U11-work-groups.png` confirmed both characters, piles, storage and order markers without visible shader failure;
-- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; the player entry executable remains 667136 bytes;
+- headless 1,000-entity measurement over 120 post-warmup steps: 12.298 ms total, 0 measured managed bytes, 0 Tier 2 GameObjects, Burst enabled/annotated and `IJobEntity` confirmed; the GPU run measured 14.751 ms total with the same allocation/GameObject/Burst evidence. These are automated Stopwatch/GC measurements, not Unity Profiler captures;
+- component layout validation reported 16 + 24 + 12 + 16 + 24 = 92 bytes;
+- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; `Game.ECS.dll` is present and the player entry executable remains 667136 bytes;
 - final log scan found no compiler error, failed assertion, missing script/reference diagnostic, runtime exception or shader error.
 
 ## Next action
-Start only U12 from `docs/NEXT_TASK.md`. U12 has not been implemented.
+Start only U13 from `docs/NEXT_TASK.md`. U13 has not been implemented.

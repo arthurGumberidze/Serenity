@@ -1,15 +1,22 @@
 # NEXT_TASK.md
 
-## Active task: U12 — DOTS bootstrap Tier 2
+## Active task: U13 — Tier manager 1↔2↔3
 
 ### Prerequisites
-U02 assembly/package architecture and U06 canonical characters are DONE. U11 work groups/jobs are also complete but are not a prerequisite edge for this bootstrap.
+U04 stable IDs/save boundary, U07 Tier 1 presentation and U12 Tier 2 DOTS bootstrap are DONE.
 
 ### Goal
-Implement the TASK_GRAPH U12 vertical slice so thousands of test entities can be updated through Entities/DOTS without one GameObject or MonoBehaviour per entity.
+Implement the TASK_GRAPH U13 vertical slice so one named character preserves identity, family and health while moving through the supported Tier 1, Tier 2 and Tier 3 representations.
 
 ### Scope boundary
-U12 has not started. Read the DOTS/Tier 2 sections of the FRS and preserve the existing no-engine Domain state and stable-identity rules. Establish only the Tier 2 data/update bootstrap and its performance/validation evidence. Do not begin U13 tier transitions, U14 off-camera simulation, U15 production, U20 combat, U27 production UI or broad persistence-schema expansion.
+U13 has not started. Read the tier-transition and off-camera sections of the FRS plus `docs/U12_HANDOFF.md` before implementation. Reuse U12's explicit transfer/materialization/extraction boundary; do not create a second Tier 2 identity authority. U13 owns automatic tier transitions and coordination. U14 still owns deterministic off-camera simulation, and U15/U20/U25/U27/U29 remain deferred.
+
+### Required invariants
+- A transition never generates a replacement `StableEntityId` for an existing character.
+- Only one tier representation is active/authoritative for a mutable field at a time.
+- Jobs complete before extraction or disposal at the transition barrier.
+- Tier 1 GameObject presentation, Tier 2 ECS projection and Tier 3 aggregate remain distinct representations.
+- Camera distance alone cannot reroll canonical results or bypass a committed state transfer.
 
 ### Relevant handoffs
-Tier 2 entities are projections of canonical identities, not replacement character IDs. Do not copy U11 groups/jobs into presenter-owned or unmanaged duplicate authorities. Reuse centralized scheduling/command boundaries where applicable, avoid structural changes in hot loops, and prove the target scale without per-entity GameObjects or per-entity Updates. See `docs/U11_HANDOFF.md`, `docs/ARCHITECTURE.md` and D-022.
+Start from `docs/U12_HANDOFF.md`, D-023 and the U12 architecture section. U12 deliberately did not register its private ECS world in the default player loop and did not implement transition triggers; those composition responsibilities begin here.

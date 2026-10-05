@@ -3,7 +3,11 @@
   "rootNamespace": "Game.ECS",
   "references": [
     "Game.Domain",
-    "Game.Simulation"
+    "Game.Simulation",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,

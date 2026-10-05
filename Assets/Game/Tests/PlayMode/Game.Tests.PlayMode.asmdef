@@ -4,11 +4,16 @@
   "references": [
     "Game.Domain",
     "Game.Simulation",
+    "Game.ECS",
     "Game.Presentation",
     "Game.Infrastructure",
     "Unity.InputSystem",
     "Unity.Cinemachine",
-    "Unity.AI.Navigation"
+    "Unity.AI.Navigation",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics"
   ],
   "optionalUnityReferences": ["TestAssemblies"],
   "autoReferenced": false,

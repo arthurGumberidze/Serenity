@@ -14,7 +14,11 @@
     "Game.ECS",
     "Game.Presentation",
     "Game.Infrastructure",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Entities",
+    "Unity.Mathematics"
   ],
   "rootNamespace": "Game.Tests",
   "name": "Game.Tests"
