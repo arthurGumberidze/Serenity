@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Presentation.Characters;
@@ -21,6 +22,7 @@ namespace Game.Presentation.AI
         public Tier1AiScheduler Scheduler => scheduler;
         public IReadOnlyList<NavMeshMovementDriver> Movements => movements;
         public int PerAgentAiUpdateCount => 0;
+        public event Action<GameTimeAdvance> SimulationAdvanced;
 
         public void Initialize(GameClock gameClock, Tier1AiScheduler aiScheduler)
         {
@@ -32,12 +34,33 @@ namespace Game.Presentation.AI
         public Tier1AiAgentState Register(Character character, CharacterPresenter presenter, Tier1Needs needs = null)
         {
             if (clock == null || scheduler == null) throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
+            if (movements.Exists(candidate => candidate.CharacterId == character.Id))
+                throw new InvalidOperationException("Tier 1 movement is already registered for this character.");
             var movement = new NavMeshMovementDriver(presenter, scheduler.Settings.MovementSpeed);
             var position = movement.CurrentPosition;
             var state = new Tier1AiAgentState(character.Id, position, needs);
             scheduler.Register(character, state, movement);
             movements.Add(movement);
             return state;
+        }
+
+        public bool Unregister(StableEntityId characterId)
+        {
+            var removed = false;
+            for (var i = movements.Count - 1; i >= 0; i--)
+            {
+                if (movements[i].CharacterId != characterId) continue;
+                movements[i].Stop();
+                movements.RemoveAt(i);
+                removed = true;
+            }
+            return scheduler != null && scheduler.Unregister(characterId) || removed;
+        }
+
+        public bool TryGetMovement(StableEntityId characterId, out NavMeshMovementDriver movement)
+        {
+            movement = movements.Find(candidate => candidate.CharacterId == characterId);
+            return movement != null;
         }
 
         public void SetPaused(bool paused)
@@ -59,6 +82,7 @@ namespace Game.Presentation.AI
             }
             var advance = clock.Advance(TimeSpan.FromSeconds(Time.unscaledDeltaTime));
             scheduler.Advance(advance);
+            SimulationAdvanced?.Invoke(advance);
             RefreshMovementPresentation();
         }
 
@@ -66,6 +90,7 @@ namespace Game.Presentation.AI
         {
             scheduler?.Reset();
             movements.Clear();
+            SimulationAdvanced = null;
         }
 
         private void RefreshMovementPresentation()

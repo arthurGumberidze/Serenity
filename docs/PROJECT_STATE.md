@@ -4,10 +4,20 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U12 DONE — DOTS bootstrap Tier 2. A separate Entities world can materialize thousands of lightweight projections using existing character IDs and update them through one Burst/job-backed batched system without GameObject-per-entity.
+U13 DONE — session-owned Tier manager coordinates one named character across Tier 1 GameObject presentation, Tier 2 ECS projection and Tier 3 lightweight data without replacing identity or canonical character state.
 
 ## Active task
-U13 — Tier manager 1↔2↔3 is next and has NOT started.
+U14 — deterministic off-camera simulation is next and has NOT started.
+
+## U13 tier lifecycle foundation
+- `CharacterSimulationTier` is the strongly typed Tier1/Tier2/Tier3 state. `TierManager` is a plain session-owned Simulation service with `GetTier`, explicit controlled transitions, safe same-tier no-ops, re-entrancy protection and a one-active-representation invariant.
+- Transitions capture source runtime state, validate the target before release, dematerialize the source, materialize the target and restore the captured source on target failure. Tests force a target failure and verify the old Tier 1 representation remains usable.
+- Durable identity, name, sex, birth/death, parents, spouse, family/dynasty, traits, skills, health, profession, Wealth/Influence and relationships remain owned by the existing `Character`. `CharacterRuntimeState` carries only representation continuity: position, lightweight movement/progress, coarse location key and current U10 Hunger/Energy values.
+- Tier 1 uses the existing deterministic sex-to-prefab catalog, presenter registry/spawner, centralized AI scheduler and NavMesh adapter. Demotion unregisters Tier 1 execution, stops the NavMesh-only path, releases haul claims and requeues an active manual order while leaving the high-level assignment, canonical inventory and work-group membership intact.
+- Tier 2 reuses `Tier2TransferState`, `Tier2Materializer` and `Tier2Runtime`. Extraction and dematerialization complete all tracked jobs first; no second ECS implementation or identity authority exists.
+- Tier 3 is one `Tier3CharacterRecord` per named persistent character in a pure C# registry. It stores the same ID plus restoration/runtime continuity and no GameObject/ECS Entity or copied biography/inventory. U14, not U13, will advance remote state.
+- `TierDistancePolicy` provides configurable hysteresis, minimum residency evaluations, deterministic stable-ID order, bounded evaluation and transition budgets, direct Tier1↔Tier3 transitions and controlled retry after transient external presentation changes.
+- `LocalSceneCompositionRoot` wires the three adapters and advances Tier 2 from the same explicit `GameTimeAdvance` emitted by the single Tier 1 runtime driver. No per-character `Update` was added.
 
 ## U12 Tier 2 DOTS foundation
 - `Tier2TransferState` is the explicit U12 boundary from an existing `Character`/stable identity into the supported ECS subset and back. Materialization never calls `StableEntityId.NewId`; duplicate active IDs are rejected before entity creation.
@@ -46,24 +56,24 @@ U13 — Tier manager 1↔2↔3 is next and has NOT started.
 
 ## Preserved architecture and scope
 - `Game.Domain` and `Game.Simulation` remain `noEngineReferences`; no NavMesh, GameObject, Animator, physics query or Unity random source enters decision or action logic.
-- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U12 runtime state is exposed through extraction but is not silently added to persistence.
-- Tier 1 continues through Character Domain plus GameObject presentation and the U10/U11 scheduler. U12 does not transition real U07 characters, copy work-group/job authority, implement Tier 3, production, combat, global-map logic or production UI.
-- No scene/prefab/rendering changes were needed for U12. Entities Graphics remains deferred because the required proof is simulation, not rendering.
+- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U13 runtime continuity is explicit but is not silently added to the old time-only persistence schema.
+- Automatic distance policy changes representation only; it performs no births, deaths, events, production, remote jobs or RNG. Deterministic Tier 3/off-camera advancement remains U14.
+- No scene asset, prefab, material or catalog data changed. Tier 1 appearance remains the existing deterministic Male/Female mapping; a richer persistent appearance descriptor is deferred.
 
 ## Validation status
-U12 validation completed on 2026-10-05 with:
+U13 validation completed on 2026-10-06 with:
 
-`& 'C:\serenity_game\Tools\Verify-U12.ps1' -FullRegression -ManagedPostgres -GpuValidation`
+`& 'C:\serenity_game\Tools\Verify-U13.ps1' -FullRegression -ManagedPostgres -GpuValidation`
 
-- 184/184 full non-PostgreSQL EditMode and 23/23 full PlayMode tests passed;
-- focused U12 passed 11/11 EditMode and 2/2 headless PlayMode; GPU-enabled U12 PlayMode also passed 2/2;
-- contained regressions passed: U11 11 EditMode + 3 PlayMode and U10 14 + 5;
+- 193/193 full non-PostgreSQL EditMode and 25/25 full PlayMode tests passed;
+- focused U13 passed 9/9 EditMode and 2/2 headless PlayMode; GPU-enabled U13 PlayMode also passed 2/2;
+- contained U12 regression passed 11/11 EditMode and 2/2 PlayMode;
 - a fresh private loopback SCRAM PostgreSQL cluster passed 25/25 integration tests;
 - U05A asset/catalog validation passed;
-- headless 1,000-entity measurement over 120 post-warmup steps: 12.298 ms total, 0 measured managed bytes, 0 Tier 2 GameObjects, Burst enabled/annotated and `IJobEntity` confirmed; the GPU run measured 14.751 ms total with the same allocation/GameObject/Burst evidence. These are automated Stopwatch/GC measurements, not Unity Profiler captures;
-- component layout validation reported 16 + 24 + 12 + 16 + 24 = 92 bytes;
-- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; `Game.ECS.dll` is present and the player entry executable remains 667136 bytes;
+- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; updated `Game.ECS.dll` and `Game.Simulation.dll` are present and the player entry executable remains 667136 bytes;
 - final log scan found no compiler error, failed assertion, missing script/reference diagnostic, runtime exception or shader error.
 
+The first pre-change baseline launch inside the filesystem sandbox hit Unity's known `BuildReportRestService/HttpListener` crash before tests. The identical approved outside-sandbox U12 verifier then passed completely. During U13 validation, the first full PlayMode run exposed a transient legacy presenter-despawn window to the automatic policy; policy retry handling was corrected and the entire final gate above was rerun successfully.
+
 ## Next action
-Start only U13 from `docs/NEXT_TASK.md`. U13 has not been implemented.
+Start only U14 from `docs/NEXT_TASK.md`. U14 has not been implemented.

@@ -1,22 +1,22 @@
 # NEXT_TASK.md
 
-## Active task: U13 — Tier manager 1↔2↔3
+## Active task: U14 — Детерминированный off-camera simulation
 
 ### Prerequisites
-U04 stable IDs/save boundary, U07 Tier 1 presentation and U12 Tier 2 DOTS bootstrap are DONE.
+U03 deterministic time, U04 stable IDs/save boundary and U13 tier lifecycle manager are DONE.
 
 ### Goal
-Implement the TASK_GRAPH U13 vertical slice so one named character preserves identity, family and health while moving through the supported Tier 1, Tier 2 and Tier 3 representations.
+Implement the TASK_GRAPH U14 vertical slice so equal initial state, explicit time deltas and equal seed produce the same remote-simulation result, independent of camera zoom or tier materialization history.
 
 ### Scope boundary
-U13 has not started. Read the tier-transition and off-camera sections of the FRS plus `docs/U12_HANDOFF.md` before implementation. Reuse U12's explicit transfer/materialization/extraction boundary; do not create a second Tier 2 identity authority. U13 owns automatic tier transitions and coordination. U14 still owns deterministic off-camera simulation, and U15/U20/U25/U27/U29 remain deferred.
+U14 has not started. Begin from `docs/U13_HANDOFF.md`, D-024 and the U13 architecture section. Reuse `Tier3CharacterRecord`, `CharacterRuntimeState` and `TierManager`; do not create a second persistent-character identity, tier coordinator or random regeneration path. Production/farming remains U15, armies/abstract battle remain U21/U23, global-map mode remains U25 and formal performance gates remain U29.
 
 ### Required invariants
-- A transition never generates a replacement `StableEntityId` for an existing character.
-- Only one tier representation is active/authoritative for a mutable field at a time.
-- Jobs complete before extraction or disposal at the transition barrier.
-- Tier 1 GameObject presentation, Tier 2 ECS projection and Tier 3 aggregate remain distinct representations.
-- Camera distance alone cannot reroll canonical results or bypass a committed state transfer.
+- Off-camera advancement consumes explicit U03 simulation time and a controlled deterministic RNG stream/seed; it never reads wall time, frame delta or camera state as simulation input.
+- Zooming/materializing changes representation only and cannot grant extra progress or reroll an already committed result.
+- Persistent named characters retain their canonical `Character` identity, family, health and inventory ownership through remote ticks.
+- Tier 3 advancement is batched and adds no GameObject, ECS Entity or per-character `Update` requirement.
+- Returning to Tier 1 or Tier 2 materializes the latest committed remote state through the existing U13 transition barrier.
 
 ### Relevant handoffs
-Start from `docs/U12_HANDOFF.md`, D-023 and the U12 architecture section. U12 deliberately did not register its private ECS world in the default player loop and did not implement transition triggers; those composition responsibilities begin here.
+Read `docs/U13_HANDOFF.md`, `docs/U12_HANDOFF.md`, the FRS off-camera/LOD requirements and the U03 deterministic-time handoff before implementation.

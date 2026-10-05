@@ -1,4 +1,5 @@
 using System;
+using Game.Domain;
 using Game.Simulation.Time;
 using Unity.Entities;
 
@@ -42,6 +43,20 @@ namespace Game.ECS.Tier2
             simulationSystem.Update();
             World.EntityManager.CompleteAllTrackedJobs();
             World.EntityManager.SetComponentData(stepEntity, new Tier2SimulationStep { Sequence = sequence });
+        }
+
+        public Tier2TransferState Extract(StableEntityId characterId)
+        {
+            ThrowIfDisposed();
+            World.EntityManager.CompleteAllTrackedJobs();
+            return Materializer.Extract(characterId);
+        }
+
+        public void Dematerialize(StableEntityId characterId)
+        {
+            ThrowIfDisposed();
+            World.EntityManager.CompleteAllTrackedJobs();
+            Materializer.Dematerialize(characterId);
         }
 
         public void Dispose()

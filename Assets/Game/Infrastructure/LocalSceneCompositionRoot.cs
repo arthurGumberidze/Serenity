@@ -20,6 +20,8 @@ using Game.Simulation.Time;
 using Game.Presentation.Resources;
 using Game.Presentation.Work;
 using Game.Simulation.Work;
+using Game.Simulation.Tiers;
+using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -74,6 +76,10 @@ namespace Game.Infrastructure
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
         public WorkDebugOverlay WorkDebug { get; private set; }
+        public Tier2Runtime Tier2Runtime { get; private set; }
+        public Tier3CharacterRegistry Tier3Characters { get; private set; }
+        public TierManager Tiers { get; private set; }
+        public TierDistancePolicy TierPolicy { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
 
@@ -163,10 +169,34 @@ namespace Game.Infrastructure
             AiRuntime.Initialize(Clock, AiScheduler);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
+            Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
+            Tier3Characters = new Tier3CharacterRegistry();
+            var tier1 = new Tier1CharacterAdapter(characterCatalog, CharacterPresentations, CharacterSpawner,
+                AiRuntime, AiAgents);
+            var tier2 = new Tier2CharacterAdapter(Tier2Runtime);
+            var tier3 = new Tier3CharacterAdapter(Tier3Characters);
+            Tiers = new TierManager(Characters, tier1, tier2, tier3);
+            Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
+            Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
+            TierPolicy = new TierDistancePolicy(Tiers);
+            AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
             WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings);
+        }
+
+        private void OnDestroy()
+        {
+            if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
+            Tier2Runtime?.Dispose();
+        }
+
+        private void OnSimulationAdvanced(GameTimeAdvance advance)
+        {
+            Tier2Runtime.Step(advance);
+            var focus = cameraController.transform.position;
+            TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
         }
 
         private void SpawnDemoStorage()

@@ -92,6 +92,14 @@ namespace Game.ECS.Tier2
                 progress.ProcessedCalendarTicks, progress.ProcessedBiologicalTicks, progress.StepCount);
         }
 
+        public void Dematerialize(StableEntityId characterId)
+        {
+            if (!TryGetEntity(characterId, out var entity))
+                throw new KeyNotFoundException("No active Tier 2 projection exists for the character ID.");
+            entityManager.DestroyEntity(entity);
+            entitiesById.Remove(characterId);
+        }
+
         private void ValidateNewIdentity(StableEntityId id)
         {
             if (!id.IsValid) throw new ArgumentException("Character ID must be valid.", nameof(id));
