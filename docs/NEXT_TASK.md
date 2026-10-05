@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U10 — Utility AI Tier 1
+## Active task: U11 — Work groups and jobs
 
 ### Prerequisites
-U06, U07 and U09 are DONE. U06 owns the persistent character aggregate, U07 owns disposable Tier 1 presentation, and U09 owns canonical resources/inventories plus atomic construction funding.
+U10 is DONE. U06 owns canonical characters, U07 owns disposable Tier 1 presentation, U09 owns resources/inventories/storage, and U10 owns centralized autonomous Utility AI, movement intent and haul claims.
 
 ### Goal
-Implement the first scalable Utility AI scheduling foundation for Tier 1 characters so that 100 NPCs can evaluate needs and work without one Update-heavy script per NPC.
+Implement the TASK_GRAPH U11 slice so the player can manage more than 100 NPCs through explicit work groups and jobs without bypassing U10 scheduling or duplicating canonical state.
 
 ### Scope boundary
-U10 has not started. Read `docs/U09_HANDOFF.md`, `docs/U07_HANDOFF.md`, the U06 character boundary and the Utility AI sections of the FRS before implementation. Preserve the central scheduler/ticked-system rule, canonical Domain state and StableEntityId across future tiers. Do not implement U11 work groups/orders, U12 DOTS Tier 2, U15 production chains, U20 combat or U27 full UI.
+U11 has not started. Read `docs/U10_HANDOFF.md` and the work-group/job sections of the FRS before implementation. Preserve the U10 separation between utility selection, task execution and presentation movement. Do not begin U12 DOTS, U13 tier management, U15 production/farming, U20 combat or U27 full gameplay UI.
 
 ### Relevant handoffs
-AI may query U09 read models and submit explicit transfer/construction actions through Simulation services. It must not mutate presenter fields, duplicate resource quantities, make Unity object identity persistent or add per-character Update loops.
+Player-authored groups and job policy may constrain or prioritize U10 action availability, but must remain Simulation/Domain data keyed by `StableEntityId`. Do not create per-NPC Update loops, mutate presenter state as authority, use Character IDs as task IDs, or replace U09 atomic inventory transfers and U10 claim cleanup.

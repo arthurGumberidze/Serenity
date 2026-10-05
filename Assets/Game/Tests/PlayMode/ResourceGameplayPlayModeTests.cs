@@ -40,6 +40,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator ShelterConfirmConsumesExactRealResources()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var beforeBuildings = root.Buildings.Count;
             var wood = new ResourceId("wood_log");
             var fiber = new ResourceId("plant_fiber");
             var beforeWood = Total(root, wood);
@@ -52,7 +53,7 @@ namespace Game.Tests.PlayMode
             Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Completed));
             Assert.That(Total(root, wood), Is.EqualTo(beforeWood - 8));
             Assert.That(Total(root, fiber), Is.EqualTo(beforeFiber - 3));
-            Assert.That(root.Buildings.Count, Is.EqualTo(1));
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             yield return null;
         }
 
@@ -67,11 +68,12 @@ namespace Game.Tests.PlayMode
                 if (amount.IsPositive) inventory.TryRemove(wood, amount);
             }
             var controller = root.BuildingPlacementController;
+            var beforeBuildings = root.Buildings.Count;
             var beforeCells = root.BuildingOccupancy.OccupiedCellCount;
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
             Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(24f, 0f, 24f)), Is.False);
             Assert.That(controller.ConfirmPlacement(), Is.Null);
-            Assert.That(root.Buildings.Count, Is.Zero);
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings));
             Assert.That(root.BuildingOccupancy.OccupiedCellCount, Is.EqualTo(beforeCells));
             Assert.That(Total(root, wood), Is.Zero);
             controller.CancelPlacement();

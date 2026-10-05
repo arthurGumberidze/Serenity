@@ -38,17 +38,19 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var controller = root.BuildingPlacementController;
+            var beforeBuildings = root.Buildings.Count;
+            var beforePresenters = Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound);
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
             controller.TryMovePreviewToWorldPoint(new Vector3(20.3f, 0f, 20.4f));
             Assert.That(controller.IsActive, Is.True);
             Assert.That(controller.HasPreview, Is.True);
             Assert.That(controller.IsPreviewValid, Is.True);
-            Assert.That(Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound), Is.EqualTo(0));
-            Assert.That(root.Buildings.Count, Is.EqualTo(0));
+            Assert.That(Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound), Is.EqualTo(beforePresenters));
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings));
             controller.CancelPlacement();
             yield return null;
             Assert.That(controller.IsActive, Is.False);
-            Assert.That(root.Buildings.Count, Is.EqualTo(0));
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings));
             Assert.That(root.InteractionMode.IsBuildingPlacement, Is.False);
         }
 
@@ -57,6 +59,7 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var controller = root.BuildingPlacementController;
+            var beforeBuildings = root.Buildings.Count;
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
             controller.TryMovePreviewToWorldPoint(new Vector3(15.2f, 0f, 15.2f));
             controller.RotatePreview();
@@ -64,13 +67,13 @@ namespace Game.Tests.PlayMode
             var building = controller.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
             Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Completed));
-            Assert.That(root.Buildings.Count, Is.EqualTo(1));
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             Assert.That(controller.LastPlacedPresenter.BuildingId, Is.EqualTo(building.Id));
 
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
             Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(15f, 0f, 15f)), Is.False);
             Assert.That(controller.ConfirmPlacement(), Is.Null);
-            Assert.That(root.Buildings.Count, Is.EqualTo(1));
+            Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             controller.CancelPlacement();
             yield return null;
             Assert.That(root.InteractionMode.IsBuildingPlacement, Is.False);

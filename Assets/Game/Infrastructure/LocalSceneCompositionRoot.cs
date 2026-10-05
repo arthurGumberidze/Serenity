@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.Characters;
 using Game.Domain.Buildings;
+using Game.Domain.AI;
+using Game.Domain.Time;
+using Game.Presentation.AI;
 using Game.Presentation.Buildings;
 using Game.Presentation.CameraControl;
 using Game.Presentation.Characters;
@@ -11,8 +14,12 @@ using Game.Presentation.Interaction;
 using Game.Simulation.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
+using Game.Simulation.AI;
+using Game.Simulation.Time;
 using Game.Presentation.Resources;
+using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Game.Infrastructure
 {
@@ -54,6 +61,14 @@ namespace Game.Infrastructure
         public WorldPileService WorldPiles { get; private set; }
         public SettlementResourceView StoredResources { get; private set; }
         public ConstructionFundingService Construction { get; private set; }
+        public Building DemoStorageBuilding { get; private set; }
+        public BuildingPresenter DemoStoragePresenter { get; private set; }
+        public NavMeshSurface NavigationSurface { get; private set; }
+        public GameClock Clock { get; private set; }
+        public Tier1AiAgentRegistry AiAgents { get; private set; }
+        public HaulClaimRegistry HaulClaims { get; private set; }
+        public Tier1AiScheduler AiScheduler { get; private set; }
+        public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
 
@@ -119,6 +134,9 @@ namespace Game.Infrastructure
             SpawnDemoPile("stone", 10, new GridCoordinate(-4, -2), new Color(0.45f, 0.45f, 0.45f));
             SpawnDemoPile("hide", 5, new GridCoordinate(-2, -2), new Color(0.7f, 0.45f, 0.25f));
 
+            SpawnDemoStorage();
+            BuildNavigationSurface();
+
             MaleDemoCharacter = CreateDemoCharacter("Aren", CharacterSex.Male);
             FemaleDemoCharacter = CreateDemoCharacter("Mira", CharacterSex.Female);
             Characters.Add(MaleDemoCharacter);
@@ -127,6 +145,39 @@ namespace Game.Infrastructure
             Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, FemaleDemoCharacter.Id), Resources, 8));
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
+
+            Clock = new GameClock(new GameTimeState(0, 0, 1, false));
+            AiAgents = new Tier1AiAgentRegistry();
+            HaulClaims = new HaulClaimRegistry();
+            var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
+                new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
+            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers);
+            AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld);
+            AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
+            AiRuntime.Initialize(Clock, AiScheduler);
+            AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
+            AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
+            gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories);
+        }
+
+        private void SpawnDemoStorage()
+        {
+            // DEV_BOOTSTRAP_ONLY: a free completed basket makes the autonomous hauling slice immediately observable.
+            var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("storage_basket"));
+            DemoStorageBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(5, 5), BuildingOrientation.North);
+            Storage.Attach(DemoStorageBuilding, definition);
+            DemoStorageBuilding.MarkCompleted();
+            DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
+        }
+
+        private void BuildNavigationSurface()
+        {
+            NavigationSurface = gameObject.AddComponent<NavMeshSurface>();
+            NavigationSurface.collectObjects = CollectObjects.Volume;
+            NavigationSurface.center = new Vector3(0f, 1f, 0f);
+            NavigationSurface.size = new Vector3(100f, 8f, 100f);
+            NavigationSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            NavigationSurface.BuildNavMesh();
         }
 
         private void SpawnDemoPile(string id, long units, GridCoordinate coordinate, Color color)
