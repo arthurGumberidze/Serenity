@@ -1,0 +1,27 @@
+U09 diagnostics — 2026-10-05
+
+Hung-verifier investigation
+- No live Unity, UnityCrashHandler, PostgreSQL client/server, dotnet verifier or build process remained when inspected.
+- The last previously active Unity process was PID 6844 running U07 focused EditMode; its log ended normally and XML reported 4/4 passed.
+- Exact prior command: Unity.exe -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Logs\U07-editmode-tests.log -runTests -testPlatform EditMode -testCategory U07 -testResults C:\serenity_game\Logs\U07-editmode-tests.xml
+- No stale process or project lock required termination.
+- A later diagnostic in-sandbox attempt started PID 22164 and crashed before tests in UnityEditor.BuildReportRestService/HttpListener with exit -536870911. It left no live process or lock. The same focused step passed outside the sandbox.
+
+Final focused processes
+- Final EditMode PID 26600; exit 0; 10/10 passed.
+- PlayMode headless PID 27840; exit 0; 4/4 passed.
+- PlayMode GPU PID 24556; exit 0; 4/4 passed.
+- Final Windows build PID 11500; exit 0; Succeeded; errors=0; warnings=2.
+
+Preserved completed gates
+- Core EditMode 148/148 passed.
+- All PlayMode 13/13 passed.
+- PostgreSQL integration 25/25 passed; not rerun after U09 because no persistence, SQL, Npgsql or assembly-edge change occurred.
+
+Log scan
+- No new C# compiler error.
+- No failed assertion/test run.
+- No NullReferenceException or MissingReferenceException.
+- No missing script/reference diagnostic.
+- No shader error. The known headless ChartRasterizerHardware unsupported message remains inherited and non-fatal.
+- Build reports two inherited warnings and zero errors.

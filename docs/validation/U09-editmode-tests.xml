@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="10" result="Passed" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0,132511">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="173" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.132511" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1197" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="169" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.119164" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26600" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1198" name="Game" fullname="Game" runstate="Runnable" testcasecount="169" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.115938" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1199" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="169" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.113036" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1200" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="101" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.109200" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1186" name="ResourceInventoryTests" fullname="Game.Tests.Editor.ResourceInventoryTests" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.105923" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U09" />
+              </properties>
+              <test-case id="1196" name="AuthoredStoneAgeDefinitionsHaveCostsAndOnlyBasketHasStorage" fullname="Game.Tests.Editor.ResourceInventoryTests.AuthoredStoneAgeDefinitionsHaveCostsAndOnlyBasketHasStorage" methodname="AuthoredStoneAgeDefinitionsHaveCostsAndOnlyBasketHasStorage" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="895168106" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.035474" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1192" name="ConstructionRequiresAllCostsAndCommitsAtomically" fullname="Game.Tests.Editor.ResourceInventoryTests.ConstructionRequiresAllCostsAndCommitsAtomically" methodname="ConstructionRequiresAllCostsAndCommitsAtomically" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1459499649" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.019899" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1190" name="ExactTransferConservesTotalAndFailuresDoNotMutateEitherOwner" fullname="Game.Tests.Editor.ResourceInventoryTests.ExactTransferConservesTotalAndFailuresDoNotMutateEitherOwner" methodname="ExactTransferConservesTotalAndFailuresDoNotMutateEitherOwner" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="2074424259" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.000948" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1194" name="FailureAfterChargeRollsBackResourcesStorageBuildingAndOccupancy" fullname="Game.Tests.Editor.ResourceInventoryTests.FailureAfterChargeRollsBackResourcesStorageBuildingAndOccupancy" methodname="FailureAfterChargeRollsBackResourcesStorageBuildingAndOccupancy" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1675336276" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.004594" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1193" name="InsufficientOneResourceCreatesNoIdentityOccupancyOrPartialDeduction" fullname="Game.Tests.Editor.ResourceInventoryTests.InsufficientOneResourceCreatesNoIdentityOccupancyOrPartialDeduction" methodname="InsufficientOneResourceCreatesNoIdentityOccupancyOrPartialDeduction" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1292965464" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.001557" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1188" name="InventoryAddRemoveCapacityUnknownAndZeroRepresentationAreSafe" fullname="Game.Tests.Editor.ResourceInventoryTests.InventoryAddRemoveCapacityUnknownAndZeroRepresentationAreSafe" methodname="InventoryAddRemoveCapacityUnknownAndZeroRepresentationAreSafe" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="536423806" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.007006" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1189" name="InventorySnapshotRestoresOwnerCapacityFilterAndExactAmounts" fullname="Game.Tests.Editor.ResourceInventoryTests.InventorySnapshotRestoresOwnerCapacityFilterAndExactAmounts" methodname="InventorySnapshotRestoresOwnerCapacityFilterAndExactAmounts" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1013051649" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.004263" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1187" name="ResourceIdentityQuantityAndCatalogAreValidated" fullname="Game.Tests.Editor.ResourceInventoryTests.ResourceIdentityQuantityAndCatalogAreValidated" methodname="ResourceIdentityQuantityAndCatalogAreValidated" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1122424149" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.000952" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1195" name="StorageCapabilityAndPresenterRespawnUseBuildingIdentity" fullname="Game.Tests.Editor.ResourceInventoryTests.StorageCapabilityAndPresenterRespawnUseBuildingIdentity" methodname="StorageCapabilityAndPresenterRespawnUseBuildingIdentity" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="1590490390" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.006329" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1191" name="WorldCharacterStorageTransferSequenceConservesCanonicalQuantity" fullname="Game.Tests.Editor.ResourceInventoryTests.WorldCharacterStorageTransferSequenceConservesCanonicalQuantity" methodname="WorldCharacterStorageTransferSequenceConservesCanonicalQuantity" classname="Game.Tests.Editor.ResourceInventoryTests" runstate="Runnable" seed="182215786" result="Passed" start-time="2026-10-05 10:42:46Z" end-time="2026-10-05 10:42:46Z" duration="0.003990" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

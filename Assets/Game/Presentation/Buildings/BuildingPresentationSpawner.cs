@@ -1,5 +1,6 @@
 using System;
 using Game.Domain.Buildings;
+using Game.Domain.Resources;
 using UnityEngine;
 
 namespace Game.Presentation.Buildings
@@ -11,9 +12,10 @@ namespace Game.Presentation.Buildings
         private readonly Transform parent;
         private readonly float gridSize;
         private readonly Vector3 origin;
+        private readonly ResourceInventoryRegistry inventories;
 
         public BuildingPresentationSpawner(BuildingPresentationCatalog catalog, BuildingPresentationRegistry registry,
-            float gridSize, Vector3 origin, Transform parent = null)
+            float gridSize, Vector3 origin, Transform parent = null, ResourceInventoryRegistry inventoryRegistry = null)
         {
             this.catalog = catalog != null ? catalog : throw new ArgumentNullException(nameof(catalog));
             this.registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -21,6 +23,7 @@ namespace Game.Presentation.Buildings
             this.gridSize = gridSize;
             this.origin = origin;
             this.parent = parent;
+            inventories = inventoryRegistry;
         }
 
         public BuildingPresenter Spawn(Building building)
@@ -38,7 +41,18 @@ namespace Game.Presentation.Buildings
                 else UnityEngine.Object.DestroyImmediate(instance);
                 throw new InvalidOperationException("Building prefab requires a BuildingPresenter.");
             }
-            presenter.Bind(building, registry);
+            try
+            {
+                ResourceInventory storage = null;
+                inventories?.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id), out storage);
+                presenter.Bind(building, registry, storage);
+            }
+            catch
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(instance);
+                else UnityEngine.Object.DestroyImmediate(instance);
+                throw;
+            }
             return presenter;
         }
 

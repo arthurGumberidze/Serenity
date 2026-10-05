@@ -21,6 +21,13 @@ MonoBehaviour:
     placementMode: 0
     allowsOverlap: 0
     prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 8
+    - resourceId: plant_fiber
+      quantity: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
   - definitionId: storage_basket
     displayName: Storage Basket
     category: 1
@@ -29,4 +36,12 @@ MonoBehaviour:
     placementMode: 0
     allowsOverlap: 0
     prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 5
+    storageCapacity: 40
+    storageCategories: 000000000100000002000000i
   defaultDefinitionId: primitive_shelter
+  resourceCatalog: {fileID: 11400000, guid: 3eaad5da612fe13489ff4dbb118b2eef, type: 2}

@@ -3,6 +3,9 @@ using Game.Domain.Buildings;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Simulation.Buildings;
+using Game.Domain.Resources;
+using Game.Simulation.Resources;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Presentation.Buildings
@@ -23,10 +26,13 @@ namespace Game.Presentation.Buildings
         private BuildingPlacementService placementService;
         private BuildingPresentationSpawner spawner;
         private LocalInteractionMode interactionMode;
+        private ConstructionFundingService construction;
+        private Func<IEnumerable<InventoryOwner>> fundingSources;
         private BuildingDefinition activeDefinition;
         private BuildingOrientation orientation;
         private GridCoordinate previewCoordinate;
         private PlacementEvaluation previewEvaluation;
+        private ConstructionEvaluation constructionEvaluation;
         private GameObject previewObject;
         private Renderer[] previewRenderers = Array.Empty<Renderer>();
         private MaterialPropertyBlock propertyBlock;
@@ -35,7 +41,9 @@ namespace Game.Presentation.Buildings
 
         public bool IsActive => activeDefinition != null;
         public bool HasPreview => previewObject != null;
-        public bool IsPreviewValid => HasPreview && previewEvaluation.IsValid;
+        public bool IsPreviewValid => HasPreview && previewEvaluation.IsValid &&
+            (construction == null || constructionEvaluation.IsValid);
+        public ConstructionFailureReason LastConstructionFailure { get; private set; }
         public BuildingOrientation Orientation => orientation;
         public GridCoordinate PreviewCoordinate => previewCoordinate;
         public BuildingPresenter LastPlacedPresenter { get; private set; }
@@ -52,11 +60,14 @@ namespace Game.Presentation.Buildings
         }
 
         public void Initialize(BuildingPlacementService service, BuildingPresentationSpawner presentationSpawner,
-            LocalInteractionMode mode)
+            LocalInteractionMode mode, ConstructionFundingService constructionService = null,
+            Func<IEnumerable<InventoryOwner>> fundingSourceProvider = null)
         {
             placementService = service ?? throw new ArgumentNullException(nameof(service));
             spawner = presentationSpawner ?? throw new ArgumentNullException(nameof(presentationSpawner));
             interactionMode = mode ?? throw new ArgumentNullException(nameof(mode));
+            construction = constructionService;
+            fundingSources = fundingSourceProvider;
             Subscribe();
         }
 
@@ -78,13 +89,16 @@ namespace Game.Presentation.Buildings
                 Mathf.RoundToInt((worldPoint.x - gridOrigin.x) / gridSize - (footprint.Width - 1) * 0.5f),
                 Mathf.RoundToInt((worldPoint.z - gridOrigin.z) / gridSize - (footprint.Depth - 1) * 0.5f), 0);
             previewEvaluation = placementService.Evaluate(activeDefinition, previewCoordinate, orientation);
+            constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
+                previewCoordinate, orientation, fundingSources());
+            LastConstructionFailure = constructionEvaluation.Failure;
             if (previewObject != null)
             {
                 previewObject.transform.SetPositionAndRotation(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation),
                     Quaternion.Euler(0f, orientation.Degrees(), 0f));
-                ApplyPreviewColor(previewEvaluation.IsValid ? validColor : invalidColor);
+                ApplyPreviewColor(IsPreviewValid ? validColor : invalidColor);
             }
-            return previewEvaluation.IsValid;
+            return IsPreviewValid;
         }
 
         public void RotatePreview()
@@ -97,13 +111,32 @@ namespace Game.Presentation.Buildings
 
         public Building ConfirmPlacement()
         {
-            if (!IsActive || !previewEvaluation.IsValid) return null;
-            var building = placementService.Confirm(activeDefinition, previewCoordinate, orientation);
-            if (completeImmediately) building.MarkCompleted();
-            LastPlacedPresenter = spawner.Spawn(building);
+            if (!IsActive || !IsPreviewValid) return null;
+            Building building;
+            if (construction != null)
+            {
+                BuildingPresenter staged = null;
+                var result = construction.TryConfirm(activeDefinition, previewCoordinate, orientation,
+                    fundingSources(), out building, candidate => staged = spawner.Spawn(candidate));
+                LastConstructionFailure = result.Failure;
+                if (!result.IsValid)
+                {
+                    if (staged != null) spawner.Despawn(staged);
+                    TryMovePreviewToWorldPoint(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation));
+                    return null;
+                }
+                LastPlacedPresenter = staged;
+            }
+            else
+            {
+                building = placementService.Confirm(activeDefinition, previewCoordinate, orientation);
+                if (completeImmediately) building.MarkCompleted();
+                LastPlacedPresenter = spawner.Spawn(building);
+            }
             DestroyPreview();
             activeDefinition = null;
             previewEvaluation = default;
+            constructionEvaluation = default;
             exitModeAtEndOfFrame = true;
             return building;
         }
@@ -113,6 +146,7 @@ namespace Game.Presentation.Buildings
             DestroyPreview();
             activeDefinition = null;
             previewEvaluation = default;
+            constructionEvaluation = default;
             exitModeAtEndOfFrame = false;
             interactionMode?.ExitBuildingPlacement();
         }

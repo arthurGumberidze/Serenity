@@ -44,6 +44,12 @@ namespace Game.Simulation.Buildings
             foreach (var cell in materialized)
                 if (!allowsOverlap) occupied.Add(cell, buildingId);
         }
+
+        public void Release(IEnumerable<GridCoordinate> cells, StableEntityId buildingId)
+        {
+            foreach (var cell in cells ?? throw new ArgumentNullException(nameof(cells)))
+                if (occupied.TryGetValue(cell, out var owner) && owner == buildingId) occupied.Remove(cell);
+        }
     }
 
     public sealed class BuildingPlacementService
@@ -81,8 +87,17 @@ namespace Game.Simulation.Buildings
                 throw new InvalidOperationException("Building placement is invalid: " + evaluation.FailureReason);
             var building = Building.CreateNew(definition.Id, coordinate, orientation);
             occupancy.Reserve(evaluation.Cells, building.Id, definition.AllowsOverlap);
-            registry.Add(building);
+            try { registry.Add(building); }
+            catch { occupancy.Release(evaluation.Cells, building.Id); throw; }
             return building;
+        }
+
+        public void Rollback(Building building, BuildingDefinition definition)
+        {
+            if (building == null || definition == null || building.DefinitionId != definition.Id)
+                throw new ArgumentException("Matching building and definition required.");
+            if (!registry.Remove(building)) throw new InvalidOperationException("Building transaction is not registered.");
+            occupancy.Release(definition.Footprint.EnumerateCells(building.Coordinate, building.Orientation), building.Id);
         }
     }
 }

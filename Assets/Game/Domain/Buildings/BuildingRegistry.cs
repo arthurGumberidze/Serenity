@@ -24,5 +24,12 @@ namespace Game.Domain.Buildings
         }
 
         public bool TryGet(StableEntityId id, out Building building) => buildings.TryGetValue(id, out building);
+
+        public bool Remove(Building expected)
+        {
+            if (expected == null || !buildings.TryGetValue(expected.Id, out var current) || !ReferenceEquals(current, expected))
+                return false;
+            return buildings.Remove(expected.Id);
+        }
     }
 }

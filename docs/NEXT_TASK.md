@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-## Active task: U09 — Ресурсы, инвентари и склады
+## Active task: U10 — Utility AI Tier 1
 
 ### Prerequisites
-U06 and U08 are DONE. U08 provides canonical building identity/state, logical grid occupancy, data-driven building definitions and the current LocalGameplay placement flow.
+U06, U07 and U09 are DONE. U06 owns the persistent character aggregate, U07 owns disposable Tier 1 presentation, and U09 owns canonical resources/inventories plus atomic construction funding.
 
 ### Goal
-Implement resources, inventories and storage without duplicating canonical quantities. Connect construction costs to actual resources while preserving U08 building identity and occupancy.
+Implement the first scalable Utility AI scheduling foundation for Tier 1 characters so that 100 NPCs can evaluate needs and work without one Update-heavy script per NPC.
 
 ### Scope boundary
-U09 has not started. Read `docs/U08_HANDOFF.md`, the U06 character state boundary, the U04 persistence boundary and the FRS resource/logistics requirements before implementation. Do not implement worker AI (U10/U11), production chains (U15), combat/destruction (U20/U24), global-map streaming (U25) or full gameplay UI (U27).
+U10 has not started. Read `docs/U09_HANDOFF.md`, `docs/U07_HANDOFF.md`, the U06 character boundary and the Utility AI sections of the FRS before implementation. Preserve the central scheduler/ticked-system rule, canonical Domain state and StableEntityId across future tiers. Do not implement U11 work groups/orders, U12 DOTS Tier 2, U15 production chains, U20 combat or U27 full UI.
 
 ### Relevant handoffs
-Keep resources canonical in Domain/Simulation data and avoid representing one quantity simultaneously in world piles, inventories and storage. The current Storage Basket is only U08 building presentation; U09 must add inventory/storage behavior without moving canonical data into its prefab or presenter.
+AI may query U09 read models and submit explicit transfer/construction actions through Simulation services. It must not mutate presenter fields, duplicate resource quantities, make Unity object identity persistent or add per-character Update loops.

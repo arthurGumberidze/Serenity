@@ -4,6 +4,7 @@ using Game.Domain.Buildings;
 using Game.Domain.Characters;
 using Game.Presentation.Buildings;
 using Game.Presentation.Characters;
+using Game.Presentation.Resources;
 using UnityEditor;
 using UnityEngine;
 
@@ -47,6 +48,12 @@ namespace Game.Infrastructure.Editor
                 new BuildingPresentationCatalog.Entry().Configure("storage_basket", "Storage Basket",
                     BuildingCategory.Storage, 2, 1, storage)
             }, "primitive_shelter");
+            var resources = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
+            if (resources != null)
+            {
+                U09ResourceFoundation.ApplyEconomy(catalog);
+                catalog.ConfigureResources(resources);
+            }
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
         }
