@@ -20,6 +20,12 @@ U11 — Work groups and jobs is next and has NOT started.
 - `Tier1AiRuntimeDriver` is one scene-level `MonoBehaviour.Update`. Per-agent AI Update count is exactly zero. LocalGameplay builds a runtime `NavMeshSurface`, registers both U07 demo characters and creates one free `DEV_BOOTSTRAP_ONLY` completed Storage Basket for the autonomous hauling slice.
 - `Tier1AiDebugOverlay` is one development-only read view for selected character ID, action/phase, Hunger, Energy and canonical inventory contents.
 
+## U10 development selection follow-up
+- The existing pointer raycast/selection pipeline now recognizes bound world-pile and building presenters in addition to characters and debug markers; it does not introduce a second selection authority.
+- The development selection panel captures a fresh read-only snapshot on every draw. Piles show stable ID, resource ID/name, live canonical quantity and active source claims/claimants. Storage shows building ID, capacity, occupied/free units and live quantities for every resource definition. Characters show stable ID, action/phase, source/destination/current target, canonical inventory and active haul job/claim.
+- `HaulClaimRegistry` exposes deterministic read-only capture/query methods for debug tooling. Claims, inventories and resource quantities remain owned by Simulation/Domain services.
+- The left resource overlay now enumerates the data-driven catalog and computes `world piles / characters / building storage = total` directly from the current inventory registry on every draw. No `DEV_BOOTSTRAP_ONLY` quantity is cached or repeated as UI state.
+
 ## Preserved architecture and scope
 - `Game.Domain` and `Game.Simulation` remain `noEngineReferences`; no NavMesh, GameObject, Animator, physics query or Unity random source enters decision or action logic.
 - U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U10 task/claim execution is session-ephemeral; character, inventories and resource locations retain their existing snapshot-ready state boundaries.
@@ -30,12 +36,12 @@ U11 — Work groups and jobs is next and has NOT started.
 U10 validation completed on 2026-10-05:
 
 - baseline before U10: 148/148 non-PostgreSQL EditMode, 13/13 PlayMode and Windows Development build passed at `62a433cb0df0d8479c8c0f72cbc970938f3a3d19`;
-- 14/14 focused U10 EditMode and 3/3 focused U10 PlayMode passed headless;
-- 162/162 full non-PostgreSQL EditMode and 16/16 full PlayMode passed;
+- 14/14 focused U10 EditMode and 5/5 focused U10 PlayMode passed headless;
+- 162/162 full non-PostgreSQL EditMode and 18/18 full PlayMode passed;
 - contained regressions passed: U07 4 EditMode + 4 PlayMode, U08 8 + 3, U09 10 + 4;
 - a fresh private loopback SCRAM PostgreSQL cluster passed 25/25 integration tests;
 - U05A asset/catalog validation passed;
-- GPU-enabled U10 PlayMode passed 3/3; `Logs/U10-utility-ai.png` confirms the LocalGameplay characters, resource piles, Storage Basket and movement slice without visible shader failure;
+- GPU-enabled U10 PlayMode passed 5/5; `Logs/U10-utility-ai.png` confirms the LocalGameplay characters, resource piles, Storage Basket and movement slice without visible shader failure;
 - 100-agent pure scheduler validation processed all agents with a maximum decision batch of 8 in the test configuration, 0 per-agent AI Updates, 0 measured steady-loop thread allocations and 13.618 ms Stopwatch time (automated test measurement, not a Unity Profiler capture);
 - Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; player entry executable remains 667136 bytes;
 - final log scan found no compiler error, failed assertion, missing script/reference diagnostic, runtime exception or shader error.

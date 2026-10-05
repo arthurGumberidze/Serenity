@@ -157,7 +157,8 @@ namespace Game.Infrastructure
             AiRuntime.Initialize(Clock, AiScheduler);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
-            gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories);
+            gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
+                Resources, HaulClaims);
         }
 
         private void SpawnDemoStorage()

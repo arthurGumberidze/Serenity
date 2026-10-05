@@ -49,6 +49,33 @@ namespace Game.Simulation.AI
 
         public int Count => claims.Count;
 
+        public HaulClaim[] CaptureActive()
+        {
+            var result = new List<HaulClaim>(claims.Values);
+            result.Sort((left, right) => left.Id.Value.CompareTo(right.Id.Value));
+            return result.ToArray();
+        }
+
+        public HaulClaim[] CaptureForSource(InventoryOwner source)
+        {
+            var result = new List<HaulClaim>();
+            foreach (var claim in claims.Values)
+                if (claim.Source == source) result.Add(claim);
+            result.Sort((left, right) => left.Id.Value.CompareTo(right.Id.Value));
+            return result.ToArray();
+        }
+
+        public bool TryGetForClaimant(StableEntityId claimant, out HaulClaim claim)
+        {
+            claim = null;
+            foreach (var candidate in claims.Values)
+            {
+                if (candidate.Claimant != claimant || claim != null && candidate.Id.Value >= claim.Id.Value) continue;
+                claim = candidate;
+            }
+            return claim != null;
+        }
+
         public long ReservedAtSource(InventoryOwner source, ResourceId resourceId)
         {
             long sum = 0;

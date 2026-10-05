@@ -1,6 +1,8 @@
 using Game.Domain;
+using Game.Presentation.Buildings;
 using Game.Presentation.Characters;
 using Game.Presentation.Input;
+using Game.Presentation.Resources;
 using UnityEngine;
 
 namespace Game.Presentation.Interaction
@@ -14,6 +16,8 @@ namespace Game.Presentation.Interaction
         private LocalInteractionMode interactionMode;
         public SelectableMarker Selected { get; private set; }
         public CharacterPresenter SelectedCharacterPresenter { get; private set; }
+        public WorldResourcePilePresenter SelectedWorldResourcePilePresenter { get; private set; }
+        public BuildingPresenter SelectedBuildingPresenter { get; private set; }
         public StableEntityId? SelectedCharacterId =>
             SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
                 ? SelectedCharacterPresenter.CharacterId
@@ -54,8 +58,10 @@ namespace Game.Presentation.Interaction
             }
             var marker = hit.collider.GetComponentInParent<SelectableMarker>();
             var characterPresenter = hit.collider.GetComponentInParent<CharacterPresenter>();
-            SetSelection(marker, characterPresenter);
-            return marker != null || characterPresenter != null;
+            var pilePresenter = hit.collider.GetComponentInParent<WorldResourcePilePresenter>();
+            var buildingPresenter = hit.collider.GetComponentInParent<BuildingPresenter>();
+            SetSelection(marker, characterPresenter, pilePresenter, buildingPresenter);
+            return marker != null || characterPresenter != null || pilePresenter != null || buildingPresenter != null;
         }
 
         private void Subscribe()
@@ -80,14 +86,18 @@ namespace Game.Presentation.Interaction
             TrySelectAt(input.PointerPosition);
         }
 
-        private void SetSelection(SelectableMarker marker, CharacterPresenter characterPresenter = null)
+        private void SetSelection(SelectableMarker marker, CharacterPresenter characterPresenter = null,
+            WorldResourcePilePresenter pilePresenter = null, BuildingPresenter buildingPresenter = null)
         {
-            if (Selected == marker && SelectedCharacterPresenter == characterPresenter)
+            if (Selected == marker && SelectedCharacterPresenter == characterPresenter &&
+                SelectedWorldResourcePilePresenter == pilePresenter && SelectedBuildingPresenter == buildingPresenter)
                 return;
             if (Selected != null)
                 Selected.SetSelected(false);
             Selected = marker;
             SelectedCharacterPresenter = characterPresenter;
+            SelectedWorldResourcePilePresenter = pilePresenter;
+            SelectedBuildingPresenter = buildingPresenter;
             if (Selected != null)
                 Selected.SetSelected(true);
         }

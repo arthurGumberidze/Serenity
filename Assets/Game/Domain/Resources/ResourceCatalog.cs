@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Game.Domain.Resources
 {
@@ -23,6 +24,7 @@ namespace Game.Domain.Resources
     public sealed class ResourceCatalog
     {
         private readonly Dictionary<ResourceId, ResourceDefinition> definitions = new Dictionary<ResourceId, ResourceDefinition>();
+        private readonly IReadOnlyList<ResourceDefinition> orderedDefinitions;
 
         public ResourceCatalog(IEnumerable<ResourceDefinition> definitions)
         {
@@ -32,7 +34,10 @@ namespace Game.Domain.Resources
                 if (!this.definitions.TryAdd(definition.Id, definition))
                     throw new ArgumentException("Duplicate resource ID: " + definition.Id, nameof(definitions));
             }
+            orderedDefinitions = Array.AsReadOnly(this.definitions.Values.OrderBy(x => x.Id).ToArray());
         }
+
+        public IReadOnlyList<ResourceDefinition> All => orderedDefinitions;
 
         public ResourceDefinition Get(ResourceId id)
         {

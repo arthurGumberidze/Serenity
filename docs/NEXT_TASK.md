@@ -3,7 +3,7 @@
 ## Active task: U11 — Work groups and jobs
 
 ### Prerequisites
-U10 is DONE. U06 owns canonical characters, U07 owns disposable Tier 1 presentation, U09 owns resources/inventories/storage, and U10 owns centralized autonomous Utility AI, movement intent and haul claims.
+U10 is DONE, including its read-only development selection/resource inspection follow-up. U06 owns canonical characters, U07 owns disposable Tier 1 presentation, U09 owns resources/inventories/storage, and U10 owns centralized autonomous Utility AI, movement intent and haul claims.
 
 ### Goal
 Implement the TASK_GRAPH U11 slice so the player can manage more than 100 NPCs through explicit work groups and jobs without bypassing U10 scheduling or duplicating canonical state.

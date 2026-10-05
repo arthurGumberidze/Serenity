@@ -84,3 +84,11 @@ Final results:
 Created: Domain/Simulation/Presentation AI folders, U10 EditMode/PlayMode tests, `Tools/Verify-U10.ps1` and this handoff (with Unity `.meta` files).
 
 Modified for U10: Infrastructure and PlayMode-test assembly references, `LocalSceneCompositionRoot`, three inherited PlayMode fixtures so their expectations include the deliberate demo Storage Basket/NavMesh vertical offset, and project state/task/decision/architecture documents. `SaveSnapshot`, SQL, migrations and Npgsql code are unchanged. User-owned vendor imports, scene/prefab/controller changes and ProjectSettings already present in the dirty worktree are not part of U10.
+
+## Development/debug selection follow-up (2026-10-05)
+- `SelectionProbe` recognizes `WorldResourcePilePresenter` and `BuildingPresenter` through the existing collider/raycast path while retaining Character selection and debug-marker highlighting.
+- The U10 debug overlay reads a fresh immutable snapshot on demand. A pile exposes stable ID, resource ID/display name, canonical quantity and all active source claims with claimant IDs. A Storage Basket exposes building ID, capacity, occupied/free units and quantities for every catalog resource. A Character exposes ID, utility action/phase, source/destination/current target, inventory contents and active claim/job.
+- `HaulClaimRegistry.CaptureActive`, `CaptureForSource` and `TryGetForClaimant` are deterministic read-only inspection APIs; they do not change reservation or ownership semantics.
+- `ResourceDebugOverlay` no longer carries a hardcoded resource-ID display list. It iterates the canonical catalog and recomputes `pile / NPC / storage = total` from registered inventories on every draw.
+- Two new U10 PlayMode tests drive actual screen-point raycasts to pile, Storage Basket and Character colliders, then compare selected IDs, quantities, capacity and claim data with the canonical objects. The physical haul test now observes pile decrease, transient character-inventory increase, post-dropoff character decrease, storage increase and conserved overlay totals.
+- Latest validation: 162/162 non-PostgreSQL EditMode, 18/18 full PlayMode, 14/14 focused U10 EditMode, 5/5 focused U10 PlayMode headless and GPU-enabled, asset validation and Windows x64 Mono Development build passed. U11 remains TODO and unchanged.
