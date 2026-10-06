@@ -50,6 +50,12 @@ The first sandboxed Unity compile probe hit the known Editor `HttpListener` sand
 ## Deferred
 U12 owns the DOTS Tier 2 bootstrap. U13 owns tier transitions. Profession-aware eligibility, durable work persistence, construction labor, production/farming, combat and production gameplay UI remain their TASK_GRAPH tasks. Do not duplicate work-group or job authority inside ECS entities or presenters when implementing those slices.
 
+## GUI click-through maintenance (2026-10-06)
+- Development IMGUI rectangles now register with `WorldPointerRaycaster`; the work, resource and canonical selection panels block physics/selection before world input is processed.
+- A UI-blocked click no longer follows the empty-world branch in `SelectionProbe`, so current selection is preserved without caching or restoring it after a command error.
+- Create/Add/Remove/Select/Priority/Move/Haul/Cancel use the real Pointer InputAction path and the visible U11 button rectangles. PlayMode coverage verifies the requested Character -> Create from selection flow, all other work buttons, full debug-panel blocking, world selection outside UI and Shift multi-selection.
+- Final validation: 6/6 focused U11 PlayMode, 28/28 full PlayMode, 193/193 full non-PostgreSQL EditMode, 1/1 GPU primary regression and successful Windows Development build (errors=0, inherited warnings=2).
+
 ## Main files
 - `Assets/Game/Domain/Work/WorkModels.cs`
 - `Assets/Game/Simulation/Work/WorkManager.cs`

@@ -7,6 +7,7 @@ using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Presentation.Characters;
+using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Simulation.Resources;
 using Game.Simulation.Work;
@@ -15,15 +16,31 @@ using UnityEngine.InputSystem;
 
 namespace Game.Presentation.Work
 {
-    /// <summary>Development-only command surface. It submits canonical work orders and owns no work state.</summary>
-    public sealed class WorkDebugOverlay : MonoBehaviour
+    public enum WorkDebugCommand
     {
+        CreateFromSelection = 0,
+        SelectGroup = 1,
+        AddSelected = 2,
+        RemoveSelected = 3,
+        CyclePriority = 4,
+        AssignMove = 5,
+        AssignHaul = 6,
+        CancelJobs = 7
+    }
+
+    /// <summary>Development-only command surface. It submits canonical work orders and owns no work state.</summary>
+    public sealed class WorkDebugOverlay : MonoBehaviour, IWorldPointerUiBlocker
+    {
+        private const float PanelWidth = 398f;
+        private const float PanelHeight = 420f;
         private WorkManager work;
         private SelectionProbe selection;
         private CharacterPresentationRegistry presentations;
         private WorldPileService piles;
         private ResourceInventoryRegistry inventories;
         private BuildingRegistry buildings;
+        private LocalGameplayInputSource inputSource;
+        private WorldPointerRaycaster raycaster;
         private int nextGroupNumber = 1;
         private WorkPriority priority = WorkPriority.High;
         private readonly WorkGroupId?[] hotkeyGroups = new WorkGroupId?[9];
@@ -32,19 +49,53 @@ namespace Game.Presentation.Work
         public int SelectionCount => selection?.SelectedCharacterIds.Count ?? 0;
         public WorkPriority Priority => priority;
 
-        private void OnEnable() => InputSystem.onAfterUpdate += HandleGroupHotkeys;
-        private void OnDisable() => InputSystem.onAfterUpdate -= HandleGroupHotkeys;
+        private void OnEnable()
+        {
+            InputSystem.onAfterUpdate += HandleGroupHotkeys;
+            SubscribePrimaryClick();
+            raycaster?.RegisterUiBlocker(this);
+        }
+
+        private void OnDisable()
+        {
+            InputSystem.onAfterUpdate -= HandleGroupHotkeys;
+            UnsubscribePrimaryClick();
+            raycaster?.UnregisterUiBlocker(this);
+        }
 
         public void Initialize(WorkManager workManager, SelectionProbe selectionProbe,
             CharacterPresentationRegistry presentationRegistry, WorldPileService worldPiles,
-            ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry)
+            ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
+            LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster)
         {
+            UnsubscribePrimaryClick();
+            raycaster?.UnregisterUiBlocker(this);
             work = workManager ?? throw new ArgumentNullException(nameof(workManager));
             selection = selectionProbe ?? throw new ArgumentNullException(nameof(selectionProbe));
             presentations = presentationRegistry ?? throw new ArgumentNullException(nameof(presentationRegistry));
             piles = worldPiles ?? throw new ArgumentNullException(nameof(worldPiles));
             inventories = inventoryRegistry ?? throw new ArgumentNullException(nameof(inventoryRegistry));
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
+            inputSource = source ?? throw new ArgumentNullException(nameof(source));
+            raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
+            SubscribePrimaryClick();
+            raycaster.RegisterUiBlocker(this);
+        }
+
+        public bool TryGetUiBlockingRect(out Rect guiRect)
+        {
+            guiRect = new Rect(Screen.width - 410f, 12f, PanelWidth, PanelHeight);
+            return work != null && selection != null && (Application.isEditor || Debug.isDebugBuild);
+        }
+
+        public bool TryGetCommandGuiRect(WorkDebugCommand command, out Rect guiRect)
+        {
+            guiRect = default;
+            if (!TryGetUiBlockingRect(out var panelRect)) return false;
+            var localRect = GetCommandLocalRect(command);
+            localRect.position += panelRect.position;
+            guiRect = localRect;
+            return true;
         }
 
         public WorkGroup CreateGroupFromSelection(string displayName = null)
@@ -173,41 +224,123 @@ namespace Game.Presentation.Work
             }
         }
 
+        private void SubscribePrimaryClick()
+        {
+            if (inputSource == null) return;
+            inputSource.PrimaryClicked -= HandlePrimaryClick;
+            inputSource.PrimaryClicked += HandlePrimaryClick;
+        }
+
+        private void UnsubscribePrimaryClick()
+        {
+            if (inputSource != null) inputSource.PrimaryClicked -= HandlePrimaryClick;
+        }
+
+        private void HandlePrimaryClick()
+        {
+            if (inputSource == null || !TryGetUiBlockingRect(out var panelRect)) return;
+            var guiPosition = WorldPointerRaycaster.ScreenToGuiPoint(inputSource.PointerPosition);
+            if (!panelRect.Contains(guiPosition)) return;
+            foreach (WorkDebugCommand command in Enum.GetValues(typeof(WorkDebugCommand)))
+            {
+                if (!TryGetCommandGuiRect(command, out var commandRect) || !commandRect.Contains(guiPosition))
+                    continue;
+                ExecuteCommand(command);
+                return;
+            }
+        }
+
+        private void ExecuteCommand(WorkDebugCommand command)
+        {
+            switch (command)
+            {
+                case WorkDebugCommand.CreateFromSelection:
+                    TryUi(() => CreateGroupFromSelection());
+                    break;
+                case WorkDebugCommand.SelectGroup:
+                    TryUi(SelectCurrentGroup);
+                    break;
+                case WorkDebugCommand.AddSelected:
+                    TryUi(AddSelectionToCurrentGroup);
+                    break;
+                case WorkDebugCommand.RemoveSelected:
+                    TryUi(RemoveSelectionFromCurrentGroup);
+                    break;
+                case WorkDebugCommand.CyclePriority:
+                    priority = (WorkPriority)(((int)priority + 1) % Enum.GetValues(typeof(WorkPriority)).Length);
+                    break;
+                case WorkDebugCommand.AssignMove:
+                    TryUi(() => AssignCurrentGroupMove(new WorldPosition(0f, 0f, 10f), priority));
+                    break;
+                case WorkDebugCommand.AssignHaul:
+                    TryUi(() =>
+                    {
+                        if (!TryFindDemoHaul(out var source, out var destination, out var resourceId))
+                            throw new InvalidOperationException("No valid pile/storage pair.");
+                        AssignCurrentGroupHaul(source, destination, resourceId, new ResourceQuantity(1), priority);
+                    });
+                    break;
+                case WorkDebugCommand.CancelJobs:
+                    TryUi(() => CancelCurrentGroupJobs());
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(command), command, null);
+            }
+        }
+
         private void OnGUI()
         {
             if ((!Application.isEditor && !Debug.isDebugBuild) || work == null || selection == null) return;
-            GUILayout.BeginArea(new Rect(Screen.width - 410f, 12f, 398f, 420f), GUI.skin.box);
-            GUILayout.Label($"U11 Work — selected NPCs: {SelectionCount}");
-            GUILayout.Label(CurrentGroupId.HasValue
+            TryGetUiBlockingRect(out var panelRect);
+            GUI.Box(panelRect, GUIContent.none);
+            GUI.BeginGroup(panelRect);
+            GUI.Label(new Rect(8f, 8f, PanelWidth - 16f, 20f), $"U11 Work — selected NPCs: {SelectionCount}");
+            GUI.Label(new Rect(8f, 30f, PanelWidth - 16f, 20f), CurrentGroupId.HasValue
                 ? $"Group: {CurrentGroup().DisplayName} ({CurrentGroup().MemberCount})"
                 : "Group: none");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Create from selection")) TryUi(() => CreateGroupFromSelection());
-            if (GUILayout.Button("Select group")) TryUi(SelectCurrentGroup);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Add selected")) TryUi(AddSelectionToCurrentGroup);
-            if (GUILayout.Button("Remove selected")) TryUi(RemoveSelectionFromCurrentGroup);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Priority: " + priority, GUILayout.Width(150f));
-            if (GUILayout.Button("Cycle priority"))
-                priority = (WorkPriority)(((int)priority + 1) % Enum.GetValues(typeof(WorkPriority)).Length);
-            GUILayout.EndHorizontal();
-            if (GUILayout.Button("Assign group Move to demo point"))
-                TryUi(() => AssignCurrentGroupMove(new WorldPosition(0f, 0f, 10f), priority));
-            if (GUILayout.Button("Assign group Haul x1"))
-                TryUi(() =>
-                {
-                    if (!TryFindDemoHaul(out var source, out var destination, out var resourceId))
-                        throw new InvalidOperationException("No valid pile/storage pair.");
-                    AssignCurrentGroupHaul(source, destination, resourceId, new ResourceQuantity(1), priority);
-                });
-            if (GUILayout.Button("Cancel current group jobs")) TryUi(() => CancelCurrentGroupJobs());
+            DrawCommandButton("Create from selection", WorkDebugCommand.CreateFromSelection);
+            DrawCommandButton("Select group", WorkDebugCommand.SelectGroup);
+            DrawCommandButton("Add selected", WorkDebugCommand.AddSelected);
+            DrawCommandButton("Remove selected", WorkDebugCommand.RemoveSelected);
+            GUI.Label(new Rect(8f, 106f, 150f, 22f), "Priority: " + priority);
+            DrawCommandButton("Cycle priority", WorkDebugCommand.CyclePriority);
+            DrawCommandButton("Assign group Move to demo point", WorkDebugCommand.AssignMove);
+            DrawCommandButton("Assign group Haul x1", WorkDebugCommand.AssignHaul);
+            DrawCommandButton("Cancel current group jobs", WorkDebugCommand.CancelJobs);
 
+            var jobY = 216f;
             foreach (var job in work.Jobs.OrderByDescending(x => x.Id.Value).Take(8))
-                GUILayout.Label($"#{job.Id} {job.Type} {job.Priority} {job.Status} claim={job.ClaimState}");
-            GUILayout.EndArea();
+            {
+                GUI.Label(new Rect(8f, jobY, PanelWidth - 16f, 20f),
+                    $"#{job.Id} {job.Type} {job.Priority} {job.Status} claim={job.ClaimState}");
+                jobY += 20f;
+            }
+            GUI.EndGroup();
+        }
+
+        private static void DrawCommandButton(string label, WorkDebugCommand command)
+        {
+            GUI.Button(GetCommandLocalRect(command), label);
+        }
+
+        private static Rect GetCommandLocalRect(WorkDebugCommand command)
+        {
+            const float left = 8f;
+            const float gap = 6f;
+            const float fullWidth = PanelWidth - left * 2f;
+            const float halfWidth = (fullWidth - gap) * 0.5f;
+            switch (command)
+            {
+                case WorkDebugCommand.CreateFromSelection: return new Rect(left, 54f, halfWidth, 22f);
+                case WorkDebugCommand.SelectGroup: return new Rect(left + halfWidth + gap, 54f, halfWidth, 22f);
+                case WorkDebugCommand.AddSelected: return new Rect(left, 80f, halfWidth, 22f);
+                case WorkDebugCommand.RemoveSelected: return new Rect(left + halfWidth + gap, 80f, halfWidth, 22f);
+                case WorkDebugCommand.CyclePriority: return new Rect(158f, 106f, fullWidth - 150f, 22f);
+                case WorkDebugCommand.AssignMove: return new Rect(left, 132f, fullWidth, 22f);
+                case WorkDebugCommand.AssignHaul: return new Rect(left, 158f, fullWidth, 22f);
+                case WorkDebugCommand.CancelJobs: return new Rect(left, 184f, fullWidth, 22f);
+                default: throw new ArgumentOutOfRangeException(nameof(command), command, null);
+            }
         }
 
         private static void TryUi(Action action)

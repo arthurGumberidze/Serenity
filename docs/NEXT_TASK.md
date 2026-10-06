@@ -1,5 +1,7 @@
 # NEXT_TASK.md
 
+U11 GUI click-through maintenance was completed on 2026-10-06 without reopening U11 or starting U14. The active implementation task remains U14.
+
 ## Active task: U14 — Детерминированный off-camera simulation
 
 ### Prerequisites

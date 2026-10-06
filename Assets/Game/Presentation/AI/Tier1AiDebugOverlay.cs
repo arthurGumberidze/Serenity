@@ -70,23 +70,39 @@ namespace Game.Presentation.AI
         public InventoryOwner? Destination { get; }
     }
 
-    public sealed class Tier1AiDebugOverlay : MonoBehaviour
+    public sealed class Tier1AiDebugOverlay : MonoBehaviour, IWorldPointerUiBlocker
     {
         private SelectionProbe selection;
         private Tier1AiAgentRegistry agents;
         private ResourceInventoryRegistry inventories;
         private ResourceCatalog resources;
         private HaulClaimRegistry claims;
+        private WorldPointerRaycaster raycaster;
 
         public void Initialize(SelectionProbe selectionProbe, Tier1AiAgentRegistry agentRegistry,
             ResourceInventoryRegistry inventoryRegistry, ResourceCatalog resourceCatalog,
-            HaulClaimRegistry claimRegistry)
+            HaulClaimRegistry claimRegistry, WorldPointerRaycaster worldRaycaster)
         {
             selection = selectionProbe ?? throw new ArgumentNullException(nameof(selectionProbe));
             agents = agentRegistry ?? throw new ArgumentNullException(nameof(agentRegistry));
             inventories = inventoryRegistry ?? throw new ArgumentNullException(nameof(inventoryRegistry));
             resources = resourceCatalog ?? throw new ArgumentNullException(nameof(resourceCatalog));
             claims = claimRegistry ?? throw new ArgumentNullException(nameof(claimRegistry));
+            raycaster?.UnregisterUiBlocker(this);
+            raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
+            raycaster.RegisterUiBlocker(this);
+        }
+
+        private void OnEnable() => raycaster?.RegisterUiBlocker(this);
+        private void OnDisable() => raycaster?.UnregisterUiBlocker(this);
+
+        public bool TryGetUiBlockingRect(out Rect guiRect)
+        {
+            guiRect = default;
+            if ((!Application.isEditor && !Debug.isDebugBuild) || !TryCaptureSelected(out var snapshot)) return false;
+            var height = 150f + snapshot.Resources.Count * 20f + snapshot.ActiveClaims.Count * 42f;
+            guiRect = new Rect(12f, 160f, 620f, height);
+            return true;
         }
 
         public bool TryCaptureSelected(out DevelopmentSelectionSnapshot snapshot)
@@ -164,8 +180,8 @@ namespace Game.Presentation.AI
         private void OnGUI()
         {
             if ((!Application.isEditor && !Debug.isDebugBuild) || !TryCaptureSelected(out var snapshot)) return;
-            var height = 150f + snapshot.Resources.Count * 20f + snapshot.ActiveClaims.Count * 42f;
-            GUILayout.BeginArea(new Rect(12f, 160f, 620f, height), GUI.skin.box);
+            TryGetUiBlockingRect(out var panelRect);
+            GUILayout.BeginArea(panelRect, GUI.skin.box);
             GUILayout.Label("Canonical selection debug — " + snapshot.Kind);
             GUILayout.Label("StableEntityId: " + snapshot.StableId);
             if (snapshot.CurrentAction.HasValue)

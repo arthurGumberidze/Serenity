@@ -100,7 +100,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var presenter = root.DemoPresenters[0];
             var collider = presenter.GetComponent<Collider>();
-            var screenPoint = root.PointerRaycaster.WorldCamera.WorldToScreenPoint(collider.bounds.center);
+            var screenPoint = PointerSelectionTestPoint.AimCameraAtUnblockedPoint(root, collider.bounds.center);
             Assert.That(screenPoint.z, Is.GreaterThan(0f));
             Assert.That(root.SelectionProbe.TrySelectAt(screenPoint), Is.True);
             Assert.That(root.SelectionProbe.SelectedCharacterPresenter, Is.SameAs(presenter));

@@ -37,6 +37,12 @@ U14 — deterministic off-camera simulation is next and has NOT started.
 - `SelectionProbe` supports Shift additive/toggle multi-selection. The development-only work overlay can create groups, change membership/priority, issue Move/Haul orders, cancel work and inspect status/claims; Ctrl+1…9 assigns groups and 1…9 recalls them. It is a command surface, not canonical state or U27 production UI.
 - The implementation adds no per-NPC `Update`. The existing single `Tier1AiRuntimeDriver` advances all agents; automated coverage includes 128 registered characters across 8 groups with deterministic distribution and zero per-agent update ownership.
 
+## U11 GUI click-through follow-up
+- `WorldPointerRaycaster` now owns one pre-physics UI-block query for both EventSystem UI and registered development IMGUI regions. The U11 work panel, canonical resource panel and selected-entity debug panel register their full visible rectangles.
+- `SelectionProbe` distinguishes a UI-blocked pointer from a world miss: UI clicks leave selection unchanged, while an unblocked empty-world click still clears a non-additive selection. World selection and Shift additive/toggle selection remain unchanged outside UI.
+- U11 work buttons use the same Input System primary-click path as world selection. The work overlay resolves its actual button rectangles before dispatching Create, Select group, Add/Remove, priority, Move, Haul and Cancel commands, so UI blocking happens before selection and the command reads the current selected IDs.
+- PlayMode regression uses a synthetic Mouse bound to the real `LocalGameplay.inputactions` Pointer map. It verifies selected Character -> Create from selection -> one-member group with the same Character and unchanged selection, full-panel click blocking, every other work button, outside-UI world raycasts and Shift multi-selection.
+
 ## U10 Utility AI foundation
 - Each active agent is keyed by its existing Character `StableEntityId`; `Tier1AiAgentState` and bounded Hunger/Energy needs live outside `CharacterPresenter`. Presenter loss explicitly unmaterializes/unregisters the active Tier 1 agent without deleting the Character or its inventory.
 - `Tier1AiScheduler` is the sole decision/need/action scheduler. It uses explicit U03 `GameTimeAdvance`, stable-ID ordering and deterministic phase staggering; pause/zero calendar delta advances nothing.
@@ -74,6 +80,25 @@ U13 validation completed on 2026-10-06 with:
 - final log scan found no compiler error, failed assertion, missing script/reference diagnostic, runtime exception or shader error.
 
 The first pre-change baseline launch inside the filesystem sandbox hit Unity's known `BuildReportRestService/HttpListener` crash before tests. The identical approved outside-sandbox U12 verifier then passed completely. During U13 validation, the first full PlayMode run exposed a transient legacy presenter-despawn window to the automatic policy; policy retry handling was corrected and the entire final gate above was rerun successfully.
+
+U11 GUI click-through follow-up validation completed on 2026-10-06 with:
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\U11-gui-focused.log' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WorkGroupPlayModeTests' -testResults 'C:\serenity_game\Logs\U11-gui-focused.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\U11-gui-all-playmode.log' -runTests -testPlatform PlayMode -testResults 'C:\serenity_game\Logs\U11-gui-all-playmode.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\U11-gui-core-tests.log' -runTests -testPlatform EditMode -testCategory '!PostgresIntegration' -testResults 'C:\serenity_game\Logs\U11-gui-core-tests.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\U11-gui-gpu.log' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WorkGroupPlayModeTests.CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough' -testResults 'C:\serenity_game\Logs\U11-gui-gpu.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\U11-gui-build.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment`
+
+- focused U11 PlayMode passed 6/6;
+- full PlayMode passed 28/28;
+- full non-PostgreSQL EditMode passed 193/193;
+- GPU-enabled primary GUI regression passed 1/1;
+- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited warnings; `Game.Presentation.dll` and `Game.Infrastructure.dll` were rebuilt at 2026-10-06 10:12:41;
+- Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
 Start only U14 from `docs/NEXT_TASK.md`. U14 has not been implemented.

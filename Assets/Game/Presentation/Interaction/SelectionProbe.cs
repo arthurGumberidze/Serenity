@@ -52,7 +52,9 @@ namespace Game.Presentation.Interaction
 
         public bool TrySelectAt(Vector2 pointerPosition, bool additive)
         {
-            if (raycaster == null || !raycaster.TryGetWorldHit(pointerPosition, out var hit))
+            if (raycaster == null) return false;
+            if (raycaster.IsPointerBlockedByUi(pointerPosition)) return false;
+            if (!raycaster.TryGetWorldHit(pointerPosition, out var hit))
             {
                 if (!additive) SetSelection(null);
                 return false;

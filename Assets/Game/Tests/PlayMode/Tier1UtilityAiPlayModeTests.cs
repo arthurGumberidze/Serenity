@@ -172,12 +172,8 @@ namespace Game.Tests.PlayMode
         {
             var collider = target.GetComponentInChildren<Collider>(true);
             Assert.That(collider, Is.Not.Null, "Selectable presenter requires a collider in the existing raycast pipeline.");
-            var camera = root.PointerRaycaster.WorldCamera;
             var center = collider.bounds.center;
-            camera.transform.SetPositionAndRotation(center + Vector3.up * 12f,
-                Quaternion.LookRotation(Vector3.down, Vector3.forward));
-            Physics.SyncTransforms();
-            var screenPoint = camera.WorldToScreenPoint(center);
+            var screenPoint = PointerSelectionTestPoint.AimCameraAtUnblockedPoint(root, center);
             Assert.That(screenPoint.z, Is.GreaterThan(0f));
             Assert.That(root.SelectionProbe.TrySelectAt(screenPoint), Is.True);
         }

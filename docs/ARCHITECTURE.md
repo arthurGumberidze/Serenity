@@ -167,6 +167,8 @@ The job model has an explicit priority and lifecycle. Queued jobs may be assigne
 
 Presentation extends the existing U05 selection boundary with Shift additive/toggle selection and a disposable selected-ID list. The development-only work overlay issues commands, cycles priority and supports Ctrl+1…9 assignment plus 1…9 recall. `CharacterPresenter.IsSelected` is visual/ephemeral only. Group membership and job state remain valid when a presenter is destroyed and rebound to the same aggregate. Production selection and UI styling remain U27 work.
 
+Development IMGUI is part of the U05 pointer boundary even though it is not represented by `EventSystem`. Each visible debug overlay registers its GUI-space blocking rectangle with `WorldPointerRaycaster`. A primary click is tested against those regions before physics or selection mutation; a blocked click is consumed, while a genuine unblocked world miss retains the existing clear-selection behavior. U11 work buttons dispatch from the same Input System primary-click event after that guard, so commands observe the current selection rather than a selection already cleared by click-through.
+
 ## U12 Tier 2 DOTS bootstrap
 The U12 flow is `Character/StableEntityId -> Tier2TransferState -> Tier2Materializer -> ECS components -> Tier2SimulationSystem -> Tier2TransferState extraction`. It lives entirely in `Game.ECS`, whose new package references are one-way to Entities, Burst, Collections and Mathematics. `Game.Domain` and `Game.Simulation` remain engine-free and expose only the existing character and `GameTimeAdvance` contracts.
 

@@ -131,7 +131,7 @@ namespace Game.Infrastructure
             WorldPiles = new WorldPileService(Resources, Inventories);
             StoredResources = new SettlementResourceView(Inventories);
             Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage);
-            gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources);
+            gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources, pointerRaycaster);
             BuildingPresentations = new BuildingPresentationRegistry();
             BuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
                 buildingGridSize, buildingGridOrigin, null, Inventories);
@@ -181,9 +181,10 @@ namespace Game.Infrastructure
             TierPolicy = new TierDistancePolicy(Tiers);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
-                Resources, HaulClaims);
+                Resources, HaulClaims, pointerRaycaster);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
-            WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings);
+            WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings,
+                input, pointerRaycaster);
         }
 
         private void OnDestroy()

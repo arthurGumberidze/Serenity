@@ -45,3 +45,5 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U36 | TODO | Дипломатия | U17,U25,U26 | POST | AI оценивает условия и хранит договоры/последствия. |
 | U37 | TODO | Шпионаж | U26,U36 | POST | Миссия имеет время/стоимость/шанс/последствия. |
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
+
+Maintenance note (2026-10-06): U11 remains DONE after fixing development-UI click-through into world selection and adding real Pointer InputAction PlayMode regression coverage. U14 remains the next TODO task.

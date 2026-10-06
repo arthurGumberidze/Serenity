@@ -5,8 +5,15 @@ using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Infrastructure;
+using Game.Presentation.AI;
+using Game.Presentation.Input;
+using Game.Presentation.Interaction;
+using Game.Presentation.Resources;
+using Game.Presentation.Work;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -18,6 +25,7 @@ namespace Game.Tests.PlayMode
         [UnitySetUp]
         public IEnumerator LoadLocalScene()
         {
+            Screen.SetResolution(1600, 900, false);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
             yield return null;
         }
@@ -50,6 +58,109 @@ namespace Game.Tests.PlayMode
             Assert.That(root.SelectionProbe.SelectedCharacterIds, Does.Contain(character.Id));
             Assert.That(root.Work.Groups.Get(group.Id).Contains(character.Id), Is.True);
             root.AiRuntime.SetPaused(false);
+        }
+
+        [UnityTest]
+        public IEnumerator CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            var selectedId = root.DemoPresenters[0].CharacterId;
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { selectedId }));
+            Assert.That(root.Input.Actions.FindActionMap("Pointer", true).enabled, Is.True,
+                "Pointer action map must be enabled for the real input path.");
+            yield return WaitForCommandRect(root.WorkDebug, WorkDebugCommand.CreateFromSelection);
+            var primaryClicks = 0;
+            var pointerAtClick = Vector2.zero;
+            root.Input.PrimaryClicked += () =>
+            {
+                primaryClicks++;
+                pointerAtClick = root.Input.PointerPosition;
+            };
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.CreateFromSelection);
+
+            Assert.That(primaryClicks, Is.EqualTo(1), "Synthetic mouse press did not reach LocalGameplayInputSource.");
+            Assert.That(root.WorkDebug.TryGetCommandGuiRect(WorkDebugCommand.CreateFromSelection, out var commandRect),
+                Is.True);
+            var expectedPointer = WorldPointerRaycaster.GuiToScreenPoint(commandRect.center);
+            Assert.That(Vector2.Distance(pointerAtClick, expectedPointer), Is.LessThan(0.5f),
+                $"Pointer at click was {pointerAtClick}, expected {expectedPointer}.");
+            Assert.That(root.WorkDebug.CurrentGroupId.HasValue, Is.True);
+            var group = root.Work.Groups.Get(root.WorkDebug.CurrentGroupId.Value);
+            Assert.That(group.MemberCount, Is.EqualTo(1));
+            Assert.That(group.Contains(selectedId), Is.True);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { selectedId }));
+        }
+
+        [UnityTest]
+        public IEnumerator ClickInsideEveryDevelopmentPanelDoesNotClearSelection()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            var selectedId = root.DemoPresenters[0].CharacterId;
+            yield return null;
+
+            var blockers = new IWorldPointerUiBlocker[]
+            {
+                Object.FindAnyObjectByType<ResourceDebugOverlay>(),
+                Object.FindAnyObjectByType<Tier1AiDebugOverlay>(),
+                root.WorkDebug
+            };
+            foreach (var blocker in blockers)
+            {
+                Assert.That(blocker, Is.Not.Null);
+                Assert.That(blocker.TryGetUiBlockingRect(out var panelRect), Is.True);
+                var guiPoint = new Vector2(panelRect.xMin + 4f, panelRect.yMin + 4f);
+                yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(guiPoint));
+                Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { selectedId }));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RemainingWorkPanelButtonsUseInputPathWithoutSelectionClickThrough()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            yield return WaitForAllCommandRects(root.WorkDebug);
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.CreateFromSelection);
+            var groupId = root.WorkDebug.CurrentGroupId.Value;
+            var firstId = root.DemoPresenters[0].CharacterId;
+            var secondId = root.DemoPresenters[1].CharacterId;
+
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[1] });
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.AddSelected);
+            Assert.That(root.Work.Groups.Get(groupId).Contains(secondId), Is.True);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { secondId }));
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.RemoveSelected);
+            Assert.That(root.Work.Groups.Get(groupId).Contains(secondId), Is.False);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { secondId }));
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.SelectGroup);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { firstId }));
+
+            var oldPriority = root.WorkDebug.Priority;
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.CyclePriority);
+            Assert.That(root.WorkDebug.Priority, Is.Not.EqualTo(oldPriority));
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { firstId }));
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.AssignMove);
+            Assert.That(root.Work.Jobs.Any(x => x.GroupId == groupId && x.Type == WorkJobType.Move), Is.True);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { firstId }));
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.CancelJobs);
+            Assert.That(root.Work.Jobs.Where(x => x.GroupId == groupId).All(x => x.IsTerminal), Is.True);
+
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.AssignHaul);
+            Assert.That(root.Work.Jobs.Any(x => x.GroupId == groupId && x.Type == WorkJobType.Haul), Is.True);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { firstId }));
+            yield return ClickWorkCommand(root.WorkDebug, WorkDebugCommand.CancelJobs);
+            Assert.That(root.Work.Jobs.Where(x => x.GroupId == groupId).All(x => x.IsTerminal), Is.True);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { firstId }));
         }
 
         [UnityTest]
@@ -114,13 +225,67 @@ namespace Game.Tests.PlayMode
         {
             var collider = target.GetComponentInChildren<Collider>(true);
             Assert.That(collider, Is.Not.Null);
-            var camera = root.PointerRaycaster.WorldCamera;
             var center = collider.bounds.center;
-            camera.transform.SetPositionAndRotation(center + Vector3.up * 12f,
-                Quaternion.LookRotation(Vector3.down, Vector3.forward));
-            Physics.SyncTransforms();
-            var point = camera.WorldToScreenPoint(center);
+            var point = PointerSelectionTestPoint.AimCameraAtUnblockedPoint(root, center);
+            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(point), Is.False);
             Assert.That(root.SelectionProbe.TrySelectAt(point, additive), Is.True);
+        }
+
+        private static IEnumerator WaitForCommandRect(WorkDebugOverlay overlay, WorkDebugCommand command)
+        {
+            for (var frame = 0; frame < 20; frame++)
+            {
+                if (overlay.TryGetCommandGuiRect(command, out var rect) && rect.width > 0f) yield break;
+                yield return null;
+            }
+            Assert.Fail("Work debug command rect was not produced for " + command + ".");
+        }
+
+        private static IEnumerator WaitForAllCommandRects(WorkDebugOverlay overlay)
+        {
+            foreach (WorkDebugCommand command in System.Enum.GetValues(typeof(WorkDebugCommand)))
+                yield return WaitForCommandRect(overlay, command);
+        }
+
+        private static IEnumerator ClickWorkCommand(WorkDebugOverlay overlay, WorkDebugCommand command)
+        {
+            Assert.That(overlay.TryGetCommandGuiRect(command, out var guiRect), Is.True);
+            yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(guiRect.center));
+        }
+
+        private static IEnumerator ClickScreenPoint(Vector2 screenPoint)
+        {
+            var input = Object.FindAnyObjectByType<LocalGameplayInputSource>();
+            Assert.That(input, Is.Not.Null);
+            var clickAction = input.Actions.FindActionMap("Pointer", true).FindAction("PrimaryClick", true);
+            var oldBackgroundBehavior = InputSystem.settings.backgroundBehavior;
+            var oldEditorInputBehavior = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            InputSystem.settings.editorInputBehaviorInPlayMode =
+                InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            var mouse = InputSystem.AddDevice<Mouse>();
+            InputSystem.EnableDevice(mouse);
+            input.Actions.devices = new InputDevice[] { mouse };
+            try
+            {
+                Assert.That(clickAction.controls.Select(x => x.device).OfType<Mouse>().FirstOrDefault(), Is.Not.Null,
+                    "PrimaryClick must resolve to the synthetic Mouse device.");
+                yield return null;
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPoint });
+                yield return null;
+                InputSystem.QueueStateEvent(mouse,
+                    new MouseState { position = screenPoint }.WithButton(MouseButton.Left));
+                yield return null;
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPoint });
+                yield return null;
+            }
+            finally
+            {
+                input.Actions.devices = null;
+                InputSystem.RemoveDevice(mouse);
+                InputSystem.settings.backgroundBehavior = oldBackgroundBehavior;
+                InputSystem.settings.editorInputBehaviorInPlayMode = oldEditorInputBehavior;
+            }
         }
 
         private static void Capture(Camera camera)
