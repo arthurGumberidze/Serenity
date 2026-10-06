@@ -29,11 +29,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root, Is.Not.Null);
             Assert.That(root.Production, Is.Not.Null);
             Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(5));
-            Assert.That(root.Production.Sites.Count, Is.EqualTo(5));
-            Assert.That(root.DemoCropPlotBuilding.DefinitionId.ToString(), Is.EqualTo("primitive_crop_plot"));
-            Assert.That(root.DemoCropPlotBuilding.ConstructionState, Is.EqualTo(Game.Domain.Buildings.ConstructionState.Completed));
-            Assert.That(root.DemoCropPlotPresenter.IsBound, Is.True);
-            Assert.That(root.DemoCropPlotPresenter.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>(), Is.Not.Null);
+            Assert.That(root.Production.Sites.Count, Is.EqualTo(4));
+            Assert.That(root.DemoCropPlotBuilding, Is.Null);
 
             var initialRemaining = root.Production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource)
                 .Sum(x => x.RemainingAmount);
@@ -97,6 +94,10 @@ namespace Game.Tests.PlayMode
         {
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
+            CompleteTechnology(root, "controlled_fire");
+            CompleteTechnology(root, "stone_tools");
+            CompleteTechnology(root, "fiber_working");
+            CompleteTechnology(root, "primitive_agriculture");
             var beforeSites = root.Production.Sites.Count;
             root.BuildingPlacementController.StartPlacement(new Game.Domain.Buildings.BuildingDefinitionId("primitive_crop_plot"));
             Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(15f, 0f, 15f)), Is.True);
@@ -108,6 +109,16 @@ namespace Game.Tests.PlayMode
             Assert.That(site.Kind, Is.EqualTo(ProductionSiteKind.PrimitiveCropPlot));
             Assert.That(root.Production.Sites.Count, Is.EqualTo(beforeSites + 1));
             yield return null;
+        }
+
+        private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)
+        {
+            var technologyId = new Game.Domain.Research.TechnologyId(id);
+            if (root.Research.IsCompleted(technologyId)) return;
+            Assert.That(root.Research.Start(technologyId), Is.True);
+            var target = root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks;
+            root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id, target, true);
+            Assert.That(root.Research.IsCompleted(technologyId), Is.True);
         }
     }
 }

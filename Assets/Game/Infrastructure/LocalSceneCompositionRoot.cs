@@ -24,6 +24,9 @@ using Game.Simulation.Tiers;
 using Game.Domain.Production;
 using Game.Simulation.Production;
 using Game.Presentation.Production;
+using Game.Domain.Research;
+using Game.Simulation.Research;
+using Game.Presentation.Research;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -90,6 +93,9 @@ namespace Game.Infrastructure
         public Tier3CharacterAdapter Tier3Adapter { get; private set; }
         public ProductionService Production { get; private set; }
         public ProductionCatalog ProductionRecipes { get; private set; }
+        public TechnologyCatalog Technologies { get; private set; }
+        public ResearchService Research { get; private set; }
+        public ResearchDebugOverlay ResearchDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -143,7 +149,12 @@ namespace Game.Infrastructure
             Storage = new StorageService(Inventories, Resources);
             WorldPiles = new WorldPileService(Resources, Inventories);
             StoredResources = new SettlementResourceView(Inventories);
-            Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage);
+            ProductionRecipes = ProductionCatalog.CreateStoneAge(Resources);
+            Technologies = TechnologyCatalog.CreateStoneAge(ProductionRecipes,
+                buildingCatalog.Entries.Select(entry => new BuildingDefinitionId(entry.DefinitionId)));
+            Research = new ResearchService(Technologies, new CharacterResearchRateProvider(Characters));
+            Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage,
+                Research);
             gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources, pointerRaycaster);
             BuildingPresentations = new BuildingPresentationRegistry();
             BuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
@@ -171,8 +182,8 @@ namespace Game.Infrastructure
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
 
-            ProductionRecipes = ProductionCatalog.CreateStoneAge(Resources);
-            Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers);
+            Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
+                researchUnlocks: Research);
             Production.Population = Characters.Count;
             SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
                 new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere);
@@ -182,8 +193,11 @@ namespace Game.Infrastructure
                 new Color(0.35f, 0.2f, 0.08f), PrimitiveType.Cylinder);
             SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
                 new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere);
-            SpawnDemoCropPlot();
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
+            Research.AssignWorker(MaleDemoCharacter.Id);
+            Research.AssignWorker(FemaleDemoCharacter.Id);
+            ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
+            ResearchDebug.Initialize(Research, pointerRaycaster);
 
             Clock = new GameClock(new GameTimeState(0, 0, 1, false));
             AiAgents = new Tier1AiAgentRegistry();
@@ -191,7 +205,7 @@ namespace Game.Infrastructure
             Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
-            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production);
+            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research);
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler);
@@ -233,6 +247,8 @@ namespace Game.Infrastructure
         {
             Tier2Runtime.Step(advance);
             Tier3Adapter.AdvanceAllToCurrent();
+            Tier2Runtime.AdvanceResearch(Research, Clock.State.CalendarTicks);
+            Tier3Adapter.AdvanceResearchToCurrent(Research);
             var abstractWorkers = Tier2Runtime.ConsumeProductionWorkers().Concat(Tiers.ManagedIds.Where(id =>
                 Tiers.GetTier(id) == CharacterSimulationTier.Tier3));
             Production.AdvanceTo(Clock.State.CalendarTicks, abstractWorkers);

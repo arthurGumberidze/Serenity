@@ -217,3 +217,15 @@ Tier 1 adds one Production utility/action path to the existing centralized sched
 `primitive_crop_plot` is a normal U08/U09 placed and funded building whose stable ID activates a crop production site. Its deterministic lifecycle is Unplanted -> Growing -> Ready -> harvest -> Unplanted. Presentation is a disposable binding; current art reuses the Storage Basket prefab as a temporary placeholder.
 
 `SaveSnapshot` version 2 embeds a detached `ProductionSaveState`: production time, food counters, targets, sites, active tasks, produced totals and canonical inventory states. Restore validates stable identities, recipe/site compatibility and claim uniqueness before replacing live registries. The strict codec still reads legacy version 1 saves and PostgreSQL continues to store the validated opaque payload with no schema change.
+
+## U16 research framework and Stone Age progression
+
+The U16 logical flow is `TechnologyCatalog -> ResearchService -> ResearchUnlockSet -> U08/U15 availability boundaries`. Definitions and save DTOs are in engine-free Domain; active progress and completion live in engine-free Simulation; Infrastructure composes the real building/production IDs; Presentation contains only a debug read/command overlay. Every persistent technology/worker reference uses a stable value ID.
+
+The catalog has 14 Stone Age definitions and validates its graph and typed targets before play. `basic_survival` and `gathering` form starting knowledge. The remaining branches converge through shelter/woodworking/organized labor, fire/hunting/preservation, fiber/agriculture/weaving and advanced stonecraft into `stone_age_mastery`. Completing a technology rebuilds a derived unlock view; canonical building and recipe definitions stay in their original catalogs.
+
+One settlement project accumulates integer work ticks. Each assigned worker stores its last absolute checkpoint and fixed-point rate remainder. Tier 1's central U10 scheduler owns the Research action, Tier 2 reports its active stable IDs after the ECS job barrier, and Tier 3 reports stable IDs from its aggregate registry. All routes call the same research service, stale checkpoints are no-ops, and completion is committed once at a reproducible tick. No tier owns copied progress and no research object has an `Update`.
+
+`SaveSnapshot` version 3 embeds `ResearchSaveState`: last tick, sorted completed technology IDs, optional active project and sorted worker checkpoints/remainders. Restore validates prerequisites, costs, starting knowledge and identities before commit, then reconstructs unlocks. Versions 1 and 2 remain loadable. PostgreSQL stores the same validated XML payload and needed no relational migration.
+
+LocalGameplay's development overlay reads canonical state on draw and can cycle/start/cancel available technologies. It shows prerequisites, progress, aggregate rate/ETA, unlock preview and state lists, while the existing IMGUI blocker prevents world click-through. U27 owns final gameplay UI; U38 owns later eras.

@@ -8,11 +8,12 @@ using Game.Domain.AI;
 using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Domain.Time;
+using Game.Domain.Research;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. Version 2 adds U15 production state.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V2 adds production; V3 adds research.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -29,8 +30,10 @@ namespace Game.Infrastructure
                 new XElement("speed", snapshot.SpeedMultiplier),
                 new XElement("paused", snapshot.IsPaused),
                 new XElement("biologicalMultiplier", snapshot.BiologicalMultiplier));
-            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+            if (snapshot.FormatVersion >= SaveSnapshot.ProductionVersion)
                 root.Add(SerializeProduction(snapshot.Production));
+            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+                root.Add(SerializeResearch(snapshot.Research));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -56,16 +59,20 @@ namespace Game.Infrastructure
                     var versionElement = root.Elements("version").SingleOrDefault();
                     if (versionElement == null) throw new FormatException("Missing save version.");
                     var version = XmlConvert.ToInt32(versionElement.Value);
-                    if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.CurrentVersion)
+                    if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
+                        version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
-                    RequireFields(root, version == SaveSnapshot.LegacyVersion
-                        ? TimeFields : TimeFields.Concat(new[] { "production" }).ToArray());
-                    var production = version == SaveSnapshot.CurrentVersion
+                    RequireFields(root, version == SaveSnapshot.LegacyVersion ? TimeFields :
+                        version == SaveSnapshot.ProductionVersion ? TimeFields.Concat(new[] { "production" }).ToArray() :
+                        TimeFields.Concat(new[] { "production", "research" }).ToArray());
+                    var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production")) : null;
+                    var research = version >= SaveSnapshot.CurrentVersion
+                        ? DeserializeResearch(root.Element("research")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production);
+                        Int(root, "biologicalMultiplier"), production, research);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -168,6 +175,59 @@ namespace Game.Infrastructure
             return new ResourceAmount(new ResourceId(Value(item, "resourceId")), new ResourceQuantity(Long(item, "quantity")));
         }
 
+        private static XElement SerializeResearch(ResearchSaveState state)
+        {
+            var element = new XElement("research");
+            if (state == null) return element;
+            element.Add(new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("completed", state.Completed.Select(id => new XElement("technology", id.ToString()))),
+                new XElement("activeProject", state.ActiveProject.HasValue
+                    ? new[]
+                    {
+                        new XElement("technologyId", state.ActiveProject.Value.TechnologyId.ToString()),
+                        new XElement("work", state.ActiveProject.Value.AccumulatedWorkTicks),
+                        new XElement("required", state.ActiveProject.Value.RequiredWorkTicks),
+                        new XElement("startTick", state.ActiveProject.Value.StartTick)
+                    }
+                    : Array.Empty<XElement>()),
+                new XElement("workers", state.Workers.Select(worker => new XElement("worker",
+                    new XElement("id", worker.WorkerId.ToString()),
+                    new XElement("lastProcessedTick", worker.LastProcessedTick),
+                    new XElement("remainder", worker.FractionalRemainder)))));
+            return element;
+        }
+
+        private static ResearchSaveState DeserializeResearch(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing research state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty research state.");
+                return null;
+            }
+            RequireFields(element, new[] { "lastProcessedTick", "completed", "activeProject", "workers" });
+            var completed = Items(element.Element("completed"), "technology",
+                item => new TechnologyId(Scalar(item)));
+            var activeElement = element.Element("activeProject");
+            ResearchProjectState? active = null;
+            if (activeElement == null || activeElement.HasAttributes ||
+                activeElement.Nodes().OfType<XText>().Any(text => !string.IsNullOrWhiteSpace(text.Value)))
+                throw new FormatException("Invalid active research project.");
+            if (activeElement.HasElements)
+            {
+                RequireFields(activeElement, new[] { "technologyId", "work", "required", "startTick" });
+                active = new ResearchProjectState(new TechnologyId(Value(activeElement, "technologyId")),
+                    Long(activeElement, "work"), Long(activeElement, "required"), Long(activeElement, "startTick"));
+            }
+            var workers = Items(element.Element("workers"), "worker", item =>
+            {
+                RequireFields(item, new[] { "id", "lastProcessedTick", "remainder" });
+                return new ResearchWorkerState(StableEntityId.Parse(Value(item, "id")),
+                    Long(item, "lastProcessedTick"), Int(item, "remainder"));
+            });
+            return new ResearchSaveState(Long(element, "lastProcessedTick"), completed, active, workers);
+        }
+
         private static T[] Items<T>(XElement container, XName itemName, Func<XElement, T> parser)
         {
             if (container == null || container.HasAttributes ||
@@ -192,6 +252,13 @@ namespace Game.Infrastructure
         {
             var element = parent.Element(name);
             if (element == null || element.HasElements || element.HasAttributes) throw new FormatException("Invalid scalar field.");
+            return element.Value;
+        }
+
+        private static string Scalar(XElement element)
+        {
+            if (element == null || element.HasElements || element.HasAttributes)
+                throw new FormatException("Invalid scalar field.");
             return element.Value;
         }
 

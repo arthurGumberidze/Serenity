@@ -44,7 +44,8 @@ namespace Game.Domain.AI
         Haul = 2,
         ManualMove = 3,
         ManualHaul = 4,
-        Produce = 5
+        Produce = 5,
+        Research = 6
     }
 
     public enum AiActionPhase
@@ -60,7 +61,8 @@ namespace Game.Domain.AI
         Unmaterialized = 8,
         MoveToTarget = 9,
         Working = 10,
-        DeliverProduction = 11
+        DeliverProduction = 11,
+        Researching = 12
     }
 
     public sealed class Tier1Needs

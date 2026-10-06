@@ -1,6 +1,7 @@
 using System;
 using Game.Domain;
 using Game.Domain.Characters;
+using Game.Simulation.Research;
 
 namespace Game.Simulation.Tiers
 {
@@ -68,6 +69,18 @@ namespace Game.Simulation.Tiers
             lastAutomaticStepIndex = stepIndex;
             AutomaticBatchCount++;
             return simulation.Advance(records.All, target);
+        }
+
+        public int AdvanceResearchToCurrent(ResearchService research)
+        {
+            if (research == null) throw new ArgumentNullException(nameof(research));
+            if (currentTime == null) throw new InvalidOperationException("Off-camera simulation is not configured.");
+            var target = currentTime().CalendarTicks;
+            var count = 0;
+            foreach (var record in records.All)
+                if (research.IsAssigned(record.CharacterId) &&
+                    research.AdvanceWorkerTo(record.CharacterId, target, true) > 0) count++;
+            return count;
         }
     }
 }

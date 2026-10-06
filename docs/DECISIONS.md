@@ -195,3 +195,21 @@ Tier 1 physically moves, works and delivers through the centralized U10 schedule
 The first cultivated site is `primitive_crop_plot`, a U08 `BuildingDefinition` whose placed stable ID is also its production-site ID. U08 occupancy and U09 construction/activation remain the only placement path. Its abstract deterministic lifecycle is Unplanted -> planted work -> fixed growth -> Ready -> harvest work -> Unplanted. Soil, seeds, seasons, weather, irrigation and crop disease remain explicitly deferred. The Storage Basket prefab is a temporary project-owned placeholder visual, not crop state.
 
 `SaveSnapshot.CurrentVersion` is 2. The production payload stores absolute production tick, food remainder/consumed/shortage, targets, sites, active tasks, produced totals and all canonical inventory states. XML decoding remains strict and capped at 4 MiB; legacy version 1 time-only saves remain readable with no production payload. PostgreSQL stores and validates the versioned XML as before, so no SQL schema migration or realtime database authority was introduced.
+
+## D-031 Canonical research authority and typed unlock availability (2026-10-06)
+
+One session-owned, engine-independent `ResearchService` is the canonical settlement research authority. Definitions use stable `TechnologyId` values, explicit prerequisite IDs, tick costs, Stone Age era metadata and typed building/production-recipe/capability unlocks. `TechnologyCatalog` fails fast on duplicate or unresolved IDs, self-dependency, cycles and unlocks that do not resolve against the real U08/U15 catalogs.
+
+Research never removes, clones or mutates building/recipe definitions. U08 construction and U15 production accept a read-only `IResearchUnlockView` and decide availability at the action boundary. A programmatic locked construction request returns `LockedByResearch`; an isolated system fixture with no injected research view preserves its intentional unlocked sandbox behavior. Unlock state is derived from completed technologies rather than persisted as redundant truth.
+
+## D-032 Research labor uses absolute deterministic checkpoints across tiers (2026-10-06)
+
+Research progress is integer game-time work with a fixed-point rate-per-thousand remainder per assigned stable worker. The default character rate is a small explicit hook over Intelligence and optional `research` skill; no wall clock, coroutine or random stream contributes. Completion computes the reproducible absolute tick and commits a technology once. A lower stale checkpoint from a tier transition or teardown is an idempotent no-op, while forward calls consume only their unprocessed interval.
+
+Tier 1 adds Research to U10's centralized Utility AI; Tier 2 and Tier 3 submit stable IDs after their existing batch barriers to the same service. There is no research MonoBehaviour per worker/project, no GameObject in Tier 2 and no off-camera copy. One active settlement project is the deliberate MVP scope; queueing and physical libraries/universities are deferred.
+
+## D-033 Research persistence version 3 and Stone Age completion (2026-10-06)
+
+`SaveSnapshot.CurrentVersion` is 3 because research adds durable completed IDs, active project/progress, assignments, fractional remainders and the last processed absolute tick. Versions 1 and 2 remain strictly readable; missing research payload means no research state to restore. PostgreSQL continues to validate and store the opaque versioned XML, accepts metadata versions 1–3 and requires no SQL migration or realtime query path.
+
+The current catalog is Stone Age only. `stone_age_mastery` depends on all required late branches and unlocks `stone_age_completed`; `ResearchService.StoneAgeCompleted` exposes that capstone without starting a later era. Post-Stone-Age content remains U38.

@@ -3,6 +3,7 @@ using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Production;
+using Game.Simulation.Research;
 
 namespace Game.Simulation.AI
 {
@@ -307,6 +308,41 @@ namespace Game.Simulation.AI
             Phase = phase;
             phaseElapsed = TimeSpan.Zero;
             agent.SetAction(UtilityActionKind.Produce, phase);
+        }
+    }
+
+    internal sealed class ResearchActionExecution : IUtilityActionExecution
+    {
+        private readonly Tier1AiAgentState agent;
+        private readonly ITier1MovementDriver movement;
+        private readonly ResearchService research;
+
+        public ResearchActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
+            ResearchService research)
+        {
+            this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
+            this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
+            this.research = research ?? throw new ArgumentNullException(nameof(research));
+            movement.Stop();
+            agent.SetAction(UtilityActionKind.Research, AiActionPhase.Researching);
+        }
+
+        public UtilityActionKind Kind => UtilityActionKind.Research;
+        public AiActionPhase Phase => AiActionPhase.Researching;
+        public bool IsFinished { get; private set; }
+        public bool Succeeded => IsFinished && research.ActiveProject == null;
+        public bool IsInterruptible => true;
+        public bool IsValid => !IsFinished && research.ActiveProject != null && research.IsAssigned(agent.CharacterId);
+
+        public void Tick(TimeSpan simulationDelta)
+        {
+            if (!IsValid) IsFinished = true;
+        }
+
+        public void Cancel()
+        {
+            IsFinished = true;
+            movement.Stop();
         }
     }
 }

@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U15 DONE — reusable production/farming, canonical resource ownership, food consumption and deterministic Tier1/Tier2/Tier3 execution are complete.
+U16 DONE — reusable deterministic research, the complete 14-technology Stone Age branch, typed content gating and persistent Tier1/Tier2/Tier3 research execution are complete.
 
 ## Active task
-No implementation task is active. U16 is the next unblocked task, but it has not started and awaits review of U15.
+No implementation task is active. U17 is the next unblocked task, but it has not started and awaits review of U16.
+
+## U16 research framework and Stone Age
+- `TechnologyDefinition`, `TechnologyCatalog`, typed unlocks and research save DTOs are engine-independent. The catalog contains 14 Stone Age technologies, validates duplicate/missing/self/cyclic dependencies and resolves every building, U15 recipe and capability target at construction.
+- Starting knowledge is limited to `basic_survival` and `gathering`. One settlement-level `ResearchService` owns the active project, completed IDs, exact progress, assigned stable worker IDs, fractional rate remainders, completion tick and derived `ResearchUnlockSet`.
+- Research uses absolute U03 calendar ticks and fixed-point rate-per-thousand hooks. Character Intelligence and optional `research` skill affect rate without creating another skill system. Stale tier checkpoints are deterministic no-ops, so representation changes cannot rewind or duplicate work.
+- U10's centralized scheduler exposes Research as one normal Utility action. Tier 2 crosses its completed-job barrier and Tier 3 supplies its active stable IDs to the same service; there is no per-worker, per-technology or per-unlock `Update` and no tier-local research truth.
+- U08 construction and U15 recipes keep their canonical definitions. Placement returns explicit `LockedByResearch`; production eligibility consults the live unlock view. Isolated legacy fixtures remain unlocked when no research view is injected.
+- `SaveSnapshot` current wire version is 3. It persists completed technologies, active project/progress, assigned workers and fractional checkpoints, and last processed tick; unlocks are reconstructed from catalog + completed IDs. Strict XML still reads versions 1 and 2, and PostgreSQL schema remains unchanged.
+- LocalGameplay has one development research overlay with available/locked/completed lists, prerequisites, progress/rate/ETA, unlock preview and Start/Cancel controls. It is a disposable command/read surface and participates in the existing UI pointer blocker.
+- Final gates: 233/233 full non-PostgreSQL EditMode, 39/39 full PlayMode, 25/25 PostgreSQL, U16 12/12 EditMode, 2/2 headless and 2/2 GPU PlayMode, U08 8/8 + 3/3, U09 through U15 focused regressions, 35/35 persistence, asset validation and Windows x64 Mono Development build.
+- Determinism evidence: route hash `A9022738CC9580C0`; 20-person/730-day research hash `B0B088B38CCE9E01`; matching production hash `F27F0B25EC99953B`, food shortage 0. Scale observation: 1,000 assigned workers over 5 daily batches in 8 ms, 0 measured managed bytes, hash `E135E16085E27656`.
 
 ## U15 production and farming foundation
 - `ProductionRecipe`, `ProductionCatalog`, `ProductionSite`, `ProductionTask` and `ProductionSaveState` are engine-independent. Recipes declare inputs, outputs, work time, site kind and enabled state; the initial catalog produces `berries`, `plant_fiber`, `wood_log` and `stone` and can accept later processing chains without a parallel inventory/time/job system.
@@ -167,4 +178,10 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Review U15 using `docs/U15_HANDOFF.md`. Do not start U16 until the review explicitly authorizes it.
+Review U16 using `docs/U16_HANDOFF.md`. Do not start U17 until the review explicitly authorizes it.
+
+U16 final validation command:
+
+`& 'C:\serenity_game\Tools\Verify-U16.ps1' -ProjectPath 'C:\serenity_game' -FullRegression -ManagedPostgres -GpuValidation -StepTimeoutSeconds 900`
+
+The gate passed focused U16, full EditMode/PlayMode, U09–U15 focused regressions, managed PostgreSQL, GPU PlayMode, asset validation and Windows build. Separate U08 and persistence runs passed 8/8 + 3/3 and 35/35. Windows Computer Use failed during helper initialization/reset, so interactive clicks are not claimed; the equivalent scene paths passed headless and GPU PlayMode.

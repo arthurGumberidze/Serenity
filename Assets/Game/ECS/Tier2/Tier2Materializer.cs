@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Domain;
 using Game.Domain.Characters;
 using Unity.Collections;
@@ -30,6 +31,7 @@ namespace Game.ECS.Tier2
         }
 
         public int EntityCount => identityQuery.CalculateEntityCount();
+        public IReadOnlyList<StableEntityId> ActiveIds => entitiesById.Keys.OrderBy(x => x).ToArray();
 
         public Entity Materialize(in Tier2TransferState state)
         {

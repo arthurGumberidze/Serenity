@@ -5,6 +5,7 @@ using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Production;
+using Game.Simulation.Research;
 
 namespace Game.Simulation.AI
 {
@@ -195,16 +196,18 @@ namespace Game.Simulation.AI
     public sealed class Tier1AiWorld
     {
         public Tier1AiWorld(HaulWorldQuery haulJobs, HaulClaimRegistry claims, ResourceTransferService transfers,
-            ProductionService production = null)
+            ProductionService production = null, ResearchService research = null)
         {
             HaulJobs = haulJobs ?? throw new ArgumentNullException(nameof(haulJobs));
             Claims = claims ?? throw new ArgumentNullException(nameof(claims));
             Transfers = transfers ?? throw new ArgumentNullException(nameof(transfers));
             Production = production;
+            Research = research;
         }
         public HaulWorldQuery HaulJobs { get; }
         public HaulClaimRegistry Claims { get; }
         public ResourceTransferService Transfers { get; }
         public ProductionService Production { get; }
+        public ResearchService Research { get; }
     }
 }

@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U15 was completed and validated on 2026-10-06. Do not reopen U15 unless review finds a regression. Do not begin U16 until the user explicitly accepts the U15 handoff.
+U16 was completed and validated on 2026-10-06. Do not reopen U16 unless review finds a regression. Do not begin U17 until the user explicitly accepts the U16 handoff.
 
-## Next unblocked task: U16 — Research framework и каменный век
+## Next unblocked task: U17 — Династия и наследование
 
 ### Status
 
-Not started; awaiting U15 review.
+Not started; awaiting U16 review.
 
 ### Prerequisites
 
-U06 character domain and U15 production/farming are DONE.
+U03 time, U04/U04A persistence, and U06 character domain are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U16 research framework and the complete MVP Stone Age branch without replacing the U15 production recipe/catalog foundation.
+After explicit authorization, implement the TASK_GRAPH U17 dynasty/succession slice: a monarch's death transfers control to an eligible heir and dynasty extinction produces Game Over.
 
 ### Scope boundary
 
-Begin from `docs/U15_HANDOFF.md`, the U16 section of `docs/TASK_GRAPH.md`, current architecture decisions and the relevant FRS research/Stone Age sections. Preserve U15 save version 2 compatibility unless U16 explicitly requires and documents a migration. Do not begin U17 or later tasks.
+Begin from `docs/U16_HANDOFF.md`, the U17 section of `docs/TASK_GRAPH.md`, current architecture decisions and the relevant FRS dynasty/succession sections. Preserve the U16 research/save contracts. Do not begin U18 or later tasks.

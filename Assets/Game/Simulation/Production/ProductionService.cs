@@ -8,6 +8,7 @@ using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Tiers;
+using Game.Domain.Research;
 
 namespace Game.Simulation.Production
 {
@@ -144,11 +145,13 @@ namespace Game.Simulation.Production
         private readonly Dictionary<ResourceId, long> targets = new Dictionary<ResourceId, long>();
         private readonly Dictionary<ResourceId, long> producedTotals = new Dictionary<ResourceId, long>();
         private readonly ResourceId foodResource = new ResourceId("berries");
+        private readonly IResearchUnlockView unlocks;
         private Dictionary<ResourceId, long> stepTotals;
 
         public ProductionService(ProductionCatalog recipeCatalog, ResourceCatalog resourceCatalog,
             ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
-            ResourceTransferService transferService, ProductionSettings productionSettings = null)
+            ResourceTransferService transferService, ProductionSettings productionSettings = null,
+            IResearchUnlockView researchUnlocks = null)
         {
             recipes = recipeCatalog ?? throw new ArgumentNullException(nameof(recipeCatalog));
             resources = resourceCatalog ?? throw new ArgumentNullException(nameof(resourceCatalog));
@@ -156,6 +159,7 @@ namespace Game.Simulation.Production
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
             transfers = transferService ?? throw new ArgumentNullException(nameof(transferService));
             settings = productionSettings ?? ProductionSettings.StoneAge;
+            unlocks = researchUnlocks;
             resources.Get(foodResource);
             foreach (var target in settings.Targets)
             {
@@ -214,6 +218,8 @@ namespace Game.Simulation.Production
             if (!targets.TryGetValue(id, out var target) || target <= 0) return false;
             return checked(GetCanonicalTotal(id) + ReservedOutput(id)) < target;
         }
+
+        public bool IsRecipeAvailable(ProductionRecipeId id) => unlocks == null || unlocks.IsProductionRecipeUnlocked(id);
 
         public bool TryReserve(StableEntityId workerId, WorldPosition workerPosition, out ProductionJob job)
         {
@@ -472,7 +478,7 @@ namespace Game.Simulation.Production
             {
                 if (!site.IsWorkAvailable || siteClaims.ContainsKey(site.Id)) continue;
                 var recipe = recipes.Get(site.RecipeId);
-                if (!recipe.Enabled) continue;
+                if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 var kind = TaskKindFor(site);
                 if (!RecipeNeeded(recipe)) continue;
                 if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe)) continue;

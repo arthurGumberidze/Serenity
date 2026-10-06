@@ -4,11 +4,12 @@ using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Buildings;
+using Game.Domain.Research;
 
 namespace Game.Simulation.Resources
 {
     public enum ConstructionFailureReason { None = 0, InvalidPlacement = 1, InsufficientResources = 2,
-        FundingSourceMissing = 3, CommitFailed = 4 }
+        FundingSourceMissing = 3, CommitFailed = 4, LockedByResearch = 5 }
 
     public readonly struct ConstructionEvaluation
     {
@@ -32,6 +33,7 @@ namespace Game.Simulation.Resources
         private readonly ResourceInventoryRegistry inventories;
         private readonly ResourceCatalog resources;
         private readonly StorageService storage;
+        private readonly IResearchUnlockView unlocks;
 
         private readonly struct Deduction
         {
@@ -43,12 +45,13 @@ namespace Game.Simulation.Resources
         }
 
         public ConstructionFundingService(BuildingPlacementService placement, ResourceInventoryRegistry inventories,
-            ResourceCatalog resources, StorageService storage)
+            ResourceCatalog resources, StorageService storage, IResearchUnlockView researchUnlocks = null)
         {
             this.placement = placement ?? throw new ArgumentNullException(nameof(placement));
             this.inventories = inventories ?? throw new ArgumentNullException(nameof(inventories));
             this.resources = resources ?? throw new ArgumentNullException(nameof(resources));
             this.storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            unlocks = researchUnlocks;
         }
 
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
@@ -56,6 +59,8 @@ namespace Game.Simulation.Resources
         {
             var spatial = placement.Evaluate(definition, coordinate, orientation);
             if (!spatial.IsValid) return new ConstructionEvaluation(spatial, ConstructionFailureReason.InvalidPlacement, default);
+            if (unlocks != null && !unlocks.IsBuildingUnlocked(definition.Id))
+                return new ConstructionEvaluation(spatial, ConstructionFailureReason.LockedByResearch, default);
             var funding = Plan(definition, fundingSources, out _, out var missing);
             return new ConstructionEvaluation(spatial, funding, missing);
         }

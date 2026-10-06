@@ -40,6 +40,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator ShelterConfirmConsumesExactRealResources()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "shelter_construction");
             var beforeBuildings = root.Buildings.Count;
             var wood = new ResourceId("wood_log");
             var fiber = new ResourceId("plant_fiber");
@@ -61,6 +62,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator UnfundedConfirmLeavesRegistryOccupancyAndResourcesUnchanged()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "shelter_construction");
             var wood = new ResourceId("wood_log");
             foreach (var inventory in root.Inventories.All)
             {
@@ -84,6 +86,8 @@ namespace Game.Tests.PlayMode
         public IEnumerator StorageBasketKeepsInventoryAcrossViewRespawn()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "stone_tools");
+            CompleteTechnology(root, "woodworking");
             var controller = root.BuildingPlacementController;
             controller.StartPlacement(new BuildingDefinitionId("storage_basket"));
             controller.TryMovePreviewToWorldPoint(new Vector3(16f, 0f, 16f));
@@ -102,6 +106,15 @@ namespace Game.Tests.PlayMode
 
         private static long Total(LocalSceneCompositionRoot root, ResourceId id) =>
             root.Inventories.All.Sum(x => x.GetAmount(id).Units);
+
+        private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)
+        {
+            var technologyId = new Game.Domain.Research.TechnologyId(id);
+            if (root.Research.IsCompleted(technologyId)) return;
+            Assert.That(root.Research.Start(technologyId), Is.True);
+            root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
+                root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks, true);
+        }
 
         private static void CaptureRuntimeValidation(Camera camera)
         {

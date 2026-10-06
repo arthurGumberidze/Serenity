@@ -1,6 +1,7 @@
 using System;
 using Game.Domain;
 using Game.Simulation.Time;
+using Game.Simulation.Research;
 using Unity.Entities;
 
 namespace Game.ECS.Tier2
@@ -64,6 +65,17 @@ namespace Game.ECS.Tier2
             ThrowIfDisposed();
             World.EntityManager.CompleteAllTrackedJobs();
             return Materializer.ConsumeProductionWorkers();
+        }
+
+        public int AdvanceResearch(ResearchService research, long targetCalendarTick)
+        {
+            ThrowIfDisposed();
+            if (research == null) throw new ArgumentNullException(nameof(research));
+            World.EntityManager.CompleteAllTrackedJobs();
+            var count = 0;
+            foreach (var id in Materializer.ActiveIds)
+                if (research.IsAssigned(id) && research.AdvanceWorkerTo(id, targetCalendarTick, true) > 0) count++;
+            return count;
         }
 
         public void Dispose()

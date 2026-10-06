@@ -37,6 +37,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator PreviewHasNoIdentityAndCancelCreatesNothing()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "shelter_construction");
             var controller = root.BuildingPlacementController;
             var beforeBuildings = root.Buildings.Count;
             var beforePresenters = Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound);
@@ -58,6 +59,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator RotateConfirmAndOverlapUseLogicalGrid()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "shelter_construction");
             var controller = root.BuildingPlacementController;
             var beforeBuildings = root.Buildings.Count;
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
@@ -77,6 +79,15 @@ namespace Game.Tests.PlayMode
             controller.CancelPlacement();
             yield return null;
             Assert.That(root.InteractionMode.IsBuildingPlacement, Is.False);
+        }
+
+        private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)
+        {
+            var technologyId = new Game.Domain.Research.TechnologyId(id);
+            if (root.Research.IsCompleted(technologyId)) return;
+            Assert.That(root.Research.Start(technologyId), Is.True);
+            root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
+                root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks, true);
         }
     }
 }

@@ -112,6 +112,7 @@ namespace Game.Simulation.AI
             calendarTicks = checked(calendarTicks + advance.CalendarDelta.Ticks);
             UpdateNeeds();
             UpdateActions();
+            AdvanceResearch();
             EvaluateDueAgents();
         }
 
@@ -226,12 +227,19 @@ namespace Game.Simulation.AI
             var productionScore = 0.75d * entry.Agent.Needs.Energy * (1d - 0.35d * entry.Agent.Needs.Hunger);
             var production = new UtilityCandidate(UtilityActionKind.Produce, new UtilityScore(productionScore),
                 productionAvailable, 1);
-            var best = UtilitySelector.Select(new[] { rest, production, haul, idle });
+            var researchAvailable = world.Research != null && world.Research.ActiveProject != null &&
+                world.Research.IsAssigned(entry.Agent.CharacterId);
+            var researchScore = entry.Agent.Needs.Energy * (1d - 0.15d * entry.Agent.Needs.Hunger);
+            var research = new UtilityCandidate(UtilityActionKind.Research, new UtilityScore(researchScore),
+                researchAvailable, 0);
+            var best = UtilitySelector.Select(new[] { rest, research, production, haul, idle });
 
             if (entry.Action != null)
             {
                 var current = entry.Action.Kind == UtilityActionKind.Rest ? rest :
-                    entry.Action.Kind == UtilityActionKind.Produce
+                    entry.Action.Kind == UtilityActionKind.Research
+                        ? new UtilityCandidate(UtilityActionKind.Research, new UtilityScore(researchScore), entry.Action.IsValid, 0)
+                    : entry.Action.Kind == UtilityActionKind.Produce
                         ? new UtilityCandidate(UtilityActionKind.Produce, new UtilityScore(productionScore), entry.Action.IsValid, 1)
                         : entry.Action.Kind == UtilityActionKind.Haul
                             ? new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), entry.Action.IsValid, 2)
@@ -264,6 +272,13 @@ namespace Game.Simulation.AI
                         world.Production.TryReserve(entry.Agent.CharacterId, entry.Agent.Position, out var productionJob))
                         entry.Action = new ProductionActionExecution(entry.Agent, entry.Movement,
                             world.Production, settings, productionJob);
+                    else
+                        entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                    break;
+                case UtilityActionKind.Research:
+                    if (world.Research != null && world.Research.ActiveProject != null &&
+                        world.Research.IsAssigned(entry.Agent.CharacterId))
+                        entry.Action = new ResearchActionExecution(entry.Agent, entry.Movement, world.Research);
                     else
                         entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
                     break;
@@ -313,6 +328,18 @@ namespace Game.Simulation.AI
 
         private static bool IsManual(UtilityActionKind kind) =>
             kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul;
+
+        private void AdvanceResearch()
+        {
+            if (world.Research == null) return;
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                if (!world.Research.IsAssigned(entry.Agent.CharacterId)) continue;
+                world.Research.AdvanceWorkerTo(entry.Agent.CharacterId, calendarTicks,
+                    entry.Action != null && entry.Action.Kind == UtilityActionKind.Research && entry.Action.IsValid);
+            }
+        }
 
         private int FindInsertionIndex(StableEntityId id)
         {
