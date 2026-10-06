@@ -2,6 +2,8 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using Game.Domain.AI;
+using Game.Domain.Buildings;
+using Game.Domain.Characters;
 using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Infrastructure;
@@ -10,6 +12,7 @@ using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Presentation.Resources;
 using Game.Presentation.Work;
+using Game.Simulation.Work;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -184,6 +187,128 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator RightClickGroundMovesTwoSelectedNpcWithFormationAndReturnsToUtilityAi()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(root.DemoPresenters);
+            Assert.That(root.SelectionProbe.SelectedCharacterIds.Count, Is.EqualTo(2),
+                "The established multi-selection must feed the command path.");
+            var ids = root.DemoPresenters.Select(x => x.CharacterId).ToArray();
+            var start = root.DemoPresenters.ToDictionary(x => x.CharacterId, x => x.transform.position);
+            var screenPoint = FindGroundScreenPoint(root, out var clickedTarget);
+
+            yield return ClickScreenPoint(screenPoint, MouseButton.Right);
+
+            var result = root.ManualMoveInput.LastResult;
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.CreatedCount, Is.EqualTo(2));
+            Assert.That(result.Jobs.All(x => x.Type == WorkJobType.Move &&
+                x.Status == WorkJobStatus.Assigned), Is.True);
+            Assert.That(result.Jobs.Select(x => x.Target.Position).Distinct().Count(), Is.EqualTo(2),
+                "Formation slots must not stack agents on one destination.");
+            var commandCenter = new Vector3(
+                result.Jobs.Average(x => x.Target.Position.X),
+                result.Jobs.Average(x => x.Target.Position.Y),
+                result.Jobs.Average(x => x.Target.Position.Z));
+            Assert.That(Vector3.Distance(clickedTarget, commandCenter), Is.LessThan(0.5f),
+                $"Pointer raycast produced {commandCenter} for requested ground point {clickedTarget}.");
+            root.AiRuntime.SetPaused(false);
+
+            var timeout = Time.realtimeSinceStartup + 15f;
+            var arrivalPositions = new System.Collections.Generic.Dictionary<Game.Domain.StableEntityId, Vector3>();
+            while (Time.realtimeSinceStartup < timeout && result.Jobs.Any(x => !x.IsTerminal))
+            {
+                foreach (var job in result.Jobs.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
+                    if (!arrivalPositions.ContainsKey(job.AssigneeId.Value))
+                        arrivalPositions.Add(job.AssigneeId.Value,
+                            root.DemoPresenters.Single(x => x.CharacterId == job.AssigneeId.Value).transform.position);
+                yield return null;
+            }
+            foreach (var job in result.Jobs.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
+                if (!arrivalPositions.ContainsKey(job.AssigneeId.Value))
+                    arrivalPositions.Add(job.AssigneeId.Value,
+                        root.DemoPresenters.Single(x => x.CharacterId == job.AssigneeId.Value).transform.position);
+            Assert.That(result.Jobs.All(x => x.Status == WorkJobStatus.Completed), Is.True);
+            foreach (var presenter in root.DemoPresenters)
+            {
+                Assert.That(Vector3.Distance(start[presenter.CharacterId], presenter.transform.position),
+                    Is.GreaterThan(2f));
+                Assert.That(Vector3.Distance(clickedTarget, arrivalPositions[presenter.CharacterId]),
+                    Is.LessThan(2.5f));
+            }
+            Assert.That(root.DemoPresenters.Select(x => x.CharacterId), Is.EquivalentTo(ids));
+
+            timeout = Time.realtimeSinceStartup + 5f;
+            while (Time.realtimeSinceStartup < timeout && root.AiAgents.All.Any(x =>
+                       x.CurrentAction == UtilityActionKind.ManualMove)) yield return null;
+            Assert.That(root.AiAgents.All.All(x => x.CurrentAction != UtilityActionKind.ManualMove), Is.True);
+            Assert.That(ids.All(x => root.Tiers.GetTier(x) == CharacterSimulationTier.Tier1), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator ActiveWorkGroupRightClickReportsRemoteUnavailableWithoutTierOrOffCameraMutation()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(root.DemoPresenters);
+            var group = root.WorkDebug.CreateGroupFromSelection("Mixed tiers");
+            var remoteId = root.FemaleDemoCharacter.Id;
+            root.DemoPresenters.Single(x => x.CharacterId == remoteId).transform.position =
+                new Vector3(100f, 0f, 100f);
+            Physics.SyncTransforms();
+            root.Tiers.Transition(remoteId, CharacterSimulationTier.Tier3);
+            root.SelectionProbe.SelectCharacters(System.Array.Empty<Game.Presentation.Characters.CharacterPresenter>());
+            var remoteBefore = root.Tier3Characters.Get(remoteId).State;
+            var hashBefore = root.OffCameraSimulation.ComputeStateHash(new[] { remoteBefore });
+            var screenPoint = FindGroundScreenPoint(root, out _);
+
+            yield return ClickScreenPoint(screenPoint, MouseButton.Right);
+
+            var result = root.ManualMoveInput.LastResult;
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Entries.Count, Is.EqualTo(2));
+            Assert.That(result.Entries.Single(x => x.CharacterId == remoteId).Status,
+                Is.EqualTo(ManualMoveCommandStatus.TierUnavailable));
+            Assert.That(root.Work.Jobs.Any(x => x.AssigneeId == remoteId), Is.False);
+            Assert.That(root.Tiers.GetTier(remoteId), Is.EqualTo(CharacterSimulationTier.Tier3));
+            Assert.That(root.OffCameraSimulation.ComputeStateHash(new[]
+                { root.Tier3Characters.Get(remoteId).State }), Is.EqualTo(hashBefore));
+            Assert.That(root.Work.Groups.Get(group.Id).Contains(remoteId), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator RightClickInsideUiDoesNotCreateMove()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            Assert.That(root.WorkDebug.TryGetUiBlockingRect(out var panelRect), Is.True);
+            var before = root.Work.JobCount;
+
+            yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(panelRect.center), MouseButton.Right);
+
+            Assert.That(root.Work.JobCount, Is.EqualTo(before));
+        }
+
+        [UnityTest]
+        public IEnumerator RightClickDuringBuildingPlacementCancelsWithoutCreatingMove()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            root.BuildingPlacementController.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
+            Assert.That(root.BuildingPlacementController.IsActive, Is.True);
+            var before = root.Work.JobCount;
+            var screenPoint = FindGroundScreenPoint(root, out _);
+
+            yield return ClickScreenPoint(screenPoint, MouseButton.Right);
+
+            Assert.That(root.BuildingPlacementController.IsActive, Is.False);
+            Assert.That(root.Work.JobCount, Is.EqualTo(before));
+        }
+
+        [UnityTest]
         public IEnumerator GroupHaulUsesCanonicalInventoryThenAgentsReturnToAutonomousAi()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
@@ -231,6 +356,33 @@ namespace Game.Tests.PlayMode
             Assert.That(root.SelectionProbe.TrySelectAt(point, additive), Is.True);
         }
 
+        private static Vector2 FindGroundScreenPoint(LocalSceneCompositionRoot root, out Vector3 worldPoint)
+        {
+            const int samples = 20;
+            var bestPoint = default(Vector2);
+            worldPoint = default;
+            var bestDistance = float.PositiveInfinity;
+            var center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+            for (var y = 0; y < samples; y++)
+            for (var x = 0; x < samples; x++)
+            {
+                var point = new Vector2(
+                    Mathf.Lerp(24f, Mathf.Max(24f, Screen.width - 24f), x / (samples - 1f)),
+                    Mathf.Lerp(24f, Mathf.Max(24f, Screen.height - 24f), y / (samples - 1f)));
+                if (root.PointerRaycaster.IsPointerBlockedByUi(point)) continue;
+                if (!root.PointerRaycaster.TryGetWorldHit(point, out var hit) ||
+                    hit.collider.GetComponentInParent<BuildableGround>() == null) continue;
+                var distance = (point - center).sqrMagnitude;
+                if (distance >= bestDistance) continue;
+                bestPoint = point;
+                worldPoint = hit.point;
+                bestDistance = distance;
+            }
+            Assert.That(float.IsPositiveInfinity(bestDistance), Is.False,
+                "No unblocked buildable-ground point is visible to the RTS camera.");
+            return bestPoint;
+        }
+
         private static IEnumerator WaitForCommandRect(WorkDebugOverlay overlay, WorkDebugCommand command)
         {
             for (var frame = 0; frame < 20; frame++)
@@ -253,11 +405,12 @@ namespace Game.Tests.PlayMode
             yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(guiRect.center));
         }
 
-        private static IEnumerator ClickScreenPoint(Vector2 screenPoint)
+        private static IEnumerator ClickScreenPoint(Vector2 screenPoint, MouseButton button = MouseButton.Left)
         {
             var input = Object.FindAnyObjectByType<LocalGameplayInputSource>();
             Assert.That(input, Is.Not.Null);
-            var clickAction = input.Actions.FindActionMap("Pointer", true).FindAction("PrimaryClick", true);
+            var actionName = button == MouseButton.Right ? "SecondaryClick" : "PrimaryClick";
+            var clickAction = input.Actions.FindActionMap("Pointer", true).FindAction(actionName, true);
             var oldBackgroundBehavior = InputSystem.settings.backgroundBehavior;
             var oldEditorInputBehavior = InputSystem.settings.editorInputBehaviorInPlayMode;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
@@ -269,12 +422,12 @@ namespace Game.Tests.PlayMode
             try
             {
                 Assert.That(clickAction.controls.Select(x => x.device).OfType<Mouse>().FirstOrDefault(), Is.Not.Null,
-                    "PrimaryClick must resolve to the synthetic Mouse device.");
+                    actionName + " must resolve to the synthetic Mouse device.");
                 yield return null;
                 InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPoint });
                 yield return null;
                 InputSystem.QueueStateEvent(mouse,
-                    new MouseState { position = screenPoint }.WithButton(MouseButton.Left));
+                    new MouseState { position = screenPoint }.WithButton(button));
                 yield return null;
                 InputSystem.QueueStateEvent(mouse, new MouseState { position = screenPoint });
                 yield return null;

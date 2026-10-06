@@ -6,6 +6,11 @@ using Game.Domain.Characters;
 
 namespace Game.Simulation.Tiers
 {
+    public interface ICharacterTierLookup
+    {
+        bool TryGetTier(StableEntityId characterId, out CharacterSimulationTier tier);
+    }
+
     public readonly struct TierTransitionResult
     {
         public TierTransitionResult(StableEntityId characterId, CharacterSimulationTier source,
@@ -27,7 +32,7 @@ namespace Game.Simulation.Tiers
     /// Session-owned one-active-representation coordinator. Character remains the durable authority;
     /// adapters own only tier-specific runtime projections.
     /// </summary>
-    public sealed class TierManager
+    public sealed class TierManager : ICharacterTierLookup
     {
         private readonly CharacterRegistry characters;
         private readonly Dictionary<CharacterSimulationTier, ICharacterTierAdapter> adapters;
@@ -80,6 +85,9 @@ namespace Game.Simulation.Tiers
 
         public CharacterSimulationTier GetTier(StableEntityId characterId) => tiers.TryGetValue(characterId, out var tier)
             ? tier : throw new KeyNotFoundException("Character is not managed by this TierManager.");
+
+        public bool TryGetTier(StableEntityId characterId, out CharacterSimulationTier tier) =>
+            tiers.TryGetValue(characterId, out tier);
 
         public CharacterRuntimeState GetRuntimeState(StableEntityId characterId)
         {

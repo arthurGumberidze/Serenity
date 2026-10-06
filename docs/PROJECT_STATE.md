@@ -54,6 +54,13 @@ U15 — production and farming is next and has NOT started.
 - U11 work buttons use the same Input System primary-click path as world selection. The work overlay resolves its actual button rectangles before dispatching Create, Select group, Add/Remove, priority, Move, Haul and Cancel commands, so UI blocking happens before selection and the command reads the current selected IDs.
 - PlayMode regression uses a synthetic Mouse bound to the real `LocalGameplay.inputactions` Pointer map. It verifies selected Character -> Create from selection -> one-member group with the same Character and unchanged selection, full-panel click blocking, every other work button, outside-UI world raycasts and Shift multi-selection.
 
+## U11 RTS right-click Move follow-up
+- The existing U05 `Pointer/SecondaryClick` action now enters one `ManualMoveInputController`. It calls the existing `WorldPointerRaycaster` exactly once, accepts only `BuildableGround`, and inherits the same EventSystem/development-IMGUI blocking boundary. Building-placement right-click cancellation is routed through this same secondary-click coordinator so one physical click cannot both cancel placement and issue Move.
+- Selected character IDs take precedence; with no selected character, the currently active U11 work group supplies the targets. `ManualMoveCommandService` is a pure Simulation command boundary that fans the click out into per-character U11 `WorkOrder` Move jobs in stable-ID order.
+- Multiple executable Tier 1 characters receive deterministic 1.5 m `BALANCE_TBD` grid slots centred on the clicked world position. UI/selection never calls `NavMeshAgent.SetDestination`; U10's existing manual action and `ITier1MovementDriver` bridge remain the only physical execution path.
+- `TierManager` exposes read-only `ICharacterTierLookup`. Tier 2/Tier 3 members receive an explicit `TierUnavailable` command result and no job; a click never auto-promotes a representation or mutates U14 state. Existing open manual work is reported as `AlreadyHasWork` instead of creating an incompatible duplicate.
+- The debug "Assign group Move to demo point" button remains as a fallback but now uses the same tier-aware formation command service.
+
 ## U10 Utility AI foundation
 - Each active agent is keyed by its existing Character `StableEntityId`; `Tier1AiAgentState` and bounded Hunger/Energy needs live outside `CharacterPresenter`. Presenter loss explicitly unmaterializes/unregisters the active Tier 1 agent without deleting the Character or its inventory.
 - `Tier1AiScheduler` is the sole decision/need/action scheduler. It uses explicit U03 `GameTimeAdvance`, stable-ID ordering and deterministic phase staggering; pause/zero calendar delta advances nothing.
@@ -78,6 +85,29 @@ U15 — production and farming is next and has NOT started.
 - No scene asset, prefab, material or catalog data changed. Tier 1 appearance remains the existing deterministic Male/Female mapping; a richer persistent appearance descriptor is deferred.
 
 ## Validation status
+U11 RTS right-click Move follow-up validation completed on 2026-10-06 with:
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-editmode.log' -runTests -testPlatform EditMode -testCategory U11 -testResults 'C:\serenity_game\Logs\RTS-move-editmode.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-playmode.log' -runTests -testPlatform PlayMode -testCategory U11 -testResults 'C:\serenity_game\Logs\RTS-move-playmode.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-u05-edit.log' -runTests -testPlatform EditMode -testFilter 'Game.Tests.U05CameraAndInputTests' -testResults 'C:\serenity_game\Logs\RTS-move-u05-edit.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-u13-edit.log' -runTests -testPlatform EditMode -testCategory U13 -testResults 'C:\serenity_game\Logs\RTS-move-u13-edit.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-u13-play.log' -runTests -testPlatform PlayMode -testCategory U13 -testResults 'C:\serenity_game\Logs\RTS-move-u13-play.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-u14-edit.log' -runTests -testPlatform EditMode -testCategory U14 -testResults 'C:\serenity_game\Logs\RTS-move-u14-edit.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-u14-play.log' -runTests -testPlatform PlayMode -testCategory U14 -testResults 'C:\serenity_game\Logs\RTS-move-u14-play.xml'`
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Logs\RTS-move-build.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment`
+
+- focused U11 EditMode passed 12/12 and U11 PlayMode passed 10/10, including two-NPC physical arrival, formation spacing, unchanged StableEntityId, completed jobs, Utility AI return, active WorkGroup fallback, UI click-through blocking and right-click building-placement cancellation without a Move side effect;
+- U05 input regression passed 5/5; U13 passed 9/9 EditMode and 2/2 PlayMode; U14 passed 14/14 EditMode and 2/2 PlayMode;
+- Windows x64 Mono Development build succeeded with errors=0 and the 2 inherited BuildReport warnings; `Serenity.exe` remains 667136 bytes;
+- final log scan found no compiler error, failed assertion, missing-reference diagnostic or runtime exception in the successful gates. U15 was not started.
+
 U14 validation completed on 2026-10-06 with:
 
 `& 'C:\serenity_game\Tools\Verify-U14.ps1' -FullRegression -ManagedPostgres -GpuValidation`

@@ -14,6 +14,7 @@ using Game.Presentation.Work;
 using Game.Simulation.AI;
 using Game.Simulation.Resources;
 using Game.Simulation.Time;
+using Game.Simulation.Tiers;
 using Game.Simulation.Work;
 using NUnit.Framework;
 using UnityEngine;
@@ -132,6 +133,37 @@ namespace Game.Tests
             Assert.That(jobs.Count, Is.EqualTo(members.Length));
             Assert.That(jobs.Select(x => x.AssigneeId.Value).Distinct().Count(), Is.EqualTo(members.Length));
             Assert.That(jobs.Select(x => x.GroupId.Value).Distinct().Single(), Is.EqualTo(group.Id));
+        }
+
+        [Test]
+        public void ManualMoveCommandCreatesDeterministicFormationAndRejectsUnavailableTier()
+        {
+            var registry = new CharacterRegistry();
+            var first = CreateCharacter("Aren");
+            var second = CreateCharacter("Mira");
+            var remote = CreateCharacter("Remote");
+            registry.Add(first);
+            registry.Add(second);
+            registry.Add(remote);
+            var work = new WorkManager(registry);
+            var tiers = new FakeTierLookup();
+            tiers.Set(first.Id, CharacterSimulationTier.Tier1);
+            tiers.Set(second.Id, CharacterSimulationTier.Tier1);
+            tiers.Set(remote.Id, CharacterSimulationTier.Tier3);
+            var commands = new ManualMoveCommandService(work, tiers);
+
+            var result = commands.Issue(new[] { remote.Id, second.Id, first.Id },
+                new WorldPosition(10f, 0f, 12f), WorkPriority.High);
+
+            Assert.That(result.CreatedCount, Is.EqualTo(2));
+            Assert.That(result.UnavailableCount, Is.EqualTo(1));
+            Assert.That(result.Entries.Single(x => x.CharacterId == remote.Id).Status,
+                Is.EqualTo(ManualMoveCommandStatus.TierUnavailable));
+            Assert.That(work.Jobs.Any(x => x.AssigneeId == remote.Id), Is.False);
+            Assert.That(result.Jobs.Select(x => x.Target.Position).Distinct().Count(), Is.EqualTo(2));
+            Assert.That(result.Jobs.All(x => Math.Abs(x.Target.Position.Z - 12f) < 0.001f), Is.True);
+            Assert.That(result.Jobs.Select(x => x.Target.Position.X).OrderBy(x => x),
+                Is.EqualTo(new[] { 9.25f, 10.75f }));
         }
 
         [Test]
@@ -351,6 +383,16 @@ namespace Game.Tests
                 State = MovementState.Arrived;
             }
             public void Fail() => State = MovementState.Failed;
+        }
+
+        private sealed class FakeTierLookup : ICharacterTierLookup
+        {
+            private readonly Dictionary<StableEntityId, CharacterSimulationTier> tiers =
+                new Dictionary<StableEntityId, CharacterSimulationTier>();
+
+            public void Set(StableEntityId id, CharacterSimulationTier tier) => tiers[id] = tier;
+            public bool TryGetTier(StableEntityId characterId, out CharacterSimulationTier tier) =>
+                tiers.TryGetValue(characterId, out tier);
         }
     }
 }

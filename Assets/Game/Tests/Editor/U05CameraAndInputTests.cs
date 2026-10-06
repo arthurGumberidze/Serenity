@@ -56,6 +56,11 @@ namespace Game.Tests
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
             Assert.That(asset.FindAction("Pointer/SelectionModifier").bindings.Any(binding => binding.path == "<Keyboard>/shift"), Is.True);
+            Assert.That(asset.FindAction("Pointer/SecondaryClick").bindings.Count(binding =>
+                binding.path == "<Mouse>/rightButton"), Is.EqualTo(1));
+            Assert.That(asset.FindAction("Building/Cancel").bindings.Any(binding =>
+                binding.path == "<Mouse>/rightButton"), Is.False,
+                "Secondary click is routed once so placement cancel cannot also issue a Move command.");
             Assert.That(asset.FindAction("Building/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/r"), Is.True);
         }
 

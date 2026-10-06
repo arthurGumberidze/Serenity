@@ -77,6 +77,8 @@ namespace Game.Infrastructure
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
         public WorkDebugOverlay WorkDebug { get; private set; }
+        public ManualMoveCommandService ManualMoveCommands { get; private set; }
+        public ManualMoveInputController ManualMoveInput { get; private set; }
         public Tier2Runtime Tier2Runtime { get; private set; }
         public Tier3CharacterRegistry Tier3Characters { get; private set; }
         public TierManager Tiers { get; private set; }
@@ -185,12 +187,16 @@ namespace Game.Infrastructure
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             TierPolicy = new TierDistancePolicy(Tiers);
+            ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
             WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings,
-                input, pointerRaycaster);
+                input, pointerRaycaster, ManualMoveCommands);
+            ManualMoveInput = gameObject.AddComponent<ManualMoveInputController>();
+            ManualMoveInput.Initialize(input, pointerRaycaster, selectionProbe, WorkDebug,
+                buildingPlacementController, ManualMoveCommands);
         }
 
         private void OnDestroy()

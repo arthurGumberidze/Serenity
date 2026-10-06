@@ -41,6 +41,7 @@ namespace Game.Presentation.Work
         private BuildingRegistry buildings;
         private LocalGameplayInputSource inputSource;
         private WorldPointerRaycaster raycaster;
+        private ManualMoveCommandService manualMoveCommands;
         private int nextGroupNumber = 1;
         private WorkPriority priority = WorkPriority.High;
         private readonly WorkGroupId?[] hotkeyGroups = new WorkGroupId?[9];
@@ -66,7 +67,8 @@ namespace Game.Presentation.Work
         public void Initialize(WorkManager workManager, SelectionProbe selectionProbe,
             CharacterPresentationRegistry presentationRegistry, WorldPileService worldPiles,
             ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
-            LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster)
+            LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
+            ManualMoveCommandService moveCommands)
         {
             UnsubscribePrimaryClick();
             raycaster?.UnregisterUiBlocker(this);
@@ -78,6 +80,7 @@ namespace Game.Presentation.Work
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
             inputSource = source ?? throw new ArgumentNullException(nameof(source));
             raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
+            manualMoveCommands = moveCommands ?? throw new ArgumentNullException(nameof(moveCommands));
             SubscribePrimaryClick();
             raycaster.RegisterUiBlocker(this);
         }
@@ -133,7 +136,13 @@ namespace Game.Presentation.Work
         public IReadOnlyList<WorkOrder> AssignCurrentGroupMove(WorldPosition target, WorkPriority selectedPriority)
         {
             var group = CurrentGroup();
-            return work.CreateGroupMoveJobs(group.Id, target, selectedPriority);
+            return manualMoveCommands.IssueForGroup(group.Id, target, selectedPriority).Jobs;
+        }
+
+        public bool TryGetGroup(WorkGroupId groupId, out WorkGroup group)
+        {
+            group = null;
+            return work != null && work.Groups.TryGet(groupId, out group);
         }
 
         public IReadOnlyList<WorkOrder> AssignCurrentGroupHaul(InventoryOwner source, InventoryOwner destination,

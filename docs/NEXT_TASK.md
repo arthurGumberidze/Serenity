@@ -1,6 +1,6 @@
 # NEXT_TASK.md
 
-U14 was completed on 2026-10-06. Do not reopen U14 unless a regression is found. The next active implementation task is U15.
+U14 was completed on 2026-10-06. The U11 RTS right-click Move follow-up was completed and validated on 2026-10-06 without starting U15. Do not reopen U11/U14 unless a regression is found. The next active implementation task remains U15.
 
 ## Active task: U15 — Производство и фермерство
 

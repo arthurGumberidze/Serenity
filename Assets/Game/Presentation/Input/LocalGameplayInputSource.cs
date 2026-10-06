@@ -18,6 +18,7 @@ namespace Game.Presentation.Input
         private InputAction panModifierAction;
         private InputAction pointerPositionAction;
         private InputAction primaryClickAction;
+        private InputAction secondaryClickAction;
         private InputAction selectionModifierAction;
         private InputAction buildModeAction;
         private InputAction buildConfirmAction;
@@ -33,6 +34,7 @@ namespace Game.Presentation.Input
         public Vector2 PointerPosition => ReadVector2(pointerPositionAction);
 
         public event Action PrimaryClicked;
+        public event Action SecondaryClicked;
         public event Action BuildModeRequested;
         public event Action BuildConfirmed;
         public event Action BuildCancelled;
@@ -88,6 +90,7 @@ namespace Game.Presentation.Input
             panModifierAction = cameraMap.FindAction("PanModifier", true);
             pointerPositionAction = pointerMap.FindAction("Position", true);
             primaryClickAction = pointerMap.FindAction("PrimaryClick", true);
+            secondaryClickAction = pointerMap.FindAction("SecondaryClick", true);
             selectionModifierAction = pointerMap.FindAction("SelectionModifier", true);
             buildModeAction = buildingMap.FindAction("ToggleMode", true);
             buildConfirmAction = buildingMap.FindAction("Confirm", true);
@@ -101,6 +104,8 @@ namespace Game.Presentation.Input
                 return;
             primaryClickAction.performed -= OnPrimaryClick;
             primaryClickAction.performed += OnPrimaryClick;
+            secondaryClickAction.performed -= OnSecondaryClick;
+            secondaryClickAction.performed += OnSecondaryClick;
             buildModeAction.performed -= OnBuildMode;
             buildModeAction.performed += OnBuildMode;
             buildConfirmAction.performed -= OnBuildConfirm;
@@ -118,6 +123,8 @@ namespace Game.Presentation.Input
         {
             if (primaryClickAction != null)
                 primaryClickAction.performed -= OnPrimaryClick;
+            if (secondaryClickAction != null)
+                secondaryClickAction.performed -= OnSecondaryClick;
             if (buildModeAction != null) buildModeAction.performed -= OnBuildMode;
             if (buildConfirmAction != null) buildConfirmAction.performed -= OnBuildConfirm;
             if (buildCancelAction != null) buildCancelAction.performed -= OnBuildCancel;
@@ -130,6 +137,11 @@ namespace Game.Presentation.Input
         private void OnPrimaryClick(InputAction.CallbackContext context)
         {
             PrimaryClicked?.Invoke();
+        }
+
+        private void OnSecondaryClick(InputAction.CallbackContext context)
+        {
+            SecondaryClicked?.Invoke();
         }
 
         private void OnBuildMode(InputAction.CallbackContext context) => BuildModeRequested?.Invoke();

@@ -47,3 +47,5 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
 
 Completion note (2026-10-06): U14 deterministic Tier 3 catch-up, keyed RNG, tier-path equivalence and 1,000/10,000-character scale coverage are complete. U15 is the next unblocked task and has not started.
+
+Follow-up note (2026-10-06): U11 RTS right-click Move is complete. Selected characters or the active WorkGroup now issue tier-aware, formation-spaced U11 Move jobs through the U05 pointer pipeline and U10 movement bridge. U11 remains DONE; U15 remains TODO and was not started.

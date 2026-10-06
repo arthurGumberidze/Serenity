@@ -57,7 +57,6 @@
       "bindings": [
         { "name": "", "id": "6550c5d8-55d5-4734-b74c-bfef25e94f03", "path": "<Keyboard>/b", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "ToggleMode", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "df32806b-acd3-47f1-a919-35d064f80416", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Confirm", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "893c23e4-8be1-4ded-9986-c69bf306c150", "path": "<Mouse>/rightButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Cancel", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "c9e0a6cb-6417-442e-83fa-ad230895e4a7", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Cancel", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "db40377a-d2c4-4cd5-8db0-d0d49606ce02", "path": "<Keyboard>/r", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Rotate", "isComposite": false, "isPartOfComposite": false }
       ]

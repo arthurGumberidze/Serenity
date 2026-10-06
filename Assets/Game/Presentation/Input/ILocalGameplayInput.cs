@@ -13,6 +13,7 @@ namespace Game.Presentation.Input
         bool IsAdditiveSelectionPressed { get; }
         Vector2 PointerPosition { get; }
         event Action PrimaryClicked;
+        event Action SecondaryClicked;
         event Action BuildModeRequested;
         event Action BuildConfirmed;
         event Action BuildCancelled;
