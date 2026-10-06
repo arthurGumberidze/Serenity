@@ -3,7 +3,7 @@ using System;
 namespace Game.Domain
 {
     /// <summary>Domain identity; independent of every presentation or simulation tier.</summary>
-    public readonly struct StableEntityId : IEquatable<StableEntityId>
+    public readonly struct StableEntityId : IEquatable<StableEntityId>, IComparable<StableEntityId>
     {
         private readonly Guid value;
         private StableEntityId(Guid value) { this.value = value; }
@@ -22,6 +22,8 @@ namespace Game.Domain
             return true;
         }
         public bool Equals(StableEntityId other) => value.Equals(other.value);
+        public int CompareTo(StableEntityId other) => value.CompareTo(other.value);
+        public Guid ToGuid() => value;
         public override bool Equals(object obj) => obj is StableEntityId other && Equals(other);
         public override int GetHashCode() => value.GetHashCode();
         public override string ToString() => value.ToString("N");

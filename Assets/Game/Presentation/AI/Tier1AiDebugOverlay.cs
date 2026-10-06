@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Resources;
+using Game.Domain.Characters;
 using Game.Presentation.Interaction;
 using Game.Simulation.AI;
+using Game.Simulation.Time;
+using Game.Simulation.Tiers;
 using UnityEngine;
 
 namespace Game.Presentation.AI
@@ -54,6 +57,20 @@ namespace Game.Presentation.AI
             Destination = destination;
         }
 
+        internal DevelopmentSelectionSnapshot WithSimulation(CharacterSimulationTier tier, long lastCalendarTick,
+            long lastBiologicalTick, long pendingCalendarTicks, long abstractActivityProgress,
+            ulong deterministicStateHash, long worldSeed)
+        {
+            SimulationTier = tier;
+            LastSimulationCalendarTick = lastCalendarTick;
+            LastSimulationBiologicalTick = lastBiologicalTick;
+            PendingCalendarTicks = pendingCalendarTicks;
+            AbstractActivityProgress = abstractActivityProgress;
+            DeterministicStateHash = deterministicStateHash;
+            WorldSeed = worldSeed;
+            return this;
+        }
+
         public DevelopmentSelectionKind Kind { get; }
         public StableEntityId StableId { get; }
         public IReadOnlyList<DebugResourceAmount> Resources { get; }
@@ -68,6 +85,13 @@ namespace Game.Presentation.AI
         public InventoryOwner? Target { get; }
         public InventoryOwner? Source { get; }
         public InventoryOwner? Destination { get; }
+        public CharacterSimulationTier? SimulationTier { get; private set; }
+        public long? LastSimulationCalendarTick { get; private set; }
+        public long? LastSimulationBiologicalTick { get; private set; }
+        public long? PendingCalendarTicks { get; private set; }
+        public long? AbstractActivityProgress { get; private set; }
+        public ulong? DeterministicStateHash { get; private set; }
+        public long? WorldSeed { get; private set; }
     }
 
     public sealed class Tier1AiDebugOverlay : MonoBehaviour, IWorldPointerUiBlocker
@@ -78,10 +102,15 @@ namespace Game.Presentation.AI
         private ResourceCatalog resources;
         private HaulClaimRegistry claims;
         private WorldPointerRaycaster raycaster;
+        private TierManager tiers;
+        private GameClock clock;
+        private OffCameraSimulationService offCamera;
 
         public void Initialize(SelectionProbe selectionProbe, Tier1AiAgentRegistry agentRegistry,
             ResourceInventoryRegistry inventoryRegistry, ResourceCatalog resourceCatalog,
-            HaulClaimRegistry claimRegistry, WorldPointerRaycaster worldRaycaster)
+            HaulClaimRegistry claimRegistry, WorldPointerRaycaster worldRaycaster,
+            TierManager tierManager = null, GameClock gameClock = null,
+            OffCameraSimulationService offCameraSimulation = null)
         {
             selection = selectionProbe ?? throw new ArgumentNullException(nameof(selectionProbe));
             agents = agentRegistry ?? throw new ArgumentNullException(nameof(agentRegistry));
@@ -90,6 +119,9 @@ namespace Game.Presentation.AI
             claims = claimRegistry ?? throw new ArgumentNullException(nameof(claimRegistry));
             raycaster?.UnregisterUiBlocker(this);
             raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
+            tiers = tierManager;
+            clock = gameClock;
+            offCamera = offCameraSimulation;
             raycaster.RegisterUiBlocker(this);
         }
 
@@ -161,6 +193,15 @@ namespace Game.Presentation.AI
                 characterInventory?.TotalUnits ?? 0, agent?.CurrentAction, agent?.Phase,
                 agent?.Needs.Hunger, agent?.Needs.Energy, activeClaims,
                 target, source, destination);
+            if (tiers != null && clock != null && offCamera != null)
+            {
+                var runtime = tiers.GetRuntimeState(characterId);
+                snapshot.WithSimulation(tiers.GetTier(characterId), runtime.LastSimulationCalendarTick,
+                    runtime.LastSimulationBiologicalTick,
+                    Math.Max(0L, clock.State.CalendarTicks - runtime.LastSimulationCalendarTick),
+                    runtime.AbstractActivityProgress, offCamera.ComputeStateHash(new[] { runtime }),
+                    offCamera.WorldSeed);
+            }
             return true;
         }
 
@@ -182,8 +223,15 @@ namespace Game.Presentation.AI
             if ((!Application.isEditor && !Debug.isDebugBuild) || !TryCaptureSelected(out var snapshot)) return;
             TryGetUiBlockingRect(out var panelRect);
             GUILayout.BeginArea(panelRect, GUI.skin.box);
-            GUILayout.Label("Canonical selection debug — " + snapshot.Kind);
-            GUILayout.Label("StableEntityId: " + snapshot.StableId);
+            GUILayout.Label(snapshot.SimulationTier.HasValue
+                ? $"Canonical selection — {snapshot.Kind} | {snapshot.SimulationTier} | seed {snapshot.WorldSeed} | " +
+                    $"last {snapshot.LastSimulationCalendarTick}/{snapshot.LastSimulationBiologicalTick} | " +
+                    $"pending {snapshot.PendingCalendarTicks}"
+                : "Canonical selection debug — " + snapshot.Kind);
+            GUILayout.Label(snapshot.SimulationTier.HasValue
+                ? $"StableEntityId: {snapshot.StableId} | abstract {snapshot.AbstractActivityProgress} | " +
+                    $"hash {snapshot.DeterministicStateHash:X16}"
+                : "StableEntityId: " + snapshot.StableId);
             if (snapshot.CurrentAction.HasValue)
                 GUILayout.Label($"AI: {snapshot.CurrentAction} / {snapshot.ActionPhase}");
             if (snapshot.Hunger.HasValue)

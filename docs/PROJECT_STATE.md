@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U13 DONE — session-owned Tier manager coordinates one named character across Tier 1 GameObject presentation, Tier 2 ECS projection and Tier 3 lightweight data without replacing identity or canonical character state.
+U14 DONE — deterministic, seed-controlled Tier 3/off-camera catch-up is independent of input order, time chunking and Tier1/Tier2/Tier3 materialization history.
 
 ## Active task
-U14 — deterministic off-camera simulation is next and has NOT started.
+U15 — production and farming is next and has NOT started.
+
+## U14 deterministic off-camera simulation
+- `OffCameraSimulationService` is a plain engine-free Simulation service with an explicit world seed, absolute U03 calendar/biological targets and a one-calendar-day fixed step. It never reads wall time, frame delta, camera state or Unity random state.
+- `CharacterRuntimeState` remains the U13 transition DTO and now carries last committed absolute simulation ticks, completed remote steps, deterministic accumulator and generic abstract activity progress. Persistent identity, biography, family, health, inventory and work remain in their existing canonical owners.
+- `DeterministicKeyedRandom` derives each sample from world seed + `StableEntityId` + absolute step + stream ID. There is no shared cursor, so traversal order and neighboring characters cannot reroll outcomes. Stable state hashes exclude GameObject instance IDs, ECS handles, pointers and timestamps.
+- Tier 3 catches up before both demotion commit and promotion capture. Active Tier 3 records advance in one batch before distance-policy transitions. Tier 1/Tier 2 retain the same U14 fields, so T3-only, T3→T2→T3 and T3→T1→T3 routes converge without player intervention and do not double time.
+- The current U14 abstract stream is intentionally generic: it advances an audited integer progress value and accumulator but does not implement U15 production, U23 battle, U28 events, U18 mortality, remote pathfinding or resource mutation.
+- Hunger/Energy are preserved while remote rather than running full Tier 1 Utility AI. Manual work remains assigned/suspended, physical movement/path state is not simulated, and inventory quantities, family links and health remain unchanged.
+- Biological aging still uses the canonical U06 birth tick evaluated against the U03 biological timeline. U14 commits the latest biological tick but adds no second age field or natural-death policy.
+- Detached constructor capture/restore proves save/restart determinism; `SaveSnapshot` v1, PostgreSQL schema and durable world-save integration remain unchanged pending an explicit migration.
+- The development character inspector now shows current tier, configured world seed, last remote calendar/biological ticks, pending catch-up, abstract progress and deterministic state hash without enlarging its U11 UI-blocking rectangle.
 
 ## U13 tier lifecycle foundation
 - `CharacterSimulationTier` is the strongly typed Tier1/Tier2/Tier3 state. `TierManager` is a plain session-owned Simulation service with `GetTier`, explicit controlled transitions, safe same-tier no-ops, re-entrancy protection and a one-active-representation invariant.
@@ -15,7 +26,7 @@ U14 — deterministic off-camera simulation is next and has NOT started.
 - Durable identity, name, sex, birth/death, parents, spouse, family/dynasty, traits, skills, health, profession, Wealth/Influence and relationships remain owned by the existing `Character`. `CharacterRuntimeState` carries only representation continuity: position, lightweight movement/progress, coarse location key and current U10 Hunger/Energy values.
 - Tier 1 uses the existing deterministic sex-to-prefab catalog, presenter registry/spawner, centralized AI scheduler and NavMesh adapter. Demotion unregisters Tier 1 execution, stops the NavMesh-only path, releases haul claims and requeues an active manual order while leaving the high-level assignment, canonical inventory and work-group membership intact.
 - Tier 2 reuses `Tier2TransferState`, `Tier2Materializer` and `Tier2Runtime`. Extraction and dematerialization complete all tracked jobs first; no second ECS implementation or identity authority exists.
-- Tier 3 is one `Tier3CharacterRecord` per named persistent character in a pure C# registry. It stores the same ID plus restoration/runtime continuity and no GameObject/ECS Entity or copied biography/inventory. U14, not U13, will advance remote state.
+- Tier 3 is one `Tier3CharacterRecord` per named persistent character in a pure C# registry. It stores the same ID plus restoration/runtime continuity and no GameObject/ECS Entity or copied biography/inventory. U14 now advances that record through the same boundary.
 - `TierDistancePolicy` provides configurable hysteresis, minimum residency evaluations, deterministic stable-ID order, bounded evaluation and transition budgets, direct Tier1↔Tier3 transitions and controlled retry after transient external presentation changes.
 - `LocalSceneCompositionRoot` wires the three adapters and advances Tier 2 from the same explicit `GameTimeAdvance` emitted by the single Tier 1 runtime driver. No per-character `Update` was added.
 
@@ -62,11 +73,25 @@ U14 — deterministic off-camera simulation is next and has NOT started.
 
 ## Preserved architecture and scope
 - `Game.Domain` and `Game.Simulation` remain `noEngineReferences`; no NavMesh, GameObject, Animator, physics query or Unity random source enters decision or action logic.
-- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U13 runtime continuity is explicit but is not silently added to the old time-only persistence schema.
-- Automatic distance policy changes representation only; it performs no births, deaths, events, production, remote jobs or RNG. Deterministic Tier 3/off-camera advancement remains U14.
+- U04 `SaveSnapshot` version 1, SQL migrations and Npgsql boundaries are unchanged. U14 runtime continuity is snapshot-ready but is not silently added to the old time-only persistence schema.
+- Automatic distance policy still changes representation only. U14 runs its deterministic batch before policy evaluation; births, deaths, events, production and remote jobs remain outside U14.
 - No scene asset, prefab, material or catalog data changed. Tier 1 appearance remains the existing deterministic Male/Female mapping; a richer persistent appearance descriptor is deferred.
 
 ## Validation status
+U14 validation completed on 2026-10-06 with:
+
+`& 'C:\serenity_game\Tools\Verify-U14.ps1' -FullRegression -ManagedPostgres -GpuValidation`
+
+- full non-PostgreSQL EditMode passed 207/207 and full PlayMode passed 30/30;
+- focused U14 passed 14/14 EditMode and 2/2 headless PlayMode; GPU-enabled U14 PlayMode passed 2/2;
+- U13 regression passed 9/9 EditMode and 2/2 PlayMode; U12 passed 11/11 and 2/2; U11 passed 11/11 and 6/6; U10 passed 14/14 and 5/5;
+- fresh private loopback SCRAM PostgreSQL passed 25/25; U05A asset/catalog validation passed;
+- Windows x64 Mono Development build succeeded with errors=0 and 2 inherited BuildReport warnings; `Game.Domain.dll`, `Game.Simulation.dll` and `Game.Infrastructure.dll` were rebuilt, and `Serenity.exe` remains 667136 bytes;
+- final scale evidence: 1 character × 1 year = 0.106 ms; 1,000 × 365 days = 97.005 ms with 0 measured managed bytes in the timed region and hash `8C41DA6B26E39AB8`; optional 10,000 × 30 days = 163.457 ms with hash `C61F2B8EAE3C22F0`;
+- final diagnostics found no compiler error, failed assertion, missing script/reference, runtime exception or shader error in the successful gate logs.
+
+The first post-implementation all-PlayMode gate found that four extra debug labels enlarged the U10/U14 inspector's registered IMGUI blocker enough to cover the complete 640×480 headless test surface together with the existing panels. The U14 fields were compacted into the existing two header lines without changing the blocker rectangle; focused U11 then passed 6/6 and the complete verifier above was rerun successfully from the beginning.
+
 U13 validation completed on 2026-10-06 with:
 
 `& 'C:\serenity_game\Tools\Verify-U13.ps1' -FullRegression -ManagedPostgres -GpuValidation`
@@ -101,4 +126,4 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Start only U14 from `docs/NEXT_TASK.md`. U14 has not been implemented.
+Start only U15 from `docs/NEXT_TASK.md`. U15 has not been implemented.

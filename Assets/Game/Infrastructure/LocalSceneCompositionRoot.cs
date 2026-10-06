@@ -39,6 +39,7 @@ namespace Game.Infrastructure
         [SerializeField] private BuildingPlacementController buildingPlacementController;
         [SerializeField, Min(0.1f)] private float buildingGridSize = 1f;
         [SerializeField] private Vector3 buildingGridOrigin;
+        [SerializeField] private long developmentWorldSimulationSeed = 20261006L;
 
         private readonly List<CharacterPresenter> demoPresenters = new List<CharacterPresenter>();
 
@@ -80,6 +81,8 @@ namespace Game.Infrastructure
         public Tier3CharacterRegistry Tier3Characters { get; private set; }
         public TierManager Tiers { get; private set; }
         public TierDistancePolicy TierPolicy { get; private set; }
+        public OffCameraSimulationService OffCameraSimulation { get; private set; }
+        public Tier3CharacterAdapter Tier3Adapter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
 
@@ -171,17 +174,20 @@ namespace Game.Infrastructure
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
             Tier3Characters = new Tier3CharacterRegistry();
+            OffCameraSimulation = new OffCameraSimulationService(
+                OffCameraSimulationSettings.ForWorld(developmentWorldSimulationSeed));
             var tier1 = new Tier1CharacterAdapter(characterCatalog, CharacterPresentations, CharacterSpawner,
                 AiRuntime, AiAgents);
             var tier2 = new Tier2CharacterAdapter(Tier2Runtime);
-            var tier3 = new Tier3CharacterAdapter(Tier3Characters);
-            Tiers = new TierManager(Characters, tier1, tier2, tier3);
+            Tier3Adapter = new Tier3CharacterAdapter(Tier3Characters, OffCameraSimulation,
+                () => new SimulationTimePoint(Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
+            Tiers = new TierManager(Characters, tier1, tier2, Tier3Adapter);
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             TierPolicy = new TierDistancePolicy(Tiers);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
-                Resources, HaulClaims, pointerRaycaster);
+                Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
             WorkDebug.Initialize(Work, selectionProbe, CharacterPresentations, WorldPiles, Inventories, Buildings,
                 input, pointerRaycaster);
@@ -196,6 +202,7 @@ namespace Game.Infrastructure
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
             Tier2Runtime.Step(advance);
+            Tier3Adapter.AdvanceAllToCurrent();
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
         }

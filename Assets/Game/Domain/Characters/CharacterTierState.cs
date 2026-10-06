@@ -19,13 +19,18 @@ namespace Game.Domain.Characters
         public CharacterRuntimeState(StableEntityId characterId, WorldPosition position,
             WorldPosition unitsPerGameDay, bool isMoving, string locationKey = "local",
             long processedCalendarTicks = 0, long processedBiologicalTicks = 0, uint stepCount = 0,
-            double hunger = 0d, double energy = 1d)
+            double hunger = 0d, double energy = 1d, long lastSimulationCalendarTick = 0,
+            long lastSimulationBiologicalTick = 0, ulong offCameraStepCount = 0,
+            ulong deterministicAccumulator = 0, long abstractActivityProgress = 0)
         {
             if (!characterId.IsValid) throw new ArgumentException("Character identity required.", nameof(characterId));
             if (string.IsNullOrWhiteSpace(locationKey) || locationKey != locationKey.Trim() || locationKey.Length > 64)
                 throw new ArgumentException("Location key must contain 1-64 trimmed characters.", nameof(locationKey));
             if (processedCalendarTicks < 0) throw new ArgumentOutOfRangeException(nameof(processedCalendarTicks));
             if (processedBiologicalTicks < 0) throw new ArgumentOutOfRangeException(nameof(processedBiologicalTicks));
+            if (lastSimulationCalendarTick < 0) throw new ArgumentOutOfRangeException(nameof(lastSimulationCalendarTick));
+            if (lastSimulationBiologicalTick < 0) throw new ArgumentOutOfRangeException(nameof(lastSimulationBiologicalTick));
+            if (abstractActivityProgress < 0) throw new ArgumentOutOfRangeException(nameof(abstractActivityProgress));
             if (double.IsNaN(hunger) || double.IsInfinity(hunger) || hunger < 0d || hunger > 1d)
                 throw new ArgumentOutOfRangeException(nameof(hunger));
             if (double.IsNaN(energy) || double.IsInfinity(energy) || energy < 0d || energy > 1d)
@@ -41,6 +46,11 @@ namespace Game.Domain.Characters
             StepCount = stepCount;
             Hunger = hunger;
             Energy = energy;
+            LastSimulationCalendarTick = lastSimulationCalendarTick;
+            LastSimulationBiologicalTick = lastSimulationBiologicalTick;
+            OffCameraStepCount = offCameraStepCount;
+            DeterministicAccumulator = deterministicAccumulator;
+            AbstractActivityProgress = abstractActivityProgress;
         }
 
         public StableEntityId CharacterId { get; }
@@ -53,22 +63,43 @@ namespace Game.Domain.Characters
         public uint StepCount { get; }
         public double Hunger { get; }
         public double Energy { get; }
+        public long LastSimulationCalendarTick { get; }
+        public long LastSimulationBiologicalTick { get; }
+        public ulong OffCameraStepCount { get; }
+        public ulong DeterministicAccumulator { get; }
+        public long AbstractActivityProgress { get; }
 
         public CharacterRuntimeState WithProjection(WorldPosition position, WorldPosition unitsPerGameDay,
             bool isMoving, long processedCalendarTicks, long processedBiologicalTicks, uint stepCount) =>
             new CharacterRuntimeState(CharacterId, position, unitsPerGameDay, isMoving, LocationKey,
-                processedCalendarTicks, processedBiologicalTicks, stepCount, Hunger, Energy);
+                processedCalendarTicks, processedBiologicalTicks, stepCount, Hunger, Energy,
+                LastSimulationCalendarTick, LastSimulationBiologicalTick, OffCameraStepCount,
+                DeterministicAccumulator, AbstractActivityProgress);
 
         public CharacterRuntimeState WithTier1State(WorldPosition position, double hunger, double energy) =>
             new CharacterRuntimeState(CharacterId, position, default, false, LocationKey,
-                ProcessedCalendarTicks, ProcessedBiologicalTicks, StepCount, hunger, energy);
+                ProcessedCalendarTicks, ProcessedBiologicalTicks, StepCount, hunger, energy,
+                LastSimulationCalendarTick, LastSimulationBiologicalTick, OffCameraStepCount,
+                DeterministicAccumulator, AbstractActivityProgress);
+
+        public CharacterRuntimeState WithOffCameraSimulation(long lastCalendarTick, long lastBiologicalTick,
+            ulong offCameraStepCount, ulong deterministicAccumulator, long abstractActivityProgress) =>
+            new CharacterRuntimeState(CharacterId, Position, UnitsPerGameDay, IsMoving, LocationKey,
+                ProcessedCalendarTicks, ProcessedBiologicalTicks, StepCount, Hunger, Energy,
+                lastCalendarTick, lastBiologicalTick, offCameraStepCount, deterministicAccumulator,
+                abstractActivityProgress);
 
         public bool Equals(CharacterRuntimeState other) => CharacterId == other.CharacterId &&
             Position.Equals(other.Position) && UnitsPerGameDay.Equals(other.UnitsPerGameDay) &&
             IsMoving == other.IsMoving && string.Equals(LocationKey, other.LocationKey, StringComparison.Ordinal) &&
             ProcessedCalendarTicks == other.ProcessedCalendarTicks &&
             ProcessedBiologicalTicks == other.ProcessedBiologicalTicks && StepCount == other.StepCount &&
-            Hunger.Equals(other.Hunger) && Energy.Equals(other.Energy);
+            Hunger.Equals(other.Hunger) && Energy.Equals(other.Energy) &&
+            LastSimulationCalendarTick == other.LastSimulationCalendarTick &&
+            LastSimulationBiologicalTick == other.LastSimulationBiologicalTick &&
+            OffCameraStepCount == other.OffCameraStepCount &&
+            DeterministicAccumulator == other.DeterministicAccumulator &&
+            AbstractActivityProgress == other.AbstractActivityProgress;
 
         public override bool Equals(object obj) => obj is CharacterRuntimeState other && Equals(other);
         public override int GetHashCode()
@@ -84,7 +115,12 @@ namespace Game.Domain.Characters
                 hash = (hash * 397) ^ ProcessedBiologicalTicks.GetHashCode();
                 hash = (hash * 397) ^ StepCount.GetHashCode();
                 hash = (hash * 397) ^ Hunger.GetHashCode();
-                return (hash * 397) ^ Energy.GetHashCode();
+                hash = (hash * 397) ^ Energy.GetHashCode();
+                hash = (hash * 397) ^ LastSimulationCalendarTick.GetHashCode();
+                hash = (hash * 397) ^ LastSimulationBiologicalTick.GetHashCode();
+                hash = (hash * 397) ^ OffCameraStepCount.GetHashCode();
+                hash = (hash * 397) ^ DeterministicAccumulator.GetHashCode();
+                return (hash * 397) ^ AbstractActivityProgress.GetHashCode();
             }
         }
     }

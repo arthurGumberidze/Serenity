@@ -20,7 +20,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U11 | DONE | Рабочие группы и задания | U10 | MVP | Игрок управляет >100 NPC через группы. |
 | U12 | DONE | DOTS bootstrap Tier 2 | U02,U06 | MVP | Тысячи тестовых entities обновляются без GameObject-per-entity. |
 | U13 | DONE | Tier manager 1↔2↔3 | U04,U07,U12 | MVP | Именованный NPC сохраняет ID/семью/здоровье при смене tier. |
-| U14 | TODO | Детерминированный off-camera simulation | U03,U04,U13 | MVP | Одинаковый seed даёт тот же итог; zoom не меняет результат. |
+| U14 | DONE | Детерминированный off-camera simulation | U03,U04,U13 | MVP | Одинаковый seed даёт тот же итог; zoom не меняет результат. |
 | U15 | TODO | Производство и фермерство | U09,U10,U14 | MVP | Поселение устойчиво производит еду/материалы несколько игровых лет. |
 | U16 | TODO | Research framework и каменный век | U06,U15 | MVP | Законченная каменная ветка открывает здания/рецепты. |
 | U17 | TODO | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
@@ -46,4 +46,4 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U37 | TODO | Шпионаж | U26,U36 | POST | Миссия имеет время/стоимость/шанс/последствия. |
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
 
-Maintenance note (2026-10-06): U11 remains DONE after fixing development-UI click-through into world selection and adding real Pointer InputAction PlayMode regression coverage. U14 remains the next TODO task.
+Completion note (2026-10-06): U14 deterministic Tier 3 catch-up, keyed RNG, tier-path equivalence and 1,000/10,000-character scale coverage are complete. U15 is the next unblocked task and has not started.
