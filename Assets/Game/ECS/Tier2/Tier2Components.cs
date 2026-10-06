@@ -68,6 +68,12 @@ namespace Game.ECS.Tier2
         public uint StepCount;
     }
 
+    /// <summary>U15 ECS-side elapsed-work projection; canonical resources remain in Simulation.</summary>
+    public struct Tier2ProductionProgress : IComponentData
+    {
+        public long PendingWorkTicks;
+    }
+
     /// <summary>One world-level command written by the explicit GameTime bridge.</summary>
     public struct Tier2SimulationStep : IComponentData
     {

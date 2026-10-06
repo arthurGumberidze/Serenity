@@ -21,6 +21,9 @@ using Game.Presentation.Resources;
 using Game.Presentation.Work;
 using Game.Simulation.Work;
 using Game.Simulation.Tiers;
+using Game.Domain.Production;
+using Game.Simulation.Production;
+using Game.Presentation.Production;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -85,8 +88,13 @@ namespace Game.Infrastructure
         public TierDistancePolicy TierPolicy { get; private set; }
         public OffCameraSimulationService OffCameraSimulation { get; private set; }
         public Tier3CharacterAdapter Tier3Adapter { get; private set; }
+        public ProductionService Production { get; private set; }
+        public ProductionCatalog ProductionRecipes { get; private set; }
+        public Building DemoCropPlotBuilding { get; private set; }
+        public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
+        private readonly List<ProductionSourcePresenter> productionPresenters = new List<ProductionSourcePresenter>();
 
         public void Configure(LocalGameplayInputSource inputSource, RtsCameraController controller,
             WorldPointerRaycaster raycaster, SelectionProbe selection, CharacterPresentationCatalog catalog,
@@ -143,6 +151,7 @@ namespace Game.Infrastructure
             selectionProbe.Configure(input, pointerRaycaster, InteractionMode);
             buildingPlacementController.Initialize(BuildingPlacementService, BuildingSpawner, InteractionMode,
                 Construction, FundingSources);
+            buildingPlacementController.BuildingPlaced += OnBuildingPlaced;
 
             // DEV_BOOTSTRAP_ONLY: finite canonical piles for the U09 LocalGameplay slice.
             SpawnDemoPile("wood_log", 30, new GridCoordinate(-8, -2), new Color(0.45f, 0.25f, 0.1f));
@@ -162,13 +171,27 @@ namespace Game.Infrastructure
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
 
+            ProductionRecipes = ProductionCatalog.CreateStoneAge(Resources);
+            Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers);
+            Production.Population = Characters.Count;
+            SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
+                new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere);
+            SpawnProductionSource("gather_fiber", 60, new WorldPosition(-8f, 0f, 7f),
+                new Color(0.3f, 0.7f, 0.2f), PrimitiveType.Capsule);
+            SpawnProductionSource("chop_wood", 80, new WorldPosition(-4f, 0f, 9f),
+                new Color(0.35f, 0.2f, 0.08f), PrimitiveType.Cylinder);
+            SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
+                new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere);
+            SpawnDemoCropPlot();
+            gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
+
             Clock = new GameClock(new GameTimeState(0, 0, 1, false));
             AiAgents = new Tier1AiAgentRegistry();
             HaulClaims = new HaulClaimRegistry();
             Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
-            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers);
+            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production);
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler);
@@ -202,6 +225,7 @@ namespace Game.Infrastructure
         private void OnDestroy()
         {
             if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
+            if (buildingPlacementController != null) buildingPlacementController.BuildingPlaced -= OnBuildingPlaced;
             Tier2Runtime?.Dispose();
         }
 
@@ -209,6 +233,10 @@ namespace Game.Infrastructure
         {
             Tier2Runtime.Step(advance);
             Tier3Adapter.AdvanceAllToCurrent();
+            var abstractWorkers = Tier2Runtime.ConsumeProductionWorkers().Concat(Tiers.ManagedIds.Where(id =>
+                Tiers.GetTier(id) == CharacterSimulationTier.Tier3));
+            Production.AdvanceTo(Clock.State.CalendarTicks, abstractWorkers);
+            for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
         }
@@ -221,6 +249,50 @@ namespace Game.Infrastructure
             Storage.Attach(DemoStorageBuilding, definition);
             DemoStorageBuilding.MarkCompleted();
             DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
+        }
+
+        private void SpawnDemoCropPlot()
+        {
+            var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("primitive_crop_plot"));
+            DemoCropPlotBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(8, 5),
+                BuildingOrientation.North);
+            DemoCropPlotBuilding.MarkCompleted();
+            DemoCropPlotPresenter = BuildingSpawner.Spawn(DemoCropPlotBuilding);
+            RegisterCropPlot(DemoCropPlotBuilding, DemoCropPlotPresenter);
+        }
+
+        private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
+        {
+            if (building != null && building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot"))
+                RegisterCropPlot(building, presenter);
+        }
+
+        private void RegisterCropPlot(Building building, BuildingPresenter buildingPresenter)
+        {
+            if (Production.TryGetSite(building.Id, out _)) return;
+            var definition = buildingCatalog.ResolveDefinition(building.DefinitionId);
+            var world = BuildingSpawner.GridToWorld(building.Coordinate, definition, building.Orientation);
+            var site = ProductionSite.CreateCropPlot(building.Id,
+                new ProductionRecipeId("cultivate_berries"),
+                new WorldPosition(world.x, world.y, world.z), Production.Settings.CropGrowthDuration);
+            Production.AddSite(site);
+            var presenter = buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
+            presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f));
+            productionPresenters.Add(presenter);
+        }
+
+        private void SpawnProductionSource(string recipeId, long amount, WorldPosition position, Color color,
+            PrimitiveType primitive)
+        {
+            var site = ProductionSite.CreateNatural(new ProductionRecipeId(recipeId), position, amount);
+            Production.AddSite(site);
+            var view = GameObject.CreatePrimitive(primitive);
+            view.transform.position = new Vector3(position.X, position.Y + 0.5f, position.Z);
+            view.transform.localScale = primitive == PrimitiveType.Cylinder
+                ? new Vector3(0.8f, 1.6f, 0.8f) : Vector3.one;
+            var presenter = view.AddComponent<ProductionSourcePresenter>();
+            presenter.Bind(site, color);
+            productionPresenters.Add(presenter);
         }
 
         private void BuildNavigationSurface()

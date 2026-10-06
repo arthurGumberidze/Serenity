@@ -24,7 +24,7 @@ namespace Game.ECS.Tier2
             entityManager = world.EntityManager;
             archetype = entityManager.CreateArchetype(
                 typeof(Tier2StableIdentity), typeof(Tier2BiologicalState), typeof(Tier2Position),
-                typeof(Tier2Movement), typeof(Tier2SimulationProgress));
+                typeof(Tier2Movement), typeof(Tier2SimulationProgress), typeof(Tier2ProductionProgress));
             identityQuery = entityManager.CreateEntityQuery(ComponentType.ReadOnly<Tier2StableIdentity>());
             IndexExistingEntities();
         }
@@ -100,6 +100,22 @@ namespace Game.ECS.Tier2
             entitiesById.Remove(characterId);
         }
 
+        public StableEntityId[] ConsumeProductionWorkers()
+        {
+            var workers = new List<StableEntityId>();
+            foreach (var pair in entitiesById)
+            {
+                if (!entityManager.Exists(pair.Value)) continue;
+                var progress = entityManager.GetComponentData<Tier2ProductionProgress>(pair.Value);
+                if (progress.PendingWorkTicks <= 0) continue;
+                progress.PendingWorkTicks = 0;
+                entityManager.SetComponentData(pair.Value, progress);
+                workers.Add(pair.Key);
+            }
+            workers.Sort();
+            return workers.ToArray();
+        }
+
         private void ValidateNewIdentity(StableEntityId id)
         {
             if (!id.IsValid) throw new ArgumentException("Character ID must be valid.", nameof(id));
@@ -129,6 +145,7 @@ namespace Game.ECS.Tier2
                 ProcessedBiologicalTicks = state.ProcessedBiologicalTicks,
                 StepCount = state.StepCount
             });
+            entityManager.SetComponentData(entity, new Tier2ProductionProgress());
         }
 
         private void IndexExistingEntities()

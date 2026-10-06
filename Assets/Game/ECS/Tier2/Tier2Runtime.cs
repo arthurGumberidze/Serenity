@@ -59,6 +59,13 @@ namespace Game.ECS.Tier2
             Materializer.Dematerialize(characterId);
         }
 
+        public StableEntityId[] ConsumeProductionWorkers()
+        {
+            ThrowIfDisposed();
+            World.EntityManager.CompleteAllTrackedJobs();
+            return Materializer.ConsumeProductionWorkers();
+        }
+
         public void Dispose()
         {
             if (disposed) return;

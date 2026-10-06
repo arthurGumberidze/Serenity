@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U14 DONE — deterministic, seed-controlled Tier 3/off-camera catch-up is independent of input order, time chunking and Tier1/Tier2/Tier3 materialization history.
+U15 DONE — reusable production/farming, canonical resource ownership, food consumption and deterministic Tier1/Tier2/Tier3 execution are complete.
 
 ## Active task
-U15 — production and farming is next and has NOT started.
+No implementation task is active. U16 is the next unblocked task, but it has not started and awaits review of U15.
+
+## U15 production and farming foundation
+- `ProductionRecipe`, `ProductionCatalog`, `ProductionSite`, `ProductionTask` and `ProductionSaveState` are engine-independent. Recipes declare inputs, outputs, work time, site kind and enabled state; the initial catalog produces `berries`, `plant_fiber`, `wood_log` and `stone` and can accept later processing chains without a parallel inventory/time/job system.
+- `ProductionService` is the sole canonical production authority. It uses U09 inventories and atomic transfers, stable-ID-ordered fixed daily steps, exclusive site/task reservations, target-stock policy and finite natural sources. A completed batch is committed once; output is owned by the worker inventory first, can be deposited into completed building storage, and remains with the worker when storage is full.
+- `berries` is the canonical U15 food resource. `FoodConsumptionService` consumes one unit per person per 15 game days by default, never makes stock negative and records shortage. Default targets are berries 40, plant fiber 20, stone 20 and wood logs 30.
+- `primitive_crop_plot` reuses U08 placement/occupancy and U09 construction funding. The production site has deterministic Unplanted -> Growing -> Ready -> Harvested/Unplanted lifecycle; the current project-owned Storage Basket mesh is only a temporary crop-plot visual.
+- Tier 1 extends the centralized U10 scheduler with MoveToSource -> Working -> DeliverProduction and uses the existing movement/transfer bridges. Tier 2 accumulates unmanaged production work ticks in its private ECS world and commits through the shared production service. Tier 3 advances the same service in stable-ID order through one-day fixed steps; no second RNG or tier-specific economy exists.
+- `SaveSnapshot` current wire version is 2. The strict XML payload now stores production sites, active task progress and identities, targets, produced totals, canonical inventories, food counters and the last production tick. Legacy version-1 time-only XML remains loadable; PostgreSQL continues storing the opaque validated payload and its relational schema did not change.
+- LocalGameplay composes finite berry/fiber/tree/rock sources, one crop plot, target policy, food consumption and a compact canonical production overlay. Production adds no per-worker, per-source or per-building `Update`.
+- The final U15 gate passed 221/221 full non-PostgreSQL EditMode, 37/37 full PlayMode, 25/25 PostgreSQL, U15 13/13 EditMode, U15 3/3 headless and 3/3 GPU PlayMode, U09 10/10 EditMode and 4/4 PlayMode, asset validation and Windows x64 Mono Development build.
+- Five-year baseline: 20 inhabitants, one crop plot, 20 starting berries, target 80 and storage capacity 1000; produced 2490, consumed 2433, shortage 0, final hash `2D19219657849A02`. Performance evidence: 1,000 workers / population equivalent 10,000 / 30 days completed in 4551.025 ms with 0 measured managed bytes and hash `6E074B86B963FC7A` on the final full gate.
 
 ## U14 deterministic off-camera simulation
 - `OffCameraSimulationService` is a plain engine-free Simulation service with an explicit world seed, absolute U03 calendar/biological targets and a one-calendar-day fixed step. It never reads wall time, frame delta, camera state or Unity random state.
@@ -106,7 +117,7 @@ U11 RTS right-click Move follow-up validation completed on 2026-10-06 with:
 - focused U11 EditMode passed 12/12 and U11 PlayMode passed 10/10, including two-NPC physical arrival, formation spacing, unchanged StableEntityId, completed jobs, Utility AI return, active WorkGroup fallback, UI click-through blocking and right-click building-placement cancellation without a Move side effect;
 - U05 input regression passed 5/5; U13 passed 9/9 EditMode and 2/2 PlayMode; U14 passed 14/14 EditMode and 2/2 PlayMode;
 - Windows x64 Mono Development build succeeded with errors=0 and the 2 inherited BuildReport warnings; `Serenity.exe` remains 667136 bytes;
-- final log scan found no compiler error, failed assertion, missing-reference diagnostic or runtime exception in the successful gates. U15 was not started.
+- final log scan found no compiler error, failed assertion, missing-reference diagnostic or runtime exception in the successful gates. This earlier U11 follow-up predated U15.
 
 U14 validation completed on 2026-10-06 with:
 
@@ -156,4 +167,4 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Start only U15 from `docs/NEXT_TASK.md`. U15 has not been implemented.
+Review U15 using `docs/U15_HANDOFF.md`. Do not start U16 until the review explicitly authorizes it.

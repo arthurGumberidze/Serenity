@@ -48,6 +48,7 @@ namespace Game.Presentation.Buildings
         public GridCoordinate PreviewCoordinate => previewCoordinate;
         public BuildingPresenter LastPlacedPresenter { get; private set; }
         public float GridSize => gridSize;
+        public event Action<Building, BuildingPresenter> BuildingPlaced;
 
         public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
             BuildingPresentationCatalog presentationCatalog, float configuredGridSize, Vector3 origin)
@@ -138,6 +139,7 @@ namespace Game.Presentation.Buildings
             previewEvaluation = default;
             constructionEvaluation = default;
             exitModeAtEndOfFrame = true;
+            BuildingPlaced?.Invoke(building, LastPlacedPresenter);
             return building;
         }
 
@@ -176,6 +178,7 @@ namespace Game.Presentation.Buildings
         private void OnDestroy()
         {
             Unsubscribe();
+            BuildingPlaced = null;
             if (previewObject != null) Destroy(previewObject);
         }
 

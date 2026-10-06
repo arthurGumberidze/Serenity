@@ -2,6 +2,7 @@ using System;
 using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
+using Game.Simulation.Production;
 
 namespace Game.Simulation.AI
 {
@@ -194,6 +195,118 @@ namespace Game.Simulation.AI
             Phase = phase;
             phaseElapsed = TimeSpan.Zero;
             agent.SetAction(kind, phase);
+        }
+    }
+
+    internal sealed class ProductionActionExecution : IUtilityActionExecution
+    {
+        private readonly Tier1AiAgentState agent;
+        private readonly ITier1MovementDriver movement;
+        private readonly ProductionService production;
+        private readonly Tier1AiSettings settings;
+        private readonly ProductionJob job;
+        private TimeSpan phaseElapsed;
+        private ProductionCompletion completion;
+        private InventoryOwner destination;
+
+        public ProductionActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
+            ProductionService production, Tier1AiSettings settings, ProductionJob job)
+        {
+            this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
+            this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
+            this.production = production ?? throw new ArgumentNullException(nameof(production));
+            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            this.job = job;
+            SetPhase(AiActionPhase.MoveToSource);
+            movement.MoveTo(job.SourcePosition, 0.9f);
+        }
+
+        public UtilityActionKind Kind => UtilityActionKind.Produce;
+        public AiActionPhase Phase { get; private set; }
+        public bool IsFinished { get; private set; }
+        public bool Succeeded { get; private set; }
+        public bool IsInterruptible => Phase == AiActionPhase.MoveToSource;
+        public bool IsValid => !IsFinished && (completion.Completed || production.IsTaskActive(job.Task.Id));
+
+        public void Tick(TimeSpan simulationDelta)
+        {
+            if (IsFinished) return;
+            agent.UpdatePosition(movement.CurrentPosition);
+            phaseElapsed += simulationDelta;
+            if (movement.State == MovementState.Failed ||
+                ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
+                 phaseElapsed >= settings.MovementTimeout))
+            {
+                Fail();
+                return;
+            }
+
+            switch (Phase)
+            {
+                case AiActionPhase.MoveToSource:
+                    if (!production.IsTaskActive(job.Task.Id)) { Fail(); return; }
+                    if (movement.State == MovementState.Arrived)
+                    {
+                        movement.Stop();
+                        SetPhase(AiActionPhase.Working);
+                    }
+                    break;
+                case AiActionPhase.Working:
+                    completion = production.AdvanceTask(job.Task.Id, simulationDelta);
+                    if (!completion.Completed) break;
+                    if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage)
+                    {
+                        Finish();
+                        break;
+                    }
+                    if (production.TryFindStorage(completion.ResourceId, completion.Units, agent.Position,
+                            out destination, out var destinationPosition))
+                    {
+                        SetPhase(AiActionPhase.DeliverProduction);
+                        movement.MoveTo(destinationPosition, 1.1f);
+                    }
+                    else Finish(); // Full storage: output remains in the canonical character inventory.
+                    break;
+                case AiActionPhase.DeliverProduction:
+                    if (movement.State != MovementState.Arrived) break;
+                    production.TryDeposit(agent.CharacterId, destination, completion.ResourceId, completion.Units);
+                    Finish(); // A capacity race leaves the output with the character; nothing is lost.
+                    break;
+            }
+        }
+
+        public void Cancel()
+        {
+            if (IsFinished) return;
+            movement.Stop();
+            if (!completion.Completed) production.Cancel(job.Task.Id);
+            IsFinished = true;
+            Succeeded = false;
+            SetPhase(AiActionPhase.Failed);
+        }
+
+        private void Finish()
+        {
+            movement.Stop();
+            IsFinished = true;
+            Succeeded = true;
+            SetPhase(AiActionPhase.Completed);
+        }
+
+        private void Fail()
+        {
+            movement.Stop();
+            if (!completion.Completed) production.Cancel(job.Task.Id);
+            IsFinished = true;
+            Succeeded = false;
+            SetPhase(AiActionPhase.Failed);
+        }
+
+        private void SetPhase(AiActionPhase phase)
+        {
+            Phase = phase;
+            phaseElapsed = TimeSpan.Zero;
+            agent.SetAction(UtilityActionKind.Produce, phase);
         }
     }
 }

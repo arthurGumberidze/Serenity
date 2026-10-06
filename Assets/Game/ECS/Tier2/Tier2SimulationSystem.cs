@@ -12,13 +12,14 @@ namespace Game.ECS.Tier2
         public long BiologicalDeltaTicks;
 
         private void Execute(ref Tier2Position position, in Tier2Movement movement,
-            ref Tier2SimulationProgress progress)
+            ref Tier2SimulationProgress progress, ref Tier2ProductionProgress production)
         {
             if (movement.IsMoving != 0)
                 position.Value += movement.UnitsPerGameDay * DeltaGameDays;
             progress.ProcessedCalendarTicks += CalendarDeltaTicks;
             progress.ProcessedBiologicalTicks += BiologicalDeltaTicks;
             progress.StepCount++;
+            production.PendingWorkTicks += CalendarDeltaTicks;
         }
     }
 
@@ -34,7 +35,7 @@ namespace Game.ECS.Tier2
         {
             agentQuery = GetEntityQuery(
                 ComponentType.ReadWrite<Tier2Position>(), ComponentType.ReadOnly<Tier2Movement>(),
-                ComponentType.ReadWrite<Tier2SimulationProgress>());
+                ComponentType.ReadWrite<Tier2SimulationProgress>(), ComponentType.ReadWrite<Tier2ProductionProgress>());
             RequireForUpdate<Tier2SimulationStep>();
         }
 

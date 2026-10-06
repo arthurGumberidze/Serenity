@@ -1,6 +1,7 @@
 using System;
 using Game.Domain;
 using Game.Simulation.Time;
+using Game.Simulation.Production;
 
 namespace Game.Simulation
 {
@@ -8,19 +9,23 @@ namespace Game.Simulation
     public sealed class SaveCoordinator
     {
         private readonly ISaveStore store;
+        private readonly ProductionService production;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
-        public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store)
+        public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
+            ProductionService productionService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             this.store = store ?? throw new ArgumentNullException(nameof(store));
+            production = productionService;
         }
         public SaveSnapshot Capture()
         {
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State, Clock.BiologicalMultiplier);
+            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
+                Clock.BiologicalMultiplier, production?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -29,6 +34,9 @@ namespace Game.Simulation
         {
             var snapshot = store.Load(slotId);
             var restoredClock = CreateClock(snapshot);
+            if (snapshot.Production != null && production == null)
+                throw new InvalidOperationException("This save contains production state but no production service is attached.");
+            if (snapshot.Production != null) production.RestoreState(snapshot.Production);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

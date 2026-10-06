@@ -45,7 +45,7 @@ namespace Game.Infrastructure
         {
             using (var stream = new FileStream(SavePath(slotId), FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                if (stream.Length > 65536) throw new InvalidDataException("Save exceeds version-1 size limit.");
+                if (stream.Length > 4 * 1024 * 1024) throw new InvalidDataException("Save exceeds checkpoint size limit.");
                 using (var buffer = new MemoryStream()) { stream.CopyTo(buffer); return codec.Deserialize(buffer.ToArray()); }
             }
         }

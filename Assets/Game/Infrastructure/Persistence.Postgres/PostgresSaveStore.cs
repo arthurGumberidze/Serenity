@@ -59,9 +59,12 @@ SELECT session_id, save_format_version, payload FROM serenity.save_sessions WHER
                     using (var reader = command.ExecuteReader())
                     {
                         if (!reader.Read()) throw new FileNotFoundException("Save slot does not exist.");
-                        if (reader.GetInt32(1) != SaveSnapshot.CurrentVersion)
+                        var storedVersion = reader.GetInt32(1);
+                        if (storedVersion != SaveSnapshot.LegacyVersion && storedVersion != SaveSnapshot.CurrentVersion)
                             throw new NotSupportedException("Unsupported save format version.");
                         var snapshot = codec.Deserialize((byte[])reader.GetValue(2));
+                        if (snapshot.FormatVersion != storedVersion)
+                            throw new InvalidDataException("Stored save version does not match the snapshot.");
                         if (reader.GetGuid(0) == Guid.Empty || FromUuid(reader.GetGuid(0)) != snapshot.SessionId)
                             throw new InvalidDataException("Stored session identity does not match the snapshot.");
                         return snapshot;

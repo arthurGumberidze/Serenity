@@ -28,7 +28,8 @@ namespace Game.Infrastructure.Editor
                 new ResourceCatalogAsset.Entry().Configure("wood_log", "Wood Logs", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("stone", "Stone", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("plant_fiber", "Plant Fiber", ResourceCategory.Construction),
-                new ResourceCatalogAsset.Entry().Configure("hide", "Hide", ResourceCategory.Other)
+                new ResourceCatalogAsset.Entry().Configure("hide", "Hide", ResourceCategory.Other),
+                new ResourceCatalogAsset.Entry().Configure("berries", "Berries", ResourceCategory.Food)
             });
             EditorUtility.SetDirty(catalog);
             U08BuildingFoundation.RefreshCatalogAndPrefabs();
@@ -53,6 +54,12 @@ namespace Game.Infrastructure.Editor
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 3),
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 5)
                     }, 40, new[] { ResourceCategory.Construction, ResourceCategory.Food, ResourceCategory.Other }); // BALANCE_TBD
+                else if (entry.DefinitionId == "primitive_crop_plot")
+                    entry.ConfigureEconomy(new[]
+                    {
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 2),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 2)
+                    }); // BALANCE_TBD: U15 placement uses the U08 construction transaction.
             }
         }
 

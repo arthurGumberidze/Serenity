@@ -25,3 +25,6 @@ MonoBehaviour:
   - id: hide
     displayName: Hide
     category: 2
+  - id: berries
+    displayName: Berries
+    category: 1

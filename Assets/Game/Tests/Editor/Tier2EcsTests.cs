@@ -26,6 +26,7 @@ namespace Game.Tests
             Assert.That(UnsafeUtility.IsUnmanaged<Tier2Position>(), Is.True);
             Assert.That(UnsafeUtility.IsUnmanaged<Tier2Movement>(), Is.True);
             Assert.That(UnsafeUtility.IsUnmanaged<Tier2SimulationProgress>(), Is.True);
+            Assert.That(UnsafeUtility.IsUnmanaged<Tier2ProductionProgress>(), Is.True);
             Assert.That(UnsafeUtility.SizeOf<Tier2StableIdentity>(), Is.EqualTo(16));
             Assert.That(UnsafeUtility.SizeOf<Tier2BiologicalState>(), Is.LessThanOrEqualTo(24));
             Assert.That(UnsafeUtility.SizeOf<Tier2Position>(), Is.EqualTo(12));
@@ -34,7 +35,7 @@ namespace Game.Tests
             Debug.Log($"[U12_LAYOUT] identity={UnsafeUtility.SizeOf<Tier2StableIdentity>()} " +
                       $"biology={UnsafeUtility.SizeOf<Tier2BiologicalState>()} " +
                       $"position={UnsafeUtility.SizeOf<Tier2Position>()} movement={UnsafeUtility.SizeOf<Tier2Movement>()} " +
-                      $"progress={UnsafeUtility.SizeOf<Tier2SimulationProgress>()} total=92");
+                      $"progress={UnsafeUtility.SizeOf<Tier2SimulationProgress>()} production={UnsafeUtility.SizeOf<Tier2ProductionProgress>()} total=100");
         }
 
         [Test]

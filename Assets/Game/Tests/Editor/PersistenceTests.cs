@@ -123,12 +123,13 @@ namespace Game.Tests.Editor
             Assert.Throws<InvalidDataException>(() => coordinator.Load(slot));
             Assert.That(coordinator.Clock, Is.SameAs(oldClock)); Equal(before, coordinator.Capture());
         }
-        [TestCase(0)] [TestCase(2)] [TestCase(2147483647)]
+        [TestCase(0)] [TestCase(3)] [TestCase(2147483647)]
         public void UnknownVersionsAreExplicitlyRejected(int version)
         {
             var coordinator = Coordinator(); var before = coordinator.Capture(); coordinator.Save(slot);
             var path = Path.Combine(directory, slot + ".xml");
-            File.WriteAllText(path, File.ReadAllText(path).Replace("<version>1</version>", "<version>" + version + "</version>"));
+            File.WriteAllText(path, File.ReadAllText(path).Replace("<version>" + SaveSnapshot.CurrentVersion + "</version>",
+                "<version>" + version + "</version>"));
             Assert.Throws<NotSupportedException>(() => coordinator.Load(slot)); Equal(before, coordinator.Capture());
         }
         [TestCase("garbage")] [TestCase("<serenitySave>")] [TestCase("<!DOCTYPE x [<!ENTITY e SYSTEM 'file:///invalid'>]><serenitySave>&e;</serenitySave>")]
@@ -155,7 +156,7 @@ namespace Game.Tests.Editor
         }
         [Test] public void OversizedSaveIsRejected()
         {
-            Directory.CreateDirectory(directory); File.WriteAllBytes(Path.Combine(directory, slot + ".xml"), new byte[65537]);
+            Directory.CreateDirectory(directory); File.WriteAllBytes(Path.Combine(directory, slot + ".xml"), new byte[4 * 1024 * 1024 + 1]);
             Assert.Throws<InvalidDataException>(() => store.Load(slot));
         }
     }

@@ -29,6 +29,22 @@ namespace Game.Domain.Resources
             return inventories.Remove(owner);
         }
 
+        public void ReplaceAll(IEnumerable<ResourceInventoryState> states, ResourceCatalog catalog)
+        {
+            if (states == null) throw new ArgumentNullException(nameof(states));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            var replacement = new Dictionary<InventoryOwner, ResourceInventory>();
+            foreach (var state in states)
+            {
+                if (state == null) throw new ArgumentException("Inventory state cannot be null.", nameof(states));
+                var inventory = ResourceInventory.Restore(state, catalog);
+                if (!replacement.TryAdd(inventory.Owner, inventory))
+                    throw new ArgumentException("Inventory snapshot contains duplicate owners.", nameof(states));
+            }
+            inventories.Clear();
+            foreach (var pair in replacement) inventories.Add(pair.Key, pair.Value);
+        }
+
         public ResourceInventoryState[] CaptureStates() => inventories.Values.Select(x => x.CaptureState())
             .OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id.ToString(), StringComparer.Ordinal).ToArray();
     }

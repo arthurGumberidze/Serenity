@@ -24,7 +24,8 @@ namespace Game.Tests
         private PostgresMigration[] migrations;
         private StableEntityId slot;
         private static SaveSnapshot Snapshot(int speed = 5, bool paused = true)
-            => new SaveSnapshot(1, StableEntityId.NewId(), new GameTimeState(9007199254740993, long.MaxValue - 1, speed, paused), 321);
+            => new SaveSnapshot(SaveSnapshot.CurrentVersion, StableEntityId.NewId(),
+                new GameTimeState(9007199254740993, long.MaxValue - 1, speed, paused), 321);
 
         [OneTimeSetUp] public void Configure()
         {
@@ -158,7 +159,8 @@ namespace Game.Tests
                 if (kind == "xml") xml = "<broken";
                 if (kind == "id") xml = xml.Replace(snapshot.SessionId.ToString(), "invalid");
                 if (kind == "ticks") xml = xml.Replace("9007199254740993", "-1");
-                if (kind == "version") xml = xml.Replace("<version>1</version>", "<version>999</version>");
+                if (kind == "version") xml = xml.Replace("<version>" + SaveSnapshot.CurrentVersion + "</version>",
+                    "<version>999</version>");
                 Execute("UPDATE serenity.save_sessions SET payload=@payload WHERE slot_id=@slot", slot, Encoding.UTF8.GetBytes(xml));
             }
             var coordinator = new SaveCoordinator(StableEntityId.NewId(), new GameClock(new GameTimeState(), new GameTimeSettings()), store);

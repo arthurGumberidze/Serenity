@@ -177,3 +177,21 @@ Right-click movement reuses the existing U05 `Pointer/SecondaryClick` and `World
 `ManualMoveCommandService` is an engine-free Simulation boundary. It creates one U11 Move `WorkOrder` per executable member in stable-ID order and assigns deterministic 1.5 m centred formation slots (`BALANCE_TBD`). Physical execution remains the U11 manual action through U10 `ITier1MovementDriver`; Presentation/selection code never calls `NavMeshAgent.SetDestination`.
 
 Only a current Tier 1 representation may receive a physical Move job. `TierManager` implements read-only `ICharacterTierLookup`; Tier 2/Tier 3 members produce explicit `TierUnavailable` results with no job and no hidden promotion, remote pathfinding or U14 mutation. Existing open work produces `AlreadyHasWork`. This preserves U13 representation authority and U14 deterministic off-camera state while leaving future Tier 2/remote order execution for an explicit FRS-backed task.
+
+## D-028 Reusable production authority and canonical food (2026-10-06)
+
+`berries` is the one canonical U15 food resource. Production definitions are immutable engine-independent recipes with declared inputs, outputs, work ticks, enabled state and compatible site kind. Mutable source, crop and task progress belongs to stable-ID domain objects coordinated by one `ProductionService`; no recipe, vendor prefab, presenter or ScriptableObject owns mutable stock. This permits later input chains such as ore -> metal -> weapon to reuse the same catalog and commit rules without implementing those U16+ contents now.
+
+Production creates output for exactly one canonical U09 owner. A Tier 1 batch prefers its character inventory, then a valid completed building storage if the character cannot accept the whole batch. Physical delivery uses the existing U09 transfer service; if storage becomes full, stock remains in the character inventory. Aggregate tiers may deposit after completion, but never create a second balance. Recipe inputs and outputs are all-or-nothing at the batch boundary; natural source capacity decrements exactly once.
+
+## D-029 Production reservations, tiers and deterministic time (2026-10-06)
+
+One active `ProductionTask` exclusively reserves one `ProductionSite` and one worker. Cancellation releases both claims; completion releases them only after the batch commit. Active task IDs, worker/site IDs and accumulated/required work are persisted, and restore reconstructs claims only after validating unique IDs and matching site/recipe relationships. Reservations are session-owned maps, not database locks.
+
+Tier 1 physically moves, works and delivers through the centralized U10 scheduler and movement bridge. Tier 2 accumulates `PendingWorkTicks` in the existing Burst ECS pass, then crosses a completed-job barrier and commits sorted stable IDs through `ProductionService`. Tier 3 supplies its sorted stable IDs directly to the same fixed-step service. All aggregate production, crop growth and food consumption advance on absolute U03 calendar ticks in one-day steps; traversal input is deduplicated/sorted, hashes exclude representation handles, and U15 introduces no random stream. Tier changes and time chunking therefore do not alter the economic result.
+
+## D-030 Primitive farming and production persistence v2 (2026-10-06)
+
+The first cultivated site is `primitive_crop_plot`, a U08 `BuildingDefinition` whose placed stable ID is also its production-site ID. U08 occupancy and U09 construction/activation remain the only placement path. Its abstract deterministic lifecycle is Unplanted -> planted work -> fixed growth -> Ready -> harvest work -> Unplanted. Soil, seeds, seasons, weather, irrigation and crop disease remain explicitly deferred. The Storage Basket prefab is a temporary project-owned placeholder visual, not crop state.
+
+`SaveSnapshot.CurrentVersion` is 2. The production payload stores absolute production tick, food remainder/consumed/shortage, targets, sites, active tasks, produced totals and all canonical inventory states. XML decoding remains strict and capped at 4 MiB; legacy version 1 time-only saves remain readable with no production payload. PostgreSQL stores and validates the versioned XML as before, so no SQL schema migration or realtime database authority was introduced.

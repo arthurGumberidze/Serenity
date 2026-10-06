@@ -1,12 +1,14 @@
 using System;
 using Game.Domain.Time;
+using Game.Domain.Production;
 
 namespace Game.Domain
 {
     /// <summary>Immutable data-only checkpoint. Future sections require explicit schema evolution.</summary>
     public sealed class SaveSnapshot
     {
-        public const int CurrentVersion = 1;
+        public const int LegacyVersion = 1;
+        public const int CurrentVersion = 2;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -14,10 +16,13 @@ namespace Game.Domain
         public int SpeedMultiplier { get; }
         public bool IsPaused { get; }
         public int BiologicalMultiplier { get; }
+        public ProductionSaveState Production { get; }
 
-        public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier)
+        public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
+            ProductionSaveState production = null)
         {
-            if (formatVersion != CurrentVersion) throw new NotSupportedException("Unsupported save format version: " + formatVersion);
+            if (formatVersion != LegacyVersion && formatVersion != CurrentVersion)
+                throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
             if (time.CalendarTicks < 0 || time.BiologicalTicks < 0) throw new ArgumentOutOfRangeException(nameof(time));
@@ -29,6 +34,7 @@ namespace Game.Domain
             SpeedMultiplier = time.SpeedMultiplier;
             IsPaused = time.IsPaused;
             BiologicalMultiplier = biologicalMultiplier;
+            Production = production;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

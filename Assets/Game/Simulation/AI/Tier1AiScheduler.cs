@@ -214,21 +214,28 @@ namespace Game.Simulation.AI
                 }
             }
 
-            var idle = new UtilityCandidate(UtilityActionKind.Idle, new UtilityScore(0.05d), true, 2);
+            var idle = new UtilityCandidate(UtilityActionKind.Idle, new UtilityScore(0.05d), true, 3);
             var rest = new UtilityCandidate(UtilityActionKind.Rest,
                 new UtilityScore(1d - entry.Agent.Needs.Energy), true, 0);
             var haulAvailable = entry.Movement.IsAvailable &&
                 world.HaulJobs.TryFindJob(entry.Agent, settings.MaxHaulUnits, out _);
             var haulScore = 0.65d * entry.Agent.Needs.Energy * (1d - 0.5d * entry.Agent.Needs.Hunger);
-            var haul = new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), haulAvailable, 1);
-            var best = UtilitySelector.Select(rest, haul, idle);
+            var haul = new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), haulAvailable, 2);
+            var productionAvailable = entry.Movement.IsAvailable && world.Production != null &&
+                world.Production.HasEligibleWork(entry.Agent.CharacterId, entry.Agent.Position);
+            var productionScore = 0.75d * entry.Agent.Needs.Energy * (1d - 0.35d * entry.Agent.Needs.Hunger);
+            var production = new UtilityCandidate(UtilityActionKind.Produce, new UtilityScore(productionScore),
+                productionAvailable, 1);
+            var best = UtilitySelector.Select(new[] { rest, production, haul, idle });
 
             if (entry.Action != null)
             {
                 var current = entry.Action.Kind == UtilityActionKind.Rest ? rest :
-                    entry.Action.Kind == UtilityActionKind.Haul
-                        ? new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), entry.Action.IsValid, 1)
-                        : idle;
+                    entry.Action.Kind == UtilityActionKind.Produce
+                        ? new UtilityCandidate(UtilityActionKind.Produce, new UtilityScore(productionScore), entry.Action.IsValid, 1)
+                        : entry.Action.Kind == UtilityActionKind.Haul
+                            ? new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), entry.Action.IsValid, 2)
+                            : idle;
                 if (!UtilitySelector.ShouldSwitch(current, best, settings.SwitchMargin, entry.Action.IsValid,
                         entry.Action.IsInterruptible)) return;
                 entry.Action.Cancel();
@@ -249,6 +256,14 @@ namespace Game.Simulation.AI
                 case UtilityActionKind.Haul:
                     if (world.HaulJobs.TryClaim(entry.Agent, settings.MaxHaulUnits, out var job, out var claim))
                         entry.Action = new HaulActionExecution(entry.Agent, entry.Movement, world, settings, job, claim);
+                    else
+                        entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                    break;
+                case UtilityActionKind.Produce:
+                    if (world.Production != null &&
+                        world.Production.TryReserve(entry.Agent.CharacterId, entry.Agent.Position, out var productionJob))
+                        entry.Action = new ProductionActionExecution(entry.Agent, entry.Movement,
+                            world.Production, settings, productionJob);
                     else
                         entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
                     break;
