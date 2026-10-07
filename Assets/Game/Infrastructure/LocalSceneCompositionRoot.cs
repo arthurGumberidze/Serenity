@@ -31,6 +31,9 @@ using Game.Presentation.Research;
 using Game.Domain.Dynasties;
 using Game.Simulation.Dynasties;
 using Game.Presentation.Dynasties;
+using Game.Domain.Health;
+using Game.Simulation.Health;
+using Game.Presentation.Health;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -109,6 +112,8 @@ namespace Game.Infrastructure
         public GameRunState GameRun { get; private set; }
         public SuccessionService Succession { get; private set; }
         public DynastyDebugOverlay DynastyDebug { get; private set; }
+        public HealthAndFamilyService HealthFamily { get; private set; }
+        public HealthFamilyDebugOverlay HealthFamilyDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -147,6 +152,8 @@ namespace Game.Infrastructure
                 throw new InvalidOperationException("Local scene composition references must be assigned explicitly.");
 
             Characters = new CharacterRegistry();
+            HealthFamily = new HealthAndFamilyService(Characters, HealthConditionCatalog.CreateStoneAge(),
+                developmentWorldSimulationSeed);
             CharacterPresentations = new CharacterPresentationRegistry();
             CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations);
 
@@ -165,7 +172,7 @@ namespace Game.Infrastructure
             ProductionRecipes = ProductionCatalog.CreateStoneAge(Resources);
             Technologies = TechnologyCatalog.CreateStoneAge(ProductionRecipes,
                 buildingCatalog.Entries.Select(entry => new BuildingDefinitionId(entry.DefinitionId)));
-            Research = new ResearchService(Technologies, new CharacterResearchRateProvider(Characters));
+            Research = new ResearchService(Technologies, new CharacterResearchRateProvider(Characters, HealthFamily));
             Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage,
                 Research);
             gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources, pointerRaycaster);
@@ -204,7 +211,7 @@ namespace Game.Infrastructure
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
-                researchUnlocks: Research);
+                researchUnlocks: Research, capabilityProvider: HealthFamily);
             Production.Population = Characters.Count;
             SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
                 new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere);
@@ -216,19 +223,21 @@ namespace Game.Infrastructure
                 new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere);
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
 
-            Clock = new GameClock(new GameTimeState(0, 0, 1, false));
+            Clock = new GameClock(new GameTimeState(0, Character.BiologicalTicksPerYear * 20L, 1, false));
             Dynasty = DynastyState.Create(dynastyId, "House Serenity", MaleDemoCharacter.Id,
                 MaleDemoCharacter.Id, new[] { MaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id });
             PlayerRealm = new PlayerRealmState(MaleDemoCharacter.Id);
             GameRun = new GameRunState();
             Succession = new SuccessionService(Characters, Dynasty, PlayerRealm, GameRun);
+            HealthFamily.BindSuccession(Succession);
             AiAgents = new Tier1AiAgentRegistry();
             HaulClaims = new HaulClaimRegistry();
             Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research);
-            AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work);
+            AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
+                capabilityProvider: HealthFamily);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
@@ -241,6 +250,9 @@ namespace Game.Infrastructure
             TimeDebug.Initialize(input, AiRuntime, pointerRaycaster);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
+            HealthFamilyDebug = gameObject.AddComponent<HealthFamilyDebugOverlay>();
+            HealthFamilyDebug.Initialize(HealthFamily, Characters, Succession.Family, selectionProbe, Clock,
+                pointerRaycaster);
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
@@ -254,6 +266,7 @@ namespace Game.Infrastructure
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             TierPolicy = new TierDistancePolicy(Tiers);
+            HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
@@ -269,6 +282,7 @@ namespace Game.Infrastructure
         private void OnDestroy()
         {
             if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
+            if (HealthFamily != null) HealthFamily.ChildBorn -= OnChildBorn;
             if (buildingPlacementController != null) buildingPlacementController.BuildingPlaced -= OnBuildingPlaced;
             Tier2Runtime?.Dispose();
         }
@@ -277,6 +291,7 @@ namespace Game.Infrastructure
         {
             Tier2Runtime.Step(advance);
             Tier3Adapter.AdvanceAllToCurrent();
+            HealthFamily.AdvanceTo(Clock.State.CalendarTicks, Clock.State.BiologicalTicks);
             Tier2Runtime.AdvanceResearch(Research, Clock.State.CalendarTicks);
             Tier3Adapter.AdvanceResearchToCurrent(Research);
             var abstractWorkers = Tier2Runtime.ConsumeProductionWorkers().Concat(Tiers.ManagedIds.Where(id =>
@@ -285,6 +300,15 @@ namespace Game.Infrastructure
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
+        }
+
+        private void OnChildBorn(Character child)
+        {
+            var state = new CharacterRuntimeState(child.Id, default, default, false, "local",
+                lastSimulationCalendarTick: Clock.State.CalendarTicks,
+                lastSimulationBiologicalTick: Clock.State.BiologicalTicks);
+            Tiers.Materialize(child, CharacterSimulationTier.Tier3, state);
+            Production.Population = Characters.Count;
         }
 
         private void SpawnDemoStorage()

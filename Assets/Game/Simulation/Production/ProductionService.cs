@@ -9,6 +9,7 @@ using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Tiers;
 using Game.Domain.Research;
+using Game.Domain.Health;
 
 namespace Game.Simulation.Production
 {
@@ -146,12 +147,13 @@ namespace Game.Simulation.Production
         private readonly Dictionary<ResourceId, long> producedTotals = new Dictionary<ResourceId, long>();
         private readonly ResourceId foodResource = new ResourceId("berries");
         private readonly IResearchUnlockView unlocks;
+        private readonly ICharacterCapabilityProvider capabilities;
         private Dictionary<ResourceId, long> stepTotals;
 
         public ProductionService(ProductionCatalog recipeCatalog, ResourceCatalog resourceCatalog,
             ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
             ResourceTransferService transferService, ProductionSettings productionSettings = null,
-            IResearchUnlockView researchUnlocks = null)
+            IResearchUnlockView researchUnlocks = null, ICharacterCapabilityProvider capabilityProvider = null)
         {
             recipes = recipeCatalog ?? throw new ArgumentNullException(nameof(recipeCatalog));
             resources = resourceCatalog ?? throw new ArgumentNullException(nameof(resourceCatalog));
@@ -160,6 +162,7 @@ namespace Game.Simulation.Production
             transfers = transferService ?? throw new ArgumentNullException(nameof(transferService));
             settings = productionSettings ?? ProductionSettings.StoneAge;
             unlocks = researchUnlocks;
+            capabilities = capabilityProvider;
             resources.Get(foodResource);
             foreach (var target in settings.Targets)
             {
@@ -225,6 +228,7 @@ namespace Game.Simulation.Production
         {
             if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
             job = default;
+            if (capabilities != null && !capabilities.GetCapabilities(workerId).CanPerformOrdinaryWork) return false;
             if (workerTasks.TryGetValue(workerId, out var existingId) && tasks.TryGetValue(existingId, out var existing))
             {
                 if (existing.IsTerminal) return false;
@@ -262,7 +266,10 @@ namespace Game.Simulation.Production
         {
             if (work < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(work));
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return default;
-            task.AddWork(work.Ticks);
+            var workTicks = work.Ticks;
+            if (capabilities != null)
+                workTicks = checked(workTicks * capabilities.GetCapabilities(task.WorkerId).WorkPerThousand / 1000L);
+            task.AddWork(workTicks);
             if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) return default;
             return Complete(task);
         }

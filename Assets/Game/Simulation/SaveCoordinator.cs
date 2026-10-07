@@ -4,6 +4,7 @@ using Game.Simulation.Time;
 using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Dynasties;
+using Game.Simulation.Health;
 
 namespace Game.Simulation
 {
@@ -14,12 +15,13 @@ namespace Game.Simulation
         private readonly ProductionService production;
         private readonly ResearchService research;
         private readonly SuccessionService succession;
+        private readonly HealthAndFamilyService healthFamily;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
         public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
             ProductionService productionService = null, ResearchService researchService = null,
-            SuccessionService successionService = null)
+            SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -28,12 +30,13 @@ namespace Game.Simulation
             production = productionService;
             research = researchService;
             succession = successionService;
+            healthFamily = healthFamilyService;
         }
         public SaveSnapshot Capture()
         {
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
-                succession?.CaptureState());
+                succession?.CaptureState(), healthFamily?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -51,6 +54,9 @@ namespace Game.Simulation
             if (snapshot.DynastyWorld != null && succession == null)
                 throw new InvalidOperationException("This save contains dynasty state but no succession service is attached.");
             if (snapshot.DynastyWorld != null) succession.RestoreState(snapshot.DynastyWorld);
+            if (snapshot.HealthFamily != null && healthFamily == null)
+                throw new InvalidOperationException("This save contains health/family state but no health/family service is attached.");
+            if (snapshot.HealthFamily != null) healthFamily.RestoreState(snapshot.HealthFamily);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

@@ -5,6 +5,7 @@ using Game.Domain;
 using Game.Domain.Characters;
 using Game.Domain.Research;
 using Game.Simulation.Tiers;
+using Game.Domain.Health;
 
 namespace Game.Simulation.Research
 {
@@ -34,10 +35,12 @@ namespace Game.Simulation.Research
     {
         private static readonly SkillId ResearchSkill = new SkillId("research");
         private readonly CharacterRegistry characters;
+        private readonly ICharacterCapabilityProvider capabilities;
 
-        public CharacterResearchRateProvider(CharacterRegistry registry)
+        public CharacterResearchRateProvider(CharacterRegistry registry, ICharacterCapabilityProvider capabilityProvider = null)
         {
             characters = registry ?? throw new ArgumentNullException(nameof(registry));
+            capabilities = capabilityProvider;
         }
 
         public int GetRatePerThousand(StableEntityId workerId)
@@ -46,6 +49,8 @@ namespace Game.Simulation.Research
                 return 0;
             var rate = 750 + character.Attributes.Intelligence.Value * 5;
             if (character.TryGetSkill(ResearchSkill, out var skill)) rate += skill.Level.Value * 5;
+            if (capabilities != null)
+                rate = rate * capabilities.GetCapabilities(workerId).ResearchPerThousand / 1000;
             return rate;
         }
     }

@@ -25,7 +25,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U16 | DONE | Research framework и каменный век | U06,U15 | MVP | Законченная каменная ветка открывает здания/рецепты. |
 | U16A | DONE | Debug gameplay controls / usability patch | U05,U08,U10,U11,U15,U16 | MVP | Игрок назначает research workers, выбирает research-gated здания и управляет временем без конфликта с work-group hotkeys. |
 | U17 | DONE | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
-| U18 | TODO | Семейные события, болезни и травмы | U06,U17 | MVP | Событие может изменить состояние и способности наследника. |
+| U18 | DONE | Семейные события, болезни и травмы | U06,U17 | MVP | Событие может изменить состояние и способности наследника. |
 | U19 | TODO | Погода и сезоны | U03,U05,U15 | MVP | Погода имеет измеримые gameplay-модификаторы. |
 | U20 | TODO | Тактический RTS-бой | U05,U05A,U06,U07 | MVP | Два отряда завершают бой с детерминируемыми потерями. |
 | U21 | TODO | Армия, капитаны и абстрактные отряды | U17,U20 | MVP | Отряд корректно сохраняется и переходит detailed↔aggregate. |
@@ -58,3 +58,5 @@ Completion note (2026-10-06): U16 engine-independent research definitions/servic
 Completion note (2026-10-07): U16A removes hardcoded demo research assignments, distinguishes assigned from authoritative active research, adds the catalog-backed research-gated building selector and adds canonical pause/speed controls without consuming U11 digit shortcuts. Focused/full/regression/GPU/build gates passed. U17 remains not started pending review.
 
 Completion note (2026-10-07): U17 adds canonical stable-ID dynasty state, read-only family queries over U06 links, deterministic agnatic primogeniture, event-driven exactly-once succession, player-ruler transfer, extinction/Game Over, succession history, tier-independent/off-camera behavior, version-4 character/dynasty persistence with v1-v3 compatibility and a click-blocked LocalGameplay debug overlay. Focused, full, persistence, tier-route, collection-order, GPU, PostgreSQL and Windows build gates passed. U18 is next but has not started.
+
+Completion note (2026-10-07): U18 adds one canonical deterministic health/family authority, nine injury/disease/temporary/permanent definitions, capability effects integrated with AI/production/research, U17 death hooks, four exactly-once relationship events, pregnancy/birth with deterministic child IDs and dynasty membership, Tier1/2/3 off-camera equivalence, version-5 persistence with v1-v4 compatibility and a click-blocked debug panel. Focused, full, regression, persistence, determinism, long-run, GPU and Windows build gates passed. U19 is next but has not started.

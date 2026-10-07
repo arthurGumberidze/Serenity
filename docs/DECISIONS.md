@@ -233,3 +233,19 @@ The first succession policy is `agnatic_primogeniture_v1`. This follows FR-MON-0
 ## D-037 Version 4 character and dynasty persistence (2026-10-07)
 
 `SaveSnapshot` version 4 persists complete detached `CharacterState` records together with dynasty identity/members/rule/status/history/processed markers, the player ruler ID and game-run state. Family relationships remain owned by Character rather than duplicated into a dynasty graph. Load validates duplicate/missing/self/cyclic/asymmetric references before mutating the active registry and preserves existing canonical Character objects when identities match. Versions 1–3 remain readable. PostgreSQL continues storing the strict XML payload as opaque bytes, so no relational migration is added.
+
+## D-038 Canonical batched health and capability authority (2026-10-07)
+
+`HealthAndFamilyService` owns condition/event/pregnancy progress by `StableEntityId` and mutates the existing Character aggregate. Effective work, movement, research, combat and fertility capability is derived from base age/life plus active data-driven conditions. U10/U15/U16 consume that query; no tier, presenter, MonoBehaviour or ECS projection owns copied health truth or a per-character update.
+
+## D-039 Deterministic simulation-derived identity and birth (2026-10-07)
+
+Manual entity creation keeps `StableEntityId.NewId()`. Simulation-derived condition/event/pregnancy/child IDs use the narrow `FromDeterministicHash` factory over world seed, purpose, canonical parent/target IDs and absolute ticks. Birth creates one canonical Character, writes U06 parent links, enters the active U17 dynasty when applicable and publishes only a materialization notification. This makes save/restart, collection order and tier routes identity-equivalent.
+
+## D-040 Health death and family events reuse existing authorities (2026-10-07)
+
+Fatal conditions call `SuccessionService.ProcessDeath`; they do not duplicate life/succession state. Family events update existing bounded Character relationships and persist deterministic event markers. U18 remains a narrow foundation rather than the U28 event engine, medical economy, epidemiology or genetics system.
+
+## D-041 Version 5 health and family persistence (2026-10-07)
+
+Snapshot v5 adds health/family world seed and checkpoints, condition lifecycle/death markers, relationship-event markers and pregnancy/birth markers. Canonical children, parent links and relationship results remain in U17's character/dynasty payload. Versions 1 through 4 load with no health payload. PostgreSQL continues storing opaque XML and needs no relational migration.

@@ -193,10 +193,10 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void LegacySnapshotVersionsOneTwoAndThreeRemainReadable()
+        public void LegacySnapshotVersionsOneThroughFourRemainReadable()
         {
             var codec = new SaveXmlCodec();
-            for (var version = 1; version <= 3; version++)
+            for (var version = 1; version <= 4; version++)
             {
                 var snapshot = new SaveSnapshot(version, Id(200), new GameTimeState(7, 9, 1, false), 100);
                 var restored = codec.Deserialize(codec.Serialize(snapshot));

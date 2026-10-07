@@ -4,10 +4,18 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U17 DONE — the canonical dynasty, family-query, deterministic succession, ruler-transfer, extinction/Game Over and version-4 persistence slice is complete.
+U18 DONE — deterministic family events, diseases/injuries, health capabilities, pregnancy/birth, canonical children, tier-independent simulation and version-5 persistence are complete.
 
 ## Active task
-No implementation task is active. U18 is the next unblocked task, but it has not started and awaits review of U17.
+No implementation task is active. U19 is next but has not started and awaits review of U18.
+
+## U18 family events, health and birth
+- `HealthAndFamilyService` is the one engine-independent, stable-ID-based authority for conditions, narrow relationship events and pregnancy. It advances centrally on absolute game ticks; no condition, pregnancy or character gained an `Update`.
+- Nine data-driven conditions cover injuries, diseases, temporary weakness and a permanent limp. Effective per-thousand work/movement/research/combat modifiers and incapacity feed U10, U15 and U16 without rewriting base stats. Fatal resolution delegates exactly once to U17 succession.
+- Four deterministic family events mutate the existing bounded symmetric Character relationships once. Pregnancy validates alive married adults, age and health, lasts 750 biological days, persists, and creates a canonical Character with deterministic 128-bit ID, parent links and active-dynasty membership.
+- Newborns are valid Tier3 records and cannot work/research before age 16. T3-only, T3-T2-T3 and T3-T1-T3 routes converge on hash `7877019868490988825`; the 20-person three-year hash is `15340608186238284958`.
+- `SaveSnapshot.CurrentVersion` is 5. Health conditions, event markers and pregnancies are serialized; U17 character/dynasty state carries children, family links and relationship results. V1-V4 remain readable. PostgreSQL remains opaque and has no schema change.
+- Final gates: U18 13/13 EditMode, 2/2 headless and 2/2 GPU PlayMode; full non-PostgreSQL EditMode 263/263; full PlayMode 46/46; required EditMode regressions 99/99; required PlayMode regressions 17/17; persistence 35/35; Windows x64 Mono Development succeeded with 0 errors and 2 inherited warnings. PostgreSQL's 25 tests were discovered but skipped because the test database environment variable was absent.
 
 ## U17 dynasty and succession
 - `DynastyState` owns one stable dynasty identity, founder, exactly one active monarch ID, member references, succession rule ID, status, processed-death markers and deterministic history. It contains no copied person or GameObject state.

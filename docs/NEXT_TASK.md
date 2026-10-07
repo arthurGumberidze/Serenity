@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U17 was completed and validated on 2026-10-07. Do not reopen U17 unless review finds a regression. Do not begin U18 until the user explicitly accepts the U17 handoff.
+U18 was completed and validated on 2026-10-07. Do not reopen U18 unless review finds a regression. Do not begin U19 until the user explicitly accepts the U18 handoff.
 
-## Next unblocked task: U18 — Семейные события, болезни и травмы
+## Next unblocked task: U19 — Weather and Seasons
 
 ### Status
 
-Not started; awaiting U17 review.
+Not started; awaiting U18 review.
 
-### Prerequisites
+### Dependencies
 
-U06 character domain and U17 dynasty/succession are DONE.
+U03 time, U05 gameplay scene and U15 production are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U18 family-event, disease and injury slice without changing U17 succession identity or exactly-once guarantees.
+After explicit authorization, implement the TASK_GRAPH U19 weather/season slice with measurable gameplay modifiers.
 
 ### Scope boundary
 
-Begin from `docs/U17_HANDOFF.md`, `docs/DYNASTY_AND_SUCCESSION.md`, the U18 section of `docs/TASK_GRAPH.md`, current architecture decisions and the relevant FRS health/family sections. Reuse `SuccessionService.ProcessDeath` as the death boundary. Do not begin U19 or later tasks.
+Begin from `docs/U18_HANDOFF.md`, `docs/HEALTH_AND_FAMILY_EVENTS.md`, the U19 section of `docs/TASK_GRAPH.md`, current architecture decisions and relevant FRS sections. Do not change U18 deterministic health/family authority without an explicit dependency need. Do not begin U20 or later tasks.

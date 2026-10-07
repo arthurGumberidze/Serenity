@@ -60,7 +60,10 @@ SELECT session_id, save_format_version, payload FROM serenity.save_sessions WHER
                     {
                         if (!reader.Read()) throw new FileNotFoundException("Save slot does not exist.");
                         var storedVersion = reader.GetInt32(1);
-                        if (storedVersion != SaveSnapshot.LegacyVersion && storedVersion != SaveSnapshot.ProductionVersion &&
+                        if (storedVersion != SaveSnapshot.LegacyVersion &&
+                            storedVersion != SaveSnapshot.ProductionVersion &&
+                            storedVersion != SaveSnapshot.ResearchVersion &&
+                            storedVersion != SaveSnapshot.DynastyVersion &&
                             storedVersion != SaveSnapshot.CurrentVersion)
                             throw new NotSupportedException("Unsupported save format version.");
                         var snapshot = codec.Deserialize((byte[])reader.GetValue(2));

@@ -140,6 +140,13 @@ namespace Game.Domain.Dynasties
         public bool Contains(StableEntityId characterId) => members.Contains(characterId);
         public bool WasMonarchDeathProcessed(StableEntityId characterId) => processedDeaths.Contains(characterId);
 
+        public bool AddMember(StableEntityId characterId)
+        {
+            if (!characterId.IsValid) throw new ArgumentException("Dynasty member ID must be valid.", nameof(characterId));
+            if (Status != DynastyStatus.Active) throw new InvalidOperationException("Cannot add a member to an extinct dynasty.");
+            return members.Add(characterId);
+        }
+
         public SuccessionHistoryEntry ApplySuccession(StableEntityId deceasedMonarchId,
             StableEntityId? newMonarchId, long calendarTick)
         {

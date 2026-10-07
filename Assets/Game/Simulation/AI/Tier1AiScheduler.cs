@@ -7,6 +7,7 @@ using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Simulation.Time;
 using Game.Simulation.Work;
+using Game.Domain.Health;
 
 namespace Game.Simulation.AI
 {
@@ -36,6 +37,7 @@ namespace Game.Simulation.AI
         private readonly Tier1AiWorld world;
         private readonly Tier1AiSettings settings;
         private readonly WorkManager work;
+        private readonly ICharacterCapabilityProvider capabilities;
         private readonly List<Entry> entries = new List<Entry>();
         private readonly Dictionary<StableEntityId, Entry> byId = new Dictionary<StableEntityId, Entry>();
         private int thinkCursor;
@@ -44,13 +46,15 @@ namespace Game.Simulation.AI
         private long calendarTicks;
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
-            Tier1AiSettings settings = null, WorkManager workManager = null)
+            Tier1AiSettings settings = null, WorkManager workManager = null,
+            ICharacterCapabilityProvider capabilityProvider = null)
         {
             this.characters = characters ?? throw new ArgumentNullException(nameof(characters));
             this.agents = agents ?? throw new ArgumentNullException(nameof(agents));
             this.world = world ?? throw new ArgumentNullException(nameof(world));
             this.settings = settings ?? Tier1AiSettings.Default;
             work = workManager;
+            capabilities = capabilityProvider;
         }
 
         public int Count => entries.Count;
@@ -148,6 +152,15 @@ namespace Game.Simulation.AI
                 entry.LastActionTicks = calendarTicks;
                 entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
                 if (entry.Action == null) continue;
+                if (capabilities != null && entry.Action.Kind != UtilityActionKind.Rest &&
+                    !capabilities.GetCapabilities(entry.Agent.CharacterId).CanPerformOrdinaryWork)
+                {
+                    entry.Action.Cancel();
+                    entry.Action = null;
+                    entry.Movement.Stop();
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                    continue;
+                }
                 entry.Action.Tick(elapsed);
                 Metrics.TotalActionUpdates++;
                 if (!entry.Action.IsFinished) continue;
@@ -179,6 +192,15 @@ namespace Game.Simulation.AI
         {
             entry.Agent.RecordDecision();
             Metrics.TotalDecisions++;
+            var characterCapabilities = capabilities?.GetCapabilities(entry.Agent.CharacterId);
+            if (characterCapabilities.HasValue && !characterCapabilities.Value.CanPerformOrdinaryWork)
+            {
+                entry.Action?.Cancel();
+                entry.Action = null;
+                entry.Movement.Stop();
+                entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                return;
+            }
             if (entry.Action != null && !entry.Action.IsValid)
             {
                 entry.Action.Cancel();
@@ -228,7 +250,8 @@ namespace Game.Simulation.AI
             var production = new UtilityCandidate(UtilityActionKind.Produce, new UtilityScore(productionScore),
                 productionAvailable, 1);
             var researchAvailable = world.Research != null && world.Research.ActiveProject != null &&
-                world.Research.IsAssigned(entry.Agent.CharacterId);
+                world.Research.IsAssigned(entry.Agent.CharacterId) &&
+                (!characterCapabilities.HasValue || characterCapabilities.Value.CanResearch);
             var researchScore = entry.Agent.Needs.Energy * (1d - 0.15d * entry.Agent.Needs.Hunger);
             var research = new UtilityCandidate(UtilityActionKind.Research, new UtilityScore(researchScore),
                 researchAvailable, 0);
@@ -337,7 +360,8 @@ namespace Game.Simulation.AI
                 var entry = entries[i];
                 if (!world.Research.IsAssigned(entry.Agent.CharacterId)) continue;
                 world.Research.AdvanceWorkerTo(entry.Agent.CharacterId, calendarTicks,
-                    entry.Action != null && entry.Action.Kind == UtilityActionKind.Research && entry.Action.IsValid);
+                    entry.Action != null && entry.Action.Kind == UtilityActionKind.Research && entry.Action.IsValid &&
+                    (capabilities == null || capabilities.GetCapabilities(entry.Agent.CharacterId).CanResearch));
             }
         }
 

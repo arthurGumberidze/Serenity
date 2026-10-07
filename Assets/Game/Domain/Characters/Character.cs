@@ -64,6 +64,13 @@ namespace Game.Domain.Characters
             return new Character(data.WithIdentity(StableEntityId.NewId()));
         }
 
+        public static Character CreateWithId(CharacterCreationData data, StableEntityId id)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            if (!id.IsValid) throw new ArgumentException("Character ID must be valid.", nameof(id));
+            return new Character(data.WithIdentity(id));
+        }
+
         public static Character Restore(CharacterState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));

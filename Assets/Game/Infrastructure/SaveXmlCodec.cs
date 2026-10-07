@@ -11,11 +11,12 @@ using Game.Domain.Time;
 using Game.Domain.Research;
 using Game.Domain.Characters;
 using Game.Domain.Dynasties;
+using Game.Domain.Health;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V2 adds production, V3 research, V4 dynasty/characters.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V5 adds health, family events and pregnancy.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -36,8 +37,10 @@ namespace Game.Infrastructure
                 root.Add(SerializeProduction(snapshot.Production));
             if (snapshot.FormatVersion >= SaveSnapshot.ResearchVersion)
                 root.Add(SerializeResearch(snapshot.Research));
-            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+            if (snapshot.FormatVersion >= SaveSnapshot.DynastyVersion)
                 root.Add(SerializeDynastyWorld(snapshot.DynastyWorld));
+            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+                root.Add(SerializeHealthFamily(snapshot.HealthFamily));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -64,22 +67,26 @@ namespace Game.Infrastructure
                     if (versionElement == null) throw new FormatException("Missing save version.");
                     var version = XmlConvert.ToInt32(versionElement.Value);
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
-                        version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
+                        version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, version == SaveSnapshot.LegacyVersion ? TimeFields :
                         version == SaveSnapshot.ProductionVersion ? TimeFields.Concat(new[] { "production" }).ToArray() :
                         version == SaveSnapshot.ResearchVersion ? TimeFields.Concat(new[] { "production", "research" }).ToArray() :
-                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld" }).ToArray());
+                        version == SaveSnapshot.DynastyVersion ? TimeFields.Concat(new[] { "production", "research", "dynastyWorld" }).ToArray() :
+                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily" }).ToArray());
                     var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production")) : null;
                     var research = version >= SaveSnapshot.ResearchVersion
                         ? DeserializeResearch(root.Element("research")) : null;
-                    var dynastyWorld = version >= SaveSnapshot.CurrentVersion
+                    var dynastyWorld = version >= SaveSnapshot.DynastyVersion
                         ? DeserializeDynastyWorld(root.Element("dynastyWorld")) : null;
+                    var healthFamily = version >= SaveSnapshot.CurrentVersion
+                        ? DeserializeHealthFamily(root.Element("healthFamily")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld);
+                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -361,6 +368,88 @@ namespace Game.Infrastructure
                     new HealthValue(Int(health, "leftArm")), new HealthValue(Int(health, "rightArm")),
                     new HealthValue(Int(health, "leftLeg")), new HealthValue(Int(health, "rightLeg"))),
                 new Wealth(Int(item, "wealth")), new Influence(Int(item, "influence")), relationships);
+        }
+
+        private static XElement SerializeHealthFamily(HealthFamilySaveState state)
+        {
+            var element = new XElement("healthFamily");
+            if (state == null) return element;
+            element.Add(new XElement("worldSeed", state.WorldSeed),
+                new XElement("lastCalendarTick", state.LastCalendarTick),
+                new XElement("lastBiologicalTick", state.LastBiologicalTick),
+                new XElement("conditions", state.Conditions.Select(value => new XElement("condition",
+                    new XElement("id", value.InstanceId.ToString()),
+                    new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("targetId", value.TargetId.ToString()),
+                    new XElement("startTick", value.StartCalendarTick),
+                    new XElement("nextProgressTick", value.NextProgressCalendarTick),
+                    new XElement("resolveTick", value.ResolveCalendarTick),
+                    new XElement("severity", (int)value.Severity),
+                    new XElement("state", (int)value.State),
+                    new XElement("progressionSteps", value.ProgressionSteps),
+                    new XElement("deathProcessed", value.DeathProcessed)))),
+                new XElement("events", state.Events.Select(value => new XElement("event",
+                    new XElement("id", value.InstanceId.ToString()),
+                    new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("primaryId", value.PrimaryId.ToString()),
+                    new XElement("secondaryId", value.SecondaryId.ToString()),
+                    new XElement("calendarTick", value.CalendarTick),
+                    new XElement("appliedDelta", value.AppliedDelta),
+                    new XElement("applied", value.Applied)))),
+                new XElement("pregnancies", state.Pregnancies.Select(value => new XElement("pregnancy",
+                    new XElement("id", value.PregnancyId.ToString()),
+                    new XElement("motherId", value.MotherId.ToString()),
+                    new XElement("fatherId", value.FatherId.ToString()),
+                    new XElement("conceptionCalendarTick", value.ConceptionCalendarTick),
+                    new XElement("conceptionBiologicalTick", value.ConceptionBiologicalTick),
+                    new XElement("dueCalendarTick", value.DueCalendarTick),
+                    new XElement("dueBiologicalTick", value.DueBiologicalTick),
+                    new XElement("status", (int)value.Status),
+                    OptionalId("childId", value.ChildId)))));
+            return element;
+        }
+
+        private static HealthFamilySaveState DeserializeHealthFamily(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing health/family state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty health/family state.");
+                return null;
+            }
+            RequireFields(element, new[] { "worldSeed", "lastCalendarTick", "lastBiologicalTick",
+                "conditions", "events", "pregnancies" });
+            var conditions = Items(element.Element("conditions"), "condition", value =>
+            {
+                RequireFields(value, new[] { "id", "definitionId", "targetId", "startTick", "nextProgressTick",
+                    "resolveTick", "severity", "state", "progressionSteps", "deathProcessed" });
+                return new HealthConditionInstanceState(StableEntityId.Parse(Value(value, "id")),
+                    new HealthConditionId(Value(value, "definitionId")), StableEntityId.Parse(Value(value, "targetId")),
+                    Long(value, "startTick"), Long(value, "nextProgressTick"), Long(value, "resolveTick"),
+                    (HealthSeverity)Int(value, "severity"), (HealthConditionState)Int(value, "state"),
+                    Int(value, "progressionSteps"), XmlConvert.ToBoolean(Value(value, "deathProcessed")));
+            });
+            var events = Items(element.Element("events"), "event", value =>
+            {
+                RequireFields(value, new[] { "id", "definitionId", "primaryId", "secondaryId", "calendarTick",
+                    "appliedDelta", "applied" });
+                return new CharacterEventInstanceState(StableEntityId.Parse(Value(value, "id")),
+                    new CharacterEventId(Value(value, "definitionId")), StableEntityId.Parse(Value(value, "primaryId")),
+                    StableEntityId.Parse(Value(value, "secondaryId")), Long(value, "calendarTick"),
+                    Int(value, "appliedDelta"), XmlConvert.ToBoolean(Value(value, "applied")));
+            });
+            var pregnancies = Items(element.Element("pregnancies"), "pregnancy", value =>
+            {
+                RequireFields(value, new[] { "id", "motherId", "fatherId", "conceptionCalendarTick",
+                    "conceptionBiologicalTick", "dueCalendarTick", "dueBiologicalTick", "status", "childId" });
+                return new PregnancyState(StableEntityId.Parse(Value(value, "id")),
+                    StableEntityId.Parse(Value(value, "motherId")), StableEntityId.Parse(Value(value, "fatherId")),
+                    Long(value, "conceptionCalendarTick"), Long(value, "conceptionBiologicalTick"),
+                    Long(value, "dueCalendarTick"), Long(value, "dueBiologicalTick"),
+                    (PregnancyStatus)Int(value, "status"), OptionalStableId(value, "childId"));
+            });
+            return new HealthFamilySaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"),
+                Long(element, "lastBiologicalTick"), conditions, events, pregnancies);
         }
 
         private static XElement OptionalId(string name, StableEntityId? value) =>
