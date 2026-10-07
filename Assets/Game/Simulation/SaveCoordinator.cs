@@ -3,6 +3,7 @@ using Game.Domain;
 using Game.Simulation.Time;
 using Game.Simulation.Production;
 using Game.Simulation.Research;
+using Game.Simulation.Dynasties;
 
 namespace Game.Simulation
 {
@@ -12,11 +13,13 @@ namespace Game.Simulation
         private readonly ISaveStore store;
         private readonly ProductionService production;
         private readonly ResearchService research;
+        private readonly SuccessionService succession;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
         public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
-            ProductionService productionService = null, ResearchService researchService = null)
+            ProductionService productionService = null, ResearchService researchService = null,
+            SuccessionService successionService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -24,11 +27,13 @@ namespace Game.Simulation
             this.store = store ?? throw new ArgumentNullException(nameof(store));
             production = productionService;
             research = researchService;
+            succession = successionService;
         }
         public SaveSnapshot Capture()
         {
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
-                Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState());
+                Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
+                succession?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -43,6 +48,9 @@ namespace Game.Simulation
             if (snapshot.Research != null && research == null)
                 throw new InvalidOperationException("This save contains research state but no research service is attached.");
             if (snapshot.Research != null) research.RestoreState(snapshot.Research);
+            if (snapshot.DynastyWorld != null && succession == null)
+                throw new InvalidOperationException("This save contains dynasty state but no succession service is attached.");
+            if (snapshot.DynastyWorld != null) succession.RestoreState(snapshot.DynastyWorld);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

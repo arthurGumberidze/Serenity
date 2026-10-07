@@ -221,3 +221,15 @@ Research assignment is an explicit player/debug command over the canonical `Rese
 The U16A building selector is development-only until U27. It enumerates the existing `BuildingPresentationCatalog`, derives availability and unlock reasons from the live U16 catalog/service, and passes the selected `BuildingDefinitionId` to the existing U08 controller. The controller itself enforces `LockedByResearch`, so UI state is explanatory rather than authoritative. Current U16 starting knowledge remains unchanged; shelter, storage and crop availability follow their canonical technologies.
 
 Time input remains in the Unity Input System. Space toggles pause, Minus steps slower and Equals/Plus steps faster through x1/x2/x3/x5/x10. Digits 1–9 remain exclusively U11 work-group recall keys. `Tier1AiRuntimeDriver` is the debug command coordinator for pause/speed and mutates the one `GameClock`; its zero-delta path is the shared pause barrier for AI, tier batches, production and research. No second time service or final U27 HUD was introduced.
+
+## D-035 Named agnatic primogeniture policy (2026-10-07)
+
+The first succession policy is `agnatic_primogeniture_v1`. This follows FR-MON-002/003: only living male members of the ruling dynasty can inherit under the base law. Eligibility is separate from traversal: an ineligible or dead child is skipped, but living male descendants of that branch keep its primogeniture position. Branches sort by biological birth tick and then canonical `StableEntityId` text; no list insertion, scene spawn, GameObject or random order participates. Naming the policy leaves a clean replacement seam for later law changes without embedding gender rules in `DynastyState`.
+
+## D-036 Event-driven exactly-once succession and extinction (2026-10-07)
+
+`SuccessionService` is the single authoritative boundary from U06 `Character.MarkDead` to ruler succession. It queries canonical characters through stable IDs and updates `DynastyState`, `PlayerRealmState` and `GameRunState` in one transaction result. Each deceased monarch ID is persisted beside exactly one ordered history entry. Reprocessing the same death is a no-op; it cannot create another history entry or reroll the heir. No valid heir sets the dynasty Extinct and the run to GameOver/DynastyExtinction; no unrelated NPC or generated replacement is permitted.
+
+## D-037 Version 4 character and dynasty persistence (2026-10-07)
+
+`SaveSnapshot` version 4 persists complete detached `CharacterState` records together with dynasty identity/members/rule/status/history/processed markers, the player ruler ID and game-run state. Family relationships remain owned by Character rather than duplicated into a dynasty graph. Load validates duplicate/missing/self/cyclic/asymmetric references before mutating the active registry and preserves existing canonical Character objects when identities match. Versions 1–3 remain readable. PostgreSQL continues storing the strict XML payload as opaque bytes, so no relational migration is added.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Game.Domain;
 using Game.Domain.Characters;
 using Game.Domain.Buildings;
 using Game.Domain.AI;
@@ -27,6 +28,9 @@ using Game.Presentation.Production;
 using Game.Domain.Research;
 using Game.Simulation.Research;
 using Game.Presentation.Research;
+using Game.Domain.Dynasties;
+using Game.Simulation.Dynasties;
+using Game.Presentation.Dynasties;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -58,6 +62,8 @@ namespace Game.Infrastructure
         public CharacterPresentationSpawner CharacterSpawner { get; private set; }
         public Character MaleDemoCharacter { get; private set; }
         public Character FemaleDemoCharacter { get; private set; }
+        public Character FirstDemoHeir { get; private set; }
+        public Character SecondDemoHeir { get; private set; }
         public IReadOnlyList<CharacterPresenter> DemoPresenters => demoPresenters;
         public BuildingRegistry Buildings { get; private set; }
         public BuildingOccupancyGrid BuildingOccupancy { get; private set; }
@@ -98,6 +104,11 @@ namespace Game.Infrastructure
         public ResearchDebugOverlay ResearchDebug { get; private set; }
         public BuildingDebugSelector BuildingDebug { get; private set; }
         public TimeDebugOverlay TimeDebug { get; private set; }
+        public DynastyState Dynasty { get; private set; }
+        public PlayerRealmState PlayerRealm { get; private set; }
+        public GameRunState GameRun { get; private set; }
+        public SuccessionService Succession { get; private set; }
+        public DynastyDebugOverlay DynastyDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -175,10 +186,18 @@ namespace Game.Infrastructure
             SpawnDemoStorage();
             BuildNavigationSurface();
 
-            MaleDemoCharacter = CreateDemoCharacter("Aren", CharacterSex.Male);
-            FemaleDemoCharacter = CreateDemoCharacter("Mira", CharacterSex.Female);
+            var dynastyId = DemoId(100);
+            MaleDemoCharacter = CreateDemoCharacter("Aren", CharacterSex.Male, DemoId(1), dynastyId, null);
+            FemaleDemoCharacter = CreateDemoCharacter("Mira", CharacterSex.Female, DemoId(2), null, null);
+            FirstDemoHeir = CreateDemoCharacter("Cale", CharacterSex.Male, DemoId(3), dynastyId,
+                new[] { Parent(MaleDemoCharacter.Id, ParentRole.Father), Parent(FemaleDemoCharacter.Id, ParentRole.Mother) });
+            SecondDemoHeir = CreateDemoCharacter("Doran", CharacterSex.Male, DemoId(4), dynastyId,
+                new[] { Parent(MaleDemoCharacter.Id, ParentRole.Father), Parent(FemaleDemoCharacter.Id, ParentRole.Mother) });
             Characters.Add(MaleDemoCharacter);
             Characters.Add(FemaleDemoCharacter);
+            Characters.Add(FirstDemoHeir);
+            Characters.Add(SecondDemoHeir);
+            Characters.LinkSpouses(MaleDemoCharacter.Id, FemaleDemoCharacter.Id);
             Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id), Resources, 8));
             Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, FemaleDemoCharacter.Id), Resources, 8));
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
@@ -198,6 +217,11 @@ namespace Game.Infrastructure
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
 
             Clock = new GameClock(new GameTimeState(0, 0, 1, false));
+            Dynasty = DynastyState.Create(dynastyId, "House Serenity", MaleDemoCharacter.Id,
+                MaleDemoCharacter.Id, new[] { MaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id });
+            PlayerRealm = new PlayerRealmState(MaleDemoCharacter.Id);
+            GameRun = new GameRunState();
+            Succession = new SuccessionService(Characters, Dynasty, PlayerRealm, GameRun);
             AiAgents = new Tier1AiAgentRegistry();
             HaulClaims = new HaulClaimRegistry();
             Work = new WorkManager(Characters);
@@ -215,6 +239,8 @@ namespace Game.Infrastructure
             BuildingDebug.Initialize(buildingCatalog, Research, buildingPlacementController, pointerRaycaster);
             TimeDebug = gameObject.AddComponent<TimeDebugOverlay>();
             TimeDebug.Initialize(input, AiRuntime, pointerRaycaster);
+            DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
+            DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
@@ -341,14 +367,21 @@ namespace Game.Infrastructure
             demoPilePresenters.Add(presenter);
         }
 
-        private static Character CreateDemoCharacter(string name, CharacterSex sex)
+        private static Character CreateDemoCharacter(string name, CharacterSex sex, StableEntityId id,
+            StableEntityId? dynastyId, ParentLink[] parents)
         {
-            return Character.CreateNew(new CharacterCreationData(new CharacterName(name), sex, 0,
-                null, null, null, null, null,
+            return Character.Restore(new CharacterState(id, new CharacterName(name), sex, 0,
+                CharacterLifeState.Alive, null, parents, null, dynastyId, dynastyId, null,
                 new[] { new TraitId("calm"), new TraitId("brave"), new TraitId("kind"), new TraitId("curious") },
                 null,
                 new CharacterAttributes(new CharacterAttributeValue(50), new CharacterAttributeValue(50)),
                 BodyHealth.Healthy, new Wealth(0), new Influence(0), null));
         }
+
+        private static ParentLink Parent(StableEntityId id, ParentRole role) =>
+            new ParentLink(id, role, ParentageKind.Biological, true);
+
+        private static StableEntityId DemoId(int value) =>
+            StableEntityId.Parse(value.ToString("x32"));
     }
 }

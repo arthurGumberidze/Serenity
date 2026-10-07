@@ -163,7 +163,7 @@ namespace Game.Tests.Editor
                 researchService: fixture.Research);
             var bytes = new SaveXmlCodec().Serialize(coordinator.Capture());
             var decoded = new SaveXmlCodec().Deserialize(bytes);
-            Assert.That(decoded.FormatVersion, Is.EqualTo(3));
+            Assert.That(decoded.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             var restored = new Fixture();
             restored.Research.RestoreState(decoded.Research);
             Assert.That(restored.Research.ActiveProject.AccumulatedWorkTicks,

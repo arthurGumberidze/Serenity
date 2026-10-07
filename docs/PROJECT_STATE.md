@@ -4,10 +4,19 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U16A DONE — the small LocalGameplay debug-control patch for player-managed research, research-aware building selection and canonical time controls is complete.
+U17 DONE — the canonical dynasty, family-query, deterministic succession, ruler-transfer, extinction/Game Over and version-4 persistence slice is complete.
 
 ## Active task
-No implementation task is active. U17 is the next unblocked task, but it has not started and awaits review of U16A.
+No implementation task is active. U18 is the next unblocked task, but it has not started and awaits review of U17.
+
+## U17 dynasty and succession
+- `DynastyState` owns one stable dynasty identity, founder, exactly one active monarch ID, member references, succession rule ID, status, processed-death markers and deterministic history. It contains no copied person or GameObject state.
+- `FamilyTreeQuery` derives parents, children, siblings and descendants from canonical U06 parent/spouse links. The `agnatic_primogeniture_v1` rule follows the FRS base law: only living male dynasty members are eligible; branches are ordered by biological birth tick then `StableEntityId`.
+- `SuccessionService` is the sole event-driven death boundary. It marks canonical `Character` death, chooses an heir without reading tier or presentation, transfers `PlayerRealmState`, records one history entry, or sets `DynastyStatus.Extinct` and `GameRunState/GameOverReason.DynastyExtinction`.
+- Dead candidates are skipped while their living male descendants retain branch priority. Childless monarchs fall back to sibling/collateral branches. Missing, duplicate, self/cyclic or asymmetric saved family references fail validation without a null-reference crash.
+- `SaveSnapshot.CurrentVersion` is 4. V4 stores complete detached `CharacterState` values, dynasty state/history/processed markers, player ruler and game-run state. V1/V2/V3 remain readable. PostgreSQL still stores the validated opaque XML payload; no SQL schema migration was required.
+- LocalGameplay uses fixed development IDs for Aren, Mira and two domain-only sons, exposes a development dynasty overlay, and registers its full panel with the existing pointer blocker. A Tier3 heir can become ruler immediately without materializing a GameObject.
+- Final gates: U17 13/13 EditMode and 2/2 headless + 2/2 GPU PlayMode; full non-PostgreSQL EditMode 250/250; full PlayMode 44/44; required U06/U13/U14/U16/U16A EditMode 68/68; required U13/U14/U16/U16A PlayMode 9/9; persistence 35/35. Fresh managed PostgreSQL passed 25/25 after 250/250 core tests; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
 
 ## U16A debug gameplay controls
 - LocalGameplay no longer assigns Aren or Mira to research during composition. The existing selection surface now drives idempotent `Assign selected to Research` and `Remove selected from Research` commands against the one `ResearchService`.

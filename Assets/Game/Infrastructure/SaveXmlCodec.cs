@@ -9,11 +9,13 @@ using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Domain.Time;
 using Game.Domain.Research;
+using Game.Domain.Characters;
+using Game.Domain.Dynasties;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V2 adds production; V3 adds research.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V2 adds production, V3 research, V4 dynasty/characters.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -32,8 +34,10 @@ namespace Game.Infrastructure
                 new XElement("biologicalMultiplier", snapshot.BiologicalMultiplier));
             if (snapshot.FormatVersion >= SaveSnapshot.ProductionVersion)
                 root.Add(SerializeProduction(snapshot.Production));
-            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+            if (snapshot.FormatVersion >= SaveSnapshot.ResearchVersion)
                 root.Add(SerializeResearch(snapshot.Research));
+            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+                root.Add(SerializeDynastyWorld(snapshot.DynastyWorld));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -60,19 +64,22 @@ namespace Game.Infrastructure
                     if (versionElement == null) throw new FormatException("Missing save version.");
                     var version = XmlConvert.ToInt32(versionElement.Value);
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
-                        version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, version == SaveSnapshot.LegacyVersion ? TimeFields :
                         version == SaveSnapshot.ProductionVersion ? TimeFields.Concat(new[] { "production" }).ToArray() :
-                        TimeFields.Concat(new[] { "production", "research" }).ToArray());
+                        version == SaveSnapshot.ResearchVersion ? TimeFields.Concat(new[] { "production", "research" }).ToArray() :
+                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld" }).ToArray());
                     var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production")) : null;
-                    var research = version >= SaveSnapshot.CurrentVersion
+                    var research = version >= SaveSnapshot.ResearchVersion
                         ? DeserializeResearch(root.Element("research")) : null;
+                    var dynastyWorld = version >= SaveSnapshot.CurrentVersion
+                        ? DeserializeDynastyWorld(root.Element("dynastyWorld")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production, research);
+                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -226,6 +233,143 @@ namespace Game.Infrastructure
                     Long(item, "lastProcessedTick"), Int(item, "remainder"));
             });
             return new ResearchSaveState(Long(element, "lastProcessedTick"), completed, active, workers);
+        }
+
+        private static XElement SerializeDynastyWorld(DynastyWorldSaveState state)
+        {
+            var element = new XElement("dynastyWorld");
+            if (state == null) return element;
+            var dynasty = state.Dynasty;
+            element.Add(new XElement("characters", state.Characters.Select(SerializeCharacter)),
+                new XElement("dynasty",
+                    new XElement("id", dynasty.Id.ToString()),
+                    new XElement("name", dynasty.Name),
+                    new XElement("founderId", dynasty.FounderId.ToString()),
+                    OptionalId("currentMonarchId", dynasty.CurrentMonarchId),
+                    new XElement("successionRuleId", dynasty.SuccessionRuleId),
+                    new XElement("status", (int)dynasty.Status),
+                    new XElement("members", dynasty.MemberIds.Select(id => new XElement("member", id.ToString()))),
+                    new XElement("processedDeaths", dynasty.ProcessedMonarchDeathIds.Select(id => new XElement("character", id.ToString()))),
+                    new XElement("history", dynasty.History.Select(entry => new XElement("entry",
+                        new XElement("sequence", entry.SequenceNumber),
+                        new XElement("previousMonarchId", entry.PreviousMonarchId.ToString()),
+                        OptionalId("newMonarchId", entry.NewMonarchId),
+                        new XElement("calendarTick", entry.CalendarTick),
+                        new XElement("reason", (int)entry.Reason))))),
+                OptionalId("currentRulerId", state.CurrentRulerId),
+                new XElement("runStatus", (int)state.RunStatus),
+                new XElement("gameOverReason", (int)state.GameOverReason));
+            return element;
+        }
+
+        private static XElement SerializeCharacter(CharacterState state) => new XElement("character",
+            new XElement("id", state.Id.ToString()),
+            new XElement("givenName", state.Name.GivenName),
+            new XElement("familyName", state.Name.FamilyName),
+            new XElement("sex", (int)state.Sex),
+            new XElement("birthTick", state.BiologicalBirthTick),
+            new XElement("lifeState", (int)state.LifeState),
+            new XElement("deathTick", state.BiologicalDeathTick.HasValue ? state.BiologicalDeathTick.Value.ToString() : string.Empty),
+            new XElement("parents", state.Parents.Select(parent => new XElement("parent",
+                new XElement("id", parent.ParentId.ToString()), new XElement("role", (int)parent.Role),
+                new XElement("kind", (int)parent.Kind), new XElement("known", parent.IsKnownToCharacter)))),
+            OptionalId("spouseId", state.SpouseId), OptionalId("familyId", state.FamilyId),
+            OptionalId("dynastyId", state.DynastyId),
+            new XElement("professionId", state.ProfessionId.HasValue ? state.ProfessionId.Value.ToString() : string.Empty),
+            new XElement("traits", state.Traits.Select(trait => new XElement("trait", trait.ToString()))),
+            new XElement("skills", state.Skills.Select(skill => new XElement("skill",
+                new XElement("id", skill.Id.ToString()), new XElement("level", skill.Level.Value)))),
+            new XElement("attributes", new XElement("intelligence", state.Attributes.Intelligence.Value),
+                new XElement("physicalStrength", state.Attributes.PhysicalStrength.Value)),
+            new XElement("health", new XElement("head", state.Health.Head.Value),
+                new XElement("torso", state.Health.Torso.Value), new XElement("leftArm", state.Health.LeftArm.Value),
+                new XElement("rightArm", state.Health.RightArm.Value), new XElement("leftLeg", state.Health.LeftLeg.Value),
+                new XElement("rightLeg", state.Health.RightLeg.Value)),
+            new XElement("wealth", state.Wealth.Value), new XElement("influence", state.Influence.Value),
+            new XElement("relationships", state.Relationships.Select(relationship => new XElement("relationship",
+                new XElement("id", relationship.OtherCharacterId.ToString()),
+                new XElement("affinity", relationship.Affinity.Value)))));
+
+        private static DynastyWorldSaveState DeserializeDynastyWorld(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing dynasty world state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty dynasty world state.");
+                return null;
+            }
+            RequireFields(element, new[] { "characters", "dynasty", "currentRulerId", "runStatus", "gameOverReason" });
+            var characters = Items(element.Element("characters"), "character", DeserializeCharacter);
+            var dynastyElement = element.Element("dynasty");
+            RequireFields(dynastyElement, new[] { "id", "name", "founderId", "currentMonarchId", "successionRuleId",
+                "status", "members", "processedDeaths", "history" });
+            var members = Items(dynastyElement.Element("members"), "member", item => StableEntityId.Parse(Scalar(item)));
+            var processed = Items(dynastyElement.Element("processedDeaths"), "character", item => StableEntityId.Parse(Scalar(item)));
+            var history = Items(dynastyElement.Element("history"), "entry", item =>
+            {
+                RequireFields(item, new[] { "sequence", "previousMonarchId", "newMonarchId", "calendarTick", "reason" });
+                return new SuccessionHistoryEntry(Long(item, "sequence"), StableEntityId.Parse(Value(item, "previousMonarchId")),
+                    OptionalStableId(item, "newMonarchId"), Long(item, "calendarTick"), (SuccessionReason)Int(item, "reason"));
+            });
+            var dynasty = new DynastyStateSnapshot(StableEntityId.Parse(Value(dynastyElement, "id")),
+                Value(dynastyElement, "name"), StableEntityId.Parse(Value(dynastyElement, "founderId")),
+                OptionalStableId(dynastyElement, "currentMonarchId"), Value(dynastyElement, "successionRuleId"),
+                (DynastyStatus)Int(dynastyElement, "status"), members, processed, history);
+            return new DynastyWorldSaveState(characters, dynasty, OptionalStableId(element, "currentRulerId"),
+                (GameRunStatus)Int(element, "runStatus"), (GameOverReason)Int(element, "gameOverReason"));
+        }
+
+        private static CharacterState DeserializeCharacter(XElement item)
+        {
+            RequireFields(item, new[] { "id", "givenName", "familyName", "sex", "birthTick", "lifeState", "deathTick",
+                "parents", "spouseId", "familyId", "dynastyId", "professionId", "traits", "skills", "attributes",
+                "health", "wealth", "influence", "relationships" });
+            var parents = Items(item.Element("parents"), "parent", parent =>
+            {
+                RequireFields(parent, new[] { "id", "role", "kind", "known" });
+                return new ParentLink(StableEntityId.Parse(Value(parent, "id")), (ParentRole)Int(parent, "role"),
+                    (ParentageKind)Int(parent, "kind"), XmlConvert.ToBoolean(Value(parent, "known")));
+            });
+            var traits = Items(item.Element("traits"), "trait", trait => new TraitId(Scalar(trait)));
+            var skills = Items(item.Element("skills"), "skill", skill =>
+            {
+                RequireFields(skill, new[] { "id", "level" });
+                return new SkillState(new SkillId(Value(skill, "id")), new SkillLevel(Int(skill, "level")));
+            });
+            var attributes = item.Element("attributes");
+            RequireFields(attributes, new[] { "intelligence", "physicalStrength" });
+            var health = item.Element("health");
+            RequireFields(health, new[] { "head", "torso", "leftArm", "rightArm", "leftLeg", "rightLeg" });
+            var relationships = Items(item.Element("relationships"), "relationship", relation =>
+            {
+                RequireFields(relation, new[] { "id", "affinity" });
+                return new RelationshipState(StableEntityId.Parse(Value(relation, "id")),
+                    new RelationshipScore(Int(relation, "affinity")));
+            });
+            var deathText = Value(item, "deathTick");
+            var professionText = Value(item, "professionId");
+            return new CharacterState(StableEntityId.Parse(Value(item, "id")),
+                new CharacterName(Value(item, "givenName"), Value(item, "familyName")),
+                (CharacterSex)Int(item, "sex"), Long(item, "birthTick"), (CharacterLifeState)Int(item, "lifeState"),
+                string.IsNullOrEmpty(deathText) ? (long?)null : XmlConvert.ToInt64(deathText), parents,
+                OptionalStableId(item, "spouseId"), OptionalStableId(item, "familyId"), OptionalStableId(item, "dynastyId"),
+                string.IsNullOrEmpty(professionText) ? (ProfessionId?)null : new ProfessionId(professionText),
+                traits, skills,
+                new CharacterAttributes(new CharacterAttributeValue(Int(attributes, "intelligence")),
+                    new CharacterAttributeValue(Int(attributes, "physicalStrength"))),
+                new BodyHealth(new HealthValue(Int(health, "head")), new HealthValue(Int(health, "torso")),
+                    new HealthValue(Int(health, "leftArm")), new HealthValue(Int(health, "rightArm")),
+                    new HealthValue(Int(health, "leftLeg")), new HealthValue(Int(health, "rightLeg"))),
+                new Wealth(Int(item, "wealth")), new Influence(Int(item, "influence")), relationships);
+        }
+
+        private static XElement OptionalId(string name, StableEntityId? value) =>
+            new XElement(name, value.HasValue ? value.Value.ToString() : string.Empty);
+
+        private static StableEntityId? OptionalStableId(XElement parent, XName name)
+        {
+            var text = Value(parent, name);
+            return string.IsNullOrEmpty(text) ? (StableEntityId?)null : StableEntityId.Parse(text);
         }
 
         private static T[] Items<T>(XElement container, XName itemName, Func<XElement, T> parser)

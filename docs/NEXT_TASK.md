@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U16A was completed and validated on 2026-10-07. Do not reopen U16/U16A unless review finds a regression. Do not begin U17 until the user explicitly accepts the U16A handoff.
+U17 was completed and validated on 2026-10-07. Do not reopen U17 unless review finds a regression. Do not begin U18 until the user explicitly accepts the U17 handoff.
 
-## Next unblocked task: U17 — Династия и наследование
+## Next unblocked task: U18 — Семейные события, болезни и травмы
 
 ### Status
 
-Not started; awaiting U16A review.
+Not started; awaiting U17 review.
 
 ### Prerequisites
 
-U03 time, U04/U04A persistence, and U06 character domain are DONE.
+U06 character domain and U17 dynasty/succession are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U17 dynasty/succession slice: a monarch's death transfers control to an eligible heir and dynasty extinction produces Game Over.
+After explicit authorization, implement the TASK_GRAPH U18 family-event, disease and injury slice without changing U17 succession identity or exactly-once guarantees.
 
 ### Scope boundary
 
-Begin from `docs/U16A_HANDOFF.md`, `docs/U16_HANDOFF.md`, the U17 section of `docs/TASK_GRAPH.md`, current architecture decisions and the relevant FRS dynasty/succession sections. Preserve the U16 research/save contracts and U16A input/debug boundaries. Do not begin U18 or later tasks.
+Begin from `docs/U17_HANDOFF.md`, `docs/DYNASTY_AND_SUCCESSION.md`, the U18 section of `docs/TASK_GRAPH.md`, current architecture decisions and the relevant FRS health/family sections. Reuse `SuccessionService.ProcessDeath` as the death boundary. Do not begin U19 or later tasks.

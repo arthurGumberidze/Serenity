@@ -44,6 +44,37 @@ namespace Game.Domain.Characters
             return characters.Values.OrderBy(character => character.Id.ToString(), StringComparer.Ordinal).ToArray();
         }
 
+        public IReadOnlyList<CharacterState> CaptureStates() => GetAll().Select(character => character.CaptureState()).ToArray();
+
+        public void RestoreStates(IEnumerable<CharacterState> states)
+        {
+            if (states == null) throw new ArgumentNullException(nameof(states));
+            var restored = new Dictionary<StableEntityId, Character>();
+            foreach (var state in states)
+            {
+                var character = Character.Restore(state);
+                if (!restored.TryAdd(character.Id, character))
+                    throw new ArgumentException("Character state IDs must be unique.", nameof(states));
+            }
+
+            if (characters.Count == 0)
+            {
+                foreach (var pair in restored) characters.Add(pair.Key, pair.Value);
+                return;
+            }
+
+            if (characters.Count != restored.Count || characters.Keys.Any(id => !restored.ContainsKey(id)))
+                throw new InvalidOperationException("Restoring an active registry requires the same stable character identities.");
+            foreach (var pair in restored)
+            {
+                var existing = characters[pair.Key];
+                if (existing.Sex != pair.Value.Sex || existing.BiologicalBirthTick != pair.Value.BiologicalBirthTick)
+                    throw new InvalidOperationException("Restored immutable character biography does not match the active canonical instance.");
+            }
+            foreach (var pair in restored)
+                characters[pair.Key].RestoreMutableState(pair.Value.CaptureState());
+        }
+
         public IReadOnlyList<Character> GetChildren(StableEntityId parentId)
         {
             ValidateId(parentId, nameof(parentId));

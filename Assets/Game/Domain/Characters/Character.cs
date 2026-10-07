@@ -171,6 +171,31 @@ namespace Game.Domain.Characters
             SpouseId = spouseId;
         }
 
+        internal void RestoreMutableState(CharacterState state)
+        {
+            Validate(state);
+            if (state.Id != Id || state.Sex != Sex || state.BiologicalBirthTick != BiologicalBirthTick)
+                throw new InvalidOperationException("Restored character identity, sex and birth tick must match the canonical instance.");
+            Name = state.Name;
+            LifeState = state.LifeState;
+            BiologicalDeathTick = state.BiologicalDeathTick;
+            parents = state.Parents.ToArray();
+            SpouseId = state.SpouseId;
+            FamilyId = state.FamilyId;
+            DynastyId = state.DynastyId;
+            ProfessionId = state.ProfessionId;
+            traits = state.Traits.ToArray();
+            skills.Clear();
+            foreach (var skill in state.Skills) skills.Add(skill.Id, skill);
+            Attributes = state.Attributes;
+            Health = state.Health;
+            Wealth = state.Wealth;
+            Influence = state.Influence;
+            relationships.Clear();
+            foreach (var relationship in state.Relationships)
+                relationships.Add(relationship.OtherCharacterId, relationship);
+        }
+
         private static void Validate(CharacterState state)
         {
             if (!state.Id.IsValid) throw new ArgumentException("Character ID must be valid.", nameof(state));

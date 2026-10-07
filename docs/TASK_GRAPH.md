@@ -24,7 +24,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U15 | DONE | Производство и фермерство | U09,U10,U14 | MVP | Поселение устойчиво производит еду/материалы несколько игровых лет. |
 | U16 | DONE | Research framework и каменный век | U06,U15 | MVP | Законченная каменная ветка открывает здания/рецепты. |
 | U16A | DONE | Debug gameplay controls / usability patch | U05,U08,U10,U11,U15,U16 | MVP | Игрок назначает research workers, выбирает research-gated здания и управляет временем без конфликта с work-group hotkeys. |
-| U17 | TODO | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
+| U17 | DONE | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
 | U18 | TODO | Семейные события, болезни и травмы | U06,U17 | MVP | Событие может изменить состояние и способности наследника. |
 | U19 | TODO | Погода и сезоны | U03,U05,U15 | MVP | Погода имеет измеримые gameplay-модификаторы. |
 | U20 | TODO | Тактический RTS-бой | U05,U05A,U06,U07 | MVP | Два отряда завершают бой с детерминируемыми потерями. |
@@ -56,3 +56,5 @@ Completion note (2026-10-06): U15 reusable recipes/sites/tasks, finite gathering
 Completion note (2026-10-06): U16 engine-independent research definitions/service, validated 14-technology Stone Age graph, typed building/recipe/capability unlocks, centralized Tier1/Tier2/Tier3 work, deterministic checkpoints, version-3 research persistence and debug progression panel are complete. End-to-end capstone, multi-year U15+U16, full regression, PostgreSQL, GPU and Windows build gates passed. U17 is next but has not started.
 
 Completion note (2026-10-07): U16A removes hardcoded demo research assignments, distinguishes assigned from authoritative active research, adds the catalog-backed research-gated building selector and adds canonical pause/speed controls without consuming U11 digit shortcuts. Focused/full/regression/GPU/build gates passed. U17 remains not started pending review.
+
+Completion note (2026-10-07): U17 adds canonical stable-ID dynasty state, read-only family queries over U06 links, deterministic agnatic primogeniture, event-driven exactly-once succession, player-ruler transfer, extinction/Game Over, succession history, tier-independent/off-camera behavior, version-4 character/dynasty persistence with v1-v3 compatibility and a click-blocked LocalGameplay debug overlay. Focused, full, persistence, tier-route, collection-order, GPU, PostgreSQL and Windows build gates passed. U18 is next but has not started.
