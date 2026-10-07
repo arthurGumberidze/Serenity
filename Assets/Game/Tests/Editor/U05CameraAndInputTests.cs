@@ -45,13 +45,15 @@ namespace Game.Tests
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
                 "Assets/Game/Presentation/Input/LocalGameplay.inputactions");
             Assert.That(asset, Is.Not.Null);
-            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[] { "Camera", "Pointer", "Building" }));
+            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[] { "Camera", "Pointer", "Building", "Time" }));
             Assert.That(asset.FindActionMap("Camera").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "Move", "Zoom", "Rotate", "Pan", "PanModifier" }));
             Assert.That(asset.FindActionMap("Pointer").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "Position", "PrimaryClick", "SecondaryClick", "SelectionModifier" }));
             Assert.That(asset.FindActionMap("Building").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "ToggleMode", "Confirm", "Cancel", "Rotate" }));
+            Assert.That(asset.FindActionMap("Time").actions.Select(action => action.name),
+                Is.EquivalentTo(new[] { "TogglePause", "Slower", "Faster" }));
             Assert.That(asset.FindAction("Camera/Move").bindings.Any(binding => binding.path == "<Keyboard>/w"), Is.True);
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
@@ -62,6 +64,11 @@ namespace Game.Tests
                 binding.path == "<Mouse>/rightButton"), Is.False,
                 "Secondary click is routed once so placement cancel cannot also issue a Move command.");
             Assert.That(asset.FindAction("Building/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/r"), Is.True);
+            Assert.That(asset.FindAction("Time/TogglePause").bindings.Any(binding => binding.path == "<Keyboard>/space"), Is.True);
+            Assert.That(asset.FindAction("Time/Slower").bindings.Any(binding => binding.path == "<Keyboard>/minus"), Is.True);
+            Assert.That(asset.FindAction("Time/Faster").bindings.Any(binding => binding.path == "<Keyboard>/equals"), Is.True);
+            Assert.That(asset.FindActionMap("Time").bindings.Any(binding => binding.path.Contains("digit")), Is.False,
+                "Time controls must not consume U11 work-group number keys.");
         }
 
         [Test]

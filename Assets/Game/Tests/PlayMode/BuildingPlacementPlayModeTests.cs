@@ -85,6 +85,7 @@ namespace Game.Tests.PlayMode
         {
             var technologyId = new Game.Domain.Research.TechnologyId(id);
             if (root.Research.IsCompleted(technologyId)) return;
+            root.Research.TryAssignWorker(root.MaleDemoCharacter.Id);
             Assert.That(root.Research.Start(technologyId), Is.True);
             root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
                 root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks, true);

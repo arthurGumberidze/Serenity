@@ -11,6 +11,7 @@ namespace Game.Presentation.Input
         private InputActionMap cameraMap;
         private InputActionMap pointerMap;
         private InputActionMap buildingMap;
+        private InputActionMap timeMap;
         private InputAction moveAction;
         private InputAction zoomAction;
         private InputAction rotateAction;
@@ -24,6 +25,9 @@ namespace Game.Presentation.Input
         private InputAction buildConfirmAction;
         private InputAction buildCancelAction;
         private InputAction buildRotateAction;
+        private InputAction pauseAction;
+        private InputAction timeSlowerAction;
+        private InputAction timeFasterAction;
 
         public Vector2 Move => ReadVector2(moveAction);
         public float Zoom => ReadFloat(zoomAction);
@@ -39,6 +43,9 @@ namespace Game.Presentation.Input
         public event Action BuildConfirmed;
         public event Action BuildCancelled;
         public event Action BuildRotated;
+        public event Action PauseToggled;
+        public event Action TimeSlowerRequested;
+        public event Action TimeFasterRequested;
 
         public InputActionAsset Actions => actionAsset;
 
@@ -83,6 +90,7 @@ namespace Game.Presentation.Input
             cameraMap = actionAsset.FindActionMap("Camera", true);
             pointerMap = actionAsset.FindActionMap("Pointer", true);
             buildingMap = actionAsset.FindActionMap("Building", true);
+            timeMap = actionAsset.FindActionMap("Time", true);
             moveAction = cameraMap.FindAction("Move", true);
             zoomAction = cameraMap.FindAction("Zoom", true);
             rotateAction = cameraMap.FindAction("Rotate", true);
@@ -96,6 +104,9 @@ namespace Game.Presentation.Input
             buildConfirmAction = buildingMap.FindAction("Confirm", true);
             buildCancelAction = buildingMap.FindAction("Cancel", true);
             buildRotateAction = buildingMap.FindAction("Rotate", true);
+            pauseAction = timeMap.FindAction("TogglePause", true);
+            timeSlowerAction = timeMap.FindAction("Slower", true);
+            timeFasterAction = timeMap.FindAction("Faster", true);
         }
 
         private void EnableActions()
@@ -114,9 +125,16 @@ namespace Game.Presentation.Input
             buildCancelAction.performed += OnBuildCancel;
             buildRotateAction.performed -= OnBuildRotate;
             buildRotateAction.performed += OnBuildRotate;
+            pauseAction.performed -= OnPauseToggle;
+            pauseAction.performed += OnPauseToggle;
+            timeSlowerAction.performed -= OnTimeSlower;
+            timeSlowerAction.performed += OnTimeSlower;
+            timeFasterAction.performed -= OnTimeFaster;
+            timeFasterAction.performed += OnTimeFaster;
             cameraMap.Enable();
             pointerMap.Enable();
             buildingMap.Enable();
+            timeMap.Enable();
         }
 
         private void DisableActions()
@@ -129,9 +147,13 @@ namespace Game.Presentation.Input
             if (buildConfirmAction != null) buildConfirmAction.performed -= OnBuildConfirm;
             if (buildCancelAction != null) buildCancelAction.performed -= OnBuildCancel;
             if (buildRotateAction != null) buildRotateAction.performed -= OnBuildRotate;
+            if (pauseAction != null) pauseAction.performed -= OnPauseToggle;
+            if (timeSlowerAction != null) timeSlowerAction.performed -= OnTimeSlower;
+            if (timeFasterAction != null) timeFasterAction.performed -= OnTimeFaster;
             cameraMap?.Disable();
             pointerMap?.Disable();
             buildingMap?.Disable();
+            timeMap?.Disable();
         }
 
         private void OnPrimaryClick(InputAction.CallbackContext context)
@@ -148,6 +170,9 @@ namespace Game.Presentation.Input
         private void OnBuildConfirm(InputAction.CallbackContext context) => BuildConfirmed?.Invoke();
         private void OnBuildCancel(InputAction.CallbackContext context) => BuildCancelled?.Invoke();
         private void OnBuildRotate(InputAction.CallbackContext context) => BuildRotated?.Invoke();
+        private void OnPauseToggle(InputAction.CallbackContext context) => PauseToggled?.Invoke();
+        private void OnTimeSlower(InputAction.CallbackContext context) => TimeSlowerRequested?.Invoke();
+        private void OnTimeFaster(InputAction.CallbackContext context) => TimeFasterRequested?.Invoke();
 
         private static Vector2 ReadVector2(InputAction action)
         {

@@ -46,9 +46,11 @@ namespace Game.Presentation.Buildings
         public ConstructionFailureReason LastConstructionFailure { get; private set; }
         public BuildingOrientation Orientation => orientation;
         public GridCoordinate PreviewCoordinate => previewCoordinate;
+        public BuildingDefinitionId? ActiveDefinitionId => activeDefinition?.Id;
         public BuildingPresenter LastPlacedPresenter { get; private set; }
         public float GridSize => gridSize;
         public event Action<Building, BuildingPresenter> BuildingPlaced;
+        public event Action BuildMenuRequested;
 
         public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
             BuildingPresentationCatalog presentationCatalog, float configuredGridSize, Vector3 origin)
@@ -74,12 +76,25 @@ namespace Game.Presentation.Buildings
 
         public void StartPlacement(BuildingDefinitionId definitionId)
         {
+            TryStartPlacement(definitionId);
+        }
+
+        public bool TryStartPlacement(BuildingDefinitionId definitionId)
+        {
             EnsureInitialized();
             CancelPlacement();
-            activeDefinition = catalog.ResolveDefinition(definitionId);
+            var definition = catalog.ResolveDefinition(definitionId);
+            if (construction != null && !construction.IsBuildingUnlocked(definition.Id))
+            {
+                LastConstructionFailure = ConstructionFailureReason.LockedByResearch;
+                return false;
+            }
+            activeDefinition = definition;
+            LastConstructionFailure = ConstructionFailureReason.None;
             orientation = BuildingOrientation.North;
             interactionMode.EnterBuildingPlacement();
             CreatePreview();
+            return true;
         }
 
         public bool TryMovePreviewToWorldPoint(Vector3 worldPoint)
@@ -179,6 +194,7 @@ namespace Game.Presentation.Buildings
         {
             Unsubscribe();
             BuildingPlaced = null;
+            BuildMenuRequested = null;
             if (previewObject != null) Destroy(previewObject);
         }
 
@@ -211,10 +227,20 @@ namespace Game.Presentation.Buildings
 
         private void OnBuildModeRequested()
         {
-            if (IsActive) CancelPlacement();
-            else StartPlacement(catalog.DefaultDefinitionId);
+            if (IsActive)
+            {
+                CancelPlacement();
+                if (BuildMenuRequested == null) return;
+            }
+            if (BuildMenuRequested != null) BuildMenuRequested.Invoke();
+            else if (!IsActive) StartPlacement(catalog.DefaultDefinitionId);
         }
-        private void OnBuildConfirmed() => ConfirmPlacement();
+        private void OnBuildConfirmed()
+        {
+            if (inputSource != null && raycaster != null && raycaster.IsPointerBlockedByUi(inputSource.PointerPosition))
+                return;
+            ConfirmPlacement();
+        }
         private void OnBuildCancelled() => CancelPlacement();
         private void OnBuildRotated() => RotatePreview();
 

@@ -54,12 +54,15 @@ namespace Game.Simulation.Resources
             unlocks = researchUnlocks;
         }
 
+        public bool IsBuildingUnlocked(BuildingDefinitionId definitionId) =>
+            unlocks == null || unlocks.IsBuildingUnlocked(definitionId);
+
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources)
         {
             var spatial = placement.Evaluate(definition, coordinate, orientation);
             if (!spatial.IsValid) return new ConstructionEvaluation(spatial, ConstructionFailureReason.InvalidPlacement, default);
-            if (unlocks != null && !unlocks.IsBuildingUnlocked(definition.Id))
+            if (!IsBuildingUnlocked(definition.Id))
                 return new ConstructionEvaluation(spatial, ConstructionFailureReason.LockedByResearch, default);
             var funding = Plan(definition, fundingSources, out _, out var missing);
             return new ConstructionEvaluation(spatial, funding, missing);

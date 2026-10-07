@@ -133,7 +133,7 @@ namespace Game.Presentation.AI
             guiRect = default;
             if ((!Application.isEditor && !Debug.isDebugBuild) || !TryCaptureSelected(out var snapshot)) return false;
             var height = 150f + snapshot.Resources.Count * 20f + snapshot.ActiveClaims.Count * 42f;
-            guiRect = new Rect(12f, 160f, 620f, height);
+            guiRect = new Rect(12f, 190f, 430f, height);
             return true;
         }
 

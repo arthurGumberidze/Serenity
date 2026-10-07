@@ -71,6 +71,13 @@ namespace Game.Presentation.AI
             RefreshMovementPresentation();
         }
 
+        public void SetSpeed(GameSpeed speed)
+        {
+            if (clock == null) throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
+            clock.SetSpeed(speed);
+            RefreshMovementPresentation();
+        }
+
         private void Update()
         {
             if (clock == null || scheduler == null) return;

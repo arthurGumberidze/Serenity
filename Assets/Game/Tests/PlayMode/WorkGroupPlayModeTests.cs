@@ -10,6 +10,7 @@ using Game.Infrastructure;
 using Game.Presentation.AI;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
+using Game.Presentation.Production;
 using Game.Presentation.Resources;
 using Game.Presentation.Work;
 using Game.Simulation.Work;
@@ -110,6 +111,9 @@ namespace Game.Tests.PlayMode
             {
                 Object.FindAnyObjectByType<ResourceDebugOverlay>(),
                 Object.FindAnyObjectByType<Tier1AiDebugOverlay>(),
+                Object.FindAnyObjectByType<ProductionDebugOverlay>(),
+                root.ResearchDebug,
+                root.TimeDebug,
                 root.WorkDebug
             };
             foreach (var blocker in blockers)
@@ -120,6 +124,12 @@ namespace Game.Tests.PlayMode
                 yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(guiPoint));
                 Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { selectedId }));
             }
+            root.BuildingDebug.Open();
+            Assert.That(root.BuildingDebug.TryGetUiBlockingRect(out var buildingRect), Is.True);
+            yield return ClickScreenPoint(WorldPointerRaycaster.GuiToScreenPoint(
+                new Vector2(buildingRect.xMin + 4f, buildingRect.yMin + 4f)));
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Is.EqualTo(new[] { selectedId }));
+            root.BuildingDebug.Close();
         }
 
         [UnityTest]
@@ -297,6 +307,12 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            var shelterTechnology = new Game.Domain.Research.TechnologyId("shelter_construction");
+            Assert.That(root.Research.Start(shelterTechnology), Is.True);
+            Assert.That(root.Research.TryAssignWorker(root.MaleDemoCharacter.Id), Is.True);
+            root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
+                root.Technologies.Get(shelterTechnology).ResearchWorkRequiredTicks, true);
+            Assert.That(root.Research.IsCompleted(shelterTechnology), Is.True);
             root.BuildingPlacementController.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
             Assert.That(root.BuildingPlacementController.IsActive, Is.True);
             var before = root.Work.JobCount;

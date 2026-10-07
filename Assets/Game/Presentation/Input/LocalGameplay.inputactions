@@ -60,6 +60,20 @@
         { "name": "", "id": "c9e0a6cb-6417-442e-83fa-ad230895e4a7", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Cancel", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "db40377a-d2c4-4cd5-8db0-d0d49606ce02", "path": "<Keyboard>/r", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Rotate", "isComposite": false, "isPartOfComposite": false }
       ]
+    },
+    {
+      "name": "Time",
+      "id": "c4c5b08b-2a4f-4d14-b64b-c663fc77d2f9",
+      "actions": [
+        { "name": "TogglePause", "type": "Button", "id": "52c95d2e-8a82-4d4c-9497-faf11f311813", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "Slower", "type": "Button", "id": "c9b75da8-eaee-4140-8bbc-394e49423123", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "Faster", "type": "Button", "id": "55115d90-1db3-4ff6-8452-ec36d3e99f85", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "", "id": "0a9786f7-0f12-4b30-909f-88a7dc5252b7", "path": "<Keyboard>/space", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "TogglePause", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "f482d12a-cc17-442a-b917-39cd8054ce8f", "path": "<Keyboard>/minus", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Slower", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "b9d34a92-19c2-4d69-bcf2-7aecf259d358", "path": "<Keyboard>/equals", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Faster", "isComposite": false, "isPartOfComposite": false }
+      ]
     }
   ],
   "controlSchemes": [

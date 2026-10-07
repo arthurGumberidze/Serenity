@@ -229,3 +229,13 @@ One settlement project accumulates integer work ticks. Each assigned worker stor
 `SaveSnapshot` version 3 embeds `ResearchSaveState`: last tick, sorted completed technology IDs, optional active project and sorted worker checkpoints/remainders. Restore validates prerequisites, costs, starting knowledge and identities before commit, then reconstructs unlocks. Versions 1 and 2 remain loadable. PostgreSQL stores the same validated XML payload and needed no relational migration.
 
 LocalGameplay's development overlay reads canonical state on draw and can cycle/start/cancel available technologies. It shows prerequisites, progress, aggregate rate/ETA, unlock preview and state lists, while the existing IMGUI blocker prevents world click-through. U27 owns final gameplay UI; U38 owns later eras.
+
+## U16A development gameplay control layer
+
+U16A adds no new source of gameplay truth. The research command path is `SelectionProbe -> ResearchDebugOverlay -> ResearchService`; duplicate selection is idempotent and every durable worker reference remains a `StableEntityId`. `ResearchWorkerStatusQuery` is a read model joining assigned IDs to `Tier1AiAgentRegistry`; only `Research/Researching` states are Active. The overlay uses Active workers for displayed throughput while the scheduler/service remain authoritative for work.
+
+The building path is `BuildingDebugSelector -> BuildingPresentationCatalog/ResearchService read views -> BuildingPlacementController -> ConstructionFundingService`. The selector is generated from existing definitions and explains locks. The placement controller independently rejects locked definitions before creating a ghost, preserving the U08/U09/U16 validation path. Unlocking `primitive_agriculture` therefore makes `primitive_crop_plot` selectable without a parallel catalog or placement implementation.
+
+The time path is `LocalGameplay.inputactions Time map -> LocalGameplayInputSource -> TimeDebugOverlay -> Tier1AiRuntimeDriver -> GameClock`. Space toggles pause; Minus/Equals step x1/x2/x3/x5/x10. The U11 digit actions are unchanged. One runtime update obtains the clock advance and publishes it to the existing Tier 1, Tier 2, Tier 3, production and research consumers; pause produces a zero delta for all of them.
+
+Research, building and time IMGUI surfaces register rectangles with `WorldPointerRaycaster`. Placement confirmation now checks the same UI boundary, so pointer events over these panels cannot mutate world selection, issue work/move commands or confirm a hidden building. These panels are explicitly temporary development controls; U27 owns production UI.

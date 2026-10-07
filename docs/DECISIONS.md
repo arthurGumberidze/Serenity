@@ -213,3 +213,11 @@ Tier 1 adds Research to U10's centralized Utility AI; Tier 2 and Tier 3 submit s
 `SaveSnapshot.CurrentVersion` is 3 because research adds durable completed IDs, active project/progress, assignments, fractional remainders and the last processed absolute tick. Versions 1 and 2 remain strictly readable; missing research payload means no research state to restore. PostgreSQL continues to validate and store the opaque versioned XML, accepts metadata versions 1–3 and requires no SQL migration or realtime query path.
 
 The current catalog is Stone Age only. `stone_age_mastery` depends on all required late branches and unlocks `stone_age_completed`; `ResearchService.StoneAgeCompleted` exposes that capstone without starting a later era. Post-Stone-Age content remains U38.
+
+## D-034 Player-controlled research and disposable debug controls (2026-10-07)
+
+Research assignment is an explicit player/debug command over the canonical `ResearchService`; LocalGameplay composition does not implicitly assign demo characters. Batch assignment is idempotent and stable-ID ordered. Assigned means present in `ResearchService.AssignedWorkers`. Active means that same assigned ID currently has authoritative Tier 1 AI action `Research` in phase `Researching`; visual state and assignment alone are insufficient. The research panel derives its rate and ETA from Active workers and explains a zero-active stall.
+
+The U16A building selector is development-only until U27. It enumerates the existing `BuildingPresentationCatalog`, derives availability and unlock reasons from the live U16 catalog/service, and passes the selected `BuildingDefinitionId` to the existing U08 controller. The controller itself enforces `LockedByResearch`, so UI state is explanatory rather than authoritative. Current U16 starting knowledge remains unchanged; shelter, storage and crop availability follow their canonical technologies.
+
+Time input remains in the Unity Input System. Space toggles pause, Minus steps slower and Equals/Plus steps faster through x1/x2/x3/x5/x10. Digits 1–9 remain exclusively U11 work-group recall keys. `Tier1AiRuntimeDriver` is the debug command coordinator for pause/speed and mutates the one `GameClock`; its zero-delta path is the shared pause barrier for AI, tier batches, production and research. No second time service or final U27 HUD was introduced.

@@ -29,6 +29,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root.ResearchDebug, Is.Not.Null);
             Assert.That(root.Research.CompletedTechnologies.Count, Is.EqualTo(2));
             Assert.That(root.Research.IsBuildingUnlocked(new Game.Domain.Buildings.BuildingDefinitionId("primitive_crop_plot")), Is.False);
+            Assert.That(root.Research.AssignedWorkers, Is.Empty);
+            root.Research.AssignWorker(root.MaleDemoCharacter.Id);
             Assert.That(root.ResearchDebug.StartSelected(), Is.True);
             for (var i = 0; i < 6 && root.Research.ActiveProject != null &&
                 root.Research.ActiveProject.AccumulatedWorkTicks == 0; i++)
@@ -43,6 +45,7 @@ namespace Game.Tests.PlayMode
         {
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
+            root.Research.AssignWorkers(new[] { root.MaleDemoCharacter.Id, root.FemaleDemoCharacter.Id });
             var technology = new TechnologyId("stone_tools");
             Assert.That(root.Research.Start(technology), Is.True);
             root.Tiers.Transition(root.MaleDemoCharacter.Id, CharacterSimulationTier.Tier2);

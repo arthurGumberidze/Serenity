@@ -154,9 +154,33 @@ namespace Game.Simulation.Research
         public void AssignWorker(StableEntityId workerId)
         {
             if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
-            if (!workers.TryAdd(workerId, new WorkerProgress
-                { Id = workerId, LastProcessedTick = LastProcessedTick }))
+            if (!TryAssignWorker(workerId))
                 throw new InvalidOperationException("Research worker is already assigned.");
+        }
+
+        public bool TryAssignWorker(StableEntityId workerId)
+        {
+            if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
+            return workers.TryAdd(workerId, new WorkerProgress
+                { Id = workerId, LastProcessedTick = LastProcessedTick });
+        }
+
+        public int AssignWorkers(IEnumerable<StableEntityId> workerIds)
+        {
+            if (workerIds == null) throw new ArgumentNullException(nameof(workerIds));
+            var assigned = 0;
+            foreach (var workerId in workerIds.Distinct().OrderBy(x => x))
+                if (TryAssignWorker(workerId)) assigned++;
+            return assigned;
+        }
+
+        public int UnassignWorkers(IEnumerable<StableEntityId> workerIds)
+        {
+            if (workerIds == null) throw new ArgumentNullException(nameof(workerIds));
+            var removed = 0;
+            foreach (var workerId in workerIds.Distinct().OrderBy(x => x))
+                if (UnassignWorker(workerId)) removed++;
+            return removed;
         }
 
         public bool UnassignWorker(StableEntityId workerId) => workers.Remove(workerId);

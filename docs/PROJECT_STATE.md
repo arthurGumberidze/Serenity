@@ -4,10 +4,20 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U16 DONE — reusable deterministic research, the complete 14-technology Stone Age branch, typed content gating and persistent Tier1/Tier2/Tier3 research execution are complete.
+U16A DONE — the small LocalGameplay debug-control patch for player-managed research, research-aware building selection and canonical time controls is complete.
 
 ## Active task
-No implementation task is active. U17 is the next unblocked task, but it has not started and awaits review of U16.
+No implementation task is active. U17 is the next unblocked task, but it has not started and awaits review of U16A.
+
+## U16A debug gameplay controls
+- LocalGameplay no longer assigns Aren or Mira to research during composition. The existing selection surface now drives idempotent `Assign selected to Research` and `Remove selected from Research` commands against the one `ResearchService`.
+- The research panel reports canonical Assigned workers separately from Active workers. Active means an assigned stable ID whose authoritative Tier 1 AI state is `Research/Researching`; assigned-but-idle workers no longer inflate rate or ETA.
+- `B` now opens a development-only selector generated from `BuildingPresentationCatalog`. It lists `primitive_shelter`, `storage_basket` and `primitive_crop_plot`, shows research-derived availability/reasons, and delegates unlocked choices to the existing placement controller. Direct locked requests also stop at the existing `LockedByResearch` boundary.
+- The Time Input System map uses Space for pause/resume and Minus/Equals (Plus) for slower/faster. Speeds step through x1/x2/x3/x5/x10. U11 number-row work-group shortcuts remain untouched.
+- `Tier1AiRuntimeDriver` remains the canonical pause coordinator over the one `GameClock`. A paused zero delta advances neither Tier 1 AI, Tier 2/3 consumers, production nor research; resume continues from the existing clock state without catch-up duplication.
+- Development panels were separated enough for a 1600x900 Game View, and research/build/time panels register with the existing U11 pointer blocker. UI clicks cannot confirm placement, clear selection or create a world command behind a panel.
+- Final gates: U16A 4/4 EditMode and 3/3 headless PlayMode; full non-PostgreSQL EditMode 237/237; full PlayMode 42/42; U05 5/5; combined U08/U10/U11/U15/U16 EditMode 63/63; combined U08/U10/U16 PlayMode 13/13; U09 4/4, U11 10/10 and U15 3/3 PlayMode; U16A GPU PlayMode 3/3 on Direct3D 11 / Intel Arc; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- Windows Computer Use initialization failed twice before an application window was available (`helper_unknown_error`, then kernel reset). Interactive manual clicks are therefore not claimed; the equivalent control, lock, pause/resume and click-through paths passed headless and GPU PlayMode.
 
 ## U16 research framework and Stone Age
 - `TechnologyDefinition`, `TechnologyCatalog`, typed unlocks and research save DTOs are engine-independent. The catalog contains 14 Stone Age technologies, validates duplicate/missing/self/cyclic dependencies and resolves every building, U15 recipe and capability target at construction.
@@ -178,10 +188,10 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Review U16 using `docs/U16_HANDOFF.md`. Do not start U17 until the review explicitly authorizes it.
+Review U16A using `docs/U16A_HANDOFF.md`. Do not start U17 until the review explicitly authorizes it.
 
 U16 final validation command:
 
 `& 'C:\serenity_game\Tools\Verify-U16.ps1' -ProjectPath 'C:\serenity_game' -FullRegression -ManagedPostgres -GpuValidation -StepTimeoutSeconds 900`
 
-The gate passed focused U16, full EditMode/PlayMode, U09–U15 focused regressions, managed PostgreSQL, GPU PlayMode, asset validation and Windows build. Separate U08 and persistence runs passed 8/8 + 3/3 and 35/35. Windows Computer Use failed during helper initialization/reset, so interactive clicks are not claimed; the equivalent scene paths passed headless and GPU PlayMode.
+The U16A gate passed focused U16A, full EditMode/PlayMode, U05/U08/U09/U10/U11/U15/U16 regressions, GPU PlayMode and Windows build. Windows Computer Use failed during helper initialization/reset, so interactive clicks are not claimed; the equivalent scene paths passed headless and GPU PlayMode.

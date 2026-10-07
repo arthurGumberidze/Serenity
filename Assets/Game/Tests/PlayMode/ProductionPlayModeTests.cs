@@ -116,6 +116,8 @@ namespace Game.Tests.PlayMode
             var technologyId = new Game.Domain.Research.TechnologyId(id);
             if (root.Research.IsCompleted(technologyId)) return;
             Assert.That(root.Research.Start(technologyId), Is.True);
+            Assert.That(root.Research.TryAssignWorker(root.MaleDemoCharacter.Id) ||
+                root.Research.IsAssigned(root.MaleDemoCharacter.Id), Is.True);
             var target = root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks;
             root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id, target, true);
             Assert.That(root.Research.IsCompleted(technologyId), Is.True);

@@ -23,6 +23,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U14 | DONE | Детерминированный off-camera simulation | U03,U04,U13 | MVP | Одинаковый seed даёт тот же итог; zoom не меняет результат. |
 | U15 | DONE | Производство и фермерство | U09,U10,U14 | MVP | Поселение устойчиво производит еду/материалы несколько игровых лет. |
 | U16 | DONE | Research framework и каменный век | U06,U15 | MVP | Законченная каменная ветка открывает здания/рецепты. |
+| U16A | DONE | Debug gameplay controls / usability patch | U05,U08,U10,U11,U15,U16 | MVP | Игрок назначает research workers, выбирает research-gated здания и управляет временем без конфликта с work-group hotkeys. |
 | U17 | TODO | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
 | U18 | TODO | Семейные события, болезни и травмы | U06,U17 | MVP | Событие может изменить состояние и способности наследника. |
 | U19 | TODO | Погода и сезоны | U03,U05,U15 | MVP | Погода имеет измеримые gameplay-модификаторы. |
@@ -53,3 +54,5 @@ Follow-up note (2026-10-06): U11 RTS right-click Move is complete. Selected char
 Completion note (2026-10-06): U15 reusable recipes/sites/tasks, finite gathering, primitive crop plots, canonical output ownership, food consumption, target-stock automation, tier-independent deterministic execution and version-2 production persistence are complete. Five simulated years remain food-positive with no shortage; full regression, PostgreSQL, GPU, asset and Windows build gates passed. U16 is next but has not started.
 
 Completion note (2026-10-06): U16 engine-independent research definitions/service, validated 14-technology Stone Age graph, typed building/recipe/capability unlocks, centralized Tier1/Tier2/Tier3 work, deterministic checkpoints, version-3 research persistence and debug progression panel are complete. End-to-end capstone, multi-year U15+U16, full regression, PostgreSQL, GPU and Windows build gates passed. U17 is next but has not started.
+
+Completion note (2026-10-07): U16A removes hardcoded demo research assignments, distinguishes assigned from authoritative active research, adds the catalog-backed research-gated building selector and adds canonical pause/speed controls without consuming U11 digit shortcuts. Focused/full/regression/GPU/build gates passed. U17 remains not started pending review.

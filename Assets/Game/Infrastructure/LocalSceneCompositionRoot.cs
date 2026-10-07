@@ -96,6 +96,8 @@ namespace Game.Infrastructure
         public TechnologyCatalog Technologies { get; private set; }
         public ResearchService Research { get; private set; }
         public ResearchDebugOverlay ResearchDebug { get; private set; }
+        public BuildingDebugSelector BuildingDebug { get; private set; }
+        public TimeDebugOverlay TimeDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -194,10 +196,6 @@ namespace Game.Infrastructure
             SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
                 new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere);
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
-            Research.AssignWorker(MaleDemoCharacter.Id);
-            Research.AssignWorker(FemaleDemoCharacter.Id);
-            ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
-            ResearchDebug.Initialize(Research, pointerRaycaster);
 
             Clock = new GameClock(new GameTimeState(0, 0, 1, false));
             AiAgents = new Tier1AiAgentRegistry();
@@ -211,6 +209,12 @@ namespace Game.Infrastructure
             AiRuntime.Initialize(Clock, AiScheduler);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
+            ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
+            ResearchDebug.Initialize(Research, selectionProbe, AiAgents, Characters, pointerRaycaster);
+            BuildingDebug = gameObject.AddComponent<BuildingDebugSelector>();
+            BuildingDebug.Initialize(buildingCatalog, Research, buildingPlacementController, pointerRaycaster);
+            TimeDebug = gameObject.AddComponent<TimeDebugOverlay>();
+            TimeDebug.Initialize(input, AiRuntime, pointerRaycaster);
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
