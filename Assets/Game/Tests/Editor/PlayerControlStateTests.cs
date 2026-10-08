@@ -82,8 +82,9 @@ namespace Game.Tests.Editor
         public void SnapshotCurrentVersionAdvancesBeyondPlayerControlVersion()
         {
             Assert.That(SaveSnapshot.PlayerControlVersion, Is.EqualTo(9));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.BattleVersion));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(10));
+            Assert.That(SaveSnapshot.BattleVersion, Is.EqualTo(10));
+            Assert.That(SaveSnapshot.BuildingVersion, Is.EqualTo(11));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.BuildingVersion));
         }
 
         private sealed class Owner : IExternalCharacterActivityOwner

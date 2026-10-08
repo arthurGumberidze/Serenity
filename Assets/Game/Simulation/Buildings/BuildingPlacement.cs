@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.Buildings;
+using Game.Domain.Combat;
 
 namespace Game.Simulation.Buildings
 {
@@ -50,6 +51,8 @@ namespace Game.Simulation.Buildings
             foreach (var cell in cells ?? throw new ArgumentNullException(nameof(cells)))
                 if (occupied.TryGetValue(cell, out var owner) && owner == buildingId) occupied.Remove(cell);
         }
+
+        public void Clear() => occupied.Clear();
     }
 
     public sealed class BuildingPlacementService
@@ -85,7 +88,7 @@ namespace Game.Simulation.Buildings
             var evaluation = Evaluate(definition, coordinate, orientation);
             if (!evaluation.IsValid)
                 throw new InvalidOperationException("Building placement is invalid: " + evaluation.FailureReason);
-            var building = Building.CreateNew(definition.Id, coordinate, orientation);
+            var building = Building.CreateNew(definition, coordinate, orientation, new CombatSideId("player"));
             occupancy.Reserve(evaluation.Cells, building.Id, definition.AllowsOverlap);
             try { registry.Add(building); }
             catch { occupancy.Release(evaluation.Cells, building.Id); throw; }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Game.Domain.Buildings
 {
@@ -30,6 +31,20 @@ namespace Game.Domain.Buildings
             if (expected == null || !buildings.TryGetValue(expected.Id, out var current) || !ReferenceEquals(current, expected))
                 return false;
             return buildings.Remove(expected.Id);
+        }
+
+        public void ReplaceAll(IEnumerable<BuildingState> states)
+        {
+            if (states == null) throw new ArgumentNullException(nameof(states));
+            var replacement = new Dictionary<StableEntityId, Building>();
+            foreach (var state in states)
+            {
+                var building = Building.Restore(state);
+                if (!replacement.TryAdd(building.Id, building))
+                    throw new ArgumentException("Building snapshot contains duplicate identities.", nameof(states));
+            }
+            buildings.Clear();
+            foreach (var pair in replacement.OrderBy(x => x.Key)) buildings.Add(pair.Key, pair.Value);
         }
     }
 }

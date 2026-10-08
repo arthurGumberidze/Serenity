@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U23 was completed and validated on 2026-10-08.
+U24 was completed and validated on 2026-10-08.
 
-## Next unblocked task: U24 — Destruction, Fire and Building Capture
+## Next unblocked task: U25 — Global Map
 
 ### Status
 
-TODO. Awaiting explicit user authorization; U24 has not started.
+TODO. Awaiting explicit user authorization; U25 has not started.
 
 ### Dependencies
 
-U08 construction, U20 tactical combat and U23 cross-mode battle resolution are DONE.
+U04 scene architecture and U14 deterministic off-camera simulation are DONE. U24 building destruction/fire/capture is also DONE and available to future local/global transitions.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U24 destruction, fire and building-capture slice without creating a second building, combat or persistence authority.
+After explicit authorization, implement the TASK_GRAPH U25 global map as a separate scene/mode with Local↔Global transitions that preserve canonical state.
 
 ### Scope boundary
 
-Begin from `docs/U23_HANDOFF.md`, `docs/ABSTRACT_AND_PHYSICAL_BATTLE.md`, the U08/U20 handoffs, current architecture decisions and relevant FRS sections. Do not begin U25 or later tasks.
+Begin from `docs/U24_HANDOFF.md`, `docs/BUILDING_DESTRUCTION_FIRE_CAPTURE.md`, current architecture decisions and the relevant FRS sections. Do not begin U26 or later tasks.

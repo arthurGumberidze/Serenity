@@ -329,3 +329,21 @@ Physical/abstract convergence is a distribution gate rather than an identity-equ
 `BattleResolutionService` changes representations through U21's rollback-safe service. Physical units are Detailed and active fighters are Tier1-pinned; abstract units are Aggregate and use their existing Tier2/Tier3 canonical projections. A directly controlled U22 participant blocks Physical→Abstract. Returning to Physical rematerializes the same living, capable Characters from retained U13 runtime state; dead members remain absent and incapacitated members remain canonical but unmaterialized. Exact logical position state is retained, while exact future centimetre-level path continuity is not promised.
 
 Snapshot v10 adds mode, optional unit IDs and compact started/mode-changed/side-broken/captain-death/finished events to the existing combat payload. Attack history remains the detailed casualty evidence. Versions 1–9 default to Physical/no unit links when those fields are absent. PostgreSQL keeps the opaque XML design and requires no schema or realtime-query change.
+
+## D-058 Canonical structural state and retained ruins (2026-10-08)
+
+U24 extends the existing `Building` rather than introducing destroyed, captured or combat copies. The canonical record owns data-driven max/current integrity, structural status, `CombatSideId` owner, fire/checkpoint state, processed damage IDs and compact history. One engine-independent `BuildingDamageService` applies Generic, Combat and Fire damage using integer definition multipliers. Stable event IDs make repeated delivery idempotent; integrity is bounded and destruction commits once.
+
+A destroyed building remains in `BuildingRegistry` and keeps its grid occupancy as ruins. This prevents free overlap and preserves a stable future repair/reconstruction target without implementing repair. Destruction cancels uncommitted site work and makes production/crop progression non-operational. Storage contents move atomically from the building inventory into deterministic WorldPiles at its position; an explicit spill marker makes retries and load continuation non-duplicating.
+
+## D-059 Central fixed-step fire and battle-validated in-place capture (2026-10-08)
+
+Fire is a building state, never a ParticleSystem. The centralized service processes active fires in stable-ID order at a fixed one-game-hour step from an absolute persisted checkpoint. Fixed-point settings own base damage/decay plus U19 rain, snow and heat modifiers. Stable building/tick-derived damage IDs make direct catch-up, incremental advancement, collection reorder and save/load continuation converge without a new RNG stream. U24 deliberately omits spatial propagation, firefighting and smoke/evacuation systems.
+
+Capture mutates owner on the same intact, definition-capturable building only after a supplied canonical U20/U23 battle finishes with the hostile new side victorious. Identity, definition, position, integrity, fire and storage remain unchanged. Active production is cancelled for deterministic ownership revalidation, while the intact captured site may later operate even if its new owner lacks the technology required to place another one. Physical and abstract combat call the same building-damage API; no siege or territory authority is introduced.
+
+## D-060 Building snapshot v11 and disposable U24 presentation (2026-10-08)
+
+Snapshot v11 appends a sorted detached `BuildingWorldSaveState` with structural, owner, fire/checkpoint, processed-event, destruction/spill and history fields. Inventories/WorldPiles and production tasks remain in their existing snapshots. Restore validates the graph before replacement and does not replay destruction, spill or fire intervals. Versions 1–10 remain readable; PostgreSQL continues opaque XML storage and needs no relational migration.
+
+The development overlay and presenter are projections only. The click-blocked panel submits service commands; material-property tint and a lightweight burning ParticleSystem read canonical state. They own no damage, capture, storage or production truth and are not U27 final UI.

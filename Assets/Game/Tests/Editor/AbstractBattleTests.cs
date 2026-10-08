@@ -202,7 +202,7 @@ namespace Game.Tests.Editor
                 _ => new CombatWeaponId("stone_spear"));
             source.Battles.AdvanceTo(TimeSpan.FromMinutes(6).Ticks, 0);
             var codec = new SaveXmlCodec();
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(8999),
+            var snapshot = new SaveSnapshot(SaveSnapshot.BattleVersion, Id(8999),
                 new GameTimeState(TimeSpan.FromMinutes(6).Ticks, 0, 1, false), 400,
                 healthFamily: source.Health.CaptureState(), combat: source.Combat.CaptureState(),
                 military: source.Units.CaptureState());

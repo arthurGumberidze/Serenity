@@ -137,6 +137,8 @@ namespace Game.Infrastructure
         public MilitaryUnitCommandService MilitaryCommands { get; private set; }
         public MilitaryUnitCombatService MilitaryCombat { get; private set; }
         public BattleResolutionService Battles { get; private set; }
+        public BuildingDamageService BuildingDamage { get; private set; }
+        public BuildingDamageDebugOverlay BuildingDamageDebug { get; private set; }
         public MilitaryUnitDebugOverlay MilitaryDebug { get; private set; }
         public PlayerControlService PlayerControl { get; private set; }
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
@@ -315,6 +317,10 @@ namespace Game.Infrastructure
                 AiScheduler, new MilitarySideId("player"));
             Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
                 MilitaryCombat, PlayerControl);
+            BuildingDamage = new BuildingDamageService(Buildings,
+                buildingCatalog.Entries.Select(entry => buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))),
+                Production, Inventories, WorldPiles, Weather, Combat, BuildingOccupancy);
+            BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
             Combat.BindMovementSuppression(PlayerControl);
@@ -335,6 +341,9 @@ namespace Game.Infrastructure
             MilitaryDebug = gameObject.AddComponent<MilitaryUnitDebugOverlay>();
             MilitaryDebug.Initialize(MilitaryUnits, MilitaryRepresentations, MilitaryCommands, MilitaryCombat,
                 selectionProbe, pointerRaycaster, () => Clock.State.CalendarTicks, Battles);
+            BuildingDamageDebug = gameObject.AddComponent<BuildingDamageDebugOverlay>();
+            BuildingDamageDebug.Initialize(BuildingDamage, Buildings, buildingCatalog, Inventories, Production,
+                Combat, Clock, pointerRaycaster);
             ThirdPersonControl = gameObject.AddComponent<ThirdPersonControlController>();
             ThirdPersonControl.Initialize(input, selectionProbe, CharacterPresentations, AiRuntime,
                 cameraController, buildingPlacementController, PlayerControl, HealthFamily, MilitaryUnits, Work,
@@ -346,6 +355,7 @@ namespace Game.Infrastructure
             if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
             if (HealthFamily != null) HealthFamily.ChildBorn -= OnChildBorn;
             if (buildingPlacementController != null) buildingPlacementController.BuildingPlaced -= OnBuildingPlaced;
+            if (BuildingDamage != null) BuildingDamage.BuildingChanged -= OnBuildingChanged;
             Tier2Runtime?.Dispose();
         }
 
@@ -363,6 +373,7 @@ namespace Game.Infrastructure
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
             Battles.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            BuildingDamage.AdvanceFireTo(targetCalendarTick);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             WeatherPresentation.Refresh(targetCalendarTick);
@@ -479,6 +490,12 @@ namespace Game.Infrastructure
         {
             if (building != null && building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot"))
                 RegisterCropPlot(building, presenter);
+        }
+
+        private void OnBuildingChanged(Building building)
+        {
+            if (building != null && BuildingPresentations.TryGet(building.Id, out var presenter))
+                presenter.RefreshStructuralPresentation();
         }
 
         private void RegisterCropPlot(Building building, BuildingPresenter buildingPresenter)

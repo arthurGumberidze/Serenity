@@ -33,6 +33,10 @@ namespace Game.Presentation.Buildings
             [SerializeField] private List<CostEntry> constructionCost = new List<CostEntry>();
             [SerializeField, Min(0)] private long storageCapacity;
             [SerializeField] private List<ResourceCategory> storageCategories = new List<ResourceCategory>();
+            [SerializeField, Min(1)] private int maxIntegrity = 1000;
+            [SerializeField, Range(1, 2000)] private int fireDamagePerThousand = 1000;
+            [SerializeField, Range(1, 2000)] private int combatDamagePerThousand = 1000;
+            [SerializeField] private bool capturable = true;
 
             public string DefinitionId => definitionId;
             public GameObject Prefab => prefab;
@@ -44,6 +48,16 @@ namespace Game.Presentation.Buildings
                 storageCapacity = capacity;
                 storageCategories = new List<ResourceCategory>(categories ?? Enum.GetValues(typeof(ResourceCategory))
                     as ResourceCategory[] ?? Array.Empty<ResourceCategory>());
+                return this;
+            }
+
+            public Entry ConfigureStructure(int integrity, int fireDamageModifier = 1000,
+                int combatDamageModifier = 1000, bool canBeCaptured = true)
+            {
+                maxIntegrity = integrity;
+                fireDamagePerThousand = fireDamageModifier;
+                combatDamagePerThousand = combatDamageModifier;
+                capturable = canBeCaptured;
                 return this;
             }
 
@@ -68,7 +82,10 @@ namespace Game.Presentation.Buildings
                     cost.Add(entry != null ? entry.CreateAmount() : throw new InvalidOperationException("Null cost entry."));
                 return new BuildingDefinition(new BuildingDefinitionId(definitionId), displayName, category,
                     new BuildingFootprint(footprintWidth, footprintDepth), placementMode, allowsOverlap,
-                    cost, storageCapacity, storageCategories == null || storageCategories.Count == 0 ? null : storageCategories);
+                    cost, storageCapacity, storageCategories == null || storageCategories.Count == 0 ? null : storageCategories,
+                    maxIntegrity <= 0 ? 1000 : maxIntegrity,
+                    fireDamagePerThousand <= 0 ? 1000 : fireDamagePerThousand,
+                    combatDamagePerThousand <= 0 ? 1000 : combatDamagePerThousand, capturable);
             }
         }
 

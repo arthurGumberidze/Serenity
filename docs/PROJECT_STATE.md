@@ -4,10 +4,22 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U23 DONE — one canonical cross-mode battle, deterministic abstract auto-resolve, rollback-safe Physical↔Abstract transitions and version-10 persistence are complete.
+U24 DONE — canonical building integrity, deterministic fire, ruins/storage spill, production shutdown, battle-validated capture and version-11 persistence are complete.
 
 ## Active task
-No task is active. U24 is the next unblocked task but has not started and requires explicit user authorization.
+No task is active. U25 is the next unblocked task but has not started and requires explicit user authorization.
+
+## U24 destruction, fire and building capture
+- The existing `Building` remains canonical through Intact/Damaged/Critical/Destroyed and ownership changes. It owns data-driven maximum/current integrity, `CombatSideId` owner, fire/checkpoint state, exactly-once damage markers and compact structural history; no destroyed or captured copy exists.
+- `BuildingDamageService` is the engine-independent authority for generic/combat/fire damage, ignition/extinguish, fixed one-hour fire catch-up, destruction and battle-validated capture. Physical and abstract combat hooks call the same damage API.
+- Destruction is exactly once. The stable ID and grid occupancy remain as ruins, all site work is cancelled, destroyed crop/production sites reject progress and storage contents spill atomically into deterministic canonical WorldPiles without duplication.
+- Capture requires an intact capturable building and a finished battle won by the hostile new side. It preserves identity, definition, position, integrity and storage quantities, changes owner in place and cancels active site work for deterministic revalidation; intact captured sites remain usable irrespective of construction research.
+- Rain/snow/heat fire effects are fixed-point data in `BuildingFireSettings`. Active fires alone are processed in stable-ID order from persisted checkpoints; no building owns an `Update`, no GameObject or ParticleSystem is authoritative and no propagation system was added.
+- Snapshot v11 appends complete building-world state and keeps v1-v10 readable. Destroyed/fire/spill/capture markers resume without replay; PostgreSQL still stores opaque XML and needs no relational migration.
+- LocalGameplay has a click-blocked development panel and lightweight damaged/critical/destroyed/owner tint plus burning particles. The controls call canonical services and advance time only through the existing time authority.
+- Final gates: U24 14/14 EditMode, 3/3 headless and 3/3 GPU PlayMode; required U08/U09/U14/U15/U19/U20/U21/U23 regressions 107/107 EditMode and 22/22 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 346/346; full PlayMode 71/71; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- Determinism/performance evidence: fire catch-up/order hash `C07BBB21A1362B1C`; 100-fire hash `0C6853F8DB3EC535`; mixed long-run hash `1BFF2BF299CD2678` with 74 resources, 0 piles and 24 produced; 1,000-building/100-fire stress completed in 23.922 ms with 0 measured current-thread managed bytes and hash `DB7D823CB247BF78`.
+- PostgreSQL integration was not run because `DYNASTYGAME_PG_TEST_DATABASE` is absent. Native Computer Use exposed no Windows apps, so no manual clicks are claimed; equivalent headless and Direct3D GPU PlayMode paths passed. U25 has not started.
 
 ## U23 abstract battle and physical return
 - `CombatService` remains the single mutable battle authority. `CombatEncounterState` now carries `BattleMode`, the stable encounter ID as `BattleId`, optional U21 side-unit IDs and a compact ordered battle history; mode changes never create a second battle or replace participants.

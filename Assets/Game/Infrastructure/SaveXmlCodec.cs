@@ -16,11 +16,12 @@ using Game.Domain.Weather;
 using Game.Domain.Combat;
 using Game.Domain.Military;
 using Game.Domain.Control;
+using Game.Domain.Buildings;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V10 adds cross-mode battle state.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V11 adds canonical building structural state.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -53,6 +54,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeMilitary(snapshot.Military));
             if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
                 root.Add(SerializePlayerControl(snapshot.PlayerControl));
+            if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
+                root.Add(SerializeBuildingWorld(snapshot.BuildingWorld));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -83,6 +86,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
                         version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
                         version != SaveSnapshot.PlayerControlVersion &&
+                        version != SaveSnapshot.BattleVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -102,11 +106,13 @@ namespace Game.Infrastructure
                         ? DeserializeMilitary(root.Element("military")) : null;
                     var playerControl = version >= SaveSnapshot.PlayerControlVersion
                         ? DeserializePlayerControl(root.Element("playerControl")) : null;
+                    var buildingWorld = version >= SaveSnapshot.BuildingVersion
+                        ? DeserializeBuildingWorld(root.Element("buildingWorld")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military, playerControl);
+                        combat, military, playerControl, buildingWorld);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -720,6 +726,90 @@ namespace Game.Infrastructure
                 OptionalStableId(element, "controlledCharacterId"));
         }
 
+        private static XElement SerializeBuildingWorld(BuildingWorldSaveState state)
+        {
+            var element = new XElement("buildingWorld");
+            if (state == null) return element;
+            element.Add(new XElement("lastFireTick", state.LastFireTick),
+                new XElement("buildings", state.Buildings.Select(value => new XElement("building",
+                    new XElement("id", value.Id.ToString()), new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
+                    new XElement("level", value.Coordinate.Level), new XElement("orientation", (int)value.Orientation),
+                    new XElement("constructionState", (int)value.ConstructionState),
+                    new XElement("maxIntegrity", value.MaxIntegrity), new XElement("currentIntegrity", value.CurrentIntegrity),
+                    new XElement("structuralStatus", (int)value.StructuralStatus),
+                    new XElement("ownerSideId", value.OwnerSideId.ToString()),
+                    new XElement("fireStatus", (int)value.FireStatus), new XElement("fireIntensity", value.FireIntensity),
+                    new XElement("fireStartTick", value.FireStartTick),
+                    new XElement("lastFireProcessedTick", value.LastFireProcessedTick),
+                    new XElement("accumulatedFireDamage", value.AccumulatedFireDamage),
+                    new XElement("destructionProcessed", value.DestructionProcessed),
+                    new XElement("storageSpilled", value.StorageSpilled),
+                    new XElement("processedDamageEvents", value.ProcessedDamageEvents.Select(id =>
+                        new XElement("eventId", id.ToString()))),
+                    new XElement("history", value.History.Select(history => new XElement("event",
+                        new XElement("sequence", history.Sequence), new XElement("calendarTick", history.CalendarTick),
+                        new XElement("kind", (int)history.Kind), OptionalId("damageEventId", history.DamageEventId),
+                        new XElement("damageType", history.DamageType.HasValue ? (int)history.DamageType.Value : 0),
+                        new XElement("amount", history.Amount),
+                        new XElement("ownerSideId", history.OwnerSideId.HasValue ? history.OwnerSideId.Value.ToString() : string.Empty))))))),
+                new XElement("worldPiles", state.WorldPiles.Select(value => new XElement("pile",
+                    new XElement("id", value.Id.ToString()), new XElement("resourceId", value.ResourceId.ToString()),
+                    new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
+                    new XElement("level", value.Coordinate.Level)))));
+            return element;
+        }
+
+        private static BuildingWorldSaveState DeserializeBuildingWorld(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing building-world state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty building-world state.");
+                return null;
+            }
+            RequireFields(element, new[] { "lastFireTick", "buildings", "worldPiles" });
+            var buildings = Items(element.Element("buildings"), "building", item =>
+            {
+                RequireFields(item, new[] { "id", "definitionId", "x", "z", "level", "orientation",
+                    "constructionState", "maxIntegrity", "currentIntegrity", "structuralStatus", "ownerSideId",
+                    "fireStatus", "fireIntensity", "fireStartTick", "lastFireProcessedTick",
+                    "accumulatedFireDamage", "destructionProcessed", "storageSpilled",
+                    "processedDamageEvents", "history" });
+                var processed = Items(item.Element("processedDamageEvents"), "eventId", value =>
+                    StableEntityId.Parse(Scalar(value)));
+                var history = Items(item.Element("history"), "event", value =>
+                {
+                    RequireFields(value, new[] { "sequence", "calendarTick", "kind", "damageEventId",
+                        "damageType", "amount", "ownerSideId" });
+                    var damageType = Int(value, "damageType");
+                    var owner = Value(value, "ownerSideId");
+                    return new BuildingEventState(ULong(value, "sequence"), Long(value, "calendarTick"),
+                        (BuildingEventKind)Int(value, "kind"), OptionalStableId(value, "damageEventId"),
+                        damageType == 0 ? (BuildingDamageType?)null : (BuildingDamageType)damageType,
+                        Int(value, "amount"), string.IsNullOrEmpty(owner) ? (CombatSideId?)null : new CombatSideId(owner));
+                });
+                return new BuildingState(StableEntityId.Parse(Value(item, "id")),
+                    new BuildingDefinitionId(Value(item, "definitionId")),
+                    new GridCoordinate(Int(item, "x"), Int(item, "z"), Int(item, "level")),
+                    (BuildingOrientation)Int(item, "orientation"), (ConstructionState)Int(item, "constructionState"),
+                    Int(item, "maxIntegrity"), Int(item, "currentIntegrity"),
+                    (BuildingStructuralStatus)Int(item, "structuralStatus"),
+                    new CombatSideId(Value(item, "ownerSideId")), (BuildingFireStatus)Int(item, "fireStatus"),
+                    Int(item, "fireIntensity"), Long(item, "fireStartTick"), Long(item, "lastFireProcessedTick"),
+                    Long(item, "accumulatedFireDamage"), XmlConvert.ToBoolean(Value(item, "destructionProcessed")),
+                    XmlConvert.ToBoolean(Value(item, "storageSpilled")), processed, history);
+            });
+            var piles = Items(element.Element("worldPiles"), "pile", item =>
+            {
+                RequireFields(item, new[] { "id", "resourceId", "x", "z", "level" });
+                return new WorldResourcePileState(StableEntityId.Parse(Value(item, "id")),
+                    new ResourceId(Value(item, "resourceId")),
+                    new GridCoordinate(Int(item, "x"), Int(item, "z"), Int(item, "level")));
+            });
+            return new BuildingWorldSaveState(buildings, piles, Long(element, "lastFireTick"));
+        }
+
         private static string[] FieldsForVersion(int version)
         {
             var fields = TimeFields.AsEnumerable();
@@ -731,6 +821,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.CombatVersion) fields = fields.Concat(new[] { "combat" });
             if (version >= SaveSnapshot.MilitaryVersion) fields = fields.Concat(new[] { "military" });
             if (version >= SaveSnapshot.PlayerControlVersion) fields = fields.Concat(new[] { "playerControl" });
+            if (version >= SaveSnapshot.BuildingVersion) fields = fields.Concat(new[] { "buildingWorld" });
             return fields.ToArray();
         }
 

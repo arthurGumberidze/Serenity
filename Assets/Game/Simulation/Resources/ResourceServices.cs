@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
@@ -97,8 +98,83 @@ namespace Game.Simulation.Resources
             return pile;
         }
 
+        public IReadOnlyList<WorldResourcePile> SpillStorage(StableEntityId buildingId, GridCoordinate coordinate)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Building identity required.", nameof(buildingId));
+            var sourceOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, buildingId);
+            if (!inventories.TryGet(sourceOwner, out var source) || source.TotalUnits == 0)
+                return Array.Empty<WorldResourcePile>();
+            var amounts = source.CaptureState().Amounts.OrderBy(x => x.ResourceId).ToArray();
+            var staged = new List<(WorldResourcePile pile, ResourceInventory inventory, ResourceAmount amount)>();
+            foreach (var amount in amounts)
+            {
+                var pileId = SpillPileId(buildingId, amount.ResourceId);
+                if (piles.ContainsKey(pileId) || inventories.TryGet(new InventoryOwner(InventoryOwnerKind.WorldPile, pileId), out _))
+                    throw new InvalidOperationException("A deterministic spill pile already exists before destruction commit.");
+                var pile = WorldResourcePile.CreateWithId(pileId, amount.ResourceId, coordinate);
+                var inventory = new ResourceInventory(pile.InventoryOwner, catalog, long.MaxValue);
+                if (!inventory.TryAdd(amount.ResourceId, amount.Quantity))
+                    throw new InvalidOperationException("Unable to stage a storage spill.");
+                staged.Add((pile, inventory, amount));
+            }
+            var committed = new List<(WorldResourcePile pile, ResourceInventory inventory)>();
+            try
+            {
+                foreach (var item in staged)
+                {
+                    inventories.Add(item.inventory);
+                    piles.Add(item.pile.Id, item.pile);
+                    committed.Add((item.pile, item.inventory));
+                }
+                foreach (var item in staged)
+                    if (!source.TryRemove(item.amount.ResourceId, item.amount.Quantity))
+                        throw new InvalidOperationException("Storage changed during the destruction transaction.");
+                return staged.Select(x => x.pile).ToArray();
+            }
+            catch
+            {
+                foreach (var item in committed)
+                {
+                    piles.Remove(item.pile.Id);
+                    inventories.Remove(item.inventory.Owner, item.inventory);
+                }
+                foreach (var item in staged)
+                    if (!source.CanRemove(item.amount.ResourceId, item.amount.Quantity))
+                        source.TryAdd(item.amount.ResourceId, item.amount.Quantity);
+                throw;
+            }
+        }
+
+        public WorldResourcePileState[] CaptureStates() => piles.Values.Select(x => x.State)
+            .OrderBy(x => x.Id).ToArray();
+
+        public void RestoreStates(IEnumerable<WorldResourcePileState> states)
+        {
+            var replacement = new Dictionary<StableEntityId, WorldResourcePile>();
+            foreach (var state in states ?? throw new ArgumentNullException(nameof(states)))
+            {
+                catalog.Get(state.ResourceId);
+                var pile = WorldResourcePile.Restore(state);
+                if (!inventories.TryGet(pile.InventoryOwner, out var inventory) ||
+                    inventory.GetAmount(state.ResourceId).Units <= 0 || !replacement.TryAdd(pile.Id, pile))
+                    throw new ArgumentException("World-pile state has no matching canonical inventory.", nameof(states));
+            }
+            piles.Clear();
+            foreach (var pair in replacement.OrderBy(x => x.Key)) piles.Add(pair.Key, pair.Value);
+        }
+
         public bool TryGet(StableEntityId id, out WorldResourcePile pile) => piles.TryGetValue(id, out pile);
         public IEnumerable<WorldResourcePile> All => piles.Values;
         // Empty piles remain as stable entities until a future explicit cleanup/destruction rule owns their lifecycle.
+
+        private static StableEntityId SpillPileId(StableEntityId buildingId, ResourceId resourceId)
+        {
+            var first = 14695981039346656037UL;
+            foreach (var value in buildingId.ToGuid().ToByteArray()) { first ^= value; first *= 1099511628211UL; }
+            var second = 14695981039346656037UL;
+            foreach (var value in resourceId.ToString()) { second ^= value; second *= 1099511628211UL; }
+            second ^= 0x5532345350494c4cUL;
+            return StableEntityId.FromDeterministicHash(first, second);
+        }
     }
 }

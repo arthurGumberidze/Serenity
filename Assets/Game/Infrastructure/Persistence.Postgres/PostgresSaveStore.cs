@@ -69,7 +69,7 @@ SELECT session_id, save_format_version, payload FROM serenity.save_sessions WHER
                             storedVersion != SaveSnapshot.CombatVersion &&
                             storedVersion != SaveSnapshot.MilitaryVersion &&
                             storedVersion != SaveSnapshot.PlayerControlVersion &&
-                            storedVersion != SaveSnapshot.CurrentVersion)
+                            storedVersion != SaveSnapshot.BattleVersion && storedVersion != SaveSnapshot.CurrentVersion)
                             throw new NotSupportedException("Unsupported save format version.");
                         var snapshot = codec.Deserialize((byte[])reader.GetValue(2));
                         if (snapshot.FormatVersion != storedVersion)

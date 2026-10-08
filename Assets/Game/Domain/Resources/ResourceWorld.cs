@@ -77,6 +77,8 @@ namespace Game.Domain.Resources
 
         public static WorldResourcePile CreateNew(ResourceId resourceId, GridCoordinate coordinate) =>
             Restore(new WorldResourcePileState(StableEntityId.NewId(), resourceId, coordinate));
+        public static WorldResourcePile CreateWithId(StableEntityId id, ResourceId resourceId,
+            GridCoordinate coordinate) => Restore(new WorldResourcePileState(id, resourceId, coordinate));
         public static WorldResourcePile Restore(WorldResourcePileState state) => new WorldResourcePile(state);
     }
 }

@@ -198,6 +198,20 @@ namespace Game.Simulation.Production
         }
 
         public bool TryGetSite(StableEntityId id, out ProductionSite site) => sites.TryGetValue(id, out site);
+        public bool IsSiteOperational(StableEntityId id)
+        {
+            if (!sites.TryGetValue(id, out var site)) return false;
+            if (site.Kind == ProductionSiteKind.NaturalSource) return true;
+            return !buildings.TryGet(id, out var building) || building.IsOperational;
+        }
+
+        public int CancelTasksForSite(StableEntityId siteId)
+        {
+            var active = tasks.Values.Where(x => !x.IsTerminal && x.SiteId == siteId)
+                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            for (var i = 0; i < active.Length; i++) Cancel(active[i]);
+            return active.Length;
+        }
         public long GetTarget(ResourceId id) => targets.TryGetValue(id, out var value) ? value : 0;
         public void SetTarget(ResourceId id, long target)
         {
@@ -236,6 +250,7 @@ namespace Game.Simulation.Production
             if (workerTasks.TryGetValue(workerId, out var existingId) && tasks.TryGetValue(existingId, out var existing))
             {
                 if (existing.IsTerminal) return false;
+                if (!IsSiteOperational(existing.SiteId)) { Cancel(existing.Id); return false; }
                 job = new ProductionJob(existing, sites[existing.SiteId].Position);
                 return true;
             }
@@ -273,6 +288,7 @@ namespace Game.Simulation.Production
         {
             if (work < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(work));
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return default;
+            if (!IsSiteOperational(task.SiteId)) { Cancel(task.Id); return default; }
             var workTicks = GetEffectiveWorkTicks(task, work.Ticks, calendarTick);
             task.AddWork(workTicks);
             if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) return default;
@@ -299,7 +315,7 @@ namespace Game.Simulation.Production
                 if (inventory.Owner.Kind != InventoryOwnerKind.BuildingStorage ||
                     !inventory.CanAdd(id, new ResourceQuantity(units)) ||
                     !buildings.TryGet(inventory.Owner.Id, out var building) ||
-                    building.ConstructionState != ConstructionState.Completed) continue;
+                    !building.IsOperational) continue;
                 var candidate = new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z);
                 var distance = from.DistanceSquared(candidate);
                 if (!found || distance < bestDistance ||
@@ -316,6 +332,8 @@ namespace Game.Simulation.Production
 
         public bool TryDeposit(StableEntityId workerId, InventoryOwner destination, ResourceId id, long units)
         {
+            if (destination.Kind == InventoryOwnerKind.BuildingStorage &&
+                (!buildings.TryGet(destination.Id, out var building) || !building.IsOperational)) return false;
             var source = new InventoryOwner(InventoryOwnerKind.Character, workerId);
             return transfers.TransferExact(source, destination, id, new ResourceQuantity(units)) == TransferFailureReason.None;
         }
@@ -333,7 +351,8 @@ namespace Game.Simulation.Production
                 var cropModifier = weather == null ? 1000 :
                     weather.GetWeatherAtCalendarTick(stepStartTick).Modifiers.CropGrowthPerThousand;
                 var growthTicks = checked(settings.FixedStep.Ticks * cropModifier / 1000L);
-                foreach (var site in orderedSites) site.AdvanceGrowth(growthTicks);
+                foreach (var site in orderedSites)
+                    if (IsSiteOperational(site.Id)) site.AdvanceGrowth(growthTicks);
                 Food.Advance(settings.FixedStep, Population);
                 stepTotals = new Dictionary<ResourceId, long>();
                 foreach (var definition in resources.All) stepTotals.Add(definition.Id, GetCanonicalTotal(definition.Id));
@@ -541,7 +560,7 @@ namespace Game.Simulation.Production
             double bestDistance = 0d;
             foreach (var site in orderedSites)
             {
-                if (!site.IsWorkAvailable || siteClaims.ContainsKey(site.Id)) continue;
+                if (!site.IsWorkAvailable || siteClaims.ContainsKey(site.Id) || !IsSiteOperational(site.Id)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 var kind = TaskKindFor(site);
@@ -570,7 +589,7 @@ namespace Game.Simulation.Production
             foreach (var inventory in inventories.All.OrderBy(x => x.Owner.Id))
             {
                 if (inventory.Owner.Kind != InventoryOwnerKind.BuildingStorage || !CanAddAll(inventory, recipe.Outputs)) continue;
-                if (!buildings.TryGet(inventory.Owner.Id, out var building) || building.ConstructionState != ConstructionState.Completed) continue;
+                if (!buildings.TryGet(inventory.Owner.Id, out var building) || !building.IsOperational) continue;
                 owner = inventory.Owner;
                 return true;
             }

@@ -149,7 +149,7 @@ namespace Game.Simulation.AI
             foreach (var inventory in inventories.All)
             {
                 if (inventory.Owner.Kind != InventoryOwnerKind.BuildingStorage) continue;
-                if (!buildings.TryGet(inventory.Owner.Id, out var building) || building.ConstructionState != ConstructionState.Completed)
+                if (!buildings.TryGet(inventory.Owner.Id, out var building) || !building.IsOperational)
                     continue;
                 var reserved = claims.ReservedAtDestination(inventory.Owner);
                 if (existingClaim != null && existingClaim.Destination == inventory.Owner) reserved -= existingClaim.Quantity.Units;
@@ -172,7 +172,7 @@ namespace Game.Simulation.AI
         public bool InventoryExists(InventoryOwner owner, out ResourceInventory inventory) => inventories.TryGet(owner, out inventory);
         public bool BuildingStorageExists(InventoryOwner owner) => owner.Kind == InventoryOwnerKind.BuildingStorage &&
             inventories.TryGet(owner, out _) && buildings.TryGet(owner.Id, out var building) &&
-            building.ConstructionState == ConstructionState.Completed;
+            building.IsOperational;
 
         private WorldPosition ToWorld(GridCoordinate coordinate) => new WorldPosition(
             gridOrigin.X + coordinate.X * gridSize,
