@@ -4,10 +4,20 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U18 DONE — deterministic family events, diseases/injuries, health capabilities, pregnancy/birth, canonical children, tier-independent simulation and version-5 persistence are complete.
+U19 DONE — deterministic seasons/weather, measurable farming/production/movement/health modifiers, tier-independent catch-up, presentation and version-6 persistence are complete.
 
 ## Active task
-No implementation task is active. U19 is next but has not started and awaits review of U18.
+No implementation task is active. U20 is next but has not started and awaits review of U19.
+
+## U19 weather and seasons
+- `SeasonCalendar` derives Spring/Summer/Autumn/Winter from the canonical U03 calendar. The configurable 365-day temperate mapping is Spring 1-91, Summer 92-182, Autumn 183-273 and Winter 274-365.
+- `WeatherService` derives each daily fixed-point state from world seed, absolute day, climate-profile ID and keyed U14 streams. Temperate configuration owns seasonal temperature/range, weather weights, snow threshold and per-thousand gameplay modifiers. Camera, tier, frame order and collection traversal do not participate.
+- Crop growth, seasonal wild-food gathering and outdoor production consume centralized modifiers. Winter/snow stops crop progress without destroying Ready crops or stored food. Aggregate workers spend raw time correctly under slowdown; Tier 1 and Tier 2 movement consume the same logical hook.
+- Severe outdoor cold/heat can apply U18 `cold_stress`/`heat_stress` through stable-ID/day checkpoints exactly once. The current exposure set is intentionally active outdoor production workers plus aggregate Tier2/Tier3 workers; shelter/clothing/thermoregulation are outside U19.
+- `SaveSnapshot.CurrentVersion` is 6. It persists climate identity and per-character processed exposure days; weather history is derived rather than stored. V1-V5 remain readable. PostgreSQL accepts v6 opaque XML and needs no migration or realtime authority.
+- LocalGameplay adds a once-per-day environment projection and a click-blocked debug panel with date, season, weather, fixed-point temperature, precipitation, wind, modifiers and deterministic next-day preview.
+- Final gates: U19 19/19 EditMode, 2/2 headless and 2/2 graphics PlayMode; full non-PostgreSQL EditMode 282/282; full PlayMode 48/48; required regressions 44/44 EditMode and 10/10 PlayMode; persistence 35/35; Windows x64 Mono Development succeeded with 0 errors and 2 inherited obsolete-test-API warnings. PostgreSQL was not configured (`DYNASTYGAME_PG_TEST_DATABASE` absent).
+- Determinism evidence: 10,000 daily weather queries allocated 0 measured bytes, hash `000000000000003D`; the final repeatable 20-person five-year weather/farming run produced hash `4CF6296D268E48AA`, food 4000 and shortage 1 in 6.554 seconds for two runs.
 
 ## U18 family events, health and birth
 - `HealthAndFamilyService` is the one engine-independent, stable-ID-based authority for conditions, narrow relationship events and pregnancy. It advances centrally on absolute game ticks; no condition, pregnancy or character gained an `Update`.

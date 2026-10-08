@@ -90,10 +90,12 @@ namespace Game.Presentation.AI
             if (presenter != null) presenter.SetMovementSpeed(0f);
         }
 
-        public void UpdatePresentation(bool paused, int speedMultiplier)
+        public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)
         {
             if (!IsAvailable) return;
-            agent.speed = baseSpeed * Math.Max(1, speedMultiplier);
+            if (movementPerThousand < 0 || movementPerThousand > 2000)
+                throw new ArgumentOutOfRangeException(nameof(movementPerThousand));
+            agent.speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f;
             if (paused)
             {
                 agent.isStopped = true;

@@ -24,7 +24,7 @@ namespace Game.Tests.Editor
         public void HealthDefinitionsValidateAndStoneAgeCatalogIsSmallDataDrivenSet()
         {
             var catalog = HealthConditionCatalog.CreateStoneAge();
-            Assert.That(catalog.All.Count, Is.InRange(6, 10));
+            Assert.That(catalog.All.Count, Is.InRange(6, 12));
             Assert.That(catalog.Get(new HealthConditionId("minor_cut")).Type, Is.EqualTo(HealthConditionType.Injury));
             Assert.That(catalog.Get(new HealthConditionId("infection")).Type, Is.EqualTo(HealthConditionType.Disease));
             Assert.Throws<ArgumentOutOfRangeException>(() => new HealthEffect(-1, 1000, 1000, 1000, false, true, 0));

@@ -29,21 +29,25 @@ namespace Game.ECS.Tier2
             Materializer = new Tier2Materializer(World);
         }
 
-        public void Step(GameTimeAdvance advance)
+        public void Step(GameTimeAdvance advance, int movementPerThousand = 1000)
         {
             ThrowIfDisposed();
             if (advance.CalendarDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(advance));
             if (advance.BiologicalDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(advance));
+            if (movementPerThousand < 0 || movementPerThousand > 2000)
+                throw new ArgumentOutOfRangeException(nameof(movementPerThousand));
             sequence++;
             World.EntityManager.SetComponentData(stepEntity, new Tier2SimulationStep
             {
                 CalendarDeltaTicks = advance.CalendarDelta.Ticks,
                 BiologicalDeltaTicks = advance.BiologicalDelta.Ticks,
+                MovementPerThousand = movementPerThousand,
                 Sequence = sequence
             });
             simulationSystem.Update();
             World.EntityManager.CompleteAllTrackedJobs();
-            World.EntityManager.SetComponentData(stepEntity, new Tier2SimulationStep { Sequence = sequence });
+            World.EntityManager.SetComponentData(stepEntity, new Tier2SimulationStep
+                { MovementPerThousand = 1000, Sequence = sequence });
         }
 
         public Tier2TransferState Extract(StableEntityId characterId)

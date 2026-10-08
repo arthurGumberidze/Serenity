@@ -12,11 +12,12 @@ using Game.Domain.Research;
 using Game.Domain.Characters;
 using Game.Domain.Dynasties;
 using Game.Domain.Health;
+using Game.Domain.Weather;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V5 adds health, family events and pregnancy.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V6 adds climate and weather exposure checkpoints.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -39,8 +40,10 @@ namespace Game.Infrastructure
                 root.Add(SerializeResearch(snapshot.Research));
             if (snapshot.FormatVersion >= SaveSnapshot.DynastyVersion)
                 root.Add(SerializeDynastyWorld(snapshot.DynastyWorld));
-            if (snapshot.FormatVersion >= SaveSnapshot.CurrentVersion)
+            if (snapshot.FormatVersion >= SaveSnapshot.HealthVersion)
                 root.Add(SerializeHealthFamily(snapshot.HealthFamily));
+            if (snapshot.FormatVersion >= SaveSnapshot.WeatherVersion)
+                root.Add(SerializeWeather(snapshot.Weather));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -68,25 +71,28 @@ namespace Game.Infrastructure
                     var version = XmlConvert.ToInt32(versionElement.Value);
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
                         version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
-                        version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.HealthVersion && version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, version == SaveSnapshot.LegacyVersion ? TimeFields :
                         version == SaveSnapshot.ProductionVersion ? TimeFields.Concat(new[] { "production" }).ToArray() :
                         version == SaveSnapshot.ResearchVersion ? TimeFields.Concat(new[] { "production", "research" }).ToArray() :
                         version == SaveSnapshot.DynastyVersion ? TimeFields.Concat(new[] { "production", "research", "dynastyWorld" }).ToArray() :
-                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily" }).ToArray());
+                        version == SaveSnapshot.HealthVersion ? TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily" }).ToArray() :
+                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily", "weather" }).ToArray());
                     var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production")) : null;
                     var research = version >= SaveSnapshot.ResearchVersion
                         ? DeserializeResearch(root.Element("research")) : null;
                     var dynastyWorld = version >= SaveSnapshot.DynastyVersion
                         ? DeserializeDynastyWorld(root.Element("dynastyWorld")) : null;
-                    var healthFamily = version >= SaveSnapshot.CurrentVersion
+                    var healthFamily = version >= SaveSnapshot.HealthVersion
                         ? DeserializeHealthFamily(root.Element("healthFamily")) : null;
+                    var weather = version >= SaveSnapshot.WeatherVersion
+                        ? DeserializeWeather(root.Element("weather")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily);
+                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -450,6 +456,37 @@ namespace Game.Infrastructure
             });
             return new HealthFamilySaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"),
                 Long(element, "lastBiologicalTick"), conditions, events, pregnancies);
+        }
+
+        private static XElement SerializeWeather(WeatherSaveState state)
+        {
+            var element = new XElement("weather");
+            if (state == null) return element;
+            element.Add(new XElement("worldSeed", state.WorldSeed),
+                new XElement("climateProfileId", state.ClimateProfileId.ToString()),
+                new XElement("exposureCheckpoints", state.ExposureCheckpoints.Select(value =>
+                    new XElement("checkpoint", new XElement("characterId", value.CharacterId.ToString()),
+                        new XElement("lastProcessedDay", value.LastProcessedDay)))));
+            return element;
+        }
+
+        private static WeatherSaveState DeserializeWeather(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing weather state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty weather state.");
+                return null;
+            }
+            RequireFields(element, new[] { "worldSeed", "climateProfileId", "exposureCheckpoints" });
+            var checkpoints = Items(element.Element("exposureCheckpoints"), "checkpoint", value =>
+            {
+                RequireFields(value, new[] { "characterId", "lastProcessedDay" });
+                return new WeatherExposureCheckpoint(StableEntityId.Parse(Value(value, "characterId")),
+                    Long(value, "lastProcessedDay"));
+            });
+            return new WeatherSaveState(Long(element, "worldSeed"),
+                new ClimateProfileId(Value(element, "climateProfileId")), checkpoints);
         }
 
         private static XElement OptionalId(string name, StableEntityId? value) =>

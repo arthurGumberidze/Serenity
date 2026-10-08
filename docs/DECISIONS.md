@@ -249,3 +249,21 @@ Fatal conditions call `SuccessionService.ProcessDeath`; they do not duplicate li
 ## D-041 Version 5 health and family persistence (2026-10-07)
 
 Snapshot v5 adds health/family world seed and checkpoints, condition lifecycle/death markers, relationship-event markers and pregnancy/birth markers. Canonical children, parent links and relationship results remain in U17's character/dynasty payload. Versions 1 through 4 load with no health payload. PostgreSQL continues storing opaque XML and needs no relational migration.
+
+## D-042 Canonical keyed daily weather and derived seasons (2026-10-08)
+
+Season is derived from the existing U03 calendar and is never independently mutable. The initial configurable 365-day mapping begins Spring/Summer/Autumn/Winter on days 1/92/183/274. `WeatherService` derives a day from `(world seed, climate profile ID, absolute calendar day, stream ID)` with U14's keyed RNG; it keeps no sequence cursor or daily history. Camera, scene, tier, render frame and collection traversal cannot reroll weather.
+
+Temperature is integer deci-Celsius. One validated `ClimateProfile` owns four seasonal temperature/weight/growth definitions and a complete, unique weather-effect table for anomaly, precipitation range, wind range and gameplay modifiers. The temperate profile is current content, while the catalog rejects duplicate profile IDs. Rain is converted to snow at or below the configured threshold and configured snow is converted to rain above it; no accumulation, moisture or physical climate simulation is introduced.
+
+## D-043 Weather modifiers cross existing production, movement and health authorities (2026-10-08)
+
+U15 recipes now declare only `Outdoor`/`Sheltered` exposure and optional seasonal-wild-source metadata. The existing `ProductionService` multiplies base crop progress by seasonal/weather crop rate, and worker capability by outdoor-weather and optional wild-food rates. Aggregate workers consume raw elapsed time even when effective work is slowed, preserving Tier1/Tier2/Tier3 equivalence and output ownership. Winter has a zero seasonal crop rate; Ready crops and stored food remain intact.
+
+Movement reads one weather interval modifier: Tier 1 applies it through the existing NavMesh movement bridge and Tier 2 applies it in the batched ECS job. U19 adds no per-character update. Severe outdoor cold/heat calls the U18 authority with `cold_stress` or `heat_stress`; a stable-ID/day checkpoint makes exposure exactly once. Because canonical indoor/outdoor location does not yet exist, exposure is limited to active outdoor production workers and aggregate Tier2/Tier3 workers rather than inventing shelter or clothing state.
+
+## D-044 Version 6 weather persistence and disposable presentation (2026-10-08)
+
+Snapshot v6 persists world seed, climate profile ID and sorted last-processed exposure day per character. Daily weather and season remain derived, so load on the same day cannot reroll and no redundant history is stored. Versions 1-5 remain readable with no weather payload. PostgreSQL accepts v6 opaque XML metadata and needs no schema migration or realtime weather query.
+
+Environment fog/ambient/directional-light changes and the debug overlay are projections only. They refresh centrally, own no canonical state and are not saved. The debug panel shows current state/modifiers and a deterministic next-day preview, registers with the U16A pointer blocker and exposes no persistent forced-weather override.

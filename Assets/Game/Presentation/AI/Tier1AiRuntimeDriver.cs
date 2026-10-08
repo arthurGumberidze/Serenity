@@ -17,6 +17,7 @@ namespace Game.Presentation.AI
         private readonly List<NavMeshMovementDriver> movements = new List<NavMeshMovementDriver>();
         private GameClock clock;
         private Tier1AiScheduler scheduler;
+        private Func<int> movementModifierProvider;
 
         public GameClock Clock => clock;
         public Tier1AiScheduler Scheduler => scheduler;
@@ -24,11 +25,13 @@ namespace Game.Presentation.AI
         public int PerAgentAiUpdateCount => 0;
         public event Action<GameTimeAdvance> SimulationAdvanced;
 
-        public void Initialize(GameClock gameClock, Tier1AiScheduler aiScheduler)
+        public void Initialize(GameClock gameClock, Tier1AiScheduler aiScheduler,
+            Func<int> weatherMovementModifierProvider = null)
         {
             if (clock != null || scheduler != null) throw new InvalidOperationException("Tier 1 AI runtime is already initialized.");
             clock = gameClock ?? throw new ArgumentNullException(nameof(gameClock));
             scheduler = aiScheduler ?? throw new ArgumentNullException(nameof(aiScheduler));
+            movementModifierProvider = weatherMovementModifierProvider;
         }
 
         public Tier1AiAgentState Register(Character character, CharacterPresenter presenter, Tier1Needs needs = null)
@@ -103,8 +106,11 @@ namespace Game.Presentation.AI
         private void RefreshMovementPresentation()
         {
             if (clock == null) return;
+            var movementModifier = movementModifierProvider == null ? 1000 : movementModifierProvider();
+            if (movementModifier < 0 || movementModifier > 2000)
+                throw new InvalidOperationException("Movement modifier provider returned an invalid value.");
             for (var i = 0; i < movements.Count; i++)
-                movements[i].UpdatePresentation(clock.IsPaused, (int)clock.Speed);
+                movements[i].UpdatePresentation(clock.IsPaused, (int)clock.Speed, movementModifier);
         }
     }
 }

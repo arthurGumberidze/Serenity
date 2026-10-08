@@ -10,12 +10,13 @@ namespace Game.ECS.Tier2
         public float DeltaGameDays;
         public long CalendarDeltaTicks;
         public long BiologicalDeltaTicks;
+        public int MovementPerThousand;
 
         private void Execute(ref Tier2Position position, in Tier2Movement movement,
             ref Tier2SimulationProgress progress, ref Tier2ProductionProgress production)
         {
             if (movement.IsMoving != 0)
-                position.Value += movement.UnitsPerGameDay * DeltaGameDays;
+                position.Value += movement.UnitsPerGameDay * DeltaGameDays * (MovementPerThousand / 1000f);
             progress.ProcessedCalendarTicks += CalendarDeltaTicks;
             progress.ProcessedBiologicalTicks += BiologicalDeltaTicks;
             progress.StepCount++;
@@ -55,7 +56,8 @@ namespace Game.ECS.Tier2
             {
                 DeltaGameDays = deltaGameDays,
                 CalendarDeltaTicks = step.CalendarDeltaTicks,
-                BiologicalDeltaTicks = step.BiologicalDeltaTicks
+                BiologicalDeltaTicks = step.BiologicalDeltaTicks,
+                MovementPerThousand = step.MovementPerThousand
             }.ScheduleParallel(agentQuery, Dependency);
         }
     }

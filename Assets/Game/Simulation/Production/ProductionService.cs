@@ -10,6 +10,7 @@ using Game.Simulation.Resources;
 using Game.Simulation.Tiers;
 using Game.Domain.Research;
 using Game.Domain.Health;
+using Game.Domain.Weather;
 
 namespace Game.Simulation.Production
 {
@@ -148,12 +149,14 @@ namespace Game.Simulation.Production
         private readonly ResourceId foodResource = new ResourceId("berries");
         private readonly IResearchUnlockView unlocks;
         private readonly ICharacterCapabilityProvider capabilities;
+        private readonly IWeatherModifierProvider weather;
         private Dictionary<ResourceId, long> stepTotals;
 
         public ProductionService(ProductionCatalog recipeCatalog, ResourceCatalog resourceCatalog,
             ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
             ResourceTransferService transferService, ProductionSettings productionSettings = null,
-            IResearchUnlockView researchUnlocks = null, ICharacterCapabilityProvider capabilityProvider = null)
+            IResearchUnlockView researchUnlocks = null, ICharacterCapabilityProvider capabilityProvider = null,
+            IWeatherModifierProvider weatherModifierProvider = null)
         {
             recipes = recipeCatalog ?? throw new ArgumentNullException(nameof(recipeCatalog));
             resources = resourceCatalog ?? throw new ArgumentNullException(nameof(resourceCatalog));
@@ -163,6 +166,7 @@ namespace Game.Simulation.Production
             settings = productionSettings ?? ProductionSettings.StoneAge;
             unlocks = researchUnlocks;
             capabilities = capabilityProvider;
+            weather = weatherModifierProvider;
             resources.Get(foodResource);
             foreach (var target in settings.Targets)
             {
@@ -263,12 +267,13 @@ namespace Game.Simulation.Production
         public bool IsTaskActive(StableEntityId taskId) => tasks.TryGetValue(taskId, out var task) && !task.IsTerminal;
 
         public ProductionCompletion AdvanceTask(StableEntityId taskId, TimeSpan work)
+            => AdvanceTaskAt(taskId, work, LastCalendarTick);
+
+        private ProductionCompletion AdvanceTaskAt(StableEntityId taskId, TimeSpan work, long calendarTick)
         {
             if (work < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(work));
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return default;
-            var workTicks = work.Ticks;
-            if (capabilities != null)
-                workTicks = checked(workTicks * capabilities.GetCapabilities(task.WorkerId).WorkPerThousand / 1000L);
+            var workTicks = GetEffectiveWorkTicks(task, work.Ticks, calendarTick);
             task.AddWork(workTicks);
             if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) return default;
             return Complete(task);
@@ -324,13 +329,18 @@ namespace Game.Simulation.Production
             var finalStep = targetCalendarTick / settings.FixedStep.Ticks;
             for (var step = firstStep; step <= finalStep; step++)
             {
-                foreach (var site in orderedSites) site.AdvanceGrowth(settings.FixedStep.Ticks);
+                var stepStartTick = checked((step - 1L) * settings.FixedStep.Ticks);
+                var cropModifier = weather == null ? 1000 :
+                    weather.GetWeatherAtCalendarTick(stepStartTick).Modifiers.CropGrowthPerThousand;
+                var growthTicks = checked(settings.FixedStep.Ticks * cropModifier / 1000L);
+                foreach (var site in orderedSites) site.AdvanceGrowth(growthTicks);
                 Food.Advance(settings.FixedStep, Population);
                 stepTotals = new Dictionary<ResourceId, long>();
                 foreach (var definition in resources.All) stepTotals.Add(definition.Id, GetCanonicalTotal(definition.Id));
                 try
                 {
-                    for (var i = 0; i < workers.Length; i++) AdvanceAbstractWorker(workers[i], settings.FixedStep.Ticks);
+                    for (var i = 0; i < workers.Length; i++)
+                        AdvanceAbstractWorker(workers[i], settings.FixedStep.Ticks, stepStartTick);
                 }
                 finally { stepTotals = null; }
             }
@@ -401,7 +411,7 @@ namespace Game.Simulation.Production
             return hash;
         }
 
-        private void AdvanceAbstractWorker(StableEntityId workerId, long budgetTicks)
+        private void AdvanceAbstractWorker(StableEntityId workerId, long budgetTicks, long calendarTick)
         {
             var guard = 0;
             while (budgetTicks > 0 && guard++ < 256)
@@ -411,15 +421,63 @@ namespace Game.Simulation.Production
                     if (!TryReserve(workerId, default, out var job)) return;
                     task = job.Task;
                 }
-                var before = task.AccumulatedWorkTicks;
-                var completion = AdvanceTask(task.Id, TimeSpan.FromTicks(budgetTicks));
-                var applied = task.AccumulatedWorkTicks - before;
-                budgetTicks -= applied;
+                var remainingWorkTicks = task.RequiredWorkTicks - task.AccumulatedWorkTicks;
+                var effectiveBudgetTicks = GetEffectiveWorkTicks(task, budgetTicks, calendarTick);
+                if (effectiveBudgetTicks < remainingWorkTicks)
+                {
+                    task.AddWork(effectiveBudgetTicks);
+                    return;
+                }
+
+                var rawTicksUsed = GetRawWorkTicksRequired(task, remainingWorkTicks, calendarTick);
+                var completion = AdvanceTaskAt(task.Id, TimeSpan.FromTicks(rawTicksUsed), calendarTick);
                 if (!completion.Completed) return;
+                budgetTicks -= rawTicksUsed;
                 if (completion.ProducedOutput && TryFindStorage(completion.ResourceId, completion.Units, default,
                         out var destination, out _))
                     TryDeposit(workerId, destination, completion.ResourceId, completion.Units);
             }
+        }
+
+        private long GetEffectiveWorkTicks(ProductionTask task, long rawTicks, long calendarTick)
+        {
+            var workTicks = rawTicks;
+            if (capabilities != null)
+                workTicks = ApplyPerThousand(workTicks, capabilities.GetCapabilities(task.WorkerId).WorkPerThousand);
+            var recipe = recipes.Get(task.RecipeId);
+            if (weather != null && recipe.WeatherExposure == ProductionWeatherExposure.Outdoor)
+            {
+                var modifiers = weather.GetWeatherAtCalendarTick(calendarTick).Modifiers;
+                workTicks = ApplyPerThousand(workTicks, modifiers.OutdoorWorkPerThousand);
+                if (recipe.SeasonalWildSource)
+                    workTicks = ApplyPerThousand(workTicks, modifiers.WildFoodGatheringPerThousand);
+            }
+            return workTicks;
+        }
+
+        private long GetRawWorkTicksRequired(ProductionTask task, long effectiveTicks, long calendarTick)
+        {
+            if (effectiveTicks == 0) return 0;
+            var rawTicks = effectiveTicks;
+            var recipe = recipes.Get(task.RecipeId);
+            if (weather != null && recipe.WeatherExposure == ProductionWeatherExposure.Outdoor)
+            {
+                var modifiers = weather.GetWeatherAtCalendarTick(calendarTick).Modifiers;
+                if (recipe.SeasonalWildSource)
+                    rawTicks = InvertPerThousand(rawTicks, modifiers.WildFoodGatheringPerThousand);
+                rawTicks = InvertPerThousand(rawTicks, modifiers.OutdoorWorkPerThousand);
+            }
+            if (capabilities != null)
+                rawTicks = InvertPerThousand(rawTicks, capabilities.GetCapabilities(task.WorkerId).WorkPerThousand);
+            return rawTicks;
+        }
+
+        private static long ApplyPerThousand(long ticks, int modifier) => checked(ticks * modifier / 1000L);
+
+        private static long InvertPerThousand(long ticks, int modifier)
+        {
+            if (modifier <= 0) throw new InvalidOperationException("Zero-rate work cannot complete within a finite budget.");
+            return checked((ticks * 1000L + modifier - 1L) / modifier);
         }
 
         private ProductionCompletion Complete(ProductionTask task)

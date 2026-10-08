@@ -37,6 +37,7 @@ namespace Game.Domain.Production
     public enum CropPlotPhase { Unplanted = 0, Growing = 1, Ready = 2 }
     public enum ProductionTaskKind { Gather = 0, Plant = 1, Harvest = 2 }
     public enum ProductionTaskStatus { Active = 0, Completed = 1, Cancelled = 2 }
+    public enum ProductionWeatherExposure { Sheltered = 0, Outdoor = 1 }
 
     public sealed class ProductionRecipe
     {
@@ -45,12 +46,15 @@ namespace Game.Domain.Production
 
         public ProductionRecipe(ProductionRecipeId id, string displayName, IEnumerable<ResourceAmount> inputs,
             IEnumerable<ResourceAmount> outputs, TimeSpan workRequired, ProductionSiteKind siteKind,
-            bool enabled = true)
+            bool enabled = true, ProductionWeatherExposure weatherExposure = ProductionWeatherExposure.Sheltered,
+            bool seasonalWildSource = false)
         {
             if (!id.IsValid) throw new ArgumentException("Recipe identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Recipe name required.", nameof(displayName));
             if (workRequired <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(workRequired));
             if (!Enum.IsDefined(typeof(ProductionSiteKind), siteKind)) throw new ArgumentOutOfRangeException(nameof(siteKind));
+            if (!Enum.IsDefined(typeof(ProductionWeatherExposure), weatherExposure))
+                throw new ArgumentOutOfRangeException(nameof(weatherExposure));
             this.inputs = (inputs ?? Array.Empty<ResourceAmount>()).OrderBy(x => x.ResourceId).ToArray();
             this.outputs = (outputs ?? throw new ArgumentNullException(nameof(outputs))).OrderBy(x => x.ResourceId).ToArray();
             if (this.outputs.Length == 0) throw new ArgumentException("Recipe requires at least one output.", nameof(outputs));
@@ -62,6 +66,8 @@ namespace Game.Domain.Production
             WorkRequiredTicks = workRequired.Ticks;
             SiteKind = siteKind;
             Enabled = enabled;
+            WeatherExposure = weatherExposure;
+            SeasonalWildSource = seasonalWildSource;
         }
 
         public ProductionRecipeId Id { get; }
@@ -71,6 +77,8 @@ namespace Game.Domain.Production
         public long WorkRequiredTicks { get; }
         public ProductionSiteKind SiteKind { get; }
         public bool Enabled { get; }
+        public ProductionWeatherExposure WeatherExposure { get; }
+        public bool SeasonalWildSource { get; }
     }
 
     public sealed class ProductionCatalog
@@ -105,15 +113,20 @@ namespace Game.Domain.Production
             return new ProductionCatalog(new[]
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
-                    new[] { new ResourceAmount(berries, new ResourceQuantity(4)) }, TimeSpan.FromHours(4), ProductionSiteKind.NaturalSource),
+                    new[] { new ResourceAmount(berries, new ResourceQuantity(4)) }, TimeSpan.FromHours(4), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor, seasonalWildSource: true),
                 new ProductionRecipe(new ProductionRecipeId("gather_fiber"), "Gather Plant Fiber", null,
-                    new[] { new ResourceAmount(fiber, new ResourceQuantity(4)) }, TimeSpan.FromHours(6), ProductionSiteKind.NaturalSource),
+                    new[] { new ResourceAmount(fiber, new ResourceQuantity(4)) }, TimeSpan.FromHours(6), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor, seasonalWildSource: true),
                 new ProductionRecipe(new ProductionRecipeId("chop_wood"), "Chop Wood", null,
-                    new[] { new ResourceAmount(wood, new ResourceQuantity(4)) }, TimeSpan.FromHours(8), ProductionSiteKind.NaturalSource),
+                    new[] { new ResourceAmount(wood, new ResourceQuantity(4)) }, TimeSpan.FromHours(8), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor),
                 new ProductionRecipe(new ProductionRecipeId("gather_stone"), "Gather Stone", null,
-                    new[] { new ResourceAmount(stone, new ResourceQuantity(4)) }, TimeSpan.FromHours(10), ProductionSiteKind.NaturalSource),
+                    new[] { new ResourceAmount(stone, new ResourceQuantity(4)) }, TimeSpan.FromHours(10), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor),
                 new ProductionRecipe(new ProductionRecipeId("cultivate_berries"), "Cultivate Berries", null,
-                    new[] { new ResourceAmount(berries, new ResourceQuantity(6)) }, TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot)
+                    new[] { new ResourceAmount(berries, new ResourceQuantity(6)) }, TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot,
+                    weatherExposure: ProductionWeatherExposure.Outdoor)
             }, resources);
         }
     }

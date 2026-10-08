@@ -34,6 +34,9 @@ using Game.Presentation.Dynasties;
 using Game.Domain.Health;
 using Game.Simulation.Health;
 using Game.Presentation.Health;
+using Game.Domain.Weather;
+using Game.Simulation.Weather;
+using Game.Presentation.Weather;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -114,6 +117,9 @@ namespace Game.Infrastructure
         public DynastyDebugOverlay DynastyDebug { get; private set; }
         public HealthAndFamilyService HealthFamily { get; private set; }
         public HealthFamilyDebugOverlay HealthFamilyDebug { get; private set; }
+        public WeatherService Weather { get; private set; }
+        public WeatherDebugOverlay WeatherDebug { get; private set; }
+        public WeatherPresentationController WeatherPresentation { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -154,6 +160,7 @@ namespace Game.Infrastructure
             Characters = new CharacterRegistry();
             HealthFamily = new HealthAndFamilyService(Characters, HealthConditionCatalog.CreateStoneAge(),
                 developmentWorldSimulationSeed);
+            Weather = new WeatherService(developmentWorldSimulationSeed, ClimateProfile.Temperate, HealthFamily);
             CharacterPresentations = new CharacterPresentationRegistry();
             CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations);
 
@@ -211,7 +218,7 @@ namespace Game.Infrastructure
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
-                researchUnlocks: Research, capabilityProvider: HealthFamily);
+                researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
             Production.Population = Characters.Count;
             SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
                 new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere);
@@ -239,7 +246,8 @@ namespace Game.Infrastructure
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
-            AiRuntime.Initialize(Clock, AiScheduler);
+            AiRuntime.Initialize(Clock, AiScheduler, () =>
+                Weather.GetWeatherAtCalendarTick(Clock.State.CalendarTicks).Modifiers.MovementPerThousand);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.25d));
             ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
@@ -248,6 +256,11 @@ namespace Game.Infrastructure
             BuildingDebug.Initialize(buildingCatalog, Research, buildingPlacementController, pointerRaycaster);
             TimeDebug = gameObject.AddComponent<TimeDebugOverlay>();
             TimeDebug.Initialize(input, AiRuntime, pointerRaycaster);
+            WeatherDebug = gameObject.AddComponent<WeatherDebugOverlay>();
+            WeatherDebug.Initialize(Weather, Clock, pointerRaycaster);
+            WeatherPresentation = gameObject.AddComponent<WeatherPresentationController>();
+            WeatherPresentation.Initialize(Weather);
+            WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
             HealthFamilyDebug = gameObject.AddComponent<HealthFamilyDebugOverlay>();
@@ -289,15 +302,20 @@ namespace Game.Infrastructure
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
-            Tier2Runtime.Step(advance);
+            var targetCalendarTick = Clock.State.CalendarTicks;
+            var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
+            Tier2Runtime.Step(advance, Weather.GetMovementModifierForInterval(startCalendarTick, targetCalendarTick));
             Tier3Adapter.AdvanceAllToCurrent();
-            HealthFamily.AdvanceTo(Clock.State.CalendarTicks, Clock.State.BiologicalTicks);
-            Tier2Runtime.AdvanceResearch(Research, Clock.State.CalendarTicks);
+            Tier2Runtime.AdvanceResearch(Research, targetCalendarTick);
             Tier3Adapter.AdvanceResearchToCurrent(Research);
             var abstractWorkers = Tier2Runtime.ConsumeProductionWorkers().Concat(Tiers.ManagedIds.Where(id =>
-                Tiers.GetTier(id) == CharacterSimulationTier.Tier3));
-            Production.AdvanceTo(Clock.State.CalendarTicks, abstractWorkers);
+                Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
+            var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
+            Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
+            HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            Production.AdvanceTo(targetCalendarTick, abstractWorkers);
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
+            WeatherPresentation.Refresh(targetCalendarTick);
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
         }

@@ -26,7 +26,7 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U16A | DONE | Debug gameplay controls / usability patch | U05,U08,U10,U11,U15,U16 | MVP | Игрок назначает research workers, выбирает research-gated здания и управляет временем без конфликта с work-group hotkeys. |
 | U17 | DONE | Династия и наследование | U03,U04,U04A,U06 | MVP | Смерть монарха передаёт управление допустимому наследнику; extinction=GameOver. |
 | U18 | DONE | Семейные события, болезни и травмы | U06,U17 | MVP | Событие может изменить состояние и способности наследника. |
-| U19 | TODO | Погода и сезоны | U03,U05,U15 | MVP | Погода имеет измеримые gameplay-модификаторы. |
+| U19 | DONE | Погода и сезоны | U03,U05,U15 | MVP | Погода имеет измеримые gameplay-модификаторы. |
 | U20 | TODO | Тактический RTS-бой | U05,U05A,U06,U07 | MVP | Два отряда завершают бой с детерминируемыми потерями. |
 | U21 | TODO | Армия, капитаны и абстрактные отряды | U17,U20 | MVP | Отряд корректно сохраняется и переходит detailed↔aggregate. |
 | U22 | TODO | Third-person control | U02,U07,U20,U21 | MVP | Переключение RTS↔TPS не теряет приказы и не ломает state. |
@@ -60,3 +60,5 @@ Completion note (2026-10-07): U16A removes hardcoded demo research assignments, 
 Completion note (2026-10-07): U17 adds canonical stable-ID dynasty state, read-only family queries over U06 links, deterministic agnatic primogeniture, event-driven exactly-once succession, player-ruler transfer, extinction/Game Over, succession history, tier-independent/off-camera behavior, version-4 character/dynasty persistence with v1-v3 compatibility and a click-blocked LocalGameplay debug overlay. Focused, full, persistence, tier-route, collection-order, GPU, PostgreSQL and Windows build gates passed. U18 is next but has not started.
 
 Completion note (2026-10-07): U18 adds one canonical deterministic health/family authority, nine injury/disease/temporary/permanent definitions, capability effects integrated with AI/production/research, U17 death hooks, four exactly-once relationship events, pregnancy/birth with deterministic child IDs and dynasty membership, Tier1/2/3 off-camera equivalence, version-5 persistence with v1-v4 compatibility and a click-blocked debug panel. Focused, full, regression, persistence, determinism, long-run, GPU and Windows build gates passed. U19 is next but has not started.
+
+Completion note (2026-10-08): U19 adds canonical four-season derivation, keyed deterministic daily temperate weather, fixed-point temperature/precipitation/wind, data-driven crop/outdoor-work/movement/health/wild-food modifiers, weather-aware U15 production and farming, U18 cold/heat exposure with exactly-once markers, Tier1/Tier2/Tier3 hooks, version-6 persistence with v1-v5 compatibility and a click-blocked debug/presentation layer. Focused, full, regression, persistence, catch-up, actual tier-route, long-run, graphics and Windows build gates passed. U20 is next but has not started.

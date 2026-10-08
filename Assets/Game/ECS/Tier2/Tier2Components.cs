@@ -79,6 +79,7 @@ namespace Game.ECS.Tier2
     {
         public long CalendarDeltaTicks;
         public long BiologicalDeltaTicks;
+        public int MovementPerThousand;
         public uint Sequence;
     }
 }

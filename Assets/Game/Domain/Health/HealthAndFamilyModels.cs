@@ -127,7 +127,11 @@ namespace Game.Domain.Health
             new HealthConditionDefinition(new HealthConditionId("weakened"), "Weakened", HealthConditionType.TemporaryCondition,
                 HealthSeverity.Moderate, TimeSpan.FromDays(14), new HealthEffect(650, 750, 650, 600, false, false, 0)),
             new HealthConditionDefinition(new HealthConditionId("lasting_limp"), "Lasting limp", HealthConditionType.PermanentCondition,
-                HealthSeverity.Moderate, TimeSpan.Zero, new HealthEffect(700, 600, 900, 650, false, true, 0))
+                HealthSeverity.Moderate, TimeSpan.Zero, new HealthEffect(700, 600, 900, 650, false, true, 0)),
+            new HealthConditionDefinition(new HealthConditionId("cold_stress"), "Cold stress", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Moderate, TimeSpan.FromDays(3), new HealthEffect(700, 800, 800, 650, false, false, 0), 25),
+            new HealthConditionDefinition(new HealthConditionId("heat_stress"), "Heat stress", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Moderate, TimeSpan.FromDays(2), new HealthEffect(750, 850, 800, 700, false, false, 0), 20)
         });
     }
 

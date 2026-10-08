@@ -4,6 +4,7 @@ using Game.Domain.Production;
 using Game.Domain.Research;
 using Game.Domain.Dynasties;
 using Game.Domain.Health;
+using Game.Domain.Weather;
 
 namespace Game.Domain
 {
@@ -14,7 +15,9 @@ namespace Game.Domain
         public const int ProductionVersion = 2;
         public const int ResearchVersion = 3;
         public const int DynastyVersion = 4;
-        public const int CurrentVersion = 5;
+        public const int HealthVersion = 5;
+        public const int WeatherVersion = 6;
+        public const int CurrentVersion = WeatherVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -26,13 +29,16 @@ namespace Game.Domain
         public ResearchSaveState Research { get; }
         public DynastyWorldSaveState DynastyWorld { get; }
         public HealthFamilySaveState HealthFamily { get; }
+        public WeatherSaveState Weather { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
-            DynastyWorldSaveState dynastyWorld = null, HealthFamilySaveState healthFamily = null)
+            DynastyWorldSaveState dynastyWorld = null, HealthFamilySaveState healthFamily = null,
+            WeatherSaveState weather = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
-                formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != CurrentVersion)
+                formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
+                formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -49,6 +55,7 @@ namespace Game.Domain
             Research = research;
             DynastyWorld = dynastyWorld;
             HealthFamily = healthFamily;
+            Weather = weather;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

@@ -5,6 +5,7 @@ using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
+using Game.Simulation.Weather;
 
 namespace Game.Simulation
 {
@@ -16,12 +17,14 @@ namespace Game.Simulation
         private readonly ResearchService research;
         private readonly SuccessionService succession;
         private readonly HealthAndFamilyService healthFamily;
+        private readonly WeatherService weather;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
         public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
             ProductionService productionService = null, ResearchService researchService = null,
-            SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null)
+            SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null,
+            WeatherService weatherService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -31,12 +34,13 @@ namespace Game.Simulation
             research = researchService;
             succession = successionService;
             healthFamily = healthFamilyService;
+            weather = weatherService;
         }
         public SaveSnapshot Capture()
         {
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
-                succession?.CaptureState(), healthFamily?.CaptureState());
+                succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -57,6 +61,9 @@ namespace Game.Simulation
             if (snapshot.HealthFamily != null && healthFamily == null)
                 throw new InvalidOperationException("This save contains health/family state but no health/family service is attached.");
             if (snapshot.HealthFamily != null) healthFamily.RestoreState(snapshot.HealthFamily);
+            if (snapshot.Weather != null && weather == null)
+                throw new InvalidOperationException("This save contains weather state but no weather service is attached.");
+            if (snapshot.Weather != null) weather.RestoreState(snapshot.Weather);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;
