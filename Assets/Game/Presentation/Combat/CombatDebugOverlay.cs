@@ -21,17 +21,25 @@ namespace Game.Presentation.Combat
         private SelectionProbe selection;
         private WorldPointerRaycaster raycaster;
         private Action startDemo;
+        private BattleResolutionService battles;
+        private Func<long> calendarTick;
+        private Action advanceAbstract;
         private string message = "Start demo battle or RMB a hostile character";
 
         public void Initialize(CombatService combatService, CharacterRegistry characterRegistry,
             HealthAndFamilyService healthService, SelectionProbe selectionProbe,
-            WorldPointerRaycaster worldRaycaster, Action startDemoBattle)
+            WorldPointerRaycaster worldRaycaster, Action startDemoBattle,
+            BattleResolutionService battleResolutionService = null, Func<long> calendarTickProvider = null,
+            Action advanceAbstractBattle = null)
         {
             combat = combatService ?? throw new ArgumentNullException(nameof(combatService));
             characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             health = healthService ?? throw new ArgumentNullException(nameof(healthService));
             selection = selectionProbe ?? throw new ArgumentNullException(nameof(selectionProbe));
             startDemo = startDemoBattle;
+            battles = battleResolutionService;
+            calendarTick = calendarTickProvider;
+            advanceAbstract = advanceAbstractBattle;
             raycaster?.UnregisterUiBlocker(this);
             raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
             raycaster.RegisterUiBlocker(this);
@@ -59,7 +67,8 @@ namespace Game.Presentation.Combat
             }
             else
             {
-                GUILayout.Label($"Encounter {Short(encounter.EncounterId)} | {encounter.Status} | {encounter.Outcome}");
+                GUILayout.Label($"Battle {Short(encounter.BattleId)} | {encounter.Mode} | {encounter.Status} | {encounter.Outcome}");
+                GUILayout.Label($"Tick {encounter.LastProcessedCalendarTick} | units {Short(encounter.SideAUnitId)} vs {Short(encounter.SideBUnitId)}");
                 GUILayout.Label($"{encounter.SideA}: {Counts(encounter, encounter.SideA)}");
                 GUILayout.Label($"{encounter.SideB}: {Counts(encounter, encounter.SideB)}");
                 GUILayout.Label($"Attacks: {encounter.AttackHistory.Count} | hash {combat.ComputeStateHash():X16}");
@@ -94,8 +103,23 @@ namespace Game.Presentation.Combat
                 message = active != null && combat.CancelEncounter(active.EncounterId) ? "Encounter cancelled" : "No active encounter";
             }
             GUILayout.EndHorizontal();
+            if (battles != null && encounter != null && encounter.Status == CombatEncounterStatus.Active)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("To Abstract")) Transition(encounter.BattleId, BattleMode.Abstract);
+                if (GUILayout.Button("To Physical")) Transition(encounter.BattleId, BattleMode.Physical);
+                if (encounter.Mode == BattleMode.Abstract && GUILayout.Button("Advance")) advanceAbstract?.Invoke();
+                GUILayout.EndHorizontal();
+            }
             GUILayout.Label(message);
             GUILayout.EndArea();
+        }
+
+        private void Transition(StableEntityId battleId, BattleMode mode)
+        {
+            var result = battles.Transition(battleId, mode, calendarTick == null ? 0 : calendarTick());
+            message = string.IsNullOrEmpty(result.Message) ? result.Status.ToString() :
+                result.Status + ": " + result.Message;
         }
 
         private static string Counts(CombatEncounterState encounter, CombatSideId side)
@@ -112,5 +136,8 @@ namespace Game.Presentation.Combat
             var text = value.ToString();
             return text.Length <= 8 ? text : text.Substring(0, 8);
         }
+
+        private static string Short(Game.Domain.Military.MilitaryUnitId? value) =>
+            value.HasValue ? Short(value.Value.Value) : "none";
     }
 }

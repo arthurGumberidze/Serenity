@@ -313,3 +313,19 @@ The Unity Input System owns all bindings. Camera/Pointer/Building maps are disab
 ## D-054 Version 9 player-control persistence and safe fallback (2026-10-08)
 
 Snapshot v9 adds only `PlayerControlSaveState`: mode and optional controlled Character stable ID. Load re-enters through normal eligibility/materialization/arbitration. A missing, dead, incapacitated, hostile or otherwise invalid identity falls back to RTS; no GameObject or camera reference is restored. Versions 1–8 remain readable. PostgreSQL continues storing the validated XML opaquely and requires no relational migration or realtime role.
+
+## D-055 U20 encounter state is the canonical cross-mode battle (2026-10-08)
+
+U23 extends `CombatEncounterState` instead of introducing a second aggregate-combat authority. The existing stable encounter ID is also the `BattleId`; one record owns mode, U21 side-unit links, participants, targets, cooldowns, attack sequences, morale, retreat, attacks, outcome and compact battle events. Physical mode continues through U20 movement and position boundaries. Abstract mode changes only how the same state advances. A mode transition therefore cannot reroll health, replace a Character or reset combat progress.
+
+## D-056 Abstract combat uses shared rules and a fixed one-minute step (2026-10-08)
+
+`CombatRules` contains the impact, injury and morale/retreat constants used by both modes. Abstract battles advance from their last committed tick to the target `GameClock` tick in exact one-game-minute steps, respect persisted weapon intervals and choose targets from a stable hostile ordering while retaining valid assigned/current targets. No render delta, Transform, NavMesh or `UnityEngine.Random` participates. Direct catch-up, step-by-step advancement and reversed registration order must produce the same state hash.
+
+Physical/abstract convergence is a distribution gate rather than an identity-equality claim. The accepted U23 evidence is 100 paired starts with 0.0% winner delta, mean casualty delta 1 and mean duration delta 3 minutes. Exact abstract state and transfers are guaranteed; future physical Transform/NavMesh paths and the identity of future casualties across alternate modes are not.
+
+## D-057 Battle transitions compose U21/U22 and snapshot v10 (2026-10-08)
+
+`BattleResolutionService` changes representations through U21's rollback-safe service. Physical units are Detailed and active fighters are Tier1-pinned; abstract units are Aggregate and use their existing Tier2/Tier3 canonical projections. A directly controlled U22 participant blocks Physical→Abstract. Returning to Physical rematerializes the same living, capable Characters from retained U13 runtime state; dead members remain absent and incapacitated members remain canonical but unmaterialized. Exact logical position state is retained, while exact future centimetre-level path continuity is not promised.
+
+Snapshot v10 adds mode, optional unit IDs and compact started/mode-changed/side-broken/captain-death/finished events to the existing combat payload. Attack history remains the detailed casualty evidence. Versions 1–9 default to Physical/no unit links when those fields are absent. PostgreSQL keeps the opaque XML design and requires no schema or realtime-query change.

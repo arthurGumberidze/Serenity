@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U22 was completed and validated on 2026-10-08. Do not reopen U22 unless review finds a regression. Do not begin U23 until the user explicitly accepts the U22 handoff.
+U23 was completed and validated on 2026-10-08.
 
-## Next unblocked task: U23 — Auto-battle and return to physical battle
+## Next unblocked task: U24 — Destruction, Fire and Building Capture
 
 ### Status
 
-Not started; awaiting U22 review.
+TODO. Awaiting explicit user authorization; U24 has not started.
 
 ### Dependencies
 
-U20 tactical physical combat, U21 military units/captains and U22 direct third-person control are DONE.
+U08 construction, U20 tactical combat and U23 cross-mode battle resolution are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U23 abstract-battle/physical-return slice while preserving canonical Character, health, military-unit and encounter continuity.
+After explicit authorization, implement the TASK_GRAPH U24 destruction, fire and building-capture slice without creating a second building, combat or persistence authority.
 
 ### Scope boundary
 
-Begin from `docs/U22_HANDOFF.md`, `docs/THIRD_PERSON_CONTROL.md`, the U20/U21 handoffs, current architecture decisions and relevant FRS sections. Do not begin U24 or later tasks.
+Begin from `docs/U23_HANDOFF.md`, `docs/ABSTRACT_AND_PHYSICAL_BATTLE.md`, the U08/U20 handoffs, current architecture decisions and relevant FRS sections. Do not begin U25 or later tasks.

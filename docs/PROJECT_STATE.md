@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U22 DONE — stable-ID RTS↔third-person control, exclusive NavMesh movement authority, camera/input handoff, state continuity and version-9 persistence are complete.
+U23 DONE — one canonical cross-mode battle, deterministic abstract auto-resolve, rollback-safe Physical↔Abstract transitions and version-10 persistence are complete.
 
 ## Active task
-No implementation task is active. U23 is next but has not started and awaits review of U22.
+No task is active. U24 is the next unblocked task but has not started and requires explicit user authorization.
+
+## U23 abstract battle and physical return
+- `CombatService` remains the single mutable battle authority. `CombatEncounterState` now carries `BattleMode`, the stable encounter ID as `BattleId`, optional U21 side-unit IDs and a compact ordered battle history; mode changes never create a second battle or replace participants.
+- Physical mode is the existing U20 position/NavMesh path. Abstract mode is engine-independent and advances centrally in fixed one-game-minute steps with stable-ID targeting, the same weapon/stat/impact/injury/morale/cooldown rules, U18 health/death and U17 succession.
+- `BattleResolutionService` starts unit-linked battles and performs rollback-safe transitions through U21 representation APIs. Physical participants are Detailed/Tier1-pinned; abstract units are Aggregate and need no GameObjects or NavMesh. U22 direct control blocks abstraction until TPS exits.
+- Transition state is exact for battle/unit/Character IDs, health, conditions, morale, combatant/retreat state, target, attack sequence, next-attack tick and last committed battle tick. Existing U13 runtime positions are retained for rematerialization; exact future Transform/NavMesh paths are not a determinism guarantee.
+- Captain death is recorded once, then U21 deterministic fallback/Leaderless reconciliation runs. Monarch death remains U18→U17 and was validated off-camera without duplicate succession.
+- Snapshot v10 extends the combat payload with mode, unit links and battle events. Abstract state resumes without reroll; v1-v9 remain readable. PostgreSQL still stores opaque XML and needs no relational migration.
+- Final gates: U23 12/12 EditMode, 3/3 headless and 3/3 GPU PlayMode; required U13/U14/U17/U18/U20/U21/U22 regressions 87/87 EditMode and 25/25 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 332/332; full PlayMode 68/68; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- Determinism/performance evidence: catch-up and reversed collection order hash `52A0A55A95EB4EB6`; ten independent battles hash `6E9C1A83D3AABCC0`; 100 paired physical/abstract scenarios produced 0.0% winner delta, mean casualty delta 1 and mean duration delta 3 minutes; 250v250 completed in 3605.191 ms with 0 measured current-thread managed bytes and hash `D5DD44B2E9D730AF`.
+- PostgreSQL integration was not run because `DYNASTYGAME_PG_TEST_DATABASE` is absent. No manual click session is claimed; equivalent headless and Direct3D GPU PlayMode paths passed. U24 has not started.
 
 ## U22 third-person control
 - `PlayerControlState`/`PlayerControlService` own engine-independent mode and controlled Character `StableEntityId`. Valid roles are current monarch, first U17 succession candidate, or captain of a player U21 unit; dead, child, incapacitated, enemy, unmanaged and aggregate-conflicting targets are rejected.

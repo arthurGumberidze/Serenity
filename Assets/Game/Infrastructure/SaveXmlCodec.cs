@@ -20,7 +20,7 @@ using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V9 adds persistent player-control ownership.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V10 adds cross-mode battle state.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -48,7 +48,7 @@ namespace Game.Infrastructure
             if (snapshot.FormatVersion >= SaveSnapshot.WeatherVersion)
                 root.Add(SerializeWeather(snapshot.Weather));
             if (snapshot.FormatVersion >= SaveSnapshot.CombatVersion)
-                root.Add(SerializeCombat(snapshot.Combat));
+                root.Add(SerializeCombat(snapshot.Combat, snapshot.FormatVersion >= SaveSnapshot.BattleVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryVersion)
                 root.Add(SerializeMilitary(snapshot.Military));
             if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
@@ -82,6 +82,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
                         version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
                         version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
+                        version != SaveSnapshot.PlayerControlVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -96,7 +97,7 @@ namespace Game.Infrastructure
                     var weather = version >= SaveSnapshot.WeatherVersion
                         ? DeserializeWeather(root.Element("weather")) : null;
                     var combat = version >= SaveSnapshot.CombatVersion
-                        ? DeserializeCombat(root.Element("combat")) : null;
+                        ? DeserializeCombat(root.Element("combat"), version >= SaveSnapshot.BattleVersion) : null;
                     var military = version >= SaveSnapshot.MilitaryVersion
                         ? DeserializeMilitary(root.Element("military")) : null;
                     var playerControl = version >= SaveSnapshot.PlayerControlVersion
@@ -502,7 +503,7 @@ namespace Game.Infrastructure
                 new ClimateProfileId(Value(element, "climateProfileId")), checkpoints);
         }
 
-        private static XElement SerializeCombat(CombatSaveState state)
+        private static XElement SerializeCombat(CombatSaveState state, bool includeBattleState)
         {
             var element = new XElement("combat");
             if (state == null) return element;
@@ -516,6 +517,11 @@ namespace Game.Infrastructure
                     new XElement("lastTick", encounter.LastProcessedCalendarTick),
                     new XElement("status", (int)encounter.Status),
                     new XElement("outcome", (int)encounter.Outcome),
+                    includeBattleState ? new XElement("mode", (int)encounter.Mode) : null,
+                    includeBattleState ? new XElement("sideAUnitId",
+                        encounter.SideAUnitId.HasValue ? encounter.SideAUnitId.Value.ToString() : string.Empty) : null,
+                    includeBattleState ? new XElement("sideBUnitId",
+                        encounter.SideBUnitId.HasValue ? encounter.SideBUnitId.Value.ToString() : string.Empty) : null,
                     new XElement("combatants", encounter.Combatants.Select(value => new XElement("combatant",
                         new XElement("characterId", value.CharacterId.ToString()),
                         new XElement("sideId", value.SideId.ToString()),
@@ -538,11 +544,19 @@ namespace Game.Infrastructure
                         new XElement("calendarTick", value.CalendarTick),
                         new XElement("injuryId", value.InjuryId.ToString()),
                         new XElement("applied", value.Applied),
-                        new XElement("fatal", value.Fatal))))))));
+                        new XElement("fatal", value.Fatal)))),
+                    includeBattleState ? new XElement("battleHistory", encounter.BattleHistory.Select(value =>
+                        new XElement("event",
+                            new XElement("sequence", value.Sequence),
+                            new XElement("calendarTick", value.CalendarTick),
+                            new XElement("kind", (int)value.Kind),
+                            OptionalId("characterId", value.CharacterId),
+                            new XElement("sideId", value.SideId.HasValue ? value.SideId.Value.ToString() : string.Empty),
+                            new XElement("mode", value.Mode.HasValue ? ((int)value.Mode.Value).ToString() : string.Empty)))) : null))));
             return element;
         }
 
-        private static CombatSaveState DeserializeCombat(XElement element)
+        private static CombatSaveState DeserializeCombat(XElement element, bool includeBattleState)
         {
             if (element == null) throw new FormatException("Missing combat state.");
             if (!element.HasElements)
@@ -553,8 +567,11 @@ namespace Game.Infrastructure
             RequireFields(element, new[] { "worldSeed", "lastCalendarTick", "encounters" });
             var encounters = Items(element.Element("encounters"), "encounter", encounter =>
             {
-                RequireFields(encounter, new[] { "id", "sideA", "sideB", "startTick", "lastTick", "status",
-                    "outcome", "combatants", "attacks" });
+                var encounterFields = new[] { "id", "sideA", "sideB", "startTick", "lastTick", "status",
+                    "outcome", "combatants", "attacks" }.AsEnumerable();
+                if (includeBattleState) encounterFields = encounterFields.Concat(new[]
+                    { "mode", "sideAUnitId", "sideBUnitId", "battleHistory" });
+                RequireFields(encounter, encounterFields.ToArray());
                 var combatants = Items(encounter.Element("combatants"), "combatant", value =>
                 {
                     RequireFields(value, new[] { "characterId", "sideId", "weaponId", "state", "targetId",
@@ -578,11 +595,28 @@ namespace Game.Infrastructure
                         Long(value, "calendarTick"), new HealthConditionId(Value(value, "injuryId")),
                         XmlConvert.ToBoolean(Value(value, "applied")), XmlConvert.ToBoolean(Value(value, "fatal")));
                 });
+                var battleHistory = includeBattleState
+                    ? Items(encounter.Element("battleHistory"), "event", value =>
+                    {
+                        RequireFields(value, new[] { "sequence", "calendarTick", "kind", "characterId", "sideId", "mode" });
+                        var sideText = Value(value, "sideId");
+                        var modeText = Value(value, "mode");
+                        return new BattleEventState(ULong(value, "sequence"), Long(value, "calendarTick"),
+                            (BattleEventKind)Int(value, "kind"), OptionalStableId(value, "characterId"),
+                            string.IsNullOrEmpty(sideText) ? (CombatSideId?)null : new CombatSideId(sideText),
+                            string.IsNullOrEmpty(modeText) ? (BattleMode?)null :
+                                (BattleMode)XmlConvert.ToInt32(modeText));
+                    })
+                    : Array.Empty<BattleEventState>();
                 return new CombatEncounterState(StableEntityId.Parse(Value(encounter, "id")),
                     new CombatSideId(Value(encounter, "sideA")), new CombatSideId(Value(encounter, "sideB")),
                     Long(encounter, "startTick"), Long(encounter, "lastTick"),
                     (CombatEncounterStatus)Int(encounter, "status"), (CombatOutcome)Int(encounter, "outcome"),
-                    combatants, attacks);
+                    combatants, attacks,
+                    includeBattleState ? (BattleMode)Int(encounter, "mode") : BattleMode.Physical,
+                    includeBattleState ? OptionalMilitaryUnitId(encounter, "sideAUnitId") : null,
+                    includeBattleState ? OptionalMilitaryUnitId(encounter, "sideBUnitId") : null,
+                    battleHistory);
             });
             return new CombatSaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"), encounters);
         }
@@ -707,6 +741,12 @@ namespace Game.Infrastructure
         {
             var text = Value(parent, name);
             return string.IsNullOrEmpty(text) ? (StableEntityId?)null : StableEntityId.Parse(text);
+        }
+
+        private static MilitaryUnitId? OptionalMilitaryUnitId(XElement parent, XName name)
+        {
+            var text = Value(parent, name);
+            return string.IsNullOrEmpty(text) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(text);
         }
 
         private static T[] Items<T>(XElement container, XName itemName, Func<XElement, T> parser)

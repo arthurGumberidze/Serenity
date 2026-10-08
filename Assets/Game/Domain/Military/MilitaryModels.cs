@@ -138,8 +138,6 @@ namespace Game.Domain.Military
                 throw new ArgumentException("Roster member IDs must be unique.", nameof(roster));
             if (captainId.HasValue && !members.Any(x => x.CharacterId == captainId.Value && x.IsActive))
                 throw new ArgumentException("Captain must be an active roster member.", nameof(captainId));
-            if (activeEncounterId.HasValue && representation != MilitaryUnitRepresentationMode.Detailed)
-                throw new ArgumentException("An aggregate unit cannot link an active physical encounter.", nameof(activeEncounterId));
             if ((status == MilitaryUnitStatus.Engaged) != activeEncounterId.HasValue)
                 throw new ArgumentException("Engaged status and active encounter link must agree.", nameof(activeEncounterId));
             if (status == MilitaryUnitStatus.Leaderless && captainId.HasValue)

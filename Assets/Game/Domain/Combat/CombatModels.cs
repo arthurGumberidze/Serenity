@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Game.Domain.AI;
 using Game.Domain.Health;
+using Game.Domain.Military;
 
 namespace Game.Domain.Combat
 {
@@ -112,6 +113,38 @@ namespace Game.Domain.Combat
     public enum CombatEncounterStatus { Active = 1, Finished = 2, Cancelled = 3 }
     public enum CombatOutcome { None = 0, SideAVictory = 1, SideBVictory = 2, MutualDisengagement = 3, Cancelled = 4 }
     public enum CombatantState { Fighting = 1, Approaching = 2, Attacking = 3, Breaking = 4, Retreating = 5, Disengaged = 6, Incapacitated = 7, Dead = 8 }
+    public enum BattleMode { Physical = 1, Abstract = 2 }
+    public enum BattleEventKind { Started = 1, ModeChanged = 2, SideBroken = 3, CaptainDeath = 4, Finished = 5 }
+
+    public sealed class BattleEventState
+    {
+        public BattleEventState(ulong sequence, long calendarTick, BattleEventKind kind,
+            StableEntityId? characterId = null, CombatSideId? sideId = null, BattleMode? mode = null)
+        {
+            if (sequence == 0) throw new ArgumentOutOfRangeException(nameof(sequence));
+            if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (!Enum.IsDefined(typeof(BattleEventKind), kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+            if (characterId.HasValue && !characterId.Value.IsValid)
+                throw new ArgumentException("Optional battle-event character ID must be valid.", nameof(characterId));
+            if (sideId.HasValue && !sideId.Value.IsValid)
+                throw new ArgumentException("Optional battle-event side ID must be valid.", nameof(sideId));
+            if (mode.HasValue && !Enum.IsDefined(typeof(BattleMode), mode.Value))
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            Sequence = sequence;
+            CalendarTick = calendarTick;
+            Kind = kind;
+            CharacterId = characterId;
+            SideId = sideId;
+            Mode = mode;
+        }
+
+        public ulong Sequence { get; }
+        public long CalendarTick { get; }
+        public BattleEventKind Kind { get; }
+        public StableEntityId? CharacterId { get; }
+        public CombatSideId? SideId { get; }
+        public BattleMode? Mode { get; }
+    }
 
     public sealed class CombatantCombatState
     {
@@ -208,7 +241,9 @@ namespace Game.Domain.Combat
         public CombatEncounterState(StableEntityId encounterId, CombatSideId sideA, CombatSideId sideB,
             long startCalendarTick, long lastProcessedCalendarTick, CombatEncounterStatus status,
             CombatOutcome outcome, IEnumerable<CombatantCombatState> combatants,
-            IEnumerable<CombatAttackRecordState> attackHistory)
+            IEnumerable<CombatAttackRecordState> attackHistory, BattleMode mode = BattleMode.Physical,
+            MilitaryUnitId? sideAUnitId = null, MilitaryUnitId? sideBUnitId = null,
+            IEnumerable<BattleEventState> battleHistory = null)
         {
             if (!encounterId.IsValid) throw new ArgumentException("Encounter ID required.", nameof(encounterId));
             if (!sideA.IsValid || !sideB.IsValid || sideA == sideB) throw new ArgumentException("Two distinct combat sides are required.");
@@ -216,8 +251,15 @@ namespace Game.Domain.Combat
                 throw new ArgumentOutOfRangeException(nameof(startCalendarTick));
             if (!Enum.IsDefined(typeof(CombatEncounterStatus), status)) throw new ArgumentOutOfRangeException(nameof(status));
             if (!Enum.IsDefined(typeof(CombatOutcome), outcome)) throw new ArgumentOutOfRangeException(nameof(outcome));
+            if (!Enum.IsDefined(typeof(BattleMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode));
             if ((status == CombatEncounterStatus.Active) != (outcome == CombatOutcome.None))
                 throw new ArgumentException("Only an active encounter may have no outcome.");
+            if (sideAUnitId.HasValue && !sideAUnitId.Value.IsValid)
+                throw new ArgumentException("Side A unit ID must be valid.", nameof(sideAUnitId));
+            if (sideBUnitId.HasValue && !sideBUnitId.Value.IsValid)
+                throw new ArgumentException("Side B unit ID must be valid.", nameof(sideBUnitId));
+            if (sideAUnitId.HasValue && sideBUnitId.HasValue && sideAUnitId.Value == sideBUnitId.Value)
+                throw new ArgumentException("Battle sides require distinct military units.");
             EncounterId = encounterId;
             SideA = sideA;
             SideB = sideB;
@@ -225,11 +267,19 @@ namespace Game.Domain.Combat
             LastProcessedCalendarTick = lastProcessedCalendarTick;
             Status = status;
             Outcome = outcome;
+            Mode = mode;
+            SideAUnitId = sideAUnitId;
+            SideBUnitId = sideBUnitId;
             Combatants = SnapshotCombatants(combatants, sideA, sideB);
             AttackHistory = new ReadOnlyCollection<CombatAttackRecordState>((attackHistory ?? Array.Empty<CombatAttackRecordState>()).ToArray());
             if (AttackHistory.Any(x => x == null)) throw new ArgumentException("Attack history cannot contain null.");
+            var events = (battleHistory ?? Array.Empty<BattleEventState>()).OrderBy(x => x.Sequence).ToArray();
+            if (events.Any(x => x == null) || events.Select(x => x.Sequence).Distinct().Count() != events.Length)
+                throw new ArgumentException("Battle history entries must be non-null with unique sequences.");
+            BattleHistory = new ReadOnlyCollection<BattleEventState>(events);
         }
 
+        public StableEntityId BattleId => EncounterId;
         public StableEntityId EncounterId { get; }
         public CombatSideId SideA { get; }
         public CombatSideId SideB { get; }
@@ -237,8 +287,12 @@ namespace Game.Domain.Combat
         public long LastProcessedCalendarTick { get; }
         public CombatEncounterStatus Status { get; }
         public CombatOutcome Outcome { get; }
+        public BattleMode Mode { get; }
+        public MilitaryUnitId? SideAUnitId { get; }
+        public MilitaryUnitId? SideBUnitId { get; }
         public IReadOnlyList<CombatantCombatState> Combatants { get; }
         public IReadOnlyList<CombatAttackRecordState> AttackHistory { get; }
+        public IReadOnlyList<BattleEventState> BattleHistory { get; }
 
         private static IReadOnlyList<CombatantCombatState> SnapshotCombatants(IEnumerable<CombatantCombatState> values,
             CombatSideId sideA, CombatSideId sideB)

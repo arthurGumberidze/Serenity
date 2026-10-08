@@ -5,6 +5,7 @@ using Game.Domain.AI;
 using Game.Domain.Military;
 using Game.Presentation.Interaction;
 using Game.Simulation.Military;
+using Game.Simulation.Combat;
 using UnityEngine;
 
 namespace Game.Presentation.Military
@@ -18,6 +19,7 @@ namespace Game.Presentation.Military
         private MilitaryUnitRepresentationService representations;
         private MilitaryUnitCommandService commands;
         private MilitaryUnitCombatService combat;
+        private BattleResolutionService battles;
         private SelectionProbe selection;
         private WorldPointerRaycaster raycaster;
         private Func<long> calendarTick;
@@ -29,12 +31,14 @@ namespace Game.Presentation.Military
         public void Initialize(MilitaryUnitService unitService,
             MilitaryUnitRepresentationService representationService,
             MilitaryUnitCommandService commandService, MilitaryUnitCombatService combatService,
-            SelectionProbe selectionProbe, WorldPointerRaycaster worldRaycaster, Func<long> calendarTickProvider)
+            SelectionProbe selectionProbe, WorldPointerRaycaster worldRaycaster, Func<long> calendarTickProvider,
+            BattleResolutionService battleResolutionService = null)
         {
             units = unitService ?? throw new ArgumentNullException(nameof(unitService));
             representations = representationService ?? throw new ArgumentNullException(nameof(representationService));
             commands = commandService ?? throw new ArgumentNullException(nameof(commandService));
             combat = combatService ?? throw new ArgumentNullException(nameof(combatService));
+            battles = battleResolutionService;
             selection = selectionProbe ?? throw new ArgumentNullException(nameof(selectionProbe));
             calendarTick = calendarTickProvider ?? throw new ArgumentNullException(nameof(calendarTickProvider));
             raycaster?.UnregisterUiBlocker(this);
@@ -114,21 +118,40 @@ namespace Game.Presentation.Military
                     new WorldPosition(0f, 0f, 0f)));
                 GUILayout.EndHorizontal();
             }
-            if (GUILayout.Button("Start first hostile unit battle")) TryUi(StartFirstHostileBattle);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Start Physical")) TryUi(StartFirstHostileBattle);
+            if (GUILayout.Button("Start Abstract")) TryUi(StartFirstHostileAbstractBattle);
+            GUILayout.EndHorizontal();
             GUILayout.Label(message);
             GUILayout.EndArea();
         }
 
         private void StartFirstHostileBattle()
         {
-            var values = units.Units;
-            var pair = (from first in values from second in values
-                where first.Id.CompareTo(second.Id) < 0 && first.OwnerSideId != second.OwnerSideId
-                select new { first, second }).FirstOrDefault();
-            if (pair == null) throw new InvalidOperationException("Create two hostile detailed units first.");
-            combat.Start(pair.first.Id, pair.second.Id, StableEntityId.NewId(), calendarTick());
-            selectedUnitId = pair.first.Id;
+            var pair = FirstHostilePair();
+            combat.Start(pair.Item1.Id, pair.Item2.Id, StableEntityId.NewId(), calendarTick());
+            selectedUnitId = pair.Item1.Id;
             message = "Physical encounter started through U20";
+        }
+
+        private void StartFirstHostileAbstractBattle()
+        {
+            if (battles == null) throw new InvalidOperationException("U23 battle service is unavailable.");
+            var pair = FirstHostilePair();
+            representations.Transition(pair.Item1.Id, MilitaryUnitRepresentationMode.Aggregate);
+            representations.Transition(pair.Item2.Id, MilitaryUnitRepresentationMode.Aggregate);
+            battles.StartAbstractBattle(pair.Item1.Id, pair.Item2.Id, StableEntityId.NewId(), calendarTick());
+            selectedUnitId = pair.Item1.Id;
+            message = "Abstract battle started without physical combatants";
+        }
+
+        private Tuple<MilitaryUnitState, MilitaryUnitState> FirstHostilePair()
+        {
+            var pair = (from first in units.Units from second in units.Units
+                where first.Id.CompareTo(second.Id) < 0 && first.OwnerSideId != second.OwnerSideId
+                select Tuple.Create(first, second)).FirstOrDefault();
+            if (pair == null) throw new InvalidOperationException("Create two hostile units first.");
+            return pair;
         }
 
         private void TryUi(Action action)

@@ -250,26 +250,41 @@ namespace Game.Simulation.Military
             unit.Revision++;
         }
 
-        internal void SetRepresentation(MilitaryUnitId id, MilitaryUnitRepresentationMode mode)
+        internal void SetRepresentation(MilitaryUnitId id, MilitaryUnitRepresentationMode mode,
+            bool activeBattleAllowsAggregate = false)
         {
             var unit = Require(id);
-            if (unit.EncounterId.HasValue && mode == MilitaryUnitRepresentationMode.Aggregate)
+            if (unit.EncounterId.HasValue && mode == MilitaryUnitRepresentationMode.Aggregate &&
+                !activeBattleAllowsAggregate)
                 throw new InvalidOperationException("A unit in physical combat cannot become aggregate.");
             unit.Representation = mode;
             unit.Revision++;
         }
 
-        internal void AttachEncounter(MilitaryUnitId id, StableEntityId encounterId, MilitaryUnitId enemyId)
+        internal void AttachEncounter(MilitaryUnitId id, StableEntityId encounterId, MilitaryUnitId enemyId,
+            BattleMode mode = BattleMode.Physical)
         {
             var unit = Require(id);
-            if (unit.Representation != MilitaryUnitRepresentationMode.Detailed)
+            if (mode == BattleMode.Physical && unit.Representation != MilitaryUnitRepresentationMode.Detailed)
                 throw new InvalidOperationException("Only a detailed unit can enter physical combat.");
+            if (mode == BattleMode.Abstract && unit.Representation != MilitaryUnitRepresentationMode.Aggregate)
+                throw new InvalidOperationException("Only an aggregate unit can enter abstract combat.");
             if (unit.EncounterId.HasValue) throw new InvalidOperationException("Unit is already in physical combat.");
             unit.EncounterId = encounterId;
             unit.Status = MilitaryUnitStatus.Engaged;
             unit.Revision++;
             unit.Order = new MilitaryUnitOrderState(MilitaryUnitOrderKind.Engage, default, false,
                 enemyId, unit.Revision);
+        }
+
+        internal void DetachEncounter(MilitaryUnitId id, StableEntityId encounterId)
+        {
+            var unit = Require(id);
+            if (unit.EncounterId != encounterId) return;
+            unit.EncounterId = null;
+            unit.Order = MilitaryUnitOrderState.Idle(++unit.Revision);
+            unit.Status = MilitaryUnitStatus.Ready;
+            RefreshCaptain(unit);
         }
 
         internal void ReconcileEncounter(MilitaryUnitId id, CombatEncounterState encounter)
@@ -327,6 +342,12 @@ namespace Game.Simulation.Military
                     if (linkedCombatants.Any(x => !string.Equals(x.SideId.Value, saved.OwnerSideId.Value,
                         StringComparison.Ordinal)))
                         throw new ArgumentException("Saved unit owner does not match its encounter side.");
+                    if (encounter.Mode == BattleMode.Physical &&
+                        saved.Representation != MilitaryUnitRepresentationMode.Detailed)
+                        throw new ArgumentException("Saved physical battle requires detailed units.");
+                    if (encounter.Mode == BattleMode.Abstract &&
+                        saved.Representation != MilitaryUnitRepresentationMode.Aggregate)
+                        throw new ArgumentException("Saved abstract battle requires aggregate units.");
                 }
                 var unit = Restore(saved);
                 if (!restored.TryAdd(unit.Id, unit)) throw new ArgumentException("Duplicate saved military unit ID.");
@@ -467,8 +488,13 @@ namespace Game.Simulation.Military
         {
             var before = units.Get(id);
             if (before.Representation == target) return before;
-            if (target == MilitaryUnitRepresentationMode.Aggregate && (before.ActiveEncounterId.HasValue ||
-                before.ActiveMemberIds.Any(combat.IsPinnedToTier1)))
+            var aggregateBattleAllowed = false;
+            if (before.ActiveEncounterId.HasValue && combat.TryGetEncounter(before.ActiveEncounterId.Value,
+                out var linkedBattle))
+                aggregateBattleAllowed = linkedBattle.Mode == BattleMode.Abstract;
+            if (target == MilitaryUnitRepresentationMode.Aggregate &&
+                ((!aggregateBattleAllowed && before.ActiveEncounterId.HasValue) ||
+                 before.ActiveMemberIds.Any(combat.IsPinnedToTier1)))
                 throw new InvalidOperationException("Active physical combat pins the unit to detailed representation.");
             if (target == MilitaryUnitRepresentationMode.Aggregate && aggregateTier == CharacterSimulationTier.Tier1)
                 throw new ArgumentException("Aggregate transition target must be Tier2 or Tier3.", nameof(aggregateTier));
@@ -487,7 +513,7 @@ namespace Game.Simulation.Military
                     tiers.Transition(memberId, desired);
                     changed.Add(Tuple.Create(memberId, current));
                 }
-                units.SetRepresentation(id, target);
+                units.SetRepresentation(id, target, aggregateBattleAllowed);
                 return units.Get(id);
             }
             catch
@@ -558,9 +584,9 @@ namespace Game.Simulation.Military
             if (firstMembers.Length == 0 || secondMembers.Length == 0)
                 throw new InvalidOperationException("Both units require local Tier1 combat-capable members.");
             var encounter = combat.CreateEncounter(encounterId, firstSide, secondSide, firstMembers, secondMembers,
-                calendarTick, weaponSelector);
-            units.AttachEncounter(firstId, encounterId, secondId);
-            units.AttachEncounter(secondId, encounterId, firstId);
+                calendarTick, weaponSelector, BattleMode.Physical, firstId, secondId);
+            units.AttachEncounter(firstId, encounterId, secondId, BattleMode.Physical);
+            units.AttachEncounter(secondId, encounterId, firstId, BattleMode.Physical);
             return encounter;
         }
 

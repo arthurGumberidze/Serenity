@@ -136,6 +136,7 @@ namespace Game.Infrastructure
         public MilitaryUnitRepresentationService MilitaryRepresentations { get; private set; }
         public MilitaryUnitCommandService MilitaryCommands { get; private set; }
         public MilitaryUnitCombatService MilitaryCombat { get; private set; }
+        public BattleResolutionService Battles { get; private set; }
         public MilitaryUnitDebugOverlay MilitaryDebug { get; private set; }
         public PlayerControlService PlayerControl { get; private set; }
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
@@ -312,6 +313,8 @@ namespace Game.Infrastructure
             MilitaryCombat = new MilitaryUnitCombatService(MilitaryUnits, Combat);
             PlayerControl = new PlayerControlService(Characters, HealthFamily, Tiers, Dynasty, MilitaryUnits,
                 AiScheduler, new MilitarySideId("player"));
+            Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
+                MilitaryCombat, PlayerControl);
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
             Combat.BindMovementSuppression(PlayerControl);
@@ -327,10 +330,11 @@ namespace Game.Infrastructure
                 () => Clock.State.CalendarTicks);
             CombatDebug = gameObject.AddComponent<CombatDebugOverlay>();
             CombatDebug.Initialize(Combat, Characters, HealthFamily, selectionProbe, pointerRaycaster,
-                () => { StartDemoCombat(); });
+                () => { StartDemoUnitBattle(BattleMode.Physical); }, Battles, () => Clock.State.CalendarTicks,
+                () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             MilitaryDebug = gameObject.AddComponent<MilitaryUnitDebugOverlay>();
             MilitaryDebug.Initialize(MilitaryUnits, MilitaryRepresentations, MilitaryCommands, MilitaryCombat,
-                selectionProbe, pointerRaycaster, () => Clock.State.CalendarTicks);
+                selectionProbe, pointerRaycaster, () => Clock.State.CalendarTicks, Battles);
             ThirdPersonControl = gameObject.AddComponent<ThirdPersonControlController>();
             ThirdPersonControl.Initialize(input, selectionProbe, CharacterPresentations, AiRuntime,
                 cameraController, buildingPlacementController, PlayerControl, HealthFamily, MilitaryUnits, Work,
@@ -357,8 +361,7 @@ namespace Game.Infrastructure
                 Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
-            Combat.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
-            MilitaryCombat.ReconcileAll();
+            Battles.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
@@ -380,12 +383,45 @@ namespace Game.Infrastructure
         {
             var active = Combat.Encounters.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active);
             if (active != null) return active;
-            var player = new[] { MaleDemoCharacter.Id, FemaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id };
+            PrepareDemoCombatants(out var player, out var enemy);
+            var encounterId = DemoId(200 + Combat.Encounters.Count);
+            return Combat.CreateEncounter(encounterId, new CombatSideId("player"), new CombatSideId("enemy"),
+                player, enemy, Clock.State.CalendarTicks,
+                id => id == MaleDemoCharacter.Id || id == enemy[0]
+                    ? new CombatWeaponId("stone_axe") : new CombatWeaponId("stone_spear"));
+        }
+
+        public CombatEncounterState StartDemoUnitBattle(BattleMode mode)
+        {
+            var active = Combat.Encounters.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active);
+            if (active != null) return active;
+            PrepareDemoCombatants(out var player, out var enemy);
+            var playerUnit = MilitaryUnits.TryGetForMember(player[0], out var existingPlayer)
+                ? existingPlayer : MilitaryUnits.Create(new MilitaryUnitId(DemoId(300)),
+                    new MilitarySideId("player"), player, player[0]);
+            var enemyUnit = MilitaryUnits.TryGetForMember(enemy[0], out var existingEnemy)
+                ? existingEnemy : MilitaryUnits.Create(new MilitaryUnitId(DemoId(301)),
+                    new MilitarySideId("enemy"), enemy, enemy[0]);
+            var battleId = DemoId(400 + Combat.Encounters.Count);
+            if (mode == BattleMode.Abstract)
+            {
+                MilitaryRepresentations.Transition(playerUnit.Id, MilitaryUnitRepresentationMode.Aggregate);
+                MilitaryRepresentations.Transition(enemyUnit.Id, MilitaryUnitRepresentationMode.Aggregate);
+                return Battles.StartAbstractBattle(playerUnit.Id, enemyUnit.Id, battleId,
+                    Clock.State.CalendarTicks, DemoWeapon);
+            }
+            return Battles.StartPhysicalBattle(playerUnit.Id, enemyUnit.Id, battleId,
+                Clock.State.CalendarTicks, DemoWeapon);
+        }
+
+        private void PrepareDemoCombatants(out StableEntityId[] player, out StableEntityId[] enemy)
+        {
+            player = new[] { MaleDemoCharacter.Id, FemaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id };
             EnsureTier1(FirstDemoHeir, new WorldPosition(-5f, 0f, -2f));
             EnsureTier1(SecondDemoHeir, new WorldPosition(-5f, 0f, 2f));
             foreach (var id in player) Combat.RegisterSide(id, new CombatSideId("player"));
 
-            var enemy = new StableEntityId[4];
+            enemy = new StableEntityId[4];
             for (var i = 0; i < enemy.Length; i++)
             {
                 var id = DemoId(20 + i);
@@ -400,12 +436,11 @@ namespace Game.Infrastructure
                 enemy[i] = id;
             }
             Production.Population = Characters.Count;
-            var encounterId = DemoId(200 + Combat.Encounters.Count);
-            return Combat.CreateEncounter(encounterId, new CombatSideId("player"), new CombatSideId("enemy"),
-                player, enemy, Clock.State.CalendarTicks,
-                id => id == MaleDemoCharacter.Id || id == enemy[0]
-                    ? new CombatWeaponId("stone_axe") : new CombatWeaponId("stone_spear"));
         }
+
+        private CombatWeaponId DemoWeapon(StableEntityId id) =>
+            id == MaleDemoCharacter.Id || id == DemoId(20)
+                ? new CombatWeaponId("stone_axe") : new CombatWeaponId("stone_spear");
 
         private void EnsureTier1(Character character, WorldPosition position)
         {

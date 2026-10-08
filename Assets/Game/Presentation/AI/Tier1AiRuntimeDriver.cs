@@ -81,6 +81,18 @@ namespace Game.Presentation.AI
             RefreshMovementPresentation();
         }
 
+        public GameTimeAdvance AdvanceForDebug(TimeSpan realDelta)
+        {
+            if (clock == null || scheduler == null)
+                throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
+            if (realDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(realDelta));
+            var advance = clock.Advance(realDelta);
+            scheduler.Advance(advance);
+            SimulationAdvanced?.Invoke(advance);
+            RefreshMovementPresentation();
+            return advance;
+        }
+
         private void Update()
         {
             if (clock == null || scheduler == null) return;
@@ -90,10 +102,7 @@ namespace Game.Presentation.AI
                 scheduler.Unregister(movements[i].CharacterId);
                 movements.RemoveAt(i);
             }
-            var advance = clock.Advance(TimeSpan.FromSeconds(Time.unscaledDeltaTime));
-            scheduler.Advance(advance);
-            SimulationAdvanced?.Invoke(advance);
-            RefreshMovementPresentation();
+            AdvanceForDebug(TimeSpan.FromSeconds(Time.unscaledDeltaTime));
         }
 
         private void OnDestroy()

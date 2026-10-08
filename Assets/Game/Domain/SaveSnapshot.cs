@@ -23,7 +23,8 @@ namespace Game.Domain
         public const int CombatVersion = 7;
         public const int MilitaryVersion = 8;
         public const int PlayerControlVersion = 9;
-        public const int CurrentVersion = PlayerControlVersion;
+        public const int BattleVersion = 10;
+        public const int CurrentVersion = BattleVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -49,7 +50,8 @@ namespace Game.Domain
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
                 formatVersion != WeatherVersion && formatVersion != CombatVersion &&
-                formatVersion != MilitaryVersion && formatVersion != CurrentVersion)
+                formatVersion != MilitaryVersion && formatVersion != PlayerControlVersion &&
+                formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));

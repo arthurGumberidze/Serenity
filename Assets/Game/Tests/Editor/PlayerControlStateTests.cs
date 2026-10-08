@@ -43,7 +43,7 @@ namespace Game.Tests.Editor
         [Test]
         public void VersionNineXmlRoundTripPersistsModeAndIdentity()
         {
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(2), new GameTimeState(), 400,
+            var snapshot = new SaveSnapshot(SaveSnapshot.PlayerControlVersion, Id(2), new GameTimeState(), 400,
                 playerControl: new PlayerControlSaveState(PlayerControlMode.ThirdPerson, Id(3)));
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
             Assert.That(restored.FormatVersion, Is.EqualTo(9));
@@ -79,10 +79,11 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void SnapshotCurrentVersionIsPlayerControlVersion()
+        public void SnapshotCurrentVersionAdvancesBeyondPlayerControlVersion()
         {
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.PlayerControlVersion));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(9));
+            Assert.That(SaveSnapshot.PlayerControlVersion, Is.EqualTo(9));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.BattleVersion));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(10));
         }
 
         private sealed class Owner : IExternalCharacterActivityOwner

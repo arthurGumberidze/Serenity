@@ -6,6 +6,7 @@ using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.Combat;
 using Game.Domain.Health;
+using Game.Domain.Military;
 using Game.Simulation.AI;
 using Game.Simulation.Health;
 using Game.Simulation.Tiers;
@@ -42,6 +43,30 @@ namespace Game.Simulation.Combat
         public float RangeMetres => RangeMillimetres / 1000f;
         public int MovementPerThousand { get; }
         public int MoraleInfluence { get; }
+    }
+
+    /// <summary>Pure parameters and calculations shared by physical and abstract battle resolution.</summary>
+    public static class CombatRules
+    {
+        public const int BaselineMorale = 1000;
+        public const int BreakThreshold = 300;
+        public const int AllyCasualtyMoraleLoss = 260;
+        public const int SevereInjuryMoraleLoss = 350;
+        public static readonly TimeSpan RetreatDuration = TimeSpan.FromMinutes(15);
+        public static readonly TimeSpan AbstractStep = TimeSpan.FromMinutes(1);
+
+        public static int CalculateImpact(CombatStats attacker, CombatStats defender) =>
+            Math.Max(1, attacker.AttackPower - defender.Defense / 2);
+
+        public static HealthConditionId SelectInjury(int impact, HealthConditionId minimum)
+        {
+            var computed = impact >= 500 ? "serious_wound" : impact >= 350 ? "broken_bone" :
+                impact >= 220 ? "sprain" : "minor_cut";
+            var order = new[] { "minor_cut", "sprain", "broken_bone", "serious_wound" };
+            var minimumIndex = Array.IndexOf(order, minimum.Value);
+            var computedIndex = Array.IndexOf(order, computed);
+            return new HealthConditionId(order[Math.Max(minimumIndex, computedIndex)]);
+        }
     }
 
     public sealed class CombatStatQuery
@@ -118,16 +143,17 @@ namespace Game.Simulation.Combat
     }
 
     /// <summary>
-    /// Canonical U20 physical-combat authority. It is engine independent, stable-ID based and batched.
+    /// Canonical U20/U23 cross-mode combat authority. It is engine independent, stable-ID based and batched.
     /// NavMesh is accessed only through ICombatPositionProvider.
     /// </summary>
     public sealed class CombatService : ICharacterTierTransitionGuard, IExternalCharacterActivityOwner
     {
-        public const int BaselineMorale = 1000;
-        public const int BreakThreshold = 300;
-        public const int AllyCasualtyMoraleLoss = 260;
-        public const int SevereInjuryMoraleLoss = 350;
-        public static readonly TimeSpan RetreatDuration = TimeSpan.FromMinutes(15);
+        public const int BaselineMorale = CombatRules.BaselineMorale;
+        public const int BreakThreshold = CombatRules.BreakThreshold;
+        public const int AllyCasualtyMoraleLoss = CombatRules.AllyCasualtyMoraleLoss;
+        public const int SevereInjuryMoraleLoss = CombatRules.SevereInjuryMoraleLoss;
+        public static readonly TimeSpan RetreatDuration = CombatRules.RetreatDuration;
+        public static readonly TimeSpan AbstractStep = CombatRules.AbstractStep;
         private const float RetreatDistance = 8f;
         private const float FormationSpacing = 0.5f;
 
@@ -140,9 +166,14 @@ namespace Game.Simulation.Combat
             public long LastTick;
             public CombatEncounterStatus Status;
             public CombatOutcome Outcome;
+            public BattleMode Mode;
+            public MilitaryUnitId? SideAUnitId;
+            public MilitaryUnitId? SideBUnitId;
             public readonly Dictionary<StableEntityId, CombatantCombatState> Combatants =
                 new Dictionary<StableEntityId, CombatantCombatState>();
             public readonly List<CombatAttackRecordState> History = new List<CombatAttackRecordState>();
+            public readonly List<BattleEventState> BattleHistory = new List<BattleEventState>();
+            public ulong NextBattleEventSequence = 1;
         }
 
         private readonly CharacterRegistry characters;
@@ -208,28 +239,34 @@ namespace Game.Simulation.Combat
 
         public bool IsEligible(StableEntityId characterId)
         {
-            if (!roster.ContainsKey(characterId) || !characters.TryGet(characterId, out var character) ||
-                character.LifeState != CharacterLifeState.Alive || !health.GetCapabilities(characterId).CanFight)
-                return false;
+            if (!IsAbstractEligible(characterId)) return false;
             return tiers == null || tiers.TryGetTier(characterId, out var tier) && tier == CharacterSimulationTier.Tier1;
         }
+
+        public bool IsAbstractEligible(StableEntityId characterId) =>
+            roster.ContainsKey(characterId) && characters.TryGet(characterId, out var character) &&
+            character.LifeState == CharacterLifeState.Alive && health.GetCapabilities(characterId).CanFight;
 
         public CombatEncounterState CreateEncounter(StableEntityId encounterId, CombatSideId sideA,
             CombatSideId sideB, IEnumerable<StableEntityId> sideACharacters,
             IEnumerable<StableEntityId> sideBCharacters, long startCalendarTick,
-            Func<StableEntityId, CombatWeaponId> weaponSelector = null)
+            Func<StableEntityId, CombatWeaponId> weaponSelector = null, BattleMode mode = BattleMode.Physical,
+            MilitaryUnitId? sideAUnitId = null, MilitaryUnitId? sideBUnitId = null)
         {
             if (!encounterId.IsValid) throw new ArgumentException("Encounter ID required.", nameof(encounterId));
             if (!sideA.IsValid || !sideB.IsValid || sideA == sideB) throw new ArgumentException("Two distinct hostile sides are required.");
             if (startCalendarTick < LastCalendarTick) throw new ArgumentOutOfRangeException(nameof(startCalendarTick));
+            if (!Enum.IsDefined(typeof(BattleMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+            if (sideAUnitId.HasValue && sideBUnitId.HasValue && sideAUnitId.Value == sideBUnitId.Value)
+                throw new ArgumentException("Battle units must be distinct.");
             if (encounters.ContainsKey(encounterId)) throw new InvalidOperationException("Encounter ID is already registered.");
             var a = OrderedDistinct(sideACharacters);
             var b = OrderedDistinct(sideBCharacters);
             if (a.Length == 0 || b.Length == 0) throw new ArgumentException("Both sides require participants.");
             var all = a.Concat(b).ToArray();
             if (all.Distinct().Count() != all.Length) throw new ArgumentException("A participant cannot be on both sides.");
-            foreach (var id in a) ValidateParticipant(id, sideA);
-            foreach (var id in b) ValidateParticipant(id, sideB);
+            foreach (var id in a) ValidateParticipant(id, sideA, mode);
+            foreach (var id in b) ValidateParticipant(id, sideB, mode);
 
             var encounter = new Encounter
             {
@@ -239,8 +276,12 @@ namespace Game.Simulation.Combat
                 StartTick = startCalendarTick,
                 LastTick = startCalendarTick,
                 Status = CombatEncounterStatus.Active,
-                Outcome = CombatOutcome.None
+                Outcome = CombatOutcome.None,
+                Mode = mode,
+                SideAUnitId = sideAUnitId,
+                SideBUnitId = sideBUnitId
             };
+            AddBattleEvent(encounter, startCalendarTick, BattleEventKind.Started, mode: mode);
             AddCombatants(encounter, a, sideA, b, weaponSelector);
             AddCombatants(encounter, b, sideB, a, weaponSelector);
             encounters.Add(encounterId, encounter);
@@ -269,8 +310,15 @@ namespace Game.Simulation.Combat
             foreach (var encounter in encounters.Values.Where(x => x.Status == CombatEncounterStatus.Active)
                          .OrderBy(x => x.Id).ToArray())
             {
-                AdvanceEncounter(encounter, calendarTick, biologicalTick);
-                encounter.LastTick = calendarTick;
+                if (encounter.Mode == BattleMode.Physical)
+                {
+                    AdvancePhysicalEncounter(encounter, calendarTick, biologicalTick);
+                    encounter.LastTick = calendarTick;
+                }
+                else
+                {
+                    AdvanceAbstractEncounter(encounter, calendarTick, biologicalTick);
+                }
             }
             LastCalendarTick = calendarTick;
         }
@@ -281,6 +329,7 @@ namespace Game.Simulation.Combat
                 return false;
             encounter.Status = CombatEncounterStatus.Cancelled;
             encounter.Outcome = CombatOutcome.Cancelled;
+            AddBattleEvent(encounter, encounter.LastTick, BattleEventKind.Finished);
             Release(encounter);
             return true;
         }
@@ -298,7 +347,8 @@ namespace Game.Simulation.Combat
         }
 
         public bool IsPinnedToTier1(StableEntityId characterId) =>
-            activeEncounterByCharacter.ContainsKey(characterId);
+            activeEncounterByCharacter.TryGetValue(characterId, out var encounterId) &&
+            encounters[encounterId].Mode == BattleMode.Physical;
 
         public bool CanTransition(StableEntityId characterId, CharacterSimulationTier targetTier) =>
             targetTier == CharacterSimulationTier.Tier1 || !IsPinnedToTier1(characterId);
@@ -322,6 +372,50 @@ namespace Game.Simulation.Combat
         }
 
         public CombatStats GetStats(StableEntityId characterId, CombatWeaponId weaponId) => stats.Get(characterId, weaponId);
+
+        public bool TryGetEncounter(StableEntityId battleId, out CombatEncounterState state)
+        {
+            state = null;
+            if (!encounters.TryGetValue(battleId, out var encounter)) return false;
+            state = Capture(encounter);
+            return true;
+        }
+
+        public CombatEncounterState SetBattleMode(StableEntityId battleId, BattleMode mode, long calendarTick,
+            bool recordTransition = true)
+        {
+            if (!Enum.IsDefined(typeof(BattleMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+            if (!encounters.TryGetValue(battleId, out var encounter))
+                throw new KeyNotFoundException("Unknown battle: " + battleId);
+            if (encounter.Status != CombatEncounterStatus.Active)
+                throw new InvalidOperationException("A terminal battle cannot change representation mode.");
+            if (calendarTick < encounter.LastTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (encounter.Mode == mode) return Capture(encounter);
+            if (mode == BattleMode.Physical)
+                foreach (var combatant in encounter.Combatants.Values.Where(IsActiveCombatant))
+                    ValidatePhysicalPresence(combatant.CharacterId);
+            encounter.Mode = mode;
+            if (recordTransition)
+                AddBattleEvent(encounter, calendarTick, BattleEventKind.ModeChanged, mode: mode);
+            return Capture(encounter);
+        }
+
+        public void RecordModeTransition(StableEntityId battleId, long calendarTick)
+        {
+            if (!encounters.TryGetValue(battleId, out var encounter))
+                throw new KeyNotFoundException("Unknown battle: " + battleId);
+            AddBattleEvent(encounter, calendarTick, BattleEventKind.ModeChanged, mode: encounter.Mode);
+        }
+
+        public void RecordCaptainDeath(StableEntityId battleId, StableEntityId captainId,
+            CombatSideId sideId, long calendarTick)
+        {
+            if (!encounters.TryGetValue(battleId, out var encounter))
+                throw new KeyNotFoundException("Unknown battle: " + battleId);
+            if (encounter.BattleHistory.Any(x => x.Kind == BattleEventKind.CaptainDeath &&
+                x.CharacterId == captainId)) return;
+            AddBattleEvent(encounter, calendarTick, BattleEventKind.CaptainDeath, captainId, sideId);
+        }
 
         public CombatSaveState CaptureState() => new CombatSaveState(worldSeed, LastCalendarTick, Encounters);
 
@@ -363,26 +457,45 @@ namespace Game.Simulation.Combat
             foreach (var encounter in Encounters)
             {
                 AddId(ref hash, encounter.EncounterId); AddText(ref hash, encounter.SideA.Value); AddText(ref hash, encounter.SideB.Value);
+                Add(ref hash, unchecked((ulong)encounter.StartCalendarTick));
+                Add(ref hash, unchecked((ulong)encounter.LastProcessedCalendarTick));
                 Add(ref hash, (ulong)encounter.Status); Add(ref hash, (ulong)encounter.Outcome);
                 foreach (var combatant in encounter.Combatants)
                 {
                     AddId(ref hash, combatant.CharacterId); AddText(ref hash, combatant.SideId.Value);
+                    AddText(ref hash, combatant.WeaponId.Value);
                     Add(ref hash, (ulong)combatant.State); Add(ref hash, combatant.AttackSequence);
                     Add(ref hash, unchecked((ulong)combatant.NextAttackTick)); Add(ref hash, (ulong)combatant.Morale);
                     if (combatant.TargetId.HasValue) AddId(ref hash, combatant.TargetId.Value);
+                    if (combatant.AssignedTargetId.HasValue) AddId(ref hash, combatant.AssignedTargetId.Value);
+                    AddText(ref hash, combatant.RecentInjury);
+                    Add(ref hash, combatant.CasualtyPenaltyApplied ? 1UL : 0UL);
                 }
                 foreach (var attack in encounter.AttackHistory)
                 {
                     AddId(ref hash, attack.AttackerId); AddId(ref hash, attack.DefenderId);
                     Add(ref hash, attack.AttackSequence); AddText(ref hash, attack.InjuryId.ToString());
-                    Add(ref hash, attack.Fatal ? 1UL : 0UL);
+                    Add(ref hash, unchecked((ulong)attack.CalendarTick));
+                    Add(ref hash, attack.Applied ? 1UL : 0UL); Add(ref hash, attack.Fatal ? 1UL : 0UL);
+                }
+                Add(ref hash, (ulong)encounter.Mode);
+                if (encounter.SideAUnitId.HasValue) AddId(ref hash, encounter.SideAUnitId.Value.Value);
+                if (encounter.SideBUnitId.HasValue) AddId(ref hash, encounter.SideBUnitId.Value.Value);
+                foreach (var battleEvent in encounter.BattleHistory)
+                {
+                    Add(ref hash, battleEvent.Sequence); Add(ref hash, unchecked((ulong)battleEvent.CalendarTick));
+                    Add(ref hash, (ulong)battleEvent.Kind);
+                    if (battleEvent.CharacterId.HasValue) AddId(ref hash, battleEvent.CharacterId.Value);
+                    if (battleEvent.SideId.HasValue) AddText(ref hash, battleEvent.SideId.Value.Value);
+                    if (battleEvent.Mode.HasValue) Add(ref hash, (ulong)battleEvent.Mode.Value);
                 }
             }
             return hash;
         }
 
-        private void AdvanceEncounter(Encounter encounter, long calendarTick, long biologicalTick)
+        private void AdvancePhysicalEncounter(Encounter encounter, long calendarTick, long biologicalTick)
         {
+            encounter.LastTick = calendarTick;
             foreach (var id in encounter.Combatants.Keys.OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray())
             {
                 var combatant = RefreshEligibility(encounter, encounter.Combatants[id]);
@@ -395,6 +508,7 @@ namespace Game.Simulation.Combat
                     combatant = combatant.With(state: CombatantState.Breaking, clearTarget: true,
                         nextAttackTick: checked(calendarTick + RetreatDuration.Ticks));
                     encounter.Combatants[id] = combatant;
+                    RecordSideBroken(encounter, combatant.SideId, calendarTick);
                 }
                 if (combatant.State == CombatantState.Breaking)
                 {
@@ -447,13 +561,85 @@ namespace Game.Simulation.Combat
             ResolveOutcome(encounter);
         }
 
+        private void AdvanceAbstractEncounter(Encounter encounter, long calendarTick, long biologicalTick)
+        {
+            var nextStep = checked(encounter.LastTick + AbstractStep.Ticks);
+            while (nextStep <= calendarTick && encounter.Status == CombatEncounterStatus.Active)
+            {
+                foreach (var id in encounter.Combatants.Keys.OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray())
+                {
+                    var combatant = RefreshEligibility(encounter, encounter.Combatants[id]);
+                    encounter.Combatants[id] = combatant;
+                    if (!IsActiveCombatant(combatant)) continue;
+
+                    if (combatant.Morale < BreakThreshold && combatant.State != CombatantState.Retreating)
+                    {
+                        combatant = combatant.With(state: CombatantState.Breaking, clearTarget: true,
+                            nextAttackTick: checked(nextStep + RetreatDuration.Ticks));
+                        encounter.Combatants[id] = combatant;
+                        RecordSideBroken(encounter, combatant.SideId, nextStep);
+                    }
+                    if (combatant.State == CombatantState.Breaking)
+                    {
+                        encounter.Combatants[id] = combatant.With(state: CombatantState.Retreating);
+                        continue;
+                    }
+                    if (combatant.State == CombatantState.Retreating)
+                    {
+                        if (nextStep >= combatant.NextAttackTick)
+                            encounter.Combatants[id] = combatant.With(state: CombatantState.Disengaged,
+                                clearTarget: true);
+                        continue;
+                    }
+
+                    var targetId = SelectAbstractTarget(encounter, combatant);
+                    if (!targetId.HasValue)
+                    {
+                        encounter.Combatants[id] = combatant.With(state: CombatantState.Fighting,
+                            clearTarget: true);
+                        continue;
+                    }
+                    combatant = combatant.With(state: CombatantState.Attacking, targetId: targetId.Value);
+                    encounter.Combatants[id] = combatant;
+                    if (nextStep < combatant.NextAttackTick) continue;
+                    ResolveAttack(encounter, combatant, targetId.Value,
+                        stats.Get(id, combatant.WeaponId), nextStep, biologicalTick);
+                }
+                encounter.LastTick = nextStep;
+                ResolveOutcome(encounter);
+                nextStep = checked(nextStep + AbstractStep.Ticks);
+            }
+        }
+
+        private StableEntityId? SelectAbstractTarget(Encounter encounter, CombatantCombatState attacker)
+        {
+            var candidates = encounter.Combatants.Values.Where(x => x.SideId != attacker.SideId &&
+                IsValidAbstractTarget(x)).OrderBy(x => x.CharacterId.ToString(), StringComparer.Ordinal).ToArray();
+            if (candidates.Length == 0) return null;
+            if (attacker.AssignedTargetId.HasValue &&
+                candidates.Any(x => x.CharacterId == attacker.AssignedTargetId.Value))
+                return attacker.AssignedTargetId;
+            if (attacker.TargetId.HasValue && candidates.Any(x => x.CharacterId == attacker.TargetId.Value))
+                return attacker.TargetId;
+            // Opposing stable formation edges are the position-free equivalent of U20's nearest-then-ID rule.
+            return attacker.SideId == encounter.SideA
+                ? candidates[0].CharacterId
+                : candidates[candidates.Length - 1].CharacterId;
+        }
+
+        private bool IsValidAbstractTarget(CombatantCombatState combatant) =>
+            combatant != null && combatant.State != CombatantState.Dead &&
+            combatant.State != CombatantState.Incapacitated && combatant.State != CombatantState.Disengaged &&
+            characters.TryGet(combatant.CharacterId, out var character) &&
+            character.LifeState == CharacterLifeState.Alive && health.GetCapabilities(combatant.CharacterId).CanFight;
+
         private void ResolveAttack(Encounter encounter, CombatantCombatState attacker, StableEntityId defenderId,
             CombatStats attackerStats, long calendarTick, long biologicalTick)
         {
             var defender = encounter.Combatants[defenderId];
             var defenderStats = stats.Get(defenderId, defender.WeaponId);
-            var impact = Math.Max(1, attackerStats.AttackPower - defenderStats.Defense / 2);
-            var requested = SelectInjury(impact, weapons.Get(attacker.WeaponId).MinimumInjury);
+            var impact = CombatRules.CalculateImpact(attackerStats, defenderStats);
+            var requested = CombatRules.SelectInjury(impact, weapons.Get(attacker.WeaponId).MinimumInjury);
             var application = health.ApplyCombatInjury(defenderId, requested, calendarTick, biologicalTick);
             var sequence = checked(attacker.AttackSequence + 1UL);
             encounter.Combatants[attacker.CharacterId] = attacker.With(state: CombatantState.Attacking,
@@ -513,6 +699,7 @@ namespace Game.Simulation.Combat
             if (a && b) return;
             encounter.Status = CombatEncounterStatus.Finished;
             encounter.Outcome = a ? CombatOutcome.SideAVictory : b ? CombatOutcome.SideBVictory : CombatOutcome.MutualDisengagement;
+            AddBattleEvent(encounter, encounter.LastTick, BattleEventKind.Finished);
             Release(encounter);
         }
 
@@ -532,13 +719,25 @@ namespace Game.Simulation.Combat
             }
         }
 
-        private void ValidateParticipant(StableEntityId id, CombatSideId side)
+        private void ValidateParticipant(StableEntityId id, CombatSideId side, BattleMode mode)
         {
             if (!roster.TryGetValue(id, out var registered) || registered != side)
                 throw new InvalidOperationException("Combat participant must belong to the requested side.");
-            if (!IsEligible(id)) throw new InvalidOperationException("Dead, child, incapacitated or non-Tier1 character cannot enter physical combat.");
+            if (mode == BattleMode.Physical && !IsEligible(id))
+                throw new InvalidOperationException("Dead, child, incapacitated or non-Tier1 character cannot enter physical combat.");
+            if (mode == BattleMode.Abstract && !IsAbstractEligible(id))
+                throw new InvalidOperationException("Dead, child or incapacitated character cannot enter abstract combat.");
             if (activeEncounterByCharacter.ContainsKey(id)) throw new InvalidOperationException("Character is already in an active encounter.");
-            if (!positions.TryGetPosition(id, out _)) throw new InvalidOperationException("Physical combat requires a local position.");
+            if (mode == BattleMode.Physical && !positions.TryGetPosition(id, out _))
+                throw new InvalidOperationException("Physical combat requires a local position.");
+        }
+
+        private void ValidatePhysicalPresence(StableEntityId id)
+        {
+            if (tiers != null && (!tiers.TryGetTier(id, out var tier) || tier != CharacterSimulationTier.Tier1))
+                throw new InvalidOperationException("Physical battle requires every active combatant in Tier1.");
+            if (!positions.TryGetPosition(id, out _))
+                throw new InvalidOperationException("Physical battle requires a local position for every active combatant.");
         }
 
         private void AddCombatants(Encounter encounter, StableEntityId[] own, CombatSideId side,
@@ -605,16 +804,6 @@ namespace Game.Simulation.Combat
             if (!IsMovementSuppressed(characterId)) positions.Stop(characterId);
         }
 
-        private static HealthConditionId SelectInjury(int impact, HealthConditionId minimum)
-        {
-            var computed = impact >= 500 ? "serious_wound" : impact >= 350 ? "broken_bone" :
-                impact >= 220 ? "sprain" : "minor_cut";
-            var order = new[] { "minor_cut", "sprain", "broken_bone", "serious_wound" };
-            var minimumIndex = Array.IndexOf(order, minimum.Value);
-            var computedIndex = Array.IndexOf(order, computed);
-            return new HealthConditionId(order[Math.Max(minimumIndex, computedIndex)]);
-        }
-
         private static StableEntityId[] OrderedDistinct(IEnumerable<StableEntityId> ids)
         {
             if (ids == null) throw new ArgumentNullException(nameof(ids));
@@ -626,7 +815,8 @@ namespace Game.Simulation.Combat
 
         private static CombatEncounterState Capture(Encounter encounter) => new CombatEncounterState(encounter.Id,
             encounter.SideA, encounter.SideB, encounter.StartTick, encounter.LastTick, encounter.Status,
-            encounter.Outcome, encounter.Combatants.Values, encounter.History);
+            encounter.Outcome, encounter.Combatants.Values, encounter.History, encounter.Mode,
+            encounter.SideAUnitId, encounter.SideBUnitId, encounter.BattleHistory);
 
         private static Encounter Restore(CombatEncounterState state)
         {
@@ -634,11 +824,29 @@ namespace Game.Simulation.Combat
             {
                 Id = state.EncounterId, SideA = state.SideA, SideB = state.SideB,
                 StartTick = state.StartCalendarTick, LastTick = state.LastProcessedCalendarTick,
-                Status = state.Status, Outcome = state.Outcome
+                Status = state.Status, Outcome = state.Outcome, Mode = state.Mode,
+                SideAUnitId = state.SideAUnitId, SideBUnitId = state.SideBUnitId,
+                NextBattleEventSequence = state.BattleHistory.Count == 0 ? 1 :
+                    checked(state.BattleHistory.Max(x => x.Sequence) + 1UL)
             };
             foreach (var combatant in state.Combatants) result.Combatants.Add(combatant.CharacterId, combatant);
             result.History.AddRange(state.AttackHistory);
+            result.BattleHistory.AddRange(state.BattleHistory);
             return result;
+        }
+
+        private static bool IsActiveCombatant(CombatantCombatState value) => value.State != CombatantState.Dead &&
+            value.State != CombatantState.Incapacitated && value.State != CombatantState.Disengaged;
+
+        private static void AddBattleEvent(Encounter encounter, long calendarTick, BattleEventKind kind,
+            StableEntityId? characterId = null, CombatSideId? sideId = null, BattleMode? mode = null) =>
+            encounter.BattleHistory.Add(new BattleEventState(encounter.NextBattleEventSequence++, calendarTick,
+                kind, characterId, sideId, mode));
+
+        private static void RecordSideBroken(Encounter encounter, CombatSideId sideId, long calendarTick)
+        {
+            if (encounter.BattleHistory.Any(x => x.Kind == BattleEventKind.SideBroken && x.SideId == sideId)) return;
+            AddBattleEvent(encounter, calendarTick, BattleEventKind.SideBroken, sideId: sideId);
         }
 
         private static void Add(ref ulong hash, ulong value)
