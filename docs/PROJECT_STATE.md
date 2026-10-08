@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U20 DONE — deterministic local Tier 1 tactical melee, U18 injury/death, morale/retreat, player and enemy commands, terminal outcomes and version-7 persistence are complete.
+U21 DONE — persistent military units, captains, historical stable-ID rosters, detailed/aggregate transitions, U20 integration and version-8 persistence are complete.
 
 ## Active task
-No implementation task is active. U21 is next but has not started and awaits review of U20.
+No implementation task is active. U22 is next but has not started and awaits review of U21.
+
+## U21 army, captains and abstract units
+- `MilitaryUnitService` is the engine-independent canonical authority for multiple units, stable `MilitaryUnitId`, stable owner/side, active and historical roster membership, captain assignment/fallback, orders, abstract location, status and summaries. Units reference existing Character IDs and never copy person, health, dynasty or GameObject state.
+- Captain eligibility requires an active roster member whose canonical Character is alive and whose U18 capability can fight. Fallback is highest Influence then stable-ID ordinal; otherwise the unit becomes Leaderless. Captain death remains U18/U17 work and creates no replacement Character.
+- Detailed/Aggregate is unit representation, not a fourth Character tier. The explicit transition service uses the existing `TierManager`: eligible living members move to Tier1 for Detailed and Tier3 by the current aggregate adapter default. Membership, captain, injuries, dynasty identity and canonical Character instances survive the route. Incapacitated members remain in roster and are not rematerialized for combat.
+- Active U20 physical combat pins a unit to Detailed. `MilitaryUnitCombatService` registers owner sides, filters through U20 eligibility, creates the existing physical encounter, links both units and later derives morale/cohesion/status from U20 plus canonical U18/Character state. It resolves no attacks and adds no aggregate combat; U23 remains untouched.
+- Dead members remain in roster history and are excluded from alive/combat-capable queries. Explicit removal also preserves a historical membership record; a Character cannot be active in two units. Detailed Move reuses U11 formation movement, while aggregate orders remain logical intent only.
+- `SaveSnapshot.CurrentVersion` is 8. It persists sorted unit identity, side, captain, roster history, representation, status, order, summaries, active encounter link, abstract location and deterministic revision. V1-V7 remain readable. PostgreSQL accepts v8 as opaque XML and needs no schema migration.
+- LocalGameplay exposes a click-blocked development unit panel for create/inspect/select, captain assignment, member removal, Detailed/Aggregate, Move/Hold and U20 battle start. It owns no canonical state and is not the U27 UI.
+- Final gates: U21 14/14 EditMode, 2/2 headless and 2/2 GPU PlayMode; required regressions 93/93 EditMode and 19/19 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 313/313; full PlayMode 53/53; Windows x64 Mono Development succeeded with 0 errors and 2 inherited warnings. PostgreSQL was not configured (`DYNASTYGAME_PG_TEST_DATABASE` absent).
+- Determinism/performance evidence: reversed registration/roster order produced identical captain, XML and state hash. Ten units / 100 members completed Detailed→Aggregate→Detailed in 6.474 ms with 0 measured current-thread managed bytes and hash `A2DFEA74AD2C7F12`.
 
 ## U20 tactical RTS combat
 - `CombatService` is the engine-independent, stable-ID authority for two-side encounters, eligibility, deterministic targeting, movement requests, melee cooldown attacks, morale, retreat and exactly-once outcomes. Combat adds no per-agent `Update`.
@@ -227,7 +238,7 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Review U16A using `docs/U16A_HANDOFF.md`. Do not start U17 until the review explicitly authorizes it.
+Review U21 using `docs/U21_HANDOFF.md`. Do not start U22 until the review explicitly authorizes it.
 
 U16 final validation command:
 

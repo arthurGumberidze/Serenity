@@ -221,7 +221,7 @@ namespace Game.Tests.Editor
             source.Start();
             source.Combat.AssignTarget(source.SideA[0], source.SideB[1]);
             source.Combat.AdvanceTo(TimeSpan.FromHours(1).Ticks, 0);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(990),
+            var snapshot = new SaveSnapshot(SaveSnapshot.CombatVersion, Id(990),
                 new GameTimeState(TimeSpan.FromHours(1).Ticks, 0, 1, false), 400,
                 healthFamily: source.Health.CaptureState(), combat: source.Combat.CaptureState());
             var codec = new SaveXmlCodec();

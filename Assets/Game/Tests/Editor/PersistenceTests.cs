@@ -123,7 +123,7 @@ namespace Game.Tests.Editor
             Assert.Throws<InvalidDataException>(() => coordinator.Load(slot));
             Assert.That(coordinator.Clock, Is.SameAs(oldClock)); Equal(before, coordinator.Capture());
         }
-        [TestCase(0)] [TestCase(8)] [TestCase(2147483647)]
+        [TestCase(0)] [TestCase(9)] [TestCase(2147483647)]
         public void UnknownVersionsAreExplicitlyRejected(int version)
         {
             var coordinator = Coordinator(); var before = coordinator.Capture(); coordinator.Save(slot);

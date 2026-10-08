@@ -14,11 +14,12 @@ using Game.Domain.Dynasties;
 using Game.Domain.Health;
 using Game.Domain.Weather;
 using Game.Domain.Combat;
+using Game.Domain.Military;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V7 adds physical combat checkpoints.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V8 adds persistent military units.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -47,6 +48,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeWeather(snapshot.Weather));
             if (snapshot.FormatVersion >= SaveSnapshot.CombatVersion)
                 root.Add(SerializeCombat(snapshot.Combat));
+            if (snapshot.FormatVersion >= SaveSnapshot.MilitaryVersion)
+                root.Add(SerializeMilitary(snapshot.Military));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -75,7 +78,7 @@ namespace Game.Infrastructure
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
                         version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
                         version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
-                        version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.CombatVersion && version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
@@ -90,10 +93,13 @@ namespace Game.Infrastructure
                         ? DeserializeWeather(root.Element("weather")) : null;
                     var combat = version >= SaveSnapshot.CombatVersion
                         ? DeserializeCombat(root.Element("combat")) : null;
+                    var military = version >= SaveSnapshot.MilitaryVersion
+                        ? DeserializeMilitary(root.Element("military")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather, combat);
+                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
+                        combat, military);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -575,6 +581,82 @@ namespace Game.Infrastructure
             return new CombatSaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"), encounters);
         }
 
+        private static XElement SerializeMilitary(MilitaryUnitSaveState state)
+        {
+            var element = new XElement("military");
+            if (state == null) return element;
+            element.Add(new XElement("units", state.Units.Select(unit => new XElement("unit",
+                new XElement("id", unit.Id.ToString()),
+                new XElement("ownerSideId", unit.OwnerSideId.ToString()),
+                OptionalId("captainId", unit.CaptainId),
+                new XElement("status", (int)unit.Status),
+                new XElement("representation", (int)unit.Representation),
+                new XElement("abstractLocationId", unit.AbstractLocationId),
+                new XElement("morale", unit.MoraleSummary),
+                new XElement("cohesion", unit.Cohesion),
+                new XElement("revision", unit.Revision),
+                OptionalId("activeEncounterId", unit.ActiveEncounterId),
+                new XElement("order",
+                    new XElement("kind", (int)unit.Order.Kind),
+                    new XElement("hasTarget", unit.Order.HasTarget),
+                    new XElement("targetX", XmlConvert.ToString(unit.Order.Target.X)),
+                    new XElement("targetY", XmlConvert.ToString(unit.Order.Target.Y)),
+                    new XElement("targetZ", XmlConvert.ToString(unit.Order.Target.Z)),
+                    new XElement("targetUnitId", unit.Order.TargetUnitId.HasValue
+                        ? unit.Order.TargetUnitId.Value.ToString() : string.Empty),
+                    new XElement("sequence", unit.Order.Sequence)),
+                new XElement("roster", unit.Roster.Select(member => new XElement("member",
+                    new XElement("characterId", member.CharacterId.ToString()),
+                    new XElement("role", (int)member.Role),
+                    new XElement("status", (int)member.Status),
+                    new XElement("joinedSequence", member.JoinedSequence),
+                    new XElement("removedSequence", member.RemovedSequence.HasValue
+                        ? XmlConvert.ToString(member.RemovedSequence.Value) : string.Empty))))))));
+            return element;
+        }
+
+        private static MilitaryUnitSaveState DeserializeMilitary(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing military state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty military state.");
+                return null;
+            }
+            RequireFields(element, new[] { "units" });
+            var units = Items(element.Element("units"), "unit", unit =>
+            {
+                RequireFields(unit, new[] { "id", "ownerSideId", "captainId", "status", "representation",
+                    "abstractLocationId", "morale", "cohesion", "revision", "activeEncounterId", "order", "roster" });
+                var order = unit.Element("order");
+                RequireFields(order, new[] { "kind", "hasTarget", "targetX", "targetY", "targetZ",
+                    "targetUnitId", "sequence" });
+                var targetUnitText = Value(order, "targetUnitId");
+                var orderState = new MilitaryUnitOrderState((MilitaryUnitOrderKind)Int(order, "kind"),
+                    new WorldPosition(XmlConvert.ToSingle(Value(order, "targetX")),
+                        XmlConvert.ToSingle(Value(order, "targetY")), XmlConvert.ToSingle(Value(order, "targetZ"))),
+                    XmlConvert.ToBoolean(Value(order, "hasTarget")),
+                    string.IsNullOrEmpty(targetUnitText) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(targetUnitText),
+                    ULong(order, "sequence"));
+                var roster = Items(unit.Element("roster"), "member", member =>
+                {
+                    RequireFields(member, new[] { "characterId", "role", "status", "joinedSequence", "removedSequence" });
+                    var removedText = Value(member, "removedSequence");
+                    return new MilitaryUnitMemberState(StableEntityId.Parse(Value(member, "characterId")),
+                        (MilitaryUnitMemberRole)Int(member, "role"), (MilitaryUnitMemberStatus)Int(member, "status"),
+                        ULong(member, "joinedSequence"), string.IsNullOrEmpty(removedText)
+                            ? (ulong?)null : XmlConvert.ToUInt64(removedText));
+                });
+                return new MilitaryUnitState(MilitaryUnitId.Parse(Value(unit, "id")),
+                    new MilitarySideId(Value(unit, "ownerSideId")), OptionalStableId(unit, "captainId"), roster,
+                    (MilitaryUnitStatus)Int(unit, "status"),
+                    (MilitaryUnitRepresentationMode)Int(unit, "representation"),
+                    Value(unit, "abstractLocationId"), Int(unit, "morale"), Int(unit, "cohesion"), orderState,
+                    OptionalStableId(unit, "activeEncounterId"), ULong(unit, "revision"));
+            });
+            return new MilitaryUnitSaveState(units);
+        }
+
         private static string[] FieldsForVersion(int version)
         {
             var fields = TimeFields.AsEnumerable();
@@ -584,6 +666,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.HealthVersion) fields = fields.Concat(new[] { "healthFamily" });
             if (version >= SaveSnapshot.WeatherVersion) fields = fields.Concat(new[] { "weather" });
             if (version >= SaveSnapshot.CombatVersion) fields = fields.Concat(new[] { "combat" });
+            if (version >= SaveSnapshot.MilitaryVersion) fields = fields.Concat(new[] { "military" });
             return fields.ToArray();
         }
 

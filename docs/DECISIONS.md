@@ -279,3 +279,21 @@ U20 resolves melee as deterministic always-hit attacks with immutable weapon pro
 ## D-047 Combat snapshot v7 and disposable tactical controls (2026-10-08)
 
 Snapshot v7 persists detached combat encounters, participants, targets, attack sequence/cooldown, morale/retreat, attack history and outcome. Restore follows canonical Character/dynasty and U18 health restore, validates every cross-reference and does not replay attacks or deaths. Versions 1-6 remain readable; PostgreSQL stores v7 as the existing opaque validated XML with no schema migration. Right-click Attack and the IMGUI combat panel are adapters over the service and existing pointer blocker; final UX remains U27.
+
+## D-048 Military units reference canonical Characters and preserve roster history (2026-10-08)
+
+`MilitaryUnitService` owns unit identity, owner/side, membership history, captain, representation, order, abstract-location hook, summary and encounter link. A roster member is only an existing `Character.StableEntityId`; the unit never copies biography, health, dynasty, inventory, presenter or ECS state. Death does not delete membership history. Explicit removal marks the historical record removed, and one Character may be active in at most one unit.
+
+## D-049 Captain eligibility and fallback are deterministic (2026-10-08)
+
+A captain must be an active roster member whose canonical Character is alive, adult and combat-capable through U18. Assignment rejects missing, dead, child, incapacitated and non-member candidates. If a captain becomes invalid, the existing eligible member with greatest Influence wins; stable-ID ordinal breaks ties. If none exists, the unit is Leaderless. U18/U17 remain the death and monarch-succession authorities, and fallback creates no Character.
+
+## D-050 Unit representation composes existing tiers and U20 (2026-10-08)
+
+Detailed/Aggregate is unit representation, not Character tier identity. `MilitaryUnitRepresentationService` performs rollback-safe transitions through the one `TierManager`: living non-incapacitated members use Tier1 for Detailed and the requested existing Tier2/Tier3 adapter for Aggregate. Active U20 participants block aggregation. `MilitaryUnitCombatService` only supplies U20-eligible members and later derives summary/status from U20 plus canonical Character/U18 state; it does not resolve attacks or aggregate outcomes. U23 owns all abstract combat.
+
+## D-051 Version 8 military persistence and disposable controls (2026-10-08)
+
+Snapshot v8 stores stable unit/side/captain IDs, sorted roster history, status, representation, abstract location, order, morale/cohesion summary, active U20 encounter link and revision markers. Restore validates Characters, unique active membership, captain eligibility and encounter cross-references after combat restore. Versions 1-7 remain readable. PostgreSQL continues opaque XML storage and requires no relational migration.
+
+The LocalGameplay unit overlay is development-only. It issues commands to Simulation, reuses U11 Move and the existing pointer blocker, and owns no persistent state. Final army UI remains U27.

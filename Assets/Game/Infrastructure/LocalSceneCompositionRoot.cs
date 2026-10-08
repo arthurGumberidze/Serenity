@@ -40,6 +40,9 @@ using Game.Presentation.Weather;
 using Game.Domain.Combat;
 using Game.Simulation.Combat;
 using Game.Presentation.Combat;
+using Game.Domain.Military;
+using Game.Simulation.Military;
+using Game.Presentation.Military;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -126,6 +129,11 @@ namespace Game.Infrastructure
         public CombatService Combat { get; private set; }
         public CombatCommandService CombatCommands { get; private set; }
         public CombatDebugOverlay CombatDebug { get; private set; }
+        public MilitaryUnitService MilitaryUnits { get; private set; }
+        public MilitaryUnitRepresentationService MilitaryRepresentations { get; private set; }
+        public MilitaryUnitCommandService MilitaryCommands { get; private set; }
+        public MilitaryUnitCombatService MilitaryCombat { get; private set; }
+        public MilitaryUnitDebugOverlay MilitaryDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -294,6 +302,11 @@ namespace Game.Infrastructure
             CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
+            MilitaryUnits = new MilitaryUnitService(Characters, HealthFamily);
+            MilitaryRepresentations = new MilitaryUnitRepresentationService(MilitaryUnits, Tiers, Combat,
+                Characters, HealthFamily);
+            MilitaryCommands = new MilitaryUnitCommandService(MilitaryUnits, ManualMoveCommands);
+            MilitaryCombat = new MilitaryUnitCombatService(MilitaryUnits, Combat);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
@@ -307,6 +320,9 @@ namespace Game.Infrastructure
             CombatDebug = gameObject.AddComponent<CombatDebugOverlay>();
             CombatDebug.Initialize(Combat, Characters, HealthFamily, selectionProbe, pointerRaycaster,
                 () => { StartDemoCombat(); });
+            MilitaryDebug = gameObject.AddComponent<MilitaryUnitDebugOverlay>();
+            MilitaryDebug.Initialize(MilitaryUnits, MilitaryRepresentations, MilitaryCommands, MilitaryCombat,
+                selectionProbe, pointerRaycaster, () => Clock.State.CalendarTicks);
         }
 
         private void OnDestroy()
@@ -330,6 +346,7 @@ namespace Game.Infrastructure
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
             Combat.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            MilitaryCombat.ReconcileAll();
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();

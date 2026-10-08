@@ -7,6 +7,7 @@ using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
 using Game.Simulation.Weather;
 using Game.Simulation.Combat;
+using Game.Simulation.Military;
 
 namespace Game.Simulation
 {
@@ -20,13 +21,15 @@ namespace Game.Simulation
         private readonly HealthAndFamilyService healthFamily;
         private readonly WeatherService weather;
         private readonly CombatService combat;
+        private readonly MilitaryUnitService military;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
         public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
             ProductionService productionService = null, ResearchService researchService = null,
             SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null,
-            WeatherService weatherService = null, CombatService combatService = null)
+            WeatherService weatherService = null, CombatService combatService = null,
+            MilitaryUnitService militaryUnitService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -38,12 +41,14 @@ namespace Game.Simulation
             healthFamily = healthFamilyService;
             weather = weatherService;
             combat = combatService;
+            military = militaryUnitService;
         }
         public SaveSnapshot Capture()
         {
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
-                succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState());
+                succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
+                military?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -70,6 +75,9 @@ namespace Game.Simulation
             if (snapshot.Combat != null && combat == null)
                 throw new InvalidOperationException("This save contains combat state but no combat service is attached.");
             if (snapshot.Combat != null) combat.RestoreState(snapshot.Combat);
+            if (snapshot.Military != null && military == null)
+                throw new InvalidOperationException("This save contains military-unit state but no military service is attached.");
+            if (snapshot.Military != null) military.RestoreState(snapshot.Military, combat);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U20 was completed and validated on 2026-10-08. Do not reopen U20 unless review finds a regression. Do not begin U21 until the user explicitly accepts the U20 handoff.
+U21 was completed and validated on 2026-10-08. Do not reopen U21 unless review finds a regression. Do not begin U22 until the user explicitly accepts the U21 handoff.
 
-## Next unblocked task: U21 — Army, Captains and Abstract Units
+## Next unblocked task: U22 — Third-person control
 
 ### Status
 
-Not started; awaiting U20 review.
+Not started; awaiting U21 review.
 
 ### Dependencies
 
-U17 dynasty/succession and U20 tactical RTS combat are DONE.
+U02 local scene/control foundation, U07 Tier1 presentation, U20 tactical RTS combat and U21 military units/captains are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U21 persistent army, captain and abstract-unit slice.
+After explicit authorization, implement the TASK_GRAPH U22 RTS↔third-person control slice without losing orders or canonical state.
 
 ### Scope boundary
 
-Begin from `docs/U20_HANDOFF.md`, `docs/TACTICAL_COMBAT.md`, the U21 section of `docs/TASK_GRAPH.md`, current architecture decisions and relevant FRS sections. Reuse U20 combat rules without moving canonical Character/combat truth into army presentation. Do not begin U22 or later tasks.
+Begin from `docs/U21_HANDOFF.md`, `docs/MILITARY_UNITS_AND_CAPTAINS.md`, current architecture decisions and relevant FRS sections. Captain remains an existing Character and unit/combat state remains authoritative outside presentation. Do not begin U23 or later tasks.
