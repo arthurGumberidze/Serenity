@@ -28,6 +28,9 @@ SAFETY / HARD GATES
 PREREQUISITE
 ------------
 The automation package itself must be committed (or live outside the repository), and the repository must be clean before a real run. Do not keep an untracked copy under C:\serenity_game.
+Codex CLI must be installed, authenticated and available on PATH. On Windows the orchestrator prefers codex.cmd so the npm codex.ps1 shim is not blocked by PowerShell Execution Policy.
+
+Before any agent starts, the orchestrator reads `codex exec --help`, selects the installed CLI's supported unattended approval mode (`--approve-for-me` on codex-cli 0.160.0, with legacy `--ask-for-approval never` fallback), and parses the complete common argument set through a no-agent `--help` preflight. Unsupported CLI versions stop before U26.
 
 PROMPTS
 -------
@@ -99,3 +102,4 @@ shutdown /a
 IMPORTANT
 ---------
 The script automates Codex CLI, not desktop chat creation. Every `codex exec` is a fresh agent run. The external U30 soak deliberately runs without Codex.
+Current compatibility validation: codex-cli 0.160.0 uses `--approve-for-me`; the removed `--ask-for-approval` spelling must not be hard-coded for that version.

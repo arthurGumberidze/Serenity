@@ -23,6 +23,9 @@ $VerifySchema = Join-Path $ScriptRoot "verify-result.schema.json"
 $U30PrepSchema = Join-Path $ScriptRoot "u30-prep-result.schema.json"
 $U30SoakSchema = Join-Path $ScriptRoot "u30-soak-result.schema.json"
 $TaskOrder = @("U26", "U27", "U28", "U29", "U30", "U30A", "U31")
+$script:CodexCommand = ""
+$script:CodexApprovalArgs = @()
+$script:CodexApprovalMode = ""
 
 if ([string]::IsNullOrWhiteSpace($RunBase)) {
     $root = if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
@@ -108,6 +111,49 @@ $(Get-StatusPorcelain)
     exit $ExitCode
 }
 
+function Initialize-CodexCli {
+    # Prefer the npm .cmd shim on Windows so a restrictive PowerShell execution
+    # policy cannot block codex.ps1 after the orchestrator itself has started.
+    $command = Get-Command codex.cmd -ErrorAction SilentlyContinue
+    if ($null -eq $command) { $command = Get-Command codex -ErrorAction SilentlyContinue }
+    if ($null -eq $command) { throw "codex CLI missing from PATH" }
+    $script:CodexCommand = $command.Path
+
+    $versionOutput = & $script:CodexCommand --version 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "codex --version failed: $($versionOutput -join ' ')" }
+    $version = $versionOutput | Where-Object { "$_" -match "^codex-cli\s+" } | Select-Object -Last 1
+    if ([string]::IsNullOrWhiteSpace([string]$version)) { $version = ($versionOutput -join " ").Trim() }
+
+    $helpOutput = & $script:CodexCommand exec --help 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "codex exec --help failed: $($helpOutput -join ' ')" }
+    $helpText = $helpOutput -join "`n"
+    if ($helpText -match "(?m)^\s*--approve-for-me\b") {
+        $script:CodexApprovalArgs = @("--approve-for-me")
+        $script:CodexApprovalMode = "approve-for-me"
+    } elseif ($helpText -match "(?m)^\s*--ask-for-approval\b") {
+        $script:CodexApprovalArgs = @("--ask-for-approval", "never")
+        $script:CodexApprovalMode = "ask-for-approval=never"
+    } else {
+        throw "Unsupported Codex CLI: neither --approve-for-me nor --ask-for-approval is available."
+    }
+
+    # Parse every common automation option without starting an agent or making
+    # a network request. This catches CLI drift before U26 begins.
+    $preflightAnswer = Join-Path $RunRoot "codex-preflight-answer.json"
+    $preflightArgs = @("exec", "--json", "--sandbox", "workspace-write")
+    $preflightArgs += $script:CodexApprovalArgs
+    $preflightArgs += @(
+        "--config", "model_reasoning_effort=high",
+        "--output-schema", $StageSchema,
+        "--output-last-message", $preflightAnswer,
+        "--help"
+    )
+    $preflightOutput = & $script:CodexCommand @preflightArgs 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "Codex CLI argument preflight failed: $($preflightOutput -join ' ')" }
+
+    Write-RunLog "Codex CLI preflight passed: $version; approval=$($script:CodexApprovalMode); command=$($script:CodexCommand)"
+}
+
 function Invoke-CodexRun([string]$Name, [string]$PromptText, [string]$SchemaPath) {
     $dir = Join-Path $RunRoot $Name
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -122,19 +168,21 @@ function Invoke-CodexRun([string]$Name, [string]$PromptText, [string]$SchemaPath
         return @{ ExitCode = 0; AnswerPath = $answerPath; TracePath = $jsonlPath; StderrPath = $stderrPath }
     }
 
-    $args = @(
+    $cliArgs = @(
         "exec", "--json",
-        "--sandbox", "workspace-write",
-        "--ask-for-approval", "never",
+        "--sandbox", "workspace-write"
+    )
+    $cliArgs += $script:CodexApprovalArgs
+    $cliArgs += @(
         "--config", "model_reasoning_effort=high",
         "--output-schema", $SchemaPath,
         "--output-last-message", $answerPath
     )
-    if (-not [string]::IsNullOrWhiteSpace($Model)) { $args += @("--model", $Model) }
-    $args += "-"
+    if (-not [string]::IsNullOrWhiteSpace($Model)) { $cliArgs += @("--model", $Model) }
+    $cliArgs += "-"
 
     Write-RunLog "Starting Codex: $Name"
-    Get-Content -Raw $promptPath | & codex @args 2> $stderrPath | Tee-Object -FilePath $jsonlPath | Out-Null
+    Get-Content -Raw $promptPath | & $script:CodexCommand @cliArgs 2> $stderrPath | Tee-Object -FilePath $jsonlPath | Out-Null
     $code = $LASTEXITCODE
     Write-RunLog "$Name exit code: $code"
     return @{ ExitCode = $code; AnswerPath = $answerPath; TracePath = $jsonlPath; StderrPath = $stderrPath }
@@ -389,11 +437,11 @@ try {
     if (!(Test-Path $Repo)) { throw "Repository not found: $Repo" }
     if (!(Test-Path (Join-Path $Repo ".git"))) { throw "Not a git repository: $Repo" }
     if (!(Get-Command git -ErrorAction SilentlyContinue)) { throw "git missing from PATH" }
-    if (!(Get-Command codex -ErrorAction SilentlyContinue)) { throw "codex CLI missing from PATH" }
     if (!(Test-Path $PromptRoot)) { throw "prompts folder missing: $PromptRoot" }
     foreach ($schema in @($StageSchema, $VerifySchema, $U30PrepSchema, $U30SoakSchema)) {
         if (!(Test-Path $schema)) { throw "Schema missing: $schema" }
     }
+    Initialize-CodexCli
     $tasks = Get-TaskSequence
     foreach ($task in $tasks) {
         $prompt = Join-Path $PromptRoot "${task}_PROMPT.txt"

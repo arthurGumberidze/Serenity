@@ -367,3 +367,7 @@ U30 is not complete when only a short soak passes or an eight-hour runner exists
 ## D-065 Pre-U31 FRS compliance patch (2026-10-09)
 
 U31 remains an integration and release gate rather than a feature-development task. Confirmed FRS-to-roadmap gaps are assigned to U30A after the U30 reliability gate: a canonical new-game bootstrap with ten starting player characters and a monarch; normal player save/load access; deterministic AI discovery; AI construction over existing building/resource authorities; minimal Stone Age military supply over canonical inventories; and TPS aiming/attack through the existing U20 combat, weapon, injury and cooldown rules. U30A must also preserve continued sandbox play after military victory. U26, U27 and U28 still own their natural prerequisites—AI state scoping/construction, save/load and work UI, and event chains/cooldowns—so U30A verifies and closes only remaining cross-system gaps.
+
+## D-066 Detect Codex CLI automation flags before task execution (2026-10-09)
+
+The night orchestrator must not hard-code one historical approval flag. On Windows it prefers the npm `codex.cmd` shim to avoid PowerShell Execution Policy blocking `codex.ps1`, reads the installed `codex exec --help`, selects `--approve-for-me` when supported and retains `--ask-for-approval never` only as a legacy fallback. A no-agent argument-parsing preflight runs before U26 so future CLI drift fails before any implementation, commit or long soak begins.
