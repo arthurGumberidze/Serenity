@@ -371,3 +371,19 @@ U31 remains an integration and release gate rather than a feature-development ta
 ## D-066 Detect Codex CLI automation flags before task execution (2026-10-09)
 
 The night orchestrator must not hard-code one historical approval flag. On Windows it prefers the npm `codex.cmd` shim to avoid PowerShell Execution Policy blocking `codex.ps1`, reads the installed `codex exec --help`, selects standalone `--approve-for-me` when supported and retains `--sandbox workspace-write --ask-for-approval never` only as a legacy fallback. In CLI 0.160.0, `--approve-for-me` already includes the workspace-write preset and conflicts with a separate `--sandbox`. A no-agent preflight therefore exercises the complete real argument combination in a captured child process until a deliberately missing output-schema file stops execution locally; captured stderr avoids PowerShell `NativeCommandError` under stop-on-error semantics. Real agents similarly capture their native exit code with only the invocation scope set to non-terminating stderr handling, then restore global fail-fast behavior. `--help` alone is insufficient because it can bypass argument-conflict validation. Future CLI drift must fail before any implementation, commit or long soak begins.
+
+## D-067 Strategic AI composes owner-scoped canonical authorities (2026-10-09)
+
+An AI state is a stable-reference orchestration record, not a second game model. Player and AI share canonical Characters, Buildings, military units, settlements and battles. Each state owns a separate instance of the existing research, inventory, production and world-pile authorities. `AiStrategicScheduler` handles multiple states in stable ID order on absolute decision ticks and submits every action through U09/U15/U16/U21/U23/U24/U25 services. There is no `AiResearchService`, generated resource grant, teleported army, forced battle result or per-NPC strategic `Update`.
+
+## D-068 Atomic settlement capture and common defeat rule (2026-10-09)
+
+The capture transaction first validates the finished hostile U23 winner and every U24 building in the settlement. Only after all buildings accept capture are their owners changed; U25 settlement ownership is synchronized last. Any rejection leaves all building and settlement owners unchanged. The MVP defeat rule is identical for every capture caller: a side is defeated when no canonical U25 settlement has that `CombatSideId`. Final victory presentation and continued-sandbox policy remain U27/U30A/U31 work.
+
+## D-069 Multi-dynasty health routing and remote Tier3 bootstrap (2026-10-09)
+
+One health service may bind one succession authority per dynasty ID and routes fatal events by the canonical Character dynasty. This generalizes U17 without copying health or Character state and keeps player/AI histories independent. The normal rival's residents are deterministic seed-derived Characters materialized in Tier3 at a remote logical position; explicit U25 location entry, not active-scene camera distance, is the path back to Tier1.
+
+## D-070 Snapshot v13 and deterministic strategic identities (2026-10-09)
+
+Snapshot v13 stores each AI faction's strategic checkpoint, targets, orders, bounded history, sequence counters, defeat state, dynasty, research, production/inventories and world piles. Existing sections still own travel, units, battles and buildings. Restore rejects identity, ownership and target mismatches before applying faction state. AI-created building and unit identities are derived from world seed, state ID, purpose and decision sequence; direct catch-up and stepped execution therefore converge without replaying a decision. Versions 1–12 remain readable and PostgreSQL remains opaque XML.

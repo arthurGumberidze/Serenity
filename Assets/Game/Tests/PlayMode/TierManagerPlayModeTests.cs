@@ -89,6 +89,7 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
             var id = root.FemaleDemoCharacter.Id;
+            var initialTier3Count = root.Tier3Characters.Count;
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier1).Changed, Is.False);
             Assert.That(root.CharacterPresentations.Count, Is.EqualTo(2));
             root.Tiers.Transition(id, CharacterSimulationTier.Tier2);
@@ -96,7 +97,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Tier2Runtime.Materializer.EntityCount, Is.EqualTo(1));
             root.Tiers.Transition(id, CharacterSimulationTier.Tier3);
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier3).Changed, Is.False);
-            Assert.That(root.Tier3Characters.Count, Is.EqualTo(1));
+            Assert.That(root.Tier3Characters.Count, Is.EqualTo(initialTier3Count + 1));
             yield return null;
         }
 

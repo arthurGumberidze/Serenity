@@ -79,9 +79,15 @@ namespace Game.Simulation.Buildings
         private const uint FireDamageStream = 0x55323401u;
         private readonly BuildingRegistry buildings;
         private readonly Dictionary<BuildingDefinitionId, BuildingDefinition> definitions;
-        private readonly ProductionService production;
-        private readonly ResourceInventoryRegistry inventories;
-        private readonly WorldPileService worldPiles;
+        private sealed class EconomyScope
+        {
+            public ProductionService Production;
+            public ResourceInventoryRegistry Inventories;
+            public WorldPileService WorldPiles;
+        }
+
+        private readonly List<EconomyScope> economyScopes = new List<EconomyScope>();
+        private readonly WorldPileService primaryWorldPiles;
         private readonly IWeatherModifierProvider weather;
         private readonly CombatService combat;
         private readonly BuildingOccupancyGrid occupancy;
@@ -99,11 +105,11 @@ namespace Game.Simulation.Buildings
                 if (definition == null || !definitions.TryAdd(definition.Id, definition))
                     throw new ArgumentException("Building definitions must be non-null and unique.", nameof(buildingDefinitions));
             if (definitions.Count == 0) throw new ArgumentException("At least one building definition is required.", nameof(buildingDefinitions));
-            production = productionService;
-            inventories = inventoryRegistry;
-            worldPiles = pileService;
-            if ((inventories == null) != (worldPiles == null))
+            if ((inventoryRegistry == null) != (pileService == null))
                 throw new ArgumentException("Inventory and world-pile services must be supplied together.");
+            primaryWorldPiles = pileService;
+            if (productionService != null || inventoryRegistry != null)
+                RegisterEconomyScope(productionService, inventoryRegistry, pileService);
             weather = weatherProvider;
             combat = combatService;
             occupancy = occupancyGrid;
@@ -112,6 +118,24 @@ namespace Game.Simulation.Buildings
 
         public long LastFireTick { get; private set; }
         public event Action<Building> BuildingChanged;
+
+        public void RegisterEconomyScope(ProductionService productionService,
+            ResourceInventoryRegistry inventoryRegistry, WorldPileService pileService)
+        {
+            if (productionService == null && inventoryRegistry == null && pileService == null) return;
+            if (productionService == null || inventoryRegistry == null || pileService == null)
+                throw new ArgumentException("A building economy scope requires production, inventories and world piles.");
+            if (economyScopes.Any(x => ReferenceEquals(x.Production, productionService) ||
+                                       ReferenceEquals(x.Inventories, inventoryRegistry) ||
+                                       ReferenceEquals(x.WorldPiles, pileService)))
+                throw new InvalidOperationException("Building economy scope is already registered.");
+            economyScopes.Add(new EconomyScope
+            {
+                Production = productionService,
+                Inventories = inventoryRegistry,
+                WorldPiles = pileService
+            });
+        }
 
         public BuildingDamageResult ApplyDamage(StableEntityId buildingId, StableEntityId damageEventId,
             int amount, BuildingDamageType type, long calendarTick)
@@ -135,9 +159,13 @@ namespace Game.Simulation.Buildings
             var destroys = scaled >= building.CurrentIntegrity;
             if (destroys)
             {
-                if (inventories != null && worldPiles != null)
-                    worldPiles.SpillStorage(building.Id, building.Coordinate);
-                production?.CancelTasksForSite(building.Id);
+                var storageOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id);
+                foreach (var scope in economyScopes)
+                {
+                    if (scope.Inventories.TryGet(storageOwner, out _))
+                        scope.WorldPiles.SpillStorage(building.Id, building.Coordinate);
+                    scope.Production.CancelTasksForSite(building.Id);
+                }
             }
             var applied = building.ApplyDamage(damageEventId, scaled, type, calendarTick);
             if (destroys) building.MarkStorageSpilled();
@@ -233,6 +261,36 @@ namespace Game.Simulation.Buildings
         public BuildingCaptureResult CaptureBuilding(StableEntityId buildingId, CombatSideId newOwnerSideId,
             CombatEncounterState encounter, long calendarTick)
         {
+            return CaptureBuildings(new[] { buildingId }, newOwnerSideId, encounter, calendarTick);
+        }
+
+        public BuildingCaptureResult CaptureBuildings(IEnumerable<StableEntityId> buildingIds,
+            CombatSideId newOwnerSideId, CombatEncounterState encounter, long calendarTick)
+        {
+            if (buildingIds == null) throw new ArgumentNullException(nameof(buildingIds));
+            var ids = buildingIds.Distinct().OrderBy(x => x).ToArray();
+            if (ids.Any(x => !x.IsValid))
+                return new BuildingCaptureResult(BuildingCaptureFailure.MissingBuilding, default);
+            foreach (var id in ids)
+            {
+                var evaluation = EvaluateCapture(id, newOwnerSideId, encounter);
+                if (!evaluation.Succeeded) return evaluation;
+            }
+
+            // Cancel old-owner work before publishing any ownership mutation. Once prevalidated,
+            // Building.Capture cannot reject on the single simulation owner thread.
+            foreach (var id in ids)
+                foreach (var scope in economyScopes)
+                    scope.Production.CancelTasksForSite(id);
+            var changed = ids.Select(buildings.Get).ToArray();
+            foreach (var building in changed) building.Capture(newOwnerSideId, calendarTick);
+            foreach (var building in changed) BuildingChanged?.Invoke(building);
+            return new BuildingCaptureResult(BuildingCaptureFailure.None, newOwnerSideId);
+        }
+
+        public BuildingCaptureResult EvaluateCapture(StableEntityId buildingId, CombatSideId newOwnerSideId,
+            CombatEncounterState encounter)
+        {
             if (!newOwnerSideId.IsValid) return new BuildingCaptureResult(BuildingCaptureFailure.InvalidOwner, default);
             if (!buildings.TryGet(buildingId, out var building))
                 return new BuildingCaptureResult(BuildingCaptureFailure.MissingBuilding, default);
@@ -250,14 +308,11 @@ namespace Game.Simulation.Buildings
                 encounter.Outcome == CombatOutcome.SideBVictory ? encounter.SideB : default;
             if (!victor.IsValid || victor != newOwnerSideId || victor == building.OwnerSideId)
                 return new BuildingCaptureResult(BuildingCaptureFailure.NotVictoriousSide, building.OwnerSideId);
-            production?.CancelTasksForSite(building.Id);
-            building.Capture(newOwnerSideId, calendarTick);
-            BuildingChanged?.Invoke(building);
-            return new BuildingCaptureResult(BuildingCaptureFailure.None, building.OwnerSideId);
+            return new BuildingCaptureResult(BuildingCaptureFailure.None, newOwnerSideId);
         }
 
         public BuildingWorldSaveState CaptureState() => new BuildingWorldSaveState(
-            buildings.All.Select(x => x.CaptureState()), worldPiles?.CaptureStates(), LastFireTick);
+            buildings.All.Select(x => x.CaptureState()), primaryWorldPiles?.CaptureStates(), LastFireTick);
 
         public void RestoreState(BuildingWorldSaveState state)
         {
@@ -282,7 +337,7 @@ namespace Game.Simulation.Buildings
                         building.Id, definition.AllowsOverlap);
                 }
             }
-            if (worldPiles != null) worldPiles.RestoreStates(state.WorldPiles);
+            if (primaryWorldPiles != null) primaryWorldPiles.RestoreStates(state.WorldPiles);
             else if (state.WorldPiles.Count != 0) throw new InvalidOperationException("Save contains world piles but no pile service is attached.");
             LastFireTick = state.LastFireTick;
         }

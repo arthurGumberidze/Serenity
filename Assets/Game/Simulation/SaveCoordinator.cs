@@ -12,6 +12,7 @@ using Game.Domain.Control;
 using Game.Simulation.Control;
 using Game.Simulation.Buildings;
 using Game.Simulation.World;
+using Game.Simulation.AI;
 
 namespace Game.Simulation
 {
@@ -29,6 +30,7 @@ namespace Game.Simulation
         private readonly PlayerControlService playerControl;
         private readonly BuildingDamageService buildingDamage;
         private readonly GlobalMapService globalMap;
+        private readonly AiStrategicScheduler strategicAi;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -37,7 +39,8 @@ namespace Game.Simulation
             SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null,
             WeatherService weatherService = null, CombatService combatService = null,
             MilitaryUnitService militaryUnitService = null, PlayerControlService playerControlService = null,
-            BuildingDamageService buildingDamageService = null, GlobalMapService globalMapService = null)
+            BuildingDamageService buildingDamageService = null, GlobalMapService globalMapService = null,
+            AiStrategicScheduler strategicAiScheduler = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -53,6 +56,7 @@ namespace Game.Simulation
             playerControl = playerControlService;
             buildingDamage = buildingDamageService;
             globalMap = globalMapService;
+            strategicAi = strategicAiScheduler;
         }
         public SaveSnapshot Capture()
         {
@@ -60,7 +64,7 @@ namespace Game.Simulation
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
-                globalMap?.CaptureState());
+                globalMap?.CaptureState(), strategicAi?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -99,6 +103,9 @@ namespace Game.Simulation
             if (snapshot.GlobalMap != null && globalMap == null)
                 throw new InvalidOperationException("This save contains global-map state but no global-map service is attached.");
             if (snapshot.GlobalMap != null) globalMap.RestoreState(snapshot.GlobalMap);
+            if (snapshot.StrategicAi != null && strategicAi == null)
+                throw new InvalidOperationException("This save contains strategic AI state but no strategic AI scheduler is attached.");
+            if (snapshot.StrategicAi != null) strategicAi.RestoreState(snapshot.StrategicAi);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

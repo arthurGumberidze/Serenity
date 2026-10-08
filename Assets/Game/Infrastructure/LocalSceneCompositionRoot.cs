@@ -145,6 +145,8 @@ namespace Game.Infrastructure
         public PlayerControlService PlayerControl { get; private set; }
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
         public GlobalMapService GlobalMap { get; private set; }
+        public AiStrategicScheduler StrategicAi { get; private set; }
+        public AiFactionRuntime StarterEnemyAi { get; private set; }
         public GameModeTransitionService ModeTransitions { get; private set; }
         public SettlementId StarterSettlementId { get; private set; }
         public GlobalMapRuntimeBridge GlobalMapBridge { get; private set; }
@@ -332,6 +334,19 @@ namespace Game.Infrastructure
             BuildingDamage = new BuildingDamageService(Buildings,
                 buildingCatalog.Entries.Select(entry => buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))),
                 Production, Inventories, WorldPiles, Weather, Combat, BuildingOccupancy);
+            var strategicDefinitions = buildingCatalog.Entries.Select(entry =>
+                buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))).ToArray();
+            StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(developmentWorldSimulationSeed,
+                Clock.State.CalendarTicks, Clock.State.BiologicalTicks, Characters, HealthFamily, Tiers, GlobalMap, Buildings,
+                BuildingPlacementService, Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather);
+            HealthFamily.BindSuccession(StarterEnemyAi.Succession);
+            BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
+                StarterEnemyAi.WorldPiles);
+            StrategicAi = new AiStrategicScheduler(developmentWorldSimulationSeed, Characters, HealthFamily,
+                MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
+            StrategicAi.AddFaction(StarterEnemyAi);
+            gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
+                () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
@@ -385,8 +400,7 @@ namespace Game.Infrastructure
                 Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
-            GlobalMap.AdvanceTo(targetCalendarTick);
-            Battles.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
@@ -411,7 +425,9 @@ namespace Game.Infrastructure
             if (GlobalMap == null) return;
             GlobalMap.SynchronizeSettlement(StarterSettlementId,
                 new WorldLocationId("starter_settlement"), new CombatSideId("player"),
-                Buildings.All.Select(x => x.Id), Characters.GetAll().Select(x => x.Id));
+                Buildings.All.Where(x => x.OwnerSideId == new CombatSideId("player")).Select(x => x.Id),
+                Characters.GetAll().Where(x => StarterEnemyAi == null || !StarterEnemyAi.Residents.Contains(x.Id))
+                    .Select(x => x.Id));
         }
 
         public void ApplyLocalLocationScope(WorldLocationId locationId)

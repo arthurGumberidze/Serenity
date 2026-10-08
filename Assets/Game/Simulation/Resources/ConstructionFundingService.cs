@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Buildings;
@@ -70,7 +71,8 @@ namespace Game.Simulation.Resources
 
         public ConstructionEvaluation TryConfirm(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources, out Building building,
-            Action<Building> afterPlacement = null)
+            Action<Building> afterPlacement = null, Game.Domain.Combat.CombatSideId ownerSideId = default,
+            StableEntityId? stableId = null)
         {
             building = null;
             var result = Evaluate(definition, coordinate, orientation, fundingSources);
@@ -84,7 +86,7 @@ namespace Game.Simulation.Resources
             var charged = new List<Deduction>();
             try
             {
-                candidate = placement.Confirm(definition, coordinate, orientation);
+                candidate = placement.Confirm(definition, coordinate, orientation, ownerSideId, stableId);
                 attachedStorage = storage.Attach(candidate, definition);
                 foreach (var deduction in deductions)
                 {

@@ -50,7 +50,8 @@ namespace Game.Simulation.Health
         private readonly Dictionary<StableEntityId, PregnancyState> pregnancies =
             new Dictionary<StableEntityId, PregnancyState>();
         private readonly Dictionary<CharacterEventId, CharacterEventDefinition> eventDefinitions;
-        private SuccessionService succession;
+        private readonly Dictionary<StableEntityId, SuccessionService> successions =
+            new Dictionary<StableEntityId, SuccessionService>();
 
         public HealthAndFamilyService(CharacterRegistry characterRegistry, HealthConditionCatalog conditionCatalog,
             long simulationWorldSeed, SuccessionService successionService = null,
@@ -64,7 +65,7 @@ namespace Game.Simulation.Health
             worldSeed = simulationWorldSeed;
             pregnancyDurationBiologicalTicks = duration.Ticks;
             biologicalTicksPerCalendarTick = biologicalMultiplier;
-            succession = successionService;
+            if (successionService != null) BindSuccession(successionService);
             eventDefinitions = CreateEventDefinitions().ToDictionary(x => x.Id);
         }
 
@@ -81,9 +82,9 @@ namespace Game.Simulation.Health
         public void BindSuccession(SuccessionService service)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));
-            if (succession != null && !ReferenceEquals(succession, service))
-                throw new InvalidOperationException("Health service is already bound to another succession authority.");
-            succession = service;
+            if (successions.TryGetValue(service.Dynasty.Id, out var existing) && !ReferenceEquals(existing, service))
+                throw new InvalidOperationException("The dynasty is already bound to another succession authority.");
+            successions[service.Dynasty.Id] = service;
         }
 
         public HealthConditionInstanceState ApplyCondition(StableEntityId targetId, HealthConditionId definitionId,
@@ -400,8 +401,17 @@ namespace Game.Simulation.Health
 
         private void ProcessHealthDeath(StableEntityId targetId, long biologicalTick, long calendarTick)
         {
-            if (succession == null) throw new InvalidOperationException("Health death requires the U17 SuccessionService boundary.");
-            succession.ProcessDeath(targetId, biologicalTick, calendarTick);
+            if (successions.Count == 0) throw new InvalidOperationException("Health death requires the U17 SuccessionService boundary.");
+            var character = characters.Get(targetId);
+            if (character.DynastyId.HasValue && successions.TryGetValue(character.DynastyId.Value, out var succession))
+            {
+                succession.ProcessDeath(targetId, biologicalTick, calendarTick);
+                return;
+            }
+
+            // Non-dynastic characters still cross the canonical U17 boundary so life-state mutation
+            // remains centralized. Any bound authority produces the same NoChange result for them.
+            successions.OrderBy(x => x.Key).First().Value.ProcessDeath(targetId, biologicalTick, calendarTick);
         }
 
         private void ProcessBirth(PregnancyState pregnancy)
@@ -420,7 +430,7 @@ namespace Game.Simulation.Health
             var familyName = !string.IsNullOrEmpty(mother.Name.FamilyName) ? mother.Name.FamilyName : father.Name.FamilyName;
             var name = new CharacterName(names[(int)(sexSample % (ulong)names.Length)], familyName);
             StableEntityId? dynastyId = mother.DynastyId ?? father.DynastyId;
-            if (succession != null && dynastyId != succession.Dynasty.Id) dynastyId = null;
+            if (dynastyId.HasValue && !successions.ContainsKey(dynastyId.Value)) dynastyId = null;
             var attributes = new CharacterAttributes(
                 new CharacterAttributeValue((mother.Attributes.Intelligence.Value + father.Attributes.Intelligence.Value) / 2),
                 new CharacterAttributeValue((mother.Attributes.PhysicalStrength.Value + father.Attributes.PhysicalStrength.Value) / 2));
@@ -434,7 +444,8 @@ namespace Game.Simulation.Health
                 null, attributes, BodyHealth.Healthy, new Wealth(0), new Influence(0), null);
             var child = Character.CreateWithId(data, childId);
             characters.Add(child);
-            if (succession != null && dynastyId == succession.Dynasty.Id) succession.Dynasty.AddMember(childId);
+            if (dynastyId.HasValue && successions.TryGetValue(dynastyId.Value, out var succession))
+                succession.Dynasty.AddMember(childId);
             pregnancies[pregnancy.PregnancyId] = new PregnancyState(pregnancy.PregnancyId,
                 pregnancy.MotherId, pregnancy.FatherId, pregnancy.ConceptionCalendarTick,
                 pregnancy.ConceptionBiologicalTick, pregnancy.DueCalendarTick, pregnancy.DueBiologicalTick,

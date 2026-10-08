@@ -30,7 +30,7 @@ namespace Game.Tests.PlayMode
             var overlay = Object.FindAnyObjectByType<DynastyDebugOverlay>();
             Assert.That(root, Is.Not.Null);
             Assert.That(overlay, Is.SameAs(root.DynastyDebug));
-            Assert.That(root.Characters.Count, Is.EqualTo(4));
+            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(4));
             Assert.That(root.Dynasty.CurrentMonarchId, Is.EqualTo(root.MaleDemoCharacter.Id));
             Assert.That(root.Succession.Family.GetOrderedSuccessionCandidates(root.Dynasty,
                 root.MaleDemoCharacter.Id)[0].Id, Is.EqualTo(root.FirstDemoHeir.Id));

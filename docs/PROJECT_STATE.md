@@ -4,10 +4,10 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U25 DONE — the stable-ID global graph, deterministic travel, rollback-safe Local↔Global transitions, additive map scene and version-12 persistence are complete.
+U26 DONE — the deterministic owner-scoped strategic AI, normal-runtime rival bootstrap, canonical development/war/capture loop and version-13 persistence are complete.
 
 ## Active task
-No task is active. U26 is the next unblocked task but has not started and requires explicit user authorization.
+No task is active. U27 is the next unblocked task but has not started and requires explicit user authorization.
 
 ## Approved downstream validation plan
 - The U26-U31 overnight automation is being hardened without starting U26. U30 remains subject to its literal 8+ wall-clock-hour accelerated-soak gate; a prepared runner or short soak alone cannot mark U30 DONE.
@@ -21,6 +21,17 @@ No task is active. U26 is the next unblocked task but has not started and requir
 - Real CLI smoke evidence after the correction: an ephemeral no-tool `codex.cmd exec --json --approve-for-me --config model_reasoning_effort=high --output-schema ... --output-last-message ... -` run through stdin started an agent, exited 0 and produced schema-valid `CLI smoke test passed` JSON without changing the repository. The complete production argument combination is therefore validated beyond help/preflight parsing; no Unity process or game task was started.
 - Windows PowerShell preflight correction on 2026-10-09: the intentional missing-schema diagnostic is written by Codex to native stderr. With the orchestrator's global `$ErrorActionPreference = 'Stop'`, direct invocation converted that expected diagnostic into a terminating exception before it could be inspected. Preflight now runs Codex via `Start-Process` with redirected stdout/stderr, waits for the child exit code and validates the captured missing-schema boundary. This exact mechanism returned the expected exit 1/diagnostic without throwing or starting model inference; a full `U26→U31 -DryRun -NoShutdown` then passed outside the sandbox against the real `%LOCALAPPDATA%\SerenityAutomation\runs` path.
 - The same native-stderr boundary now protects real Codex agent runs: only the invocation scope temporarily uses PowerShell `Continue`, diagnostics remain in `stderr.log`, `$LASTEXITCODE` is captured before restoring global `Stop`, and normal hard gates still reject any non-zero exit or invalid/missing structured answer. A real ephemeral schema-constrained agent smoke executed under global `Stop` with this exact wrapper, exited 0, captured stderr and returned the expected JSON without repository changes. This prevents benign CLI warnings from aborting an otherwise successful task while preserving fail-closed orchestration.
+
+## U26 strategic AI of one state
+- Normal `LocalGameplay` composition deterministically creates six canonical Tier3 residents, an AI ruler/dynasty, independent inventories, U15 production sites/targets and U16 research for the existing U25 enemy settlement. The player and AI share canonical Character/Building/unit/map/battle registries but never share mutable research, inventory or production authority.
+- `AiStrategicScheduler` centrally advances any number of sorted `AiFactionRuntime` scopes. Stable scoring and IDs drive research, funded/occupied placement, unit/captain creation, route travel and hostile targeting; there is no per-NPC or per-army `Update` and no AI-only research/economy/combat model.
+- The configured baseline researches shelter construction, spends canonical resources to create a completed AI-owned shelter through U09, forms a U21 Aggregate unit, traverses U25 routes, starts and resolves U23 Abstract combat and captures the player settlement/building set through U24.
+- `BuildingDamageService` now supports registered owner economy scopes and atomically prevalidates a whole settlement building set before changing any owner. `SettlementCaptureService` changes U25 settlement ownership only after that succeeds. The shared defeat rule is: a side is defeated when it owns no canonical U25 settlement.
+- U18 health routes fatal events to the succession authority matching the Character dynasty. An extinct AI dynasty or loss of every settlement marks the strategic state defeated. A lost expedition is disbanded cleanly and remaining eligible residents can form a replacement.
+- Snapshot v13 persists sorted strategic identity/objective/target, decision checkpoint/sequence/history, orders, dynasty, research, production/inventories and AI world piles. V1-v12 remain readable; restore validates faction, ruler, settlement, unit and target references before commit.
+- The click-blocked IMGUI overlay is inspection/advance-only and exposes state, ruler, economy, research, combat-capable army strength, goal/target, travel, battle checkpoint and defeat. It owns no gameplay truth and is not U27 UI.
+- Final command: `& .\Tools\Verify-U26.ps1 -FullRegression -BuildPlayer` -> U26 10/10 EditMode and 2/2 headless PlayMode; dependency regressions 160/160 EditMode and 31/31 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 368/368; full PlayMode 76/76; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- PostgreSQL integration and GPU-only PlayMode were not requested/run. The v13 opaque XML guard, persistence suite, headless runtime tests and Windows Player build passed. U27 has not started.
 
 ## U25 global map and local/global mode
 - `GlobalMapService` owns a validated six-location/two-settlement starter graph, routes, active mode/location, settlement stable-ID references and in-progress logical travel. It contains no Unity object or copied Character, Building, unit or battle.

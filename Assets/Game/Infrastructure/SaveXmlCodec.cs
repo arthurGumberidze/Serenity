@@ -22,7 +22,7 @@ using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V12 adds canonical global-map state.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V13 adds strategic AI state.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -59,6 +59,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeBuildingWorld(snapshot.BuildingWorld));
             if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
                 root.Add(SerializeGlobalMap(snapshot.GlobalMap));
+            if (snapshot.FormatVersion >= SaveSnapshot.StrategicAiVersion)
+                root.Add(SerializeStrategicAi(snapshot.StrategicAi));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -90,7 +92,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
                         version != SaveSnapshot.PlayerControlVersion &&
                         version != SaveSnapshot.BattleVersion && version != SaveSnapshot.BuildingVersion &&
-                        version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
@@ -113,11 +115,13 @@ namespace Game.Infrastructure
                         ? DeserializeBuildingWorld(root.Element("buildingWorld")) : null;
                     var globalMap = version >= SaveSnapshot.GlobalMapVersion
                         ? DeserializeGlobalMap(root.Element("globalMap")) : null;
+                    var strategicAi = version >= SaveSnapshot.StrategicAiVersion
+                        ? DeserializeStrategicAi(root.Element("strategicAi")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military, playerControl, buildingWorld, globalMap);
+                        combat, military, playerControl, buildingWorld, globalMap, strategicAi);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -885,6 +889,144 @@ namespace Game.Infrastructure
                 Long(element, "lastProcessedTick"));
         }
 
+        private static XElement SerializeStrategicAi(AiStrategicSaveState state)
+        {
+            var element = new XElement("strategicAi");
+            if (state == null) return element;
+            element.Add(new XElement("worldSeed", state.WorldSeed),
+                new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("factions", state.Factions.Select(faction =>
+                {
+                    var strategic = faction.Strategic;
+                    return new XElement("faction",
+                        new XElement("strategic",
+                            new XElement("id", strategic.Id.ToString()),
+                            new XElement("ownerId", strategic.OwnerId),
+                            new XElement("sideId", strategic.SideId.Value),
+                            new XElement("homeSettlementId", strategic.HomeSettlementId.ToString()),
+                            new XElement("rulerCharacterId", strategic.RulerCharacterId.ToString()),
+                            new XElement("controlledSettlements", strategic.ControlledSettlements.Select(x => new XElement("settlement", x.ToString()))),
+                            new XElement("knownMilitaryUnits", strategic.KnownMilitaryUnits.Select(x => new XElement("unit", x.ToString()))),
+                            new XElement("goal", (int)strategic.Goal),
+                            new XElement("targetSettlementId", strategic.TargetSettlementId.HasValue ? strategic.TargetSettlementId.Value.ToString() : string.Empty),
+                            new XElement("targetLocationId", strategic.TargetLocationId.HasValue ? strategic.TargetLocationId.Value.ToString() : string.Empty),
+                            new XElement("lastDecisionTick", strategic.LastDecisionTick),
+                            new XElement("nextDecisionTick", strategic.NextDecisionTick),
+                            new XElement("decisionSequence", strategic.DecisionSequence),
+                            new XElement("defeated", strategic.IsDefeated),
+                            new XElement("defeatReason", (int)strategic.DefeatReason),
+                            new XElement("orders", strategic.PendingOrders.Select(x => new XElement("order",
+                                new XElement("sequence", x.Sequence), new XElement("kind", (int)x.Kind),
+                                new XElement("issuedTick", x.IssuedTick),
+                                new XElement("unitId", x.UnitId.HasValue ? x.UnitId.Value.ToString() : string.Empty),
+                                new XElement("settlementId", x.TargetSettlementId.HasValue ? x.TargetSettlementId.Value.ToString() : string.Empty),
+                                new XElement("locationId", x.TargetLocationId.HasValue ? x.TargetLocationId.Value.ToString() : string.Empty)))),
+                            new XElement("decisions", strategic.RecentDecisions.Select(x => new XElement("decision",
+                                new XElement("sequence", x.Sequence), new XElement("tick", x.Tick),
+                                new XElement("kind", (int)x.Kind), new XElement("goal", (int)x.Goal),
+                                new XElement("score", x.Score), new XElement("reason", x.Reason),
+                                new XElement("settlementId", x.TargetSettlementId.HasValue ? x.TargetSettlementId.Value.ToString() : string.Empty),
+                                new XElement("locationId", x.TargetLocationId.HasValue ? x.TargetLocationId.Value.ToString() : string.Empty),
+                                new XElement("unitId", x.UnitId.HasValue ? x.UnitId.Value.ToString() : string.Empty))))),
+                        SerializeAiDynasty(faction.Dynasty), SerializeResearch(faction.Research),
+                        SerializeProduction(faction.Production),
+                        new XElement("worldPiles", faction.WorldPiles.Select(value => new XElement("pile",
+                            new XElement("id", value.Id.ToString()),
+                            new XElement("resourceId", value.ResourceId.ToString()),
+                            new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
+                            new XElement("level", value.Coordinate.Level)))));
+                })));
+            return element;
+        }
+
+        private static AiStrategicSaveState DeserializeStrategicAi(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing strategic AI state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty strategic AI state.");
+                return null;
+            }
+            RequireFields(element, new[] { "worldSeed", "lastProcessedTick", "factions" });
+            var factions = Items(element.Element("factions"), "faction", item =>
+            {
+                RequireFields(item, new[] { "strategic", "dynasty", "research", "production", "worldPiles" });
+                var value = item.Element("strategic");
+                RequireFields(value, new[] { "id", "ownerId", "sideId", "homeSettlementId", "rulerCharacterId",
+                    "controlledSettlements", "knownMilitaryUnits", "goal", "targetSettlementId", "targetLocationId",
+                    "lastDecisionTick", "nextDecisionTick", "decisionSequence", "defeated", "defeatReason", "orders", "decisions" });
+                var settlements = Items(value.Element("controlledSettlements"), "settlement",
+                    x => new SettlementId(StableEntityId.Parse(Scalar(x))));
+                var units = Items(value.Element("knownMilitaryUnits"), "unit", x => MilitaryUnitId.Parse(Scalar(x)));
+                var orders = Items(value.Element("orders"), "order", x =>
+                {
+                    RequireFields(x, new[] { "sequence", "kind", "issuedTick", "unitId", "settlementId", "locationId" });
+                    return new AiPendingOrder(Long(x, "sequence"), (AiDecisionKind)Int(x, "kind"), Long(x, "issuedTick"),
+                        OptionalUnit(x, "unitId"), OptionalSettlement(x, "settlementId"), OptionalLocation(x, "locationId"));
+                });
+                var decisions = Items(value.Element("decisions"), "decision", x =>
+                {
+                    RequireFields(x, new[] { "sequence", "tick", "kind", "goal", "score", "reason", "settlementId", "locationId", "unitId" });
+                    return new AiDecision(Long(x, "sequence"), Long(x, "tick"), (AiDecisionKind)Int(x, "kind"),
+                        (AiStrategicGoal)Int(x, "goal"), Int(x, "score"), Value(x, "reason"),
+                        OptionalSettlement(x, "settlementId"), OptionalLocation(x, "locationId"), OptionalUnit(x, "unitId"));
+                });
+                var strategic = new AiStrategicStateSnapshot(new AiStateId(StableEntityId.Parse(Value(value, "id"))),
+                    Value(value, "ownerId"), new CombatSideId(Value(value, "sideId")),
+                    new SettlementId(StableEntityId.Parse(Value(value, "homeSettlementId"))),
+                    StableEntityId.Parse(Value(value, "rulerCharacterId")), settlements, units,
+                    (AiStrategicGoal)Int(value, "goal"), OptionalSettlement(value, "targetSettlementId"),
+                    OptionalLocation(value, "targetLocationId"), Long(value, "lastDecisionTick"),
+                    Long(value, "nextDecisionTick"), Long(value, "decisionSequence"), orders, decisions,
+                    XmlConvert.ToBoolean(Value(value, "defeated")), (AiDefeatReason)Int(value, "defeatReason"));
+                var piles = Items(item.Element("worldPiles"), "pile", pile =>
+                {
+                    RequireFields(pile, new[] { "id", "resourceId", "x", "z", "level" });
+                    return new WorldResourcePileState(StableEntityId.Parse(Value(pile, "id")),
+                        new ResourceId(Value(pile, "resourceId")),
+                        new GridCoordinate(Int(pile, "x"), Int(pile, "z"), Int(pile, "level")));
+                });
+                return new AiFactionSaveState(strategic, DeserializeAiDynasty(item.Element("dynasty")),
+                    DeserializeResearch(item.Element("research")), DeserializeProduction(item.Element("production")), piles);
+            });
+            return new AiStrategicSaveState(Long(element, "worldSeed"), Long(element, "lastProcessedTick"), factions);
+        }
+
+        private static XElement SerializeAiDynasty(DynastyStateSnapshot dynasty) => new XElement("dynasty",
+            new XElement("id", dynasty.Id.ToString()), new XElement("name", dynasty.Name),
+            new XElement("founderId", dynasty.FounderId.ToString()), OptionalId("currentMonarchId", dynasty.CurrentMonarchId),
+            new XElement("successionRuleId", dynasty.SuccessionRuleId), new XElement("status", (int)dynasty.Status),
+            new XElement("members", dynasty.MemberIds.Select(id => new XElement("member", id.ToString()))),
+            new XElement("processedDeaths", dynasty.ProcessedMonarchDeathIds.Select(id => new XElement("character", id.ToString()))),
+            new XElement("history", dynasty.History.Select(entry => new XElement("entry",
+                new XElement("sequence", entry.SequenceNumber), new XElement("previousMonarchId", entry.PreviousMonarchId.ToString()),
+                OptionalId("newMonarchId", entry.NewMonarchId), new XElement("calendarTick", entry.CalendarTick),
+                new XElement("reason", (int)entry.Reason)))));
+
+        private static DynastyStateSnapshot DeserializeAiDynasty(XElement element)
+        {
+            RequireFields(element, new[] { "id", "name", "founderId", "currentMonarchId", "successionRuleId",
+                "status", "members", "processedDeaths", "history" });
+            var members = Items(element.Element("members"), "member", x => StableEntityId.Parse(Scalar(x)));
+            var processed = Items(element.Element("processedDeaths"), "character", x => StableEntityId.Parse(Scalar(x)));
+            var history = Items(element.Element("history"), "entry", x =>
+            {
+                RequireFields(x, new[] { "sequence", "previousMonarchId", "newMonarchId", "calendarTick", "reason" });
+                return new SuccessionHistoryEntry(Long(x, "sequence"), StableEntityId.Parse(Value(x, "previousMonarchId")),
+                    OptionalStableId(x, "newMonarchId"), Long(x, "calendarTick"), (SuccessionReason)Int(x, "reason"));
+            });
+            return new DynastyStateSnapshot(StableEntityId.Parse(Value(element, "id")), Value(element, "name"),
+                StableEntityId.Parse(Value(element, "founderId")), OptionalStableId(element, "currentMonarchId"),
+                Value(element, "successionRuleId"), (DynastyStatus)Int(element, "status"), members, processed, history);
+        }
+
+        private static MilitaryUnitId? OptionalUnit(XElement parent, string name)
+        { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(value); }
+        private static SettlementId? OptionalSettlement(XElement parent, string name)
+        { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (SettlementId?)null : new SettlementId(StableEntityId.Parse(value)); }
+        private static WorldLocationId? OptionalLocation(XElement parent, string name)
+        { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (WorldLocationId?)null : new WorldLocationId(value); }
+
         private static string[] FieldsForVersion(int version)
         {
             var fields = TimeFields.AsEnumerable();
@@ -898,6 +1040,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.PlayerControlVersion) fields = fields.Concat(new[] { "playerControl" });
             if (version >= SaveSnapshot.BuildingVersion) fields = fields.Concat(new[] { "buildingWorld" });
             if (version >= SaveSnapshot.GlobalMapVersion) fields = fields.Concat(new[] { "globalMap" });
+            if (version >= SaveSnapshot.StrategicAiVersion) fields = fields.Concat(new[] { "strategicAi" });
             return fields.ToArray();
         }
 

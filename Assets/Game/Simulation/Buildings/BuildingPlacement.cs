@@ -83,12 +83,16 @@ namespace Game.Simulation.Buildings
             return new PlacementEvaluation(true, PlacementFailureReason.None, cells);
         }
 
-        public Building Confirm(BuildingDefinition definition, GridCoordinate coordinate, BuildingOrientation orientation)
+        public Building Confirm(BuildingDefinition definition, GridCoordinate coordinate, BuildingOrientation orientation,
+            CombatSideId ownerSideId = default, StableEntityId? stableId = null)
         {
             var evaluation = Evaluate(definition, coordinate, orientation);
             if (!evaluation.IsValid)
                 throw new InvalidOperationException("Building placement is invalid: " + evaluation.FailureReason);
-            var building = Building.CreateNew(definition, coordinate, orientation, new CombatSideId("player"));
+            var owner = ownerSideId.IsValid ? ownerSideId : new CombatSideId("player");
+            var building = stableId.HasValue
+                ? Building.CreateNew(definition, coordinate, orientation, owner, stableId.Value)
+                : Building.CreateNew(definition, coordinate, orientation, owner);
             occupancy.Reserve(evaluation.Cells, building.Id, definition.AllowsOverlap);
             try { registry.Add(building); }
             catch { occupancy.Release(evaluation.Cells, building.Id); throw; }

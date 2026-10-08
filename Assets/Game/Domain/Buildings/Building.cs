@@ -157,6 +157,15 @@ namespace Game.Domain.Buildings
                 BuildingStructuralStatus.Intact, ownerSideId, BuildingFireStatus.None, 0, 0, 0, 0,
                 false, false, null, null));
 
+        public static Building CreateNew(BuildingDefinition definition, GridCoordinate coordinate,
+            BuildingOrientation orientation, CombatSideId ownerSideId, StableEntityId id) => definition == null
+            ? throw new ArgumentNullException(nameof(definition))
+            : !id.IsValid ? throw new ArgumentException("A stable building identity is required.", nameof(id))
+            : Restore(new BuildingState(id, definition.Id, coordinate, orientation,
+                ConstructionState.Planned, definition.MaxIntegrity, definition.MaxIntegrity,
+                BuildingStructuralStatus.Intact, ownerSideId, BuildingFireStatus.None, 0, 0, 0, 0,
+                false, false, null, null));
+
         public static Building Restore(BuildingState state) => new Building(state);
 
         public void MarkCompleted()
