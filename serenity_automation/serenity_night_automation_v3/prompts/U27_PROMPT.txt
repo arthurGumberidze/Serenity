@@ -1,0 +1,449 @@
+U27 — UI TOOLKIT/uGUI GAMEPLAY UI
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U26 expected DONE.
+- Актуальный TASK_GRAPH: U27 зависит от U04,U06,U08,U11,U16,U20,U22,U25,U26.
+- Definition of Done: все MVP actions доступны без debug menu.
+- Сейчас большая часть interaction всё ещё debug IMGUI.
+- Это milestone: после U27 игра должна визуально ощущаться как игра, а не инженерный стенд.
+- U28 НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Создать единый нормальный gameplay UI поверх уже готовых systems, не перенося authority в UI.
+
+Debug overlays:
+- скрыты по умолчанию;
+- доступны одним explicit developer/debug toggle;
+- не нужны для обычного MVP gameplay.
+
+==================================================
+2. СНАЧАЛА ИЗУЧИ
+==================================================
+
+Изучи все существующие overlays/input:
+U08,U11,U15,U16/U16A,U17,U18,U19,U20,U21,U22,U23,U24,U25,U26.
+Найди UI Toolkit/uGUI infrastructure, Input System, UI blocker, selection model.
+
+Reuse existing services.
+
+==================================================
+3. UI ARCHITECTURE
+==================================================
+
+Создай player-facing UI layer:
+- read models/view-models/adapters допускаются;
+- UI вызывает services/commands;
+- UI не хранит canonical resource/research/combat/etc state.
+
+Не создавать "UI copy" gameplay truth.
+
+==================================================
+4. MAIN HUD
+==================================================
+
+Обязательная верхняя/основная панель:
+- date/time;
+- pause;
+- x1/x2/x3/x5/x10;
+- food/wood/stone/fiber и ключевые текущие resources;
+- important alerts;
+- current mode Local/Global;
+- optional population summary.
+
+==================================================
+5. SELECTION INSPECTOR
+==================================================
+
+Единый inspector для selected:
+- Character;
+- Building;
+- MilitaryUnit;
+- Global location/Settlement.
+
+Character:
+name, age, health, work/action, dynasty role, unit/captain, inventory summary.
+
+Building:
+type, owner, integrity/fire, storage/production.
+
+Military:
+captain, roster counts, order, Detailed/Aggregate, battle.
+
+==================================================
+6. BUILDING UI
+==================================================
+
+Player должен без debug:
+- открыть build menu;
+- видеть available/locked buildings;
+- видеть reason lock;
+- выбрать shelter/storage/crop;
+- placement confirm/rotate/cancel.
+
+Reuse U08/U16 gating.
+
+==================================================
+7. PRODUCTION/STORAGE UI
+==================================================
+
+Показывать:
+- stocks;
+- target stocks;
+- storage capacity;
+- production status;
+- crop status where relevant.
+
+Не строить сложный economy spreadsheet.
+
+==================================================
+8. RESEARCH UI
+==================================================
+
+Нужен playable research screen/panel:
+- 14 Stone Age tech;
+- prerequisites;
+- completed/available/locked;
+- active progress;
+- unlock preview;
+- assign/remove selected research workers.
+
+Не обязательно beautiful Civ tree; functional clean hierarchy допустима.
+
+==================================================
+8A. WORK GROUPS / JOBS UI
+==================================================
+
+Перенеси обязательные U11 actions из debug overlay в normal player UI:
+- create/select/rename work group;
+- add/remove current selection;
+- assign or change commander where current rules permit;
+- set priority;
+- issue Move and Haul through existing commands;
+- inspect order lifecycle/claim;
+- cancel an order;
+- preserve Ctrl+1..9 and 1..9 shortcuts.
+
+UI не может напрямую менять membership, job status, reservation или inventory.
+
+==================================================
+9. DYNASTY UI
+==================================================
+
+Показывать:
+- current monarch;
+- heir;
+- spouse;
+- children;
+- succession candidates summary;
+- dynasty active/extinct.
+
+Без production-quality genealogy graph requirement.
+
+==================================================
+10. HEALTH/FAMILY UI
+==================================================
+
+Selected Character:
+- conditions/severity;
+- work/research modifiers;
+- incapacitated;
+- pregnancy;
+- parents/children.
+
+Debug injury/pregnancy buttons НЕ должны быть normal player controls.
+
+==================================================
+11. WEATHER
+==================================================
+
+HUD:
+- season;
+- weather;
+- temperature;
+- meaningful weather modifier/alert.
+Не показывать технические RNG hashes normal player.
+
+==================================================
+12. MILITARY UI
+==================================================
+
+Player может:
+- create/manage unit from eligible selected characters;
+- see captain;
+- assign captain;
+- see roster counts;
+- issue Move/Hold/Engage;
+- see Detailed/Aggregate;
+- inspect unit location/travel.
+
+Не делать U33 hierarchy.
+
+==================================================
+13. COMBAT UI
+==================================================
+
+Physical/Abstract battle:
+- sides;
+- active/dead/incapacitated/retreated counts;
+- morale/outcome;
+- mode indicator;
+- transition action only if existing U23 policy permits.
+
+Не давать UI bypass eligibility/TPS blocks.
+
+==================================================
+14. TPS UI
+==================================================
+
+Минимальный TPS HUD:
+- controlled Character;
+- health/status;
+- exit hint/mode;
+- no action-RPG redesign.
+
+==================================================
+15. BUILDING DAMAGE/FIRE/CAPTURE UI
+==================================================
+
+Player-facing inspection:
+- integrity;
+- burning/destroyed;
+- owner.
+
+Debug Damage/Destroy/Capture buttons скрыты in debug mode.
+
+==================================================
+16. GLOBAL MAP UI
+==================================================
+
+Без debug menu player должен:
+- select settlement/location;
+- select military unit;
+- see owner/captain/strength/location;
+- choose valid connected destination;
+- see ETA/travel state;
+- enter accessible Local location;
+- enter active battle;
+- return Global safely.
+
+==================================================
+17. STRATEGIC AI VISIBILITY
+==================================================
+
+Не показывать hidden AI internals.
+Player-facing:
+- known enemy settlement/owner;
+- visible army;
+- active battle;
+- captured state.
+
+Full AI scoring remains debug-only.
+
+==================================================
+18. NOTIFICATIONS
+==================================================
+
+Создай lightweight notification feed:
+- research complete;
+- birth/death/succession;
+- serious injury;
+- fire/building destroyed/captured;
+- battle start/end;
+- army arrival;
+- important AI attack.
+
+Use current event/service signals where possible.
+Не начинать U28 general event system.
+
+==================================================
+19. DEBUG MODE
+==================================================
+
+Один toggle (developer only) включает legacy/debug panels.
+По умолчанию normal player UI only.
+
+Нельзя требовать debug overlay для выполнения MVP action.
+
+==================================================
+20. LAYOUT
+==================================================
+
+Must work at 1600×900.
+No overlapping critical controls.
+Basic handling 16:9 and common desktop ratios.
+
+Use scalable anchors/flex where appropriate.
+
+==================================================
+21. INPUT / CLICK-THROUGH
+==================================================
+
+UI blocker обязателен.
+Click UI не должен:
+- Move;
+- Attack;
+- place building accidentally;
+- change selection.
+
+Keyboard shortcuts U11/U16A/U22 сохраняются.
+
+==================================================
+22. LOCAL/GLOBAL UI MODE
+==================================================
+
+UI composition adapts:
+Local controls in Local mode.
+Global map controls in Global mode.
+No duplicate persistent UI subscriptions on repeated transitions.
+
+==================================================
+23. SAVE/LOAD
+==================================================
+
+UI presentation itself generally not canonical.
+Do not inflate snapshot with transient open panels unless needed.
+
+All underlying state continues existing persistence.
+
+Normal player UI обязательно предоставляет:
+- Save to an explicit slot;
+- list existing slots with safe human-readable metadata derived outside canonical simulation;
+- Load selected slot with confirmation;
+- visible success/failure state without exposing secrets/provider details;
+- local-file provider as the always-available MVP path;
+- optional PostgreSQL provider only when configured.
+
+Save/Load нельзя оставлять только debug command, test API или keyboard-only undocumented path. Loading must replace/rebind the canonical session through the existing SaveCoordinator boundary and must not duplicate UI subscriptions.
+
+==================================================
+24. ACCESSIBILITY/USABILITY
+==================================================
+
+Minimum:
+- readable labels;
+- disabled state with reason;
+- tooltips/help text where useful;
+- selected/hover state;
+- no raw internal IDs unless debug.
+
+==================================================
+25. DO NOT IMPLEMENT
+==================================================
+
+Не делать:
+- U28 event engine;
+- art-final skin;
+- localization framework overhaul;
+- controller/gamepad full support unless trivial;
+- mobile UI;
+- cinematic HUD;
+- extensive animation polish.
+
+==================================================
+26. PLAYER FLOW TEST
+==================================================
+
+Without debug panels:
+Local:
+- time control;
+- select NPC;
+- create/manage work group, issue and cancel Move/Haul;
+- assign research;
+- build shelter/storage/crop;
+- inspect resources/health/dynasty;
+- create/manage military;
+- RTS↔TPS;
+- combat inspect.
+- save to a normal slot, mutate/progress, load the same slot and continue.
+
+Global:
+- open Global;
+- select army/location;
+- move army;
+- enter battle/location;
+- return.
+
+All through normal UI.
+
+==================================================
+27. TESTS
+==================================================
+
+Focused:
+- UI binding/commands;
+- locked/disabled reasons;
+- no click-through;
+- mode switching;
+- no duplicate callbacks;
+- major panel visibility.
+- save/load slot UI and post-load rebinding;
+- U11 work-group/job commands through normal UI;
+
+Critical functional regressions:
+U08,U11,U16,U20,U22,U25,U26.
+
+==================================================
+28. MILESTONE REGRESSION
+==================================================
+
+U27 is broader milestone:
+- run focused U27;
+- critical flows;
+- ONE full EditMode;
+- ONE full PlayMode if runtime reasonable;
+- GPU PlayMode;
+- Windows build.
+
+Не дублировать full suite multiple times.
+
+==================================================
+29. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- normal gameplay no longer depends on debug menus;
+- all MVP actions implemented through U26 are reachable;
+- player save/load and U11 work management no longer require debug UI;
+- debug windows hidden by default;
+- UI does not own canonical state;
+- Local/Global both usable;
+- click-through absent;
+- major workflows PlayMode pass;
+- milestone regression/build pass;
+- U28 not started.
+
+COMMIT
+`U27: implement gameplay UI`

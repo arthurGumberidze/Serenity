@@ -1,0 +1,332 @@
+U28 — DETERMINISTIC EVENT SYSTEM
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U27 expected DONE.
+- TASK_GRAPH: U28 depends on U04,U04A,U06,U17,U18,U27.
+- Definition of Done: events persist and are reproducible by seed.
+- U18 already has narrow health/family events.
+- U27 now provides player-facing notification/event UI surface.
+- U29 НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Обобщить существующий narrow event foundation в reusable deterministic gameplay event system, не ломая U18.
+
+Поддержать:
+- triggers;
+- targets;
+- choices;
+- single events and multi-node chains;
+- conditions, weights and persisted cooldowns;
+- deterministic outcomes;
+- AI auto-resolution;
+- persistence;
+- off-camera;
+- UI queue/history.
+
+==================================================
+2. MIGRATION, НЕ ВТОРАЯ СИСТЕМА
+==================================================
+
+Сначала изучи U18 event code.
+Reuse/migrate common abstractions.
+Не оставлять две competing event authorities.
+
+==================================================
+3. DOMAIN MODEL
+==================================================
+
+Engine-independent:
+- EventDefinitionId
+- EventDefinition
+- EventInstanceId
+- EventInstance
+- EventTrigger
+- EventChoice
+- EventOutcome
+- EventStatus
+- EventService
+- EventHistoryEntry
+
+No GameObject refs.
+
+Domain содержит immutable definitions/IDs/state/DTO. Mutable `EventService`, scheduler, trigger evaluation и outcome orchestration принадлежат Simulation. Presentation только отображает очередь/историю и отправляет choice command.
+
+==================================================
+4. CATEGORIES
+==================================================
+
+Минимум:
+- Character/Family
+- Dynasty
+- Settlement
+- Building
+- Military/Battle
+- Research/Economy
+
+Не делать отдельные engines по категориям.
+
+==================================================
+5. TRIGGERS
+==================================================
+
+Поддержать data-driven trigger conditions:
+- tick/date;
+- state predicate;
+- after canonical event/hook;
+- probability/weight with deterministic RNG.
+
+No per-definition Update.
+
+Каждая definition явно задаёт eligibility conditions, integer weight, cooldown policy и optional next-node transitions. Catalog validation rejects missing nodes, duplicate IDs, impossible next references and unbounded cycles.
+
+==================================================
+5A. CHAINS AND COOLDOWNS
+==================================================
+
+Минимум одна representative Stone Age event chain должна иметь 2+ nodes и условный переход после player/AI choice.
+
+Persist:
+- chain instance/root ID;
+- current node;
+- visited/resolved node markers;
+- next eligible tick/cooldown checkpoint;
+- pending choice and deterministic sequence.
+
+Save/load between nodes must continue the same chain without re-offer, skipped outcome or reroll. Cooldown is evaluated from canonical ticks and cannot be reset by tier/mode/load changes.
+
+==================================================
+6. DETERMINISTIC RNG
+==================================================
+
+Use U14 keyed RNG:
+world seed + event definition + target IDs + eligible tick/sequence.
+
+Same state => same offered/resolved event.
+
+Collection order independent.
+
+==================================================
+7. EXACTLY ONCE
+==================================================
+
+Event may become:
+Eligible -> Offered/Pending -> Resolved/Expired.
+
+Save/load/off-camera catch-up must not:
+- offer duplicate instance;
+- apply outcome twice;
+- reroll resolved outcome.
+
+==================================================
+8. TARGETS
+==================================================
+
+Stable refs only:
+Character ID, Dynasty ID, Building ID, MilitaryUnitId, Settlement/Location ID, BattleId.
+
+Missing target handled cleanly.
+
+==================================================
+9. PLAYER CHOICES
+==================================================
+
+At least one event with 2+ choices.
+Pending choice persists across Save/Load.
+Outcome applied only after valid choice.
+
+UI from U27 displays:
+title/description/targets/choices/outcome.
+
+==================================================
+10. AI CHOICES
+==================================================
+
+AI settlement cannot wait for player UI.
+Deterministic choice policy:
+- scoring;
+- stable tie-break.
+No cheating.
+
+==================================================
+11. OFF-CAMERA
+==================================================
+
+Events can trigger/resolve for remote AI/location without materialization.
+
+Player-targeted choice events may queue pending until player interaction.
+
+==================================================
+12. CONTENT SET
+==================================================
+
+Add only ~8–15 representative Stone Age events.
+Examples may cover:
+- family dispute/support;
+- minor settlement resource opportunity/cost;
+- research insight;
+- military morale incident;
+- building mishap;
+- dynasty family matter.
+
+Do not write hundreds.
+
+==================================================
+13. OUTCOME API
+==================================================
+
+Outcomes call existing canonical services.
+Do not directly mutate:
+health/resources/building owner/combat/dynasty if service exists.
+
+==================================================
+14. U18 COMPATIBILITY
+==================================================
+
+Existing health/family events either:
+- run through generalized system,
+or
+- use shared common event primitives cleanly.
+
+All U18 tests must remain valid.
+
+==================================================
+15. EVENT HISTORY
+==================================================
+
+Persist compact history:
+- instance ID;
+- definition ID;
+- targets;
+- offered/resolved ticks;
+- choice;
+- outcome summary.
+
+No giant narrative logs.
+
+==================================================
+16. UI
+==================================================
+
+U27:
+- pending event indicator;
+- event queue/list;
+- detail modal/panel;
+- choices;
+- resolved notification/history.
+
+No debug raw JSON in normal UI.
+
+==================================================
+17. SAVE/LOAD
+==================================================
+
+Persist:
+- pending events;
+- processed/eligibility markers;
+- history;
+- deterministic sequence counters;
+- unresolved choice.
+
+Preserve all prior snapshots.
+
+==================================================
+18. INVALID STATES
+==================================================
+
+Handle:
+- missing target;
+- no valid choice;
+- choice after resolution;
+- duplicate event ID;
+- bad definition;
+- cyclic/recursive trigger chain runaway.
+
+Add guard against infinite immediate event loops.
+
+==================================================
+19. DO NOT IMPLEMENT
+==================================================
+
+Не делать:
+- U32 Wealth/Influence;
+- ministers;
+- taxes;
+- laws;
+- diplomacy;
+- espionage;
+- huge narrative content pipeline;
+- quest system.
+
+==================================================
+20. TESTS
+==================================================
+
+- definition validation;
+- trigger eligibility;
+- weight/cooldown and chain catalog validation;
+- multi-node chain continuation across save/load;
+- deterministic instance ID/outcome;
+- exactly-once;
+- player choice;
+- AI choice;
+- save/load pending/resolved;
+- off-camera catch-up;
+- collection-order independence;
+- U18 compatibility;
+- UI choice flow.
+
+Critical regressions: U17,U18,U24,U26,U27,persistence.
+
+==================================================
+21. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- one general event framework;
+- isolated events and persisted conditional chains/cooldowns work;
+- deterministic/reproducible;
+- persisted;
+- no duplicate outcomes;
+- player choice works;
+- AI resolution works;
+- off-camera works;
+- U18 compatible;
+- U27 UI integration works;
+- Windows build passes;
+- U29 not started.
+
+COMMIT
+`U28: implement deterministic event system`

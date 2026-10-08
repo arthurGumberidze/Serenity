@@ -9,6 +9,13 @@ U25 DONE — the stable-ID global graph, deterministic travel, rollback-safe Loc
 ## Active task
 No task is active. U26 is the next unblocked task but has not started and requires explicit user authorization.
 
+## Approved downstream validation plan
+- The U26-U31 overnight automation is being hardened without starting U26. U30 remains subject to its literal 8+ wall-clock-hour accelerated-soak gate; a prepared runner or short soak alone cannot mark U30 DONE.
+- The long U30 run must execute as an external PowerShell/Unity process so Codex is not kept active for eight hours. A separate Codex finalizer verifies the result artifacts before the U30 DONE commit.
+- U30A is the explicit pre-U31 FRS compliance patch. It closes confirmed MVP gaps that are feature work rather than U31 integration fixes; U31 now depends on U28 and U30A.
+- Automation-only validation on 2026-10-09: PowerShell parser reported no syntax errors; all four JSON schemas passed `ConvertFrom-Json`; dry runs for `U26→U31`, `U30` only and `U30A→U31` resolved the expected task order and invoked neither Codex, Unity, shutdown nor the long soak. `git diff --check` passed with line-ending notices only. No Unity source/package/project setting changed, so no Unity test suite or Player build was run for this automation/documentation patch.
+- Exact final validation commands/results: PowerShell AST parse of `serenity_automation/serenity_night_automation_v3/Run-Serenity-Night.ps1` via `[System.Management.Automation.Language.Parser]::ParseFile(...)` -> `PowerShell syntax: OK`; `Get-ChildItem serenity_automation/serenity_night_automation_v3 -Filter '*.schema.json' | ... | ConvertFrom-Json` -> 4/4 parsed; `& serenity_automation/serenity_night_automation_v3/Run-Serenity-Night.ps1 -Repo C:\serenity_game -DryRun -NoShutdown -StartTask U26 -FinalTask U31 -RunBase C:\serenity_game\Logs\AutomationDryRun` -> expected seven-task order, `clean=True`, and no external actions; `git diff --cached --check` -> passed before commit.
+
 ## U25 global map and local/global mode
 - `GlobalMapService` owns a validated six-location/two-settlement starter graph, routes, active mode/location, settlement stable-ID references and in-progress logical travel. It contains no Unity object or copied Character, Building, unit or battle.
 - `GameModeTransitionService` composes the existing TierManager, U21 representation, U22 player control and U23 battle transition boundaries. Mode commits last; failures compensate tiers, units, battle modes and TPS ownership.

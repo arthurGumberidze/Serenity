@@ -1,0 +1,445 @@
+U26 — AI ОДНОГО ГОСУДАРСТВА / STRATEGIC AI
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U25 должны быть DONE.
+- U25 обязан предоставить canonical Global Map, WorldLocation/Settlement, Local↔Global transition, global travel и интеграцию U23 abstract battle.
+- Актуальный TASK_GRAPH: U26 зависит от U08,U09,U14,U15,U16,U17,U18,U21,U23,U24,U25.
+- Definition of Done: AI развивается, создаёт армию, атакует и может быть захвачен.
+- U27 НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Реализовать одного полноценного автономного AI-соперника, который без GameObject-обязательности и без читов:
+- развивает своё поселение;
+- управляет базовыми ресурсами/production;
+- выбирает research;
+- формирует military unit;
+- назначает captain;
+- перемещает армию по U25 global map;
+- выбирает враждебную цель;
+- вступает в U23 abstract battle;
+- после победы использует U24 capture;
+- может проиграть, потерять армию/правителя и быть захвачен.
+
+Это strategic layer, НЕ tactical combat rewrite.
+
+==================================================
+2. СНАЧАЛА ИЗУЧИ
+==================================================
+
+Изучи:
+- U14 deterministic off-camera;
+- U15 production/target-stock;
+- U16 research tree/unlocks;
+- U17 dynasty/ruler;
+- U18 health/population;
+- U21 military units/captains;
+- U23 physical/abstract battle;
+- U24 building owner/capture;
+- U25 GlobalMap/Settlement/travel;
+- current save snapshot version и persistence;
+- owner/side identifiers, чтобы не создать несовместимый тип.
+
+До проектирования зафиксируй ownership map для player и AI: какой существующий service/registry владеет Characters, dynasty, research, inventories, buildings, production sites, military units, settlements и battles. Нельзя позволить AI использовать player research progress, target stocks, food pool или workers. Если текущая authority session-wide, обобщи её существующую модель до state/settlement scope с одним типом authority и совместимой миграцией; не создавай параллельный `AiResearchService`, `AiInventory` или `AiProductionService`.
+
+==================================================
+2A. NORMAL RUNTIME BOOTSTRAP
+==================================================
+
+U26 должен создать реального AI-соперника в normal new-game/runtime composition, а не только в unit test fixture:
+- существующий U25 enemy settlement/location;
+- canonical AI ruler and dynasty;
+- canonical resident Characters with unique StableEntityIds;
+- AI-owned inventories/resources;
+- AI-owned buildings/production sites;
+- independent U16 research state;
+- AI strategic state bound to the same owner/settlement/side IDs.
+
+Bootstrap должен быть deterministic from world seed/config, data-driven where content/balance is involved, сохраняться обычным snapshot и не зависеть от debug button. U31 later may polish the full new-game flow, but it must not have to invent the AI state from scratch.
+
+==================================================
+3. STRATEGIC AI DOMAIN
+==================================================
+
+Создай engine-independent state/service, например:
+- `AiStateId`
+- `AiStrategicState`
+- `AiStrategicGoal`
+- `AiDecision`
+- `AiDecisionService`
+- `AiStrategicScheduler`
+
+Canonical AI state хранит stable references:
+- owner/state/settlement ID;
+- ruler Character ID;
+- known own settlements;
+- known military units;
+- current strategic objective;
+- target settlement/location;
+- decision cooldown/checkpoint;
+- pending orders;
+- recent decision history.
+
+Не хранить GameObject refs.
+
+==================================================
+4. НИКАКОГО CHEAT AI
+==================================================
+
+AI не может:
+- создавать ресурсы из воздуха;
+- создавать soldiers без Character;
+- мгновенно открывать tech;
+- напрямую задавать battle winner;
+- читать future RNG/outcomes;
+- телепортировать units;
+- напрямую менять owner buildings.
+
+Все действия через существующие canonical services.
+
+==================================================
+5. DECISION TICK
+==================================================
+
+Strategic AI работает централизованно по game ticks.
+Не каждый render frame.
+
+Сделай data-driven decision interval.
+Same state + seed + tick => same decisions.
+
+При ties:
+stable scoring + stable ID tie-break.
+
+==================================================
+6. DEVELOPMENT / ECONOMY
+==================================================
+
+AI использует U15:
+- оценивает food/material shortages;
+- поддерживает минимальные target stocks;
+- активирует/разрешает production через существующие policies;
+- не создаёт отдельную AI economy.
+
+AI также обязан реально развивать settlement через существующие U08/U09/U15/U16 boundaries:
+- выбирает доступный building need;
+- проверяет research unlock, placement/occupancy и реальную стоимость;
+- резервирует/тратит canonical resources;
+- создаёт минимум одно новое полезное AI-owned building/site в baseline scenario;
+- не вызывает player-only placement controller и не создаёт бесплатное completed building напрямую.
+
+Если существующий placement/funding API hardcoded to player, вынеси owner/settlement scope в общий command/service и оставь UI только adapter. Не дублируй building registry или construction rules.
+
+Не реализовывать taxes/trade/faction economy.
+
+==================================================
+7. RESEARCH
+==================================================
+
+AI использует U16:
+- выбирает только available technology;
+- уважает prerequisites;
+- не открывает tech напрямую;
+- детерминированный выбор при нескольких вариантах;
+- цель Stone Age progression.
+
+Research choice должен быть объясним через scoring/debug output.
+
+==================================================
+8. POPULATION / HEALTH / DYNASTY
+==================================================
+
+AI учитывает:
+- alive/adult/capable population;
+- incapacitated/children exclusion;
+- ruler/dynasty state U17;
+- births/deaths U18.
+
+Не реализовывать autonomous romance/politics.
+
+Если AI dynasty extinct / GameOver-like state:
+поведение должно быть explicit и не crash.
+
+==================================================
+9. MILITARY PLANNING
+==================================================
+
+AI через U21:
+- создаёт military unit только из eligible Characters;
+- не дублирует membership;
+- назначает captain через существующие rules;
+- оценивает combat-capable count;
+- может восстановить army после потерь.
+
+Не делать новый army model.
+
+==================================================
+10. THREAT / TARGET SELECTION
+==================================================
+
+Минимум один hostile target settlement.
+
+Target scoring должен быть deterministic и data-driven.
+Можно учитывать:
+- route distance/travel time;
+- own vs estimated target military strength;
+- settlement ownership;
+- active battle/conflict.
+
+Не внедрять diplomacy U36.
+
+==================================================
+11. GLOBAL TRAVEL
+==================================================
+
+Используй U25 travel API.
+AI:
+- выдаёт travel order;
+- ждёт arrival tick;
+- не телепортируется;
+- Save/Load сохраняет pending travel.
+
+Никакого второго global movement system.
+
+==================================================
+12. BATTLE
+==================================================
+
+Когда hostile units встречаются:
+- использовать U23 battle API;
+- abstract mode по умолчанию off-camera;
+- AI не рассчитывает casualty сам.
+
+Physical entry остаётся player/global-map concern.
+
+==================================================
+13. CAPTURE
+==================================================
+
+После реальной U23 victory:
+- AI использует U24 capture validation/service;
+- existing building IDs сохраняются;
+- owner changes canonically.
+
+Не менять owner напрямую в AI code.
+
+Захват settlement должен быть одной orchestration transaction/compensated operation над существующими authorities:
+- проверить finished hostile battle and winner;
+- захватить документированный key building set через U24;
+- синхронизировать U25 settlement owner без создания нового settlement;
+- обновить AI controlled-settlement/defeat state exactly once;
+- при промежуточной ошибке не оставлять половину зданий и settlement с противоречивыми owners.
+
+Точное MVP defeat rule должно ссылаться на canonical settlement ownership и быть одинаковым для player и AI capture paths.
+
+==================================================
+14. AI МОЖЕТ ПРОИГРАТЬ
+==================================================
+
+Обязательный сценарий:
+- AI army разгромлена;
+- target не захвачен;
+- AI state остаётся корректным;
+- может сформировать replacement, если есть люди/ресурсы;
+- если settlement/army lost, никакой auto-win cheat.
+
+==================================================
+15. PLAYER МОЖЕТ ЗАХВАТИТЬ AI
+==================================================
+
+Нужен canonical condition для "AI state defeated/captured", пригодный U31.
+Не делать финальную victory screen.
+Достаточно domain state/result:
+- main settlement captured / no viable controlled settlement according to documented MVP rule.
+
+Документируй точное правило defeat.
+
+==================================================
+16. MULTIPLE AI READY
+==================================================
+
+Реализация должна поддерживать >1 AiStrategicState, хотя demo может иметь один AI.
+Не hardcode singleton enemy named "Enemy".
+
+==================================================
+17. OFF-CAMERA
+==================================================
+
+AI должен полностью работать в Global mode / Tier3/off-camera.
+No GameObject requirement.
+
+Catch-up не должен повторять decisions.
+Last processed decision tick/state required.
+
+==================================================
+18. SAVE / LOAD
+==================================================
+
+Сохранять:
+- strategic state;
+- active goal;
+- target;
+- decision checkpoint;
+- pending orders;
+- AI-owned entity references;
+- defeat state;
+- any deterministic sequence counters.
+
+Используй текущую snapshot version; повышай только если формат реально меняется.
+Все старые версии сохраняют compatibility.
+
+==================================================
+19. DEBUG AI UI
+==================================================
+
+Добавь debug overlay:
+- AI state/owner;
+- ruler;
+- settlement;
+- food/material summary;
+- current research;
+- army/unit strength;
+- current goal;
+- target;
+- travel state;
+- battle state;
+- last decision tick;
+- defeat status.
+
+Debug controls допускаются только для inspect/advance, не для искусственного "win".
+
+==================================================
+20. INVALID STATES
+==================================================
+
+Cleanly handle:
+- no eligible workers;
+- no research available;
+- no military candidates;
+- captain death;
+- route unavailable;
+- target already captured;
+- active battle already exists;
+- ruler changes;
+- settlement lost;
+- unit destroyed;
+- save references missing/corrupt.
+
+No NullReference.
+
+==================================================
+21. DO NOT IMPLEMENT
+==================================================
+
+Не делать:
+- U27 final UI;
+- diplomacy;
+- alliances/treaties;
+- trade;
+- taxes/corruption;
+- ministers;
+- laws/protests;
+- espionage;
+- multiple strategic doctrines depth;
+- cheating omniscient AI;
+- new tactical combat AI.
+
+==================================================
+22. TESTS
+==================================================
+
+Focused U26:
+- deterministic decision selection;
+- economy target reaction;
+- research selection;
+- independent player/AI research and inventory isolation;
+- deterministic normal-runtime AI bootstrap;
+- AI construction spends real resources and respects unlock/occupancy;
+- military unit creation;
+- captain assignment;
+- travel order;
+- hostile encounter starts U23;
+- victory triggers U24 capture;
+- settlement capture transaction cannot leave partial ownership;
+- loss leaves valid state;
+- save/load no repeated decision;
+- collection-order independence;
+- multiple AI states isolation.
+
+Critical regressions:
+U14, U16, U17, U21, U23, U24, U25, persistence.
+
+==================================================
+23. LONG-RUN INTEGRATION
+==================================================
+
+Engine-independent scenario:
+AI starts with modest settlement/population/resources.
+Over accelerated time it must:
+- produce;
+- research;
+- form army;
+- move;
+- attack.
+
+Result may be win or loss depending deterministic setup, but one configured baseline must demonstrate full successful attack/capture path.
+
+No direct final-state mutation.
+
+==================================================
+24. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- strategic AI is canonical and deterministic;
+- uses existing economy/research/military/global/combat/capture services;
+- develops without cheats;
+- exists in normal runtime/new game, not only tests;
+- owns independent research/resources/production state;
+- constructs at least one useful building through canonical rules;
+- creates army/captain;
+- moves globally;
+- attacks;
+- can win/capture;
+- settlement ownership and defeat resolve atomically/exactly once;
+- can lose;
+- save/load works;
+- off-camera works;
+- baseline end-to-end AI development→attack scenario passes;
+- Windows build passes;
+- docs updated;
+- U27 not started.
+
+COMMIT
+`U26: implement strategic AI state`

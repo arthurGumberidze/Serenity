@@ -1,0 +1,317 @@
+U31 — MVP INTEGRATION GATE
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U30A expected DONE.
+- TASK_GRAPH depends U08,U10,U13,U16,U17,U19,U22,U23,U25,U26,U27,U28,U29,U30,U30A.
+- Definition of Done: новая игра проходит до захвата AI-государства без ручной правки данных.
+- Это финальный Stone Age MVP gate.
+- U32 POST-MVP НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Доказать, что Serenity уже является цельной игрой Stone Age MVP, а не набором раздельных systems.
+
+Новая игра:
+start
+→ resources
+→ buildings
+→ food
+→ research
+→ dynasty/health/weather
+→ military
+→ local/global
+→ AI opponent
+→ battle
+→ capture/defeat AI state
+
+без ручной правки XML/database/domain state.
+
+==================================================
+2. НИКАКОГО НОВОГО SCOPE
+==================================================
+
+U31 исправляет integration bugs.
+Не добавляет:
+- Wealth/Influence;
+- ministries;
+- taxes;
+- diplomacy;
+- espionage;
+- later eras.
+
+==================================================
+3. NEW GAME BOOTSTRAP
+==================================================
+
+Проверь canonical new-game flow:
+- seed/world;
+- player settlement;
+- AI settlement;
+- exactly 10 starting player Characters with a valid monarch/dynasty;
+- viable independent AI ruler/dynasty/population;
+- resources;
+- research starting knowledge;
+- global map locations.
+
+No hidden test-only final state.
+Same seed/config produces the documented stable logical bootstrap hash. Starting a new game after a prior session does not duplicate roots/subscriptions.
+
+==================================================
+4. PLAYER UI ONLY FLOW
+==================================================
+
+Основной player-facing path должен быть доступен через U27 UI/normal controls.
+Debug UI не требуется.
+
+The E2E must drive the critical path through actual U27/U30A UI commands where PlayMode/UI automation can do so: New Game, time, selection/work, building, research, Save/Load, Local/Global, travel and battle entry. Direct service calls are allowed for lower-level setup/assertion only and cannot be the sole evidence that a player-facing action is reachable.
+
+Test harness может вызывать те же canonical commands/services, но не мутировать финальное state напрямую.
+
+==================================================
+5. ECONOMY/SURVIVAL
+==================================================
+
+Player settlement:
+- gather/store;
+- build;
+- produce food/material;
+- survive seasons;
+- no resource duplication;
+- health conditions don't deadlock basic progression.
+
+==================================================
+6. RESEARCH
+==================================================
+
+Stone Age tree progresses.
+Required unlocks become available.
+No impossible deadlock.
+
+==================================================
+7. DYNASTY
+==================================================
+
+Ruler/heir state remains valid.
+At least save/load around dynasty/family state.
+Succession need not be forced in every E2E, but system must remain valid.
+
+==================================================
+8. MILITARY
+==================================================
+
+Create military unit/captain from canonical Characters.
+Move on global map.
+No duplicate roster.
+
+==================================================
+9. AI OPPONENT
+==================================================
+
+U26 AI actually develops independently and can launch action.
+E2E must include real AI state, not static dummy only.
+AI must construct at least one useful building/site through canonical resource/unlock rules during the campaign.
+
+==================================================
+10. BATTLE
+==================================================
+
+At least one canonical U23 battle must exercise both representations during the campaign:
+- Abstract advancement off-camera;
+- transition to Physical without reset;
+- RTS player command/attack in Physical;
+injuries/deaths persist;
+captain/ruler integrations remain valid.
+
+==================================================
+11. CAPTURE / VICTORY CONDITION
+==================================================
+
+Use U24/U26 canonical defeat/capture rule.
+No direct set `AI.Defeated=true` in test.
+
+End state:
+AI state genuinely defeated/captured according to documented MVP rule.
+Victory is recorded exactly once and the same campaign continues in sandbox mode afterward; time, production and Save/Load remain operational.
+
+==================================================
+12. LOCAL↔GLOBAL
+==================================================
+
+Transition at least multiple times during E2E.
+No regenerated Character/Building/Army.
+
+==================================================
+13. RTS↔TPS
+==================================================
+
+Required integrated combat check:
+- enter TPS with the same eligible monarch/heir/captain during a Physical U20/U23 battle;
+- aim and perform at least one canonical attack through shared U20 rules;
+- companions continue AI orders;
+- return RTS;
+- Character, unit, battle, health, target and cooldown state remain preserved.
+
+TPS does not have to deliver the winning blow, but movement-only smoke is insufficient.
+
+==================================================
+13A. DISCOVERY AND SUPPLY
+==================================================
+
+- The player must discover/contact the initially unknown AI state through the canonical U30A knowledge boundary before using full enemy details.
+- Player and AI armies consume/preserve canonical minimal Stone Age supply during travel/battle.
+- Physical↔Abstract and Save/Load cannot refill, duplicate or lose supply.
+
+==================================================
+14. EVENTS
+==================================================
+
+U28 event system active.
+No event duplication.
+Player-choice event handling does not block campaign incorrectly.
+
+==================================================
+15. SAVE/LOAD CHECKPOINTS
+==================================================
+
+E2E must save/reload representative points:
+- early settlement;
+- after research progression;
+- global travel/battle;
+- after major capture if practical.
+
+Continue same campaign.
+
+==================================================
+16. DETERMINISM
+==================================================
+
+Automated canonical E2E fixed seed should produce stable major milestones/hash under same command sequence.
+
+Don't require identical graphical transforms.
+
+==================================================
+17. PERFORMANCE
+==================================================
+
+Re-run/consume U29 final performance gates.
+No regression introduced by U31 fixes.
+
+==================================================
+18. SOAK
+==================================================
+
+Run U30 short integrated soak after final fixes.
+If real 8h soak was separately done, reference results honestly.
+
+==================================================
+19. FULL DEEP VALIDATION
+==================================================
+
+ЗДЕСЬ НЕ ЭКОНОМИТЬ.
+
+Run:
+- full EditMode;
+- full PlayMode;
+- focused U31 E2E;
+- persistence;
+- legacy snapshots;
+- deterministic/tier/catch-up gates;
+- U29 performance gates;
+- U30 short soak;
+- GPU PlayMode;
+- Windows x64 Mono Development build;
+- logs;
+- git diff checks.
+
+PostgreSQL integration:
+- run if test DB configured;
+- otherwise state NOT RUN, not passed.
+
+==================================================
+20. BUG FIX POLICY
+==================================================
+
+Any integration bug:
+- identify owning system;
+- minimal fix;
+- regression test where practical.
+No broad rewrite without evidence.
+
+==================================================
+21. PLAYER READINESS REVIEW
+==================================================
+
+Create `MVP_READINESS.md`:
+- what is playable;
+- start-to-victory flow;
+- controls;
+- placeholder visuals;
+- known balance issues;
+- debug-only leftovers;
+- known nonblocking defects;
+- U32+ backlog boundaries.
+
+==================================================
+22. RELEASE-LIKE BUILD
+==================================================
+
+Windows x64 Mono Development build mandatory.
+Optionally smoke standalone executable if tooling available.
+Do not claim manual standalone click test if unavailable.
+
+==================================================
+23. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- clean new game reaches genuine AI defeat/capture;
+- no manual data edits;
+- normal player UI exposes needed actions;
+- save/load continuation works;
+- Local/Global works;
+- AI works;
+- combat/capture works;
+- full suites pass;
+- performance gate passes;
+- short soak passes;
+- build succeeds;
+- no critical invariant violation;
+- exact ten-character player bootstrap, discovery, AI construction, supply and TPS attack paths pass;
+- victory is exactly once and post-victory sandbox continuation works;
+- docs/readiness updated;
+- U32 NOT started.
+
+COMMIT
+`U31: pass Stone Age MVP integration gate`

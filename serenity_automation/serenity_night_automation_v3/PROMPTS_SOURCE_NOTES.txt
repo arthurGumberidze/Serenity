@@ -1,0 +1,23 @@
+PROMPTS SOURCE / DESIGN NOTES
+=============================
+
+The U26-U31 prompts use four authoritative layers:
+
+1) Current repository TASK_GRAPH/NEXT_TASK/PROJECT_STATE.
+2) Implemented architecture and handoffs through U25 and later task outputs as the chain advances.
+3) FRS Unity MVP requirements, especially NPC states, strategic war, events, UI, saves, performance and the start-to-AI-capture MVP flow.
+4) Explicit project decisions in DECISIONS.md.
+
+Important corrections in this v3 package:
+
+- U26 requires a normal-runtime independent AI state, scoped research/resources/production, canonical AI construction and compensated settlement capture.
+- U27 includes normal player Save/Load and U11 work-group/job actions.
+- U28 explicitly requires persisted event chains, weights and cooldowns.
+- U29 has a fixed 1000-character tier mix and a hard p95 33.33 ms Windows Player gate derived from the FRS minimum 30 FPS target.
+- U30 cannot be marked DONE from a short soak or runner readiness. The actual >=8-hour run executes externally without an active Codex process, then a fresh finalizer audits it.
+- U30A is a new pre-U31 FRS compliance patch for exact 10-character New Game, discovery, AI construction verification, canonical minimal supply, TPS attack through U20 and post-victory continuation.
+- U31 is integration-only and now requires the U30A paths.
+
+At execution time every agent MUST read current repository files. Historical uploaded copies never override repository state.
+
+The automation must be committed or stored outside the repository before use. Runtime logs and U30 soak artifacts are external to the Git worktree.

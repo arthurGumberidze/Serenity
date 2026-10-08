@@ -1,0 +1,258 @@
+U29 — PERFORMANCE GATES 100→300→500→1000
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U28 expected DONE.
+- TASK_GRAPH depends U10,U12,U13,U14,U20,U26,U27,U28.
+- Definition of Done: 1000 NPC test scene reaches agreed FPS/frametime without runaway allocations.
+- Это optimization/measurement task, НЕ feature task.
+- U30 НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Создать воспроизводимые performance gates и исправить измеренные bottlenecks так, чтобы архитектура уверенно проходила 100/300/500/1000 population-equivalent scenarios.
+
+==================================================
+2. PROFILE FIRST
+==================================================
+
+Никакого speculative rewrite.
+Сначала baseline measurements.
+Каждое существенное optimization сопровождается before/after.
+
+==================================================
+3. HARD INVARIANTS
+==================================================
+
+Нельзя ради FPS:
+- отключать обязательную simulation;
+- ломать determinism;
+- менять identities;
+- уменьшать population hiddenly;
+- обходить gameplay systems;
+- отключать health/weather/AI without scenario documentation.
+
+==================================================
+4. BENCHMARK HARNESS
+==================================================
+
+Создай reproducible harness/config:
+- fixed seed;
+- fixed hardware/report metadata;
+- scenario IDs;
+- warm-up;
+- timed window;
+- repeat count;
+- output JSON/CSV/text report.
+
+No UI manual timing as sole evidence.
+
+==================================================
+5. POPULATION GATES
+==================================================
+
+At least:
+- 100
+- 300
+- 500
+- 1000
+
+Measure active mix appropriate to architecture:
+real canonical Characters distributed across Tier1/Tier2/Tier3.
+
+Do not force 1000 GameObjects.
+
+The mandatory 1000-character representative gate uses exactly 1000 unique addressable canonical Characters with a recorded default mix of 250 Tier1, 500 Tier2 and 250 Tier3. A second configuration may tune the mix, but it cannot replace this baseline or hide population in a scalar counter. Tier1 presenters may use existing pooling/LOD, while every Character keeps a real StableEntityId and valid tier record.
+
+==================================================
+6. SCENARIOS
+==================================================
+
+A. Settlement simulation:
+production, research, health, weather, events.
+
+B. Tier transition churn:
+camera/representation promotions/demotions.
+
+C. Global map:
+many units/locations/travel + AI.
+
+D. Abstract combat:
+large battles / multiple battles.
+
+E. Physical combat:
+representative visible combat, not necessarily 1000 visible fighters.
+
+F. UI:
+normal U27 HUD/panels enabled.
+
+G. Save serialization observation.
+
+==================================================
+7. METRICS
+==================================================
+
+Capture:
+- average/p50/p95 frame or simulation-step time;
+- managed allocations;
+- GC counts;
+- main-thread hotspots;
+- ECS/job timings if available;
+- memory snapshot/working set where practical;
+- entity/GameObject counts.
+
+==================================================
+8. THRESHOLDS
+==================================================
+
+These thresholds are fixed for the U29 development gate and may not be relaxed by the implementation agent:
+
+- Windows x64 Development Player, normal U27 UI enabled, representative camera: measured p95 frame time <= 33.33 ms after warm-up for the mandatory 1000-character mix. This is the FRS minimum stable-30-FPS gate.
+- Report median/p50 against the 16.67 ms 60-FPS target. Missing 60 FPS is documented but is not by itself a U29 failure when the hard 30-FPS p95 gate passes.
+- Measurement window >= 5 minutes after >= 60 seconds warm-up, at least 3 repeats; use the worst repeat for pass/fail.
+- Simulation-only/headless results are reported separately and cannot substitute for the Player/GPU frame gate.
+- No unbounded or monotonic managed-memory growth across the three steady-state windows after warm-up/GC normalization; no recurring GC storm. Report absolute allocations, GC counts and working-set trend rather than claiming zero leak from one snapshot.
+- No single hidden reduction of active systems, character count or tier workload is allowed between 100/300/500/1000 gates.
+
+Record CPU, GPU, RAM, OS, Unity version, resolution, quality settings, VSync/frame cap and exact tier mix. If the environment cannot execute a real GPU/Player measurement, return NOT DONE; do not replace it with editor/headless timing or change the threshold.
+
+==================================================
+9. RUNAWAY ALLOCATIONS
+==================================================
+
+Mandatory:
+no allocation growth proportional to elapsed time in steady-state loops where zero/low allocation was designed.
+
+Identify:
+LINQ, temporary lists, string/UI churn, repeated sorting, event subscriptions, materialization churn.
+
+==================================================
+10. OPTIMIZATION ORDER
+==================================================
+
+Prefer:
+- reduce frequency;
+- batch;
+- cache stable queries;
+- avoid re-sorting unchanged data;
+- reuse buffers;
+- ECS jobs;
+- UI throttling.
+
+Avoid giant architecture rewrite unless profiling proves necessity.
+
+==================================================
+11. DETERMINISM AFTER OPTIMIZATION
+==================================================
+
+Re-run hashes/contracts relevant to any optimized subsystem.
+Optimization must not change logical result unexpectedly.
+
+==================================================
+12. UI PERFORMANCE
+==================================================
+
+U27 normal player UI must be enabled during representative benchmark.
+Do not benchmark only with all UI disabled.
+
+Throttle noncritical refresh rather than polling every frame.
+
+==================================================
+13. AI PERFORMANCE
+==================================================
+
+U26 strategic AI decision cadence should not scale pathologically with population/state count.
+Measure multiple AI states if supported.
+
+==================================================
+14. SAVE PERFORMANCE
+==================================================
+
+Observe save size/time for 1000 population scenario.
+Do not redesign persistence unless clearly necessary.
+
+==================================================
+15. REPORT
+==================================================
+
+Create `PERFORMANCE_GATES.md`:
+- hardware/software;
+- scenarios;
+- before/after;
+- thresholds;
+- bottlenecks;
+- fixes;
+- remaining limits;
+- recommended future scale.
+
+==================================================
+16. TESTS
+==================================================
+
+Focused performance harness tests.
+Critical correctness tests only for modified systems.
+This is milestone:
+- full EditMode once;
+- full PlayMode once;
+- GPU;
+- Windows build;
+- deterministic regression after optimization.
+
+==================================================
+17. DO NOT IMPLEMENT
+==================================================
+
+No new gameplay features.
+No U30 soak implementation.
+No content expansion.
+No premature DOTS rewrite of everything.
+
+==================================================
+18. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- reproducible gates exist;
+- 100/300/500/1000 measured;
+- mandatory 250/500/250 real-character 1000 gate meets p95 <=33.33 ms in a Windows Development Player with normal UI;
+- no runaway allocations;
+- important bottlenecks fixed/documented;
+- deterministic behavior preserved;
+- UI-enabled scenario included;
+- report exists;
+- build/tests pass;
+- U30 not started.
+
+COMMIT
+`U29: establish performance gates`

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task",
+    "prepared",
+    "commit_created",
+    "commit_hash",
+    "working_tree_clean",
+    "short_soak_passed",
+    "checkpoint_resume_passed",
+    "determinism_passed",
+    "build_passed",
+    "runner_path",
+    "next_task_started",
+    "blocking_reason",
+    "summary"
+  ],
+  "properties": {
+    "task": { "const": "U30" },
+    "prepared": { "type": "boolean" },
+    "commit_created": { "type": "boolean" },
+    "commit_hash": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "working_tree_clean": { "type": "boolean" },
+    "short_soak_passed": { "type": "boolean" },
+    "checkpoint_resume_passed": { "type": "boolean" },
+    "determinism_passed": { "type": "boolean" },
+    "build_passed": { "type": "boolean" },
+    "runner_path": { "type": "string", "minLength": 1 },
+    "next_task_started": { "type": "boolean" },
+    "blocking_reason": { "type": "string", "maxLength": 2000 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 4000 }
+  }
+}

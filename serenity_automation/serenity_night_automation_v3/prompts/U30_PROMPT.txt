@@ -1,0 +1,271 @@
+U30 — AUTOMATED TESTS AND SOAK
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед любыми изменениями проверь `git status`. Если рабочее дерево не чистое и изменения не относятся к текущей задаче — не удаляй их вслепую, остановись и сообщи причину.
+- Обязательно прочитай актуальные файлы ИМЕННО ИЗ РЕПОЗИТОРИЯ:
+  - `docs/TASK_GRAPH.md`
+  - `docs/NEXT_TASK.md`
+  - `docs/PROJECT_STATE.md`
+  - `docs/ARCHITECTURE.md`
+  - `docs/DECISIONS.md`
+  - релевантные `docs/UXX_HANDOFF.md`
+  - task-specific design docs.
+- Uploaded/старые копии TASK_GRAPH/NEXT_TASK не считать актуальнее файлов в repository.
+- Сначала изучи существующие API и точки интеграции; reuse-first.
+- Не создавай параллельные Character / StableEntityId / Tier / Time / Save / Resources / Health / Combat / Military / Global Map / UI foundations.
+- `Character Domain != Character GameObject != DOTS Entity representation`.
+- `StableEntityId` — постоянная identity.
+- PostgreSQL — только durable persistence/history, НЕ realtime engine.
+- Presentation/UI не владеют authoritative gameplay state.
+- Save/Load не должен делать reroll deterministic state.
+- Resource quantity всегда имеет одного canonical owner.
+- Не использовать `MonoBehaviour.Update` на каждый NPC/army/event/system object, если уже есть centralized/batched infrastructure.
+- Не начинать следующий roadmap task.
+- Если обязательный gate не выполнен — остановись и верни `done=false`.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `UXX_HANDOFF.md` и task-specific design doc при необходимости.
+- Validation policy: focused tests + критические regressions прямых зависимостей + persistence/determinism/tier checks по необходимости + Windows x64 Mono Development build + console/log inspection + `git diff --check` + staged review.
+- Не гоняй каждую старую suite отдельно без причины; milestone-задачи U27/U31 имеют более широкий прогон.
+- Commit только после всех gates. Один основной commit, subject начинается с ID задачи. Не push.
+- Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
+
+ТЕКУЩАЯ ТОЧКА
+- U00–U29 expected DONE.
+- TASK_GRAPH depends U04A,U10,U13,U14,U23,U26,U28,U29.
+- Official DoD references 8+ hours accelerated simulation without critical errors/leaks.
+- U30 выполняется в три фазы: Codex готовит/проверяет harness и оставляет task IN_PROGRESS; затем внешний PowerShell/Unity process реально работает не менее 8 wall-clock hours без активного Codex; отдельный Codex finalizer проверяет artifacts и только после этого ставит DONE.
+- Short soak или наличие готового runner НИКОГДА не заменяет фактический 8h result.
+- U31 НЕ начинать.
+
+==================================================
+1. ЦЕЛЬ
+==================================================
+
+Создать надежный soak/reliability harness:
+- short CI-like accelerated soak;
+- restart/checkpoint recovery;
+- 8+ hour unattended runner;
+- invariant monitoring;
+- reproducible failure artifacts.
+
+==================================================
+2. SHORT MANDATORY SOAK
+==================================================
+
+Во время U30 обязательно реально выполнить short accelerated soak разумной wall-clock длительности.
+
+Он должен покрывать большое количество game time/steps и одновременно:
+- production;
+- research;
+- dynasty;
+- health/birth/death;
+- weather;
+- military;
+- physical/abstract combat where feasible;
+- fire/capture;
+- global travel;
+- strategic AI;
+- events.
+
+==================================================
+3. 8+ HOUR RUNNER
+==================================================
+
+Создай отдельный command/script:
+обязательно `Tools/Run-Soak-U30.ps1`.
+
+Parameters:
+- `-Seed <int>`;
+- `-WallClockHours <int>` default 8 and minimum 8 for the official gate;
+- `-CheckpointIntervalMinutes <int>`;
+- `-OutputFolder <absolute path>`;
+- optional `-ResumeFromCheckpoint <absolute path>`.
+
+Он должен реально уметь 8h unattended, даже если current task runner не ждёт 8h.
+
+Contract:
+- exit code 0 only on a passing completed run;
+- non-zero on invariant/watchdog/exception/duration/result-write failure;
+- atomically write `<OutputFolder>\soak-result.json`;
+- all logs/checkpoints/artifacts stay under OutputFolder supplied by the external orchestrator, outside the Git worktree;
+- do not invoke Codex/OpenAI APIs from the soak runner.
+
+`soak-result.json` mandatory fields:
+- `passed` boolean;
+- `seed` integer;
+- `requested_wall_clock_seconds` integer;
+- `actual_wall_clock_seconds` integer;
+- `started_utc`, `completed_utc` ISO timestamps;
+- `critical_errors`, `invariant_failures`, `watchdog_failures` integers;
+- `memory_runaway_detected` boolean;
+- `checkpoint_resume_verified` boolean;
+- `final_state_hash` non-empty string;
+- `summary` string.
+
+==================================================
+4. PROGRESS / HEARTBEAT
+==================================================
+
+Every interval write:
+- wall time;
+- game tick/date;
+- population;
+- resources;
+- battles;
+- AI state;
+- memory;
+- current hash;
+- last save/checkpoint.
+
+No silent hang.
+
+==================================================
+5. INVARIANTS
+==================================================
+
+Continuously/periodically assert:
+- unique StableEntityIds;
+- no duplicate canonical resource ownership;
+- nonnegative quantities;
+- no duplicate children/births;
+- no repeated death/succession;
+- no impossible dynasty refs;
+- valid military membership;
+- no duplicate battle participants;
+- no stuck transition half-state;
+- valid building ownership;
+- no fire reprocessing;
+- valid event exactly-once state;
+- no AI invalid target loops.
+
+==================================================
+6. MEMORY / LEAK SIGNALS
+==================================================
+
+Track managed memory/alloc trends where possible.
+Don't claim "no leak" from one snapshot.
+Detect monotonic runaway patterns / repeated growth after GC.
+
+==================================================
+7. SAVE/LOAD CYCLING
+==================================================
+
+Soak periodically:
+- save;
+- reload or checkpoint-validate;
+- continue.
+
+Need prove continuation doesn't reroll/duplicate.
+
+==================================================
+8. FAILURE ARTIFACTS
+==================================================
+
+On first critical failure write:
+- seed;
+- tick/date;
+- scenario;
+- exception/assert;
+- last hashes;
+- latest checkpoint;
+- minimal reproduction command;
+- logs.
+
+Then exit non-zero.
+
+==================================================
+9. RESUME
+==================================================
+
+Test that an interrupted soak can resume from checkpoint and continue without duplicate effects.
+
+==================================================
+10. DETERMINISM
+==================================================
+
+Short soak same seed/config repeated should end same logical hash where no external nondeterministic input.
+
+==================================================
+11. WATCHDOG
+==================================================
+
+Harness must detect stalled simulation/progress timeout and fail, not hang forever.
+
+==================================================
+12. PERFORMANCE INTEGRATION
+==================================================
+
+Reuse U29 benchmark utilities where appropriate.
+Do not build another profiler system.
+
+==================================================
+13. 8H VALIDATION STATUS
+==================================================
+
+Preparation phase:
+- run focused tests, short soak, deterministic repeat, checkpoint/resume and Windows build;
+- create the runner and documentation;
+- update U30 to IN_PROGRESS, keep NEXT_TASK on U30, commit subject beginning `U30`;
+- return the preparation schema supplied by the orchestrator;
+- do not mark U30 DONE and do not start U30A/U31.
+
+External phase:
+- the night orchestrator launches `Tools/Run-Soak-U30.ps1` for at least 8 hours and waits without an active Codex session;
+- it validates exit code and structured result before starting the finalizer.
+
+Finalization phase:
+- a fresh Codex run reads the external structured result and supporting logs/checkpoints;
+- verifies actual duration >= requested duration >= 28800 seconds and every failure counter/flag;
+- updates PROJECT_STATE/TASK_GRAPH/NEXT_TASK/DECISIONS and U30_HANDOFF with exact evidence;
+- commits `U30: validate 8 hour soak` and returns normal stage-result JSON.
+
+If the external run was not executed, was shorter than 8 hours, has missing evidence or reports any critical failure, U30 remains IN_PROGRESS/NOT DONE. Never edit the DoD to turn runner readiness into completion.
+
+==================================================
+14. TESTS
+==================================================
+
+- harness unit/focused;
+- short soak real run;
+- checkpoint/restart;
+- deterministic repeat;
+- failure injection catches invariant;
+- watchdog;
+- U29 regression;
+- Windows build.
+
+No need full historical suite unless soak reveals failure.
+
+==================================================
+15. DOCUMENTATION
+==================================================
+
+Create:
+- `U30_HANDOFF.md`
+- `SOAK_TESTING.md`
+
+Exact commands:
+short soak;
+8h soak;
+resume;
+where logs/checkpoints live.
+
+==================================================
+16. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- automated soak harness exists;
+- short integrated soak passes;
+- invariant monitoring works;
+- failure artifacts/repro work;
+- checkpoint/resume works;
+- deterministic repeat works;
+- actual external run lasted at least 8 wall-clock hours and passed every structured gate;
+- runner and exact result/log/checkpoint locations are documented;
+- Windows build passes;
+- U31 not started.
+
+COMMIT
+`U30: add automated soak validation`

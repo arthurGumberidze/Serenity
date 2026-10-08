@@ -1,0 +1,170 @@
+U30A — PRE-U31 FRS COMPLIANCE PATCH
+
+ОБЩИЕ ПРАВИЛА ВЫПОЛНЕНИЯ
+
+- Продолжай существующий проект Serenity в `C:\serenity_game`. Новый проект не создавать.
+- Перед изменениями проверь clean `git status` и прочитай AGENTS.md, TASK_GRAPH, NEXT_TASK, PROJECT_STATE, ARCHITECTURE, DECISIONS, FRS Unity, U22/U25/U26/U27/U28/U30 handoffs и task-specific design docs.
+- U00–U30 должны быть DONE. U31 и U32 не начинать.
+- Reuse-first: не создавать параллельные Character, StableEntityId, clock, save, inventory, research, building, combat, military, map, UI или event authorities.
+- Domain/Simulation остаются engine-independent; Presentation/UI не владеют gameplay truth.
+- Все новые persistent references используют stable IDs; все balance/content definitions data-driven.
+- PostgreSQL остаётся durable snapshot/history store, не realtime engine.
+- Focused tests + critical regressions + persistence/determinism + GPU PlayMode + Windows x64 Mono Development build обязательны.
+- На success обнови PROJECT_STATE/TASK_GRAPH/NEXT_TASK/ARCHITECTURE/DECISIONS, создай `U30A_HANDOFF.md` и `MVP_FRS_COMPLIANCE.md`, сделай один commit `U30A: close pre-MVP FRS gaps`. Не push.
+- Финальный ответ — только JSON по supplied stage schema. `done=true` только после всех gates и clean tree.
+
+==================================================
+1. PURPOSE AND SCOPE
+==================================================
+
+Закрыть подтверждённые функциональные разрывы между реализованным roadmap и FRS до того, как U31 начнёт только интеграционную проверку.
+
+U30A не переписывает готовые системы. Он добавляет минимальные vertical slices поверх их canonical APIs:
+1) canonical new game bootstrap;
+2) normal save/load accessibility verification;
+3) discovery of the AI state;
+4) AI construction compliance;
+5) minimal Stone Age military supply;
+6) TPS aiming/attack using U20 rules;
+7) continued play after victory.
+
+If U26/U27 already fully implemented an item, verify and reuse it; do not duplicate it.
+
+==================================================
+2. CANONICAL NEW GAME
+==================================================
+
+Provide one normal player-facing/canonical New Game command and deterministic bootstrap from a selected/default world seed.
+
+Mandatory initial state:
+- exactly 10 player Characters;
+- one valid player monarch and dynasty/family graph;
+- one AI ruler/dynasty and viable AI population from U26;
+- player and AI settlements on the U25 graph;
+- separate owner-scoped resources, buildings, research and production;
+- valid starting knowledge and building unlock state;
+- no test-only mutation after bootstrap.
+
+Same seed/config must reproduce stable IDs and logical initial hash according to the documented identity policy. Starting a second new game must dispose/rebind the old session and subscriptions rather than duplicate roots.
+
+==================================================
+3. NORMAL SAVE/LOAD
+==================================================
+
+Verify U27 exposes Save and Load through normal player UI. If still missing or incomplete, add the minimal UI/adapters now over the existing SaveCoordinator/providers.
+
+Required:
+- save a named/selected slot;
+- advance/mutate normal gameplay;
+- load and replace/rebind the session;
+- preserve player/AI/dynasty/research/resources/buildings/units/map/events/supply;
+- no duplicate callbacks/presenters/roots;
+- clear provider error without exposing secrets.
+
+Do not invent a second save format.
+
+==================================================
+4. AI DISCOVERY
+==================================================
+
+FRS MVP requires discovering the AI dynasty. Implement the smallest deterministic knowledge boundary, not a full fog-of-war system.
+
+- At New Game the AI state's detailed identity/strength is unknown to the player unless starting config says otherwise.
+- A canonical exploration/contact condition on the U25 graph reveals the AI settlement/state using stable IDs and a persisted discovered marker/tick.
+- Discovery is exactly once, deterministic and survives save/load/off-camera catch-up.
+- U27 Global UI hides undiscovered details and presents the discovery notification through existing UI/event surfaces.
+- AI strategic simulation continues while undiscovered; hidden does not mean nonexistent.
+
+No diplomacy, treaties or full visibility/terrain streaming.
+
+==================================================
+5. AI CONSTRUCTION COMPLIANCE
+==================================================
+
+Verify the U26 baseline AI creates at least one useful new building/site after New Game through canonical research, funding, placement/occupancy, construction and ownership rules.
+
+If U26 only produces/researches against prebuilt content, fix the owning U26 integration rather than adding an U30A-only shortcut. Construction spends real AI resources, creates one canonical Building ID, joins the existing settlement and persists.
+
+==================================================
+6. MINIMAL STONE AGE MILITARY SUPPLY
+==================================================
+
+Implement a minimal data-driven supply model for MVP without a second inventory system:
+- supply state belongs to the existing MilitaryUnit and references/consumes canonical resource inventories;
+- Stone Age baseline requires food/rations and any ammunition/resource actually used by the current weapon catalog; fuel is a valid future/zero-requirement category, not fabricated consumption;
+- travel and abstract/physical combat consume from one shared logical supply state at deterministic ticks;
+- insufficient supply applies bounded data-driven movement/combat/morale modifiers through existing U25/U20/U23 hooks;
+- no negative quantity, duplication or representation-mode refill;
+- capture/destruction cannot duplicate supply;
+- save/load and Physical↔Abstract preserve exact remaining supply/checkpoints.
+
+Do not add strategic trade, convoy AI, roads or full logistics networks.
+
+==================================================
+7. TPS AIMING AND ATTACK
+==================================================
+
+Extend U22 direct control with the minimal FRS combat path:
+- only eligible controlled monarch/heir/captain;
+- pointer/mouse aiming and one explicit Attack input;
+- uses the same U20 CombatService, CombatRules, weapon profile, target eligibility, cooldown, injury, health, death, morale and battle state;
+- no second projectile/damage/health authority;
+- other unit members continue their existing U20 AI orders while the captain is directly controlled;
+- pause and x1/x2/x3/x5/x10 semantics remain correct;
+- leaving TPS returns movement authority without duplicate attack or lost target/cooldown.
+
+The current Stone Age melee profiles may use an aim/target ray and canonical melee-range validation. Do not invent firearms or later-era content. Presentation animation/VFX can remain placeholder.
+
+==================================================
+8. VICTORY CONTINUATION
+==================================================
+
+After canonical capture/defeat of the only AI state:
+- record military victory exactly once;
+- show a normal player-facing result/notification;
+- continue in sandbox mode with clock, settlement, dynasty, production and save/load active;
+- repeated load/advance does not re-award victory or freeze the campaign.
+
+Player dynasty extinction remains the existing U17 GameOver rule.
+
+==================================================
+9. TESTS
+==================================================
+
+Focused EditMode:
+- deterministic 10-player + AI new-game bootstrap and isolation;
+- duplicate-new-game/session disposal safety;
+- discovery exactly once/save-load/off-camera;
+- AI construction spends resources and persists;
+- supply conservation/consumption/modifiers/mode transition/save-load;
+- TPS attack delegates to U20 and cannot double-hit;
+- victory exactly once and post-victory continuation.
+
+Focused PlayMode/GPU:
+- normal New Game and Save/Load UI path;
+- explore/discover AI through normal controls;
+- RTS battle then control an eligible captain in TPS, aim/attack, exit to RTS with the same Character/battle;
+- post-victory UI and continued time/save.
+
+Critical regressions: U04,U09,U17,U20,U21,U22,U23,U24,U25,U26,U27,U28,U30 short soak and persistence/legacy snapshots.
+
+==================================================
+10. NON-GOALS
+==================================================
+
+Do not implement diplomacy, trade, taxes, ministries, laws, espionage, later eras, full fog of war, convoy/path logistics, firearms, final art or U31 integration report.
+
+==================================================
+11. DEFINITION OF DONE
+==================================================
+
+DONE only if:
+- normal deterministic New Game creates exactly 10 player Characters, player monarch/dynasty and a viable independent AI dynasty/state;
+- normal UI Save/Load works;
+- player can discover the AI state and discovery persists;
+- AI demonstrably constructs through canonical rules;
+- minimal supply is canonical, conserved and shared by physical/abstract modes;
+- TPS controlled eligible Character can aim/attack through U20 rules while companions continue AI;
+- AI capture/victory is exactly once and play continues afterward;
+- focused/regression/persistence/GPU/build gates pass;
+- U31 has not started.

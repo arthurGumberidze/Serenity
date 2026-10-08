@@ -359,3 +359,11 @@ Global travel is a persisted logical order resolved by absolute canonical game t
 ## D-063 Snapshot v12 and additive disposable map presentation (2026-10-09)
 
 Snapshot v12 appends validated graph, settlement, mode and in-progress travel state; v1-v11 remain readable and PostgreSQL needs no relational migration. `GlobalMap.unity` is an additive presentation scene. `LocalGameplay` and its composition root stay loaded off-camera so the existing clock and simulation services remain authoritative. Schematic markers, map camera and controls are disposable U25 development UX; U27 owns final interface design.
+
+## D-064 U30 requires an actual external eight-hour soak (2026-10-09)
+
+U30 is not complete when only a short soak passes or an eight-hour runner exists. The mandatory gate is one real uninterrupted or checkpoint-resumed run whose measured wall-clock duration is at least eight hours and whose structured result reports no critical exception, invariant failure, watchdog failure or runaway-memory signal. The task implementation first prepares and commits the harness as IN_PROGRESS. The night orchestrator then runs PowerShell/Unity without an active Codex session, validates the structured result, and invokes a fresh Codex finalizer to update documentation and create the U30 DONE commit. This avoids spending Codex usage on idle polling while retaining auditable evidence.
+
+## D-065 Pre-U31 FRS compliance patch (2026-10-09)
+
+U31 remains an integration and release gate rather than a feature-development task. Confirmed FRS-to-roadmap gaps are assigned to U30A after the U30 reliability gate: a canonical new-game bootstrap with ten starting player characters and a monarch; normal player save/load access; deterministic AI discovery; AI construction over existing building/resource authorities; minimal Stone Age military supply over canonical inventories; and TPS aiming/attack through the existing U20 combat, weapon, injury and cooldown rules. U30A must also preserve continued sandbox play after military victory. U26, U27 and U28 still own their natural prerequisites—AI state scoping/construction, save/load and work UI, and event chains/cooldowns—so U30A verifies and closes only remaining cross-system gaps.

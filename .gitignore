@@ -23,6 +23,9 @@
 /Validation/
 /serenity_games_assets/
 
+# Local superseded automation copy; retained outside versioned night pipeline.
+/automation_delete_after/
+
 # U04A restored packages and local-only configuration/test cluster
 /Assets/Packages/
 /Assets/Packages.meta

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "passed",
+    "seed",
+    "requested_wall_clock_seconds",
+    "actual_wall_clock_seconds",
+    "started_utc",
+    "completed_utc",
+    "critical_errors",
+    "invariant_failures",
+    "watchdog_failures",
+    "memory_runaway_detected",
+    "checkpoint_resume_verified",
+    "final_state_hash",
+    "summary"
+  ],
+  "properties": {
+    "passed": { "type": "boolean" },
+    "seed": { "type": "integer" },
+    "requested_wall_clock_seconds": { "type": "integer", "minimum": 28800 },
+    "actual_wall_clock_seconds": { "type": "integer", "minimum": 28800 },
+    "started_utc": { "type": "string", "format": "date-time" },
+    "completed_utc": { "type": "string", "format": "date-time" },
+    "critical_errors": { "type": "integer", "minimum": 0 },
+    "invariant_failures": { "type": "integer", "minimum": 0 },
+    "watchdog_failures": { "type": "integer", "minimum": 0 },
+    "memory_runaway_detected": { "type": "boolean" },
+    "checkpoint_resume_verified": { "type": "boolean" },
+    "final_state_hash": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task",
+    "done",
+    "commit_created",
+    "commit_hash",
+    "working_tree_clean",
+    "required_tests_passed",
+    "build_passed",
+    "next_task_started",
+    "blocking_reason",
+    "summary"
+  ],
+  "properties": {
+    "task": {
+      "type": "string",
+      "pattern": "^U(?:2[5-9]|30A?|31)$"
+    },
+    "done": {
+      "type": "boolean"
+    },
+    "commit_created": {
+      "type": "boolean"
+    },
+    "commit_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "working_tree_clean": {
+      "type": "boolean"
+    },
+    "required_tests_passed": {
+      "type": "boolean"
+    },
+    "build_passed": {
+      "type": "boolean"
+    },
+    "next_task_started": {
+      "type": "boolean"
+    },
+    "blocking_reason": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000
+    }
+  }
+}

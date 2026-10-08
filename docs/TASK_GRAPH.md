@@ -33,12 +33,13 @@ Statuses: TODO / IN_PROGRESS / DONE / BLOCKED
 | U23 | DONE | Автобой и возврат в физическую битву | U14,U21 | MVP | Физический и abstract бой используют общие параметры и сходятся по диапазону результатов. |
 | U24 | DONE | Разрушение, пожар и захват зданий | U08,U20,U23 | MVP | Здание разрушается/захватывается и правильно меняет производство. |
 | U25 | DONE | Глобальная карта как отдельная сцена/режим | U04,U14 | MVP | Local↔Global переход сохраняет состояние. |
-| U26 | TODO | AI одного государства | U14,U16,U17,U23,U25 | MVP | AI развивается, создаёт армию, атакует и может быть захвачен. |
-| U27 | TODO | UI Toolkit/uGUI gameplay UI | U06,U08,U11,U16,U20 | MVP | Все MVP действия доступны без debug меню. |
-| U28 | TODO | Событийная система | U04,U04A,U06,U17 | MVP | События сохраняются и воспроизводимы при seed. |
-| U29 | TODO | Performance gates: 100→300→500→1000 | U10,U12,U13,U14,U20,U27 | MVP | 1000 NPC test scene достигает согласованного FPS/frametime без runaway allocations. |
-| U30 | TODO | Automated tests и soak | U04A,U10,U13,U14,U23,U26,U29 | MVP | 8+ часов ускоренной симуляции без критических ошибок/утечек. |
-| U31 | TODO | MVP Integration Gate | U08,U10,U13,U16,U17,U19,U22,U23,U25,U26,U27,U29,U30 | MVP | Новая игра проходит до захвата AI-государства без ручной правки данных. |
+| U26 | TODO | AI одного государства | U08,U09,U14,U15,U16,U17,U18,U21,U23,U24,U25 | MVP | Независимый AI bootstrap владеет своими research/resources/production, строит, создаёт армию, атакует и согласованно захватывается. |
+| U27 | TODO | UI Toolkit/uGUI gameplay UI | U04,U06,U08,U11,U16,U20,U22,U25,U26 | MVP | Все MVP действия, включая Save/Load и work groups/jobs, доступны без debug меню. |
+| U28 | TODO | Событийная система | U04,U04A,U06,U17,U18,U27 | MVP | Одиночные события и цепочки с weights/cooldowns сохраняются и воспроизводимы при seed. |
+| U29 | TODO | Performance gates: 100→300→500→1000 | U10,U12,U13,U14,U20,U26,U27,U28 | MVP | Реальные 1000 Characters (250/500/250 tiers) держат Player p95 ≤33.33 ms без runaway allocations. |
+| U30 | TODO | Automated tests и soak | U04A,U10,U13,U14,U23,U26,U28,U29 | MVP | Реальный внешний 8+ wall-clock-hour accelerated soak проходит без критических ошибок/утечек; runner readiness alone недостаточно. |
+| U30A | TODO | Pre-U31 FRS compliance patch | U22,U25,U26,U27,U28,U30 | MVP | Закрыты подтверждённые MVP-разрывы: canonical new-game на 10 персонажей, player save/load UI, AI construction/discovery, минимальное снабжение и TPS combat через общие U20 rules. |
+| U31 | TODO | MVP Integration Gate | U08,U10,U13,U16,U17,U19,U22,U23,U25,U26,U27,U28,U29,U30,U30A | MVP | Новая игра проходит через normal player UI до захвата AI-государства без ручной правки данных и продолжает игру после победы. |
 | U32 | TODO | Wealth / Influence | U06,U17 | POST | Показатели влияют на статус/события/отношение. |
 | U33 | TODO | Министры, губернаторы и ведомства | U11,U17,U32 | POST | Замена чиновника меняет эффективность ведомства. |
 | U34 | TODO | Казна, налоги, коррупция | U32,U33 | POST | Ставки меняют казну/стабильность; коррупция измерима. |

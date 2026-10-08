@@ -14,8 +14,8 @@ U14 deterministic off-camera simulation, U16 research, U17 succession, U23 abstr
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U26 AI for one state: development, army creation, attack and capture behavior over the canonical U16/U21/U23/U25 boundaries.
+After explicit authorization, implement the TASK_GRAPH U26 AI for one state: deterministic normal-runtime bootstrap, independent owner-scoped research/resources/production, real construction, army creation, global attack and coherent capture/defeat over the canonical U08/U09/U15/U16/U17/U21/U23/U24/U25 boundaries.
 
 ### Scope boundary
 
-Begin from `docs/U25_HANDOFF.md`, `docs/GLOBAL_MAP.md`, current architecture decisions and the relevant FRS sections. Do not begin U27 or later tasks.
+Begin from `docs/U25_HANDOFF.md`, `docs/GLOBAL_MAP.md`, current architecture decisions and the relevant FRS sections. Generalize existing authorities where state/settlement scope is missing; do not create parallel AI-only economy/research/building systems. Do not begin U27 or later tasks.
