@@ -23,7 +23,7 @@ SAFETY / HARD GATES
 - Implementation and verifier must leave the repository clean.
 - Logs are stored OUTSIDE the Git repository by default under:
   %LOCALAPPDATA%\SerenityAutomation\runs\<timestamp>\
-- On stop or final success Windows shutdown is scheduled in 60 seconds unless -NoShutdown is used.
+- On an error/stop Windows shutdown is scheduled in 120 seconds; after final success it is scheduled in 60 seconds. `-NoShutdown` disables both.
 
 PREREQUISITE
 ------------

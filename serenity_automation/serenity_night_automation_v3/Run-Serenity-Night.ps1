@@ -102,8 +102,8 @@ $(Get-StatusPorcelain)
 "@ | Set-Content -Encoding UTF8 (Join-Path $RunRoot "STOP_REASON.txt")
 
     if (-not $NoShutdown -and -not $DryRun) {
-        Write-RunLog "PC shutdown scheduled in 60 seconds. Cancel with: shutdown /a"
-        & shutdown.exe /s /t 60 /c "Serenity night automation stopped: $Reason"
+        Write-RunLog "PC shutdown scheduled in 120 seconds after failure. Cancel with: shutdown /a"
+        & shutdown.exe /s /t 120 /c "Serenity night automation stopped: $Reason"
     } else {
         Write-RunLog "Shutdown skipped."
     }
@@ -512,7 +512,7 @@ try {
 
     Write-RunLog "Completed through $FinalTask."
     if (-not $NoShutdown) {
-        Write-RunLog "Shutdown in 60 sec. Cancel: shutdown /a"
+        Write-RunLog "Successful completion: shutdown in 60 sec. Cancel: shutdown /a"
         & shutdown.exe /s /t 60 /c "Serenity automation completed through $FinalTask"
     }
     Stop-Transcript | Out-Null
