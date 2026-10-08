@@ -128,28 +128,39 @@ function Initialize-CodexCli {
     if ($LASTEXITCODE -ne 0) { throw "codex exec --help failed: $($helpOutput -join ' ')" }
     $helpText = $helpOutput -join "`n"
     if ($helpText -match "(?m)^\s*--approve-for-me\b") {
+        # In codex-cli 0.160.0 this preset already selects workspace-write and
+        # conflicts with an explicit --sandbox argument.
         $script:CodexApprovalArgs = @("--approve-for-me")
         $script:CodexApprovalMode = "approve-for-me"
     } elseif ($helpText -match "(?m)^\s*--ask-for-approval\b") {
-        $script:CodexApprovalArgs = @("--ask-for-approval", "never")
+        $script:CodexApprovalArgs = @("--sandbox", "workspace-write", "--ask-for-approval", "never")
         $script:CodexApprovalMode = "ask-for-approval=never"
     } else {
         throw "Unsupported Codex CLI: neither --approve-for-me nor --ask-for-approval is available."
     }
 
-    # Parse every common automation option without starting an agent or making
-    # a network request. This catches CLI drift before U26 begins.
+    # Parse every common automation option without starting an agent. --help
+    # cannot be used here because clap may skip conflicts while rendering help.
+    # A deliberately absent schema makes Codex stop locally after validating
+    # the complete argument combination and before model inference.
     $preflightAnswer = Join-Path $RunRoot "codex-preflight-answer.json"
-    $preflightArgs = @("exec", "--json", "--sandbox", "workspace-write")
+    $missingSchema = Join-Path $RunRoot "codex-preflight-intentionally-missing.schema.json"
+    $preflightArgs = @("exec", "--json")
     $preflightArgs += $script:CodexApprovalArgs
     $preflightArgs += @(
         "--config", "model_reasoning_effort=high",
-        "--output-schema", $StageSchema,
+        "--output-schema", $missingSchema,
         "--output-last-message", $preflightAnswer,
-        "--help"
+        "-"
     )
-    $preflightOutput = & $script:CodexCommand @preflightArgs 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "Codex CLI argument preflight failed: $($preflightOutput -join ' ')" }
+    $preflightOutput = "argument validation only" | & $script:CodexCommand @preflightArgs 2>&1
+    $preflightCode = $LASTEXITCODE
+    $preflightText = $preflightOutput -join "`n"
+    if ($preflightCode -eq 0 -or
+        -not $preflightText.Contains("Failed to read output schema file") -or
+        -not $preflightText.Contains($missingSchema)) {
+        throw "Codex CLI argument preflight failed before the expected missing-schema boundary: $preflightText"
+    }
 
     Write-RunLog "Codex CLI preflight passed: $version; approval=$($script:CodexApprovalMode); command=$($script:CodexCommand)"
 }
@@ -168,10 +179,7 @@ function Invoke-CodexRun([string]$Name, [string]$PromptText, [string]$SchemaPath
         return @{ ExitCode = 0; AnswerPath = $answerPath; TracePath = $jsonlPath; StderrPath = $stderrPath }
     }
 
-    $cliArgs = @(
-        "exec", "--json",
-        "--sandbox", "workspace-write"
-    )
+    $cliArgs = @("exec", "--json")
     $cliArgs += $script:CodexApprovalArgs
     $cliArgs += @(
         "--config", "model_reasoning_effort=high",
@@ -458,7 +466,7 @@ try {
         foreach ($task in $tasks) {
             Write-RunLog "$task status=$(Get-TaskStatus $task); prompt=OK"
         }
-        Write-RunLog "Dry run does not invoke Codex, Unity, shutdown or the eight-hour soak."
+        Write-RunLog "Dry run validates the Codex CLI locally but starts no Codex agent, Unity process, shutdown or eight-hour soak."
         Stop-Transcript | Out-Null
         exit 0
     }
