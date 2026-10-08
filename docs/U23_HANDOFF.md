@@ -31,11 +31,11 @@ U23 is DONE and committed only after every configured mandatory gate passed. U24
 23. Tiers: active Physical fighters are Tier1-pinned; Abstract unit members use existing Aggregate Tier2/Tier3 representation.
 24. Save/load: v10 writes mode, side-unit links and events and resumes from the committed tick without replay/reroll.
 25. Snapshot: `SaveSnapshot.CurrentVersion == 10`; v1-v9 are explicitly exercised.
-26. PostgreSQL: opaque XML version acceptance includes v8/v9/v10; integration was not run because `DYNASTYGAME_PG_TEST_DATABASE` is absent.
+26. PostgreSQL: opaque XML version acceptance includes v8/v9/v10. PostgreSQL 18 integration passed 25/25 against isolated `serenity_game_test`; migration 001 was applied and the fixture left zero save rows.
 27. History: ordered Started, ModeChanged, SideBroken, CaptainDeath and Finished records; attack history remains separate.
 28. Debug UI: start Physical/Abstract, inspect ID/mode/tick/units/hash, transition both ways and advance through the canonical clock.
 29. Tests added: 12 EditMode and 3 PlayMode U23 cases covering shared rules, abstract resolution, all transition routes/states, persistence, determinism, deaths, convergence, stress, clock/pause/visibility and TPS blocking.
-30. Exact results: U23 EditMode 12/12; headless PlayMode 3/3; GPU PlayMode 3/3; required regressions 87/87 EditMode + 25/25 PlayMode; persistence 35/35; full EditMode 332/332; full PlayMode 68/68.
+30. Exact results: U23 EditMode 12/12; headless PlayMode 3/3; GPU PlayMode 3/3; required regressions 87/87 EditMode + 25/25 PlayMode; persistence 35/35; PostgreSQL integration 25/25; full EditMode 332/332; full PlayMode 68/68.
 31. Determinism: combined catch-up/order hash `52A0A55A95EB4EB6`.
 32. Catch-up: one direct jump equals minute-by-minute stepping exactly.
 33. Collection order: reversed character/unit registration produces the same snapshot/hash.
@@ -51,7 +51,7 @@ U23 is DONE and committed only after every configured mandatory gate passed. U24
 43. Diff checks: unstaged and staged `git diff --check` must be clean before commit (line-ending conversion notices are informational).
 44. Commit: `U23: implement abstract battle and physical transition`; record the resulting hash in the final response.
 45. Known limits: exact physical Transform/NavMesh future path and cross-mode future casualty identity are not promised; no global-map/camera policy automation, reinforcement, siege, supply or U24+ feature was added.
-46. Definition of Done: every U23 item passed; PostgreSQL was conditional and not configured. U24 remains untouched.
+46. Definition of Done: every U23 item passed, including configured PostgreSQL integration. U24 remains untouched.
 
 ## Exact validation command
 
@@ -59,4 +59,4 @@ U23 is DONE and committed only after every configured mandatory gate passed. U24
 & 'C:\serenity_game\Tools\Verify-U23.ps1' -FullRegression -GpuValidation -BuildPlayer -StepTimeoutSeconds 900
 ```
 
-Final result: `U23 validation passed.` The verifier runs compile; U23 EditMode/headless PlayMode; U13/U14/U17/U18/U20/U21/U22 regressions; persistence; full EditMode/PlayMode; GPU U23; and Windows build. PostgreSQL is enabled separately with `-PostgresIntegration` only when its database environment is configured.
+Final result: `U23 validation passed.` The verifier runs compile; U23 EditMode/headless PlayMode; U13/U14/U17/U18/U20/U21/U22 regressions; persistence; full EditMode/PlayMode; GPU U23; and Windows build. A subsequent configured `PostgresIntegration` run passed 25/25 on PostgreSQL 18. PostgreSQL remains enabled separately with `-PostgresIntegration` and process-local environment variables.
