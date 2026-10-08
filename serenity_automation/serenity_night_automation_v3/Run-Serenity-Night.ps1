@@ -145,18 +145,32 @@ function Initialize-CodexCli {
     # the complete argument combination and before model inference.
     $preflightAnswer = Join-Path $RunRoot "codex-preflight-answer.json"
     $missingSchema = Join-Path $RunRoot "codex-preflight-intentionally-missing.schema.json"
+    $preflightStdout = Join-Path $RunRoot "codex-preflight-stdout.log"
+    $preflightStderr = Join-Path $RunRoot "codex-preflight-stderr.log"
     $preflightArgs = @("exec", "--json")
     $preflightArgs += $script:CodexApprovalArgs
     $preflightArgs += @(
         "--config", "model_reasoning_effort=high",
         "--output-schema", $missingSchema,
         "--output-last-message", $preflightAnswer,
-        "-"
+        "argument-validation-only"
     )
-    $preflightOutput = "argument validation only" | & $script:CodexCommand @preflightArgs 2>&1
-    $preflightCode = $LASTEXITCODE
-    $preflightText = $preflightOutput -join "`n"
-    if ($preflightCode -eq 0 -or
+    # Start-Process captures native stderr without PowerShell converting the
+    # expected missing-schema diagnostic into a terminating NativeCommandError
+    # under ErrorActionPreference=Stop.
+    $preflightProcess = Start-Process `
+        -FilePath $script:CodexCommand `
+        -ArgumentList $preflightArgs `
+        -NoNewWindow `
+        -Wait `
+        -PassThru `
+        -RedirectStandardOutput $preflightStdout `
+        -RedirectStandardError $preflightStderr
+    $preflightText = @(
+        if (Test-Path $preflightStdout) { Get-Content -Raw -LiteralPath $preflightStdout }
+        if (Test-Path $preflightStderr) { Get-Content -Raw -LiteralPath $preflightStderr }
+    ) -join "`n"
+    if ($preflightProcess.ExitCode -eq 0 -or
         -not $preflightText.Contains("Failed to read output schema file") -or
         -not $preflightText.Contains($missingSchema)) {
         throw "Codex CLI argument preflight failed before the expected missing-schema boundary: $preflightText"
