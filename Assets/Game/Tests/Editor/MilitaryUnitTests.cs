@@ -198,7 +198,7 @@ namespace Game.Tests.Editor
             var b = fixture.Units.Create(UnitId(516), new MilitarySideId("enemy"), fixture.MemberIds.Skip(2),
                 fixture.MemberIds[2]);
             var encounter = fixture.UnitCombat.Start(a.Id, b.Id, Id(802), 0);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(990), new GameTimeState(), 400,
+            var snapshot = new SaveSnapshot(SaveSnapshot.MilitaryVersion, Id(990), new GameTimeState(), 400,
                 healthFamily: fixture.Health.CaptureState(), combat: fixture.Combat.CaptureState(),
                 military: fixture.Units.CaptureState());
             var codec = new SaveXmlCodec();

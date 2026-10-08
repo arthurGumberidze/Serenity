@@ -4,10 +4,20 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U21 DONE — persistent military units, captains, historical stable-ID rosters, detailed/aggregate transitions, U20 integration and version-8 persistence are complete.
+U22 DONE — stable-ID RTS↔third-person control, exclusive NavMesh movement authority, camera/input handoff, state continuity and version-9 persistence are complete.
 
 ## Active task
-No implementation task is active. U22 is next but has not started and awaits review of U21.
+No implementation task is active. U23 is next but has not started and awaits review of U22.
+
+## U22 third-person control
+- `PlayerControlState`/`PlayerControlService` own engine-independent mode and controlled Character `StableEntityId`. Valid roles are current monarch, first U17 succession candidate, or captain of a player U21 unit; dead, child, incapacitated, enemy, unmanaged and aggregate-conflicting targets are rejected.
+- RTS→TPS reuses the exact canonical Character, `CharacterPresenter` and `NavMeshAgent`. `Tier1MovementAuthority` is exclusively `Autonomous` or `DirectPlayer`; the AI path is reset, Utility actions are suspended, U11 manual Move requeues as `Assigned`, and U20 movement requests are gated while its encounter/attack/health/morale state continues.
+- TPS→RTS restores the untouched RTS camera controller/transform and action maps, returns movement authority and schedules immediate AI reconsideration. Research assignment, work group/order, inventory, dynasty/relations, health, U21 roster/captain and U20 combatant identity remain unchanged.
+- One reusable Cinemachine third-person rig follows the existing presenter. Input System actions are T toggle, WASD move, pointer-delta look, Shift run and Escape exit. Camera/Pointer/Building maps are disabled in TPS; Time/Mode remain active. Pause stops movement; x1/x2/x3/x5/x10 scales direct movement consistently.
+- Direct control pins Tier1. Canonical death or incapacitation exits safely to RTS; monarch death still runs U17 succession. U22 introduces no new damage or TPS attack system.
+- `SaveSnapshot.CurrentVersion` is 9. The strict payload adds control mode and controlled stable ID, valid TPS loads through the same entry path, invalid targets fall back to RTS, and v1-v8 remain readable. PostgreSQL remains opaque XML with no schema migration.
+- Final gates: U22 7/7 EditMode, 12/12 headless and 12/12 GPU PlayMode; full non-PostgreSQL EditMode 320/320; full PlayMode 65/65; required U07/U10/U11/U13/U16A/U17/U18/U20/U21 regressions 100/100 EditMode and 33/33 PlayMode; U05 input 5/5; persistence 35/35; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- PostgreSQL integration was not run because `DYNASTYGAME_PG_TEST_DATABASE` is absent. No manual click session is claimed; equivalent headless and Direct3D 11 GPU paths passed. `git diff --check` passed; the staged check is performed immediately before commit.
 
 ## U21 army, captains and abstract units
 - `MilitaryUnitService` is the engine-independent canonical authority for multiple units, stable `MilitaryUnitId`, stable owner/side, active and historical roster membership, captain assignment/fallback, orders, abstract location, status and summaries. Units reference existing Character IDs and never copy person, health, dynasty or GameObject state.
@@ -238,7 +248,7 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-Review U21 using `docs/U21_HANDOFF.md`. Do not start U22 until the review explicitly authorizes it.
+Review U22 using `docs/U22_HANDOFF.md`. Do not start U23 until the review explicitly authorizes it.
 
 U16 final validation command:
 

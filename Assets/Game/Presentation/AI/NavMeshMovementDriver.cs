@@ -8,6 +8,12 @@ using UnityEngine.AI;
 
 namespace Game.Presentation.AI
 {
+    public enum Tier1MovementAuthority
+    {
+        Autonomous = 0,
+        DirectPlayer = 1
+    }
+
     public sealed class NavMeshMovementDriver : ITier1MovementDriver
     {
         private readonly CharacterPresenter presenter;
@@ -15,6 +21,7 @@ namespace Game.Presentation.AI
         private readonly float baseSpeed;
         private readonly StableEntityId characterId;
         private MovementState state;
+        private Tier1MovementAuthority authority;
 
         public NavMeshMovementDriver(CharacterPresenter presenter, float baseSpeed)
         {
@@ -51,6 +58,7 @@ namespace Game.Presentation.AI
         }
         public bool IsAvailable => presenter != null && presenter.IsBound && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
         public NavMeshAgent Agent => agent;
+        public Tier1MovementAuthority Authority => authority;
 
         public MovementState State
         {
@@ -68,6 +76,7 @@ namespace Game.Presentation.AI
 
         public void MoveTo(WorldPosition target, float stoppingDistance)
         {
+            if (authority == Tier1MovementAuthority.DirectPlayer) return;
             if (!IsAvailable || stoppingDistance < 0f ||
                 !NavMesh.SamplePosition(new Vector3(target.X, target.Y, target.Z), out var hit, 3f, NavMesh.AllAreas))
             {
@@ -90,12 +99,66 @@ namespace Game.Presentation.AI
             if (presenter != null) presenter.SetMovementSpeed(0f);
         }
 
+        public void BeginDirectControl()
+        {
+            if (!IsAvailable) throw new InvalidOperationException("Direct control requires an active NavMesh agent.");
+            Stop();
+            authority = Tier1MovementAuthority.DirectPlayer;
+            agent.updateRotation = false;
+        }
+
+        public void MoveDirect(Vector3 worldDirection, float unscaledDeltaTime, bool running, bool paused,
+            int speedMultiplier, int movementPerThousand)
+        {
+            if (authority != Tier1MovementAuthority.DirectPlayer)
+                throw new InvalidOperationException("Direct movement does not own this character.");
+            if (!IsAvailable || unscaledDeltaTime < 0f || movementPerThousand < 0 || movementPerThousand > 2000)
+                return;
+            agent.isStopped = true;
+            agent.ResetPath();
+            var direction = Vector3.ProjectOnPlane(worldDirection, Vector3.up);
+            if (paused || direction.sqrMagnitude <= 0.0001f)
+            {
+                presenter.SetMovementSpeed(0f);
+                presenter.SetSimulationPaused(paused);
+                state = MovementState.Idle;
+                return;
+            }
+            direction.Normalize();
+            var runMultiplier = running ? 1.65f : 1f;
+            var speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f * runMultiplier;
+            agent.Move(direction * (speed * unscaledDeltaTime));
+            presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
+                Quaternion.LookRotation(direction, Vector3.up), 720f * unscaledDeltaTime);
+            presenter.SetSimulationPaused(false);
+            presenter.SetMovementSpeed(speed);
+            state = MovementState.Moving;
+        }
+
+        public void EndDirectControl()
+        {
+            if (authority != Tier1MovementAuthority.DirectPlayer) return;
+            Stop();
+            agent.updateRotation = true;
+            authority = Tier1MovementAuthority.Autonomous;
+        }
+
         public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)
         {
             if (!IsAvailable) return;
             if (movementPerThousand < 0 || movementPerThousand > 2000)
                 throw new ArgumentOutOfRangeException(nameof(movementPerThousand));
             agent.speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f;
+            if (authority == Tier1MovementAuthority.DirectPlayer)
+            {
+                agent.isStopped = true;
+                if (paused)
+                {
+                    presenter.SetMovementSpeed(0f);
+                    presenter.SetSimulationPaused(true);
+                }
+                return;
+            }
             if (paused)
             {
                 agent.isStopped = true;

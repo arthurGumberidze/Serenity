@@ -45,7 +45,8 @@ namespace Game.Tests
             var asset = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
                 "Assets/Game/Presentation/Input/LocalGameplay.inputactions");
             Assert.That(asset, Is.Not.Null);
-            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[] { "Camera", "Pointer", "Building", "Time" }));
+            Assert.That(asset.actionMaps.Select(map => map.name), Is.EquivalentTo(new[]
+                { "Camera", "Pointer", "Building", "Time", "Mode", "ThirdPerson" }));
             Assert.That(asset.FindActionMap("Camera").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "Move", "Zoom", "Rotate", "Pan", "PanModifier" }));
             Assert.That(asset.FindActionMap("Pointer").actions.Select(action => action.name),
@@ -54,6 +55,10 @@ namespace Game.Tests
                 Is.EquivalentTo(new[] { "ToggleMode", "Confirm", "Cancel", "Rotate" }));
             Assert.That(asset.FindActionMap("Time").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "TogglePause", "Slower", "Faster" }));
+            Assert.That(asset.FindActionMap("Mode").actions.Select(action => action.name),
+                Is.EquivalentTo(new[] { "ToggleControl" }));
+            Assert.That(asset.FindActionMap("ThirdPerson").actions.Select(action => action.name),
+                Is.EquivalentTo(new[] { "Move", "Look", "Run", "Exit" }));
             Assert.That(asset.FindAction("Camera/Move").bindings.Any(binding => binding.path == "<Keyboard>/w"), Is.True);
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
@@ -69,6 +74,8 @@ namespace Game.Tests
             Assert.That(asset.FindAction("Time/Faster").bindings.Any(binding => binding.path == "<Keyboard>/equals"), Is.True);
             Assert.That(asset.FindActionMap("Time").bindings.Any(binding => binding.path.Contains("digit")), Is.False,
                 "Time controls must not consume U11 work-group number keys.");
+            Assert.That(asset.FindAction("Mode/ToggleControl").bindings.Any(binding => binding.path == "<Keyboard>/t"), Is.True);
+            Assert.That(asset.FindAction("ThirdPerson/Exit").bindings.Any(binding => binding.path == "<Keyboard>/escape"), Is.True);
         }
 
         [Test]

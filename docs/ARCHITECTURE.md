@@ -306,4 +306,14 @@ Detailed Move delegates to U11 `ManualMoveCommandService`, retaining its formati
 
 Snapshot v8 appends `MilitaryUnitSaveState` after combat. XML stores sorted identities, roster history, captain, representation/status, order, summaries, abstract location, encounter link and deterministic revision. Restore runs after U20 and validates every Character, exclusive membership, eligible captain, detailed-only active encounter and live encounter reference. V1-v7 decode with no military payload; PostgreSQL accepts v8 metadata while retaining the opaque XML schema.
 
-LocalGameplay composes the service, explicit representation/command/combat adapters and one click-blocked IMGUI overlay. The panel can create and inspect units, select a unit, assign a captain, remove a member, switch representation, issue Move/Hold and start a hostile U20 encounter. It is disposable development tooling; U27 owns final UI and U22 remains unimplemented.
+LocalGameplay composes the service, explicit representation/command/combat adapters and one click-blocked IMGUI overlay. The panel can create and inspect units, select a unit, assign a captain, remove a member, switch representation, issue Move/Hold and start a hostile U20 encounter. It is disposable development tooling; U27 owns final UI.
+
+## U22 third-person control
+
+The U22 authority flow is `selected StableEntityId -> PlayerControlService -> Tier1AiScheduler/TierManager -> existing NavMeshMovementDriver`, with `ThirdPersonControlController` adapting input and Cinemachine presentation. `PlayerControlState` and its save DTO are Domain values. Eligibility, ownership, tier pinning and restore policy are engine-independent Simulation. Input, cameras, cursor and direct NavMesh movement remain disposable Presentation. Infrastructure only composes these existing boundaries.
+
+One Character has one canonical identity and one Tier1 presenter. RTS/AI, U11 work, U20 combat and U21 military state can retain logical intent, but `Tier1MovementAuthority` permits only `Autonomous` or `DirectPlayer` to move the existing `NavMeshAgent`. Enter cancels the current Utility action through its normal cancellation semantics, resets its path and gates later autonomous/U20 destinations. Manual Move requeues as `Assigned`; research/group/unit membership remains. Exit restores autonomous authority and schedules immediate reevaluation. Other Characters and the global clock continue normally.
+
+The TPS camera is one reusable `CinemachineCamera` with a child target on the existing presenter. Priority handoff leaves the RTS rig transform untouched. The Unity Input System enables Camera/Pointer/Building only in RTS and ThirdPerson only in TPS; Time and Mode remain global. Presentation never becomes save truth.
+
+Snapshot v9 appends mode and controlled Character ID. Restore uses the same eligibility and Tier1 path, with safe RTS fallback. V1-v8 remain loadable and the opaque PostgreSQL schema is unchanged. U22 adds no alternate health, inventory, combat, unit, damage or animation system; U23 abstract battle remains untouched.

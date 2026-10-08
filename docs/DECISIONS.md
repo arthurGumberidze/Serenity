@@ -297,3 +297,19 @@ Detailed/Aggregate is unit representation, not Character tier identity. `Militar
 Snapshot v8 stores stable unit/side/captain IDs, sorted roster history, status, representation, abstract location, order, morale/cohesion summary, active U20 encounter link and revision markers. Restore validates Characters, unique active membership, captain eligibility and encounter cross-references after combat restore. Versions 1-7 remain readable. PostgreSQL continues opaque XML storage and requires no relational migration.
 
 The LocalGameplay unit overlay is development-only. It issues commands to Simulation, reuses U11 Move and the existing pointer blocker, and owns no persistent state. Final army UI remains U27.
+
+## D-052 Stable-ID player control and exclusive movement ownership (2026-10-08)
+
+`PlayerControlService` is the engine-independent authority for the temporary RTS/ThirdPerson ownership mode. It stores only the existing Character `StableEntityId`, admits the current monarch, first eligible heir or player-unit captain, pins that ID in Tier1 and never creates a person, presenter or copied gameplay state. Direct control composes with the existing combat transition guard and external-activity owner rather than replacing them.
+
+The existing `NavMeshMovementDriver` has an explicit `Autonomous`/`DirectPlayer` authority. Direct movement uses the same `NavMeshAgent.Move`; there is no second CharacterController or Transform writer. On entry the current Utility action is cancelled through its existing contract. A U11 manual Move becomes `Assigned` again, while assignment/group metadata is retained. U20 continues logical combat but its movement requests are gated while player control owns locomotion. On exit the scheduler may resume valid work through normal selection.
+
+## D-053 Reusable TPS presentation and mode-scoped input (2026-10-08)
+
+One scene-level TPS Cinemachine rig and target are created once and rebound to the existing Character presenter. Camera priorities switch while the RTS controller and transform are retained for exact in-session return. Camera state is disposable and not a gameplay/save authority.
+
+The Unity Input System owns all bindings. Camera/Pointer/Building maps are disabled in TPS, the ThirdPerson map is enabled, and global Time plus Mode maps remain active. T toggles, Escape exits, WASD moves camera-relative, pointer delta looks and Shift runs. Cursor locking is presentation-only and skipped in batch mode. U22 deliberately adds no second damage or attack input path.
+
+## D-054 Version 9 player-control persistence and safe fallback (2026-10-08)
+
+Snapshot v9 adds only `PlayerControlSaveState`: mode and optional controlled Character stable ID. Load re-enters through normal eligibility/materialization/arbitration. A missing, dead, incapacitated, hostile or otherwise invalid identity falls back to RTS; no GameObject or camera reference is restored. Versions 1–8 remain readable. PostgreSQL continues storing the validated XML opaquely and requires no relational migration or realtime role.

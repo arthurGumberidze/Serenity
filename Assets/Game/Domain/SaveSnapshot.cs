@@ -7,6 +7,7 @@ using Game.Domain.Health;
 using Game.Domain.Weather;
 using Game.Domain.Combat;
 using Game.Domain.Military;
+using Game.Domain.Control;
 
 namespace Game.Domain
 {
@@ -21,7 +22,8 @@ namespace Game.Domain
         public const int WeatherVersion = 6;
         public const int CombatVersion = 7;
         public const int MilitaryVersion = 8;
-        public const int CurrentVersion = MilitaryVersion;
+        public const int PlayerControlVersion = 9;
+        public const int CurrentVersion = PlayerControlVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -36,16 +38,18 @@ namespace Game.Domain
         public WeatherSaveState Weather { get; }
         public CombatSaveState Combat { get; }
         public MilitaryUnitSaveState Military { get; }
+        public PlayerControlSaveState PlayerControl { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
             DynastyWorldSaveState dynastyWorld = null, HealthFamilySaveState healthFamily = null,
             WeatherSaveState weather = null, CombatSaveState combat = null,
-            MilitaryUnitSaveState military = null)
+            MilitaryUnitSaveState military = null, PlayerControlSaveState playerControl = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
-                formatVersion != WeatherVersion && formatVersion != CombatVersion && formatVersion != CurrentVersion)
+                formatVersion != WeatherVersion && formatVersion != CombatVersion &&
+                formatVersion != MilitaryVersion && formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -65,6 +69,7 @@ namespace Game.Domain
             Weather = weather;
             Combat = combat;
             Military = military;
+            PlayerControl = playerControl;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

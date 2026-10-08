@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Game.Domain.Control;
 
 namespace Game.Presentation.Input
 {
@@ -12,6 +13,8 @@ namespace Game.Presentation.Input
         private InputActionMap pointerMap;
         private InputActionMap buildingMap;
         private InputActionMap timeMap;
+        private InputActionMap modeMap;
+        private InputActionMap thirdPersonMap;
         private InputAction moveAction;
         private InputAction zoomAction;
         private InputAction rotateAction;
@@ -28,6 +31,12 @@ namespace Game.Presentation.Input
         private InputAction pauseAction;
         private InputAction timeSlowerAction;
         private InputAction timeFasterAction;
+        private InputAction controlModeToggleAction;
+        private InputAction thirdPersonMoveAction;
+        private InputAction thirdPersonLookAction;
+        private InputAction thirdPersonRunAction;
+        private InputAction thirdPersonExitAction;
+        private PlayerControlMode controlMode = PlayerControlMode.Rts;
 
         public Vector2 Move => ReadVector2(moveAction);
         public float Zoom => ReadFloat(zoomAction);
@@ -36,6 +45,12 @@ namespace Game.Presentation.Input
         public bool IsPanPressed => panModifierAction != null && panModifierAction.IsPressed();
         public bool IsAdditiveSelectionPressed => selectionModifierAction != null && selectionModifierAction.IsPressed();
         public Vector2 PointerPosition => ReadVector2(pointerPositionAction);
+        public Vector2 ThirdPersonMove => ReadVector2(thirdPersonMoveAction);
+        public Vector2 ThirdPersonLook => ReadVector2(thirdPersonLookAction);
+        public bool ThirdPersonRun => thirdPersonRunAction != null && thirdPersonRunAction.IsPressed();
+        public bool RtsActionsEnabled => cameraMap != null && cameraMap.enabled;
+        public bool ThirdPersonActionsEnabled => thirdPersonMap != null && thirdPersonMap.enabled;
+        public bool GlobalTimeActionsEnabled => timeMap != null && timeMap.enabled;
 
         public event Action PrimaryClicked;
         public event Action SecondaryClicked;
@@ -46,6 +61,8 @@ namespace Game.Presentation.Input
         public event Action PauseToggled;
         public event Action TimeSlowerRequested;
         public event Action TimeFasterRequested;
+        public event Action ControlModeToggled;
+        public event Action ThirdPersonExitRequested;
 
         public InputActionAsset Actions => actionAsset;
 
@@ -91,6 +108,8 @@ namespace Game.Presentation.Input
             pointerMap = actionAsset.FindActionMap("Pointer", true);
             buildingMap = actionAsset.FindActionMap("Building", true);
             timeMap = actionAsset.FindActionMap("Time", true);
+            modeMap = actionAsset.FindActionMap("Mode", true);
+            thirdPersonMap = actionAsset.FindActionMap("ThirdPerson", true);
             moveAction = cameraMap.FindAction("Move", true);
             zoomAction = cameraMap.FindAction("Zoom", true);
             rotateAction = cameraMap.FindAction("Rotate", true);
@@ -107,6 +126,11 @@ namespace Game.Presentation.Input
             pauseAction = timeMap.FindAction("TogglePause", true);
             timeSlowerAction = timeMap.FindAction("Slower", true);
             timeFasterAction = timeMap.FindAction("Faster", true);
+            controlModeToggleAction = modeMap.FindAction("ToggleControl", true);
+            thirdPersonMoveAction = thirdPersonMap.FindAction("Move", true);
+            thirdPersonLookAction = thirdPersonMap.FindAction("Look", true);
+            thirdPersonRunAction = thirdPersonMap.FindAction("Run", true);
+            thirdPersonExitAction = thirdPersonMap.FindAction("Exit", true);
         }
 
         private void EnableActions()
@@ -131,10 +155,13 @@ namespace Game.Presentation.Input
             timeSlowerAction.performed += OnTimeSlower;
             timeFasterAction.performed -= OnTimeFaster;
             timeFasterAction.performed += OnTimeFaster;
-            cameraMap.Enable();
-            pointerMap.Enable();
-            buildingMap.Enable();
+            controlModeToggleAction.performed -= OnControlModeToggle;
+            controlModeToggleAction.performed += OnControlModeToggle;
+            thirdPersonExitAction.performed -= OnThirdPersonExit;
+            thirdPersonExitAction.performed += OnThirdPersonExit;
             timeMap.Enable();
+            modeMap.Enable();
+            ApplyControlModeMaps();
         }
 
         private void DisableActions()
@@ -150,10 +177,14 @@ namespace Game.Presentation.Input
             if (pauseAction != null) pauseAction.performed -= OnPauseToggle;
             if (timeSlowerAction != null) timeSlowerAction.performed -= OnTimeSlower;
             if (timeFasterAction != null) timeFasterAction.performed -= OnTimeFaster;
+            if (controlModeToggleAction != null) controlModeToggleAction.performed -= OnControlModeToggle;
+            if (thirdPersonExitAction != null) thirdPersonExitAction.performed -= OnThirdPersonExit;
             cameraMap?.Disable();
             pointerMap?.Disable();
             buildingMap?.Disable();
             timeMap?.Disable();
+            modeMap?.Disable();
+            thirdPersonMap?.Disable();
         }
 
         private void OnPrimaryClick(InputAction.CallbackContext context)
@@ -173,6 +204,33 @@ namespace Game.Presentation.Input
         private void OnPauseToggle(InputAction.CallbackContext context) => PauseToggled?.Invoke();
         private void OnTimeSlower(InputAction.CallbackContext context) => TimeSlowerRequested?.Invoke();
         private void OnTimeFaster(InputAction.CallbackContext context) => TimeFasterRequested?.Invoke();
+        private void OnControlModeToggle(InputAction.CallbackContext context) => ControlModeToggled?.Invoke();
+        private void OnThirdPersonExit(InputAction.CallbackContext context) => ThirdPersonExitRequested?.Invoke();
+
+        public void SetPlayerControlMode(PlayerControlMode mode)
+        {
+            if (!Enum.IsDefined(typeof(PlayerControlMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+            controlMode = mode;
+            if (isActiveAndEnabled) ApplyControlModeMaps();
+        }
+
+        private void ApplyControlModeMaps()
+        {
+            if (controlMode == PlayerControlMode.ThirdPerson)
+            {
+                cameraMap?.Disable();
+                pointerMap?.Disable();
+                buildingMap?.Disable();
+                thirdPersonMap?.Enable();
+            }
+            else
+            {
+                thirdPersonMap?.Disable();
+                cameraMap?.Enable();
+                pointerMap?.Enable();
+                buildingMap?.Enable();
+            }
+        }
 
         private static Vector2 ReadVector2(InputAction action)
         {

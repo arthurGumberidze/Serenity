@@ -74,6 +74,36 @@
         { "name": "", "id": "f482d12a-cc17-442a-b917-39cd8054ce8f", "path": "<Keyboard>/minus", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Slower", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "b9d34a92-19c2-4d69-bcf2-7aecf259d358", "path": "<Keyboard>/equals", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Faster", "isComposite": false, "isPartOfComposite": false }
       ]
+    },
+    {
+      "name": "Mode",
+      "id": "f89a205a-732a-42a2-b1dc-3a6de98e68c7",
+      "actions": [
+        { "name": "ToggleControl", "type": "Button", "id": "599a2d21-7013-4937-b449-df8969a44efc", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "", "id": "0ddc55e2-1162-497f-a85a-54a1fd163e16", "path": "<Keyboard>/t", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "ToggleControl", "isComposite": false, "isPartOfComposite": false }
+      ]
+    },
+    {
+      "name": "ThirdPerson",
+      "id": "7f18bc98-a73d-4420-a7a2-01d3da89105b",
+      "actions": [
+        { "name": "Move", "type": "Value", "id": "77ed0256-4e96-405f-b8d6-dd7c095d6e3f", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "Look", "type": "PassThrough", "id": "0f5ee99d-1c0d-4c20-a8d7-748a26672d52", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "Run", "type": "Button", "id": "b6cc038d-e897-45c3-98e4-76083398e2dd", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": true },
+        { "name": "Exit", "type": "Button", "id": "f0a92517-64b6-46fa-ad04-17ec96a950ff", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+      ],
+      "bindings": [
+        { "name": "WASD", "id": "6e56c0f5-691f-48a7-91aa-bc1f8b522f84", "path": "2DVector", "interactions": "", "processors": "", "groups": "", "action": "Move", "isComposite": true, "isPartOfComposite": false },
+        { "name": "up", "id": "adcc9064-35f9-42fd-8393-8a41b2630b0c", "path": "<Keyboard>/w", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "down", "id": "c9387d62-1d10-442f-b45a-30d60f1355ea", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "left", "id": "94db41bc-c483-439d-89ab-ff54d7fb80a4", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "right", "id": "4b25a1c4-8c27-4794-93a7-a8f7d9d3f63a", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
+        { "name": "", "id": "a81bdcb2-38ed-48e6-ab9c-3b692e7d1949", "path": "<Pointer>/delta", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Look", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "18b9baaf-ee30-4ac8-842d-89944f3a5a34", "path": "<Keyboard>/leftShift", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Run", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "ae5ab43a-55bd-471c-bfc0-c887e4f85628", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Exit", "isComposite": false, "isPartOfComposite": false }
+      ]
     }
   ],
   "controlSchemes": [

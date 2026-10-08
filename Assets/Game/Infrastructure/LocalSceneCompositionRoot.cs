@@ -43,6 +43,9 @@ using Game.Presentation.Combat;
 using Game.Domain.Military;
 using Game.Simulation.Military;
 using Game.Presentation.Military;
+using Game.Domain.Control;
+using Game.Simulation.Control;
+using Game.Presentation.Control;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -134,6 +137,8 @@ namespace Game.Infrastructure
         public MilitaryUnitCommandService MilitaryCommands { get; private set; }
         public MilitaryUnitCombatService MilitaryCombat { get; private set; }
         public MilitaryUnitDebugOverlay MilitaryDebug { get; private set; }
+        public PlayerControlService PlayerControl { get; private set; }
+        public ThirdPersonControlController ThirdPersonControl { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -297,8 +302,6 @@ namespace Game.Infrastructure
                 developmentWorldSimulationSeed, Tiers);
             Combat.RegisterSide(MaleDemoCharacter.Id, new CombatSideId("player"));
             Combat.RegisterSide(FemaleDemoCharacter.Id, new CombatSideId("player"));
-            Tiers.BindTransitionGuard(Combat);
-            AiScheduler.BindExternalActivityOwner(Combat);
             CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
@@ -307,6 +310,11 @@ namespace Game.Infrastructure
                 Characters, HealthFamily);
             MilitaryCommands = new MilitaryUnitCommandService(MilitaryUnits, ManualMoveCommands);
             MilitaryCombat = new MilitaryUnitCombatService(MilitaryUnits, Combat);
+            PlayerControl = new PlayerControlService(Characters, HealthFamily, Tiers, Dynasty, MilitaryUnits,
+                AiScheduler, new MilitarySideId("player"));
+            Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
+            AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
+            Combat.BindMovementSuppression(PlayerControl);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
@@ -323,6 +331,10 @@ namespace Game.Infrastructure
             MilitaryDebug = gameObject.AddComponent<MilitaryUnitDebugOverlay>();
             MilitaryDebug.Initialize(MilitaryUnits, MilitaryRepresentations, MilitaryCommands, MilitaryCombat,
                 selectionProbe, pointerRaycaster, () => Clock.State.CalendarTicks);
+            ThirdPersonControl = gameObject.AddComponent<ThirdPersonControlController>();
+            ThirdPersonControl.Initialize(input, selectionProbe, CharacterPresentations, AiRuntime,
+                cameraController, buildingPlacementController, PlayerControl, HealthFamily, MilitaryUnits, Work,
+                pointerRaycaster);
         }
 
         private void OnDestroy()

@@ -15,11 +15,12 @@ using Game.Domain.Health;
 using Game.Domain.Weather;
 using Game.Domain.Combat;
 using Game.Domain.Military;
+using Game.Domain.Control;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V8 adds persistent military units.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V9 adds persistent player-control ownership.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -50,6 +51,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeCombat(snapshot.Combat));
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryVersion)
                 root.Add(SerializeMilitary(snapshot.Military));
+            if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
+                root.Add(SerializePlayerControl(snapshot.PlayerControl));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -78,7 +81,8 @@ namespace Game.Infrastructure
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
                         version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
                         version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
-                        version != SaveSnapshot.CombatVersion && version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
+                        version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
@@ -95,11 +99,13 @@ namespace Game.Infrastructure
                         ? DeserializeCombat(root.Element("combat")) : null;
                     var military = version >= SaveSnapshot.MilitaryVersion
                         ? DeserializeMilitary(root.Element("military")) : null;
+                    var playerControl = version >= SaveSnapshot.PlayerControlVersion
+                        ? DeserializePlayerControl(root.Element("playerControl")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military);
+                        combat, military, playerControl);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -657,6 +663,29 @@ namespace Game.Infrastructure
             return new MilitaryUnitSaveState(units);
         }
 
+        private static XElement SerializePlayerControl(PlayerControlSaveState state)
+        {
+            var element = new XElement("playerControl");
+            if (state == null) return element;
+            element.Add(new XElement("mode", (int)state.Mode),
+                OptionalId("controlledCharacterId", state.ControlledCharacterId));
+            return element;
+        }
+
+        private static PlayerControlSaveState DeserializePlayerControl(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing player-control state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value))
+                    throw new FormatException("Invalid empty player-control state.");
+                return null;
+            }
+            RequireFields(element, new[] { "mode", "controlledCharacterId" });
+            return new PlayerControlSaveState((PlayerControlMode)Int(element, "mode"),
+                OptionalStableId(element, "controlledCharacterId"));
+        }
+
         private static string[] FieldsForVersion(int version)
         {
             var fields = TimeFields.AsEnumerable();
@@ -667,6 +696,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.WeatherVersion) fields = fields.Concat(new[] { "weather" });
             if (version >= SaveSnapshot.CombatVersion) fields = fields.Concat(new[] { "combat" });
             if (version >= SaveSnapshot.MilitaryVersion) fields = fields.Concat(new[] { "military" });
+            if (version >= SaveSnapshot.PlayerControlVersion) fields = fields.Concat(new[] { "playerControl" });
             return fields.ToArray();
         }
 

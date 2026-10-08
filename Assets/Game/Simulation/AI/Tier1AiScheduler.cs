@@ -77,6 +77,28 @@ namespace Game.Simulation.AI
             externalActivityOwner = owner;
         }
 
+        public void SuspendForExternalControl(StableEntityId characterId)
+        {
+            if (!byId.TryGetValue(characterId, out var entry))
+                throw new InvalidOperationException("Tier 1 AI agent is not registered for direct control.");
+            if (entry.Action != null)
+            {
+                entry.Action.Cancel();
+                entry.Action = null;
+            }
+            entry.Movement.Stop();
+            entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
+            entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+        }
+
+        public void ResumeAfterExternalControl(StableEntityId characterId)
+        {
+            if (!byId.TryGetValue(characterId, out var entry)) return;
+            entry.NextThinkTicks = calendarTicks;
+            entry.LastActionTicks = calendarTicks;
+            entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
+        }
+
         public void Register(Character character, Tier1AiAgentState agent, ITier1MovementDriver movement)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));

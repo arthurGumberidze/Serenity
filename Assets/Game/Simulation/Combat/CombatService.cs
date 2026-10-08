@@ -157,6 +157,7 @@ namespace Game.Simulation.Combat
         private readonly Dictionary<StableEntityId, StableEntityId> activeEncounterByCharacter =
             new Dictionary<StableEntityId, StableEntityId>();
         private readonly long worldSeed;
+        private IExternalCharacterActivityOwner movementSuppression;
 
         public CombatService(CharacterRegistry characterRegistry, HealthAndFamilyService healthService,
             ICombatPositionProvider positionProvider, long simulationWorldSeed,
@@ -177,6 +178,14 @@ namespace Game.Simulation.Combat
         public CombatWeaponCatalog Weapons => weapons;
         public IReadOnlyList<CombatEncounterState> Encounters => encounters.Values.OrderBy(x => x.Id)
             .Select(Capture).ToArray();
+
+        public void BindMovementSuppression(IExternalCharacterActivityOwner owner)
+        {
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (movementSuppression != null && !ReferenceEquals(movementSuppression, owner))
+                throw new InvalidOperationException("Combat movement suppression is already bound.");
+            movementSuppression = owner;
+        }
 
         public void RegisterSide(StableEntityId characterId, CombatSideId sideId)
         {
@@ -389,17 +398,17 @@ namespace Game.Simulation.Combat
                 }
                 if (combatant.State == CombatantState.Breaking)
                 {
-                    positions.MoveTo(id, combatant.RetreatPoint, 0.5f);
+                    MoveToUnlessSuppressed(id, combatant.RetreatPoint, 0.5f);
                     combatant = combatant.With(state: CombatantState.Retreating);
                     encounter.Combatants[id] = combatant;
                     continue;
                 }
                 if (combatant.State == CombatantState.Retreating)
                 {
-                    positions.MoveTo(id, combatant.RetreatPoint, 0.5f);
+                    MoveToUnlessSuppressed(id, combatant.RetreatPoint, 0.5f);
                     if (calendarTick >= combatant.NextAttackTick || IsWithin(id, combatant.RetreatPoint, 0.75f))
                     {
-                        positions.Stop(id);
+                        StopUnlessSuppressed(id);
                         encounter.Combatants[id] = combatant.With(state: CombatantState.Disengaged, clearTarget: true);
                     }
                     continue;
@@ -408,7 +417,7 @@ namespace Game.Simulation.Combat
                 var targetId = targeting.Select(combatant, encounter.Combatants.Values);
                 if (!targetId.HasValue)
                 {
-                    positions.Stop(id);
+                    StopUnlessSuppressed(id);
                     encounter.Combatants[id] = combatant.With(state: CombatantState.Fighting, clearTarget: true);
                     continue;
                 }
@@ -423,11 +432,11 @@ namespace Game.Simulation.Combat
                 {
                     var destination = distanceSquared > (range + 2f) * (range + 2f)
                         ? FormationApproach(encounter, combatant, targetPosition) : targetPosition;
-                    positions.MoveTo(id, destination, Math.Max(0.3f, range * 0.7f));
+                    MoveToUnlessSuppressed(id, destination, Math.Max(0.3f, range * 0.7f));
                     encounter.Combatants[id] = combatant.With(state: CombatantState.Approaching);
                     continue;
                 }
-                positions.Stop(id);
+                StopUnlessSuppressed(id);
                 if (calendarTick < combatant.NextAttackTick)
                 {
                     encounter.Combatants[id] = combatant.With(state: CombatantState.Attacking);
@@ -519,7 +528,7 @@ namespace Game.Simulation.Combat
             foreach (var combatant in encounter.Combatants.Values)
             {
                 activeEncounterByCharacter.Remove(combatant.CharacterId);
-                positions.Stop(combatant.CharacterId);
+                StopUnlessSuppressed(combatant.CharacterId);
             }
         }
 
@@ -582,6 +591,19 @@ namespace Game.Simulation.Combat
 
         private bool IsWithin(StableEntityId id, WorldPosition target, float distance) =>
             positions.TryGetPosition(id, out var position) && position.DistanceSquared(target) <= distance * distance;
+
+        private bool IsMovementSuppressed(StableEntityId characterId) =>
+            movementSuppression != null && movementSuppression.IsExternallyControlled(characterId);
+
+        private void MoveToUnlessSuppressed(StableEntityId characterId, WorldPosition target, float stoppingDistance)
+        {
+            if (!IsMovementSuppressed(characterId)) positions.MoveTo(characterId, target, stoppingDistance);
+        }
+
+        private void StopUnlessSuppressed(StableEntityId characterId)
+        {
+            if (!IsMovementSuppressed(characterId)) positions.Stop(characterId);
+        }
 
         private static HealthConditionId SelectInjury(int impact, HealthConditionId minimum)
         {
