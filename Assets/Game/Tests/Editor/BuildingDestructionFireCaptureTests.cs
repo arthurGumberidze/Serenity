@@ -267,7 +267,7 @@ namespace Game.Tests.Editor
                 .TryAdd(fixture.Wood, new ResourceQuantity(4));
             fixture.Damage.IgniteBuilding(building.Id, 700, 0);
             fixture.Damage.AdvanceFireTo(TimeSpan.FromHours(2).Ticks);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Fixture.Id(900), new GameTimeState(), 400,
+            var snapshot = new SaveSnapshot(SaveSnapshot.BuildingVersion, Fixture.Id(900), new GameTimeState(), 400,
                 production: fixture.Production.CaptureState(), buildingWorld: fixture.Damage.CaptureState());
             var codec = new SaveXmlCodec();
             var restored = codec.Deserialize(codec.Serialize(snapshot));

@@ -9,6 +9,7 @@ using Game.Domain.Combat;
 using Game.Domain.Military;
 using Game.Domain.Control;
 using Game.Domain.Buildings;
+using Game.Domain.World;
 
 namespace Game.Domain
 {
@@ -26,7 +27,8 @@ namespace Game.Domain
         public const int PlayerControlVersion = 9;
         public const int BattleVersion = 10;
         public const int BuildingVersion = 11;
-        public const int CurrentVersion = BuildingVersion;
+        public const int GlobalMapVersion = 12;
+        public const int CurrentVersion = GlobalMapVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -43,19 +45,20 @@ namespace Game.Domain
         public MilitaryUnitSaveState Military { get; }
         public PlayerControlSaveState PlayerControl { get; }
         public BuildingWorldSaveState BuildingWorld { get; }
+        public GlobalMapSaveState GlobalMap { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
             DynastyWorldSaveState dynastyWorld = null, HealthFamilySaveState healthFamily = null,
             WeatherSaveState weather = null, CombatSaveState combat = null,
             MilitaryUnitSaveState military = null, PlayerControlSaveState playerControl = null,
-            BuildingWorldSaveState buildingWorld = null)
+            BuildingWorldSaveState buildingWorld = null, GlobalMapSaveState globalMap = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
                 formatVersion != WeatherVersion && formatVersion != CombatVersion &&
                 formatVersion != MilitaryVersion && formatVersion != PlayerControlVersion &&
-                formatVersion != BattleVersion && formatVersion != CurrentVersion)
+                formatVersion != BattleVersion && formatVersion != BuildingVersion && formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -77,6 +80,7 @@ namespace Game.Domain
             Military = military;
             PlayerControl = playerControl;
             BuildingWorld = buildingWorld;
+            GlobalMap = globalMap;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

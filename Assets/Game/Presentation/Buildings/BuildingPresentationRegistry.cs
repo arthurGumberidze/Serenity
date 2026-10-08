@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Domain;
 
 namespace Game.Presentation.Buildings
@@ -9,6 +10,8 @@ namespace Game.Presentation.Buildings
         private readonly Dictionary<StableEntityId, BuildingPresenter> presenters = new Dictionary<StableEntityId, BuildingPresenter>();
 
         public int Count => presenters.Count;
+        public IReadOnlyList<BuildingPresenter> All => presenters.OrderBy(x => x.Key)
+            .Select(x => x.Value).ToArray();
 
         internal void Register(StableEntityId id, BuildingPresenter presenter)
         {

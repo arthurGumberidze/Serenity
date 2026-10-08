@@ -46,6 +46,8 @@ using Game.Presentation.Military;
 using Game.Domain.Control;
 using Game.Simulation.Control;
 using Game.Presentation.Control;
+using Game.Domain.World;
+using Game.Simulation.World;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -142,6 +144,10 @@ namespace Game.Infrastructure
         public MilitaryUnitDebugOverlay MilitaryDebug { get; private set; }
         public PlayerControlService PlayerControl { get; private set; }
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
+        public GlobalMapService GlobalMap { get; private set; }
+        public GameModeTransitionService ModeTransitions { get; private set; }
+        public SettlementId StarterSettlementId { get; private set; }
+        public GlobalMapRuntimeBridge GlobalMapBridge { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -317,6 +323,12 @@ namespace Game.Infrastructure
                 AiScheduler, new MilitarySideId("player"));
             Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
                 MilitaryCombat, PlayerControl);
+            GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks), MilitaryUnits,
+                Battles);
+            StarterSettlementId = new SettlementId(DemoId(500));
+            SynchronizeStarterSettlement();
+            ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,
+                MilitaryRepresentations, Battles, PlayerControl);
             BuildingDamage = new BuildingDamageService(Buildings,
                 buildingCatalog.Entries.Select(entry => buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))),
                 Production, Inventories, WorldPiles, Weather, Combat, BuildingOccupancy);
@@ -348,6 +360,8 @@ namespace Game.Infrastructure
             ThirdPersonControl.Initialize(input, selectionProbe, CharacterPresentations, AiRuntime,
                 cameraController, buildingPlacementController, PlayerControl, HealthFamily, MilitaryUnits, Work,
                 pointerRaycaster);
+            GlobalMapBridge = gameObject.AddComponent<GlobalMapRuntimeBridge>();
+            GlobalMapBridge.Initialize(this);
         }
 
         private void OnDestroy()
@@ -371,6 +385,7 @@ namespace Game.Infrastructure
                 Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
+            GlobalMap.AdvanceTo(targetCalendarTick);
             Battles.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
@@ -388,6 +403,25 @@ namespace Game.Infrastructure
                 lastSimulationBiologicalTick: Clock.State.BiologicalTicks);
             Tiers.Materialize(child, CharacterSimulationTier.Tier3, state);
             Production.Population = Characters.Count;
+            SynchronizeStarterSettlement();
+        }
+
+        public void SynchronizeStarterSettlement()
+        {
+            if (GlobalMap == null) return;
+            GlobalMap.SynchronizeSettlement(StarterSettlementId,
+                new WorldLocationId("starter_settlement"), new CombatSideId("player"),
+                Buildings.All.Select(x => x.Id), Characters.GetAll().Select(x => x.Id));
+        }
+
+        public void ApplyLocalLocationScope(WorldLocationId locationId)
+        {
+            var settlement = GlobalMap.GetSettlementAt(locationId);
+            var visibleBuildings = settlement == null
+                ? new HashSet<StableEntityId>()
+                : new HashSet<StableEntityId>(settlement.BuildingIds);
+            foreach (var presenter in BuildingPresentations.All)
+                if (presenter != null) presenter.gameObject.SetActive(visibleBuildings.Contains(presenter.BuildingId));
         }
 
         public CombatEncounterState StartDemoCombat()

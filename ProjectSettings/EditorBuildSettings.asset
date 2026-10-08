@@ -8,5 +8,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/LocalGameplay.unity
     guid: a03548db2c170ae45839a602c94a9d62
+  - enabled: 1
+    path: Assets/Scenes/GlobalMap.unity
+    guid: 7aa100a250b296b44954011ea301687f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

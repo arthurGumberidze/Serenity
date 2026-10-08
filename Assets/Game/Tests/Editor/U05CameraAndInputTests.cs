@@ -79,10 +79,11 @@ namespace Game.Tests
         }
 
         [Test]
-        public void LocalSceneIsTheBuildSceneAndUsesOnlyApprovedVendorDependencies()
+        public void LocalAndGlobalScenesAreBuildScenesAndUseOnlyApprovedVendorDependencies()
         {
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).ToArray();
-            Assert.That(scenes.Select(scene => scene.path), Is.EqualTo(new[] { "Assets/Scenes/LocalGameplay.unity" }));
+            Assert.That(scenes.Select(scene => scene.path), Is.EqualTo(new[]
+                { "Assets/Scenes/LocalGameplay.unity", "Assets/Scenes/GlobalMap.unity" }));
             var dependencies = AssetDatabase.GetDependencies(scenes[0].path, true);
             Assert.That(dependencies.Any(path => path.StartsWith("Assets/EmaceArt")
                 || path.StartsWith("Assets/EmbersStorm")

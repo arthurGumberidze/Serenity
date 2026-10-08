@@ -17,11 +17,12 @@ using Game.Domain.Combat;
 using Game.Domain.Military;
 using Game.Domain.Control;
 using Game.Domain.Buildings;
+using Game.Domain.World;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V11 adds canonical building structural state.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V12 adds canonical global-map state.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -56,6 +57,8 @@ namespace Game.Infrastructure
                 root.Add(SerializePlayerControl(snapshot.PlayerControl));
             if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
                 root.Add(SerializeBuildingWorld(snapshot.BuildingWorld));
+            if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
+                root.Add(SerializeGlobalMap(snapshot.GlobalMap));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -86,7 +89,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
                         version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
                         version != SaveSnapshot.PlayerControlVersion &&
-                        version != SaveSnapshot.BattleVersion &&
+                        version != SaveSnapshot.BattleVersion && version != SaveSnapshot.BuildingVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -108,11 +111,13 @@ namespace Game.Infrastructure
                         ? DeserializePlayerControl(root.Element("playerControl")) : null;
                     var buildingWorld = version >= SaveSnapshot.BuildingVersion
                         ? DeserializeBuildingWorld(root.Element("buildingWorld")) : null;
+                    var globalMap = version >= SaveSnapshot.GlobalMapVersion
+                        ? DeserializeGlobalMap(root.Element("globalMap")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military, playerControl, buildingWorld);
+                        combat, military, playerControl, buildingWorld, globalMap);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -810,6 +815,76 @@ namespace Game.Infrastructure
             return new BuildingWorldSaveState(buildings, piles, Long(element, "lastFireTick"));
         }
 
+        private static XElement SerializeGlobalMap(GlobalMapSaveState state)
+        {
+            var element = new XElement("globalMap");
+            if (state == null) return element;
+            element.Add(new XElement("graphId", state.GraphId), new XElement("mode", (int)state.Mode),
+                new XElement("activeLocationId", state.ActiveLocationId.ToString()),
+                new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("locations", state.Locations.Select(value => new XElement("location",
+                    new XElement("id", value.Id.ToString()), new XElement("name", value.Name),
+                    new XElement("type", (int)value.Type), new XElement("mapX", value.MapX),
+                    new XElement("mapY", value.MapY)))),
+                new XElement("routes", state.Routes.Select(value => new XElement("route",
+                    new XElement("from", value.From.ToString()), new XElement("to", value.To.ToString()),
+                    new XElement("durationTicks", value.TravelDurationTicks)))),
+                new XElement("settlements", state.Settlements.Select(value => new XElement("settlement",
+                    new XElement("id", value.Id.ToString()), new XElement("locationId", value.LocationId.ToString()),
+                    new XElement("ownerSideId", value.OwnerSideId.ToString()),
+                    new XElement("buildingIds", value.BuildingIds.Select(id => new XElement("id", id.ToString()))),
+                    new XElement("residentIds", value.ResidentCharacterIds.Select(id => new XElement("id", id.ToString())))))),
+                new XElement("travels", state.Travels.Select(value => new XElement("travel",
+                    new XElement("unitId", value.UnitId.ToString()), new XElement("origin", value.Origin.ToString()),
+                    new XElement("destination", value.Destination.ToString()),
+                    new XElement("departureTick", value.DepartureTick),
+                    new XElement("arrivalTick", value.ArrivalTick)))));
+            return element;
+        }
+
+        private static GlobalMapSaveState DeserializeGlobalMap(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing global-map state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty global-map state.");
+                return null;
+            }
+            RequireFields(element, new[] { "graphId", "mode", "activeLocationId", "lastProcessedTick",
+                "locations", "routes", "settlements", "travels" });
+            var locations = Items(element.Element("locations"), "location", item =>
+            {
+                RequireFields(item, new[] { "id", "name", "type", "mapX", "mapY" });
+                return new WorldLocationState(new WorldLocationId(Value(item, "id")), Value(item, "name"),
+                    (WorldLocationType)Int(item, "type"), Int(item, "mapX"), Int(item, "mapY"));
+            });
+            var routes = Items(element.Element("routes"), "route", item =>
+            {
+                RequireFields(item, new[] { "from", "to", "durationTicks" });
+                return new WorldRouteState(new WorldLocationId(Value(item, "from")),
+                    new WorldLocationId(Value(item, "to")), Long(item, "durationTicks"));
+            });
+            var settlements = Items(element.Element("settlements"), "settlement", item =>
+            {
+                RequireFields(item, new[] { "id", "locationId", "ownerSideId", "buildingIds", "residentIds" });
+                var buildings = Items(item.Element("buildingIds"), "id", id => StableEntityId.Parse(Scalar(id)));
+                var residents = Items(item.Element("residentIds"), "id", id => StableEntityId.Parse(Scalar(id)));
+                return new SettlementState(new SettlementId(StableEntityId.Parse(Value(item, "id"))),
+                    new WorldLocationId(Value(item, "locationId")), new CombatSideId(Value(item, "ownerSideId")),
+                    buildings, residents);
+            });
+            var travels = Items(element.Element("travels"), "travel", item =>
+            {
+                RequireFields(item, new[] { "unitId", "origin", "destination", "departureTick", "arrivalTick" });
+                return new WorldTravelState(MilitaryUnitId.Parse(Value(item, "unitId")),
+                    new WorldLocationId(Value(item, "origin")), new WorldLocationId(Value(item, "destination")),
+                    Long(item, "departureTick"), Long(item, "arrivalTick"));
+            });
+            return new GlobalMapSaveState(Value(element, "graphId"), (GameWorldMode)Int(element, "mode"),
+                new WorldLocationId(Value(element, "activeLocationId")), locations, routes, settlements, travels,
+                Long(element, "lastProcessedTick"));
+        }
+
         private static string[] FieldsForVersion(int version)
         {
             var fields = TimeFields.AsEnumerable();
@@ -822,6 +897,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.MilitaryVersion) fields = fields.Concat(new[] { "military" });
             if (version >= SaveSnapshot.PlayerControlVersion) fields = fields.Concat(new[] { "playerControl" });
             if (version >= SaveSnapshot.BuildingVersion) fields = fields.Concat(new[] { "buildingWorld" });
+            if (version >= SaveSnapshot.GlobalMapVersion) fields = fields.Concat(new[] { "globalMap" });
             return fields.ToArray();
         }
 

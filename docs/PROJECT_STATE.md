@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U24 DONE — canonical building integrity, deterministic fire, ruins/storage spill, production shutdown, battle-validated capture and version-11 persistence are complete.
+U25 DONE — the stable-ID global graph, deterministic travel, rollback-safe Local↔Global transitions, additive map scene and version-12 persistence are complete.
 
 ## Active task
-No task is active. U25 is the next unblocked task but has not started and requires explicit user authorization.
+No task is active. U26 is the next unblocked task but has not started and requires explicit user authorization.
+
+## U25 global map and local/global mode
+- `GlobalMapService` owns a validated six-location/two-settlement starter graph, routes, active mode/location, settlement stable-ID references and in-progress logical travel. It contains no Unity object or copied Character, Building, unit or battle.
+- `GameModeTransitionService` composes the existing TierManager, U21 representation, U22 player control and U23 battle transition boundaries. Mode commits last; failures compensate tiers, units, battle modes and TPS ownership.
+- Local→Global exits TPS, converts physical battles to their same Abstract battle IDs, aggregates other Detailed units and demotes managed Characters. Global→settlement rematerializes canonical residents/friendly units; entering a battle restores that same U23 encounter to Physical.
+- Travel is route-duration/absolute-tick based and arrival is resolved exactly once in `(arrival tick, unit ID)` order. Hostile Aggregate units at one location deterministically start the existing U23 abstract battle; U25 adds no combat rules or casualty state.
+- `GlobalMap.unity` is a separate additive schematic scene. `LocalGameplay` remains loaded so its composition root and centralized clock keep research, production, weather, fire, family/health and battle systems progressing off-camera. Markers are aggregate units/battles, not soldiers.
+- Snapshot v12 persists mode, graph, settlements and mid-travel state, while v1-v11 remain readable. PostgreSQL accepts v12 as opaque XML with no SQL migration.
+- Final gates: U25 12/12 EditMode, 3/3 headless and 3/3 Direct3D GPU PlayMode; required U13/U14/U21/U23 regressions 49/49 EditMode and 9/9 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 358/358; full PlayMode 74/74; Windows x64 Mono Development build succeeded with 0 errors and 2 inherited warnings.
+- Determinism/performance evidence: direct catch-up, hourly stepping and reversed collection order hash `05FDEC2FB26A11F9`; 100 units across 50 locations completed in 0.768 ms with 0 measured current-thread managed bytes and hash `EBCF24AF1D0B3C71`.
+- PostgreSQL integration was not run because `DYNASTYGAME_PG_TEST_DATABASE` is absent. Computer Use exposed no native-app launcher/backend, so no manual Player clicks are claimed; equivalent headless and GPU PlayMode paths passed. U26 has not started.
 
 ## U24 destruction, fire and building capture
 - The existing `Building` remains canonical through Intact/Damaged/Critical/Destroyed and ownership changes. It owns data-driven maximum/current integrity, `CombatSideId` owner, fire/checkpoint state, exactly-once damage markers and compact structural history; no destroyed or captured copy exists.

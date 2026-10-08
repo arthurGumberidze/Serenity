@@ -347,3 +347,15 @@ Capture mutates owner on the same intact, definition-capturable building only af
 Snapshot v11 appends a sorted detached `BuildingWorldSaveState` with structural, owner, fire/checkpoint, processed-event, destruction/spill and history fields. Inventories/WorldPiles and production tasks remain in their existing snapshots. Restore validates the graph before replacement and does not replay destruction, spill or fire intervals. Versions 1–10 remain readable; PostgreSQL continues opaque XML storage and needs no relational migration.
 
 The development overlay and presenter are projections only. The click-blocked panel submits service commands; material-property tint and a lightweight burning ParticleSystem read canonical state. They own no damage, capture, storage or production truth and are not U27 final UI.
+
+## D-061 Stable-ID world graph and canonical settlement references (2026-10-09)
+
+U25 adds an engine-independent validated graph of `WorldLocationId`, routes and `SettlementId`. Settlements reference existing Character and Building stable IDs, U21 units retain their canonical identity/location/order, and U20/U23 encounter IDs remain battles. Local and global presentation never create copies of those authorities. The initial six-node/two-settlement graph is fixed authored data, not procedural generation or a territory system.
+
+## D-062 Absolute-tick travel and rollback-safe representation transitions (2026-10-09)
+
+Global travel is a persisted logical order resolved by absolute canonical game ticks in arrival-tick/unit-ID order. Exactly-once arrival updates the existing U21 abstract location; deterministic hostile co-location starts the existing U23 Abstract battle. Local↔Global mode changes commit mode last and compensate U22 control, U23 battle mode, U21 representation and U13 tier changes on failure. No per-army or per-character global Update exists.
+
+## D-063 Snapshot v12 and additive disposable map presentation (2026-10-09)
+
+Snapshot v12 appends validated graph, settlement, mode and in-progress travel state; v1-v11 remain readable and PostgreSQL needs no relational migration. `GlobalMap.unity` is an additive presentation scene. `LocalGameplay` and its composition root stay loaded off-camera so the existing clock and simulation services remain authoritative. Schematic markers, map camera and controls are disposable U25 development UX; U27 owns final interface design.
