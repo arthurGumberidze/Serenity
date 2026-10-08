@@ -3,8 +3,10 @@ using System.Linq;
 using Game.Domain.AI;
 using Game.Domain.Work;
 using Game.Presentation.Buildings;
+using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
+using Game.Simulation.Combat;
 using Game.Simulation.Work;
 using UnityEngine;
 
@@ -19,12 +21,16 @@ namespace Game.Presentation.Work
         private WorkDebugOverlay workOverlay;
         private BuildingPlacementController buildingPlacement;
         private ManualMoveCommandService commands;
+        private CombatCommandService combatCommands;
+        private Func<long> calendarTickProvider;
 
         public ManualMoveCommandResult LastResult { get; private set; }
+        public CombatCommandResult LastCombatResult { get; private set; }
 
         public void Initialize(LocalGameplayInputSource inputSource, WorldPointerRaycaster worldRaycaster,
             SelectionProbe selectionProbe, WorkDebugOverlay overlay, BuildingPlacementController placement,
-            ManualMoveCommandService commandService)
+            ManualMoveCommandService commandService, CombatCommandService combatCommandService = null,
+            Func<long> currentCalendarTick = null)
         {
             Unsubscribe();
             input = inputSource ?? throw new ArgumentNullException(nameof(inputSource));
@@ -33,6 +39,8 @@ namespace Game.Presentation.Work
             workOverlay = overlay ?? throw new ArgumentNullException(nameof(overlay));
             buildingPlacement = placement ?? throw new ArgumentNullException(nameof(placement));
             commands = commandService ?? throw new ArgumentNullException(nameof(commandService));
+            combatCommands = combatCommandService;
+            calendarTickProvider = currentCalendarTick;
             Subscribe();
         }
 
@@ -59,12 +67,19 @@ namespace Game.Presentation.Work
                 return;
             }
 
-            if (!raycaster.TryGetWorldHit(input.PointerPosition, out var hit) ||
-                hit.collider.GetComponentInParent<BuildableGround>() == null)
+            if (!raycaster.TryGetWorldHit(input.PointerPosition, out var hit)) return;
+
+            var selectedIds = selection.SelectedCharacterIds;
+            var hostile = hit.collider.GetComponentInParent<CharacterPresenter>();
+            if (hostile != null && hostile.IsBound && combatCommands != null && selectedIds.Count > 0)
+            {
+                LastCombatResult = combatCommands.IssueAttack(selectedIds, hostile.CharacterId,
+                    calendarTickProvider == null ? 0L : calendarTickProvider());
                 return;
+            }
+            if (hit.collider.GetComponentInParent<BuildableGround>() == null) return;
 
             var target = new WorldPosition(hit.point.x, hit.point.y, hit.point.z);
-            var selectedIds = selection.SelectedCharacterIds;
             if (selectedIds.Count > 0)
             {
                 WorkGroupId? groupId = null;

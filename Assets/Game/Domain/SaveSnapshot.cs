@@ -5,6 +5,7 @@ using Game.Domain.Research;
 using Game.Domain.Dynasties;
 using Game.Domain.Health;
 using Game.Domain.Weather;
+using Game.Domain.Combat;
 
 namespace Game.Domain
 {
@@ -17,7 +18,8 @@ namespace Game.Domain
         public const int DynastyVersion = 4;
         public const int HealthVersion = 5;
         public const int WeatherVersion = 6;
-        public const int CurrentVersion = WeatherVersion;
+        public const int CombatVersion = 7;
+        public const int CurrentVersion = CombatVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -30,15 +32,16 @@ namespace Game.Domain
         public DynastyWorldSaveState DynastyWorld { get; }
         public HealthFamilySaveState HealthFamily { get; }
         public WeatherSaveState Weather { get; }
+        public CombatSaveState Combat { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
             DynastyWorldSaveState dynastyWorld = null, HealthFamilySaveState healthFamily = null,
-            WeatherSaveState weather = null)
+            WeatherSaveState weather = null, CombatSaveState combat = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
-                formatVersion != CurrentVersion)
+                formatVersion != WeatherVersion && formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -56,6 +59,7 @@ namespace Game.Domain
             DynastyWorld = dynastyWorld;
             HealthFamily = healthFamily;
             Weather = weather;
+            Combat = combat;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

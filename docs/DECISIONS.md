@@ -267,3 +267,15 @@ Movement reads one weather interval modifier: Tier 1 applies it through the exis
 Snapshot v6 persists world seed, climate profile ID and sorted last-processed exposure day per character. Daily weather and season remain derived, so load on the same day cannot reroll and no redundant history is stored. Versions 1-5 remain readable with no weather payload. PostgreSQL accepts v6 opaque XML metadata and needs no schema migration or realtime weather query.
 
 Environment fog/ambient/directional-light changes and the debug overlay are projections only. They refresh centrally, own no canonical state and are not saved. The debug panel shows current state/modifiers and a deterministic next-day preview, registers with the U16A pointer blocker and exposes no persistent forced-weather override.
+
+## D-045 Stable-ID local combat authority and tactical sides (2026-10-08)
+
+`CombatService` is the only mutable U20 encounter authority. It references canonical Characters by `StableEntityId`, owns deterministic participant/target/cooldown/morale/retreat/outcome state and advances from the existing absolute game clock in one central batch. `CombatSideId` is a narrow encounter allegiance used to distinguish two hostile sides; it is not a U21 army, captain or strategic-faction aggregate. Presentation, NavMesh agents and selected GameObjects cannot own combat truth.
+
+## D-046 Deterministic melee reuses U18 death and pins Tier 1 (2026-10-08)
+
+U20 resolves melee as deterministic always-hit attacks with immutable weapon profiles, stable-ID ordering and a fixed impact-to-injury ladder. All persistent injury, incapacity and death mutation goes through `HealthAndFamilyService.ApplyCombatInjury`; fatal resolution therefore continues through U17 `SuccessionService` exactly once. While an encounter is active, combat owns the character's external activity and blocks Tier1 demotion. This keeps physical movement local without inventing U21/U23 aggregate battle state.
+
+## D-047 Combat snapshot v7 and disposable tactical controls (2026-10-08)
+
+Snapshot v7 persists detached combat encounters, participants, targets, attack sequence/cooldown, morale/retreat, attack history and outcome. Restore follows canonical Character/dynasty and U18 health restore, validates every cross-reference and does not replay attacks or deaths. Versions 1-6 remain readable; PostgreSQL stores v7 as the existing opaque validated XML with no schema migration. Right-click Attack and the IMGUI combat panel are adapters over the service and existing pointer blocker; final UX remains U27.

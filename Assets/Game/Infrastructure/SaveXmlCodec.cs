@@ -13,11 +13,12 @@ using Game.Domain.Characters;
 using Game.Domain.Dynasties;
 using Game.Domain.Health;
 using Game.Domain.Weather;
+using Game.Domain.Combat;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V6 adds climate and weather exposure checkpoints.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V7 adds physical combat checkpoints.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -44,6 +45,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeHealthFamily(snapshot.HealthFamily));
             if (snapshot.FormatVersion >= SaveSnapshot.WeatherVersion)
                 root.Add(SerializeWeather(snapshot.Weather));
+            if (snapshot.FormatVersion >= SaveSnapshot.CombatVersion)
+                root.Add(SerializeCombat(snapshot.Combat));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -71,14 +74,10 @@ namespace Game.Infrastructure
                     var version = XmlConvert.ToInt32(versionElement.Value);
                     if (version != SaveSnapshot.LegacyVersion && version != SaveSnapshot.ProductionVersion &&
                         version != SaveSnapshot.ResearchVersion && version != SaveSnapshot.DynastyVersion &&
-                        version != SaveSnapshot.HealthVersion && version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.HealthVersion && version != SaveSnapshot.WeatherVersion &&
+                        version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
-                    RequireFields(root, version == SaveSnapshot.LegacyVersion ? TimeFields :
-                        version == SaveSnapshot.ProductionVersion ? TimeFields.Concat(new[] { "production" }).ToArray() :
-                        version == SaveSnapshot.ResearchVersion ? TimeFields.Concat(new[] { "production", "research" }).ToArray() :
-                        version == SaveSnapshot.DynastyVersion ? TimeFields.Concat(new[] { "production", "research", "dynastyWorld" }).ToArray() :
-                        version == SaveSnapshot.HealthVersion ? TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily" }).ToArray() :
-                        TimeFields.Concat(new[] { "production", "research", "dynastyWorld", "healthFamily", "weather" }).ToArray());
+                    RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production")) : null;
                     var research = version >= SaveSnapshot.ResearchVersion
@@ -89,10 +88,12 @@ namespace Game.Infrastructure
                         ? DeserializeHealthFamily(root.Element("healthFamily")) : null;
                     var weather = version >= SaveSnapshot.WeatherVersion
                         ? DeserializeWeather(root.Element("weather")) : null;
+                    var combat = version >= SaveSnapshot.CombatVersion
+                        ? DeserializeCombat(root.Element("combat")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
-                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather);
+                        Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather, combat);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -489,6 +490,103 @@ namespace Game.Infrastructure
                 new ClimateProfileId(Value(element, "climateProfileId")), checkpoints);
         }
 
+        private static XElement SerializeCombat(CombatSaveState state)
+        {
+            var element = new XElement("combat");
+            if (state == null) return element;
+            element.Add(new XElement("worldSeed", state.WorldSeed),
+                new XElement("lastCalendarTick", state.LastCalendarTick),
+                new XElement("encounters", state.Encounters.Select(encounter => new XElement("encounter",
+                    new XElement("id", encounter.EncounterId.ToString()),
+                    new XElement("sideA", encounter.SideA.ToString()),
+                    new XElement("sideB", encounter.SideB.ToString()),
+                    new XElement("startTick", encounter.StartCalendarTick),
+                    new XElement("lastTick", encounter.LastProcessedCalendarTick),
+                    new XElement("status", (int)encounter.Status),
+                    new XElement("outcome", (int)encounter.Outcome),
+                    new XElement("combatants", encounter.Combatants.Select(value => new XElement("combatant",
+                        new XElement("characterId", value.CharacterId.ToString()),
+                        new XElement("sideId", value.SideId.ToString()),
+                        new XElement("weaponId", value.WeaponId.ToString()),
+                        new XElement("state", (int)value.State),
+                        OptionalId("targetId", value.TargetId),
+                        OptionalId("assignedTargetId", value.AssignedTargetId),
+                        new XElement("nextAttackTick", value.NextAttackTick),
+                        new XElement("attackSequence", value.AttackSequence),
+                        new XElement("morale", value.Morale),
+                        new XElement("retreatX", XmlConvert.ToString(value.RetreatPoint.X)),
+                        new XElement("retreatY", XmlConvert.ToString(value.RetreatPoint.Y)),
+                        new XElement("retreatZ", XmlConvert.ToString(value.RetreatPoint.Z)),
+                        new XElement("recentInjury", value.RecentInjury),
+                        new XElement("casualtyPenaltyApplied", value.CasualtyPenaltyApplied)))),
+                    new XElement("attacks", encounter.AttackHistory.Select(value => new XElement("attack",
+                        new XElement("attackerId", value.AttackerId.ToString()),
+                        new XElement("defenderId", value.DefenderId.ToString()),
+                        new XElement("sequence", value.AttackSequence),
+                        new XElement("calendarTick", value.CalendarTick),
+                        new XElement("injuryId", value.InjuryId.ToString()),
+                        new XElement("applied", value.Applied),
+                        new XElement("fatal", value.Fatal))))))));
+            return element;
+        }
+
+        private static CombatSaveState DeserializeCombat(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing combat state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty combat state.");
+                return null;
+            }
+            RequireFields(element, new[] { "worldSeed", "lastCalendarTick", "encounters" });
+            var encounters = Items(element.Element("encounters"), "encounter", encounter =>
+            {
+                RequireFields(encounter, new[] { "id", "sideA", "sideB", "startTick", "lastTick", "status",
+                    "outcome", "combatants", "attacks" });
+                var combatants = Items(encounter.Element("combatants"), "combatant", value =>
+                {
+                    RequireFields(value, new[] { "characterId", "sideId", "weaponId", "state", "targetId",
+                        "assignedTargetId", "nextAttackTick", "attackSequence", "morale", "retreatX",
+                        "retreatY", "retreatZ", "recentInjury", "casualtyPenaltyApplied" });
+                    return new CombatantCombatState(StableEntityId.Parse(Value(value, "characterId")),
+                        new CombatSideId(Value(value, "sideId")), new CombatWeaponId(Value(value, "weaponId")),
+                        (CombatantState)Int(value, "state"), OptionalStableId(value, "targetId"),
+                        OptionalStableId(value, "assignedTargetId"), Long(value, "nextAttackTick"),
+                        ULong(value, "attackSequence"), Int(value, "morale"),
+                        new WorldPosition(XmlConvert.ToSingle(Value(value, "retreatX")),
+                            XmlConvert.ToSingle(Value(value, "retreatY")), XmlConvert.ToSingle(Value(value, "retreatZ"))),
+                        Value(value, "recentInjury"), XmlConvert.ToBoolean(Value(value, "casualtyPenaltyApplied")));
+                });
+                var attacks = Items(encounter.Element("attacks"), "attack", value =>
+                {
+                    RequireFields(value, new[] { "attackerId", "defenderId", "sequence", "calendarTick",
+                        "injuryId", "applied", "fatal" });
+                    return new CombatAttackRecordState(StableEntityId.Parse(Value(value, "attackerId")),
+                        StableEntityId.Parse(Value(value, "defenderId")), ULong(value, "sequence"),
+                        Long(value, "calendarTick"), new HealthConditionId(Value(value, "injuryId")),
+                        XmlConvert.ToBoolean(Value(value, "applied")), XmlConvert.ToBoolean(Value(value, "fatal")));
+                });
+                return new CombatEncounterState(StableEntityId.Parse(Value(encounter, "id")),
+                    new CombatSideId(Value(encounter, "sideA")), new CombatSideId(Value(encounter, "sideB")),
+                    Long(encounter, "startTick"), Long(encounter, "lastTick"),
+                    (CombatEncounterStatus)Int(encounter, "status"), (CombatOutcome)Int(encounter, "outcome"),
+                    combatants, attacks);
+            });
+            return new CombatSaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"), encounters);
+        }
+
+        private static string[] FieldsForVersion(int version)
+        {
+            var fields = TimeFields.AsEnumerable();
+            if (version >= SaveSnapshot.ProductionVersion) fields = fields.Concat(new[] { "production" });
+            if (version >= SaveSnapshot.ResearchVersion) fields = fields.Concat(new[] { "research" });
+            if (version >= SaveSnapshot.DynastyVersion) fields = fields.Concat(new[] { "dynastyWorld" });
+            if (version >= SaveSnapshot.HealthVersion) fields = fields.Concat(new[] { "healthFamily" });
+            if (version >= SaveSnapshot.WeatherVersion) fields = fields.Concat(new[] { "weather" });
+            if (version >= SaveSnapshot.CombatVersion) fields = fields.Concat(new[] { "combat" });
+            return fields.ToArray();
+        }
+
         private static XElement OptionalId(string name, StableEntityId? value) =>
             new XElement(name, value.HasValue ? value.Value.ToString() : string.Empty);
 
@@ -534,5 +632,6 @@ namespace Game.Infrastructure
 
         private static long Long(XElement parent, XName name) => XmlConvert.ToInt64(Value(parent, name));
         private static int Int(XElement parent, XName name) => XmlConvert.ToInt32(Value(parent, name));
+        private static ulong ULong(XElement parent, XName name) => XmlConvert.ToUInt64(Value(parent, name));
     }
 }

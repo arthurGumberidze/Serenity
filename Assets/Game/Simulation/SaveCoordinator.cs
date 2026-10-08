@@ -6,6 +6,7 @@ using Game.Simulation.Research;
 using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
 using Game.Simulation.Weather;
+using Game.Simulation.Combat;
 
 namespace Game.Simulation
 {
@@ -18,13 +19,14 @@ namespace Game.Simulation
         private readonly SuccessionService succession;
         private readonly HealthAndFamilyService healthFamily;
         private readonly WeatherService weather;
+        private readonly CombatService combat;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
         public SaveCoordinator(StableEntityId sessionId, GameClock clock, ISaveStore store,
             ProductionService productionService = null, ResearchService researchService = null,
             SuccessionService successionService = null, HealthAndFamilyService healthFamilyService = null,
-            WeatherService weatherService = null)
+            WeatherService weatherService = null, CombatService combatService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -35,12 +37,13 @@ namespace Game.Simulation
             succession = successionService;
             healthFamily = healthFamilyService;
             weather = weatherService;
+            combat = combatService;
         }
         public SaveSnapshot Capture()
         {
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
-                succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState());
+                succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -64,6 +67,9 @@ namespace Game.Simulation
             if (snapshot.Weather != null && weather == null)
                 throw new InvalidOperationException("This save contains weather state but no weather service is attached.");
             if (snapshot.Weather != null) weather.RestoreState(snapshot.Weather);
+            if (snapshot.Combat != null && combat == null)
+                throw new InvalidOperationException("This save contains combat state but no combat service is attached.");
+            if (snapshot.Combat != null) combat.RestoreState(snapshot.Combat);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

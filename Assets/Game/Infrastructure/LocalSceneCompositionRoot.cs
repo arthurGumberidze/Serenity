@@ -37,6 +37,9 @@ using Game.Presentation.Health;
 using Game.Domain.Weather;
 using Game.Simulation.Weather;
 using Game.Presentation.Weather;
+using Game.Domain.Combat;
+using Game.Simulation.Combat;
+using Game.Presentation.Combat;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -120,6 +123,9 @@ namespace Game.Infrastructure
         public WeatherService Weather { get; private set; }
         public WeatherDebugOverlay WeatherDebug { get; private set; }
         public WeatherPresentationController WeatherPresentation { get; private set; }
+        public CombatService Combat { get; private set; }
+        public CombatCommandService CombatCommands { get; private set; }
+        public CombatDebugOverlay CombatDebug { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -279,6 +285,13 @@ namespace Game.Infrastructure
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             TierPolicy = new TierDistancePolicy(Tiers);
+            Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
+                developmentWorldSimulationSeed, Tiers);
+            Combat.RegisterSide(MaleDemoCharacter.Id, new CombatSideId("player"));
+            Combat.RegisterSide(FemaleDemoCharacter.Id, new CombatSideId("player"));
+            Tiers.BindTransitionGuard(Combat);
+            AiScheduler.BindExternalActivityOwner(Combat);
+            CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
@@ -289,7 +302,11 @@ namespace Game.Infrastructure
                 input, pointerRaycaster, ManualMoveCommands);
             ManualMoveInput = gameObject.AddComponent<ManualMoveInputController>();
             ManualMoveInput.Initialize(input, pointerRaycaster, selectionProbe, WorkDebug,
-                buildingPlacementController, ManualMoveCommands);
+                buildingPlacementController, ManualMoveCommands, CombatCommands,
+                () => Clock.State.CalendarTicks);
+            CombatDebug = gameObject.AddComponent<CombatDebugOverlay>();
+            CombatDebug.Initialize(Combat, Characters, HealthFamily, selectionProbe, pointerRaycaster,
+                () => { StartDemoCombat(); });
         }
 
         private void OnDestroy()
@@ -312,6 +329,7 @@ namespace Game.Infrastructure
                 Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
+            Combat.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
@@ -327,6 +345,50 @@ namespace Game.Infrastructure
                 lastSimulationBiologicalTick: Clock.State.BiologicalTicks);
             Tiers.Materialize(child, CharacterSimulationTier.Tier3, state);
             Production.Population = Characters.Count;
+        }
+
+        public CombatEncounterState StartDemoCombat()
+        {
+            var active = Combat.Encounters.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active);
+            if (active != null) return active;
+            var player = new[] { MaleDemoCharacter.Id, FemaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id };
+            EnsureTier1(FirstDemoHeir, new WorldPosition(-5f, 0f, -2f));
+            EnsureTier1(SecondDemoHeir, new WorldPosition(-5f, 0f, 2f));
+            foreach (var id in player) Combat.RegisterSide(id, new CombatSideId("player"));
+
+            var enemy = new StableEntityId[4];
+            for (var i = 0; i < enemy.Length; i++)
+            {
+                var id = DemoId(20 + i);
+                if (!Characters.TryGet(id, out var character))
+                {
+                    character = CreateDemoCharacter("Raider" + (i + 1), i % 2 == 0 ? CharacterSex.Male : CharacterSex.Female,
+                        id, null, null);
+                    Characters.Add(character);
+                }
+                EnsureTier1(character, new WorldPosition(8f, 0f, -3f + i * 2f));
+                Combat.RegisterSide(id, new CombatSideId("enemy"));
+                enemy[i] = id;
+            }
+            Production.Population = Characters.Count;
+            var encounterId = DemoId(200 + Combat.Encounters.Count);
+            return Combat.CreateEncounter(encounterId, new CombatSideId("player"), new CombatSideId("enemy"),
+                player, enemy, Clock.State.CalendarTicks,
+                id => id == MaleDemoCharacter.Id || id == enemy[0]
+                    ? new CombatWeaponId("stone_axe") : new CombatWeaponId("stone_spear"));
+        }
+
+        private void EnsureTier1(Character character, WorldPosition position)
+        {
+            if (Tiers.TryGetTier(character.Id, out var tier))
+            {
+                if (tier != CharacterSimulationTier.Tier1) Tiers.Transition(character.Id, CharacterSimulationTier.Tier1);
+                return;
+            }
+            Tiers.Materialize(character, CharacterSimulationTier.Tier1,
+                new CharacterRuntimeState(character.Id, position, default, false, "local",
+                    lastSimulationCalendarTick: Clock.State.CalendarTicks,
+                    lastSimulationBiologicalTick: Clock.State.BiologicalTicks));
         }
 
         private void SpawnDemoStorage()

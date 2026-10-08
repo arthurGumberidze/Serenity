@@ -189,6 +189,23 @@ namespace Game.Domain.Health
         CharacterCapabilities GetCapabilities(StableEntityId characterId);
     }
 
+    public readonly struct CombatInjuryApplication
+    {
+        public CombatInjuryApplication(HealthConditionId conditionId, bool applied, bool incapacitated, bool fatal)
+        {
+            if (!conditionId.IsValid) throw new ArgumentException("Combat injury condition ID required.", nameof(conditionId));
+            ConditionId = conditionId;
+            Applied = applied;
+            Incapacitated = incapacitated;
+            Fatal = fatal;
+        }
+
+        public HealthConditionId ConditionId { get; }
+        public bool Applied { get; }
+        public bool Incapacitated { get; }
+        public bool Fatal { get; }
+    }
+
     public readonly struct CharacterEventId : IEquatable<CharacterEventId>, IComparable<CharacterEventId>
     {
         public CharacterEventId(string value)

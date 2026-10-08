@@ -4,10 +4,22 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U19 DONE — deterministic seasons/weather, measurable farming/production/movement/health modifiers, tier-independent catch-up, presentation and version-6 persistence are complete.
+U20 DONE — deterministic local Tier 1 tactical melee, U18 injury/death, morale/retreat, player and enemy commands, terminal outcomes and version-7 persistence are complete.
 
 ## Active task
-No implementation task is active. U20 is next but has not started and awaits review of U19.
+No implementation task is active. U21 is next but has not started and awaits review of U20.
+
+## U20 tactical RTS combat
+- `CombatService` is the engine-independent, stable-ID authority for two-side encounters, eligibility, deterministic targeting, movement requests, melee cooldown attacks, morale, retreat and exactly-once outcomes. Combat adds no per-agent `Update`.
+- Combat stats reuse canonical Character Strength/combat skill and U18 capability. Immutable `unarmed`, `stone_axe` and `stone_spear` profiles define range, interval, power and minimum injury. U20 intentionally uses deterministic always-hit melee.
+- Attack resolution calls `HealthAndFamilyService.ApplyCombatInjury`; the U18 condition ladder supplies injury/incapacitation and fatal damage delegates to U17 succession exactly once. Repeated death after save/load is a no-op.
+- Assigned targets win; otherwise the nearest eligible enemy is selected with stable-ID tie-break. Fixed half-metre approach slots provide small-group spacing, while actual movement uses the existing Tier 1/NavMesh boundary.
+- Active combat is local Tier 1 activity: `TierManager` blocks demotion and `Tier1AiScheduler` suspends ordinary AI/work until finish/cancel. U21/U23 armies and aggregate combat were not started.
+- Existing selection/work-group right-click routes hostile Character hits to Attack while terrain remains Move. Enemy combatants run the same centralized tactical loop. The click-blocked debug panel exposes a deterministic 4v4 demo and live encounter/combatant state.
+- `SaveSnapshot.CurrentVersion` is 7. It persists active/finished encounters, targets, cooldown sequences, morale/retreat state, attack history and outcomes. V1-V6 remain readable. PostgreSQL accepts v7 as opaque XML and needs no schema migration.
+- Final gates: U20 17/17 EditMode, 3/3 headless and 3/3 GPU PlayMode; required regressions 123/123 EditMode and 25/25 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 299/299; full PlayMode 51/51; Windows x64 Mono Development succeeded with 0 errors and 2 inherited warnings. PostgreSQL was not configured (`DYNASTYGAME_PG_TEST_DATABASE` absent).
+- Determinism/performance evidence: reversed registration/input order produced identical combat and health hashes. The 50v50 logical encounter completed in 203.162 ms with 0 measured current-thread managed bytes, 250 attacks and hash `BC4B733A3E3410B1`. Active and terminal v7 round-trips produced no duplicate attacks, injuries or deaths.
+- Interactive Computer Use could not initialize its Windows helper (`setup refresh had errors`), so no manual clicks are claimed; physical 4v4 NavMesh and GPU PlayMode passed.
 
 ## U19 weather and seasons
 - `SeasonCalendar` derives Spring/Summer/Autumn/Winter from the canonical U03 calendar. The configurable 365-day temperate mapping is Spring 1-91, Summer 92-182, Autumn 183-273 and Winter 274-365.

@@ -11,6 +11,11 @@ using Game.Domain.Health;
 
 namespace Game.Simulation.AI
 {
+    public interface IExternalCharacterActivityOwner
+    {
+        bool IsExternallyControlled(StableEntityId characterId);
+    }
+
     public sealed class Tier1AiSchedulerMetrics
     {
         public long TotalDecisions { get; internal set; }
@@ -44,6 +49,7 @@ namespace Game.Simulation.AI
         private int needCursor;
         private int actionCursor;
         private long calendarTicks;
+        private IExternalCharacterActivityOwner externalActivityOwner;
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
             Tier1AiSettings settings = null, WorkManager workManager = null,
@@ -62,6 +68,14 @@ namespace Game.Simulation.AI
         public Tier1AiSettings Settings => settings;
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
         public const double CriticalRestEnergy = 0.10d;
+
+        public void BindExternalActivityOwner(IExternalCharacterActivityOwner owner)
+        {
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (externalActivityOwner != null && !ReferenceEquals(externalActivityOwner, owner))
+                throw new InvalidOperationException("The scheduler is already bound to another external activity owner.");
+            externalActivityOwner = owner;
+        }
 
         public void Register(Character character, Tier1AiAgentState agent, ITier1MovementDriver movement)
         {
@@ -151,6 +165,16 @@ namespace Game.Simulation.AI
                 var elapsed = TimeSpan.FromTicks(calendarTicks - entry.LastActionTicks);
                 entry.LastActionTicks = calendarTicks;
                 entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
+                if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(entry.Agent.CharacterId))
+                {
+                    if (entry.Action != null)
+                    {
+                        entry.Action.Cancel();
+                        entry.Action = null;
+                        entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                    }
+                    continue;
+                }
                 if (entry.Action == null) continue;
                 if (capabilities != null && entry.Action.Kind != UtilityActionKind.Rest &&
                     !capabilities.GetCapabilities(entry.Agent.CharacterId).CanPerformOrdinaryWork)
@@ -192,6 +216,8 @@ namespace Game.Simulation.AI
         {
             entry.Agent.RecordDecision();
             Metrics.TotalDecisions++;
+            if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(entry.Agent.CharacterId))
+                return;
             var characterCapabilities = capabilities?.GetCapabilities(entry.Agent.CharacterId);
             if (characterCapabilities.HasValue && !characterCapabilities.Value.CanPerformOrdinaryWork)
             {

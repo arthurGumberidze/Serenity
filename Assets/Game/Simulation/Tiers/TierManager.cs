@@ -11,6 +11,11 @@ namespace Game.Simulation.Tiers
         bool TryGetTier(StableEntityId characterId, out CharacterSimulationTier tier);
     }
 
+    public interface ICharacterTierTransitionGuard
+    {
+        bool CanTransition(StableEntityId characterId, CharacterSimulationTier targetTier);
+    }
+
     public readonly struct TierTransitionResult
     {
         public TierTransitionResult(StableEntityId characterId, CharacterSimulationTier source,
@@ -39,6 +44,7 @@ namespace Game.Simulation.Tiers
         private readonly Dictionary<StableEntityId, CharacterSimulationTier> tiers =
             new Dictionary<StableEntityId, CharacterSimulationTier>();
         private readonly HashSet<StableEntityId> transitioning = new HashSet<StableEntityId>();
+        private ICharacterTierTransitionGuard transitionGuard;
 
         public TierManager(CharacterRegistry characterRegistry, params ICharacterTierAdapter[] tierAdapters)
         {
@@ -53,6 +59,14 @@ namespace Game.Simulation.Tiers
         public int Count => tiers.Count;
         public IReadOnlyList<StableEntityId> ManagedIds => tiers.Keys
             .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
+
+        public void BindTransitionGuard(ICharacterTierTransitionGuard guard)
+        {
+            if (guard == null) throw new ArgumentNullException(nameof(guard));
+            if (transitionGuard != null && !ReferenceEquals(transitionGuard, guard))
+                throw new InvalidOperationException("TierManager is already bound to another transition guard.");
+            transitionGuard = guard;
+        }
 
         public void RegisterExisting(StableEntityId characterId, CharacterSimulationTier tier)
         {
@@ -105,6 +119,8 @@ namespace Game.Simulation.Tiers
             AssertExactlyOneActive(characterId, sourceTier);
             if (sourceTier == targetTier)
                 return new TierTransitionResult(characterId, sourceTier, targetTier, false);
+            if (transitionGuard != null && !transitionGuard.CanTransition(characterId, targetTier))
+                throw new InvalidOperationException("The character is pinned to its current physical simulation tier.");
             if (!transitioning.Add(characterId))
                 throw new InvalidOperationException("A re-entrant transition for the same character is not allowed.");
 

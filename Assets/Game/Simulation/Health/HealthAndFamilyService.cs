@@ -106,6 +106,51 @@ namespace Game.Simulation.Health
             return state;
         }
 
+        /// <summary>
+        /// U20 combat entry point. Repeated injuries escalate through the existing U18 definitions;
+        /// the health/succession authorities remain the only writers of incapacity and death.
+        /// </summary>
+        public CombatInjuryApplication ApplyCombatInjury(StableEntityId targetId,
+            HealthConditionId requestedDefinitionId, long calendarTick, long biologicalTick,
+            bool forceFatal = false)
+        {
+            if (calendarTick < LastCalendarTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (biologicalTick < LastBiologicalTick) throw new ArgumentOutOfRangeException(nameof(biologicalTick));
+            var target = characters.Get(targetId);
+            catalog.Get(requestedDefinitionId);
+            if (target.LifeState != CharacterLifeState.Alive)
+                return new CombatInjuryApplication(requestedDefinitionId, false, true, true);
+            if (forceFatal)
+            {
+                ProcessHealthDeath(targetId, biologicalTick, calendarTick);
+                return new CombatInjuryApplication(requestedDefinitionId, true, true, true);
+            }
+
+            var escalation = new[]
+            {
+                new HealthConditionId("minor_cut"),
+                new HealthConditionId("sprain"),
+                new HealthConditionId("broken_bone"),
+                new HealthConditionId("serious_wound")
+            };
+            var requestedIndex = Array.FindIndex(escalation, x => x.Equals(requestedDefinitionId));
+            if (requestedIndex < 0) throw new ArgumentException("Combat injuries must use an existing U18 injury definition.", nameof(requestedDefinitionId));
+            var active = new HashSet<HealthConditionId>(conditions.Values.Where(x => x.TargetId == targetId && IsActive(x.State))
+                .Select(x => x.DefinitionId));
+            for (var i = requestedIndex; i < escalation.Length; i++)
+            {
+                if (active.Contains(escalation[i])) continue;
+                ApplyCondition(targetId, escalation[i], calendarTick);
+                var capability = GetCapabilitiesAt(targetId, biologicalTick);
+                return new CombatInjuryApplication(escalation[i], true, capability.IsIncapacitated, false);
+            }
+
+            // A further damaging blow after the full injury ladder is fatal. This is a combat rule,
+            // but death still crosses the existing U17 succession boundary exactly once.
+            ProcessHealthDeath(targetId, biologicalTick, calendarTick);
+            return new CombatInjuryApplication(new HealthConditionId("serious_wound"), true, true, true);
+        }
+
         public int RecoverAll(StableEntityId targetId)
         {
             characters.Get(targetId);

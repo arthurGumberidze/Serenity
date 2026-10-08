@@ -361,7 +361,7 @@ namespace Game.Tests.Editor
             var id = WeatherTestSupport.Id(50);
             weather.AdvanceHealthExposureTo(TimeSpan.FromDays(10).Ticks, new[] { id });
             var time = new GameTimeState(TimeSpan.FromDays(9).Ticks, 0, 1, false);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, WeatherTestSupport.Id(51), time, 400,
+            var snapshot = new SaveSnapshot(SaveSnapshot.WeatherVersion, WeatherTestSupport.Id(51), time, 400,
                 weather: weather.CaptureState());
             var decoded = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
             var restored = new WeatherService(52, ClimateProfile.Temperate);
