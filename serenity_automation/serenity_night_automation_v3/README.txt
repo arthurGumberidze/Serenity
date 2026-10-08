@@ -31,6 +31,7 @@ The automation package itself must be committed (or live outside the repository)
 Codex CLI must be installed, authenticated and available on PATH. On Windows the orchestrator prefers codex.cmd so the npm codex.ps1 shim is not blocked by PowerShell Execution Policy.
 
 Before any agent starts, the orchestrator reads `codex exec --help`, selects the installed CLI's supported unattended approval mode (`--approve-for-me` on codex-cli 0.160.0, with legacy `--sandbox workspace-write --ask-for-approval never` fallback), and validates the complete common argument set in a captured child process against an intentionally absent schema. Capturing native stderr prevents the expected diagnostic from becoming a terminating PowerShell error. This catches conflicting flags without model inference. `--approve-for-me` already selects workspace-write in 0.160.0 and must not be combined with an explicit `--sandbox`. Unsupported CLI versions stop before U26.
+Real agent invocations also isolate native stderr from the orchestrator's global stop-on-error policy: warnings go to each run's `stderr.log`, while the Codex process exit code and schema-valid `answer.json` decide success.
 
 PROMPTS
 -------

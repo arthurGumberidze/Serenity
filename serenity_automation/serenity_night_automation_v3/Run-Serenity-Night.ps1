@@ -204,8 +204,18 @@ function Invoke-CodexRun([string]$Name, [string]$PromptText, [string]$SchemaPath
     $cliArgs += "-"
 
     Write-RunLog "Starting Codex: $Name"
-    Get-Content -Raw $promptPath | & $script:CodexCommand @cliArgs 2> $stderrPath | Tee-Object -FilePath $jsonlPath | Out-Null
-    $code = $LASTEXITCODE
+    $code = -1
+    $savedErrorActionPreference = $ErrorActionPreference
+    try {
+        # Codex writes ordinary diagnostics and warnings to native stderr.
+        # Do not let PowerShell promote those records to terminating errors;
+        # the native exit code and structured result remain authoritative.
+        $ErrorActionPreference = "Continue"
+        Get-Content -Raw $promptPath | & $script:CodexCommand @cliArgs 2> $stderrPath | Tee-Object -FilePath $jsonlPath | Out-Null
+        $code = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
     Write-RunLog "$Name exit code: $code"
     return @{ ExitCode = $code; AnswerPath = $answerPath; TracePath = $jsonlPath; StderrPath = $stderrPath }
 }
