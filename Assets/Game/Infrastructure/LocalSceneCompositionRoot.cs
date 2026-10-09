@@ -46,7 +46,9 @@ using Game.Presentation.Military;
 using Game.Domain.Control;
 using Game.Simulation.Control;
 using Game.Presentation.Control;
+using Game.Presentation.UI;
 using Game.Domain.World;
+using Game.Simulation;
 using Game.Simulation.World;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
@@ -87,6 +89,7 @@ namespace Game.Infrastructure
         public BuildingPlacementService BuildingPlacementService { get; private set; }
         public BuildingPresentationRegistry BuildingPresentations { get; private set; }
         public BuildingPresentationSpawner BuildingSpawner { get; private set; }
+        public BuildingPresentationCatalog BuildingCatalog => buildingCatalog;
         public BuildingPlacementController BuildingPlacementController => buildingPlacementController;
         public LocalInteractionMode InteractionMode { get; private set; }
         public ResourceCatalog Resources { get; private set; }
@@ -150,6 +153,9 @@ namespace Game.Infrastructure
         public GameModeTransitionService ModeTransitions { get; private set; }
         public SettlementId StarterSettlementId { get; private set; }
         public GlobalMapRuntimeBridge GlobalMapBridge { get; private set; }
+        public SaveCoordinator Saves { get; private set; }
+        public LocalGameplaySaveFacade PlayerSaves { get; private set; }
+        public GameplayUiController GameplayUi { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -377,6 +383,28 @@ namespace Game.Infrastructure
                 pointerRaycaster);
             GlobalMapBridge = gameObject.AddComponent<GlobalMapRuntimeBridge>();
             GlobalMapBridge.Initialize(this);
+
+            var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
+            var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "Saves")
+                : configuredSaveDirectory;
+            var saveStore = new FileSaveStore(saveDirectory);
+            Saves = new SaveCoordinator(DemoId(600), Clock, saveStore, Production, Research, Succession,
+                HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi);
+            PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
+            var legacyOverlays = GetComponents<Behaviour>().Where(component =>
+                component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
+                .ToArray();
+            GameplayUi = gameObject.AddComponent<GameplayUiController>();
+            GameplayUi.Initialize(new GameplayUiContext(() => Clock, Characters, selectionProbe, Resources,
+                    Inventories, StoredResources, Production, Research, AiAgents, Work, CharacterPresentations,
+                    ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
+                    HealthFamily, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
+                    MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
+                    GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
+                    GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
+                    GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays),
+                pointerRaycaster, input);
         }
 
         private void OnDestroy()
@@ -438,6 +466,20 @@ namespace Game.Infrastructure
                 : new HashSet<StableEntityId>(settlement.BuildingIds);
             foreach (var presenter in BuildingPresentations.All)
                 if (presenter != null) presenter.gameObject.SetActive(visibleBuildings.Contains(presenter.BuildingId));
+        }
+
+        public void RebindAfterLoad(GameClock restoredClock)
+        {
+            Clock = restoredClock ?? throw new ArgumentNullException(nameof(restoredClock));
+            AiRuntime.RebindClock(Clock);
+            Tier3Adapter.RebaseAfterLoad(new SimulationTimePoint(Clock.State.CalendarTicks,
+                Clock.State.BiologicalTicks));
+            selectionProbe.ClearSelection();
+            Production.Population = Characters.Count;
+            WeatherPresentation.Refresh(Clock.State.CalendarTicks);
+            if (GlobalMap.Mode == GameWorldMode.Local) ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
+            GlobalMapBridge.ReconcileAfterLoad();
+            GameplayUi?.RefreshNow();
         }
 
         public CombatEncounterState StartDemoCombat()

@@ -81,6 +81,12 @@ namespace Game.Presentation.AI
             RefreshMovementPresentation();
         }
 
+        public void RebindClock(GameClock replacement)
+        {
+            clock = replacement ?? throw new ArgumentNullException(nameof(replacement));
+            RefreshMovementPresentation();
+        }
+
         public GameTimeAdvance AdvanceForDebug(TimeSpan realDelta)
         {
             if (clock == null || scheduler == null)

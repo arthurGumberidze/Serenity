@@ -1,21 +1,21 @@
 # NEXT_TASK.md
 
-U26 was completed and validated on 2026-10-09.
+U27 was completed and validated on 2026-10-09.
 
-## Next unblocked task: U27 — UI Toolkit/uGUI gameplay UI
+## Next unblocked task: U28 — Event System
 
 ### Status
 
-TODO. Awaiting explicit user authorization; U27 has not started.
+TODO. Awaiting explicit user authorization; U28 has not started.
 
 ### Dependencies
 
-U04 time/save, U06 Characters, U08 buildings, U11 work groups/jobs, U16 research, U20 combat, U22 third-person control, U25 global map and U26 strategic AI are DONE.
+U04/U04A persistence, U06 Characters, U17 succession, U18 health/family and U27 player-facing UI are DONE.
 
 ### Goal
 
-After explicit authorization, implement the TASK_GRAPH U27 production gameplay UI so every MVP action, including Save/Load and work groups/jobs, is available without debug menus.
+After explicit authorization, implement deterministic single events and weighted/cooldown event chains with stable-seed replay and persistence.
 
 ### Scope boundary
 
-Begin from `docs/U26_HANDOFF.md`, `docs/STRATEGIC_AI.md`, current architecture decisions and the relevant FRS UI sections. UI must remain an adapter over existing authorities and may not become canonical state. Do not begin U28 or later tasks.
+Begin from `docs/U27_HANDOFF.md`, `docs/GAMEPLAY_UI.md`, current architecture decisions and the relevant FRS event sections. Keep the U27 notification feed as a presentation consumer; do not make UI the event authority. Do not begin U29 or later tasks.

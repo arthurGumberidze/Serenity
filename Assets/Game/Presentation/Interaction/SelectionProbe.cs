@@ -82,6 +82,12 @@ namespace Game.Presentation.Interaction
             SelectedCharacterPresenter = selectedCharacters.LastOrDefault();
         }
 
+        public void ClearSelection()
+        {
+            ClearCharacterSelection();
+            ClearNonCharacterSelection();
+        }
+
         private void Subscribe()
         {
             input ??= inputSource;

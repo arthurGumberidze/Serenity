@@ -33,7 +33,9 @@ namespace Game.Tests.PlayMode
             Assert.That(root.BuildingDamageDebug, Is.Not.Null);
             Assert.That(UnityEngine.Object.FindObjectsByType<BuildingDamageDebugOverlay>().Length, Is.EqualTo(1));
             Assert.That(root.Buildings.All.All(x => x.MaxIntegrity > 0), Is.True);
-            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(20f, Screen.height - 510f)), Is.True);
+            Assert.That(root.BuildingDamageDebug.enabled, Is.False, "U27 hides legacy debug panels by default.");
+            Assert.That(root.GameplayUi, Is.Not.Null);
+            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(20f, Screen.height - 20f)), Is.True);
             yield return null;
         }
 

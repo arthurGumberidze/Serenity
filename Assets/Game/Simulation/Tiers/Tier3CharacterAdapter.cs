@@ -82,5 +82,20 @@ namespace Game.Simulation.Tiers
                     research.AdvanceWorkerTo(record.CharacterId, target, true) > 0) count++;
             return count;
         }
+
+        /// <summary>
+        /// Tier 3 records are runtime projections rather than durable authority. Loading an older checkpoint
+        /// replaces the canonical clock, so projection cursors must be rebased before the next automatic tick.
+        /// </summary>
+        public void RebaseAfterLoad(SimulationTimePoint restoredTime)
+        {
+            foreach (var record in records.All)
+            {
+                var state = record.State;
+                record.Replace(state.WithOffCameraSimulation(restoredTime.CalendarTicks,
+                    restoredTime.BiologicalTicks, 0, 0, 0));
+            }
+            lastAutomaticStepIndex = long.MinValue;
+        }
     }
 }

@@ -373,3 +373,10 @@ Settlement capture prevalidates the complete documented building set through U24
 U18 now registers succession authorities by dynasty ID. Fatal health processing chooses the Character's matching dynasty, while a non-dynastic death crosses any registered U17 authority only for the canonical life-state mutation. This preserves one Character registry while permitting independent player and AI succession histories.
 
 Snapshot v13 appends sorted AI factions: strategic references/objective/target/checkpoints/orders/history/defeat, dynasty, research, production/inventories and world piles. U25 travel, U21 units, U23 battles and U24 buildings remain in their existing sections. Restore validates cross-references and sequence coherence before mutation; versions 1–12 remain readable. The IMGUI panel is a disposable read/advance adapter; U27 owns final UI.
+## U27 player-facing UI composition
+
+The runtime UI flow is `UIDocument -> GameplayUiController -> GameplayUiContext -> existing Simulation services`. `GameplayUiContext` is dependency wiring, not a second model; panels rebuild read-only projections from canonical registries and submit commands through the same services used by earlier tasks. One hash-gated refresh runs at 4 Hz, and one guarded subscription set handles time/build input.
+
+`WorldPointerRaycaster` now accepts both rectangular legacy IMGUI blockers and the U27 region blocker, so UI rejection still occurs before world physics. The player UI is always present. Legacy debug behaviours are disabled during composition and one F10 toggle controls all of them, including TPS/global IMGUI surfaces.
+
+Player persistence is `GameplayUiController -> LocalGameplaySaveFacade -> SaveCoordinator -> FileSaveStore`. `ISaveSlotCatalog` reads safe metadata and reports corrupt files without exposing XML/errors. A successful load replaces the root clock, rebinds its centralized consumer, clears selection, refreshes disposable weather/location/global presentation and rebases non-authoritative Tier3 projection cursors. The UI is not recreated and subscriptions are not duplicated.

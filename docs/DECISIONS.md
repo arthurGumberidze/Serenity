@@ -387,3 +387,15 @@ One health service may bind one succession authority per dynasty ID and routes f
 ## D-070 Snapshot v13 and deterministic strategic identities (2026-10-09)
 
 Snapshot v13 stores each AI faction's strategic checkpoint, targets, orders, bounded history, sequence counters, defeat state, dynasty, research, production/inventories and world piles. Existing sections still own travel, units, battles and buildings. Restore rejects identity, ownership and target mismatches before applying faction state. AI-created building and unit identities are derived from world seed, state ID, purpose and decision sequence; direct catch-up and stepped execution therefore converge without replaying a decision. Versions 1–12 remain readable and PostgreSQL remains opaque XML.
+
+## D-071 One UI Toolkit projection and explicit developer mode (2026-10-09)
+
+U27 uses one programmatic UI Toolkit document with a runtime theme and a 1600×900 scale reference. It owns transient panel/confirmation choices only; all displayed values are rebuilt from canonical services and all commands call existing boundaries. Legacy IMGUI debug behaviours are disabled by default and F10 is the only developer-surface toggle. Stable IDs, forced damage/health/combat actions, hashes and AI scoring never enter player mode.
+
+## D-072 Local slot metadata and post-load rebinding (2026-10-09)
+
+The always-available player save path remains `SaveCoordinator` plus `FileSaveStore`; U27 adds an optional `ISaveSlotCatalog` capability and a three-slot adapter, not another persistence authority or schema. Corrupt metadata is redacted. A successful load adopts the coordinator's replacement clock, rebinds the centralized runtime driver, clears selection and reconciles disposable Local/Global/UI presentation exactly once. Tier3 absolute cursors are derived projection state and are rebased to the restored clock so a load to an earlier tick cannot make the next batch advance backwards.
+
+## D-073 Player UI blocking and bounded refresh (2026-10-09)
+
+UI Toolkit regions join the existing `WorldPointerRaycaster` blocker before physics, preserving the U11/U08 no-click-through contract for selection, Move and placement. Text-field focus suppresses U27 time/build/group hotkeys. The UI computes a compact cross-service state hash at 4 Hz and rebuilds only changed projections; it never gives each Character, unit or panel an Update loop. Local/Global, RTS/TPS, panel and Save/Load changes reuse one guarded subscription set.

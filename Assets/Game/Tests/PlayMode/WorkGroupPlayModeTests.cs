@@ -68,6 +68,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.GameplayUi.SetDeveloperUiVisible(true);
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             var selectedId = root.DemoPresenters[0].CharacterId;
@@ -102,6 +103,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator ClickInsideEveryDevelopmentPanelDoesNotClearSelection()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.GameplayUi.SetDeveloperUiVisible(true);
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             var selectedId = root.DemoPresenters[0].CharacterId;
@@ -136,6 +138,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator RemainingWorkPanelButtonsUseInputPathWithoutSelectionClickThrough()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.GameplayUi.SetDeveloperUiVisible(true);
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             yield return WaitForAllCommandRects(root.WorkDebug);
@@ -291,6 +294,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator RightClickInsideUiDoesNotCreateMove()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.GameplayUi.SetDeveloperUiVisible(true);
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             Assert.That(root.WorkDebug.TryGetUiBlockingRect(out var panelRect), Is.True);

@@ -10,6 +10,11 @@ namespace Game.Presentation.Interaction
         bool TryGetUiBlockingRect(out Rect guiRect);
     }
 
+    public interface IWorldPointerUiRegionBlocker
+    {
+        bool IsGuiPointBlocked(Vector2 guiPosition);
+    }
+
     public sealed class WorldPointerRaycaster : MonoBehaviour
     {
         [SerializeField] private UnityEngine.Camera worldCamera;
@@ -74,6 +79,8 @@ namespace Game.Presentation.Interaction
                     continue;
                 }
                 if (blocker is Behaviour behaviour && !behaviour.isActiveAndEnabled) continue;
+                if (blocker is IWorldPointerUiRegionBlocker regionBlocker &&
+                    regionBlocker.IsGuiPointBlocked(guiPosition)) return true;
                 if (blocker.TryGetUiBlockingRect(out var rect) && rect.Contains(guiPosition)) return true;
             }
             return false;

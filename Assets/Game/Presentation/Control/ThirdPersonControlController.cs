@@ -51,6 +51,7 @@ namespace Game.Presentation.Control
         public int CameraRigCount => thirdPersonCamera == null ? 0 : 1;
         public int SubscriptionCount => initialized ? 3 : 0;
         public Tier1MovementAuthority MovementAuthority => directMovement?.Authority ?? Tier1MovementAuthority.Autonomous;
+        public bool ShowLegacyOverlay { get; set; }
 
         public void Initialize(LocalGameplayInputSource inputSource, SelectionProbe selectionProbe,
             CharacterPresentationRegistry presentationRegistry, Tier1AiRuntimeDriver aiRuntime,
@@ -125,8 +126,11 @@ namespace Game.Presentation.Control
         public bool TryGetUiBlockingRect(out Rect guiRect)
         {
             guiRect = overlayRect;
-            return initialized;
+            return initialized && ShowLegacyOverlay;
         }
+
+
+        public void SynchronizePresentation() => ApplyControlState();
 
         private void Update() => Tick(Time.unscaledDeltaTime);
 
@@ -202,7 +206,7 @@ namespace Game.Presentation.Control
 
         private void OnGUI()
         {
-            if (!initialized) return;
+            if (!initialized || !ShowLegacyOverlay) return;
             GUI.Box(overlayRect, GUIContent.none);
             var mode = control.State.Mode;
             GUI.Label(new Rect(18f, overlayRect.y + 8f, 365f, 22f), "Mode: " + mode);

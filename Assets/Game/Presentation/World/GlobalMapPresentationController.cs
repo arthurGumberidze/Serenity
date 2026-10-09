@@ -38,6 +38,7 @@ namespace Game.Presentation.World
 
         public Camera MapCamera => mapCamera;
         public int LocationMarkerCount => locationMarkers.Count;
+        public bool ShowDeveloperUi { get; set; }
 
         public void Configure(Camera camera, Transform root)
         {
@@ -192,7 +193,7 @@ namespace Game.Presentation.World
 
         private void OnGUI()
         {
-            if (map == null) return;
+            if (map == null || !ShowDeveloperUi) return;
             GUILayout.BeginArea(new Rect(12, 12, 390, 860), GUI.skin.box);
             GUILayout.Label("GLOBAL MAP  |  " + TimeSpan.FromTicks(currentTick()));
             GUILayout.Label("Mode: " + map.Mode + "  Active: " + map.ActiveLocationId);

@@ -46,8 +46,8 @@ namespace Game.Tests.PlayMode
             Assert.That(enemy.ResidentCharacterIds, Is.EqualTo(root.StarterEnemyAi.Residents.OrderBy(x => x)));
             Assert.That(player.ResidentCharacterIds.Intersect(root.StarterEnemyAi.Residents), Is.Empty);
             Assert.That(overlay, Is.Not.Null);
-            Assert.That(overlay.TryGetUiBlockingRect(out var panel), Is.True);
-            Assert.That(panel.width, Is.GreaterThan(0));
+            Assert.That(overlay.enabled, Is.False, "U27 keeps legacy developer UI hidden by default.");
+            Assert.That(root.GameplayUi, Is.Not.Null);
             yield return null;
         }
 

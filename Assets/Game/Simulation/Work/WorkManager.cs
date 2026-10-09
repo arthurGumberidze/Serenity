@@ -61,6 +61,14 @@ namespace Game.Simulation.Work
         public bool RemoveMember(WorkGroupId groupId, StableEntityId characterId) =>
             Groups.RemoveMember(groupId, characterId);
 
+        public void RenameGroup(WorkGroupId groupId, string displayName) => Groups.Get(groupId).Rename(displayName);
+
+        public void SetCommander(WorkGroupId groupId, StableEntityId characterId)
+        {
+            RequireCharacter(characterId);
+            Groups.Get(groupId).SetCommander(characterId);
+        }
+
         public WorkOrder CreateMoveJob(StableEntityId? assigneeId, WorldPosition target, WorkPriority priority,
             WorkGroupId? groupId = null, bool exclusiveTarget = false)
         {

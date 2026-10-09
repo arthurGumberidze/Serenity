@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using Game.Domain;
+using Game.Domain.World;
 
 namespace Game.Simulation
 {
@@ -7,5 +10,35 @@ namespace Game.Simulation
     {
         void Save(StableEntityId slotId, SaveSnapshot snapshot);
         SaveSnapshot Load(StableEntityId slotId);
+    }
+
+    public sealed class SaveSlotMetadata
+    {
+        public SaveSlotMetadata(StableEntityId slotId, StableEntityId? sessionId, long? calendarTicks,
+            GameWorldMode? mode, DateTime lastWriteUtc, bool isCorrupt, string error)
+        {
+            if (!slotId.IsValid) throw new ArgumentException("Slot ID is required.", nameof(slotId));
+            SlotId = slotId;
+            SessionId = sessionId;
+            CalendarTicks = calendarTicks;
+            Mode = mode;
+            LastWriteUtc = DateTime.SpecifyKind(lastWriteUtc, DateTimeKind.Utc);
+            IsCorrupt = isCorrupt;
+            Error = error ?? string.Empty;
+        }
+
+        public StableEntityId SlotId { get; }
+        public StableEntityId? SessionId { get; }
+        public long? CalendarTicks { get; }
+        public GameWorldMode? Mode { get; }
+        public DateTime LastWriteUtc { get; }
+        public bool IsCorrupt { get; }
+        public string Error { get; }
+    }
+
+    /// <summary>Optional storage capability used by player-facing slot browsers.</summary>
+    public interface ISaveSlotCatalog
+    {
+        IReadOnlyList<SaveSlotMetadata> ListSlots();
     }
 }

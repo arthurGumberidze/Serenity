@@ -4,10 +4,20 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U26 DONE — the deterministic owner-scoped strategic AI, normal-runtime rival bootstrap, canonical development/war/capture loop and version-13 persistence are complete.
+U27 DONE — the unified UI Toolkit gameplay interface, player/debug separation, normal MVP command surfaces and local slot Save/Load/rebinding are complete.
 
 ## Active task
-No task is active. U27 is the next unblocked task but has not started and requires explicit user authorization.
+No task is active. U28 is the next unblocked task but has not started and requires explicit user authorization.
+
+## U27 gameplay UI
+- `GameplayUiController` owns one runtime UI Toolkit document at a 1600×900 scaled reference. It holds only panel/selection/confirmation display state and calls the existing time, research, work, building, production, dynasty, health, military, combat, TPS, global and persistence boundaries.
+- The HUD exposes population/key resources, date/season/weather/temperature, Local/Global mode, alerts, pause and x1/x2/x3/x5/x10. Context panels cover settlement targets/sites/crops/shortage, the Stone Age research list, work groups/jobs, build placement, dynasty, military/battles, global travel and three local save slots.
+- Character/building/resource selection projects canonical state; Stable IDs and force/debug actions are hidden. Legacy debug behaviours are default-off and restored only by F10.
+- UI regions participate in the existing pre-physics pointer blocker. Refresh is hash-gated at 4 Hz; the single subscription set is guarded. Text focus suppresses U27 hotkeys.
+- `FileSaveStore` now supplies validated slot metadata. Load confirmation uses `SaveCoordinator`, adopts its replacement clock, clears selection, reconciles Local/Global presentation and rebases derived Tier3 cursors before the next tick. The same UI instance remains subscribed once.
+- The bounded notification adapter maps existing research, birth/death, succession, health, shortage, building, battle and travel state without starting U28.
+- Final command: `& .\Tools\Verify-U27.ps1 -ProjectPath C:\serenity_game -FullRegression -GpuValidation -BuildPlayer` -> U27 3/3 EditMode, 6/6 headless and GPU PlayMode; dependency regressions 170/170 EditMode and 33/33 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 371/371; full PlayMode 82/82; Windows x64 Mono Development build succeeded with errors=0 and two inherited warnings.
+- PostgreSQL integration was not run because U27 uses the always-available local provider and does not change the opaque snapshot schema. U28 has not started.
 
 ## Approved downstream validation plan
 - The U26-U31 overnight automation is being hardened without starting U26. U30 remains subject to its literal 8+ wall-clock-hour accelerated-soak gate; a prepared runner or short soak alone cannot mark U30 DONE.
