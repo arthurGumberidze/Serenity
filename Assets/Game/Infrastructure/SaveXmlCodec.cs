@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -18,11 +19,12 @@ using Game.Domain.Military;
 using Game.Domain.Control;
 using Game.Domain.Buildings;
 using Game.Domain.World;
+using Game.Domain.Events;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V13 adds strategic AI state.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V14 adds deterministic event state.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -61,6 +63,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeGlobalMap(snapshot.GlobalMap));
             if (snapshot.FormatVersion >= SaveSnapshot.StrategicAiVersion)
                 root.Add(SerializeStrategicAi(snapshot.StrategicAi));
+            if (snapshot.FormatVersion >= SaveSnapshot.EventVersion)
+                root.Add(SerializeEvents(snapshot.Events));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -92,7 +96,8 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.CombatVersion && version != SaveSnapshot.MilitaryVersion &&
                         version != SaveSnapshot.PlayerControlVersion &&
                         version != SaveSnapshot.BattleVersion && version != SaveSnapshot.BuildingVersion &&
-                        version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.StrategicAiVersion &&
+                        version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
@@ -117,11 +122,13 @@ namespace Game.Infrastructure
                         ? DeserializeGlobalMap(root.Element("globalMap")) : null;
                     var strategicAi = version >= SaveSnapshot.StrategicAiVersion
                         ? DeserializeStrategicAi(root.Element("strategicAi")) : null;
+                    var events = version >= SaveSnapshot.EventVersion
+                        ? DeserializeEvents(root.Element("events")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military, playerControl, buildingWorld, globalMap, strategicAi);
+                        combat, military, playerControl, buildingWorld, globalMap, strategicAi, events);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1020,6 +1027,125 @@ namespace Game.Infrastructure
                 Value(element, "successionRuleId"), (DynastyStatus)Int(element, "status"), members, processed, history);
         }
 
+        private static XElement SerializeEvents(EventSaveState state)
+        {
+            var element = new XElement("events");
+            if (state == null) return element;
+            element.Add(new XElement("worldSeed", state.WorldSeed),
+                new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("nextRequestSequence", state.NextRequestSequence),
+                new XElement("archivedCount", state.ArchivedCount),
+                new XElement("archivedChecksum", state.ArchivedChecksum),
+                new XElement("instances", state.Instances.Select(value => new XElement("instance",
+                    new XElement("id", value.InstanceId.ToString()),
+                    new XElement("rootId", value.RootInstanceId.ToString()),
+                    new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("nodeId", value.CurrentNodeId.ToString()),
+                    new XElement("ownerId", value.OwnerId.ToString()),
+                    new XElement("audience", (int)value.Audience),
+                    new XElement("offeredTick", value.OfferedTick),
+                    new XElement("dueTick", value.DueTick),
+                    new XElement("resolvedTick", value.ResolvedTick),
+                    new XElement("status", (int)value.Status),
+                    new XElement("occurrence", value.OccurrenceSequence),
+                    new XElement("nodeSequence", value.NodeSequence),
+                    new XElement("selectedChoiceId", value.SelectedChoiceId?.ToString() ?? string.Empty),
+                    SerializeEventTargets(value.Targets),
+                    new XElement("resolvedNodes", value.ResolvedNodes.Select(x => new XElement("node",
+                        new XElement("nodeId", x.NodeId.ToString()), new XElement("choiceId", x.ChoiceId.ToString()),
+                        new XElement("resolvedTick", x.ResolvedTick)))),
+                    new XElement("appliedEffects", value.AppliedEffectMarkers.Select(x => new XElement("marker", x))),
+                    new XElement("outcomeCode", value.OutcomeCode)))),
+                new XElement("cooldowns", state.Cooldowns.Select(value => new XElement("cooldown",
+                    new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("scopeKey", value.ScopeKey),
+                    new XElement("nextEligibleTick", value.NextEligibleTick)))),
+                new XElement("history", state.History.Select(value => new XElement("entry",
+                    new XElement("id", value.InstanceId.ToString()),
+                    new XElement("rootId", value.RootInstanceId.ToString()),
+                    new XElement("definitionId", value.DefinitionId.ToString()),
+                    new XElement("category", (int)value.Category),
+                    new XElement("audience", (int)value.Audience),
+                    new XElement("ownerId", value.OwnerId.ToString()),
+                    new XElement("offeredTick", value.OfferedTick),
+                    new XElement("resolvedTick", value.ResolvedTick),
+                    new XElement("choiceId", value.ChoiceId?.ToString() ?? string.Empty),
+                    new XElement("outcomeCode", value.OutcomeCode),
+                    new XElement("status", (int)value.Status),
+                    SerializeEventTargets(value.Targets)))));
+            return element;
+        }
+
+        private static XElement SerializeEventTargets(IEnumerable<EventTargetRef> targets) =>
+            new XElement("targets", targets.Select(x => new XElement("target",
+                new XElement("kind", (int)x.Kind), new XElement("id", x.PersistentId))));
+
+        private static EventSaveState DeserializeEvents(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing event state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty event state.");
+                return null;
+            }
+            RequireFields(element, new[] { "worldSeed", "lastProcessedTick", "nextRequestSequence", "archivedCount",
+                "archivedChecksum", "instances", "cooldowns", "history" });
+            var instances = Items(element.Element("instances"), "instance", value =>
+            {
+                RequireFields(value, new[] { "id", "rootId", "definitionId", "nodeId", "ownerId", "audience",
+                    "offeredTick", "dueTick", "resolvedTick", "status", "occurrence", "nodeSequence",
+                    "selectedChoiceId", "targets", "resolvedNodes", "appliedEffects", "outcomeCode" });
+                var choiceText = Value(value, "selectedChoiceId");
+                var selectedChoice = string.IsNullOrEmpty(choiceText) ? (EventChoiceId?)null : new EventChoiceId(choiceText);
+                var resolvedNodes = Items(value.Element("resolvedNodes"), "node", x =>
+                {
+                    RequireFields(x, new[] { "nodeId", "choiceId", "resolvedTick" });
+                    return new EventNodeResolutionState(new EventNodeId(Value(x, "nodeId")),
+                        new EventChoiceId(Value(x, "choiceId")), Long(x, "resolvedTick"));
+                });
+                var markers = Items(value.Element("appliedEffects"), "marker", Scalar);
+                return new EventInstanceState(
+                    new EventInstanceId(StableEntityId.Parse(Value(value, "id"))),
+                    new EventInstanceId(StableEntityId.Parse(Value(value, "rootId"))),
+                    new EventDefinitionId(Value(value, "definitionId")), new EventNodeId(Value(value, "nodeId")),
+                    new EventOwnerId(Value(value, "ownerId")), (EventAudience)Int(value, "audience"),
+                    DeserializeEventTargets(value.Element("targets")), Long(value, "offeredTick"),
+                    Long(value, "dueTick"), Long(value, "resolvedTick"), (EventStatus)Int(value, "status"),
+                    ULong(value, "occurrence"), Int(value, "nodeSequence"), selectedChoice, resolvedNodes,
+                    markers, Value(value, "outcomeCode"));
+            });
+            var cooldowns = Items(element.Element("cooldowns"), "cooldown", value =>
+            {
+                RequireFields(value, new[] { "definitionId", "scopeKey", "nextEligibleTick" });
+                return new EventCooldownState(new EventDefinitionId(Value(value, "definitionId")),
+                    Value(value, "scopeKey"), Long(value, "nextEligibleTick"));
+            });
+            var history = Items(element.Element("history"), "entry", value =>
+            {
+                RequireFields(value, new[] { "id", "rootId", "definitionId", "category", "audience", "ownerId",
+                    "offeredTick", "resolvedTick", "choiceId", "outcomeCode", "status", "targets" });
+                var choiceText = Value(value, "choiceId");
+                var choice = string.IsNullOrEmpty(choiceText) ? (EventChoiceId?)null : new EventChoiceId(choiceText);
+                return new EventHistoryEntry(
+                    new EventInstanceId(StableEntityId.Parse(Value(value, "id"))),
+                    new EventInstanceId(StableEntityId.Parse(Value(value, "rootId"))),
+                    new EventDefinitionId(Value(value, "definitionId")), (EventCategory)Int(value, "category"),
+                    (EventAudience)Int(value, "audience"), new EventOwnerId(Value(value, "ownerId")),
+                    DeserializeEventTargets(value.Element("targets")), Long(value, "offeredTick"),
+                    Long(value, "resolvedTick"), choice, Value(value, "outcomeCode"), (EventStatus)Int(value, "status"));
+            });
+            return new EventSaveState(Long(element, "worldSeed"), Long(element, "lastProcessedTick"),
+                ULong(element, "nextRequestSequence"), instances, cooldowns, history,
+                Long(element, "archivedCount"), ULong(element, "archivedChecksum"));
+        }
+
+        private static EventTargetRef[] DeserializeEventTargets(XElement element) =>
+            Items(element, "target", value =>
+            {
+                RequireFields(value, new[] { "kind", "id" });
+                return new EventTargetRef((EventTargetKind)Int(value, "kind"), Value(value, "id"));
+            });
+
         private static MilitaryUnitId? OptionalUnit(XElement parent, string name)
         { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(value); }
         private static SettlementId? OptionalSettlement(XElement parent, string name)
@@ -1041,6 +1167,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.BuildingVersion) fields = fields.Concat(new[] { "buildingWorld" });
             if (version >= SaveSnapshot.GlobalMapVersion) fields = fields.Concat(new[] { "globalMap" });
             if (version >= SaveSnapshot.StrategicAiVersion) fields = fields.Concat(new[] { "strategicAi" });
+            if (version >= SaveSnapshot.EventVersion) fields = fields.Concat(new[] { "events" });
             return fields.ToArray();
         }
 

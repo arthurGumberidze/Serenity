@@ -399,3 +399,23 @@ The always-available player save path remains `SaveCoordinator` plus `FileSaveSt
 ## D-073 Player UI blocking and bounded refresh (2026-10-09)
 
 UI Toolkit regions join the existing `WorldPointerRaycaster` blocker before physics, preserving the U11/U08 no-click-through contract for selection, Move and placement. Text-field focus suppresses U27 time/build/group hotkeys. The UI computes a compact cross-service state hash at 4 Hz and rebuilds only changed projections; it never gives each Character, unit or panel an Update loop. Local/Global, RTS/TPS, panel and Save/Load changes reuse one guarded subscription set.
+
+## D-074 One event authority with canonical outcome adapters (2026-10-09)
+
+U28 owns one engine-independent `EventService` for eligibility, offer selection, chain state, player/AI resolution, cooldown and event history. Immutable definitions and typed stable target references live in Domain; Infrastructure only composes targets/content; U27 is a projection/command adapter. Outcomes cross narrow `IEventEffectExecutor` boundaries into existing authorities. The shipped relationship and health outcomes call U18 exactly once; U28 does not duplicate Character, health, death, succession or relationship state.
+
+## D-075 Keyed weighted selection and active-scope suppression (2026-10-09)
+
+At every due canonical checkpoint, all eligible definition/target candidates are stably ordered and one candidate is sampled per owner/target scope. Positive definition weights are relative integer weights; a configurable `noEventWeight` is an explicit additional bucket and totals use checked arithmetic. U14 keyed RNG includes world seed, stable definition/target identity, absolute tick, purpose stream and occurrence/transition sequence, so neither registration order nor a mutable cursor affects results. Cooldown starts at offer and uses definition + owner + ordered targets; an unresolved instance also blocks another offer for the same definition/scope, bounding pending growth.
+
+## D-076 Persisted chains are exactly-once bounded state machines (2026-10-09)
+
+One deterministic `EventInstanceId` remains the chain/root identity across nodes. Active state persists current node, due tick, sequence, selected choice, resolved-node records and applied `node:index` effect markers. Player commands are typed; AI uses applicable integer scores and choice-ID tie-breaks. Effects commit before resolution markers, delayed nodes return to canonical checkpoints, and terminal instances move to history. Catalog validation rejects immediate cycles, while a hard 32-resolution per-instance budget converts any excessive immediate path to a controlled Invalid result.
+
+## D-077 Event history is bounded detail plus deterministic archive summary (2026-10-09)
+
+U28 retains the newest 128 terminal event entries in stable resolution/instance order. Evicted entries increment an archive count and update a deterministic checksum. Active/unresolved instances are retained separately and never evicted. This bounds the v14 payload while preserving replay/audit signals, but it is not presented as the complete 2000-year chronicle requested by later information-system work.
+
+## D-078 Snapshot v14 and U27 event projection (2026-10-09)
+
+Snapshot v14 appends event seed/checkpoint/sequence, active chain state, cooldowns, markers, bounded history and archive summary to strict XML. Restore validates a detached candidate after canonical services are restored and never reapplies outcomes. Loading v1-v13 resets event state at the restored tick; PostgreSQL keeps its opaque payload schema and accepts v14 metadata. U27 adds one Events panel, pending HUD count, Character-history projection and notification adaptation; it stores no canonical event state, reuses the existing blocker/hash refresh/subscriptions and suppresses restored-history notification spam.

@@ -16,12 +16,14 @@ using Game.Domain.Resources;
 using Game.Domain.Time;
 using Game.Domain.Work;
 using Game.Domain.World;
+using Game.Domain.Events;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Simulation.Control;
 using Game.Simulation.Military;
 using Game.Simulation.Research;
 using Game.Simulation.Time;
+using Game.Simulation.Events;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -71,6 +73,7 @@ namespace Game.Presentation.UI
         private WorkGroupId? selectedGroup;
         private MilitaryUnitId? selectedUnit;
         private WorldLocationId? selectedLocation;
+        private EventInstanceId? selectedEvent;
         private WorkPriority workPriority = WorkPriority.High;
         private int pendingLoadSlot;
         private float nextRefresh;
@@ -87,6 +90,9 @@ namespace Game.Presentation.UI
         private int knownBattleEventCount;
         private int knownTravelCount;
         private long knownFoodShortage;
+        private int knownEventHistoryCount;
+        private int knownPendingEventCount;
+        private bool suppressNotificationCaptureOnce;
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -184,6 +190,7 @@ namespace Game.Presentation.UI
 
         public void ConfirmLoadSlot(int index) => TryCommand(() =>
         {
+            suppressNotificationCaptureOnce = true;
             context.Saves.Load(index);
             context.Selection.ClearSelection();
             pendingLoadSlot = 0;
@@ -328,6 +335,7 @@ namespace Game.Presentation.UI
             AddNavigation("Military", GameplayPanel.Military);
             AddNavigation("Save / Load", GameplayPanel.SaveLoad);
             AddNavigation("Global map", GameplayPanel.Global);
+            if (context.Events != null) AddNavigation("Events", GameplayPanel.Events);
             root.Add(navigation);
 
             mainPanel = new ScrollView(ScrollViewMode.Vertical) { name = "main-panel" };
@@ -410,7 +418,8 @@ namespace Game.Presentation.UI
             var weather = context.Weather.GetWeatherAtCalendarTick(ticks);
             weatherLabel.text = weather.Season + "   " + weather.Type + "   " + weather.TemperatureCelsius.ToString("0.0") + " C";
             modeLabel.text = context.GlobalMap.Mode == GameWorldMode.Local ? "LOCAL" : "GLOBAL";
-            alertLabel.text = "Alerts " + notificationFeed.Count;
+            var pendingEvents = context.Events?.PendingPlayerEvents.Count ?? 0;
+            alertLabel.text = "Alerts " + notificationFeed.Count + (pendingEvents > 0 ? "  Events " + pendingEvents : string.Empty);
             topBar.Q<Button>("pause-button").text = clock.IsPaused ? "Resume" : "Pause";
         }
 
@@ -428,6 +437,61 @@ namespace Game.Presentation.UI
                 case GameplayPanel.SaveLoad: DrawSavePanel(); break;
                 case GameplayPanel.Global: DrawGlobalPanel(); break;
                 case GameplayPanel.Economy: DrawEconomyPanel(); break;
+                case GameplayPanel.Events: DrawEventsPanel(); break;
+            }
+        }
+
+        private void DrawEventsPanel()
+        {
+            AddTitle(mainPanel, "Events");
+            if (context.Events == null)
+            {
+                AddMuted(mainPanel, "Event service is unavailable in this session.");
+                return;
+            }
+            var pending = context.Events.PendingPlayerEvents;
+            AddSection(mainPanel, "Pending " + pending.Count);
+            if (pending.Count == 0) AddMuted(mainPanel, "No decisions are waiting.");
+            foreach (var instance in pending)
+            {
+                var definition = context.Events.Catalog.Get(instance.DefinitionId);
+                var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
+                var captured = instance.InstanceId;
+                mainPanel.Add(ActionButton((selectedEvent == instance.InstanceId ? "> " : string.Empty) + node.Title,
+                    () => { selectedEvent = captured; RefreshPanel(); }));
+                AddMuted(mainPanel, string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)));
+            }
+            if (!selectedEvent.HasValue || pending.All(x => x.InstanceId != selectedEvent.Value))
+                selectedEvent = pending.Count == 0 ? (EventInstanceId?)null : pending[0].InstanceId;
+            if (selectedEvent.HasValue)
+            {
+                var instance = pending.First(x => x.InstanceId == selectedEvent.Value);
+                var definition = context.Events.Catalog.Get(instance.DefinitionId);
+                var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
+                AddSection(mainPanel, node.Title);
+                AddLine(mainPanel, node.Description);
+                AddMuted(mainPanel, "Involving " + string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)) + ".");
+                foreach (var choice in node.Choices)
+                {
+                    var capturedChoice = choice.Id;
+                    mainPanel.Add(ActionButton(choice.Label, () => TryCommand(() =>
+                    {
+                        var result = context.Events.ResolvePlayerChoice(instance.InstanceId, capturedChoice,
+                            context.Clock().State.CalendarTicks);
+                        if (!result.Applied) throw new InvalidOperationException("Event choice was not applied: " + result.Status);
+                        selectedEvent = null;
+                        SetStatus("Event choice applied.");
+                    })));
+                }
+            }
+            AddSection(mainPanel, "Recent history");
+            if (context.Events.History.Count == 0) AddMuted(mainPanel, "No resolved events yet.");
+            foreach (var entry in context.Events.History.Reverse().Take(12))
+            {
+                var definition = context.Events.Catalog.Get(entry.DefinitionId);
+                var title = definition.Nodes[0].Title;
+                AddLine(mainPanel, title + " - " + entry.Status + " - " + entry.OutcomeCode);
+                AddMuted(mainPanel, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
             }
         }
 
@@ -814,6 +878,14 @@ namespace Game.Presentation.UI
             AddLine(inspector, "Dynasty role: " + DynastyRole(id));
             AddLine(inspector, "Military: " + (context.Military.TryGetForMember(id, out var unit)
                 ? "member" + (unit.CaptainId == id ? ", captain" : string.Empty) : "civilian"));
+            if (context.Events != null)
+            {
+                var eventHistory = context.Events.History.Where(x => x.Targets.Any(target =>
+                    target.Kind == EventTargetKind.Character && target.TryGetStableEntityId(out var targetId) && targetId == id))
+                    .Reverse().Take(3).ToArray();
+                AddLine(inspector, "Key events: " + (eventHistory.Length == 0 ? "none" : string.Join(", ",
+                    eventHistory.Select(x => context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Title))));
+            }
             var eligibility = context.PlayerControl.Evaluate(id);
             var actions = Row();
             actions.Add(ActionButton(context.Research.AssignedWorkers.Contains(id) ? "Remove research" : "Assign research", () => TryCommand(() =>
@@ -874,7 +946,9 @@ namespace Game.Presentation.UI
             var battleEvents = context.Battles.Battles.Sum(x => x.BattleHistory.Count);
             var travelCount = context.GlobalMap.Travels.Count;
             var shortage = context.Production.Food.TotalShortage;
-            if (notificationsPrimed)
+            var eventHistoryCount = context.Events?.History.Count ?? 0;
+            var pendingEventCount = context.Events?.PendingPlayerEvents.Count ?? 0;
+            if (notificationsPrimed && !suppressNotificationCaptureOnce)
             {
                 if (researchCount > knownResearchCount) AddNotification("Research completed.");
                 if (characterCount > knownCharacterCount) AddNotification("A child was born.");
@@ -896,7 +970,14 @@ namespace Game.Presentation.UI
                 }
                 if (travelCount < knownTravelCount) AddNotification("An army arrived.");
                 if (shortage > knownFoodShortage) AddNotification("Food shortage increased.");
+                if (pendingEventCount > knownPendingEventCount) AddNotification("A new event awaits your decision.");
+                if (eventHistoryCount > knownEventHistoryCount)
+                {
+                    var entry = context.Events.History.Last();
+                    AddNotification(context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Title + " resolved.");
+                }
             }
+            suppressNotificationCaptureOnce = false;
             notificationsPrimed = true;
             knownResearchCount = researchCount;
             knownCharacterCount = characterCount;
@@ -907,6 +988,8 @@ namespace Game.Presentation.UI
             knownBattleEventCount = battleEvents;
             knownTravelCount = travelCount;
             knownFoodShortage = shortage;
+            knownEventHistoryCount = eventHistoryCount;
+            knownPendingEventCount = pendingEventCount;
         }
 
         private void RefreshTps()
@@ -1146,6 +1229,7 @@ namespace Game.Presentation.UI
                        (clock.IsPaused ? 0x8000000000000000UL : 0UL) ^ context.GlobalMap.ComputeStateHash() ^
                        context.Military.ComputeStateHash() ^ context.Combat.ComputeStateHash() ^
                        context.Research.ComputeStateHash() ^ context.Health.ComputeStateHash() ^
+                       (context.Events?.ComputeStateHash() ?? 0UL) ^
                        unchecked((ulong)context.Selection.SelectedCharacterIds.Count << 20) ^
                        unchecked((ulong)context.Buildings.All.Sum(x => x.History.Count) << 24) ^
                        unchecked((ulong)context.Work.JobCount << 32);

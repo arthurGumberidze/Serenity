@@ -26,6 +26,7 @@ using Game.Simulation.Time;
 using Game.Simulation.Weather;
 using Game.Simulation.Work;
 using Game.Simulation.World;
+using Game.Simulation.Events;
 using UnityEngine;
 
 namespace Game.Presentation.UI
@@ -40,7 +41,8 @@ namespace Game.Presentation.UI
         Military = 5,
         SaveLoad = 6,
         Global = 7,
-        Economy = 8
+        Economy = 8,
+        Events = 9
     }
 
     public sealed class GameplaySaveSlotInfo
@@ -84,7 +86,7 @@ namespace Game.Presentation.UI
             Action<bool> setPaused, Action<Game.Simulation.Time.GameSpeed> setSpeed,
             Action requestEnterGlobal, Action<WorldLocationId> requestEnterLocation,
             Action<StableEntityId> requestEnterBattle, Action<bool> setDeveloperUiVisible,
-            IEnumerable<Behaviour> legacyDebugOverlays)
+            IEnumerable<Behaviour> legacyDebugOverlays, EventService events = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -123,6 +125,7 @@ namespace Game.Presentation.UI
             RequestEnterBattle = requestEnterBattle ?? throw new ArgumentNullException(nameof(requestEnterBattle));
             SetDeveloperUiVisible = setDeveloperUiVisible ?? throw new ArgumentNullException(nameof(setDeveloperUiVisible));
             LegacyDebugOverlays = new List<Behaviour>(legacyDebugOverlays ?? Array.Empty<Behaviour>()).AsReadOnly();
+            Events = events;
         }
 
         public Func<GameClock> Clock { get; }
@@ -162,5 +165,6 @@ namespace Game.Presentation.UI
         public Action<StableEntityId> RequestEnterBattle { get; }
         public Action<bool> SetDeveloperUiVisible { get; }
         public IReadOnlyList<Behaviour> LegacyDebugOverlays { get; }
+        public EventService Events { get; }
     }
 }

@@ -4,10 +4,21 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U27 DONE — the unified UI Toolkit gameplay interface, player/debug separation, normal MVP command surfaces and local slot Save/Load/rebinding are complete.
+U28 DONE — the centralized deterministic event framework, persisted chains/cooldowns, canonical outcomes, U27 event projection and snapshot v14 are complete.
 
 ## Active task
-No task is active. U28 is the next unblocked task but has not started and requires explicit user authorization.
+No task is active. U29 is the next unblocked task but has not started and requires explicit user authorization.
+
+## U28 deterministic event system
+- `EventService` is the single engine-independent scheduler for absolute, periodic, state-predicate, typed-hook and explicit triggers. Immutable definitions are validated for identities, graph reachability/cycles, positive checked weights, delay/cooldown bounds and registered effects before runtime.
+- Candidate and target order is canonical. U14 keyed RNG derives weighted offers, transitions and persistent instance IDs from seed, purpose stream, stable IDs, target scope, absolute tick and sequence; direct/stepped catch-up and reversed enumeration converge to the same event state hash.
+- Player choices return typed command results. AI filters applicable choices, uses integer score plus ID tie-break, and requires no presentation. Persistent node/effect markers enforce exactly once across save/load; delayed multi-node chains resume without reroll. Immediate resolution is capped at 32 transitions.
+- Cooldown begins at offer and is keyed by definition + owner + ordered targets in canonical ticks. An unresolved definition/scope blocks duplicate offers. Detailed terminal history retains 128 stable entries and folds evictions into a deterministic archive count/checksum.
+- The representative Stone Age catalog contains a three-node player family-dispute chain, a standalone player support event, an off-camera AI U18 injury and an AI narrative event. U18 remains the health/relationship/death authority; U28 stores no copied canonical entity state.
+- Normal composition advances strategic AI, events, health/family, fire and player production in that deterministic order. One U27 Events panel projects pending/detail/choices/history, Character inspection and the notification feed; UI state is non-authoritative, hash-gated and click-blocked.
+- Snapshot v14 stores event checkpoint/sequence, active chains, pending choices, stable targets, markers, cooldowns and bounded history/archive. Detached restore rejects incompatible seed/definitions/graph/IDs/targets/markers before commit. V1-v13 remain readable and explicitly reset event state at the restored tick; PostgreSQL stays opaque XML with v14 metadata acceptance.
+- Final command: `& .\Tools\Verify-U28.ps1 -ProjectPath C:\serenity_game -FullRegression -GpuValidation -BuildPlayer` -> U28 20/20 EditMode, 4/4 headless and GPU PlayMode; dependency regressions 72/72 EditMode and 12/12 PlayMode; persistence 35/35; full non-PostgreSQL EditMode 391/391; full PlayMode 86/86; Windows x64 Mono Development build succeeded with errors=0 and two inherited warnings.
+- PostgreSQL's 25 integration tests were discovered but skipped because `DYNASTYGAME_PG_TEST_DATABASE` was absent. No manual native Player clicks are claimed; equivalent headless and Direct3D GPU UI flows passed. U29 has not started.
 
 ## U27 gameplay UI
 - `GameplayUiController` owns one runtime UI Toolkit document at a 1600×900 scaled reference. It holds only panel/selection/confirmation display state and calls the existing time, research, work, building, production, dynasty, health, military, combat, TPS, global and persistence boundaries.

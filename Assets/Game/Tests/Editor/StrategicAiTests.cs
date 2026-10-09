@@ -122,7 +122,7 @@ namespace Game.Tests.Editor
             var source = Fixture.Create(26004);
             source.AdvanceTo(DecisionStep);
             var before = source.Ai.Strategic.DecisionSequence;
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(260041),
+            var snapshot = new SaveSnapshot(SaveSnapshot.StrategicAiVersion, Id(260041),
                 new GameTimeState(source.Tick, source.BiologicalTick, 1, false), 400,
                 strategicAi: source.Scheduler.CaptureState());
             var codec = new SaveXmlCodec();

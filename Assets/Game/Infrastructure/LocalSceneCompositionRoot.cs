@@ -48,8 +48,10 @@ using Game.Simulation.Control;
 using Game.Presentation.Control;
 using Game.Presentation.UI;
 using Game.Domain.World;
+using Game.Domain.Events;
 using Game.Simulation;
 using Game.Simulation.World;
+using Game.Simulation.Events;
 using Game.ECS.Tier2;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -149,6 +151,7 @@ namespace Game.Infrastructure
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
         public GlobalMapService GlobalMap { get; private set; }
         public AiStrategicScheduler StrategicAi { get; private set; }
+        public EventService Events { get; private set; }
         public AiFactionRuntime StarterEnemyAi { get; private set; }
         public GameModeTransitionService ModeTransitions { get; private set; }
         public SettlementId StarterSettlementId { get; private set; }
@@ -351,6 +354,13 @@ namespace Game.Infrastructure
             StrategicAi = new AiStrategicScheduler(developmentWorldSimulationSeed, Characters, HealthFamily,
                 MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
             StrategicAi.AddFaction(StarterEnemyAi);
+            var eventTargets = new CharacterEventTargetSource(Characters,
+                () => Characters.GetAll().Select(x => x.Id).Except(StarterEnemyAi.Residents),
+                () => StarterEnemyAi.Residents,
+                () => Clock.State.BiologicalTicks);
+            Events = new EventService(StoneAgeEventCatalog.Create(), eventTargets,
+                new CanonicalEventEffectExecutor(Characters, HealthFamily), developmentWorldSimulationSeed,
+                Clock.State.CalendarTicks);
             gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
                 () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
@@ -390,7 +400,8 @@ namespace Game.Infrastructure
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(DemoId(600), Clock, saveStore, Production, Research, Succession,
-                HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi);
+                HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
+                Events);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -403,7 +414,8 @@ namespace Game.Infrastructure
                     MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
-                    GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays),
+                    GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
+                    Events),
                 pointerRaycaster, input);
         }
 
@@ -429,6 +441,7 @@ namespace Game.Infrastructure
             var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            Events.AdvanceTo(targetCalendarTick);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             Production.AdvanceTo(targetCalendarTick, abstractWorkers);
