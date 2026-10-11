@@ -31,7 +31,7 @@ U30 — AUTOMATED TESTS AND SOAK
 - Финальный ответ Codex — ТОЛЬКО JSON по заданной schema.
 
 ТЕКУЩАЯ ТОЧКА
-- U00–U29 expected DONE.
+- U00–U28 are DONE. U29 is PARTIAL by explicit user decision: its harness and safe optimizations are committed, but sustained 1000-Character p95 remains above 33.33 ms. This prompt explicitly authorizes U30 preparation despite that debt; do not relabel U29 DONE.
 - TASK_GRAPH depends U04A,U10,U13,U14,U23,U26,U28,U29.
 - Official DoD references 8+ hours accelerated simulation without critical errors/leaks.
 - U30 выполняется в три фазы: Codex готовит/проверяет harness и оставляет task IN_PROGRESS; затем внешний PowerShell/Unity process реально работает не менее 8 wall-clock hours без активного Codex; отдельный Codex finalizer проверяет artifacts и только после этого ставит DONE.
@@ -86,10 +86,21 @@ Parameters:
 
 Contract:
 - exit code 0 only on a passing completed run;
-- non-zero on invariant/watchdog/exception/duration/result-write failure;
+- non-zero at the end on invariant/watchdog/exception/duration/result-write failure;
 - atomically write `<OutputFolder>\soak-result.json`;
 - all logs/checkpoints/artifacts stay under OutputFolder supplied by the external orchestrator, outside the Git worktree;
 - do not invoke Codex/OpenAI APIs from the soak runner.
+
+Fail-soft evidence rule:
+- a recoverable gameplay exception, invariant violation, failed checkpoint validation, Player crash or watchdog restart makes the final verdict FAIL, but must not immediately discard the rest of the night;
+- append the incident to durable JSONL/text logs, preserve every completed performance/heartbeat segment and the first-failure reproduction bundle, then continue observing until the requested wall-clock deadline whenever the runner can do so safely;
+- after a Player crash/hang, restart from the newest independently verified checkpoint; if it is invalid, fall back to the preceding verified checkpoint and record both failures;
+- failure counters and hashes are aggregate and monotonic across restarts; never reset them when a segment restarts and never overwrite earlier evidence;
+- maintain a segment/restart manifest with start/end reason, checkpoint, PID/exit code, sample counts and performance summary;
+- apply bounded retry backoff so a crash loop cannot spin at full speed. Keep the orchestration heartbeat alive and continue retrying until the deadline unless an immediate-stop condition below occurs;
+- immediate stop is allowed only when continued execution risks the machine/evidence or cannot record trustworthy data: output path/disk failure, inability to write the result/incident journal, explicit user cancellation, unsafe resource exhaustion, or corrupt state with no verified checkpoint/fresh-start recovery path;
+- `actual_wall_clock_seconds` is real orchestration duration. Also report productive simulation duration and coverage separately; waiting/restart time cannot be disguised as successful soak time;
+- a run containing any critical/invariant/watchdog incident remains `passed=false` even if later segments recover and reach the deadline.
 
 `soak-result.json` mandatory fields:
 - `passed` boolean;
@@ -103,6 +114,8 @@ Contract:
 - `final_state_hash` non-empty string;
 - `summary` string.
 
+Also include additive diagnostic fields validated by U30 tests/schema: `recoverable_errors`, `player_restarts`, `segments_completed`, `productive_simulation_seconds`, `performance_samples`, `first_failure_utc`, `last_failure_utc`, and paths/hashes for the append-only incident journal and segment manifest.
+
 ==================================================
 4. PROGRESS / HEARTBEAT
 ==================================================
@@ -115,10 +128,13 @@ Every interval write:
 - battles;
 - AI state;
 - memory;
+- interval frame count and p50/p95/p99/max frame time;
+- available main/render/GPU timing, allocation rate, collection count, process CPU and working set;
 - current hash;
 - last save/checkpoint.
 
 No silent hang.
+Write raw or losslessly aggregated performance evidence per segment to append-only files. A restart must open a new segment file and preserve previous segments. Keep storage bounded through explicit rotation/indexing, never by overwriting older evidence.
 
 ==================================================
 5. INVARIANTS
@@ -159,10 +175,10 @@ Soak periodically:
 Need prove continuation doesn't reroll/duplicate.
 
 ==================================================
-8. FAILURE ARTIFACTS
+8. FAILURE ARTIFACTS AND CONTINUATION
 ==================================================
 
-On first critical failure write:
+On first critical failure write immediately:
 - seed;
 - tick/date;
 - scenario;
@@ -172,7 +188,7 @@ On first critical failure write:
 - minimal reproduction command;
 - logs.
 
-Then exit non-zero.
+Do not erase this bundle. Continue the external observation under the fail-soft evidence rule when safe. Append later incidents and performance summaries. Exit non-zero after the requested deadline, or earlier only for an explicit immediate-stop condition.
 
 ==================================================
 9. RESUME
@@ -190,7 +206,7 @@ Short soak same seed/config repeated should end same logical hash where no exter
 11. WATCHDOG
 ==================================================
 
-Harness must detect stalled simulation/progress timeout and fail, not hang forever.
+Harness must detect stalled simulation/progress timeout, record it, restart/resume under the fail-soft rule when safe, and make the eventual result fail rather than hanging forever.
 
 ==================================================
 12. PERFORMANCE INTEGRATION
@@ -198,6 +214,7 @@ Harness must detect stalled simulation/progress timeout and fail, not hang forev
 
 Reuse U29 benchmark utilities where appropriate.
 Do not build another profiler system.
+The soak result must summarize performance over the full night and per segment, including samples collected before and after every recoverable incident. Performance regression is evidence even when another failure already guarantees `passed=false`.
 
 ==================================================
 13. 8H VALIDATION STATUS
@@ -231,6 +248,7 @@ If the external run was not executed, was shorter than 8 hours, has missing evid
 - checkpoint/restart;
 - deterministic repeat;
 - failure injection catches invariant;
+- failure injection proves the runner records the incident, preserves earlier samples, restarts/resumes when possible, continues to its short-test deadline, and returns non-zero only after producing the aggregate result;
 - watchdog;
 - U29 regression;
 - Windows build.

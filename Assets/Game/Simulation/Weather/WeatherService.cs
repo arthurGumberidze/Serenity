@@ -36,7 +36,10 @@ namespace Game.Simulation.Weather
         private readonly ClimateProfile climate;
         private readonly HealthAndFamilyService health;
         private readonly Dictionary<StableEntityId, long> exposureDays = new Dictionary<StableEntityId, long>();
+        private readonly List<StableEntityId> outdoorCharacterBuffer = new List<StableEntityId>();
         private readonly ulong climateKey;
+        private long cachedWeatherDay = -1;
+        private WeatherState cachedWeather;
 
         public WeatherService(long simulationWorldSeed, ClimateProfile climateProfile,
             HealthAndFamilyService healthService = null)
@@ -61,6 +64,8 @@ namespace Game.Simulation.Weather
         public WeatherState GetWeatherForDay(long absoluteDay)
         {
             if (absoluteDay < 0) throw new ArgumentOutOfRangeException(nameof(absoluteDay));
+            // Weather is a pure function of immutable seed/profile/day. This is disposable memoization.
+            if (cachedWeatherDay == absoluteDay) return cachedWeather;
             var dayTick = checked(absoluteDay * TimeSpan.TicksPerDay);
             var season = climate.SeasonCalendar.GetSeason(dayTick);
             var seasonal = climate.GetSeason(season);
@@ -99,9 +104,11 @@ namespace Game.Simulation.Weather
             var exposureRisk = exposureKind == WeatherExposureKind.None ? 0 :
                 Math.Min(1000, 120 + Math.Abs(temperature - (exposureKind == WeatherExposureKind.Cold
                     ? climate.SevereColdDeciCelsius : climate.SevereHeatDeciCelsius)) * 2);
-            return new WeatherState(absoluteDay, season, type, temperature, precipitation, precipitationPermille, wind,
+            cachedWeather = new WeatherState(absoluteDay, season, type, temperature, precipitation, precipitationPermille, wind,
                 exposureKind, new WeatherModifiers(crop, work, movement, exposureRisk,
                     seasonal.WildFoodModifierPerThousand));
+            cachedWeatherDay = absoluteDay;
+            return cachedWeather;
         }
 
         public int GetMovementModifierForInterval(long startCalendarTick, long endCalendarTick)
@@ -123,19 +130,32 @@ namespace Game.Simulation.Weather
 
         public WeatherHealthAdvanceResult AdvanceHealthExposureTo(long targetCalendarTick,
             IEnumerable<StableEntityId> outdoorCharacters)
+            => AdvanceHealthExposureTo(targetCalendarTick, outdoorCharacters, true);
+
+        public WeatherHealthAdvanceResult AdvanceHealthExposureTo(long targetCalendarTick,
+            IEnumerable<StableEntityId> outdoorCharacters, bool includeStateHash)
         {
             if (targetCalendarTick < 0) throw new ArgumentOutOfRangeException(nameof(targetCalendarTick));
-            var ids = (outdoorCharacters ?? throw new ArgumentNullException(nameof(outdoorCharacters)))
-                .Distinct().OrderBy(x => x).ToArray();
-            if (ids.Any(x => !x.IsValid)) throw new ArgumentException("Outdoor character IDs must be valid.", nameof(outdoorCharacters));
+            if (outdoorCharacters == null) throw new ArgumentNullException(nameof(outdoorCharacters));
             var completedDays = targetCalendarTick / TimeSpan.TicksPerDay;
             var finalDay = completedDays - 1;
+            outdoorCharacterBuffer.Clear();
+            // Validate the entire input before mutation, but only sort people with unprocessed days.
+            // New arrivals must still catch up even when the global day has not changed.
+            foreach (var id in outdoorCharacters)
+            {
+                if (!id.IsValid)
+                    throw new ArgumentException("Outdoor character IDs must be valid.", nameof(outdoorCharacters));
+                if (finalDay >= 0 && (!exposureDays.TryGetValue(id, out var lastDay) || lastDay < finalDay))
+                    outdoorCharacterBuffer.Add(id);
+            }
+            outdoorCharacterBuffer.Sort();
+            RemoveAdjacentDuplicates(outdoorCharacterBuffer);
             var processed = 0;
             var applied = 0;
-            foreach (var id in ids)
+            foreach (var id in outdoorCharacterBuffer)
             {
-                exposureDays.TryGetValue(id, out var savedDay);
-                var firstDay = exposureDays.ContainsKey(id) ? savedDay + 1 : 0;
+                var firstDay = exposureDays.TryGetValue(id, out var savedDay) ? savedDay + 1 : 0;
                 for (var day = firstDay; day <= finalDay; day++)
                 {
                     processed++;
@@ -157,7 +177,16 @@ namespace Game.Simulation.Weather
                     exposureDays[id] = day;
                 }
             }
-            return new WeatherHealthAdvanceResult(processed, applied, ComputeStateHash());
+            return new WeatherHealthAdvanceResult(processed, applied, includeStateHash ? ComputeStateHash() : 0UL);
+        }
+
+        private static void RemoveAdjacentDuplicates(List<StableEntityId> values)
+        {
+            if (values.Count < 2) return;
+            var write = 1;
+            for (var read = 1; read < values.Count; read++)
+                if (values[read] != values[write - 1]) values[write++] = values[read];
+            if (write < values.Count) values.RemoveRange(write, values.Count - write);
         }
 
         public WeatherSaveState CaptureState() => new WeatherSaveState(worldSeed, climate.Id, ExposureCheckpoints);

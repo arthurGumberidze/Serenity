@@ -37,6 +37,7 @@ namespace Game.Presentation.UI
     [DisallowMultipleComponent]
     public sealed class GameplayUiController : MonoBehaviour, IWorldPointerUiBlocker, IWorldPointerUiRegionBlocker
     {
+        private const float AutomaticRefreshIntervalSeconds = 1f;
         private static readonly Color PanelColor = new Color(0.075f, 0.085f, 0.07f, 0.96f);
         private static readonly Color HeaderColor = new Color(0.15f, 0.18f, 0.12f, 0.98f);
         private static readonly Color AccentColor = new Color(0.66f, 0.52f, 0.28f, 1f);
@@ -69,6 +70,9 @@ namespace Game.Presentation.UI
         private Label tpsLabel;
         private Label gameOverLabel;
         private readonly List<string> notificationFeed = new List<string>();
+        private int notificationVersion;
+        private int renderedNotificationVersion = -1;
+        private bool emptyInspectorRendered;
         private GameplayPanel activePanel;
         private WorkGroupId? selectedGroup;
         private MilitaryUnitId? selectedUnit;
@@ -206,7 +210,7 @@ namespace Game.Presentation.UI
                 SetDeveloperUiVisible(!DeveloperUiVisible);
             HandleWorkGroupHotkeys(keyboard);
             if (Time.unscaledTime < nextRefresh) return;
-            nextRefresh = Time.unscaledTime + 0.25f;
+            nextRefresh = Time.unscaledTime + AutomaticRefreshIntervalSeconds;
             var hash = ComputeRefreshHash();
             if (hash == lastRefreshHash) return;
             RefreshNow();
@@ -407,7 +411,7 @@ namespace Game.Presentation.UI
         private void RefreshHud()
         {
             var clock = context.Clock();
-            var alive = context.Characters.GetAll().Count(x => x.LifeState == CharacterLifeState.Alive);
+            var alive = context.Characters.CountAlive();
             resourcesLabel.text = "Population " + alive + "   " + string.Join("   ", context.Resources.All
                 .Where(x => x.Id.ToString() == "berries" || x.Id.ToString() == "wood_log" ||
                             x.Id.ToString() == "stone" || x.Id.ToString() == "plant_fiber" || x.Id.ToString() == "hide")
@@ -820,6 +824,11 @@ namespace Game.Presentation.UI
 
         private void RefreshInspector()
         {
+            var hasSelection = context.Selection.SelectedCharacterIds.Count > 0 ||
+                               context.Selection.SelectedBuildingPresenter != null ||
+                               context.Selection.SelectedWorldResourcePilePresenter != null;
+            if (!hasSelection && emptyInspectorRendered) return;
+            emptyInspectorRendered = !hasSelection;
             inspector.Clear();
             AddTitle(inspector, "Selection");
             if (context.Selection.SelectedCharacterIds.Count > 1)
@@ -928,6 +937,8 @@ namespace Game.Presentation.UI
 
         private void RefreshNotifications()
         {
+            if (renderedNotificationVersion == notificationVersion) return;
+            renderedNotificationVersion = notificationVersion;
             notifications.Clear();
             AddSection(notifications, "Notifications");
             if (notificationFeed.Count == 0) AddMuted(notifications, "No important alerts.");
@@ -939,7 +950,7 @@ namespace Game.Presentation.UI
         {
             var researchCount = context.Research.CompletedTechnologies.Count;
             var characterCount = context.Characters.Count;
-            var aliveCount = context.Characters.GetAll().Count(x => x.LifeState == CharacterLifeState.Alive);
+            var aliveCount = context.Characters.CountAlive();
             var dynastyCount = context.Dynasty.History.Count;
             var conditionCount = context.Health.Conditions.Count;
             var buildingHistory = context.Buildings.All.Sum(x => x.History.Count);
@@ -1213,6 +1224,7 @@ namespace Game.Presentation.UI
             if (string.IsNullOrWhiteSpace(message)) return;
             notificationFeed.Add(message.Trim());
             if (notificationFeed.Count > 20) notificationFeed.RemoveAt(0);
+            notificationVersion++;
         }
 
         private void CloseModal()

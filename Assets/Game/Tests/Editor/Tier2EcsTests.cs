@@ -202,6 +202,74 @@ namespace Game.Tests
             Assert.That(typeof(Tier2AgentSimulationJob).GetInterfaces(), Does.Contain(typeof(IJobEntity)));
         }
 
+        [Test, Category("U29")]
+        public void WorkerBatchPreservesOrderConsumptionAndStructuralChanges()
+        {
+            using (var runtime = new Tier2Runtime())
+            {
+                var states = CreateTransfers(500);
+                runtime.Materializer.Materialize(states.AsEnumerable().Reverse().ToArray());
+                var output = new List<StableEntityId> { Id(9999) };
+                runtime.Step(new GameTimeAdvance(TimeSpan.FromSeconds(1), TimeSpan.Zero));
+                runtime.ConsumeProductionWorkers(output);
+                Assert.That(output, Is.EqualTo(new[] { Id(9999) }.Concat(states.Select(x => x.CharacterId))));
+                output.Clear();
+                runtime.ConsumeProductionWorkers(output);
+                Assert.That(output, Is.Empty, "Pending work must be consumed exactly once.");
+                runtime.Dematerialize(states[0].CharacterId);
+                runtime.Materializer.Materialize(CreateTransfer(501));
+                runtime.Materializer.TryGetEntity(states[1].CharacterId, out var externallyDestroyed);
+                runtime.World.EntityManager.DestroyEntity(externallyDestroyed);
+                runtime.Step(new GameTimeAdvance(TimeSpan.FromSeconds(1), TimeSpan.Zero));
+                runtime.ConsumeProductionWorkers(output);
+                Assert.That(output, Is.EqualTo(states.Skip(2).Select(x => x.CharacterId).Concat(new[] { Id(501) })));
+            }
+        }
+
+        [Test, Category("U29")]
+        public void WorkerConsumptionLocalComparisonKeepsIdenticalResults()
+        {
+            using (var runtime = new Tier2Runtime())
+            {
+                runtime.Materializer.Materialize(CreateTransfers(500));
+                var output = new List<StableEntityId>(500);
+                var expected = runtime.Materializer.ActiveIds.ToArray();
+                var clock = new System.Diagnostics.Stopwatch();
+                long oldTicks = 0, newTicks = 0;
+                // Alternate the order to reduce warm-up/CPU drift bias. Setup is outside each timed region.
+                for (var iteration = 0; iteration < 100; iteration++)
+                    for (var pass = 0; pass < 2; pass++)
+                    {
+                        var legacy = (iteration + pass) % 2 == 0;
+                        runtime.Step(new GameTimeAdvance(TimeSpan.FromSeconds(1), TimeSpan.Zero));
+                        output.Clear();
+                        clock.Restart();
+                        if (legacy)
+                        {
+                            foreach (var id in runtime.Materializer.ActiveIds)
+                            {
+                                if (!runtime.Materializer.TryGetEntity(id, out var entity)) continue;
+                                var progress = runtime.World.EntityManager.GetComponentData<Tier2ProductionProgress>(entity);
+                                if (progress.PendingWorkTicks <= 0) continue;
+                                progress.PendingWorkTicks = 0;
+                                runtime.World.EntityManager.SetComponentData(entity, progress);
+                                output.Add(id);
+                            }
+                        }
+                        else runtime.ConsumeProductionWorkers(output);
+                        clock.Stop();
+                        if (iteration >= 10) { if (legacy) oldTicks += clock.ElapsedTicks; else newTicks += clock.ElapsedTicks; }
+                        Assert.That(output, Is.EqualTo(expected));
+                        output.Clear();
+                        runtime.ConsumeProductionWorkers(output);
+                        Assert.That(output, Is.Empty);
+                    }
+                TestContext.WriteLine("U29_WORKER_BATCH_AB: legacy_ms=" +
+                    (oldTicks * 1000d / System.Diagnostics.Stopwatch.Frequency / 90).ToString("F6", System.Globalization.CultureInfo.InvariantCulture) +
+                    "; batch_ms=" + (newTicks * 1000d / System.Diagnostics.Stopwatch.Frequency / 90).ToString("F6", System.Globalization.CultureInfo.InvariantCulture));
+            }
+        }
+
         private static Character CreateCharacter()
         {
             return Character.CreateNew(new CharacterCreationData(new CharacterName("Tier", "Two"), CharacterSex.Male,

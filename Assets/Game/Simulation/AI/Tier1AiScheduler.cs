@@ -184,10 +184,15 @@ namespace Game.Simulation.AI
             {
                 var entry = entries[actionCursor];
                 actionCursor = (actionCursor + 1) % entries.Count;
+                var externallyControlled = externalActivityOwner != null &&
+                    externalActivityOwner.IsExternallyControlled(entry.Agent.CharacterId);
+                // Idle agents cannot move. Avoid crossing the engine presentation boundary merely to copy the
+                // same position into canonical state; active actions and direct control retain the exact path.
+                if (entry.Action == null && !externallyControlled) continue;
                 var elapsed = TimeSpan.FromTicks(calendarTicks - entry.LastActionTicks);
                 entry.LastActionTicks = calendarTicks;
                 entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
-                if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(entry.Agent.CharacterId))
+                if (externallyControlled)
                 {
                     if (entry.Action != null)
                     {
@@ -402,7 +407,7 @@ namespace Game.Simulation.AI
 
         private void AdvanceResearch()
         {
-            if (world.Research == null) return;
+            if (world.Research == null || world.Research.ActiveProject == null) return;
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];

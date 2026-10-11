@@ -146,6 +146,7 @@ namespace Game.Simulation.Production
         private readonly Dictionary<StableEntityId, StableEntityId> workerTasks = new Dictionary<StableEntityId, StableEntityId>();
         private readonly Dictionary<ResourceId, long> targets = new Dictionary<ResourceId, long>();
         private readonly Dictionary<ResourceId, long> producedTotals = new Dictionary<ResourceId, long>();
+        private readonly List<StableEntityId> orderedWorkerBuffer = new List<StableEntityId>();
         private readonly ResourceId foodResource = new ResourceId("berries");
         private readonly IResearchUnlockView unlocks;
         private readonly ICharacterCapabilityProvider capabilities;
@@ -281,6 +282,13 @@ namespace Game.Simulation.Production
 
         public bool IsTaskActive(StableEntityId taskId) => tasks.TryGetValue(taskId, out var task) && !task.IsTerminal;
 
+        public void CollectActiveWorkerIds(List<StableEntityId> destination)
+        {
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
+            foreach (var task in tasks.Values)
+                if (!task.IsTerminal) destination.Add(task.WorkerId);
+        }
+
         public ProductionCompletion AdvanceTask(StableEntityId taskId, TimeSpan work)
             => AdvanceTaskAt(taskId, work, LastCalendarTick);
 
@@ -342,9 +350,15 @@ namespace Game.Simulation.Production
         {
             if (targetCalendarTick < LastCalendarTick)
                 throw new ArgumentOutOfRangeException(nameof(targetCalendarTick), "Production time cannot move backwards.");
-            var workers = (abstractWorkers ?? throw new ArgumentNullException(nameof(abstractWorkers))).Distinct().OrderBy(x => x).ToArray();
+            if (abstractWorkers == null) throw new ArgumentNullException(nameof(abstractWorkers));
             var firstStep = LastCalendarTick / settings.FixedStep.Ticks + 1L;
             var finalStep = targetCalendarTick / settings.FixedStep.Ticks;
+            // No production boundary was crossed. Preserve the checkpoint, without preparing an unused roster.
+            if (firstStep > finalStep) { LastCalendarTick = targetCalendarTick; return; }
+            orderedWorkerBuffer.Clear();
+            orderedWorkerBuffer.AddRange(abstractWorkers);
+            orderedWorkerBuffer.Sort();
+            RemoveAdjacentDuplicates(orderedWorkerBuffer);
             for (var step = firstStep; step <= finalStep; step++)
             {
                 var stepStartTick = checked((step - 1L) * settings.FixedStep.Ticks);
@@ -358,12 +372,21 @@ namespace Game.Simulation.Production
                 foreach (var definition in resources.All) stepTotals.Add(definition.Id, GetCanonicalTotal(definition.Id));
                 try
                 {
-                    for (var i = 0; i < workers.Length; i++)
-                        AdvanceAbstractWorker(workers[i], settings.FixedStep.Ticks, stepStartTick);
+                    for (var i = 0; i < orderedWorkerBuffer.Count; i++)
+                        AdvanceAbstractWorker(orderedWorkerBuffer[i], settings.FixedStep.Ticks, stepStartTick);
                 }
                 finally { stepTotals = null; }
             }
             LastCalendarTick = targetCalendarTick;
+        }
+
+        private static void RemoveAdjacentDuplicates(List<StableEntityId> values)
+        {
+            if (values.Count < 2) return;
+            var write = 1;
+            for (var read = 1; read < values.Count; read++)
+                if (values[read] != values[write - 1]) values[write++] = values[read];
+            if (write < values.Count) values.RemoveRange(write, values.Count - write);
         }
 
         public ProductionSaveState CaptureState() => new ProductionSaveState(LastCalendarTick,

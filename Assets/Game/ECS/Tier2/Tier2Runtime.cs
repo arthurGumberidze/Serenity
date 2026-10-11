@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Domain;
 using Game.Simulation.Time;
 using Game.Simulation.Research;
@@ -69,6 +70,13 @@ namespace Game.ECS.Tier2
             ThrowIfDisposed();
             World.EntityManager.CompleteAllTrackedJobs();
             return Materializer.ConsumeProductionWorkers();
+        }
+
+        public void ConsumeProductionWorkers(List<StableEntityId> workers)
+        {
+            ThrowIfDisposed();
+            World.EntityManager.CompleteAllTrackedJobs();
+            Materializer.ConsumeProductionWorkers(workers);
         }
 
         public int AdvanceResearch(ResearchService research, long targetCalendarTick)

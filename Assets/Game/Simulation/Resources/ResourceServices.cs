@@ -156,7 +156,8 @@ namespace Game.Simulation.Resources
                 catalog.Get(state.ResourceId);
                 var pile = WorldResourcePile.Restore(state);
                 if (!inventories.TryGet(pile.InventoryOwner, out var inventory) ||
-                    inventory.GetAmount(state.ResourceId).Units <= 0 || !replacement.TryAdd(pile.Id, pile))
+                    inventory.CaptureState().Amounts.Any(x => x.Quantity.Units > 0 && x.ResourceId != state.ResourceId) ||
+                    !replacement.TryAdd(pile.Id, pile))
                     throw new ArgumentException("World-pile state has no matching canonical inventory.", nameof(states));
             }
             piles.Clear();

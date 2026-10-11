@@ -12,6 +12,14 @@ namespace Game.Domain.Characters
 
         public int Count => characters.Count;
 
+        public int CountAlive()
+        {
+            var count = 0;
+            foreach (var character in characters.Values)
+                if (character.LifeState == CharacterLifeState.Alive) count++;
+            return count;
+        }
+
         public void Add(Character character)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));

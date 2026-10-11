@@ -226,12 +226,18 @@ namespace Game.Simulation.Health
         }
 
         public HealthAdvanceResult AdvanceTo(long calendarTick, long biologicalTick)
+            => AdvanceTo(calendarTick, biologicalTick, true);
+
+        public HealthAdvanceResult AdvanceTo(long calendarTick, long biologicalTick, bool includeStateHash)
         {
             if (calendarTick < LastCalendarTick || biologicalTick < LastBiologicalTick)
                 throw new ArgumentOutOfRangeException(nameof(calendarTick), "Health/family time cannot move backwards.");
             var transitions = 0;
             var deaths = 0;
-            foreach (var original in conditions.Values.OrderBy(x => x.InstanceId).ToArray())
+            var conditionSnapshot = conditions.Count == 0
+                ? Array.Empty<HealthConditionInstanceState>()
+                : conditions.Values.OrderBy(x => x.InstanceId).ToArray();
+            foreach (var original in conditionSnapshot)
             {
                 var current = original;
                 var definition = catalog.Get(current.DefinitionId);
@@ -279,9 +285,12 @@ namespace Game.Simulation.Health
             }
 
             var births = 0;
-            foreach (var pregnancy in pregnancies.Values.Where(x => x.Status == PregnancyStatus.Active &&
-                         x.DueBiologicalTick <= biologicalTick).OrderBy(x => x.DueBiologicalTick)
-                         .ThenBy(x => x.PregnancyId).ToArray())
+            var duePregnancies = pregnancies.Count == 0
+                ? Array.Empty<PregnancyState>()
+                : pregnancies.Values.Where(x => x.Status == PregnancyStatus.Active &&
+                    x.DueBiologicalTick <= biologicalTick).OrderBy(x => x.DueBiologicalTick)
+                    .ThenBy(x => x.PregnancyId).ToArray();
+            foreach (var pregnancy in duePregnancies)
             {
                 var mother = characters.Get(pregnancy.MotherId);
                 if (mother.LifeState != CharacterLifeState.Alive)
@@ -297,7 +306,7 @@ namespace Game.Simulation.Health
             }
             LastCalendarTick = calendarTick;
             LastBiologicalTick = biologicalTick;
-            return new HealthAdvanceResult(transitions, deaths, births, ComputeStateHash());
+            return new HealthAdvanceResult(transitions, deaths, births, includeStateHash ? ComputeStateHash() : 0UL);
         }
 
         public CharacterCapabilities GetCapabilities(StableEntityId characterId) =>
@@ -315,8 +324,9 @@ namespace Game.Simulation.Health
             var combat = adult ? 1000 : 0;
             var incapacitated = false;
             var fertility = adult;
-            foreach (var condition in conditions.Values.Where(x => x.TargetId == characterId && IsActive(x.State)))
+            foreach (var condition in conditions.Values)
             {
+                if (condition.TargetId != characterId || !IsActive(condition.State)) continue;
                 var effect = catalog.Get(condition.DefinitionId).Effect;
                 work = Multiply(work, effect.WorkPerThousand);
                 movement = Multiply(movement, effect.MovementPerThousand);

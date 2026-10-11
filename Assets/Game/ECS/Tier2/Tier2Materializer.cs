@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Game.Domain;
 using Game.Domain.Characters;
 using Unity.Collections;
@@ -17,12 +16,15 @@ namespace Game.ECS.Tier2
         private readonly EntityManager entityManager;
         private readonly EntityArchetype archetype;
         private readonly EntityQuery identityQuery;
+        private readonly Tier2SimulationSystem componentAccessSystem;
         private readonly Dictionary<StableEntityId, Entity> entitiesById = new Dictionary<StableEntityId, Entity>();
+        private readonly List<StableEntityId> orderedActiveIds = new List<StableEntityId>();
 
         public Tier2Materializer(World world)
         {
             if (world == null || !world.IsCreated) throw new ArgumentException("A created ECS world is required.", nameof(world));
             entityManager = world.EntityManager;
+            componentAccessSystem = world.GetOrCreateSystemManaged<Tier2SimulationSystem>();
             archetype = entityManager.CreateArchetype(
                 typeof(Tier2StableIdentity), typeof(Tier2BiologicalState), typeof(Tier2Position),
                 typeof(Tier2Movement), typeof(Tier2SimulationProgress), typeof(Tier2ProductionProgress));
@@ -31,7 +33,7 @@ namespace Game.ECS.Tier2
         }
 
         public int EntityCount => identityQuery.CalculateEntityCount();
-        public IReadOnlyList<StableEntityId> ActiveIds => entitiesById.Keys.OrderBy(x => x).ToArray();
+        public IReadOnlyList<StableEntityId> ActiveIds => orderedActiveIds;
 
         public Entity Materialize(in Tier2TransferState state)
         {
@@ -39,6 +41,7 @@ namespace Game.ECS.Tier2
             var entity = entityManager.CreateEntity(archetype);
             Write(entity, state);
             entitiesById.Add(state.CharacterId, entity);
+            InsertOrdered(state.CharacterId);
             return entity;
         }
 
@@ -60,6 +63,7 @@ namespace Game.ECS.Tier2
                 {
                     Write(entities[i], states[i]);
                     entitiesById.Add(states[i].CharacterId, entities[i]);
+                    InsertOrdered(states[i].CharacterId);
                 }
             }
         }
@@ -68,6 +72,7 @@ namespace Game.ECS.Tier2
         {
             if (entitiesById.TryGetValue(characterId, out entity) && entityManager.Exists(entity)) return true;
             entitiesById.Remove(characterId);
+            orderedActiveIds.Remove(characterId);
             entity = Entity.Null;
             return false;
         }
@@ -100,22 +105,33 @@ namespace Game.ECS.Tier2
                 throw new KeyNotFoundException("No active Tier 2 projection exists for the character ID.");
             entityManager.DestroyEntity(entity);
             entitiesById.Remove(characterId);
+            orderedActiveIds.Remove(characterId);
         }
 
         public StableEntityId[] ConsumeProductionWorkers()
         {
             var workers = new List<StableEntityId>();
-            foreach (var pair in entitiesById)
+            ConsumeProductionWorkers(workers);
+            return workers.ToArray();
+        }
+
+        public void ConsumeProductionWorkers(List<StableEntityId> workers)
+        {
+            if (workers == null) throw new ArgumentNullException(nameof(workers));
+            // Resolve safety/dependencies once for the whole batch, not twice per resident.
+            // Lookup is reacquired after structural changes; stable iteration order is unchanged.
+            entityManager.CompleteDependencyBeforeRW<Tier2ProductionProgress>();
+            var production = componentAccessSystem.GetComponentLookup<Tier2ProductionProgress>();
+            for (var i = 0; i < orderedActiveIds.Count; i++)
             {
-                if (!entityManager.Exists(pair.Value)) continue;
-                var progress = entityManager.GetComponentData<Tier2ProductionProgress>(pair.Value);
+                var id = orderedActiveIds[i];
+                if (!entitiesById.TryGetValue(id, out var entity) ||
+                    !production.TryGetComponent(entity, out var progress)) continue;
                 if (progress.PendingWorkTicks <= 0) continue;
                 progress.PendingWorkTicks = 0;
-                entityManager.SetComponentData(pair.Value, progress);
-                workers.Add(pair.Key);
+                production[entity] = progress;
+                workers.Add(id);
             }
-            workers.Sort();
-            return workers.ToArray();
         }
 
         private void ValidateNewIdentity(StableEntityId id)
@@ -161,8 +177,16 @@ namespace Game.ECS.Tier2
                     if (entitiesById.ContainsKey(id))
                         throw new InvalidOperationException("The ECS world already contains duplicate Tier 2 identities.");
                     entitiesById.Add(id, entities[i]);
+                    InsertOrdered(id);
                 }
             }
+        }
+
+        private void InsertOrdered(StableEntityId id)
+        {
+            var index = orderedActiveIds.BinarySearch(id);
+            if (index < 0) index = ~index;
+            orderedActiveIds.Insert(index, id);
         }
     }
 }

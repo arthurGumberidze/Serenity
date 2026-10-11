@@ -43,6 +43,7 @@ namespace Game.Simulation.Tiers
         private readonly Dictionary<CharacterSimulationTier, ICharacterTierAdapter> adapters;
         private readonly Dictionary<StableEntityId, CharacterSimulationTier> tiers =
             new Dictionary<StableEntityId, CharacterSimulationTier>();
+        private readonly List<StableEntityId> orderedIds = new List<StableEntityId>();
         private readonly HashSet<StableEntityId> transitioning = new HashSet<StableEntityId>();
         private ICharacterTierTransitionGuard transitionGuard;
 
@@ -57,8 +58,7 @@ namespace Game.Simulation.Tiers
         }
 
         public int Count => tiers.Count;
-        public IReadOnlyList<StableEntityId> ManagedIds => tiers.Keys
-            .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
+        public IReadOnlyList<StableEntityId> ManagedIds => orderedIds;
 
         public void BindTransitionGuard(ICharacterTierTransitionGuard guard)
         {
@@ -79,6 +79,7 @@ namespace Game.Simulation.Tiers
             var state = adapters[tier].Capture(characterId);
             RequireMatchingIdentity(characterId, state);
             tiers.Add(characterId, tier);
+            InsertOrdered(characterId);
         }
 
         public void Materialize(Character character, CharacterSimulationTier tier, CharacterRuntimeState state)
@@ -95,6 +96,7 @@ namespace Game.Simulation.Tiers
             if (!adapters[tier].IsActive(character.Id))
                 throw new InvalidOperationException("Tier adapter did not activate the requested representation.");
             tiers.Add(character.Id, tier);
+            InsertOrdered(character.Id);
         }
 
         public CharacterSimulationTier GetTier(StableEntityId characterId) => tiers.TryGetValue(characterId, out var tier)
@@ -194,6 +196,13 @@ namespace Game.Simulation.Tiers
         {
             if (!Enum.IsDefined(typeof(CharacterSimulationTier), tier))
                 throw new ArgumentOutOfRangeException(nameof(tier));
+        }
+
+        private void InsertOrdered(StableEntityId id)
+        {
+            var index = orderedIds.BinarySearch(id);
+            if (index < 0) index = ~index;
+            orderedIds.Insert(index, id);
         }
     }
 }

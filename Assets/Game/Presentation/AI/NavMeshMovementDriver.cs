@@ -22,6 +22,7 @@ namespace Game.Presentation.AI
         private readonly StableEntityId characterId;
         private MovementState state;
         private Tier1MovementAuthority authority;
+        private float appliedAgentSpeed = float.NaN;
 
         public NavMeshMovementDriver(CharacterPresenter presenter, float baseSpeed)
         {
@@ -33,13 +34,14 @@ namespace Game.Presentation.AI
             characterId = presenter.CharacterId;
             agent = presenter.GetComponent<NavMeshAgent>();
             if (agent == null) agent = presenter.gameObject.AddComponent<NavMeshAgent>();
-            agent.speed = baseSpeed;
+            ApplyAgentSpeed(baseSpeed);
             agent.angularSpeed = 540f;
             agent.acceleration = 12f;
             agent.radius = 0.32f;
             agent.height = 1.8f;
             agent.baseOffset = 0f;
             agent.autoBraking = true;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
             agent.updatePosition = true;
             agent.updateRotation = true;
             if (!agent.isOnNavMesh && NavMesh.SamplePosition(presenter.transform.position, out var hit, 4f, NavMesh.AllAreas))
@@ -57,6 +59,7 @@ namespace Game.Presentation.AI
             }
         }
         public bool IsAvailable => presenter != null && presenter.IsBound && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+        public bool HasBoundPresenter => presenter != null && presenter.IsBound;
         public NavMeshAgent Agent => agent;
         public Tier1MovementAuthority Authority => authority;
 
@@ -86,6 +89,7 @@ namespace Game.Presentation.AI
             agent.stoppingDistance = stoppingDistance;
             agent.isStopped = false;
             state = agent.SetDestination(hit.position) ? MovementState.Moving : MovementState.Failed;
+            presenter.SetMovementSpeed(state == MovementState.Moving ? agent.speed : 0f);
         }
 
         public void Stop()
@@ -121,6 +125,7 @@ namespace Game.Presentation.AI
             {
                 presenter.SetMovementSpeed(0f);
                 presenter.SetSimulationPaused(paused);
+                presenter.RefreshAnimation(Time.unscaledTime);
                 state = MovementState.Idle;
                 return;
             }
@@ -132,6 +137,7 @@ namespace Game.Presentation.AI
                 Quaternion.LookRotation(direction, Vector3.up), 720f * unscaledDeltaTime);
             presenter.SetSimulationPaused(false);
             presenter.SetMovementSpeed(speed);
+            presenter.RefreshAnimation(Time.unscaledTime);
             state = MovementState.Moving;
         }
 
@@ -148,10 +154,10 @@ namespace Game.Presentation.AI
             if (!IsAvailable) return;
             if (movementPerThousand < 0 || movementPerThousand > 2000)
                 throw new ArgumentOutOfRangeException(nameof(movementPerThousand));
-            agent.speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f;
+            ApplyAgentSpeed(baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f);
             if (authority == Tier1MovementAuthority.DirectPlayer)
             {
-                agent.isStopped = true;
+                if (!agent.isStopped) agent.isStopped = true;
                 if (paused)
                 {
                     presenter.SetMovementSpeed(0f);
@@ -161,14 +167,28 @@ namespace Game.Presentation.AI
             }
             if (paused)
             {
-                agent.isStopped = true;
+                if (!agent.isStopped) agent.isStopped = true;
                 presenter.SetMovementSpeed(0f);
                 presenter.SetSimulationPaused(true);
                 return;
             }
             presenter.SetSimulationPaused(false);
-            if (state == MovementState.Moving && agent.hasPath) agent.isStopped = false;
-            presenter.SetMovementSpeed(agent.velocity.magnitude);
+            if (state == MovementState.Moving && agent.hasPath)
+            {
+                if (agent.isStopped) agent.isStopped = false;
+                presenter.SetMovementSpeed(agent.velocity.magnitude);
+                return;
+            }
+            presenter.SetMovementSpeed(0f);
+        }
+
+        public void RefreshAnimation(float unscaledTime) => presenter.RefreshAnimation(unscaledTime);
+
+        private void ApplyAgentSpeed(float speed)
+        {
+            if (!float.IsNaN(appliedAgentSpeed) && Mathf.Abs(appliedAgentSpeed - speed) <= 0.001f) return;
+            agent.speed = speed;
+            appliedAgentSpeed = speed;
         }
     }
 }

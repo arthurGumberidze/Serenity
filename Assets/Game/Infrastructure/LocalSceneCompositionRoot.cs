@@ -53,6 +53,7 @@ using Game.Simulation;
 using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.ECS.Tier2;
+using Game.Infrastructure.Performance;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -159,11 +160,14 @@ namespace Game.Infrastructure
         public SaveCoordinator Saves { get; private set; }
         public LocalGameplaySaveFacade PlayerSaves { get; private set; }
         public GameplayUiController GameplayUi { get; private set; }
+        public U29BenchmarkController PerformanceBenchmark { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
         private readonly List<ProductionSourcePresenter> productionPresenters = new List<ProductionSourcePresenter>();
+        private readonly List<StableEntityId> abstractWorkerBuffer = new List<StableEntityId>();
+        private readonly List<StableEntityId> outdoorWorkerBuffer = new List<StableEntityId>();
 
         public void Configure(LocalGameplayInputSource inputSource, RtsCameraController controller,
             WorldPointerRaycaster raycaster, SelectionProbe selection, CharacterPresentationCatalog catalog,
@@ -417,6 +421,7 @@ namespace Game.Infrastructure
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
                     Events),
                 pointerRaycaster, input);
+            PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
@@ -430,25 +435,49 @@ namespace Game.Infrastructure
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
+            PerformanceBenchmark?.BeginSimulationAllocationSample();
             var targetCalendarTick = Clock.State.CalendarTicks;
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
             Tier2Runtime.Step(advance, Weather.GetMovementModifierForInterval(startCalendarTick, targetCalendarTick));
+            PerformanceBenchmark?.RecordTier2Allocation();
             Tier3Adapter.AdvanceAllToCurrent();
             Tier2Runtime.AdvanceResearch(Research, targetCalendarTick);
             Tier3Adapter.AdvanceResearchToCurrent(Research);
-            var abstractWorkers = Tier2Runtime.ConsumeProductionWorkers().Concat(Tiers.ManagedIds.Where(id =>
-                Tiers.GetTier(id) == CharacterSimulationTier.Tier3)).Distinct().OrderBy(id => id).ToArray();
-            var outdoorWorkers = Production.ActiveTasks.Select(task => task.WorkerId).Concat(abstractWorkers);
-            Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkers);
+            PerformanceBenchmark?.RecordTier3AndResearchAllocation();
+            abstractWorkerBuffer.Clear();
+            Tier2Runtime.ConsumeProductionWorkers(abstractWorkerBuffer);
+            var managedIds = Tiers.ManagedIds;
+            for (var i = 0; i < managedIds.Count; i++)
+                if (Tiers.GetTier(managedIds[i]) == CharacterSimulationTier.Tier3)
+                    abstractWorkerBuffer.Add(managedIds[i]);
+            SortAndRemoveDuplicates(abstractWorkerBuffer);
+            outdoorWorkerBuffer.Clear();
+            Production.CollectActiveWorkerIds(outdoorWorkerBuffer);
+            outdoorWorkerBuffer.AddRange(abstractWorkerBuffer);
+            // Weather validates/deduplicates only its due subset; sorting this whole list again is redundant.
+            Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkerBuffer, false);
+            PerformanceBenchmark?.RecordWorkersAndWeatherAllocation();
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
-            Events.AdvanceTo(targetCalendarTick);
-            HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            Events.AdvanceTo(targetCalendarTick, false);
+            HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
-            Production.AdvanceTo(targetCalendarTick, abstractWorkers);
+            Production.AdvanceTo(targetCalendarTick, abstractWorkerBuffer);
+            PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             WeatherPresentation.Refresh(targetCalendarTick);
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
+            PerformanceBenchmark?.RecordPresentationAndTierPolicyAllocation();
+        }
+
+        private static void SortAndRemoveDuplicates(List<StableEntityId> values)
+        {
+            values.Sort();
+            if (values.Count < 2) return;
+            var write = 1;
+            for (var read = 1; read < values.Count; read++)
+                if (values[read] != values[write - 1]) values[write++] = values[read];
+            if (write < values.Count) values.RemoveRange(write, values.Count - write);
         }
 
         private void OnChildBorn(Character child)

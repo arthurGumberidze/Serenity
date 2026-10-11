@@ -324,6 +324,39 @@ namespace Game.Tests.Editor
     [TestFixture, Category("U19")]
     public sealed class WeatherHealthTests
     {
+        [Test, Category("U29")]
+        public void ExposureSkipsSettledPeopleButCatchesNewArrivalsAndEarlierRestore()
+        {
+            var first = WeatherTestSupport.Id(901);
+            var second = WeatherTestSupport.Id(902);
+            var weather = new WeatherService(444, ClimateProfile.Temperate);
+            var day = TimeSpan.FromDays(10).Ticks;
+            Assert.That(weather.AdvanceHealthExposureTo(day, new[] { first }, false).ProcessedPersonDays, Is.EqualTo(10));
+            var checkpoint = weather.CaptureState();
+            Assert.That(weather.AdvanceHealthExposureTo(day, new[] { first, first }, false).ProcessedPersonDays, Is.Zero);
+            Assert.That(weather.AdvanceHealthExposureTo(day, new[] { second, first, second }, false).ProcessedPersonDays, Is.EqualTo(10));
+            var reference = new WeatherService(444, ClimateProfile.Temperate);
+            reference.AdvanceHealthExposureTo(day, new[] { first, second });
+            Assert.That(weather.ComputeStateHash(), Is.EqualTo(reference.ComputeStateHash()));
+            var beforeInvalid = weather.ComputeStateHash();
+            Assert.Throws<ArgumentException>(() => weather.AdvanceHealthExposureTo(day + TimeSpan.TicksPerDay,
+                new[] { first, default(StableEntityId) }, false));
+            Assert.That(weather.ComputeStateHash(), Is.EqualTo(beforeInvalid), "Input validation must remain atomic.");
+            weather.AdvanceHealthExposureTo(day + TimeSpan.TicksPerDay, new[] { first, second });
+            weather.RestoreState(checkpoint);
+            Assert.That(weather.AdvanceHealthExposureTo(day, new[] { first, second }, false).ProcessedPersonDays, Is.EqualTo(10));
+            Assert.That(weather.ComputeStateHash(), Is.EqualTo(reference.ComputeStateHash()));
+        }
+
+        [Test, Category("U29")]
+        public void CachedWeatherMatchesIndependentQueriesIncludingBackwardsDays()
+        {
+            var weather = new WeatherService(444, ClimateProfile.Temperate);
+            foreach (var day in new long[] { 0, 0, 364, 364, 120, 0, 365, 365, 1 })
+                Assert.That(weather.GetWeatherForDay(day), Is.EqualTo(new WeatherService(444, ClimateProfile.Temperate).GetWeatherForDay(day)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => weather.GetWeatherForDay(-1));
+        }
+
         [Test]
         public void ColdHeatExposureIsDeterministicExactlyOnceAndRestorable()
         {

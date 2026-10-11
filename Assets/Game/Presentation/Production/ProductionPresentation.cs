@@ -11,7 +11,9 @@ namespace Game.Presentation.Production
     {
         private ProductionSite site;
         private Renderer cachedRenderer;
+        private MaterialPropertyBlock propertyBlock;
         private Color activeColor;
+        private bool? displayedDepleted;
 
         public ProductionSite Site => site;
         public bool IsBound => site != null;
@@ -28,10 +30,12 @@ namespace Game.Presentation.Production
         public void Refresh()
         {
             if (site == null || cachedRenderer == null) return;
-            var block = new MaterialPropertyBlock();
-            cachedRenderer.GetPropertyBlock(block);
-            block.SetColor("_BaseColor", site.IsDepleted ? Color.gray : activeColor);
-            cachedRenderer.SetPropertyBlock(block);
+            if (displayedDepleted == site.IsDepleted) return;
+            displayedDepleted = site.IsDepleted;
+            propertyBlock ??= new MaterialPropertyBlock();
+            cachedRenderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor("_BaseColor", site.IsDepleted ? Color.gray : activeColor);
+            cachedRenderer.SetPropertyBlock(propertyBlock);
             gameObject.SetActive(!site.IsDepleted || site.Kind == ProductionSiteKind.PrimitiveCropPlot);
         }
     }

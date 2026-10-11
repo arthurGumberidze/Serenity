@@ -77,6 +77,7 @@ namespace Game.Simulation.Events
         private readonly Dictionary<EventInstanceId, EventInstanceState> instances = new Dictionary<EventInstanceId, EventInstanceState>();
         private readonly Dictionary<string, EventCooldownState> cooldowns = new Dictionary<string, EventCooldownState>(StringComparer.Ordinal);
         private readonly List<EventHistoryEntry> history = new List<EventHistoryEntry>();
+        private readonly SortedSet<long> checkpointBuffer = new SortedSet<long>();
         private ulong nextRequestSequence;
         private long archivedCount;
         private ulong archivedChecksum;
@@ -115,9 +116,13 @@ namespace Game.Simulation.Events
         public string GetTargetDisplayName(EventTargetRef target) => targets.GetDisplayName(target);
 
         public EventAdvanceResult AdvanceTo(long calendarTick)
+            => AdvanceTo(calendarTick, true);
+
+        public EventAdvanceResult AdvanceTo(long calendarTick, bool includeStateHash)
         {
             if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick), "Event time cannot move backwards.");
-            if (calendarTick == LastProcessedTick) return new EventAdvanceResult(0, 0, 0, ComputeStateHash());
+            if (calendarTick == LastProcessedTick)
+                return new EventAdvanceResult(0, 0, 0, includeStateHash ? ComputeStateHash() : 0UL);
             var offered = 0; var resolved = 0; var expired = 0;
             var checkpoints = BuildCheckpoints(LastProcessedTick, calendarTick);
             while (checkpoints.Count > 0)
@@ -128,7 +133,7 @@ namespace Game.Simulation.Events
                 EvaluateScheduled(checkpoint, ref offered, ref resolved, ref expired, checkpoints, calendarTick);
             }
             LastProcessedTick = calendarTick;
-            return new EventAdvanceResult(offered, resolved, expired, ComputeStateHash());
+            return new EventAdvanceResult(offered, resolved, expired, includeStateHash ? ComputeStateHash() : 0UL);
         }
 
         public EventInstanceState Enqueue(EventDefinitionId definitionId, EventTargetSet targetSet, long calendarTick)
@@ -249,7 +254,8 @@ namespace Game.Simulation.Events
 
         private SortedSet<long> BuildCheckpoints(long afterTick, long targetTick)
         {
-            var result = new SortedSet<long>();
+            var result = checkpointBuffer;
+            result.Clear();
             foreach (var definition in catalog.All)
             {
                 var trigger = definition.Trigger;

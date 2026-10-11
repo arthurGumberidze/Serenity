@@ -120,6 +120,21 @@ namespace Game.Tests.Editor
             Assert.That(registry.All.Sum(x => x.GetAmount(Wood).Units), Is.EqualTo(20));
         }
 
+        [Test, Category("U29")]
+        public void EmptyStableWorldPileRoundTripsAfterItsCanonicalInventoryIsConsumed()
+        {
+            var catalog = NewCatalog();
+            var registry = new ResourceInventoryRegistry();
+            var piles = new WorldPileService(catalog, registry);
+            var pile = piles.Create(Wood, new ResourceQuantity(1), new GridCoordinate(0, 0));
+            Assert.That(registry.Get(pile.InventoryOwner).TryRemove(Wood, new ResourceQuantity(1)), Is.True);
+
+            var state = piles.CaptureStates();
+            Assert.DoesNotThrow(() => piles.RestoreStates(state));
+            Assert.That(piles.TryGet(pile.Id, out var restored), Is.True);
+            Assert.That(restored.ResourceId, Is.EqualTo(Wood));
+        }
+
         [Test]
         public void ConstructionRequiresAllCostsAndCommitsAtomically()
         {
