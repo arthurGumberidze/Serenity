@@ -58,6 +58,8 @@ Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a
 | U37 | TODO | Шпионаж | U26,U36 | POST | Миссия имеет время/стоимость/шанс/последствия. |
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
 
+Product sequencing note (2026-10-13): by explicit user decision, `PRODUCT_ROADMAP_RU.md` directions P1–P7 execute sequentially before final U29/U30/U31 qualification. This does not change the statuses or relax the gates above. P8 performs final profiling, history/native-memory closure, the complete U29 matrix, continuous-process endurance, a fresh segmented eight-hour U30 and U31 finalization against the feature-complete first-era build. Each P direction runs in a separate Codex chat from committed predecessor state; no concurrent shared-checkout edits.
+
 Completion note (2026-10-06): U14 deterministic Tier 3 catch-up, keyed RNG, tier-path equivalence and 1,000/10,000-character scale coverage are complete. This historical note predates the U15 completion below.
 
 Follow-up note (2026-10-06): U11 RTS right-click Move is complete. Selected characters or the active WorkGroup now issue tier-aware, formation-spaced U11 Move jobs through the U05 pointer pipeline and U10 movement bridge. This note predates the U15 completion recorded below.
