@@ -1,6 +1,7 @@
 using System;
 using Game.Domain.Resources;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using UnityEngine;
 
 namespace Game.Presentation.Resources
@@ -73,12 +74,13 @@ namespace Game.Presentation.Resources
             if (inventories == null || resources == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             TryGetUiBlockingRect(out var panelRect);
             GUILayout.BeginArea(panelRect, GUI.skin.box);
-            GUILayout.Label("Canonical resources: pile / NPC / storage = total");
+            GUILayout.Label(RussianTextCatalog.Get("debug.resources.title"));
             foreach (var definition in resources.All)
             {
                 var totals = GetCanonicalTotals(definition.Id);
-                GUILayout.Label($"{definition.DisplayName}: {totals.WorldPiles} / {totals.Characters} / " +
-                    $"{totals.Storage} = {totals.Total}");
+                GUILayout.Label(RussianTextCatalog.Format("debug.resources.line",
+                    RussianTextCatalog.Content("resource", definition.Id.ToString()), totals.WorldPiles,
+                    totals.Characters, totals.Storage, totals.Total));
             }
             GUILayout.EndArea();
         }

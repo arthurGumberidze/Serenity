@@ -1,0 +1,603 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using UnityEngine;
+
+namespace Game.Presentation.Localization
+{
+    /// <summary>
+    /// Player-facing text boundary. Stable keys are presentation data; canonical IDs and save payloads stay unchanged.
+    /// Missing translations are reported once and degrade to a neutral Russian message instead of exposing a raw key.
+    /// </summary>
+    public static class RussianTextCatalog
+    {
+        public const string Locale = "ru-RU";
+        public const string MissingText = "Перевод недоступен";
+
+        private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo(Locale);
+        private static readonly HashSet<string> ReportedMissing = new HashSet<string>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, string> Entries = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["common.none"] = "нет",
+            ["common.unknown"] = "неизвестно",
+            ["common.empty"] = "пусто",
+            ["common.active"] = "активно",
+            ["common.unavailable"] = "недоступно",
+            ["common.cancel"] = "Отмена",
+            ["common.load"] = "Загрузить",
+            ["common.save"] = "Сохранить",
+            ["common.yes"] = "Да",
+            ["common.no"] = "Нет",
+            ["common.selected_marker"] = "▶ ",
+            ["common.percent"] = "{0}%",
+            ["common.days"] = "{0} дн.",
+            ["common.hours"] = "{0} ч.",
+
+            ["ui.status.player"] = "Интерфейс игрока · F10 — инструменты разработчика",
+            ["ui.status.developer"] = "Режим разработчика · F10 — вернуться в интерфейс игрока",
+            ["ui.status.command_accepted"] = "Действие выполнено.",
+            ["ui.status.command_failed"] = "Действие не выполнено. Проверьте выбранные объекты и доступные ресурсы.",
+            ["ui.status.internal_error"] = "Действие не выполнено из-за внутренней ошибки. Подробности записаны в журнал.",
+            ["ui.action.pause"] = "Пауза",
+            ["ui.action.resume"] = "Продолжить",
+            ["ui.nav.build"] = "Строительство  B",
+            ["ui.nav.settlement"] = "Поселение",
+            ["ui.nav.research"] = "Исследования",
+            ["ui.nav.work"] = "Работы",
+            ["ui.nav.dynasty"] = "Династия",
+            ["ui.nav.military"] = "Войска",
+            ["ui.nav.saves"] = "Сохранения",
+            ["ui.nav.world_map"] = "Карта мира",
+            ["ui.nav.events"] = "События",
+            ["ui.hud.population"] = "Жители: {0}",
+            ["ui.hud.date"] = "Год {0} · день {1} · {2}:{3}",
+            ["ui.hud.mode.local"] = "ПОСЕЛЕНИЕ",
+            ["ui.hud.mode.global"] = "КАРТА МИРА",
+            ["ui.hud.alerts"] = "Важное: {0}",
+            ["ui.hud.pending_events"] = " · решений: {0}",
+
+            ["ui.modal.load.title"] = "Загрузить ячейку {0}",
+            ["ui.modal.load.body"] = "Текущее состояние мира будет заменено сохранённым. Продолжить?",
+            ["ui.modal.new_game.title"] = "Начать новую игру",
+            ["ui.modal.new_game.body"] = "Текущая партия будет заменена новым миром с зерном {0}. Продолжить?",
+            ["ui.action.new_game"] = "Новая игра",
+            ["ui.notification.saved"] = "Игра сохранена в ячейку {0}.",
+            ["ui.notification.loaded"] = "Ячейка {0} загружена.",
+
+            ["ui.events.title"] = "События",
+            ["ui.events.unavailable"] = "События недоступны в этой партии.",
+            ["ui.events.pending"] = "Ожидают решения: {0}",
+            ["ui.events.none_pending"] = "Сейчас нет событий, требующих решения.",
+            ["ui.events.involving"] = "Участники: {0}.",
+            ["ui.events.choice_applied"] = "Решение по событию принято.",
+            ["ui.events.history"] = "Недавние события",
+            ["ui.events.no_history"] = "Завершённых событий пока нет.",
+            ["ui.events.history_line"] = "{0} · {1} · {2}",
+
+            ["ui.economy.title"] = "Хозяйство поселения",
+            ["ui.economy.storage"] = "Склады: {0}/{1}",
+            ["ui.economy.resource_line"] = "{0} · на складах {1} · всего {2} · цель {3}",
+            ["ui.economy.food"] = "Еды израсходовано: {0} · нехватка: {1}",
+            ["ui.economy.modifiers"] = "Текущие условия: рост культур {0}, работа снаружи {1}, сбор дикой пищи {2}.",
+            ["ui.economy.sites"] = "Места производства",
+            ["ui.economy.crop"] = "посев: {0} {1}",
+            ["ui.economy.source"] = "источник: {0}/{1}",
+            ["ui.economy.disabled"] = "недоступно: {0}",
+            ["ui.economy.active_production"] = "Текущие работы",
+            ["ui.economy.no_tasks"] = "Активных производственных задач нет.",
+            ["ui.economy.task"] = "{0} · {1} · {2}",
+
+            ["ui.build.title"] = "Строительство",
+            ["ui.build.instructions"] = "Выберите постройку и укажите место левой кнопкой мыши. R — повернуть, Esc или правая кнопка — отменить.",
+            ["ui.build.no_cost"] = "бесплатно",
+            ["ui.build.cost"] = "Стоимость: {0}",
+            ["ui.build.placement"] = "Размещение: {0} · {1}",
+            ["ui.build.valid"] = "место подходит",
+            ["ui.build.locked_era"] = "Эта постройка недоступна в текущей эпохе.",
+            ["ui.build.requires"] = "Нужно исследовать: {0}.",
+            ["ui.build.locked_research"] = "Сначала завершите требуемое исследование.",
+            ["ui.build.insufficient_resources"] = "Не хватает ресурсов: {0}.",
+            ["ui.build.insufficient_resources_generic"] = "Для этой постройки не хватает ресурсов. Пополните запасы поселения.",
+            ["ui.build.invalid_place"] = "Выберите свободный ровный участок внутри зоны строительства.",
+            ["ui.build.started"] = "Выберите место: левая кнопка — построить, R — повернуть, Esc или правая кнопка — отменить.",
+
+            ["ui.research.title"] = "Исследования каменного века",
+            ["ui.research.active_none"] = "Текущее исследование: нет",
+            ["ui.research.active"] = "Изучается: {0} · {1}",
+            ["ui.research.workers"] = "Исследователи: работают {0}, назначено {1}",
+            ["ui.research.cancel"] = "Отменить исследование",
+            ["ui.research.assign"] = "Назначить выбранных",
+            ["ui.research.remove"] = "Снять выбранных",
+            ["ui.research.assigned_count"] = "Назначено исследователей: {0}.",
+            ["ui.research.removed_count"] = "Снято исследователей: {0}.",
+            ["ui.research.prerequisites"] = "Требования: {0}",
+            ["ui.research.no_prerequisites"] = "нет",
+            ["ui.research.work_unlocks"] = "Объём работы: {0} · открывает: {1}",
+            ["ui.research.capability"] = "новую возможность",
+            ["ui.research.start"] = "Начать: {0}",
+            ["ui.research.no_active"] = "Нет активного исследования.",
+            ["enum.ResearchAvailability.Completed"] = "Завершено",
+            ["enum.ResearchAvailability.Active"] = "Изучается",
+            ["enum.ResearchAvailability.Available"] = "Доступно",
+            ["enum.ResearchAvailability.Locked"] = "Закрыто",
+
+            ["ui.work.title"] = "Рабочие группы и задания",
+            ["ui.work.create"] = "Создать из выбранных жителей",
+            ["ui.work.default_name"] = "Рабочая группа {0}",
+            ["ui.work.need_selection"] = "Сначала выберите хотя бы одного жителя.",
+            ["ui.work.select_group"] = "Выберите или создайте группу.",
+            ["ui.work.name"] = "Название",
+            ["ui.work.rename"] = "Переименовать",
+            ["ui.work.add_selected"] = "Добавить выбранных",
+            ["ui.work.remove_selected"] = "Убрать выбранных",
+            ["ui.work.commander_selected"] = "Назначить выбранного старшим",
+            ["ui.work.need_one_member"] = "Выберите одного участника этой группы.",
+            ["ui.work.commander_priority"] = "Старший: {0} · приоритет: {1}",
+            ["ui.work.move_center"] = "Идти к центру",
+            ["ui.work.haul"] = "Перенести доступное",
+            ["ui.work.cancel_jobs"] = "Отменить незавершённые задания",
+            ["ui.work.help"] = "Для движения выберите группу и щёлкните правой кнопкой по доступной земле. Ctrl+1…9 назначает быстрый номер, 1…9 выбирает группу.",
+            ["ui.work.job"] = "Задание №{0} · {1} · {2} · {3} · резерв: {4}",
+            ["ui.work.selected_shortcut"] = "Выбрана группа «{0}» по клавише {1}.",
+            ["ui.work.no_haul_route"] = "Нет доступного источника ресурсов или свободного склада.",
+
+            ["ui.dynasty.status"] = "Состояние: {0}",
+            ["ui.dynasty.monarch"] = "Правитель: {0}",
+            ["ui.dynasty.spouse"] = "Супруг или супруга: {0}",
+            ["ui.dynasty.children"] = "Дети: {0}",
+            ["ui.dynasty.heir"] = "Текущий наследник: {0}",
+            ["ui.dynasty.candidates"] = "Порядок наследования",
+            ["ui.dynasty.candidate"] = "{0} · возраст: {1}",
+            ["ui.dynasty.history"] = "История наследования",
+            ["ui.dynasty.history_line"] = "{0} → {1} · {2}",
+
+            ["ui.military.title"] = "Войска",
+            ["ui.military.create"] = "Создать отряд из выбранных",
+            ["ui.military.summary"] = "Капитан: {0} · в составе: {1} · боеспособны: {2} · ранены: {3} · {4} · приказ: {5}",
+            ["ui.military.actions"] = "Действия выбранного отряда",
+            ["ui.military.supply"] = "Припасы: {0}",
+            ["ui.military.not_supplied"] = "не загружены",
+            ["ui.military.resupply"] = "Пополнить припасы",
+            ["ui.military.add_selected"] = "Добавить выбранных",
+            ["ui.military.remove_selected"] = "Убрать выбранных",
+            ["ui.military.captain_selected"] = "Назначить выбранного капитаном",
+            ["ui.military.need_one_member"] = "Выберите одного бойца из состава отряда.",
+            ["ui.military.order.idle"] = "Без приказа",
+            ["ui.military.order.move"] = "Идти к центру",
+            ["ui.military.order.hold"] = "Удерживать позицию",
+            ["ui.military.order.engage"] = "Вступить в бой",
+            ["ui.military.detailed"] = "Подробный режим",
+            ["ui.military.aggregate"] = "Сводный режим",
+            ["ui.military.battles"] = "Активные сражения",
+            ["ui.military.battle"] = "{0} · {1} · боевой дух {2}/{3}",
+            ["ui.military.enter_battle"] = "Перейти к сражению",
+            ["ui.military.need_characters"] = "Сначала выберите взрослых боеспособных жителей.",
+            ["ui.military.no_captain"] = "Среди выбранных нет подходящего капитана.",
+            ["ui.military.player_unit"] = "Отряд игрока {0}",
+            ["ui.military.known_enemy_unit"] = "Известный отряд соперника {0}",
+            ["ui.military.battle_counts"] = "в строю {0} · погибло {1} · отступило {2}",
+            ["ui.side.player"] = "Игрок", ["ui.side.enemy"] = "Соперник", ["ui.side.neutral"] = "Нейтральная сторона",
+            ["ui.profession.other"] = "Другое занятие",
+            ["ui.dynasty.role.monarch"] = "Правитель", ["ui.dynasty.role.member"] = "Член династии",
+            ["ui.location.unknown"] = "Неизвестное место", ["ui.event.completed"] = "Завершено",
+
+            ["ui.save.title"] = "Сохранения",
+            ["ui.save.explanation"] = "Сохранение записывает текущее состояние мира. Перед загрузкой игра попросит подтверждение.",
+            ["ui.save.new_game"] = "Новая игра",
+            ["ui.save.world_seed"] = "Зерно мира",
+            ["ui.save.start"] = "Начать новую игру",
+            ["ui.save.seed_integer"] = "Зерно мира должно быть целым числом.",
+            ["ui.save.empty_slot"] = "Пустая ячейка",
+            ["ui.save.corrupt_slot"] = "Ячейка повреждена или недоступна. Выберите другую ячейку или создайте новое сохранение.",
+            ["ui.save.slot"] = "Ячейка {0}",
+            ["ui.save.slot_unavailable"] = "Повреждена или недоступна",
+            ["ui.save.slot_detail"] = "Год {0}, день {1} · {2} · {3}",
+
+            ["ui.map.title"] = "Карта мира",
+            ["ui.map.mode_location"] = "Режим: {0} · текущее место: {1}",
+            ["ui.map.open"] = "Открыть карту мира",
+            ["ui.map.local_continues"] = "Жизнь поселения продолжается, пока открыта карта мира.",
+            ["ui.map.locations"] = "Места и маршруты",
+            ["ui.map.unclaimed"] = "никому не принадлежит",
+            ["ui.map.hidden"] = "Неизведанная земля · поселение · владелец неизвестен",
+            ["ui.map.location"] = "{0} · {1} · {2}",
+            ["ui.map.player_armies"] = "Отряды игрока",
+            ["ui.map.travel_eta"] = "{0} → {1} · прибытие через {2}",
+            ["ui.map.travel"] = "Отправить в выбранное место",
+            ["ui.map.enter_location"] = "Войти в выбранное место",
+            ["ui.map.need_unit_destination"] = "Выберите свой сводный отряд и место назначения.",
+            ["ui.map.need_location"] = "Сначала выберите место.",
+            ["ui.map.departed"] = "Отряд отправился в «{0}».",
+            ["ui.map.battles"] = "Сражения",
+            ["ui.map.battle"] = "{0} · {1} · исход: {2}",
+            ["ui.map.enter_battle"] = "Перейти к сражению",
+            ["ui.map.no_route"] = "Прямого маршрута нет. Выберите соседнее место, соединённое дорогой.",
+            ["ui.map.unit_in_battle"] = "Отряд уже участвует в сражении. Дождитесь его завершения.",
+            ["ui.map.already_travelling"] = "Отряд уже в пути. Дождитесь прибытия.",
+            ["ui.map.need_aggregate"] = "Сначала переведите отряд в сводный режим.",
+
+            ["ui.selection.title"] = "Выбор",
+            ["ui.selection.characters"] = "Выбрано жителей: {0}.",
+            ["ui.selection.many_help"] = "Для личных действий выберите одного жителя; для массовых используйте панели работ или войск.",
+            ["ui.selection.resource_pile"] = "Запас ресурсов в мире",
+            ["ui.selection.nothing"] = "Ничего не выбрано",
+            ["ui.selection.help"] = "Выберите жителя, постройку или ресурс в мире.",
+            ["ui.character.age"] = "Возраст: {0} · {1} · {2}",
+            ["ui.character.profession"] = "Занятие: {0}",
+            ["ui.character.unassigned"] = "не назначено",
+            ["ui.character.health"] = "Состояние: {0} · работа {1} · исследования {2}",
+            ["ui.character.incapacitated"] = "не может действовать",
+            ["ui.character.conditions"] = "Состояния здоровья: {0}",
+            ["ui.character.pregnancy"] = "Беременность: развивается",
+            ["ui.character.inventory"] = "Инвентарь: {0}",
+            ["ui.character.research"] = "Исследования: {0}",
+            ["ui.character.research_assigned"] = "назначен",
+            ["ui.character.research_not_assigned"] = "не назначен",
+            ["ui.character.work_group"] = "Рабочая группа: {0}",
+            ["ui.character.current_job"] = "Текущее задание: {0}",
+            ["ui.character.dynasty_role"] = "Роль в династии: {0}",
+            ["ui.character.military"] = "Войска: {0}",
+            ["ui.character.member"] = "боец",
+            ["ui.character.captain"] = "капитан",
+            ["ui.character.civilian"] = "мирный житель",
+            ["ui.character.events"] = "Важные события: {0}",
+            ["ui.character.assign_research"] = "Назначить на исследования",
+            ["ui.character.remove_research"] = "Снять с исследований",
+            ["ui.character.enter_tps"] = "Управлять от третьего лица",
+            ["ui.character.tps_unavailable"] = "Прямое управление недоступно: {0}",
+            ["ui.character.stable_id"] = "Внутренний ID: {0}",
+            ["ui.tps.dead"] = "Персонаж погиб.",
+            ["ui.tps.child"] = "Ребёнком нельзя управлять напрямую.",
+            ["ui.tps.incapacitated"] = "Персонаж не может действовать из-за состояния здоровья.",
+            ["ui.tps.aggregate"] = "Сначала верните отряд в подробный режим.",
+            ["ui.tps.role"] = "Управлять напрямую можно правителем, наследником или капитаном своего отряда.",
+            ["ui.tps.hud"] = "ОТ ТРЕТЬЕГО ЛИЦА · {0} · {1} · бой: {2} · ЛКМ — атака · T или Esc — вернуться в стратегический режим",
+            ["ui.tps.health_active"] = "может действовать",
+            ["ui.tps.combat_engaged"] = "идёт",
+            ["ui.tps.combat_clear"] = "нет",
+
+            ["ui.building.owner"] = "Владелец: {0} · строительство: {1}",
+            ["ui.building.integrity"] = "Прочность: {0}/{1} · состояние: {2}",
+            ["ui.building.fire"] = "Огонь: {0}",
+            ["ui.building.fire_intensity"] = " · сила {0}",
+            ["ui.building.storage"] = "Склад: {0}/{1} · {2}",
+            ["ui.building.production"] = "Производство: {0}",
+            ["ui.building.operational"] = "работает",
+            ["ui.building.crop"] = "Посев: {0} · рост {1}",
+
+            ["ui.notifications.title"] = "Уведомления",
+            ["ui.notifications.none"] = "Важных сообщений нет.",
+            ["ui.notification.research"] = "Исследование завершено.",
+            ["ui.notification.birth"] = "Родился ребёнок.",
+            ["ui.notification.death"] = "Один из жителей умер.",
+            ["ui.notification.succession"] = "Изменился порядок наследования.",
+            ["ui.notification.condition"] = "Травма или болезнь требует внимания.",
+            ["ui.notification.building"] = "Состояние постройки изменилось: {0}.",
+            ["ui.notification.battle_started"] = "Началось сражение за поселение.",
+            ["ui.notification.battle_finished"] = "Сражение завершено.",
+            ["ui.notification.battle_changed"] = "Обстановка в сражении изменилась.",
+            ["ui.notification.arrival"] = "Отряд прибыл в место назначения.",
+            ["ui.notification.shortage"] = "Запасов еды не хватает.",
+            ["ui.notification.event"] = "Новое событие ожидает решения.",
+            ["ui.notification.event_resolved"] = "Событие «{0}» завершено.",
+            ["ui.notification.victory"] = "Военная победа достигнута. Игру можно продолжить.",
+            ["ui.notification.discovery"] = "Обнаружена соперничающая династия.",
+            ["ui.game_over.defeat"] = "ПОРАЖЕНИЕ\n{0}",
+            ["ui.game_over.victory"] = "СОПЕРНИК ПОБЕЖДЁН\nИгра продолжается",
+
+            ["debug.open_global_map"] = "Открыть карту мира",
+            ["debug.time.date"] = "Время: год {0}, день {1}, {2}:{3}",
+            ["debug.time.speed"] = "Скорость: x{0}   Пауза: {1}",
+            ["debug.time.pause"] = "Пауза", ["debug.time.resume"] = "Продолжить",
+            ["debug.time.slower"] = "Медленнее", ["debug.time.faster"] = "Быстрее",
+            ["debug.time.help"] = "Пробел — пауза · - медленнее · + быстрее · 1–9 рабочие группы",
+            ["debug.weather.title"] = "Погода и времена года (отладка U19)",
+            ["debug.weather.date"] = "Год {0}, день {1} · {2}:{3}",
+            ["debug.weather.summary"] = "{0} · {1} · {2} °C",
+            ["debug.weather.precipitation"] = "Осадки: {0} {1}% · ветер {2}%",
+            ["debug.weather.crop"] = "Рост культур {0} · работа снаружи {1}",
+            ["debug.weather.movement"] = "Передвижение {0} · дикая пища {1}",
+            ["debug.weather.health"] = "Воздействие на здоровье: {0} · риск {1}%",
+            ["debug.weather.tomorrow"] = "Отладочный прогноз: {0} · {1} · {2} °C",
+            ["debug.weather.note"] = "Прогноз виден только при отладке; день рассчитывается из зерна мира и абсолютной даты.",
+            ["debug.production.title"] = "Производство (всего / цель / произведено)",
+            ["debug.production.resource"] = "{0}: {1} / {2} / {3}",
+            ["debug.production.jobs"] = "Задачи: {0} · источники: доступно {1}, истощено {2}",
+            ["debug.production.food"] = "Еды израсходовано: {0} · нехватка: {1} · {2}",
+            ["debug.production.short"] = "НЕ ХВАТАЕТ", ["debug.production.ok"] = "достаточно",
+            ["debug.production.tick"] = "Такт производства: {0} · хеш: {1}",
+            ["debug.resources.title"] = "Ресурсы: в мире / у жителей / на складах = всего",
+            ["debug.resources.line"] = "{0}: {1} / {2} / {3} = {4}",
+            ["debug.map.title"] = "КАРТА МИРА · прошло {0}",
+            ["debug.map.mode"] = "Режим: {0} · текущее место: {1}",
+            ["debug.map.locations"] = "Места", ["debug.map.location"] = "{0} [{1}]",
+            ["debug.map.units"] = "Сводные военные отряды",
+            ["debug.map.unit"] = "{0} · {1} · боеспособны: {2} · {3}",
+            ["debug.map.stationed"] = "находится: {0}", ["debug.map.travelling"] = "{0} → {1} · прибытие через {2}",
+            ["debug.map.selected_location"] = "Выбрано место: {0}", ["debug.map.selected_unit"] = "Выбран отряд: {0}",
+            ["debug.map.move"] = "Отправить выбранный отряд", ["debug.map.enter"] = "Войти в выбранное поселение",
+            ["debug.map.enter_battle"] = "Перейти к активному сражению",
+            ["debug.tps.mode"] = "Режим: {0}", ["debug.tps.controlled"] = "Под управлением: {0} [{1}]",
+            ["debug.tps.state"] = "Жизнь: {0} · не может действовать: {1} · управление: {2}",
+            ["debug.tps.unit"] = "Отряд: {0} · капитан: {1}", ["debug.tps.no_unit"] = "Отряд: нет",
+            ["debug.tps.order"] = "Приостановленное задание: {0}/{1}", ["debug.tps.no_order"] = "Приостановленное задание: нет",
+            ["debug.tps.help"] = "WASD — движение · Shift — бег · мышь — обзор · ЛКМ — атака · T/Esc — стратегия",
+            ["debug.tps.select"] = "Выберите правителя, текущего наследника или капитана своего отряда и нажмите T.",
+            ["debug.tps.select_one"] = "Выберите ровно одного подходящего персонажа.",
+            ["debug.tps.multiple"] = "Для прямого управления нельзя выбирать нескольких персонажей.",
+
+            ["content.resource.wood_log"] = "Брёвна",
+            ["content.resource.stone"] = "Камень",
+            ["content.resource.plant_fiber"] = "Растительное волокно",
+            ["content.resource.hide"] = "Шкуры",
+            ["content.resource.berries"] = "Ягоды",
+            ["content.building.primitive_shelter"] = "Примитивное укрытие",
+            ["content.building.storage_basket"] = "Плетёный склад",
+            ["content.building.primitive_crop_plot"] = "Примитивный огород",
+            ["content.recipe.gather_berries"] = "Сбор ягод",
+            ["content.recipe.gather_fiber"] = "Сбор растительного волокна",
+            ["content.recipe.chop_wood"] = "Заготовка брёвен",
+            ["content.recipe.gather_stone"] = "Сбор камня",
+            ["content.recipe.cultivate_berries"] = "Выращивание ягод",
+            ["content.technology.basic_survival"] = "Основы выживания",
+            ["content.technology.gathering"] = "Собирательство",
+            ["content.technology.controlled_fire"] = "Управляемый огонь",
+            ["content.technology.shelter_construction"] = "Строительство укрытий",
+            ["content.technology.stone_tools"] = "Каменные орудия",
+            ["content.technology.fiber_working"] = "Обработка волокон",
+            ["content.technology.woodworking"] = "Работа с деревом",
+            ["content.technology.hunting"] = "Организованная охота",
+            ["content.technology.food_preservation"] = "Сохранение пищи",
+            ["content.technology.organized_labor"] = "Организация труда",
+            ["content.technology.primitive_agriculture"] = "Примитивное земледелие",
+            ["content.technology.weaving"] = "Ткачество",
+            ["content.technology.advanced_stonecraft"] = "Совершенная обработка камня",
+            ["content.technology.stone_age_mastery"] = "Освоение каменного века",
+            ["content.condition.minor_cut"] = "Небольшой порез",
+            ["content.condition.sprain"] = "Растяжение",
+            ["content.condition.broken_bone"] = "Перелом",
+            ["content.condition.serious_wound"] = "Тяжёлая рана",
+            ["content.condition.mild_fever"] = "Лёгкая лихорадка",
+            ["content.condition.infection"] = "Инфекция",
+            ["content.condition.severe_fever"] = "Сильная лихорадка",
+            ["content.condition.weakened"] = "Слабость",
+            ["content.condition.lasting_limp"] = "Хромота",
+            ["content.condition.cold_stress"] = "Переохлаждение",
+            ["content.condition.heat_stress"] = "Перегрев",
+            ["content.weapon.unarmed"] = "Без оружия",
+            ["content.weapon.stone_axe"] = "Каменный топор",
+            ["content.weapon.stone_spear"] = "Каменное копьё",
+            ["content.location.starter_settlement"] = "Родное поселение",
+            ["content.location.enemy_settlement"] = "Поселение соперника",
+            ["content.location.north_forest"] = "Северный лес",
+            ["content.location.river_ford"] = "Речной брод",
+            ["content.location.east_hills"] = "Восточные холмы",
+            ["content.location.south_field"] = "Южная равнина",
+
+            ["event.family_dispute_chain.dispute.title"] = "Семейный спор",
+            ["event.family_dispute_chain.dispute.description"] = "Разногласия разделили двух членов правящей семьи.",
+            ["event.family_dispute_chain.dispute.choice.seek_reconciliation"] = "Попытаться примирить",
+            ["event.family_dispute_chain.dispute.choice.stand_firm"] = "Настоять на своём",
+            ["event.family_dispute_chain.aftermath.title"] = "Примирение",
+            ["event.family_dispute_chain.aftermath.description"] = "После дня размышлений семья снова собирается вместе.",
+            ["event.family_dispute_chain.aftermath.choice.share_meal"] = "Разделить трапезу",
+            ["event.family_dispute_chain.aftermath.choice.return_to_work"] = "Вернуться к работе",
+            ["event.family_dispute_chain.lingering_tension.title"] = "Сохраняющееся напряжение",
+            ["event.family_dispute_chain.lingering_tension.description"] = "Разногласие осталось, но семье нужно двигаться дальше.",
+            ["event.family_dispute_chain.lingering_tension.choice.let_time_pass"] = "Дать времени пройти",
+            ["event.family_support_offer.offer.title"] = "Поддержка в семье",
+            ["event.family_support_offer.offer.description"] = "Родственник спрашивает, как семье пережить трудный день.",
+            ["event.family_support_offer.offer.choice.offer_support"] = "Поддержать",
+            ["event.family_support_offer.offer.choice.keep_distance"] = "Сохранить дистанцию",
+            ["event.foraging_mishap.injury.title"] = "Несчастье на промысле",
+            ["event.foraging_mishap.injury.description"] = "Собиратель получил небольшую травму вдали от поселения.",
+            ["event.foraging_mishap.injury.choice.treat_cut"] = "Обработать порез",
+            ["event.campfire_story.story.title"] = "Рассказ у костра",
+            ["event.campfire_story.story.description"] = "Знакомая история успокаивает лагерь после заката.",
+            ["event.campfire_story.story.choice.remember_ancestors"] = "Вспомнить предков",
+            ["event.campfire_story.story.choice.plan_tomorrow"] = "Обсудить завтрашний день",
+            ["event.outcome.relationship_applied"] = "отношения изменились",
+            ["event.outcome.health_applied"] = "состояние здоровья изменилось",
+            ["event.outcome.no_effect"] = "без последствий",
+            ["name.person.Aren"] = "Арен", ["name.person.Mira"] = "Мира", ["name.person.Cale"] = "Кейл",
+            ["name.person.Doran"] = "Доран", ["name.person.Pela"] = "Пела", ["name.person.Neris"] = "Нерис",
+            ["name.person.Tarin"] = "Тарин", ["name.person.Elda"] = "Эльда", ["name.person.Rovan"] = "Рован",
+            ["name.person.Sela"] = "Села", ["name.person.Varek"] = "Варек", ["name.person.Sorin"] = "Сорин",
+            ["name.person.Marek"] = "Марек", ["name.person.Tovan"] = "Тован", ["name.person.Ilya"] = "Илья",
+            ["name.person.Boran"] = "Боран", ["name.person.Borin"] = "Борин", ["name.person.Eran"] = "Эран",
+            ["name.person.Fenn"] = "Фенн", ["name.person.Alya"] = "Аля", ["name.person.Brina"] = "Брина",
+            ["name.person.Nera"] = "Нера", ["name.person.Rina"] = "Рина",
+            ["name.dynasty.House_Serenity"] = "Дом Серенити", ["name.dynasty.House_Varek"] = "Дом Варека",
+        };
+
+        private static readonly Dictionary<string, string> EnumEntries = CreateEnumEntries();
+
+        public static IReadOnlyDictionary<string, string> All => Entries;
+        public static IReadOnlyCollection<string> MissingKeys => ReportedMissing;
+
+        public static string Get(string key)
+        {
+            if (key != null && Entries.TryGetValue(key, out var value)) return value;
+            ReportMissing(key);
+            return MissingText;
+        }
+
+        public static bool TryGet(string key, out string value) => Entries.TryGetValue(key ?? string.Empty, out value);
+
+        public static string Format(string key, params object[] arguments) =>
+            string.Format(Culture, Get(key), arguments ?? Array.Empty<object>());
+
+        public static string Number(long value) => value.ToString("N0", Culture);
+        public static string Decimal(double value, string format = "0.0") => value.ToString(format, Culture);
+        public static string Percent(double value) => value.ToString("P0", Culture);
+
+        public static string Content(string category, string id)
+        {
+            var key = "content." + (category ?? string.Empty) + "." + (id ?? string.Empty);
+            return Get(key);
+        }
+
+        public static string PersonName(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName)) return Get("common.unknown");
+            var parts = displayName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            for (var i = 0; i < parts.Length; i++)
+                if (TryGet("name.person." + parts[i], out var localized)) parts[i] = localized;
+            return string.Join(" ", parts);
+        }
+
+        public static string DynastyName(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName)) return Get("common.unknown");
+            if (TryGet("name.dynasty." + displayName.Replace(' ', '_'), out var localized)) return localized;
+            return displayName.StartsWith("House ", StringComparison.Ordinal)
+                ? "Дом " + PersonName(displayName.Substring(6)) : displayName;
+        }
+
+        public static string Enum(Enum value)
+        {
+            if (value == null) return Get("common.unknown");
+            var key = "enum." + value.GetType().Name + "." + value;
+            if (EnumEntries.TryGetValue(key, out var text)) return text;
+            ReportMissing(key);
+            return Get("common.unknown");
+        }
+
+        public static string EventTitle(string definitionId, string nodeId) =>
+            Get("event." + definitionId + "." + nodeId + ".title");
+
+        public static string EventDescription(string definitionId, string nodeId) =>
+            Get("event." + definitionId + "." + nodeId + ".description");
+
+        public static string EventChoice(string definitionId, string nodeId, string choiceId)
+        {
+            var key = "event." + definitionId + "." + nodeId + ".choice." + choiceId;
+            return TryGet(key, out var value) ? value : Get("common.unknown");
+        }
+
+        public static string Plural(long value, string one, string few, string many)
+        {
+            var absolute = Math.Abs(value) % 100;
+            if (absolute >= 11 && absolute <= 19) return many;
+            switch (absolute % 10)
+            {
+                case 1: return one;
+                case 2:
+                case 3:
+                case 4: return few;
+                default: return many;
+            }
+        }
+
+        public static void ResetMissingDiagnosticsForTests() => ReportedMissing.Clear();
+
+        private static void ReportMissing(string key)
+        {
+            var safeKey = string.IsNullOrWhiteSpace(key) ? "<empty>" : key;
+            if (!ReportedMissing.Add(safeKey)) return;
+            Debug.LogWarning("Missing ru-RU translation key: " + safeKey);
+        }
+
+        private static Dictionary<string, string> CreateEnumEntries() => new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["enum.Season.Spring"] = "Весна", ["enum.Season.Summer"] = "Лето",
+            ["enum.Season.Autumn"] = "Осень", ["enum.Season.Winter"] = "Зима",
+            ["enum.WeatherType.Clear"] = "Ясно", ["enum.WeatherType.Cloudy"] = "Облачно",
+            ["enum.WeatherType.Rain"] = "Дождь", ["enum.WeatherType.HeavyRain"] = "Ливень",
+            ["enum.WeatherType.Snow"] = "Снег", ["enum.WeatherType.Windy"] = "Ветрено",
+            ["enum.WeatherType.HeatWave"] = "Жара",
+            ["enum.WeatherType.ColdSnap"] = "Похолодание",
+            ["enum.GameWorldMode.Local"] = "Поселение", ["enum.GameWorldMode.Global"] = "Карта мира",
+            ["enum.WorldLocationType.Settlement"] = "Поселение", ["enum.WorldLocationType.Wilderness"] = "Дикая местность",
+            ["enum.CharacterSex.Male"] = "мужчина", ["enum.CharacterSex.Female"] = "женщина",
+            ["enum.CharacterLifeState.Alive"] = "жив", ["enum.CharacterLifeState.Dead"] = "мёртв",
+            ["enum.HealthSeverity.Minor"] = "лёгкая", ["enum.HealthSeverity.Moderate"] = "средняя",
+            ["enum.HealthSeverity.Serious"] = "тяжёлая", ["enum.HealthSeverity.Critical"] = "критическая",
+            ["enum.WorkPriority.Low"] = "Низкий", ["enum.WorkPriority.Normal"] = "Обычный",
+            ["enum.WorkPriority.High"] = "Высокий", ["enum.WorkPriority.Urgent"] = "Срочный",
+            ["enum.WorkJobType.Move"] = "Перемещение", ["enum.WorkJobType.Haul"] = "Переноска",
+            ["enum.WorkJobStatus.Queued"] = "В очереди", ["enum.WorkJobStatus.Assigned"] = "Назначено",
+            ["enum.WorkJobStatus.Active"] = "Выполняется", ["enum.WorkJobStatus.Completed"] = "Завершено",
+            ["enum.WorkJobStatus.Cancelled"] = "Отменено", ["enum.WorkJobStatus.Failed"] = "Не выполнено",
+            ["enum.WorkClaimState.None"] = "нет", ["enum.WorkClaimState.Reserved"] = "зарезервировано",
+            ["enum.WorkClaimState.Carrying"] = "переносится", ["enum.WorkClaimState.Released"] = "освобождено",
+            ["enum.DynastyStatus.Active"] = "Продолжается", ["enum.DynastyStatus.Extinct"] = "Пресеклась",
+            ["enum.MilitaryUnitRepresentationMode.Detailed"] = "Подробный режим",
+            ["enum.MilitaryUnitRepresentationMode.Aggregate"] = "Сводный режим",
+            ["enum.MilitaryUnitOrderKind.Idle"] = "Нет", ["enum.MilitaryUnitOrderKind.Move"] = "Движение",
+            ["enum.MilitaryUnitOrderKind.Hold"] = "Удержание", ["enum.MilitaryUnitOrderKind.Engage"] = "Атака",
+            ["enum.BattleMode.Physical"] = "На местности", ["enum.BattleMode.Abstract"] = "Автоматически",
+            ["enum.CombatOutcome.None"] = "не решён", ["enum.CombatOutcome.SideAVictory"] = "победа первой стороны",
+            ["enum.CombatOutcome.SideBVictory"] = "победа второй стороны", ["enum.CombatOutcome.MutualDisengagement"] = "стороны разошлись",
+            ["enum.CombatOutcome.Cancelled"] = "отменено",
+            ["enum.ConstructionState.Planned"] = "запланировано", ["enum.ConstructionState.Completed"] = "завершено",
+            ["enum.BuildingStructuralStatus.Intact"] = "цело", ["enum.BuildingStructuralStatus.Damaged"] = "повреждено",
+            ["enum.BuildingStructuralStatus.Critical"] = "аварийное", ["enum.BuildingStructuralStatus.Destroyed"] = "разрушено",
+            ["enum.BuildingFireStatus.None"] = "нет", ["enum.BuildingFireStatus.Burning"] = "горит",
+            ["enum.BuildingFireStatus.Extinguished"] = "потушен", ["enum.BuildingFireStatus.BurnedOut"] = "выгорело",
+            ["enum.CropPlotPhase.Unplanted"] = "не засеян", ["enum.CropPlotPhase.Growing"] = "растёт",
+            ["enum.CropPlotPhase.Ready"] = "готов к сбору",
+            ["enum.ProductionTaskKind.Gather"] = "Сбор", ["enum.ProductionTaskKind.Plant"] = "Посев",
+            ["enum.ProductionTaskKind.Harvest"] = "Сбор урожая",
+            ["enum.EventStatus.PendingChoice"] = "ожидает решения", ["enum.EventStatus.Waiting"] = "ожидает продолжения",
+            ["enum.EventStatus.Completed"] = "завершено", ["enum.EventStatus.Cancelled"] = "отменено",
+            ["enum.EventStatus.Expired"] = "срок истёк", ["enum.EventStatus.Invalid"] = "прервано",
+            ["enum.GameOverReason.DynastyExtinction"] = "Династия игрока пресеклась",
+            ["enum.BuildingEventKind.Damaged"] = "повреждена", ["enum.BuildingEventKind.Destroyed"] = "разрушена",
+            ["enum.BuildingEventKind.Ignited"] = "загорелась", ["enum.BuildingEventKind.Extinguished"] = "потушена",
+            ["enum.BuildingEventKind.Captured"] = "захвачена",
+            ["enum.SuccessionReason.MonarchDeath"] = "смерть правителя",
+            ["enum.SuccessionReason.DynastyExtinction"] = "пресечение династии",
+            ["enum.PrecipitationType.None"] = "нет", ["enum.PrecipitationType.Rain"] = "дождь", ["enum.PrecipitationType.Snow"] = "снег",
+            ["enum.WeatherExposureKind.None"] = "нет", ["enum.WeatherExposureKind.Cold"] = "холод", ["enum.WeatherExposureKind.Heat"] = "жара",
+            ["enum.PregnancyStatus.Active"] = "развивается", ["enum.PregnancyStatus.BirthProcessed"] = "роды завершены", ["enum.PregnancyStatus.Cancelled"] = "прервана",
+            ["enum.PlayerControlMode.Rts"] = "Стратегия", ["enum.PlayerControlMode.ThirdPerson"] = "От третьего лица",
+            ["enum.CharacterSimulationTier.Tier1"] = "подробная симуляция", ["enum.CharacterSimulationTier.Tier2"] = "групповая симуляция", ["enum.CharacterSimulationTier.Tier3"] = "сводная симуляция",
+            ["enum.DevelopmentSelectionKind.WorldResourcePile"] = "запас в мире", ["enum.DevelopmentSelectionKind.BuildingStorage"] = "склад",
+            ["enum.DevelopmentSelectionKind.Building"] = "постройка", ["enum.DevelopmentSelectionKind.Character"] = "персонаж",
+            ["enum.HaulClaimPhase.ReservedAtSource"] = "зарезервировано у источника", ["enum.HaulClaimPhase.Carrying"] = "переносится",
+            ["enum.MilitaryUnitStatus.Ready"] = "готов", ["enum.MilitaryUnitStatus.Engaged"] = "в бою",
+            ["enum.MilitaryUnitStatus.Leaderless"] = "без капитана", ["enum.MilitaryUnitStatus.Disbanded"] = "расформирован",
+            ["enum.CombatEncounterStatus.Active"] = "идёт", ["enum.CombatEncounterStatus.Finished"] = "завершено", ["enum.CombatEncounterStatus.Cancelled"] = "отменено",
+            ["enum.CombatantState.Fighting"] = "сражается", ["enum.CombatantState.Approaching"] = "сближается",
+            ["enum.CombatantState.Attacking"] = "атакует", ["enum.CombatantState.Breaking"] = "дрогнул",
+            ["enum.CombatantState.Retreating"] = "отступает", ["enum.CombatantState.Disengaged"] = "вышел из боя",
+            ["enum.CombatantState.Incapacitated"] = "недееспособен", ["enum.CombatantState.Dead"] = "погиб",
+            ["enum.AiStrategicGoal.StabilizeEconomy"] = "стабилизировать хозяйство", ["enum.AiStrategicGoal.AdvanceResearch"] = "развивать исследования",
+            ["enum.AiStrategicGoal.DevelopSettlement"] = "развивать поселение", ["enum.AiStrategicGoal.FormArmy"] = "создать армию",
+            ["enum.AiStrategicGoal.AttackSettlement"] = "атаковать поселение", ["enum.AiStrategicGoal.CaptureSettlement"] = "захватить поселение",
+            ["enum.AiStrategicGoal.Recover"] = "восстановиться", ["enum.AiStrategicGoal.Defeated"] = "побеждён",
+            ["enum.AiDefeatReason.None"] = "", ["enum.AiDefeatReason.NoControlledSettlement"] = "нет подконтрольных поселений",
+            ["enum.AiDefeatReason.DynastyExtinct"] = "династия пресеклась",
+            ["enum.InventoryOwnerKind.WorldPile"] = "запас в мире", ["enum.InventoryOwnerKind.Character"] = "персонаж",
+            ["enum.InventoryOwnerKind.BuildingStorage"] = "склад постройки",
+            ["enum.Tier1MovementAuthority.Autonomous"] = "ИИ", ["enum.Tier1MovementAuthority.DirectPlayer"] = "игрок",
+            ["enum.UtilityActionKind.Idle"] = "бездействует", ["enum.UtilityActionKind.Rest"] = "отдыхает",
+            ["enum.UtilityActionKind.Haul"] = "переносит", ["enum.UtilityActionKind.ManualMove"] = "идёт по приказу",
+            ["enum.UtilityActionKind.ManualHaul"] = "переносит по приказу", ["enum.UtilityActionKind.Produce"] = "производит",
+            ["enum.UtilityActionKind.Research"] = "исследует",
+            ["enum.AiActionPhase.Idle"] = "ожидание", ["enum.AiActionPhase.Resting"] = "отдых",
+            ["enum.AiActionPhase.MoveToSource"] = "идёт к источнику", ["enum.AiActionPhase.Pickup"] = "забирает",
+            ["enum.AiActionPhase.MoveToDestination"] = "идёт к месту назначения", ["enum.AiActionPhase.Dropoff"] = "выгружает",
+            ["enum.AiActionPhase.Completed"] = "завершено", ["enum.AiActionPhase.Failed"] = "не выполнено",
+            ["enum.AiActionPhase.Unmaterialized"] = "вне подробной симуляции", ["enum.AiActionPhase.MoveToTarget"] = "идёт к цели",
+            ["enum.AiActionPhase.Working"] = "работает", ["enum.AiActionPhase.DeliverProduction"] = "доставляет продукцию",
+            ["enum.AiActionPhase.Researching"] = "исследует",
+            ["enum.BattleTransitionStatus.Changed"] = "режим изменён", ["enum.BattleTransitionStatus.AlreadyInMode"] = "режим уже выбран",
+            ["enum.BattleTransitionStatus.BattleNotFound"] = "сражение не найдено", ["enum.BattleTransitionStatus.BattleFinished"] = "сражение завершено",
+            ["enum.BattleTransitionStatus.MissingMilitaryUnits"] = "отряды недоступны", ["enum.BattleTransitionStatus.BlockedByDirectControl"] = "мешает прямое управление",
+            ["enum.BattleTransitionStatus.FailedAndRolledBack"] = "изменение отменено после ошибки",
+            ["enum.BuildingDamageFailure.None"] = "готово", ["enum.BuildingDamageFailure.MissingBuilding"] = "постройка не найдена",
+            ["enum.BuildingDamageFailure.InvalidAmount"] = "неверная величина урона", ["enum.BuildingDamageFailure.AlreadyDestroyed"] = "постройка уже разрушена",
+            ["enum.BuildingDamageFailure.DuplicateEvent"] = "это повреждение уже учтено",
+            ["enum.BuildingFireFailure.None"] = "готово", ["enum.BuildingFireFailure.MissingBuilding"] = "постройка не найдена",
+            ["enum.BuildingFireFailure.InvalidIntensity"] = "неверная сила огня", ["enum.BuildingFireFailure.AlreadyDestroyed"] = "постройка разрушена",
+            ["enum.BuildingFireFailure.AlreadyBurning"] = "постройка уже горит", ["enum.BuildingFireFailure.NotBurning"] = "постройка не горит",
+            ["enum.BuildingCaptureFailure.None"] = "готово", ["enum.BuildingCaptureFailure.MissingBattle"] = "подходящее завершённое сражение не найдено",
+            ["enum.BuildingCaptureFailure.MissingBuilding"] = "постройка не найдена", ["enum.BuildingCaptureFailure.InvalidOwner"] = "неверный владелец",
+            ["enum.BuildingCaptureFailure.SameOwner"] = "владелец не изменился", ["enum.BuildingCaptureFailure.Destroyed"] = "постройка разрушена",
+            ["enum.BuildingCaptureFailure.NotCapturable"] = "постройку нельзя захватить", ["enum.BuildingCaptureFailure.BattleNotFinished"] = "сражение ещё идёт",
+            ["enum.BuildingCaptureFailure.NotVictoriousSide"] = "эта сторона не победила",
+        };
+    }
+}

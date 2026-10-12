@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Game.Domain.Resources;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.AI;
 using UnityEngine;
 
@@ -31,25 +32,26 @@ namespace Game.Presentation.AI
         {
             if (scheduler == null) return;
             GUILayout.BeginArea(panel, GUI.skin.box);
-            GUILayout.Label("Strategic AI (U26 debug)");
+            GUILayout.Label("Стратегический ИИ (отладка U26)");
             foreach (var faction in scheduler.Factions)
             {
                 var state = faction.Strategic;
                 var unit = state.KnownMilitaryUnits.FirstOrDefault();
-                GUILayout.Label($"State/owner: {state.Id} / {state.OwnerId}");
-                GUILayout.Label($"Ruler: {state.RulerCharacterId}");
-                GUILayout.Label($"Settlements: {state.ControlledSettlements.Count}; home {state.HomeSettlementId}");
-                GUILayout.Label($"Food/material: {faction.Production.GetCanonicalTotal(new ResourceId("berries"))} / " +
+                GUILayout.Label($"Государство/владелец: {state.Id} / {state.OwnerId}");
+                GUILayout.Label($"Правитель: {state.RulerCharacterId}");
+                GUILayout.Label($"Поселения: {state.ControlledSettlements.Count} · столица {state.HomeSettlementId}");
+                GUILayout.Label($"Еда/материалы: {faction.Production.GetCanonicalTotal(new ResourceId("berries"))} / " +
                     $"{faction.Production.GetCanonicalTotal(new ResourceId("wood_log"))}");
-                GUILayout.Label("Research: " + (faction.Research.ActiveProject?.TechnologyId.ToString() ?? "none"));
+                GUILayout.Label("Исследование: " + (faction.Research.ActiveProject == null ? "нет" :
+                    RussianTextCatalog.Content("technology", faction.Research.ActiveProject.TechnologyId.ToString())));
                 var strength = unit.IsValid ? scheduler.GetUnitSummary(unit).CombatCapable : 0;
                 var battle = unit.IsValid ? scheduler.GetUnit(unit).ActiveEncounterId : null;
-                GUILayout.Label($"Army: {state.KnownMilitaryUnits.Count}; combat-capable {strength}; first {unit}");
-                GUILayout.Label($"Goal/target: {state.Goal} / {state.TargetLocationId?.ToString() ?? "none"}");
-                GUILayout.Label($"Travel: {state.PendingOrders.Count}; last tick {state.LastDecisionTick}");
-                GUILayout.Label("Battle: " + (battle.HasValue ? battle.Value.ToString() : "none"));
-                GUILayout.Label($"Defeated: {state.IsDefeated} {state.DefeatReason}");
-                if (GUILayout.Button("Advance canonical time")) advance?.Invoke();
+                GUILayout.Label($"Армия: {state.KnownMilitaryUnits.Count} · боеспособны {strength} · первый {unit}");
+                GUILayout.Label($"Цель/место: {RussianTextCatalog.Enum(state.Goal)} / {(state.TargetLocationId.HasValue ? RussianTextCatalog.Content("location", state.TargetLocationId.Value.Value) : "нет")}");
+                GUILayout.Label($"Переходы: {state.PendingOrders.Count} · последний такт {state.LastDecisionTick}");
+                GUILayout.Label("Сражение: " + (battle.HasValue ? battle.Value.ToString() : "нет"));
+                GUILayout.Label($"Побеждён: {(state.IsDefeated ? "да" : "нет")} {RussianTextCatalog.Enum(state.DefeatReason)}");
+                if (GUILayout.Button("Продвинуть время мира")) advance?.Invoke();
             }
             GUILayout.EndArea();
         }

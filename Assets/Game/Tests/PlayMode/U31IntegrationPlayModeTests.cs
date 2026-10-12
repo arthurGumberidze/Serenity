@@ -12,6 +12,7 @@ using Game.Domain.Research;
 using Game.Domain.Time;
 using Game.Infrastructure;
 using Game.Presentation.UI;
+using Game.Presentation.Localization;
 using Game.Simulation.Time;
 using NUnit.Framework;
 using UnityEngine;
@@ -98,7 +99,7 @@ namespace Game.Tests.PlayMode
             for (var i = 0; i < 20 && root.Production.GetTarget(berries) <=
                  root.Production.GetCanonicalTotal(berries); i++)
             {
-                Submit(RowButton(ui, "Berries", "+5"));
+                Submit(RowButton(ui, RussianTextCatalog.Content("resource", "berries"), "+5"));
                 ui.RefreshNow();
             }
             Assert.That(root.Production.GetTarget(berries),
@@ -110,7 +111,8 @@ namespace Game.Tests.PlayMode
 
             ui.SetPanel(GameplayPanel.Research);
             Submit(ButtonWithText(ui, "Assign selected"));
-            Submit(ButtonWithText(ui, "Start Shelter Construction"));
+            Submit(ButtonWithText(ui, RussianTextCatalog.Format("ui.research.start",
+                RussianTextCatalog.Content("technology", "shelter_construction"))));
             Submit(ui.RootVisual.Q<Button>("speed-10"));
             Assert.That(root.Clock.Speed, Is.EqualTo(GameSpeed.Maximum));
 
@@ -137,7 +139,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.StarterEnemyAi.Inventories, Is.Not.SameAs(root.Inventories));
 
             ui.SetPanel(GameplayPanel.Build);
-            Submit(ButtonStartingWith(ui, "Primitive Shelter"));
+            Submit(ButtonStartingWith(ui, RussianTextCatalog.Content("building", "primitive_shelter")));
             Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(30, 0, 30)), Is.True);
             var shelter = root.BuildingPlacementController.ConfirmPlacement();
             Assert.That(shelter, Is.Not.Null);
@@ -190,7 +192,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.CampaignProgress.State.VictoryTick, Is.EqualTo(victoryTick));
             Assert.That(root.CampaignProgress.State.EventSequence, Is.EqualTo(eventSequence));
             ui.RefreshNow();
-            Assert.That(AllUiText(ui), Does.Contain("Military victory"));
+            Assert.That(AllUiText(ui), Does.Contain("СОПЕРНИК ПОБЕЖДЁН").Or.Contain("Военная победа"));
 
             ui.SetPanel(GameplayPanel.SaveLoad);
             ui.SaveSlot(1);
@@ -222,7 +224,19 @@ namespace Game.Tests.PlayMode
         }
 
         private static Button ButtonWithText(GameplayUiController ui, string text) =>
-            ui.RootVisual.Query<Button>().ToList().First(x => x.text == text);
+            ui.RootVisual.Query<Button>().ToList().First(x => x.text == TranslateButton(text));
+
+        private static string TranslateButton(string text)
+        {
+            switch (text)
+            {
+                case "Create from selected characters": return RussianTextCatalog.Get("ui.work.create");
+                case "Assign selected": return RussianTextCatalog.Get("ui.research.assign");
+                case "Create player unit from selected": return RussianTextCatalog.Get("ui.military.create");
+                case "Aggregate": return RussianTextCatalog.Get("ui.military.aggregate");
+                default: return text;
+            }
+        }
 
         private static Button ButtonStartingWith(GameplayUiController ui, string text) =>
             ui.RootVisual.Query<Button>().ToList().First(x => x.text.StartsWith(text, StringComparison.Ordinal));

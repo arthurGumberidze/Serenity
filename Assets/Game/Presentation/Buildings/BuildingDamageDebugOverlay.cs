@@ -6,6 +6,7 @@ using Game.Domain.Combat;
 using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Buildings;
 using Game.Simulation.Combat;
 using Game.Simulation.Production;
@@ -27,7 +28,7 @@ namespace Game.Presentation.Buildings
         private GameClock clock;
         private WorldPointerRaycaster raycaster;
         private StableEntityId? selectedId;
-        private string message = "Ready";
+        private string message = "Готово";
 
         public void Initialize(BuildingDamageService service, BuildingRegistry registry,
             BuildingPresentationCatalog catalog, ResourceInventoryRegistry inventoryRegistry,
@@ -59,51 +60,52 @@ namespace Game.Presentation.Buildings
         {
             if (damage == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(PanelRect(), GUI.skin.box);
-            GUILayout.Label("Building Damage / Fire / Capture (U24)");
+            GUILayout.Label("Повреждение, пожар и захват построек (U24)");
             var ordered = buildings.All.OrderBy(x => x.Id).ToArray();
-            if (ordered.Length == 0) { GUILayout.Label("No buildings"); GUILayout.EndArea(); return; }
+            if (ordered.Length == 0) { GUILayout.Label("Построек нет"); GUILayout.EndArea(); return; }
             var selected = selectedId.HasValue && buildings.TryGet(selectedId.Value, out var found) ? found : ordered[0];
             selectedId = selected.Id;
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Previous")) SelectOffset(ordered, selected, -1);
-            if (GUILayout.Button("Next")) SelectOffset(ordered, selected, 1);
+            if (GUILayout.Button("Предыдущая")) SelectOffset(ordered, selected, -1);
+            if (GUILayout.Button("Следующая")) SelectOffset(ordered, selected, 1);
             GUILayout.EndHorizontal();
-            GUILayout.Label($"{selected.DefinitionId} [{Short(selected.Id)}] owner={selected.OwnerSideId}");
-            GUILayout.Label($"Integrity {selected.CurrentIntegrity}/{selected.MaxIntegrity} | {selected.StructuralStatus}");
-            GUILayout.Label($"Fire {selected.FireStatus} intensity={selected.FireIntensity} tick={selected.LastFireProcessedTick}");
-            GUILayout.Label($"Production {(production.IsSiteOperational(selected.Id) ? "enabled" : "disabled")} | capturable={definitions.ResolveDefinition(selected.DefinitionId).Capturable}");
+            GUILayout.Label($"{RussianTextCatalog.Content("building", selected.DefinitionId.ToString())} [{Short(selected.Id)}] · владелец " +
+                (selected.OwnerSideId.Value == "player" ? RussianTextCatalog.Get("ui.side.player") : RussianTextCatalog.Get("ui.side.enemy")));
+            GUILayout.Label($"Прочность {selected.CurrentIntegrity}/{selected.MaxIntegrity} · {RussianTextCatalog.Enum(selected.StructuralStatus)}");
+            GUILayout.Label($"Огонь: {RussianTextCatalog.Enum(selected.FireStatus)} · сила {selected.FireIntensity} · такт {selected.LastFireProcessedTick}");
+            GUILayout.Label($"Производство: {(production.IsSiteOperational(selected.Id) ? "работает" : "остановлено")} · можно захватить: {(definitions.ResolveDefinition(selected.DefinitionId).Capturable ? "да" : "нет")}");
             var owner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, selected.Id);
-            GUILayout.Label("Storage: " + (inventories.TryGet(owner, out var storage)
-                ? string.Join(", ", storage.CaptureState().Amounts.Select(x => x.ResourceId + "=" + x.Quantity.Units))
-                : "none"));
+            GUILayout.Label("Склад: " + (inventories.TryGet(owner, out var storage)
+                ? string.Join(", ", storage.CaptureState().Amounts.Select(x => RussianTextCatalog.Content("resource", x.ResourceId.ToString()) + "=" + x.Quantity.Units))
+                : "нет"));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Damage 100")) Apply(selected, 100, BuildingDamageType.Generic);
-            if (GUILayout.Button("Combat 100")) Apply(selected, 100, BuildingDamageType.Combat);
-            if (GUILayout.Button("Destroy")) Apply(selected, selected.CurrentIntegrity, BuildingDamageType.Generic);
+            if (GUILayout.Button("Повредить на 100")) Apply(selected, 100, BuildingDamageType.Generic);
+            if (GUILayout.Button("Боевой урон 100")) Apply(selected, 100, BuildingDamageType.Combat);
+            if (GUILayout.Button("Разрушить")) Apply(selected, selected.CurrentIntegrity, BuildingDamageType.Generic);
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Ignite")) message = damage.IgniteBuilding(selected.Id, 800, Tick()).Failure.ToString();
-            if (GUILayout.Button("Extinguish")) message = damage.ExtinguishBuilding(selected.Id, Tick()).Failure.ToString();
+            if (GUILayout.Button("Поджечь")) message = RussianTextCatalog.Enum(damage.IgniteBuilding(selected.Id, 800, Tick()).Failure);
+            if (GUILayout.Button("Потушить")) message = RussianTextCatalog.Enum(damage.ExtinguishBuilding(selected.Id, Tick()).Failure);
             GUILayout.EndHorizontal();
-            if (GUILayout.Button("Capture to victorious enemy")) Capture(selected);
+            if (GUILayout.Button("Передать победившему сопернику")) Capture(selected);
             GUILayout.Label(message);
             GUILayout.EndArea();
         }
 
         private void Apply(Building building, int amount, BuildingDamageType type)
         {
-            if (amount <= 0) { message = BuildingDamageFailure.AlreadyDestroyed.ToString(); return; }
+            if (amount <= 0) { message = RussianTextCatalog.Enum(BuildingDamageFailure.AlreadyDestroyed); return; }
             var result = damage.ApplyDamage(building.Id, StableEntityId.NewId(), amount, type, Tick());
-            message = result.Failure + $" applied={result.Applied}";
+            message = RussianTextCatalog.Enum(result.Failure) + $" · применено: {result.Applied}";
         }
 
         private void Capture(Building building)
         {
             var battle = combat.Encounters.Where(x => x.Status == CombatEncounterStatus.Finished)
                 .OrderByDescending(x => x.LastProcessedCalendarTick).FirstOrDefault();
-            if (battle == null) { message = BuildingCaptureFailure.MissingBattle.ToString(); return; }
+            if (battle == null) { message = RussianTextCatalog.Enum(BuildingCaptureFailure.MissingBattle); return; }
             var result = damage.CaptureBuilding(building.Id, new CombatSideId("enemy"), battle.BattleId, Tick());
-            message = result.Failure.ToString();
+            message = RussianTextCatalog.Enum(result.Failure);
         }
 
         private void SelectOffset(Building[] ordered, Building selected, int offset)

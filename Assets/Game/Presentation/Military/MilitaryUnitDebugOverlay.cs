@@ -4,6 +4,7 @@ using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Military;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Military;
 using Game.Simulation.Combat;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace Game.Presentation.Military
         private WorldPointerRaycaster raycaster;
         private Func<long> calendarTick;
         private MilitaryUnitId? selectedUnitId;
-        private string message = "Select characters to create a unit";
+        private string message = "Выберите персонажей, чтобы создать отряд";
 
         public MilitaryUnitId? SelectedUnitId => selectedUnitId;
 
@@ -49,7 +50,7 @@ namespace Game.Presentation.Military
         public MilitaryUnitState CreateFromSelection(MilitarySideId sideId)
         {
             var selected = selection.SelectedCharacterIds;
-            if (selected.Count == 0) throw new InvalidOperationException("Select at least one eligible character.");
+            if (selected.Count == 0) throw new InvalidOperationException("Выберите хотя бы одного подходящего персонажа.");
             var unit = units.Create(sideId, selected, selected[0]);
             selectedUnitId = unit.Id;
             return unit;
@@ -76,51 +77,51 @@ namespace Game.Presentation.Military
         {
             if (units == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(GetPanelRect(), GUI.skin.box);
-            GUILayout.Label("Military Units (U21 debug)");
+            GUILayout.Label("Военные отряды (отладка U21)");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Create player")) TryUi(() => CreateFromSelection(new MilitarySideId("player")));
-            if (GUILayout.Button("Create enemy")) TryUi(() => CreateFromSelection(new MilitarySideId("enemy")));
+            if (GUILayout.Button("Создать отряд игрока")) TryUi(() => CreateFromSelection(new MilitarySideId("player")));
+            if (GUILayout.Button("Создать отряд соперника")) TryUi(() => CreateFromSelection(new MilitarySideId("enemy")));
             GUILayout.EndHorizontal();
 
             foreach (var unit in units.Units)
             {
                 var summary = units.GetRosterSummary(unit.Id);
                 if (GUILayout.Button((selectedUnitId == unit.Id ? "> " : string.Empty) +
-                    $"{Short(unit.Id.Value)} {unit.OwnerSideId} {unit.Representation} {unit.Status}"))
+                    $"{Short(unit.Id.Value)} · {(unit.OwnerSideId.Value == "player" ? "игрок" : "соперник")} · {RussianTextCatalog.Enum(unit.Representation)} · {RussianTextCatalog.Enum(unit.Status)}"))
                     selectedUnitId = unit.Id;
-                GUILayout.Label($"capt {Short(unit.CaptainId)} | roster {summary.Active}/{summary.Historical} | " +
-                    $"alive {summary.Alive} fight {summary.CombatCapable} inj {summary.Injured} incap {summary.Incapacitated}");
-                GUILayout.Label($"order {unit.Order.Kind} | encounter {Short(unit.ActiveEncounterId)} | " +
-                    $"morale {unit.MoraleSummary} cohesion {unit.Cohesion}");
+                GUILayout.Label($"капитан {Short(unit.CaptainId)} · состав {summary.Active}/{summary.Historical} · " +
+                    $"живы {summary.Alive} · боеспособны {summary.CombatCapable} · ранены {summary.Injured} · недееспособны {summary.Incapacitated}");
+                GUILayout.Label($"приказ {RussianTextCatalog.Enum(unit.Order.Kind)} · сражение {Short(unit.ActiveEncounterId)} · " +
+                    $"боевой дух {unit.MoraleSummary} · сплочённость {unit.Cohesion}");
             }
 
             if (selectedUnitId.HasValue)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Captain = selected")) TryUi(() =>
+                if (GUILayout.Button("Выбранный — капитан")) TryUi(() =>
                 {
-                    if (!selection.SelectedCharacterId.HasValue) throw new InvalidOperationException("Select a roster member.");
-                    message = units.AssignCaptain(selectedUnitId.Value, selection.SelectedCharacterId.Value).ToString();
+                    if (!selection.SelectedCharacterId.HasValue) throw new InvalidOperationException("Выберите бойца из состава.");
+                    message = RussianTextCatalog.Enum(units.AssignCaptain(selectedUnitId.Value, selection.SelectedCharacterId.Value));
                 });
-                if (GUILayout.Button("Remove selected")) TryUi(() =>
+                if (GUILayout.Button("Убрать выбранного")) TryUi(() =>
                 {
-                    if (!selection.SelectedCharacterId.HasValue) throw new InvalidOperationException("Select a roster member.");
+                    if (!selection.SelectedCharacterId.HasValue) throw new InvalidOperationException("Выберите бойца из состава.");
                     units.RemoveMember(selectedUnitId.Value, selection.SelectedCharacterId.Value);
                 });
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Detailed")) TryUi(() => representations.Transition(selectedUnitId.Value,
+                if (GUILayout.Button("Подробный")) TryUi(() => representations.Transition(selectedUnitId.Value,
                     MilitaryUnitRepresentationMode.Detailed));
-                if (GUILayout.Button("Aggregate")) TryUi(() => representations.Transition(selectedUnitId.Value,
+                if (GUILayout.Button("Сводный")) TryUi(() => representations.Transition(selectedUnitId.Value,
                     MilitaryUnitRepresentationMode.Aggregate));
-                if (GUILayout.Button("Hold")) TryUi(() => commands.Hold(selectedUnitId.Value));
-                if (GUILayout.Button("Move origin")) TryUi(() => commands.Move(selectedUnitId.Value,
+                if (GUILayout.Button("Удерживать")) TryUi(() => commands.Hold(selectedUnitId.Value));
+                if (GUILayout.Button("Идти к началу координат")) TryUi(() => commands.Move(selectedUnitId.Value,
                     new WorldPosition(0f, 0f, 0f)));
                 GUILayout.EndHorizontal();
             }
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Start Physical")) TryUi(StartFirstHostileBattle);
-            if (GUILayout.Button("Start Abstract")) TryUi(StartFirstHostileAbstractBattle);
+            if (GUILayout.Button("Начать бой на местности")) TryUi(StartFirstHostileBattle);
+            if (GUILayout.Button("Начать автоматический бой")) TryUi(StartFirstHostileAbstractBattle);
             GUILayout.EndHorizontal();
             GUILayout.Label(message);
             GUILayout.EndArea();
@@ -131,18 +132,18 @@ namespace Game.Presentation.Military
             var pair = FirstHostilePair();
             combat.Start(pair.Item1.Id, pair.Item2.Id, StableEntityId.NewId(), calendarTick());
             selectedUnitId = pair.Item1.Id;
-            message = "Physical encounter started through U20";
+            message = "Сражение на местности начато через U20";
         }
 
         private void StartFirstHostileAbstractBattle()
         {
-            if (battles == null) throw new InvalidOperationException("U23 battle service is unavailable.");
+            if (battles == null) throw new InvalidOperationException("Сервис сражений U23 недоступен.");
             var pair = FirstHostilePair();
             representations.Transition(pair.Item1.Id, MilitaryUnitRepresentationMode.Aggregate);
             representations.Transition(pair.Item2.Id, MilitaryUnitRepresentationMode.Aggregate);
             battles.StartAbstractBattle(pair.Item1.Id, pair.Item2.Id, StableEntityId.NewId(), calendarTick());
             selectedUnitId = pair.Item1.Id;
-            message = "Abstract battle started without physical combatants";
+            message = "Автоматическое сражение начато без физических бойцов";
         }
 
         private Tuple<MilitaryUnitState, MilitaryUnitState> FirstHostilePair()
@@ -156,8 +157,8 @@ namespace Game.Presentation.Military
 
         private void TryUi(Action action)
         {
-            try { action(); message = "OK"; }
-            catch (Exception exception) { message = exception.Message; }
+            try { action(); message = "Готово"; }
+            catch (Exception exception) { Debug.LogException(exception); message = RussianTextCatalog.Get("ui.status.internal_error"); }
         }
 
         private static Rect GetPanelRect() => new Rect(Mathf.Max(1220f, Screen.width - PanelWidth - 10f),

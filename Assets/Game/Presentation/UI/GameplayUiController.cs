@@ -19,6 +19,7 @@ using Game.Domain.World;
 using Game.Domain.Events;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Control;
 using Game.Simulation.Military;
 using Game.Simulation.Research;
@@ -105,6 +106,14 @@ namespace Game.Presentation.UI
         public int SubscriptionCount => subscribed ? 4 : 0;
         public VisualElement RootVisual => root;
         public IReadOnlyList<string> Notifications => notificationFeed.AsReadOnly();
+        public string Locale => RussianTextCatalog.Locale;
+        public float UiScale => panelSettings?.scale ?? 1f;
+
+        public void SetUiScale(float value)
+        {
+            if (panelSettings == null) throw new InvalidOperationException("Gameplay UI is not initialized.");
+            panelSettings.scale = Mathf.Clamp(value, 1f, 1.5f);
+        }
 
         public void Initialize(GameplayUiContext gameplayContext, WorldPointerRaycaster worldRaycaster,
             LocalGameplayInputSource inputSource)
@@ -156,9 +165,7 @@ namespace Game.Presentation.UI
                 if (overlay != null) overlay.enabled = visible;
             context.ThirdPerson.ShowLegacyOverlay = visible;
             context.SetDeveloperUiVisible(visible);
-            statusLabel.text = visible
-                ? "Developer UI enabled - F10 returns to player interface"
-                : "Player interface active - F10 developer tools";
+            statusLabel.text = T(visible ? "ui.status.developer" : "ui.status.player");
             RefreshNow();
         }
 
@@ -178,7 +185,7 @@ namespace Game.Presentation.UI
         public void SaveSlot(int index) => TryCommand(() =>
         {
             context.Saves.Save(index);
-            AddNotification("Game saved to Slot " + index + ".");
+            AddNotification(F("ui.notification.saved", index));
         });
 
         public void RequestLoadSlot(int index)
@@ -186,11 +193,11 @@ namespace Game.Presentation.UI
             pendingLoadSlot = index;
             modal.Clear();
             modal.style.display = DisplayStyle.Flex;
-            AddTitle(modal, "Load Slot " + index);
-            AddLine(modal, "Loading replaces the current canonical session state. Continue?");
+            AddTitle(modal, F("ui.modal.load.title", index));
+            AddLine(modal, T("ui.modal.load.body"));
             var row = Row();
-            row.Add(ActionButton("Load", () => ConfirmLoadSlot(index)));
-            row.Add(ActionButton("Cancel", CloseModal));
+            row.Add(ActionButton(T("common.load"), () => ConfirmLoadSlot(index)));
+            row.Add(ActionButton(T("common.cancel"), CloseModal));
             modal.Add(row);
         }
 
@@ -201,20 +208,20 @@ namespace Game.Presentation.UI
             context.Selection.ClearSelection();
             pendingLoadSlot = 0;
             CloseModal();
-            AddNotification("Slot " + index + " loaded. UI rebound to restored state.");
+            AddNotification(F("ui.notification.loaded", index));
         });
 
         public void RequestNewGame(long worldSeed)
         {
-            if (context.StartNewGame == null) throw new InvalidOperationException("New Game is unavailable.");
+            if (context.StartNewGame == null) throw PlayerError("ui.status.command_failed");
             pendingNewGameSeed = worldSeed;
             modal.Clear();
             modal.style.display = DisplayStyle.Flex;
-            AddTitle(modal, "Start new game");
-            AddLine(modal, "This replaces the running session with deterministic seed " + worldSeed + ". Continue?");
+            AddTitle(modal, T("ui.modal.new_game.title"));
+            AddLine(modal, F("ui.modal.new_game.body", worldSeed));
             var row = Row();
-            row.Add(ActionButton("New Game", () => ConfirmNewGame(worldSeed), "confirm-new-game"));
-            row.Add(ActionButton("Cancel", CloseModal));
+            row.Add(ActionButton(T("ui.action.new_game"), () => ConfirmNewGame(worldSeed), "confirm-new-game"));
+            row.Add(ActionButton(T("common.cancel"), CloseModal));
             modal.Add(row);
         }
 
@@ -329,17 +336,17 @@ namespace Game.Presentation.UI
             topBar.style.paddingLeft = 12; topBar.style.paddingRight = 12;
             topBar.style.backgroundColor = HeaderColor;
             topBar.pickingMode = PickingMode.Position;
-            resourcesLabel = HudLabel(440);
-            dateLabel = HudLabel(210);
+            resourcesLabel = HudLabel(460);
+            dateLabel = HudLabel(220);
             weatherLabel = HudLabel(250);
-            modeLabel = HudLabel(110);
-            alertLabel = HudLabel(85);
+            modeLabel = HudLabel(135);
+            alertLabel = HudLabel(135);
             topBar.Add(resourcesLabel);
             topBar.Add(dateLabel);
             topBar.Add(weatherLabel);
             topBar.Add(modeLabel);
             topBar.Add(alertLabel);
-            topBar.Add(ActionButton("Pause", () => context.SetPaused(!context.Clock().IsPaused), "pause-button"));
+            topBar.Add(ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button"));
             foreach (var speed in Speeds)
             {
                 var captured = speed;
@@ -349,25 +356,25 @@ namespace Game.Presentation.UI
 
             navigation = Panel("navigation");
             navigation.style.position = Position.Absolute;
-            navigation.style.left = 12; navigation.style.top = 84; navigation.style.bottom = 54; navigation.style.width = 138;
+            navigation.style.left = 12; navigation.style.top = 84; navigation.style.bottom = 54; navigation.style.width = 174;
             navigation.style.backgroundColor = PanelColor;
             navigation.style.paddingTop = 8; navigation.style.paddingLeft = 8; navigation.style.paddingRight = 8;
             navigation.pickingMode = PickingMode.Position;
-            AddNavigation("Build  B", GameplayPanel.Build);
-            AddNavigation("Settlement", GameplayPanel.Economy);
-            AddNavigation("Research", GameplayPanel.Research);
-            AddNavigation("Work groups", GameplayPanel.Work);
-            AddNavigation("Dynasty", GameplayPanel.Dynasty);
-            AddNavigation("Military", GameplayPanel.Military);
-            AddNavigation("Save / Load", GameplayPanel.SaveLoad);
-            AddNavigation("Global map", GameplayPanel.Global);
-            if (context.Events != null) AddNavigation("Events", GameplayPanel.Events);
+            AddNavigation(T("ui.nav.build"), GameplayPanel.Build);
+            AddNavigation(T("ui.nav.settlement"), GameplayPanel.Economy);
+            AddNavigation(T("ui.nav.research"), GameplayPanel.Research);
+            AddNavigation(T("ui.nav.work"), GameplayPanel.Work);
+            AddNavigation(T("ui.nav.dynasty"), GameplayPanel.Dynasty);
+            AddNavigation(T("ui.nav.military"), GameplayPanel.Military);
+            AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad);
+            AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global);
+            if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events);
             root.Add(navigation);
 
             mainPanel = new ScrollView(ScrollViewMode.Vertical) { name = "main-panel" };
             StylePanel(mainPanel);
             mainPanel.style.position = Position.Absolute;
-            mainPanel.style.left = 158; mainPanel.style.top = 84; mainPanel.style.bottom = 54; mainPanel.style.width = 480;
+            mainPanel.style.left = 194; mainPanel.style.top = 84; mainPanel.style.bottom = 54; mainPanel.style.width = 520;
             mainPanel.style.display = DisplayStyle.None;
             mainPanel.pickingMode = PickingMode.Position;
             root.Add(mainPanel);
@@ -394,7 +401,7 @@ namespace Game.Presentation.UI
             statusBar.style.flexDirection = FlexDirection.Row;
             statusBar.style.alignItems = Align.Center;
             statusBar.style.paddingLeft = 12;
-            statusLabel = new Label("Player interface active - F10 developer tools");
+            statusLabel = new Label(T("ui.status.player"));
             statusLabel.style.flexGrow = 1;
             statusBar.Add(statusLabel);
             root.Add(statusBar);
@@ -434,19 +441,20 @@ namespace Game.Presentation.UI
         {
             var clock = context.Clock();
             var alive = context.Characters.CountAlive();
-            resourcesLabel.text = "Population " + alive + "   " + string.Join("   ", context.Resources.All
+            resourcesLabel.text = F("ui.hud.population", alive) + "   " + string.Join("   ", context.Resources.All
                 .Where(x => x.Id.ToString() == "berries" || x.Id.ToString() == "wood_log" ||
                             x.Id.ToString() == "stone" || x.Id.ToString() == "plant_fiber" || x.Id.ToString() == "hide")
-                .Select(x => x.DisplayName + " " + TotalResource(x.Id)));
+                .Select(x => Content("resource", x.Id.ToString()) + " " + TotalResource(x.Id)));
             var ticks = clock.State.CalendarTicks;
-            dateLabel.text = "Year " + GameCalendar.Year(ticks) + "  Day " + GameCalendar.DayOfYear(ticks) +
-                             "  " + GameCalendar.HourOfDay(ticks).ToString("00") + ":" + GameCalendar.MinuteOfHour(ticks).ToString("00");
+            dateLabel.text = F("ui.hud.date", GameCalendar.Year(ticks), GameCalendar.DayOfYear(ticks),
+                GameCalendar.HourOfDay(ticks).ToString("00"), GameCalendar.MinuteOfHour(ticks).ToString("00"));
             var weather = context.Weather.GetWeatherAtCalendarTick(ticks);
-            weatherLabel.text = weather.Season + "   " + weather.Type + "   " + weather.TemperatureCelsius.ToString("0.0") + " C";
-            modeLabel.text = context.GlobalMap.Mode == GameWorldMode.Local ? "LOCAL" : "GLOBAL";
+            weatherLabel.text = E(weather.Season) + " · " + E(weather.Type) + " · " + RussianTextCatalog.Decimal(weather.TemperatureCelsius) + " °C";
+            modeLabel.text = T(context.GlobalMap.Mode == GameWorldMode.Local ? "ui.hud.mode.local" : "ui.hud.mode.global");
             var pendingEvents = context.Events?.PendingPlayerEvents.Count ?? 0;
-            alertLabel.text = "Alerts " + notificationFeed.Count + (pendingEvents > 0 ? "  Events " + pendingEvents : string.Empty);
-            topBar.Q<Button>("pause-button").text = clock.IsPaused ? "Resume" : "Pause";
+            alertLabel.text = F("ui.hud.alerts", notificationFeed.Count) +
+                              (pendingEvents > 0 ? F("ui.hud.pending_events", pendingEvents) : string.Empty);
+            topBar.Q<Button>("pause-button").text = T(clock.IsPaused ? "ui.action.resume" : "ui.action.pause");
         }
 
         private void RefreshPanel()
@@ -469,21 +477,22 @@ namespace Game.Presentation.UI
 
         private void DrawEventsPanel()
         {
-            AddTitle(mainPanel, "Events");
+            AddTitle(mainPanel, T("ui.events.title"));
             if (context.Events == null)
             {
-                AddMuted(mainPanel, "Event service is unavailable in this session.");
+                AddMuted(mainPanel, T("ui.events.unavailable"));
                 return;
             }
             var pending = context.Events.PendingPlayerEvents;
-            AddSection(mainPanel, "Pending " + pending.Count);
-            if (pending.Count == 0) AddMuted(mainPanel, "No decisions are waiting.");
+            AddSection(mainPanel, F("ui.events.pending", pending.Count));
+            if (pending.Count == 0) AddMuted(mainPanel, T("ui.events.none_pending"));
             foreach (var instance in pending)
             {
                 var definition = context.Events.Catalog.Get(instance.DefinitionId);
                 var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
                 var captured = instance.InstanceId;
-                mainPanel.Add(ActionButton((selectedEvent == instance.InstanceId ? "> " : string.Empty) + node.Title,
+                mainPanel.Add(ActionButton((selectedEvent == instance.InstanceId ? T("common.selected_marker") : string.Empty) +
+                    EventTitle(instance.DefinitionId, node.Id),
                     () => { selectedEvent = captured; RefreshPanel(); }));
                 AddMuted(mainPanel, string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)));
             }
@@ -494,143 +503,143 @@ namespace Game.Presentation.UI
                 var instance = pending.First(x => x.InstanceId == selectedEvent.Value);
                 var definition = context.Events.Catalog.Get(instance.DefinitionId);
                 var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
-                AddSection(mainPanel, node.Title);
-                AddLine(mainPanel, node.Description);
-                AddMuted(mainPanel, "Involving " + string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)) + ".");
+                AddSection(mainPanel, EventTitle(instance.DefinitionId, node.Id));
+                AddLine(mainPanel, EventDescription(instance.DefinitionId, node.Id));
+                AddMuted(mainPanel, F("ui.events.involving", string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName))));
                 foreach (var choice in node.Choices)
                 {
                     var capturedChoice = choice.Id;
-                    mainPanel.Add(ActionButton(choice.Label, () => TryCommand(() =>
+                    mainPanel.Add(ActionButton(EventChoice(instance.DefinitionId, node.Id, choice.Id), () => TryCommand(() =>
                     {
                         var result = context.Events.ResolvePlayerChoice(instance.InstanceId, capturedChoice,
                             context.Clock().State.CalendarTicks);
-                        if (!result.Applied) throw new InvalidOperationException("Event choice was not applied: " + result.Status);
+                        if (!result.Applied) throw PlayerError("ui.status.command_failed");
                         selectedEvent = null;
-                        SetStatus("Event choice applied.");
+                        SetStatus(T("ui.events.choice_applied"));
                     })));
                 }
             }
-            AddSection(mainPanel, "Recent history");
-            if (context.Events.History.Count == 0) AddMuted(mainPanel, "No resolved events yet.");
+            AddSection(mainPanel, T("ui.events.history"));
+            if (context.Events.History.Count == 0) AddMuted(mainPanel, T("ui.events.no_history"));
             foreach (var entry in context.Events.History.Reverse().Take(12))
             {
                 var definition = context.Events.Catalog.Get(entry.DefinitionId);
-                var title = definition.Nodes[0].Title;
-                AddLine(mainPanel, title + " - " + entry.Status + " - " + entry.OutcomeCode);
+                var title = EventTitle(entry.DefinitionId, definition.Nodes[0].Id);
+                AddLine(mainPanel, F("ui.events.history_line", title, E(entry.Status), EventOutcome(entry.OutcomeCode)));
                 AddMuted(mainPanel, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
             }
         }
 
         private void DrawEconomyPanel()
         {
-            AddTitle(mainPanel, "Settlement economy");
+            AddTitle(mainPanel, T("ui.economy.title"));
             var storage = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray();
-            AddLine(mainPanel, "Storage: " + storage.Sum(x => x.TotalUnits) + "/" + storage.Sum(x => x.Capacity));
+            AddLine(mainPanel, F("ui.economy.storage", storage.Sum(x => x.TotalUnits), storage.Sum(x => x.Capacity)));
             foreach (var definition in context.Resources.All)
             {
                 var target = context.Production.GetTarget(definition.Id);
                 var total = context.Production.GetCanonicalTotal(definition.Id);
                 var row = Row();
-                row.Add(new Label(definition.DisplayName + "  stored " + context.StoredResources.GetStoredTotal(definition.Id).Units +
-                                  "  total " + total + "  target " + target));
+                row.Add(new Label(F("ui.economy.resource_line", Content("resource", definition.Id.ToString()),
+                    context.StoredResources.GetStoredTotal(definition.Id).Units, total, target)));
                 row.Add(ActionButton("-5", () => TryCommand(() =>
                     context.Production.SetTarget(definition.Id, Math.Max(0, target - 5)))));
                 row.Add(ActionButton("+5", () => TryCommand(() =>
                     context.Production.SetTarget(definition.Id, checked(target + 5)))));
                 mainPanel.Add(row);
             }
-            AddLine(mainPanel, "Food consumed: " + context.Production.Food.TotalConsumed +
-                " | shortage: " + context.Production.Food.TotalShortage);
+            AddLine(mainPanel, F("ui.economy.food", context.Production.Food.TotalConsumed, context.Production.Food.TotalShortage));
             var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
-            AddMuted(mainPanel, "Current modifiers: crops " + Percent(weather.Modifiers.CropGrowthPerThousand) +
-                ", outdoor work " + Percent(weather.Modifiers.OutdoorWorkPerThousand) +
-                ", wild food " + Percent(weather.Modifiers.WildFoodGatheringPerThousand) + ".");
-            AddSection(mainPanel, "Production sites");
+            AddMuted(mainPanel, F("ui.economy.modifiers", Percent(weather.Modifiers.CropGrowthPerThousand),
+                Percent(weather.Modifiers.OutdoorWorkPerThousand), Percent(weather.Modifiers.WildFoodGatheringPerThousand)));
+            AddSection(mainPanel, T("ui.economy.sites"));
             foreach (var site in context.Production.Sites)
             {
                 var status = site.Kind == ProductionSiteKind.PrimitiveCropPlot
-                    ? "crop " + site.CropPhase + " " + (site.GrowthRequiredTicks == 0 ? string.Empty :
-                        ((double)site.GrowthProgressTicks / site.GrowthRequiredTicks).ToString("P0"))
-                    : "source " + site.RemainingAmount + "/" + site.SourceCapacity;
+                    ? F("ui.economy.crop", E(site.CropPhase), site.GrowthRequiredTicks == 0 ? string.Empty :
+                        RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks))
+                    : F("ui.economy.source", site.RemainingAmount, site.SourceCapacity);
                 if (context.Buildings.TryGet(site.Id, out var building) && !building.IsOperational)
-                    status += " | disabled: " + building.StructuralStatus;
-                AddLine(mainPanel, site.RecipeId + " | " + status);
+                    status += " · " + F("ui.economy.disabled", E(building.StructuralStatus));
+                AddLine(mainPanel, Content("recipe", site.RecipeId.ToString()) + " · " + status);
             }
-            AddSection(mainPanel, "Active production");
-            if (context.Production.ActiveTasks.Count == 0) AddMuted(mainPanel, "No active production tasks.");
+            AddSection(mainPanel, T("ui.economy.active_production"));
+            if (context.Production.ActiveTasks.Count == 0) AddMuted(mainPanel, T("ui.economy.no_tasks"));
             foreach (var task in context.Production.ActiveTasks.Take(12))
-                AddLine(mainPanel, task.Kind + " | " + task.RecipeId + " | " +
-                    ((double)task.AccumulatedWorkTicks / task.RequiredWorkTicks).ToString("P0"));
+                AddLine(mainPanel, F("ui.economy.task", E(task.Kind), Content("recipe", task.RecipeId.ToString()),
+                    RussianTextCatalog.Percent((double)task.AccumulatedWorkTicks / task.RequiredWorkTicks)));
         }
 
         private void DrawBuildPanel()
         {
-            AddTitle(mainPanel, "Build menu");
-            AddLine(mainPanel, "Choose a structure, then place its ghost with LMB. R rotates; Esc or RMB cancels.");
+            AddTitle(mainPanel, T("ui.build.title"));
+            AddLine(mainPanel, T("ui.build.instructions"));
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
                 var definition = entry.CreateDefinition();
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
-                var cost = definition.ConstructionCost.Count == 0 ? "No cost" : string.Join(", ",
-                    definition.ConstructionCost.Select(x => x.ResourceId + " " + x.Quantity.Units));
-                var reason = available ? string.Empty : BuildingLockReason(definition.Id);
-                var button = ActionButton(definition.DisplayName + "  |  " + cost,
+                var cost = definition.ConstructionCost.Count == 0 ? T("ui.build.no_cost") : F("ui.build.cost", string.Join(", ",
+                    definition.ConstructionCost.Select(x => Content("resource", x.ResourceId.ToString()) + " " + x.Quantity.Units)));
+                var shortage = BuildingResourceShortage(definition);
+                var reason = !available ? BuildingLockReason(definition.Id) : shortage;
+                var button = ActionButton(Content("building", definition.Id.ToString()) + " · " + cost,
                     () => StartBuilding(definition.Id));
-                button.SetEnabled(available);
+                button.SetEnabled(available && string.IsNullOrEmpty(shortage));
                 mainPanel.Add(button);
-                if (!available) AddMuted(mainPanel, reason);
+                if (!string.IsNullOrEmpty(reason)) AddMuted(mainPanel, reason);
             }
             if (context.BuildingPlacement.IsActive)
-                AddLine(mainPanel, "Placement: " + context.BuildingPlacement.ActiveDefinitionId +
-                    " | " + (context.BuildingPlacement.IsPreviewValid ? "valid" : PlacementFailureText()));
+                AddLine(mainPanel, F("ui.build.placement", Content("building", context.BuildingPlacement.ActiveDefinitionId.ToString()),
+                    context.BuildingPlacement.IsPreviewValid ? T("ui.build.valid") : PlacementFailureText()));
         }
 
         private void DrawResearchPanel()
         {
-            AddTitle(mainPanel, "Stone Age research");
+            AddTitle(mainPanel, T("ui.research.title"));
             var active = context.Research.ActiveProject;
-            if (active == null) AddLine(mainPanel, "Active project: none");
+            if (active == null) AddLine(mainPanel, T("ui.research.active_none"));
             else
             {
                 var definition = context.Research.Catalog.Get(active.TechnologyId);
-                AddLine(mainPanel, "Active: " + definition.DisplayName + "   " + active.Progress.ToString("P1"));
+                AddLine(mainPanel, F("ui.research.active", Content("technology", definition.Id.ToString()), RussianTextCatalog.Percent(active.Progress)));
                 var status = ResearchWorkerStatusQuery.Capture(context.Research, context.AiAgents);
-                AddLine(mainPanel, "Researchers: " + status.ActiveCount + " active / " + status.AssignedCount + " assigned");
-                mainPanel.Add(ActionButton("Cancel active research", () => TryCommand(() =>
+                AddLine(mainPanel, F("ui.research.workers", status.ActiveCount, status.AssignedCount));
+                mainPanel.Add(ActionButton(T("ui.research.cancel"), () => TryCommand(() =>
                 {
-                    if (!context.Research.Cancel()) throw new InvalidOperationException("There is no active research project.");
+                    if (!context.Research.Cancel()) throw PlayerError("ui.research.no_active");
                 })));
             }
             var workerRow = Row();
-            workerRow.Add(ActionButton("Assign selected", () => TryCommand(() =>
-                SetStatus(context.Research.AssignWorkers(context.Selection.SelectedCharacterIds) + " researcher(s) assigned."))));
-            workerRow.Add(ActionButton("Remove selected", () => TryCommand(() =>
-                SetStatus(context.Research.UnassignWorkers(context.Selection.SelectedCharacterIds) + " researcher(s) removed."))));
+            workerRow.Add(ActionButton(T("ui.research.assign"), () => TryCommand(() =>
+                SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds))))));
+            workerRow.Add(ActionButton(T("ui.research.remove"), () => TryCommand(() =>
+                SetStatus(F("ui.research.removed_count", context.Research.UnassignWorkers(context.Selection.SelectedCharacterIds))))));
             mainPanel.Add(workerRow);
             foreach (var technology in context.Research.Catalog.All)
             {
-                var state = context.Research.IsCompleted(technology.Id) ? "Completed" :
-                    active != null && active.TechnologyId == technology.Id ? "Active" :
-                    context.Research.IsAvailable(technology.Id) ? "Available" : "Locked";
-                AddSection(mainPanel, technology.DisplayName + " - " + state);
-                AddMuted(mainPanel, "Prerequisites: " + (technology.Prerequisites.Count == 0 ? "none" :
-                    string.Join(", ", technology.Prerequisites.Select(x => context.Research.Catalog.Get(x).DisplayName))));
-                AddMuted(mainPanel, "Research work: " + technology.ResearchWorkRequiredTicks + " | Unlocks: " +
-                    (technology.Unlocks.Count == 0 ? "capability" : string.Join(", ", technology.Unlocks.Select(x => x.ContentId))));
-                if (state == "Available" && active == null)
-                    mainPanel.Add(ActionButton("Start " + technology.DisplayName,
+                var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
+                    active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
+                    context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" : "enum.ResearchAvailability.Locked";
+                AddSection(mainPanel, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
+                AddMuted(mainPanel, F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
+                    string.Join(", ", technology.Prerequisites.Select(x => Content("technology", x.ToString())))));
+                AddMuted(mainPanel, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
+                    technology.Unlocks.Count == 0 ? T("ui.research.capability") :
+                    string.Join(", ", technology.Unlocks.Select(UnlockName))));
+                if (stateKey == "enum.ResearchAvailability.Available" && active == null)
+                    mainPanel.Add(ActionButton(F("ui.research.start", Content("technology", technology.Id.ToString())),
                         () => TryCommand(() => context.Research.Start(technology.Id))));
             }
         }
 
         private void DrawWorkPanel()
         {
-            AddTitle(mainPanel, "Work groups and jobs");
+            AddTitle(mainPanel, T("ui.work.title"));
             var groups = context.Work.Groups.All;
             foreach (var group in groups)
             {
                 var captured = group.Id;
-                var button = ActionButton((selectedGroup == group.Id ? "> " : string.Empty) + group.DisplayName +
+                var button = ActionButton((selectedGroup == group.Id ? T("common.selected_marker") : string.Empty) + group.DisplayName +
                                           "  (" + group.MemberCount + ")", () =>
                 {
                     selectedGroup = captured;
@@ -639,231 +648,235 @@ namespace Game.Presentation.UI
                 });
                 mainPanel.Add(button);
             }
-            mainPanel.Add(ActionButton("Create from selected characters", () => TryCommand(() =>
+            mainPanel.Add(ActionButton(T("ui.work.create"), () => TryCommand(() =>
             {
-                if (context.Selection.SelectedCharacterIds.Count == 0) throw new InvalidOperationException("Select at least one character.");
-                selectedGroup = context.Work.CreateGroup("Work Group " + (context.Work.Groups.Count + 1),
+                if (context.Selection.SelectedCharacterIds.Count == 0) throw PlayerError("ui.work.need_selection");
+                selectedGroup = context.Work.CreateGroup(F("ui.work.default_name", context.Work.Groups.Count + 1),
                     context.Selection.SelectedCharacterIds).Id;
             })));
             if (!selectedGroup.HasValue || !context.Work.Groups.TryGet(selectedGroup.Value, out var current))
             {
-                AddMuted(mainPanel, "Select or create a group to manage it.");
+                AddMuted(mainPanel, T("ui.work.select_group"));
                 return;
             }
             AddSection(mainPanel, current.DisplayName);
-            var rename = new TextField("Name") { value = current.DisplayName, name = "work-group-name" };
+            var rename = new TextField(T("ui.work.name")) { value = current.DisplayName, name = "work-group-name" };
+            StyleTextField(rename);
             mainPanel.Add(rename);
-            mainPanel.Add(ActionButton("Rename", () => TryCommand(() => context.Work.RenameGroup(current.Id, rename.value))));
+            mainPanel.Add(ActionButton(T("ui.work.rename"), () => TryCommand(() => context.Work.RenameGroup(current.Id, rename.value))));
             var membership = Row();
-            membership.Add(ActionButton("Add selected", () => TryCommand(() =>
+            membership.Add(ActionButton(T("ui.work.add_selected"), () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds)
                     if (!current.Contains(id)) context.Work.AddMember(current.Id, id);
             })));
-            membership.Add(ActionButton("Remove selected", () => TryCommand(() =>
+            membership.Add(ActionButton(T("ui.work.remove_selected"), () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds.ToArray()) context.Work.RemoveMember(current.Id, id);
             })));
-            membership.Add(ActionButton("Commander = selected", () => TryCommand(() =>
+            membership.Add(ActionButton(T("ui.work.commander_selected"), () => TryCommand(() =>
             {
-                if (context.Selection.SelectedCharacterIds.Count != 1) throw new InvalidOperationException("Select one group member.");
+                if (context.Selection.SelectedCharacterIds.Count != 1) throw PlayerError("ui.work.need_one_member");
                 context.Work.SetCommander(current.Id, context.Selection.SelectedCharacterIds[0]);
             })));
             mainPanel.Add(membership);
-            AddLine(mainPanel, "Commander: " + CharacterName(current.CommanderId) + "   Priority: " + workPriority);
+            AddLine(mainPanel, F("ui.work.commander_priority", CharacterName(current.CommanderId), E(workPriority)));
             var priority = Row();
             foreach (WorkPriority value in Enum.GetValues(typeof(WorkPriority)))
             {
                 var captured = value;
-                priority.Add(ActionButton(value.ToString(), () => { workPriority = captured; RefreshPanel(); }));
+                priority.Add(ActionButton(E(value), () => { workPriority = captured; RefreshPanel(); }));
             }
             mainPanel.Add(priority);
             var commands = Row();
-            commands.Add(ActionButton("Move to center", () => TryCommand(() =>
+            commands.Add(ActionButton(T("ui.work.move_center"), () => TryCommand(() =>
                 context.ManualMoveCommands.IssueForGroup(current.Id, new WorldPosition(0f, 0f, 10f), workPriority))));
-            commands.Add(ActionButton("Haul available", () => TryCommand(() => IssueGroupHaul(current.Id))));
-            commands.Add(ActionButton("Cancel open jobs", () => TryCommand(() => CancelGroupJobs(current.Id))));
+            commands.Add(ActionButton(T("ui.work.haul"), () => TryCommand(() => IssueGroupHaul(current.Id))));
+            commands.Add(ActionButton(T("ui.work.cancel_jobs"), () => TryCommand(() => CancelGroupJobs(current.Id))));
             mainPanel.Add(commands);
-            AddMuted(mainPanel, "World Move remains available by selecting this group and right-clicking valid ground. Ctrl+1..9 assigns shortcuts; 1..9 recalls them.");
+            AddMuted(mainPanel, T("ui.work.help"));
             foreach (var job in context.Work.Jobs.Where(x => x.GroupId == current.Id).OrderByDescending(x => x.Id).Take(10))
-                AddLine(mainPanel, "#" + job.Id + "  " + job.Type + "  " + job.Priority + "  " + job.Status + "  claim " + job.ClaimState);
+                AddLine(mainPanel, F("ui.work.job", job.Id, E(job.Type), E(job.Priority), E(job.Status), E(job.ClaimState)));
         }
 
         private void DrawDynastyPanel()
         {
             AddTitle(mainPanel, context.Dynasty.Name);
-            AddLine(mainPanel, "Status: " + context.Dynasty.Status);
-            AddLine(mainPanel, "Monarch: " + CharacterName(context.Dynasty.CurrentMonarchId));
+            AddLine(mainPanel, F("ui.dynasty.status", E(context.Dynasty.Status)));
+            AddLine(mainPanel, F("ui.dynasty.monarch", CharacterName(context.Dynasty.CurrentMonarchId)));
             var monarch = context.Dynasty.CurrentMonarchId.HasValue
                 ? context.Characters.Get(context.Dynasty.CurrentMonarchId.Value) : null;
-            AddLine(mainPanel, "Spouse: " + CharacterName(monarch?.SpouseId));
+            AddLine(mainPanel, F("ui.dynasty.spouse", CharacterName(monarch?.SpouseId)));
             var children = monarch == null ? Array.Empty<Character>() : context.Family.GetChildren(monarch.Id).ToArray();
-            AddLine(mainPanel, "Children: " + (children.Length == 0 ? "none" : string.Join(", ", children.Select(x => x.Name.DisplayName))));
+            AddLine(mainPanel, F("ui.dynasty.children", children.Length == 0 ? T("common.none") : string.Join(", ", children.Select(x => RussianTextCatalog.PersonName(x.Name.DisplayName)))));
             var heir = context.Dynasty.CurrentMonarchId.HasValue
                 ? context.Family.GetOrderedSuccessionCandidates(context.Dynasty, context.Dynasty.CurrentMonarchId.Value).FirstOrDefault()
                 : null;
-            AddLine(mainPanel, "Current heir: " + (heir == null ? "none" : heir.Name.DisplayName));
-            AddSection(mainPanel, "Succession candidates");
+            AddLine(mainPanel, F("ui.dynasty.heir", heir == null ? T("common.none") : RussianTextCatalog.PersonName(heir.Name.DisplayName)));
+            AddSection(mainPanel, T("ui.dynasty.candidates"));
             if (context.Dynasty.CurrentMonarchId.HasValue)
                 foreach (var candidate in context.Family.GetOrderedSuccessionCandidates(context.Dynasty,
                              context.Dynasty.CurrentMonarchId.Value).Take(8))
-                    AddLine(mainPanel, candidate.Name.DisplayName + "  age " + candidate.AgeInCompletedYears(context.Clock().State.BiologicalTicks));
-            AddSection(mainPanel, "Succession history");
+                    AddLine(mainPanel, F("ui.dynasty.candidate", RussianTextCatalog.PersonName(candidate.Name.DisplayName),
+                        candidate.AgeInCompletedYears(context.Clock().State.BiologicalTicks)));
+            AddSection(mainPanel, T("ui.dynasty.history"));
             foreach (var entry in context.Dynasty.History.Reverse().Take(6))
-                AddLine(mainPanel, CharacterName(entry.PreviousMonarchId) + " -> " + CharacterName(entry.NewMonarchId) + "  " + entry.Reason);
+                AddLine(mainPanel, F("ui.dynasty.history_line", CharacterName(entry.PreviousMonarchId),
+                    CharacterName(entry.NewMonarchId), E(entry.Reason)));
         }
 
         private void DrawMilitaryPanel()
         {
-            AddTitle(mainPanel, "Military");
-            mainPanel.Add(ActionButton("Create player unit from selected", () => TryCommand(CreatePlayerUnit)));
+            AddTitle(mainPanel, T("ui.military.title"));
+            mainPanel.Add(ActionButton(T("ui.military.create"), () => TryCommand(CreatePlayerUnit)));
             var index = 1;
             foreach (var unit in context.Military.Units)
             {
                 var captured = unit.Id;
                 var label = UnitLabel(unit, index++);
-                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? "> " : string.Empty) + label,
+                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + label,
                     () => { selectedUnit = captured; RefreshPanel(); }));
                 var summary = context.Military.GetRosterSummary(unit.Id);
-                AddMuted(mainPanel, "Captain " + CharacterName(unit.CaptainId) + " | roster " + summary.Active +
-                    " | combat " + summary.CombatCapable + " | injured " + summary.Injured +
-                    " | " + unit.Representation + " | " + unit.Order.Kind);
+                AddMuted(mainPanel, F("ui.military.summary", CharacterName(unit.CaptainId), summary.Active,
+                    summary.CombatCapable, summary.Injured, E(unit.Representation), E(unit.Order.Kind)));
             }
             if (!selectedUnit.HasValue || !context.Military.TryGet(selectedUnit.Value, out var selected)) return;
-            AddSection(mainPanel, "Selected unit actions");
-            AddLine(mainPanel, "Supply: " + (selected.Supply.Initialized
+            AddSection(mainPanel, T("ui.military.actions"));
+            AddLine(mainPanel, F("ui.military.supply", selected.Supply.Initialized
                 ? selected.Supply.Get(context.Military.SupplySettings.FoodResourceId) + " " +
-                  context.Military.SupplySettings.FoodResourceId
-                : "not provisioned"));
-            mainPanel.Add(ActionButton("Resupply", () => TryCommand(() =>
+                  Content("resource", context.Military.SupplySettings.FoodResourceId.ToString())
+                : T("ui.military.not_supplied")));
+            mainPanel.Add(ActionButton(T("ui.military.resupply"), () => TryCommand(() =>
                 context.Military.LoadInitialSupply(selected.Id, context.Inventories,
                     context.Inventories.All.Select(x => x.Owner)))));
             var roster = Row();
-            roster.Add(ActionButton("Add selected", () => TryCommand(() =>
+            roster.Add(ActionButton(T("ui.military.add_selected"), () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds) context.Military.AddMember(selected.Id, id);
             })));
-            roster.Add(ActionButton("Remove selected", () => TryCommand(() =>
+            roster.Add(ActionButton(T("ui.military.remove_selected"), () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds) context.Military.RemoveMember(selected.Id, id);
             })));
-            roster.Add(ActionButton("Captain = selected", () => TryCommand(() =>
+            roster.Add(ActionButton(T("ui.military.captain_selected"), () => TryCommand(() =>
             {
-                if (context.Selection.SelectedCharacterIds.Count != 1) throw new InvalidOperationException("Select one roster member.");
+                if (context.Selection.SelectedCharacterIds.Count != 1) throw PlayerError("ui.military.need_one_member");
                 var result = context.Military.AssignCaptain(selected.Id, context.Selection.SelectedCharacterIds[0]);
-                if (result != CommanderAssignmentStatus.Assigned) throw new InvalidOperationException(result.ToString());
+                if (result != CommanderAssignmentStatus.Assigned) throw PlayerError("ui.military.need_one_member");
             })));
             mainPanel.Add(roster);
             var orders = Row();
-            orders.Add(ActionButton("Idle", () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Idle))));
-            orders.Add(ActionButton("Move center", () => TryCommand(() => context.MilitaryCommands.Move(selected.Id, new WorldPosition(0, 0, 10)))));
-            orders.Add(ActionButton("Hold", () => TryCommand(() => context.MilitaryCommands.Hold(selected.Id))));
-            orders.Add(ActionButton("Engage", () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Engage))));
+            orders.Add(ActionButton(T("ui.military.order.idle"), () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Idle))));
+            orders.Add(ActionButton(T("ui.military.order.move"), () => TryCommand(() => context.MilitaryCommands.Move(selected.Id, new WorldPosition(0, 0, 10)))));
+            orders.Add(ActionButton(T("ui.military.order.hold"), () => TryCommand(() => context.MilitaryCommands.Hold(selected.Id))));
+            orders.Add(ActionButton(T("ui.military.order.engage"), () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Engage))));
             mainPanel.Add(orders);
             var representations = Row();
-            representations.Add(ActionButton("Detailed", () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Detailed))));
-            representations.Add(ActionButton("Aggregate", () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Aggregate))));
+            representations.Add(ActionButton(T("ui.military.detailed"), () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Detailed))));
+            representations.Add(ActionButton(T("ui.military.aggregate"), () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Aggregate))));
             mainPanel.Add(representations);
-            AddSection(mainPanel, "Active battles");
+            AddSection(mainPanel, T("ui.military.battles"));
             foreach (var battle in context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active))
             {
-                AddLine(mainPanel, battle.Mode + " | " + BattleCounts(battle) + " | morale " +
-                    SideMorale(battle, battle.SideA) + "/" + SideMorale(battle, battle.SideB));
+                AddLine(mainPanel, F("ui.military.battle", E(battle.Mode), BattleCounts(battle),
+                    SideMorale(battle, battle.SideA), SideMorale(battle, battle.SideB)));
                 if (battle.Mode == BattleMode.Abstract)
-                    mainPanel.Add(ActionButton("Enter physical battle", () => context.RequestEnterBattle(battle.BattleId)));
+                    mainPanel.Add(ActionButton(T("ui.military.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
             }
         }
 
         private void DrawSavePanel()
         {
-            AddTitle(mainPanel, "Save and load");
-            AddLine(mainPanel, "Local files are always available. Loading requires confirmation and rebinds the existing UI once.");
+            AddTitle(mainPanel, T("ui.save.title"));
+            AddLine(mainPanel, T("ui.save.explanation"));
             if (context.StartNewGame != null)
             {
-                AddSection(mainPanel, "New game");
-                var seed = new TextField("World seed") { value = context.Campaign?.State.WorldSeed.ToString() ?? "20261006" };
+                AddSection(mainPanel, T("ui.save.new_game"));
+                var seed = new TextField(T("ui.save.world_seed")) { value = context.Campaign?.State.WorldSeed.ToString() ?? "20261006" };
                 seed.name = "new-game-seed";
+                StyleTextField(seed);
                 mainPanel.Add(seed);
-                mainPanel.Add(ActionButton("Start New Game", () =>
+                mainPanel.Add(ActionButton(T("ui.save.start"), () =>
                 {
                     if (!long.TryParse(seed.value, out var parsed))
-                        throw new InvalidOperationException("World seed must be a whole number.");
+                        throw PlayerError("ui.save.seed_integer");
                     RequestNewGame(parsed);
                 }, "new-game-button"));
             }
             foreach (var slot in context.Saves.ListSlots())
             {
-                AddSection(mainPanel, slot.Label);
-                AddLine(mainPanel, slot.Exists ? slot.Detail : "Empty slot");
+                AddSection(mainPanel, F("ui.save.slot", slot.Index));
+                AddLine(mainPanel, slot.Exists ? slot.Detail : T("ui.save.empty_slot"));
                 var row = Row();
-                row.Add(ActionButton("Save", () => SaveSlot(slot.Index)));
-                var load = ActionButton("Load", () => RequestLoadSlot(slot.Index));
+                row.Add(ActionButton(T("common.save"), () => SaveSlot(slot.Index)));
+                var load = ActionButton(T("common.load"), () => RequestLoadSlot(slot.Index));
                 load.SetEnabled(slot.Exists && !slot.IsCorrupt);
                 row.Add(load);
                 mainPanel.Add(row);
-                if (slot.IsCorrupt) AddMuted(mainPanel, "Slot unavailable/corrupt.");
+                if (slot.IsCorrupt) AddMuted(mainPanel, T("ui.save.corrupt_slot"));
             }
         }
 
         private void DrawGlobalPanel()
         {
-            AddTitle(mainPanel, "Global map");
-            AddLine(mainPanel, "Mode: " + context.GlobalMap.Mode + " | Active location: " +
-                context.GlobalMap.GetLocation(context.GlobalMap.ActiveLocationId).Name);
+            AddTitle(mainPanel, T("ui.map.title"));
+            AddLine(mainPanel, F("ui.map.mode_location", E(context.GlobalMap.Mode),
+                LocationName(context.GlobalMap.ActiveLocationId)));
             if (context.GlobalMap.Mode == GameWorldMode.Local)
             {
-                mainPanel.Add(ActionButton("Open Global Map", context.RequestEnterGlobal));
-                AddMuted(mainPanel, "Local simulation continues while the global map is open.");
+                mainPanel.Add(ActionButton(T("ui.map.open"), context.RequestEnterGlobal));
+                AddMuted(mainPanel, T("ui.map.local_continues"));
                 return;
             }
-            AddSection(mainPanel, "Locations and destinations");
+            AddSection(mainPanel, T("ui.map.locations"));
             foreach (var location in context.GlobalMap.Locations)
             {
                 var captured = location.Id;
                 var settlement = context.GlobalMap.GetSettlementAt(location.Id);
                 var hidden = settlement != null && context.Campaign != null &&
                              !context.Campaign.CanRevealSettlement(settlement.Id);
-                var owner = settlement == null ? "unclaimed" : settlement.OwnerSideId.Value;
-                mainPanel.Add(ActionButton((selectedLocation == location.Id ? "> " : string.Empty) +
-                    (hidden ? "Unknown territory  | settlement | unknown" :
-                        location.Name + "  | " + location.Type + " | " + owner),
+                var owner = settlement == null ? T("ui.map.unclaimed") : SideName(settlement.OwnerSideId);
+                mainPanel.Add(ActionButton((selectedLocation == location.Id ? T("common.selected_marker") : string.Empty) +
+                    (hidden ? T("ui.map.hidden") :
+                        F("ui.map.location", LocationName(location.Id), E(location.Type), owner)),
                     () => { selectedLocation = captured; RefreshPanel(); }));
             }
-            AddSection(mainPanel, "Player armies");
+            AddSection(mainPanel, T("ui.map.player_armies"));
             var index = 1;
             foreach (var unit in context.Military.Units.Where(x => x.OwnerSideId.Value == "player" &&
                          x.Representation == MilitaryUnitRepresentationMode.Aggregate))
             {
                 var captured = unit.Id;
                 var travel = context.GlobalMap.Travels.FirstOrDefault(x => x.UnitId == unit.Id);
-                var detail = travel == null ? unit.AbstractLocationId : travel.Origin + " -> " + travel.Destination +
-                    " | ETA " + FormatDuration(Math.Max(0, travel.ArrivalTick - context.Clock().State.CalendarTicks));
-                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? "> " : string.Empty) + UnitLabel(unit, index++) + " | " + detail,
+                var detail = travel == null ? LocationName(unit.AbstractLocationId) :
+                    F("ui.map.travel_eta", LocationName(travel.Origin), LocationName(travel.Destination),
+                        FormatDuration(Math.Max(0, travel.ArrivalTick - context.Clock().State.CalendarTicks)));
+                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + UnitLabel(unit, index++) + " · " + detail,
                     () => { selectedUnit = captured; RefreshPanel(); }));
             }
             var actions = Row();
-            var travelButton = ActionButton("Travel to selected", () => TryCommand(() =>
+            var travelButton = ActionButton(T("ui.map.travel"), () => TryCommand(() =>
             {
                 if (!selectedUnit.HasValue || !selectedLocation.HasValue)
-                    throw new InvalidOperationException("Select a player army and destination.");
+                    throw PlayerError("ui.map.need_unit_destination");
                 var result = context.GlobalMap.IssueTravelOrder(selectedUnit.Value, selectedLocation.Value,
                     context.Clock().State.CalendarTicks);
-                if (!result.Issued) throw new InvalidOperationException(TravelReason(result.Status));
-                AddNotification("Army departed for " + context.GlobalMap.GetLocation(selectedLocation.Value).Name + ".");
+                if (!result.Issued) throw new PlayerFacingException(TravelReason(result.Status));
+                AddNotification(F("ui.map.departed", LocationName(selectedLocation.Value)));
             }));
             actions.Add(travelButton);
-            actions.Add(ActionButton("Enter selected location", () => TryCommand(() =>
+            actions.Add(ActionButton(T("ui.map.enter_location"), () => TryCommand(() =>
             {
-                if (!selectedLocation.HasValue) throw new InvalidOperationException("Select a location.");
+                if (!selectedLocation.HasValue) throw PlayerError("ui.map.need_location");
                 context.RequestEnterLocation(selectedLocation.Value);
             })));
             mainPanel.Add(actions);
-            AddSection(mainPanel, "Battles");
+            AddSection(mainPanel, T("ui.map.battles"));
             foreach (var battle in context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active))
             {
-                AddLine(mainPanel, battle.Mode + " | " + BattleCounts(battle) + " | " + battle.Outcome);
+                AddLine(mainPanel, F("ui.map.battle", E(battle.Mode), BattleCounts(battle), E(battle.Outcome)));
                 if (battle.Mode == BattleMode.Abstract)
-                    mainPanel.Add(ActionButton("Enter battle", () => context.RequestEnterBattle(battle.BattleId)));
+                    mainPanel.Add(ActionButton(T("ui.map.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
             }
         }
 
@@ -875,11 +888,11 @@ namespace Game.Presentation.UI
             if (!hasSelection && emptyInspectorRendered) return;
             emptyInspectorRendered = !hasSelection;
             inspector.Clear();
-            AddTitle(inspector, "Selection");
+            AddTitle(inspector, T("ui.selection.title"));
             if (context.Selection.SelectedCharacterIds.Count > 1)
             {
-                AddLine(inspector, context.Selection.SelectedCharacterIds.Count + " characters selected.");
-                AddMuted(inspector, "Choose one character for detailed actions, or use the group/military panels.");
+                AddLine(inspector, F("ui.selection.characters", context.Selection.SelectedCharacterIds.Count));
+                AddMuted(inspector, T("ui.selection.many_help"));
                 return;
             }
             if (context.Selection.SelectedCharacterId.HasValue)
@@ -897,87 +910,89 @@ namespace Game.Presentation.UI
             if (pile != null)
             {
                 var inventory = context.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId));
-                AddLine(inspector, "World resource pile");
-                AddLine(inspector, context.Resources.Get(pile.ResourceId).DisplayName + ": " +
+                AddLine(inspector, T("ui.selection.resource_pile"));
+                AddLine(inspector, Content("resource", pile.ResourceId.ToString()) + ": " +
                     inventory.GetAmount(pile.ResourceId).Units);
                 return;
             }
-            AddLine(inspector, "Nothing selected");
-            AddMuted(inspector, "Select a character, building or resource in the world.");
+            AddLine(inspector, T("ui.selection.nothing"));
+            AddMuted(inspector, T("ui.selection.help"));
         }
 
         private void DrawCharacterInspector(StableEntityId id)
         {
             var character = context.Characters.Get(id);
             var capabilities = context.Health.GetCapabilities(id);
-            AddSection(inspector, character.Name.DisplayName);
-            AddLine(inspector, "Age " + character.AgeInCompletedYears(context.Clock().State.BiologicalTicks) +
-                " | " + character.Sex + " | " + character.LifeState);
-            AddLine(inspector, "Profession: " + (character.ProfessionId?.ToString() ?? "unassigned"));
-            AddLine(inspector, "Health: " + (capabilities.IsIncapacitated ? "incapacitated" : "active") +
-                " | work " + Percent(capabilities.WorkPerThousand) + " | research " + Percent(capabilities.ResearchPerThousand));
+            AddSection(inspector, RussianTextCatalog.PersonName(character.Name.DisplayName));
+            AddLine(inspector, F("ui.character.age", character.AgeInCompletedYears(context.Clock().State.BiologicalTicks),
+                E(character.Sex), E(character.LifeState)));
+            AddLine(inspector, F("ui.character.profession", ProfessionName(character.ProfessionId?.ToString())));
+            AddLine(inspector, F("ui.character.health", capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("common.active"),
+                Percent(capabilities.WorkPerThousand), Percent(capabilities.ResearchPerThousand)));
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
                 x.State != HealthConditionState.Recovered).ToArray();
-            AddLine(inspector, "Conditions: " + (conditions.Length == 0 ? "none" : string.Join(", ", conditions.Select(x =>
-                context.Health.Catalog.Get(x.DefinitionId).DisplayName + " " + x.Severity))));
+            AddLine(inspector, F("ui.character.conditions", conditions.Length == 0 ? T("common.none") : string.Join(", ", conditions.Select(x =>
+                Content("condition", x.DefinitionId.ToString()) + " · " + E(x.Severity)))));
             var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.MotherId == id && x.Status == PregnancyStatus.Active);
-            if (pregnancy != null) AddLine(inspector, "Pregnancy: active");
+            if (pregnancy != null) AddLine(inspector, T("ui.character.pregnancy"));
             var inventoryOwner = new InventoryOwner(InventoryOwnerKind.Character, id);
-            AddLine(inspector, "Inventory: " + (context.Inventories.TryGet(inventoryOwner, out var inventory)
-                ? InventoryText(inventory) : "none"));
-            var research = context.Research.AssignedWorkers.Contains(id) ? "assigned" : "not assigned";
-            AddLine(inspector, "Research: " + research);
-            AddLine(inspector, "Work group: " + (context.Work.Groups.TryGetForMember(id, out var group) ? group.DisplayName : "none"));
-            AddLine(inspector, "Current job: " + (context.Work.TryGetAssigned(id, out var job) ? job.Type + " / " + job.Status : "none"));
-            AddLine(inspector, "Dynasty role: " + DynastyRole(id));
-            AddLine(inspector, "Military: " + (context.Military.TryGetForMember(id, out var unit)
-                ? "member" + (unit.CaptainId == id ? ", captain" : string.Empty) : "civilian"));
+            AddLine(inspector, F("ui.character.inventory", context.Inventories.TryGet(inventoryOwner, out var inventory)
+                ? InventoryText(inventory) : T("common.none")));
+            var research = context.Research.AssignedWorkers.Contains(id) ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned");
+            AddLine(inspector, F("ui.character.research", research));
+            AddLine(inspector, F("ui.character.work_group", context.Work.Groups.TryGetForMember(id, out var group) ? group.DisplayName : T("common.none")));
+            AddLine(inspector, F("ui.character.current_job", context.Work.TryGetAssigned(id, out var job)
+                ? E(job.Type) + " · " + E(job.Status) : T("common.none")));
+            AddLine(inspector, F("ui.character.dynasty_role", DynastyRole(id)));
+            AddLine(inspector, F("ui.character.military", context.Military.TryGetForMember(id, out var unit)
+                ? T("ui.character.member") + (unit.CaptainId == id ? ", " + T("ui.character.captain") : string.Empty)
+                : T("ui.character.civilian")));
             if (context.Events != null)
             {
                 var eventHistory = context.Events.History.Where(x => x.Targets.Any(target =>
                     target.Kind == EventTargetKind.Character && target.TryGetStableEntityId(out var targetId) && targetId == id))
                     .Reverse().Take(3).ToArray();
-                AddLine(inspector, "Key events: " + (eventHistory.Length == 0 ? "none" : string.Join(", ",
-                    eventHistory.Select(x => context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Title))));
+                AddLine(inspector, F("ui.character.events", eventHistory.Length == 0 ? T("common.none") : string.Join(", ",
+                    eventHistory.Select(x => EventTitle(x.DefinitionId, context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Id)))));
             }
             var eligibility = context.PlayerControl.Evaluate(id);
             var actions = Row();
-            actions.Add(ActionButton(context.Research.AssignedWorkers.Contains(id) ? "Remove research" : "Assign research", () => TryCommand(() =>
+            actions.Add(ActionButton(T(context.Research.AssignedWorkers.Contains(id) ? "ui.character.remove_research" : "ui.character.assign_research"), () => TryCommand(() =>
             {
                 if (context.Research.AssignedWorkers.Contains(id)) context.Research.UnassignWorkers(new[] { id });
                 else context.Research.AssignWorkers(new[] { id });
             })));
-            var tps = ActionButton("Enter TPS", () => TryCommand(() =>
+            var tps = ActionButton(T("ui.character.enter_tps"), () => TryCommand(() =>
             {
                 var result = context.ThirdPerson.TryEnter(id);
-                if (!result.IsEligible) throw new InvalidOperationException(EligibilityReason(result.Failure));
+                if (!result.IsEligible) throw new PlayerFacingException(EligibilityReason(result.Failure));
             }));
             tps.SetEnabled(eligibility.IsEligible);
             actions.Add(tps);
             inspector.Add(actions);
-            if (!eligibility.IsEligible) AddMuted(inspector, "TPS unavailable: " + EligibilityReason(eligibility.Failure));
-            if (DeveloperUiVisible) AddMuted(inspector, "Stable ID: " + id);
+            if (!eligibility.IsEligible) AddMuted(inspector, F("ui.character.tps_unavailable", EligibilityReason(eligibility.Failure)));
+            if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", id));
         }
 
         private void DrawBuildingInspector(Building building)
         {
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
-            AddSection(inspector, definition.DisplayName);
-            AddLine(inspector, "Owner: " + building.OwnerSideId.Value + " | " + building.ConstructionState);
-            AddLine(inspector, "Integrity: " + building.CurrentIntegrity + "/" + building.MaxIntegrity + " | " + building.StructuralStatus);
-            AddLine(inspector, "Fire: " + building.FireStatus + (building.FireStatus == BuildingFireStatus.Burning
-                ? " intensity " + building.FireIntensity : string.Empty));
+            AddSection(inspector, Content("building", definition.Id.ToString()));
+            AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
+            AddLine(inspector, F("ui.building.integrity", building.CurrentIntegrity, building.MaxIntegrity, E(building.StructuralStatus)));
+            AddLine(inspector, F("ui.building.fire", E(building.FireStatus)) + (building.FireStatus == BuildingFireStatus.Burning
+                ? F("ui.building.fire_intensity", building.FireIntensity) : string.Empty));
             var owner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id);
             if (context.Inventories.TryGet(owner, out var storage))
-                AddLine(inspector, "Storage: " + storage.TotalUnits + "/" + storage.Capacity + " | " + InventoryText(storage));
+                AddLine(inspector, F("ui.building.storage", storage.TotalUnits, storage.Capacity, InventoryText(storage)));
             if (context.Production.Sites.FirstOrDefault(x => x.Id == building.Id) is ProductionSite site)
             {
-                AddLine(inspector, "Production: " + (building.IsOperational ? "operational" : "unavailable"));
+                AddLine(inspector, F("ui.building.production", building.IsOperational ? T("ui.building.operational") : T("common.unavailable")));
                 if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
-                    AddLine(inspector, "Crop: " + site.CropPhase + " | growth " +
-                        (site.GrowthRequiredTicks == 0 ? "-" : ((double)site.GrowthProgressTicks / site.GrowthRequiredTicks).ToString("P0")));
+                    AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
+                        site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
             }
-            if (DeveloperUiVisible) AddMuted(inspector, "Stable ID: " + building.Id);
+            if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));
         }
 
         private void RefreshNotifications()
@@ -985,8 +1000,8 @@ namespace Game.Presentation.UI
             if (renderedNotificationVersion == notificationVersion) return;
             renderedNotificationVersion = notificationVersion;
             notifications.Clear();
-            AddSection(notifications, "Notifications");
-            if (notificationFeed.Count == 0) AddMuted(notifications, "No important alerts.");
+            AddSection(notifications, T("ui.notifications.title"));
+            if (notificationFeed.Count == 0) AddMuted(notifications, T("ui.notifications.none"));
             foreach (var message in notificationFeed.Skip(Math.Max(0, notificationFeed.Count - 5)).Reverse())
                 AddLine(notifications, message);
         }
@@ -1007,38 +1022,39 @@ namespace Game.Presentation.UI
             var campaignSequence = context.Campaign?.State.EventSequence ?? 0UL;
             if (notificationsPrimed && !suppressNotificationCaptureOnce)
             {
-                if (researchCount > knownResearchCount) AddNotification("Research completed.");
-                if (characterCount > knownCharacterCount) AddNotification("A child was born.");
-                if (aliveCount < knownAliveCount) AddNotification("A character died.");
-                if (dynastyCount > knownDynastyHistoryCount) AddNotification("Succession state changed.");
-                if (conditionCount > knownConditionCount) AddNotification("A new injury or disease requires attention.");
+                if (researchCount > knownResearchCount) AddNotification(T("ui.notification.research"));
+                if (characterCount > knownCharacterCount) AddNotification(T("ui.notification.birth"));
+                if (aliveCount < knownAliveCount) AddNotification(T("ui.notification.death"));
+                if (dynastyCount > knownDynastyHistoryCount) AddNotification(T("ui.notification.succession"));
+                if (conditionCount > knownConditionCount) AddNotification(T("ui.notification.condition"));
                 if (buildingHistory > knownBuildingHistoryCount)
                 {
                     var change = context.Buildings.All.SelectMany(x => x.History).OrderByDescending(x => x.CalendarTick)
                         .ThenByDescending(x => x.Sequence).First();
-                    AddNotification("Building " + change.Kind.ToString().ToLowerInvariant() + ".");
+                    AddNotification(F("ui.notification.building", E(change.Kind)));
                 }
                 if (battleEvents > knownBattleEventCount)
                 {
                     var change = context.Battles.Battles.SelectMany(x => x.BattleHistory)
                         .OrderByDescending(x => x.CalendarTick).ThenByDescending(x => x.Sequence).First();
-                    AddNotification(change.Kind == BattleEventKind.Started ? "Settlement battle started." :
-                        change.Kind == BattleEventKind.Finished ? "Battle finished." : "Battle state changed.");
+                    AddNotification(T(change.Kind == BattleEventKind.Started ? "ui.notification.battle_started" :
+                        change.Kind == BattleEventKind.Finished ? "ui.notification.battle_finished" : "ui.notification.battle_changed"));
                 }
-                if (travelCount < knownTravelCount) AddNotification("An army arrived.");
-                if (shortage > knownFoodShortage) AddNotification("Food shortage increased.");
-                if (pendingEventCount > knownPendingEventCount) AddNotification("A new event awaits your decision.");
+                if (travelCount < knownTravelCount) AddNotification(T("ui.notification.arrival"));
+                if (shortage > knownFoodShortage) AddNotification(T("ui.notification.shortage"));
+                if (pendingEventCount > knownPendingEventCount) AddNotification(T("ui.notification.event"));
                 if (eventHistoryCount > knownEventHistoryCount)
                 {
                     var entry = context.Events.History.Last();
-                    AddNotification(context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Title + " resolved.");
+                    AddNotification(F("ui.notification.event_resolved", EventTitle(entry.DefinitionId,
+                        context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Id)));
                 }
                 if (campaignSequence > knownCampaignEventSequence && context.Campaign != null)
                 {
                     if (context.Campaign.State.MilitaryVictory)
-                        AddNotification("Military victory recorded. The sandbox continues.");
+                        AddNotification(T("ui.notification.victory"));
                     else if (context.Campaign.State.RivalDiscovered)
-                        AddNotification("A rival dynasty has been discovered.");
+                        AddNotification(T("ui.notification.discovery"));
                 }
             }
             suppressNotificationCaptureOnce = false;
@@ -1070,22 +1086,22 @@ namespace Game.Presentation.UI
             var capabilities = context.Health.GetCapabilities(id);
             var combat = context.Combat.Encounters.Any(x => x.Status == CombatEncounterStatus.Active &&
                 x.Combatants.Any(c => c.CharacterId == id));
-            tpsLabel.text = "TPS  |  " + character.Name.DisplayName + "  |  " +
-                (capabilities.IsIncapacitated ? "INCAPACITATED" : "Health active") + "  |  Combat " +
-                (combat ? "engaged" : "clear") + "  |  LMB attack  |  T or Esc return to RTS";
+            tpsLabel.text = F("ui.tps.hud", RussianTextCatalog.PersonName(character.Name.DisplayName),
+                capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("ui.tps.health_active"),
+                combat ? T("ui.tps.combat_engaged") : T("ui.tps.combat_clear"));
         }
 
         private void RefreshGameOver()
         {
             if (context.GameRun.Status == GameRunStatus.GameOver)
             {
-                gameOverLabel.text = "DEFEAT\n" + context.GameRun.GameOverReason;
+                gameOverLabel.text = F("ui.game_over.defeat", E(context.GameRun.GameOverReason));
                 gameOverLabel.style.display = DisplayStyle.Flex;
                 return;
             }
             if (context.Campaign?.State.MilitaryVictory == true)
             {
-                gameOverLabel.text = "RIVAL DEFEATED\nThe sandbox continues";
+                gameOverLabel.text = T("ui.game_over.victory");
                 gameOverLabel.style.display = DisplayStyle.Flex;
                 return;
             }
@@ -1104,7 +1120,7 @@ namespace Game.Presentation.UI
                 if (group == null) return;
                 selectedGroup = group.Id;
                 SelectGroupPresenters();
-                SetStatus("Selected " + group.DisplayName + " with shortcut " + (i + 1) + ".");
+                SetStatus(F("ui.work.selected_shortcut", group.DisplayName, i + 1));
             }
         }
 
@@ -1116,7 +1132,7 @@ namespace Game.Presentation.UI
                     throw new InvalidOperationException(PlacementFailureText());
                 activePanel = GameplayPanel.None;
                 mainPanel.style.display = DisplayStyle.None;
-                SetStatus("Placement started. LMB confirm, R rotate, Esc/RMB cancel.");
+                SetStatus(T("ui.build.started"));
             });
         }
 
@@ -1133,7 +1149,7 @@ namespace Game.Presentation.UI
                 context.Inventories.Get(x.InventoryOwner).GetAmount(x.ResourceId).Units > 0);
             var destination = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
                     x.Capacity > x.TotalUnits).OrderBy(x => x.Owner.Id).FirstOrDefault();
-            if (source == null || destination == null) throw new InvalidOperationException("No available pile and storage route.");
+            if (source == null || destination == null) throw PlayerError("ui.work.no_haul_route");
             context.Work.CreateGroupHaulJobs(groupId, source.InventoryOwner, destination.Owner, source.ResourceId,
                 new ResourceQuantity(1), workPriority);
         }
@@ -1147,9 +1163,9 @@ namespace Game.Presentation.UI
         private void CreatePlayerUnit()
         {
             var roster = context.Selection.SelectedCharacterIds.ToArray();
-            if (roster.Length == 0) throw new InvalidOperationException("Select eligible characters first.");
+            if (roster.Length == 0) throw PlayerError("ui.military.need_characters");
             var captain = roster.FirstOrDefault(id => context.Health.GetCapabilities(id).CanFight);
-            if (!captain.IsValid) throw new InvalidOperationException("No eligible captain in selection.");
+            if (!captain.IsValid) throw PlayerError("ui.military.no_captain");
             var unit = context.Military.Create(new MilitarySideId("player"), roster, captain);
             context.Military.SetAbstractLocation(unit.Id, context.GlobalMap.ActiveLocationId.Value);
             context.Military.LoadInitialSupply(unit.Id, context.Inventories,
@@ -1175,39 +1191,58 @@ namespace Game.Presentation.UI
         {
             var technologies = context.Research.Catalog.All.Where(x => x.Unlocks.Any(unlock =>
                     unlock.Kind == TechnologyUnlockKind.Building && unlock.ContentId == id.ToString()))
-                .Select(x => x.DisplayName).ToArray();
-            return technologies.Length == 0 ? "Unavailable in the current era." : "Requires " + string.Join(" or ", technologies) + ".";
+                .Select(x => x.Id).ToArray();
+            return technologies.Length == 0 ? T("ui.build.locked_era") : F("ui.build.requires", string.Join(" или ",
+                technologies.Select(x => Content("technology", x.ToString()))));
+        }
+
+        private string BuildingResourceShortage(BuildingDefinition definition)
+        {
+            var missing = new List<string>();
+            foreach (var cost in definition.ConstructionCost)
+            {
+                var available = context.WorldPiles.All.Sum(x => x.ResourceId == cost.ResourceId
+                    ? context.Inventories.Get(x.InventoryOwner).GetAmount(cost.ResourceId).Units : 0L);
+                available += context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage)
+                    .Sum(x => x.GetAmount(cost.ResourceId).Units);
+                var shortage = Math.Max(0, cost.Quantity.Units - available);
+                if (shortage > 0) missing.Add(Content("resource", cost.ResourceId.ToString()) + " — " + shortage);
+            }
+            return missing.Count == 0 ? string.Empty : F("ui.build.insufficient_resources", string.Join(", ", missing));
         }
 
         private string PlacementFailureText()
         {
             switch (context.BuildingPlacement.LastConstructionFailure)
             {
-                case Game.Simulation.Resources.ConstructionFailureReason.LockedByResearch: return "Required technology is not complete.";
-                case Game.Simulation.Resources.ConstructionFailureReason.InsufficientResources: return "Insufficient settlement resources.";
-                default: return "Choose a clear, valid buildable grid area.";
+                case Game.Simulation.Resources.ConstructionFailureReason.LockedByResearch: return T("ui.build.locked_research");
+                case Game.Simulation.Resources.ConstructionFailureReason.InsufficientResources:
+                    return context.BuildingPlacement.IsActive
+                        ? BuildingResourceShortage(context.BuildingCatalog.ResolveDefinition(context.BuildingPlacement.ActiveDefinitionId.Value))
+                        : T("ui.build.insufficient_resources_generic");
+                default: return T("ui.build.invalid_place");
             }
         }
 
         private string CharacterName(StableEntityId? id) => id.HasValue && context.Characters.TryGet(id.Value, out var character)
-            ? character.Name.DisplayName : "none";
+            ? RussianTextCatalog.PersonName(character.Name.DisplayName) : T("common.none");
 
         private string DynastyRole(StableEntityId id)
         {
-            if (context.Dynasty.CurrentMonarchId == id) return "Monarch";
-            if (context.Dynasty.Contains(id)) return "Dynasty member";
-            return "None";
+            if (context.Dynasty.CurrentMonarchId == id) return T("ui.dynasty.role.monarch");
+            if (context.Dynasty.Contains(id)) return T("ui.dynasty.role.member");
+            return T("common.none");
         }
 
         private string InventoryText(ResourceInventory inventory)
         {
-            var amounts = context.Resources.All.Select(x => new { x.DisplayName, Units = inventory.GetAmount(x.Id).Units })
+            var amounts = context.Resources.All.Select(x => new { DisplayName = Content("resource", x.Id.ToString()), Units = inventory.GetAmount(x.Id).Units })
                 .Where(x => x.Units > 0).ToArray();
-            return amounts.Length == 0 ? "empty" : string.Join(", ", amounts.Select(x => x.DisplayName + " " + x.Units));
+            return amounts.Length == 0 ? T("common.empty") : string.Join(", ", amounts.Select(x => x.DisplayName + " " + x.Units));
         }
 
         private string UnitLabel(MilitaryUnitState unit, int index) =>
-            (unit.OwnerSideId.Value == "player" ? "Player Unit " : "Known Rival Unit ") + index +
+            F(unit.OwnerSideId.Value == "player" ? "ui.military.player_unit" : "ui.military.known_enemy_unit", index) +
             (DeveloperUiVisible ? " [" + unit.Id + "]" : string.Empty);
 
         private static string BattleCounts(CombatEncounterState battle)
@@ -1217,7 +1252,7 @@ namespace Game.Presentation.UI
             var dead = battle.Combatants.Count(x => x.State == CombatantState.Dead);
             var retreated = battle.Combatants.Count(x => x.State == CombatantState.Retreating ||
                 x.State == CombatantState.Disengaged);
-            return "active " + active + " / dead " + dead + " / retreated " + retreated;
+            return F("ui.military.battle_counts", active, dead, retreated);
         }
 
         private static int SideMorale(CombatEncounterState battle, CombatSideId side)
@@ -1231,12 +1266,12 @@ namespace Game.Presentation.UI
             switch (reason)
             {
                 case DirectControlEligibilityFailure.None: return string.Empty;
-                case DirectControlEligibilityFailure.Dead: return "Character is dead.";
-                case DirectControlEligibilityFailure.Child: return "Character is a child.";
-                case DirectControlEligibilityFailure.Incapacitated: return "Character is incapacitated.";
-                case DirectControlEligibilityFailure.AggregateMilitaryUnit: return "Aggregate unit must return to Detailed mode.";
-                case DirectControlEligibilityFailure.NotPlayerControlledRole: return "Only the monarch, heir or player captain is eligible.";
-                default: return reason.ToString();
+                case DirectControlEligibilityFailure.Dead: return T("ui.tps.dead");
+                case DirectControlEligibilityFailure.Child: return T("ui.tps.child");
+                case DirectControlEligibilityFailure.Incapacitated: return T("ui.tps.incapacitated");
+                case DirectControlEligibilityFailure.AggregateMilitaryUnit: return T("ui.tps.aggregate");
+                case DirectControlEligibilityFailure.NotPlayerControlledRole: return T("ui.tps.role");
+                default: return T("ui.status.command_failed");
             }
         }
 
@@ -1244,18 +1279,18 @@ namespace Game.Presentation.UI
         {
             switch (status)
             {
-                case Game.Simulation.World.TravelOrderStatus.NoDirectRoute: return "No valid route.";
-                case Game.Simulation.World.TravelOrderStatus.UnitInBattle: return "Unit is already in battle.";
-                case Game.Simulation.World.TravelOrderStatus.AlreadyTravelling: return "Unit is already travelling.";
-                case Game.Simulation.World.TravelOrderStatus.UnitNotAggregate: return "Unit must be Aggregate on the global map.";
-                default: return status.ToString();
+                case Game.Simulation.World.TravelOrderStatus.NoDirectRoute: return T("ui.map.no_route");
+                case Game.Simulation.World.TravelOrderStatus.UnitInBattle: return T("ui.map.unit_in_battle");
+                case Game.Simulation.World.TravelOrderStatus.AlreadyTravelling: return T("ui.map.already_travelling");
+                case Game.Simulation.World.TravelOrderStatus.UnitNotAggregate: return T("ui.map.need_aggregate");
+                default: return T("ui.status.command_failed");
             }
         }
 
-        private static string Percent(int perThousand) => (perThousand / 10d).ToString("0") + "%";
+        private static string Percent(int perThousand) => RussianTextCatalog.Format("common.percent", (perThousand / 10d).ToString("0"));
         private static string FormatDuration(long ticks) => TimeSpan.FromTicks(ticks).TotalDays >= 1
-            ? TimeSpan.FromTicks(ticks).TotalDays.ToString("0.0") + " days"
-            : TimeSpan.FromTicks(ticks).TotalHours.ToString("0.0") + " hours";
+            ? F("common.days", RussianTextCatalog.Decimal(TimeSpan.FromTicks(ticks).TotalDays))
+            : F("common.hours", RussianTextCatalog.Decimal(TimeSpan.FromTicks(ticks).TotalHours));
 
         private bool IsTextInputFocused() => root?.panel?.focusController?.focusedElement is TextField;
 
@@ -1264,12 +1299,17 @@ namespace Game.Presentation.UI
             try
             {
                 action();
-                SetStatus("Command accepted.");
+                SetStatus(T("ui.status.command_accepted"));
                 RefreshNow();
+            }
+            catch (PlayerFacingException exception)
+            {
+                SetStatus(exception.Message);
             }
             catch (Exception exception)
             {
-                SetStatus(exception.Message);
+                Debug.LogException(exception);
+                SetStatus(T("ui.status.internal_error"));
             }
         }
 
@@ -1312,6 +1352,57 @@ namespace Game.Presentation.UI
             navigation.Add(ActionButton(label, () => SetPanel(panel), "nav-" + panel.ToString().ToLowerInvariant()));
         }
 
+        private static string T(string key) => RussianTextCatalog.Get(key);
+        private static string F(string key, params object[] arguments) => RussianTextCatalog.Format(key, arguments);
+        private static string E(Enum value) => RussianTextCatalog.Enum(value);
+        private static string Content(string category, string id) => RussianTextCatalog.Content(category, id);
+
+        private static PlayerFacingException PlayerError(string key, params object[] arguments) =>
+            new PlayerFacingException(F(key, arguments));
+
+        private static string EventTitle(EventDefinitionId definitionId, EventNodeId nodeId) =>
+            RussianTextCatalog.EventTitle(definitionId.ToString(), nodeId.ToString());
+
+        private static string EventDescription(EventDefinitionId definitionId, EventNodeId nodeId) =>
+            RussianTextCatalog.EventDescription(definitionId.ToString(), nodeId.ToString());
+
+        private static string EventChoice(EventDefinitionId definitionId, EventNodeId nodeId, EventChoiceId choiceId) =>
+            RussianTextCatalog.EventChoice(definitionId.ToString(), nodeId.ToString(), choiceId.ToString());
+
+        private static string EventOutcome(string outcomeCode)
+        {
+            if (string.IsNullOrWhiteSpace(outcomeCode)) return T("common.none");
+            return RussianTextCatalog.TryGet("event.outcome." + outcomeCode, out var value) ? value : T("ui.event.completed");
+        }
+
+        private string UnlockName(TechnologyUnlock unlock)
+        {
+            switch (unlock.Kind)
+            {
+                case TechnologyUnlockKind.Building: return Content("building", unlock.ContentId);
+                case TechnologyUnlockKind.ProductionRecipe: return Content("recipe", unlock.ContentId);
+                default: return T("ui.research.capability");
+            }
+        }
+
+        private string LocationName(WorldLocationId id)
+        {
+            var key = "content.location." + id.Value;
+            return RussianTextCatalog.TryGet(key, out var value) ? value : T("ui.location.unknown");
+        }
+
+        private string LocationName(string id) => string.IsNullOrWhiteSpace(id) ? T("common.none") :
+            LocationName(new WorldLocationId(id));
+
+        private static string SideName(CombatSideId side) => T(side.Value == "player" ? "ui.side.player" :
+            side.Value == "enemy" ? "ui.side.enemy" : "ui.side.neutral");
+
+        private static string ProfessionName(string professionId)
+        {
+            if (string.IsNullOrWhiteSpace(professionId)) return T("ui.character.unassigned");
+            return RussianTextCatalog.TryGet("content.profession." + professionId, out var value) ? value : T("ui.profession.other");
+        }
+
         private static VisualElement Panel(string name)
         {
             var value = new VisualElement { name = name };
@@ -1325,6 +1416,19 @@ namespace Game.Presentation.UI
             value.style.color = TextColor;
             value.style.paddingLeft = 12; value.style.paddingRight = 12;
             value.style.paddingTop = 10; value.style.paddingBottom = 10;
+        }
+
+        private static void StyleTextField(TextField field)
+        {
+            field.style.color = TextColor;
+            var input = field.Q<VisualElement>(TextField.textInputUssName);
+            if (input == null) return;
+            input.style.color = TextColor;
+            input.style.backgroundColor = HeaderColor;
+            input.style.borderLeftColor = AccentColor;
+            input.style.borderRightColor = AccentColor;
+            input.style.borderTopColor = AccentColor;
+            input.style.borderBottomColor = AccentColor;
         }
 
         private static Label HudLabel(float width)
@@ -1394,6 +1498,11 @@ namespace Game.Presentation.UI
             label.style.marginBottom = 3;
             parent.Add(label);
         }
+    }
+
+    internal sealed class PlayerFacingException : Exception
+    {
+        public PlayerFacingException(string message) : base(message) { }
     }
 
     internal static class GameplayUiContextExtensions

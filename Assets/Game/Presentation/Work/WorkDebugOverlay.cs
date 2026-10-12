@@ -9,6 +9,7 @@ using Game.Domain.Work;
 using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Resources;
 using Game.Simulation.Work;
 using UnityEngine;
@@ -303,25 +304,25 @@ namespace Game.Presentation.Work
             TryGetUiBlockingRect(out var panelRect);
             GUI.Box(panelRect, GUIContent.none);
             GUI.BeginGroup(panelRect);
-            GUI.Label(new Rect(8f, 8f, PanelWidth - 16f, 20f), $"U11 Work — selected NPCs: {SelectionCount}");
+            GUI.Label(new Rect(8f, 8f, PanelWidth - 16f, 20f), $"Работы U11 · выбрано жителей: {SelectionCount}");
             GUI.Label(new Rect(8f, 30f, PanelWidth - 16f, 20f), CurrentGroupId.HasValue
-                ? $"Group: {CurrentGroup().DisplayName} ({CurrentGroup().MemberCount})"
-                : "Group: none");
-            DrawCommandButton("Create from selection", WorkDebugCommand.CreateFromSelection);
-            DrawCommandButton("Select group", WorkDebugCommand.SelectGroup);
-            DrawCommandButton("Add selected", WorkDebugCommand.AddSelected);
-            DrawCommandButton("Remove selected", WorkDebugCommand.RemoveSelected);
-            GUI.Label(new Rect(8f, 106f, 150f, 22f), "Priority: " + priority);
-            DrawCommandButton("Cycle priority", WorkDebugCommand.CyclePriority);
-            DrawCommandButton("Assign group Move to demo point", WorkDebugCommand.AssignMove);
-            DrawCommandButton("Assign group Haul x1", WorkDebugCommand.AssignHaul);
-            DrawCommandButton("Cancel current group jobs", WorkDebugCommand.CancelJobs);
+                ? $"Группа: {CurrentGroup().DisplayName} ({CurrentGroup().MemberCount})"
+                : "Группа: нет");
+            DrawCommandButton("Создать из выбранных", WorkDebugCommand.CreateFromSelection);
+            DrawCommandButton("Выбрать группу", WorkDebugCommand.SelectGroup);
+            DrawCommandButton("Добавить выбранных", WorkDebugCommand.AddSelected);
+            DrawCommandButton("Убрать выбранных", WorkDebugCommand.RemoveSelected);
+            GUI.Label(new Rect(8f, 106f, 150f, 22f), "Приоритет: " + RussianTextCatalog.Enum(priority));
+            DrawCommandButton("Сменить приоритет", WorkDebugCommand.CyclePriority);
+            DrawCommandButton("Отправить группу к пробной точке", WorkDebugCommand.AssignMove);
+            DrawCommandButton("Перенести 1 единицу", WorkDebugCommand.AssignHaul);
+            DrawCommandButton("Отменить задания группы", WorkDebugCommand.CancelJobs);
 
             var jobY = 216f;
             foreach (var job in work.Jobs.OrderByDescending(x => x.Id.Value).Take(8))
             {
                 GUI.Label(new Rect(8f, jobY, PanelWidth - 16f, 20f),
-                    $"#{job.Id} {job.Type} {job.Priority} {job.Status} claim={job.ClaimState}");
+                    $"№{job.Id} · {RussianTextCatalog.Enum(job.Type)} · {RussianTextCatalog.Enum(job.Priority)} · {RussianTextCatalog.Enum(job.Status)} · резерв {RussianTextCatalog.Enum(job.ClaimState)}");
                 jobY += 20f;
             }
             GUI.EndGroup();

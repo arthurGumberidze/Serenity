@@ -2,6 +2,7 @@ using System;
 using Game.Domain.Time;
 using Game.Presentation.AI;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Time;
 using UnityEngine;
 
@@ -96,14 +97,14 @@ namespace Game.Presentation.Input
             GUI.Box(panelRect, GUIContent.none);
             GUI.BeginGroup(panelRect);
             var ticks = Clock.State.CalendarTicks;
-            GUI.Label(new Rect(8f, 6f, 414f, 20f),
-                $"Time: Year {GameCalendar.Year(ticks)}, day {GameCalendar.DayOfYear(ticks)}, " +
-                $"{GameCalendar.HourOfDay(ticks):00}:{GameCalendar.MinuteOfHour(ticks):00}");
-            GUI.Label(new Rect(8f, 27f, 190f, 20f), $"Speed: x{(int)Clock.Speed}   Paused: {Clock.IsPaused}");
-            if (GUI.Button(new Rect(202f, 25f, 68f, 23f), Clock.IsPaused ? "Resume" : "Pause")) TogglePause();
-            if (GUI.Button(new Rect(276f, 25f, 68f, 23f), "Slower")) StepSlower();
-            if (GUI.Button(new Rect(350f, 25f, 72f, 23f), "Faster")) StepFaster();
-            GUI.Label(new Rect(8f, 53f, 414f, 20f), "Space pause/resume | Minus slower | Equals/Plus faster | 1-9 work groups");
+            GUI.Label(new Rect(8f, 6f, 414f, 20f), RussianTextCatalog.Format("debug.time.date",
+                GameCalendar.Year(ticks), GameCalendar.DayOfYear(ticks), GameCalendar.HourOfDay(ticks), GameCalendar.MinuteOfHour(ticks)));
+            GUI.Label(new Rect(8f, 27f, 190f, 20f), RussianTextCatalog.Format("debug.time.speed", (int)Clock.Speed,
+                Clock.IsPaused ? RussianTextCatalog.Get("common.yes") : RussianTextCatalog.Get("common.no")));
+            if (GUI.Button(new Rect(202f, 25f, 68f, 23f), RussianTextCatalog.Get(Clock.IsPaused ? "debug.time.resume" : "debug.time.pause"))) TogglePause();
+            if (GUI.Button(new Rect(276f, 25f, 68f, 23f), RussianTextCatalog.Get("debug.time.slower"))) StepSlower();
+            if (GUI.Button(new Rect(350f, 25f, 72f, 23f), RussianTextCatalog.Get("debug.time.faster"))) StepFaster();
+            GUI.Label(new Rect(8f, 53f, 414f, 20f), RussianTextCatalog.Get("debug.time.help"));
             GUI.EndGroup();
         }
     }

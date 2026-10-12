@@ -16,6 +16,7 @@ using Game.Simulation.Work;
 using Game.Simulation.Combat;
 using Unity.Cinemachine;
 using UnityEngine;
+using Game.Presentation.Localization;
 
 namespace Game.Presentation.Control
 {
@@ -94,8 +95,8 @@ namespace Game.Presentation.Control
             if (selection.SelectedCharacterIds.Count != 1)
             {
                 LastEntryFailure = DirectControlEligibilityFailure.NotPlayerControlledRole;
-                LastEntryMessage = selection.SelectedCharacterIds.Count == 0
-                    ? "Select exactly one eligible character." : "Multiple selection cannot enter third-person control.";
+                LastEntryMessage = RussianTextCatalog.Get(selection.SelectedCharacterIds.Count == 0
+                    ? "debug.tps.select_one" : "debug.tps.multiple");
                 return new DirectControlEligibility(LastEntryFailure);
             }
             return TryEnter(selection.SelectedCharacterIds[0]);
@@ -106,7 +107,7 @@ namespace Game.Presentation.Control
             if (buildingPlacement.IsActive) buildingPlacement.CancelPlacement();
             var result = control.TryEnterThirdPerson(characterId);
             LastEntryFailure = result.Failure;
-            LastEntryMessage = result.IsEligible ? string.Empty : result.Failure.ToString();
+            LastEntryMessage = result.IsEligible ? string.Empty : EligibilityReason(result.Failure);
             return result;
         }
 
@@ -237,26 +238,30 @@ namespace Game.Presentation.Control
             if (!initialized || !ShowLegacyOverlay) return;
             GUI.Box(overlayRect, GUIContent.none);
             var mode = control.State.Mode;
-            GUI.Label(new Rect(18f, overlayRect.y + 8f, 365f, 22f), "Mode: " + mode);
+            GUI.Label(new Rect(18f, overlayRect.y + 8f, 365f, 22f), RussianTextCatalog.Format("debug.tps.mode", RussianTextCatalog.Enum(mode)));
             if (mode == PlayerControlMode.ThirdPerson && activeCharacterId.HasValue &&
                 presentations.TryGet(activeCharacterId.Value, out var presenter))
             {
                 var capability = capabilities.GetCapabilities(activeCharacterId.Value);
                 GUI.Label(new Rect(18f, overlayRect.y + 30f, 365f, 22f),
-                    $"Controlled: {presenter.Character.Name} [{activeCharacterId.Value.ToString().Substring(0, 8)}]");
+                    RussianTextCatalog.Format("debug.tps.controlled", presenter.Character.Name, activeCharacterId.Value.ToString().Substring(0, 8)));
                 GUI.Label(new Rect(18f, overlayRect.y + 52f, 365f, 22f),
-                    $"Alive={presenter.Character.LifeState} incapacitated={capability.IsIncapacitated} owner={MovementAuthority}");
+                    RussianTextCatalog.Format("debug.tps.state", RussianTextCatalog.Enum(presenter.Character.LifeState),
+                        capability.IsIncapacitated ? RussianTextCatalog.Get("common.yes") : RussianTextCatalog.Get("common.no"), RussianTextCatalog.Enum(MovementAuthority)));
                 var unit = military != null && military.TryGetForMember(activeCharacterId.Value, out var value)
-                    ? $"unit={value.Id} captain={value.CaptainId == activeCharacterId}" : "unit=none";
+                    ? RussianTextCatalog.Format("debug.tps.unit", value.Id,
+                        value.CaptainId == activeCharacterId ? RussianTextCatalog.Get("common.yes") : RussianTextCatalog.Get("common.no"))
+                    : RussianTextCatalog.Get("debug.tps.no_unit");
                 GUI.Label(new Rect(18f, overlayRect.y + 74f, 365f, 22f), unit);
                 var order = work != null && work.TryGetAssigned(activeCharacterId.Value, out var job)
-                    ? $"suspended order={job.Type}/{job.Status}" : "suspended order=none";
+                    ? RussianTextCatalog.Format("debug.tps.order", RussianTextCatalog.Enum(job.Type), RussianTextCatalog.Enum(job.Status))
+                    : RussianTextCatalog.Get("debug.tps.no_order");
                 GUI.Label(new Rect(18f, overlayRect.y + 96f, 365f, 22f), order);
-                GUI.Label(new Rect(18f, overlayRect.y + 118f, 365f, 22f), "WASD move  Shift run  Mouse look  LMB attack  T/Esc RTS");
+                GUI.Label(new Rect(18f, overlayRect.y + 118f, 365f, 22f), RussianTextCatalog.Get("debug.tps.help"));
             }
             else
             {
-                GUI.Label(new Rect(18f, overlayRect.y + 30f, 365f, 22f), "Select one monarch, current heir, or player captain; press T.");
+                GUI.Label(new Rect(18f, overlayRect.y + 30f, 365f, 22f), RussianTextCatalog.Get("debug.tps.select"));
                 if (!string.IsNullOrEmpty(LastEntryMessage))
                     GUI.Label(new Rect(18f, overlayRect.y + 52f, 365f, 22f), LastEntryMessage);
             }
@@ -275,6 +280,19 @@ namespace Game.Presentation.Control
             raycaster?.UnregisterUiBlocker(this);
             directMovement?.EndDirectControl();
             SetCursor(false);
+        }
+
+        private static string EligibilityReason(DirectControlEligibilityFailure reason)
+        {
+            switch (reason)
+            {
+                case DirectControlEligibilityFailure.Dead: return RussianTextCatalog.Get("ui.tps.dead");
+                case DirectControlEligibilityFailure.Child: return RussianTextCatalog.Get("ui.tps.child");
+                case DirectControlEligibilityFailure.Incapacitated: return RussianTextCatalog.Get("ui.tps.incapacitated");
+                case DirectControlEligibilityFailure.AggregateMilitaryUnit: return RussianTextCatalog.Get("ui.tps.aggregate");
+                case DirectControlEligibilityFailure.NotPlayerControlledRole: return RussianTextCatalog.Get("ui.tps.role");
+                default: return RussianTextCatalog.Get("ui.status.command_failed");
+            }
         }
 
         private static void SetCursor(bool thirdPerson)

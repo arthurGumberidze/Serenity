@@ -12,6 +12,17 @@ Latest U29 review (2026-10-12): complete `offline-20261011-194641` remains FAIL;
 
 Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a separate local 1000-Character sustained capture (180+900 seconds plus fresh build), with calibrated allocation counters, frame-aligned callback sections, available native profiler markers and slow/healthy comparisons. Detailed observation is opt-in and cannot complete U29. The long diagnostic is left for the user to run independently; no gameplay semantics or gate thresholds are changed.
 
+| Product ID | Status | Task | Depends on | Definition of Done |
+|---|---|---|---|---|
+| P1 | DONE | Русский интерфейс и понятные действия | U27,U28,U30A | Все обычные и developer игровые поверхности русские; стабильные ключи/fallback; понятные причины отказа; 1280×720 + 125%; тесты, build и Player smoke. |
+| P2 | IN_PROGRESS | Главное меню и начало партии | P1 | Чистый запуск даёт Continue/New Game/Load/Settings/Exit на русском; повреждённые сохранения объяснены; cancel/back и первая группа настроек работают. |
+| P3 | TODO | Эталонная сцена и арт-производство | P2 | Принят согласованный вид лагеря и двух персонажей в настоящем Player. |
+| P4 | TODO | Создание и внешность героя | P3 | Герой/династия/AppearanceState сохраняются и одинаково отображаются после переходов и Save/Load. |
+| P5 | TODO | Обитаемый регион | P3,P4 | Связный читаемый Stone Age регион без обязательных кубов. |
+| P6 | TODO | Понятный первый час | P2,P5 | Новый игрок проходит начальный цикл и понимает причины остановки действий. |
+| P7 | TODO | Полный каменный век | P4,P5,P6 | Связный маршрут до войны/наследования, включая утверждённое занятие пустого поселения. |
+| P8 | TODO | Масштаб и выпуск | P7,U29,U30,U31 | Финальная матрица/soak/gates и отдельная визуальная/UX приёмка. |
+
 | ID | Status | Task | Depends on | Phase | Definition of Done |
 |---|---|---|---|---|---|
 | U00 | DONE | Среда, Unity-проект и Git | — | MVP | Проект открывается без ошибок, создаёт Windows Development build, первый commit создан. |

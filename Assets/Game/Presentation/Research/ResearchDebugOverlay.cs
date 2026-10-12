@@ -5,6 +5,7 @@ using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.Research;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Research;
 using UnityEngine;
 
@@ -68,46 +69,46 @@ namespace Game.Presentation.Research
         {
             if (research == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(PanelRect, GUI.skin.box);
-            GUILayout.Label("Research - Stone Age");
+            GUILayout.Label("Исследования каменного века");
             var active = research.ActiveProject;
             var workerStatus = CaptureWorkerStatus();
-            if (active == null) GUILayout.Label("Active technology: none");
+            if (active == null) GUILayout.Label("Текущее исследование: нет");
             else
             {
                 var remaining = active.RequiredWorkTicks - active.AccumulatedWorkTicks;
                 var totalRate = workerStatus.ActiveWorkerIds.Sum(id => research.GetRatePerThousand(id));
                 var etaTicks = totalRate <= 0 ? -1 : (long)Math.Ceiling(remaining * 1000d / totalRate);
-                GUILayout.Label($"Active technology: {active.TechnologyId}  Progress: {active.Progress:P1}");
-                GUILayout.Label($"Rate: {totalRate / 1000d:0.##}x  ETA ticks: {(etaTicks < 0 ? "n/a" : etaTicks.ToString())}");
+                GUILayout.Label($"Изучается: {RussianTextCatalog.Content("technology", active.TechnologyId.ToString())} · прогресс {RussianTextCatalog.Percent(active.Progress)}");
+                GUILayout.Label($"Скорость: {totalRate / 1000d:0.##}x · осталось тактов: {(etaTicks < 0 ? "неизвестно" : etaTicks.ToString())}");
             }
-            GUILayout.Label($"Assigned researchers: {workerStatus.AssignedCount}   Active researchers now: {workerStatus.ActiveCount}");
+            GUILayout.Label($"Исследователи: назначено {workerStatus.AssignedCount} · сейчас работают {workerStatus.ActiveCount}");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Assign selected to Research")) AssignSelected();
-            if (GUILayout.Button("Remove selected from Research")) RemoveSelected();
+            if (GUILayout.Button("Назначить выбранных")) AssignSelected();
+            if (GUILayout.Button("Снять выбранных")) RemoveSelected();
             GUILayout.EndHorizontal();
             if (active != null && workerStatus.ActiveCount == 0)
-                GUILayout.Label("Progress paused: no assigned researcher is actively Researching.");
+                GUILayout.Label("Прогресс остановлен: никто из назначенных исследователей сейчас не работает.");
             foreach (var workerId in workerStatus.AssignedWorkerIds.Take(3))
-                GUILayout.Label("Assigned: " + WorkerLabel(workerId));
+                GUILayout.Label("Назначен: " + WorkerLabel(workerId));
             var available = research.AvailableTechnologies;
             if (available.Count > 0)
             {
                 selectedAvailableIndex = Mathf.Clamp(selectedAvailableIndex, 0, available.Count - 1);
                 var selected = available[selectedAvailableIndex];
-                GUILayout.Label($"Available: {selected.DisplayName} [{selected.Id}]");
-                GUILayout.Label("Unlocks: " + string.Join(", ", selected.Unlocks.Select(x => x.ContentId)));
+                GUILayout.Label($"Доступно: {RussianTextCatalog.Content("technology", selected.Id.ToString())} [{selected.Id}]");
+                GUILayout.Label("Открывает: " + string.Join(", ", selected.Unlocks.Select(UnlockLabel)));
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Next")) SelectNextAvailable();
-                if (GUILayout.Button("Start") && active == null) StartSelected();
-                if (GUILayout.Button("Cancel") && active != null) research.Cancel();
+                if (GUILayout.Button("Следующее")) SelectNextAvailable();
+                if (GUILayout.Button("Начать") && active == null) StartSelected();
+                if (GUILayout.Button("Отменить") && active != null) research.Cancel();
                 GUILayout.EndHorizontal();
             }
-            else GUILayout.Label("Available: none");
+            else GUILayout.Label("Доступно: нет");
             var locked = research.Catalog.All.Count(x => !research.IsCompleted(x.Id) && !research.IsAvailable(x.Id) &&
                 (active == null || active.TechnologyId != x.Id));
-            GUILayout.Label($"Completed: {research.CompletedTechnologies.Count}/{research.Catalog.All.Count}  Locked: {locked}");
-            GUILayout.Label("Prerequisites: " + (available.Count == 0 ? "-" :
-                string.Join(", ", available[selectedAvailableIndex].Prerequisites.Select(x => x.ToString()))));
+            GUILayout.Label($"Завершено: {research.CompletedTechnologies.Count}/{research.Catalog.All.Count} · закрыто: {locked}");
+            GUILayout.Label("Требования: " + (available.Count == 0 ? "нет" :
+                string.Join(", ", available[selectedAvailableIndex].Prerequisites.Select(x => RussianTextCatalog.Content("technology", x.ToString())))));
             GUILayout.EndArea();
         }
 
@@ -118,6 +119,19 @@ namespace Game.Presentation.Research
             return characters.TryGet(workerId, out var character)
                 ? $"{character.Name.DisplayName} [{shortId}]"
                 : shortId;
+        }
+
+        private static string UnlockLabel(TechnologyUnlock unlock)
+        {
+            switch (unlock.Kind)
+            {
+                case TechnologyUnlockKind.Building:
+                    return RussianTextCatalog.Content("building", unlock.ContentId);
+                case TechnologyUnlockKind.ProductionRecipe:
+                    return RussianTextCatalog.Content("recipe", unlock.ContentId);
+                default:
+                    return RussianTextCatalog.Get("ui.research.capability");
+            }
         }
     }
 }

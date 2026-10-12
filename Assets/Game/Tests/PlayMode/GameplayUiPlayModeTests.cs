@@ -9,6 +9,7 @@ using Game.Domain.Military;
 using Game.Domain.Work;
 using Game.Presentation.AI;
 using Game.Presentation.UI;
+using Game.Presentation.Localization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -73,15 +74,15 @@ namespace Game.Tests.PlayMode
             ui.RefreshNow();
             var researchText = string.Join("\n", ui.RootVisual.Q("main-panel").Query<Label>().ToList()
                 .Select(x => x.text));
-            Assert.That(researchText, Does.Contain("Stone Age research"));
-            Assert.That(researchText, Does.Contain(root.Technologies.All.First().DisplayName));
+            Assert.That(researchText, Does.Contain(RussianTextCatalog.Get("ui.research.title")));
+            Assert.That(researchText, Does.Contain(RussianTextCatalog.Content("technology", root.Technologies.All.First().Id.ToString())));
 
             ui.SetPanel(GameplayPanel.Build);
             ui.RefreshNow();
             var buildText = string.Join("\n", ui.RootVisual.Q("main-panel").Query<Label>().ToList()
                 .Select(x => x.text));
-            Assert.That(buildText, Does.Contain("Build menu"));
-            Assert.That(buildText, Does.Contain("Requires").Or.Contain("current era"));
+            Assert.That(buildText, Does.Contain(RussianTextCatalog.Get("ui.build.title")));
+            Assert.That(buildText, Does.Contain("Нужно исследовать").Or.Contain("текущей эпохе"));
             yield return null;
         }
 
@@ -95,9 +96,9 @@ namespace Game.Tests.PlayMode
             root.GameplayUi.RefreshNow();
             var inspectorText = string.Join("\n", root.GameplayUi.RootVisual.Q("selection-inspector")
                 .Query<Label>().ToList().Select(x => x.text));
-            Assert.That(inspectorText, Does.Contain(root.MaleDemoCharacter.Name.DisplayName));
-            Assert.That(inspectorText, Does.Contain("Health:"));
-            Assert.That(inspectorText, Does.Contain("Work group:"));
+            Assert.That(inspectorText, Does.Contain(RussianTextCatalog.PersonName(root.MaleDemoCharacter.Name.DisplayName)));
+            Assert.That(inspectorText, Does.Contain("Состояние:"));
+            Assert.That(inspectorText, Does.Contain("Рабочая группа:"));
             Assert.That(inspectorText, Does.Not.Contain(root.MaleDemoCharacter.Id.ToString()));
 
             root.GameplayUi.SetDeveloperUiVisible(true);
@@ -147,7 +148,8 @@ namespace Game.Tests.PlayMode
             Submit(ButtonWithText(ui, "Assign selected"));
             Assert.That(root.Research.AssignedWorkers, Does.Contain(root.DemoPresenters[0].CharacterId));
             var technology = root.Research.AvailableTechnologies.First();
-            Submit(ButtonWithText(ui, "Start " + technology.DisplayName));
+            Submit(ButtonWithText(ui, RussianTextCatalog.Format("ui.research.start",
+                RussianTextCatalog.Content("technology", technology.Id.ToString()))));
             Assert.That(root.Research.ActiveProject.TechnologyId, Is.EqualTo(technology.Id));
 
             var researchTick = root.Research.LastProcessedTick;
@@ -161,7 +163,8 @@ namespace Game.Tests.PlayMode
                     var next = root.Research.AvailableTechnologies
                         .OrderByDescending(x => x.Unlocks.Any(unlock => unlock.Kind == Game.Domain.Research.TechnologyUnlockKind.Building))
                         .First();
-                    Submit(ButtonWithText(ui, "Start " + next.DisplayName));
+                    Submit(ButtonWithText(ui, RussianTextCatalog.Format("ui.research.start",
+                        RussianTextCatalog.Content("technology", next.Id.ToString()))));
                     active = root.Research.ActiveProject;
                 }
                 researchTick = checked(researchTick + active.RequiredWorkTicks * 10);
@@ -187,7 +190,7 @@ namespace Game.Tests.PlayMode
                 .First(x => root.Research.IsBuildingUnlocked(x.Id));
             ui.SetPanel(GameplayPanel.Build);
             Submit(ui.RootVisual.Q("main-panel").Query<Button>().ToList()
-                .First(x => x.text.StartsWith(unlockedBuilding.DisplayName)));
+                .First(x => x.text.StartsWith(RussianTextCatalog.Content("building", unlockedBuilding.Id.ToString()))));
             Assert.That(root.BuildingPlacementController.IsActive, Is.True);
             root.BuildingPlacementController.CancelPlacement();
 
@@ -235,9 +238,9 @@ namespace Game.Tests.PlayMode
             var route = root.GlobalMap.GetRoutes(active).First();
             var destination = route.From == active ? route.To : route.From;
             Submit(ui.RootVisual.Q("main-panel").Query<Button>().ToList()
-                .First(x => x.text.StartsWith(root.GlobalMap.GetLocation(destination).Name)));
+                .First(x => x.text.StartsWith(RussianTextCatalog.Content("location", destination.Value))));
             Submit(ui.RootVisual.Q("main-panel").Query<Button>().ToList()
-                .First(x => x.text.Contains("Player Unit")));
+                .First(x => x.text.Contains("Отряд игрока")));
             Submit(ButtonWithText(ui, "Travel to selected"));
             Assert.That(root.GlobalMap.Travels.Any(x => x.UnitId == unit.Id && x.Destination == destination), Is.True);
 
@@ -248,7 +251,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GlobalMap.Travels.Any(x => x.UnitId == unit.Id), Is.False);
             Assert.That(root.MilitaryUnits.Get(unit.Id).AbstractLocationId, Is.EqualTo(destination.ToString()));
             Submit(ui.RootVisual.Q("main-panel").Query<Button>().ToList()
-                .First(x => x.text.Contains(root.GlobalMap.GetLocation(active).Name)));
+                .First(x => x.text.Contains(RussianTextCatalog.Content("location", active.Value))));
             Submit(ButtonWithText(ui, "Enter selected location"));
             for (var i = 0; i < 20 && root.GlobalMapBridge.IsGlobalSceneLoaded; i++) yield return null;
             Assert.That(root.GlobalMap.Mode, Is.EqualTo(Game.Domain.World.GameWorldMode.Local));
@@ -256,7 +259,28 @@ namespace Game.Tests.PlayMode
         }
 
         private static Button ButtonWithText(GameplayUiController ui, string text) =>
-            ui.RootVisual.Query<Button>().ToList().First(x => x.text == text);
+            ui.RootVisual.Query<Button>().ToList().First(x => x.text == TranslateButton(text));
+
+        private static string TranslateButton(string text)
+        {
+            switch (text)
+            {
+                case "Assign selected": return RussianTextCatalog.Get("ui.research.assign");
+                case "Create from selected characters": return RussianTextCatalog.Get("ui.work.create");
+                case "Rename": return RussianTextCatalog.Get("ui.work.rename");
+                case "Move to center": return RussianTextCatalog.Get("ui.work.move_center");
+                case "Cancel open jobs": return RussianTextCatalog.Get("ui.work.cancel_jobs");
+                case "Haul available": return RussianTextCatalog.Get("ui.work.haul");
+                case "Create player unit from selected": return RussianTextCatalog.Get("ui.military.create");
+                case "Captain = selected": return RussianTextCatalog.Get("ui.military.captain_selected");
+                case "Enter TPS": return RussianTextCatalog.Get("ui.character.enter_tps");
+                case "Aggregate": return RussianTextCatalog.Get("ui.military.aggregate");
+                case "Open Global Map": return RussianTextCatalog.Get("ui.map.open");
+                case "Travel to selected": return RussianTextCatalog.Get("ui.map.travel");
+                case "Enter selected location": return RussianTextCatalog.Get("ui.map.enter_location");
+                default: return text;
+            }
+        }
 
         private static void Submit(Button button)
         {

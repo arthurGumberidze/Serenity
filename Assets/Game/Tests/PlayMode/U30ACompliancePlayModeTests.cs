@@ -11,6 +11,7 @@ using Game.Infrastructure;
 using Game.Simulation.Combat;
 using Game.Simulation.World;
 using Game.Presentation.UI;
+using Game.Presentation.Localization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -163,7 +164,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.CampaignProgress.State.VictoryTick, Is.EqualTo(victoryTick));
             root.GameplayUi.RefreshNow();
             Assert.That(string.Join("\n", root.GameplayUi.RootVisual.Query<Label>().ToList().Select(x => x.text)),
-                Does.Contain("Military victory"));
+                Does.Contain("СОПЕРНИК ПОБЕЖДЁН").Or.Contain("Военная победа"));
 
             root.PlayerSaves.Save(1);
             root.PlayerSaves.Load(1);

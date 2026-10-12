@@ -4,6 +4,7 @@ using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Research;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Research;
 using UnityEngine;
 
@@ -48,8 +49,8 @@ namespace Game.Presentation.Buildings
                 .OrderBy(id => id, StringComparer.Ordinal)
                 .ToArray();
             var reason = technologyIds.Length == 0
-                ? "not unlocked by current research catalog"
-                : "requires " + string.Join(" or ", technologyIds);
+                ? "не открывается текущим каталогом исследований"
+                : "требуется: " + string.Join(" или ", technologyIds.Select(id => RussianTextCatalog.Content("technology", id)));
             return new BuildingDebugOption(definition, false, reason);
         }
     }
@@ -143,15 +144,15 @@ namespace Game.Presentation.Buildings
             if (!TryGetUiBlockingRect(out var panelRect)) return;
             GUI.Box(panelRect, GUIContent.none);
             GUI.BeginGroup(panelRect);
-            GUI.Label(new Rect(8f, 7f, PanelWidth - 16f, 20f), "Buildings (B closes; R rotates; Esc/RMB cancels)");
+            GUI.Label(new Rect(8f, 7f, PanelWidth - 16f, 20f), "Постройки (B — закрыть · R — повернуть · Esc/ПКМ — отменить)");
             var options = Options;
             for (var i = 0; i < options.Count; i++)
             {
                 var option = options[i];
                 var y = 31f + i * 34f;
-                var label = option.IsAvailable ? "AVAILABLE" : "LOCKED - " + option.LockReason;
+                var label = option.IsAvailable ? "ДОСТУПНО" : "ЗАКРЫТО · " + option.LockReason;
                 GUI.enabled = option.IsAvailable;
-                if (GUI.Button(new Rect(8f, y, 154f, 26f), option.Definition.DisplayName))
+                if (GUI.Button(new Rect(8f, y, 154f, 26f), RussianTextCatalog.Content("building", option.Definition.Id.ToString())))
                     Select(option.Definition.Id);
                 GUI.enabled = true;
                 GUI.Label(new Rect(170f, y + 3f, PanelWidth - 178f, 22f),

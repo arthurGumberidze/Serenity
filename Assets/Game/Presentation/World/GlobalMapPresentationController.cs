@@ -7,6 +7,7 @@ using Game.Domain.World;
 using Game.Simulation.Combat;
 using Game.Simulation.Military;
 using Game.Simulation.World;
+using Game.Presentation.Localization;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -195,28 +196,31 @@ namespace Game.Presentation.World
         {
             if (map == null || !ShowDeveloperUi) return;
             GUILayout.BeginArea(new Rect(12, 12, 390, 860), GUI.skin.box);
-            GUILayout.Label("GLOBAL MAP  |  " + TimeSpan.FromTicks(currentTick()));
-            GUILayout.Label("Mode: " + map.Mode + "  Active: " + map.ActiveLocationId);
-            GUILayout.Label("Locations");
+            GUILayout.Label(RussianTextCatalog.Format("debug.map.title", TimeSpan.FromTicks(currentTick())));
+            GUILayout.Label(RussianTextCatalog.Format("debug.map.mode", RussianTextCatalog.Enum(map.Mode), LocationName(map.ActiveLocationId)));
+            GUILayout.Label(RussianTextCatalog.Get("debug.map.locations"));
             foreach (var location in map.Locations)
-                if (GUILayout.Button(location.Name + "  [" + location.Type + "]")) selectedLocation = location.Id;
-            GUILayout.Label("Aggregate military units");
+                if (GUILayout.Button(RussianTextCatalog.Format("debug.map.location", LocationName(location.Id), RussianTextCatalog.Enum(location.Type)))) selectedLocation = location.Id;
+            GUILayout.Label(RussianTextCatalog.Get("debug.map.units"));
             foreach (var unit in units.Units.Where(x => x.Representation == MilitaryUnitRepresentationMode.Aggregate))
             {
                 var summary = units.GetRosterSummary(unit.Id);
                 var travel = map.Travels.SingleOrDefault(x => x.UnitId == unit.Id);
-                var detail = travel == null ? unit.AbstractLocationId : travel.Origin + " -> " + travel.Destination +
-                    " ETA " + TimeSpan.FromTicks(Math.Max(0, travel.ArrivalTick - currentTick()));
-                if (GUILayout.Button(unit.Id + " " + unit.OwnerSideId + " combat " + summary.CombatCapable + "  " + detail))
+                var detail = travel == null ? RussianTextCatalog.Format("debug.map.stationed", LocationName(unit.AbstractLocationId)) :
+                    RussianTextCatalog.Format("debug.map.travelling", LocationName(travel.Origin), LocationName(travel.Destination),
+                        TimeSpan.FromTicks(Math.Max(0, travel.ArrivalTick - currentTick())));
+                if (GUILayout.Button(RussianTextCatalog.Format("debug.map.unit", unit.Id,
+                    unit.OwnerSideId.Value == "player" ? RussianTextCatalog.Get("ui.side.player") : RussianTextCatalog.Get("ui.side.enemy"),
+                    summary.CombatCapable, detail)))
                     selectedUnit = unit.Id;
             }
-            if (selectedLocation.HasValue) GUILayout.Label("Selected location: " + selectedLocation.Value);
-            if (selectedUnit.HasValue) GUILayout.Label("Selected unit: " + selectedUnit.Value);
+            if (selectedLocation.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_location", LocationName(selectedLocation.Value)));
+            if (selectedUnit.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_unit", selectedUnit.Value));
             GUI.enabled = selectedLocation.HasValue && selectedUnit.HasValue;
-            if (GUILayout.Button("Move selected unit"))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.move")))
                 map.IssueTravelOrder(selectedUnit.Value, selectedLocation.Value, currentTick());
             GUI.enabled = selectedLocation.HasValue;
-            if (GUILayout.Button("Enter selected settlement"))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter")))
             {
                 var result = transitions.EnterLocation(selectedLocation.Value, currentTick());
                 if (result.Changed) localEntered?.Invoke(result);
@@ -225,7 +229,7 @@ namespace Game.Presentation.World
             var activeBattle = battles.Battles.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active &&
                 x.Mode == BattleMode.Abstract);
             GUI.enabled = activeBattle != null;
-            if (GUILayout.Button("Enter active battle"))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter_battle")))
             {
                 var result = transitions.EnterBattle(activeBattle.BattleId, currentTick());
                 if (result.Changed) localEntered?.Invoke(result);
@@ -236,6 +240,12 @@ namespace Game.Presentation.World
 
         private static Vector3 Position(WorldLocationState location, float y) =>
             new Vector3(location.MapX, y, location.MapY);
+
+        private static string LocationName(WorldLocationId id) =>
+            RussianTextCatalog.TryGet("content.location." + id.Value, out var value) ? value : RussianTextCatalog.Get("ui.location.unknown");
+
+        private static string LocationName(string id) => string.IsNullOrWhiteSpace(id)
+            ? RussianTextCatalog.Get("common.none") : LocationName(new WorldLocationId(id));
 
         private static void SetColor(GameObject target, Color color)
         {

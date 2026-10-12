@@ -4,6 +4,7 @@ using System.Linq;
 using Game.Domain;
 using Game.Domain.Time;
 using Game.Presentation.UI;
+using Game.Presentation.Localization;
 using Game.Simulation;
 
 namespace Game.Infrastructure
@@ -32,15 +33,16 @@ namespace Game.Infrastructure
             {
                 if (!metadata.TryGetValue(SlotId(index), out var slot))
                 {
-                    result.Add(new GameplaySaveSlotInfo(index, "Slot " + index, false, false, string.Empty));
+                    result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), false, false, string.Empty));
                     continue;
                 }
                 var detail = slot.IsCorrupt || !slot.CalendarTicks.HasValue
-                    ? "Unavailable or corrupt"
-                    : "Year " + GameCalendar.Year(slot.CalendarTicks.Value) + ", day " +
-                      GameCalendar.DayOfYear(slot.CalendarTicks.Value) + " | " +
-                      (slot.Mode?.ToString() ?? "Local") + " | " + slot.LastWriteUtc.ToLocalTime().ToString("g");
-                result.Add(new GameplaySaveSlotInfo(index, "Slot " + index, true, slot.IsCorrupt, detail));
+                    ? RussianTextCatalog.Get("ui.save.slot_unavailable")
+                    : RussianTextCatalog.Format("ui.save.slot_detail", GameCalendar.Year(slot.CalendarTicks.Value),
+                      GameCalendar.DayOfYear(slot.CalendarTicks.Value),
+                      slot.Mode.HasValue ? RussianTextCatalog.Enum(slot.Mode.Value) : RussianTextCatalog.Get("ui.hud.mode.local"),
+                      slot.LastWriteUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
+                result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), true, slot.IsCorrupt, detail));
             }
             return result;
         }

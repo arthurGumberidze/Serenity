@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Game.Domain.World;
 using Game.Presentation.World;
+using Game.Presentation.Localization;
 using Game.Simulation.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -125,7 +126,7 @@ namespace Game.Infrastructure
         {
             if (!developerUiVisible || root == null || root.GlobalMap == null ||
                 root.GlobalMap.Mode != GameWorldMode.Local || busy) return;
-            if (GUI.Button(new Rect(Screen.width - 190, 12, 178, 34), "Open Global Map"))
+            if (GUI.Button(new Rect(Screen.width - 190, 12, 178, 34), RussianTextCatalog.Get("debug.open_global_map")))
                 RequestEnterGlobal();
         }
 

@@ -5,6 +5,7 @@ using Game.Domain.Characters;
 using Game.Domain.Combat;
 using Game.Domain.Health;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Combat;
 using Game.Simulation.Health;
 using UnityEngine;
@@ -24,7 +25,7 @@ namespace Game.Presentation.Combat
         private BattleResolutionService battles;
         private Func<long> calendarTick;
         private Action advanceAbstract;
-        private string message = "Start demo battle or RMB a hostile character";
+        private string message = "Начните демонстрационный бой или нажмите ПКМ на враждебном персонаже";
 
         public void Initialize(CombatService combatService, CharacterRegistry characterRegistry,
             HealthAndFamilyService healthService, SelectionProbe selectionProbe,
@@ -59,19 +60,19 @@ namespace Game.Presentation.Combat
         {
             if (combat == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(GetPanelRect(), GUI.skin.box);
-            GUILayout.Label("Tactical Combat (U20 debug)");
+            GUILayout.Label("Тактический бой (отладка U20)");
             var encounter = combat.Encounters.OrderByDescending(x => x.StartCalendarTick).FirstOrDefault();
             if (encounter == null)
             {
-                GUILayout.Label("Encounter: none");
+                GUILayout.Label("Сражение: нет");
             }
             else
             {
-                GUILayout.Label($"Battle {Short(encounter.BattleId)} | {encounter.Mode} | {encounter.Status} | {encounter.Outcome}");
-                GUILayout.Label($"Tick {encounter.LastProcessedCalendarTick} | units {Short(encounter.SideAUnitId)} vs {Short(encounter.SideBUnitId)}");
+                GUILayout.Label($"Сражение {Short(encounter.BattleId)} · {RussianTextCatalog.Enum(encounter.Mode)} · {RussianTextCatalog.Enum(encounter.Status)} · {RussianTextCatalog.Enum(encounter.Outcome)}");
+                GUILayout.Label($"Такт {encounter.LastProcessedCalendarTick} · отряды {Short(encounter.SideAUnitId)} против {Short(encounter.SideBUnitId)}");
                 GUILayout.Label($"{encounter.SideA}: {Counts(encounter, encounter.SideA)}");
                 GUILayout.Label($"{encounter.SideB}: {Counts(encounter, encounter.SideB)}");
-                GUILayout.Label($"Attacks: {encounter.AttackHistory.Count} | hash {combat.ComputeStateHash():X16}");
+                GUILayout.Label($"Атаки: {encounter.AttackHistory.Count} · хеш {combat.ComputeStateHash():X16}");
             }
 
             if (selection.SelectedCharacterId.HasValue &&
@@ -82,33 +83,33 @@ namespace Game.Presentation.Combat
                 var conditions = health.Conditions.Where(x => x.TargetId == selected.Id &&
                     x.State != HealthConditionState.Recovered).Select(x => x.DefinitionId.ToString()).ToArray();
                 GUILayout.Space(4f);
-                GUILayout.Label($"Selected: {selected.Name.DisplayName} | {combatant.SideId} | {combatant.State}");
-                GUILayout.Label("Target: " + (combatant.TargetId.HasValue ? Short(combatant.TargetId.Value) : "none"));
-                GUILayout.Label($"Weapon {combatant.WeaponId} | atk {stats.AttackPower} def {stats.Defense} range {stats.RangeMetres:0.0}m");
-                GUILayout.Label($"Morale {combatant.Morale}/1000 | attacks {combatant.AttackSequence} | cooldown tick {combatant.NextAttackTick}");
-                GUILayout.Label("Recent: " + (string.IsNullOrEmpty(combatant.RecentInjury) ? "none" : combatant.RecentInjury));
-                GUILayout.Label("Health: " + (conditions.Length == 0 ? "healthy" : string.Join(", ", conditions)));
+                GUILayout.Label($"Выбран: {selected.Name.DisplayName} · {combatant.SideId} · {RussianTextCatalog.Enum(combatant.State)}");
+                GUILayout.Label("Цель: " + (combatant.TargetId.HasValue ? Short(combatant.TargetId.Value) : "нет"));
+                GUILayout.Label($"Оружие {RussianTextCatalog.Content("weapon", combatant.WeaponId.ToString())} · атака {stats.AttackPower} · защита {stats.Defense} · дальность {stats.RangeMetres:0.0} м");
+                GUILayout.Label($"Боевой дух {combatant.Morale}/1000 · атак {combatant.AttackSequence} · перезарядка до такта {combatant.NextAttackTick}");
+                GUILayout.Label("Недавняя травма: " + (string.IsNullOrEmpty(combatant.RecentInjury) ? "нет" : combatant.RecentInjury));
+                GUILayout.Label("Здоровье: " + (conditions.Length == 0 ? "здоров" : string.Join(", ", conditions.Select(x => RussianTextCatalog.Content("condition", x)))));
             }
-            else GUILayout.Label("Selected combatant: none");
+            else GUILayout.Label("Выбранный боец: нет");
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Spawn/start demo"))
+            if (GUILayout.Button("Создать демонстрационный бой"))
             {
-                try { startDemo?.Invoke(); message = "Demo battle started"; }
-                catch (Exception exception) { message = exception.Message; }
+                try { startDemo?.Invoke(); message = "Демонстрационный бой начат"; }
+                catch (Exception exception) { Debug.LogException(exception); message = RussianTextCatalog.Get("ui.status.internal_error"); }
             }
-            if (GUILayout.Button("Stop active"))
+            if (GUILayout.Button("Остановить активный бой"))
             {
                 var active = combat.Encounters.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active);
-                message = active != null && combat.CancelEncounter(active.EncounterId) ? "Encounter cancelled" : "No active encounter";
+                message = active != null && combat.CancelEncounter(active.EncounterId) ? "Сражение отменено" : "Активного сражения нет";
             }
             GUILayout.EndHorizontal();
             if (battles != null && encounter != null && encounter.Status == CombatEncounterStatus.Active)
             {
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("To Abstract")) Transition(encounter.BattleId, BattleMode.Abstract);
-                if (GUILayout.Button("To Physical")) Transition(encounter.BattleId, BattleMode.Physical);
-                if (encounter.Mode == BattleMode.Abstract && GUILayout.Button("Advance")) advanceAbstract?.Invoke();
+                if (GUILayout.Button("В автоматический режим")) Transition(encounter.BattleId, BattleMode.Abstract);
+                if (GUILayout.Button("На местность")) Transition(encounter.BattleId, BattleMode.Physical);
+                if (encounter.Mode == BattleMode.Abstract && GUILayout.Button("Продвинуть")) advanceAbstract?.Invoke();
                 GUILayout.EndHorizontal();
             }
             GUILayout.Label(message);
@@ -118,16 +119,15 @@ namespace Game.Presentation.Combat
         private void Transition(StableEntityId battleId, BattleMode mode)
         {
             var result = battles.Transition(battleId, mode, calendarTick == null ? 0 : calendarTick());
-            message = string.IsNullOrEmpty(result.Message) ? result.Status.ToString() :
-                result.Status + ": " + result.Message;
+            message = RussianTextCatalog.Enum(result.Status);
         }
 
         private static string Counts(CombatEncounterState encounter, CombatSideId side)
         {
             var values = encounter.Combatants.Where(x => x.SideId == side).ToArray();
-            return $"{values.Length} total, {values.Count(x => x.State == CombatantState.Fighting || x.State == CombatantState.Approaching || x.State == CombatantState.Attacking)} fighting, " +
-                   $"{values.Count(x => x.State == CombatantState.Incapacitated)} incap, {values.Count(x => x.State == CombatantState.Dead)} dead, " +
-                   $"{values.Count(x => x.State == CombatantState.Retreating || x.State == CombatantState.Disengaged)} retreated";
+            return $"всего {values.Length}, в бою {values.Count(x => x.State == CombatantState.Fighting || x.State == CombatantState.Approaching || x.State == CombatantState.Attacking)}, " +
+                   $"недееспособны {values.Count(x => x.State == CombatantState.Incapacitated)}, погибли {values.Count(x => x.State == CombatantState.Dead)}, " +
+                   $"отступили {values.Count(x => x.State == CombatantState.Retreating || x.State == CombatantState.Disengaged)}";
         }
 
         private static Rect GetPanelRect() => new Rect(Mathf.Max(850f, Screen.width - 750f), 246f, PanelWidth, PanelHeight);
@@ -138,6 +138,6 @@ namespace Game.Presentation.Combat
         }
 
         private static string Short(Game.Domain.Military.MilitaryUnitId? value) =>
-            value.HasValue ? Short(value.Value.Value) : "none";
+            value.HasValue ? Short(value.Value.Value) : "нет";
     }
 }

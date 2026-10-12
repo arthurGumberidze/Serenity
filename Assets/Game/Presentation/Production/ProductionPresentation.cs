@@ -2,6 +2,7 @@ using System;
 using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Production;
 using UnityEngine;
 
@@ -74,21 +75,22 @@ namespace Game.Presentation.Production
         {
             if (production == null || resources == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(PanelRect, GUI.skin.box);
-            GUILayout.Label("Production (canonical total / target / produced)");
+            GUILayout.Label(RussianTextCatalog.Get("debug.production.title"));
             foreach (var id in Tracked)
             {
                 var definition = resources.Get(id);
-                GUILayout.Label($"{definition.DisplayName}: {production.GetCanonicalTotal(id)} / " +
-                    $"{production.GetTarget(id)} / {production.GetProducedTotal(id)}");
+                GUILayout.Label(RussianTextCatalog.Format("debug.production.resource", RussianTextCatalog.Content("resource", id.ToString()),
+                    production.GetCanonicalTotal(id), production.GetTarget(id), production.GetProducedTotal(id)));
             }
             var available = 0;
             var depleted = 0;
             foreach (var site in production.Sites)
                 if (site.IsDepleted) depleted++; else if (site.IsWorkAvailable) available++;
-            GUILayout.Label($"Jobs: {production.ActiveTasks.Count}  Sources: {available} available / {depleted} depleted");
-            GUILayout.Label($"Food consumed: {production.Food.TotalConsumed}  shortage: {production.Food.TotalShortage} " +
-                $"({(production.Food.IsShortage ? "SHORT" : "ok")})");
-            GUILayout.Label($"Production tick: {production.LastCalendarTick}  hash: {production.ComputeStateHash():X16}");
+            GUILayout.Label(RussianTextCatalog.Format("debug.production.jobs", production.ActiveTasks.Count, available, depleted));
+            GUILayout.Label(RussianTextCatalog.Format("debug.production.food", production.Food.TotalConsumed, production.Food.TotalShortage,
+                RussianTextCatalog.Get(production.Food.IsShortage ? "debug.production.short" : "debug.production.ok")));
+            GUILayout.Label(RussianTextCatalog.Format("debug.production.tick", production.LastCalendarTick,
+                production.ComputeStateHash().ToString("X16")));
             GUILayout.EndArea();
         }
     }

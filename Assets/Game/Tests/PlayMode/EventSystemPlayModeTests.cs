@@ -6,6 +6,7 @@ using System.Reflection;
 using Game.Domain.Events;
 using Game.Infrastructure;
 using Game.Presentation.UI;
+using Game.Presentation.Localization;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -50,7 +51,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.RootVisual.Q<Button>("nav-events"), Is.Not.Null);
             root.GameplayUi.SetPanel(GameplayPanel.Events);
             root.GameplayUi.RefreshNow();
-            Assert.That(PanelText(root.GameplayUi), Does.Contain("Events"));
+            Assert.That(PanelText(root.GameplayUi), Does.Contain(RussianTextCatalog.Get("ui.events.title")));
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(200, 200)), Is.True);
             yield return null;
         }
@@ -66,15 +67,15 @@ namespace Game.Tests.PlayMode
             root.GameplayUi.RefreshNow();
             var definition = root.Events.Catalog.Get(pending.DefinitionId);
             var node = definition.Nodes.Single(x => x.Id == pending.CurrentNodeId);
-            Assert.That(PanelText(root.GameplayUi), Does.Contain(node.Title));
+            Assert.That(PanelText(root.GameplayUi), Does.Contain(RussianTextCatalog.EventTitle(pending.DefinitionId.ToString(), pending.CurrentNodeId.ToString())));
             Submit(root.GameplayUi.RootVisual.Q("main-panel").Query<Button>().ToList()
-                .First(x => node.Choices.Any(choice => choice.Label == x.text)));
+                .First(x => node.Choices.Any(choice => RussianTextCatalog.EventChoice(pending.DefinitionId.ToString(), pending.CurrentNodeId.ToString(), choice.Id.ToString()) == x.text)));
             Assert.That(root.HealthFamily.Events.Count, Is.GreaterThanOrEqualTo(beforeU18));
             Assert.That(root.Events.ActiveInstances.Any(x => x.InstanceId == pending.InstanceId) ||
                         root.Events.History.Any(x => x.InstanceId == pending.InstanceId), Is.True);
             root.GameplayUi.RefreshNow();
-            Assert.That(root.GameplayUi.Notifications.Any(x => x.Contains("event", StringComparison.OrdinalIgnoreCase) ||
-                x.Contains("resolved", StringComparison.OrdinalIgnoreCase)), Is.True);
+            Assert.That(root.GameplayUi.Notifications.Any(x => x.Contains("событ", StringComparison.OrdinalIgnoreCase) ||
+                x.Contains("заверш", StringComparison.OrdinalIgnoreCase)), Is.True);
             yield return null;
         }
 

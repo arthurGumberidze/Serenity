@@ -4,6 +4,7 @@ using Game.Domain;
 using Game.Domain.Characters;
 using Game.Domain.Health;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
 using Game.Simulation.Time;
@@ -21,7 +22,7 @@ namespace Game.Presentation.Health
         private SelectionProbe selection;
         private GameClock clock;
         private WorldPointerRaycaster raycaster;
-        private string message = "Select a character";
+        private string message = "Выберите персонажа";
 
         public void Initialize(HealthAndFamilyService healthFamily, CharacterRegistry registry,
             FamilyTreeQuery familyQuery, SelectionProbe selectionProbe, GameClock gameClock,
@@ -50,7 +51,7 @@ namespace Game.Presentation.Health
         {
             if (service == null || (!Application.isEditor && !Debug.isDebugBuild)) return;
             GUILayout.BeginArea(GetPanelRect(), GUI.skin.box);
-            GUILayout.Label("Character Health / Family (U18 debug)");
+            GUILayout.Label("Здоровье и семья персонажа (отладка U18)");
             if (!selection.SelectedCharacterId.HasValue ||
                 !characters.TryGet(selection.SelectedCharacterId.Value, out var selected))
             {
@@ -59,36 +60,37 @@ namespace Game.Presentation.Health
                 return;
             }
             var capabilities = service.GetCapabilities(selected.Id);
-            GUILayout.Label($"{selected.Name.DisplayName} | age {selected.AgeInCompletedYears(clock.State.BiologicalTicks)} | {selected.LifeState}");
-            GUILayout.Label($"Work {capabilities.WorkPerThousand / 10f:0}% | Research {capabilities.ResearchPerThousand / 10f:0}% | " +
-                            $"Move {capabilities.MovementPerThousand / 10f:0}% | Incapacitated {capabilities.IsIncapacitated}");
+            GUILayout.Label($"{selected.Name.DisplayName} · возраст {selected.AgeInCompletedYears(clock.State.BiologicalTicks)} · {RussianTextCatalog.Enum(selected.LifeState)}");
+            GUILayout.Label($"Работа {capabilities.WorkPerThousand / 10f:0}% · исследования {capabilities.ResearchPerThousand / 10f:0}% · " +
+                            $"движение {capabilities.MovementPerThousand / 10f:0}% · недееспособен: {(capabilities.IsIncapacitated ? "да" : "нет")}");
             var active = service.Conditions.Where(x => x.TargetId == selected.Id &&
                 x.State != HealthConditionState.Recovered).ToArray();
-            GUILayout.Label("Conditions: " + (active.Length == 0 ? "none" : string.Join(", ", active.Select(x =>
-                x.DefinitionId + " " + x.Severity + "/" + x.State + " step " + x.ProgressionSteps))));
+            GUILayout.Label("Состояния: " + (active.Length == 0 ? "нет" : string.Join(", ", active.Select(x =>
+                RussianTextCatalog.Content("condition", x.DefinitionId.ToString()) + " · " + RussianTextCatalog.Enum(x.Severity) +
+                " · шаг " + x.ProgressionSteps))));
             var pregnancy = service.Pregnancies.LastOrDefault(x => x.MotherId == selected.Id && x.Status == PregnancyStatus.Active);
-            GUILayout.Label(pregnancy == null ? "Pregnancy: none" :
-                $"Pregnancy: due bio {pregnancy.DueBiologicalTick}, status {pregnancy.Status}");
+            GUILayout.Label(pregnancy == null ? "Беременность: нет" :
+                $"Беременность: ожидаемый биологический такт {pregnancy.DueBiologicalTick} · состояние {RussianTextCatalog.Enum(pregnancy.Status)}");
             var spouse = family.GetSpouse(selected.Id);
-            GUILayout.Label("Spouse: " + (spouse == null ? "none" : spouse.Name.DisplayName));
-            GUILayout.Label("Parents: " + Join(family.GetParents(selected.Id)));
-            GUILayout.Label("Children: " + Join(family.GetChildren(selected.Id)));
+            GUILayout.Label("Супруг или супруга: " + (spouse == null ? "нет" : spouse.Name.DisplayName));
+            GUILayout.Label("Родители: " + Join(family.GetParents(selected.Id)));
+            GUILayout.Label("Дети: " + Join(family.GetChildren(selected.Id)));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Add minor injury")) Execute(() => service.ApplyCondition(selected.Id,
-                new HealthConditionId("minor_cut"), clock.State.CalendarTicks), "Minor injury added");
-            if (GUILayout.Button("Add severe injury")) Execute(() => service.ApplyCondition(selected.Id,
-                new HealthConditionId("serious_wound"), clock.State.CalendarTicks), "Severe injury added");
-            if (GUILayout.Button("Add disease")) Execute(() => service.ApplyCondition(selected.Id,
-                new HealthConditionId("infection"), clock.State.CalendarTicks), "Disease added");
+            if (GUILayout.Button("Добавить лёгкую травму")) Execute(() => service.ApplyCondition(selected.Id,
+                new HealthConditionId("minor_cut"), clock.State.CalendarTicks), "Лёгкая травма добавлена");
+            if (GUILayout.Button("Добавить тяжёлую травму")) Execute(() => service.ApplyCondition(selected.Id,
+                new HealthConditionId("serious_wound"), clock.State.CalendarTicks), "Тяжёлая травма добавлена");
+            if (GUILayout.Button("Добавить болезнь")) Execute(() => service.ApplyCondition(selected.Id,
+                new HealthConditionId("infection"), clock.State.CalendarTicks), "Болезнь добавлена");
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Recover selected")) Execute(() => service.RecoverAll(selected.Id), "Recovery applied");
-            if (GUILayout.Button("Start pregnancy with spouse") && spouse != null)
+            if (GUILayout.Button("Вылечить выбранного")) Execute(() => service.RecoverAll(selected.Id), "Лечение завершено");
+            if (GUILayout.Button("Начать беременность с супругом") && spouse != null)
             {
                 var mother = selected.Sex == CharacterSex.Female ? selected : spouse;
                 var father = selected.Sex == CharacterSex.Male ? selected : spouse;
                 Execute(() => service.StartPregnancy(mother.Id, father.Id, clock.State.CalendarTicks,
-                    clock.State.BiologicalTicks), "Pregnancy started; advance game time for birth");
+                    clock.State.BiologicalTicks), "Беременность началась; для рождения ребёнка продвиньте игровое время");
             }
             GUILayout.EndHorizontal();
             GUILayout.Label(message);
@@ -98,11 +100,11 @@ namespace Game.Presentation.Health
         private void Execute(Action action, string success)
         {
             try { action(); message = success; }
-            catch (Exception exception) { message = exception.Message; }
+            catch (Exception exception) { Debug.LogException(exception); message = RussianTextCatalog.Get("ui.status.internal_error"); }
         }
 
         private static string Join(System.Collections.Generic.IReadOnlyList<Character> values) => values.Count == 0
-            ? "none" : string.Join(", ", values.Select(x => x.Name.DisplayName));
+            ? "нет" : string.Join(", ", values.Select(x => x.Name.DisplayName));
         private static Rect GetPanelRect() => new Rect(12f, 430f, PanelWidth, PanelHeight);
     }
 }

@@ -2,6 +2,7 @@ using System;
 using Game.Domain.Time;
 using Game.Domain.Weather;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.Time;
 using Game.Simulation.Weather;
 using UnityEngine;
@@ -83,20 +84,24 @@ namespace Game.Presentation.Weather
             var state = weather.GetWeatherAtCalendarTick(clock.State.CalendarTicks);
             var next = weather.GetWeatherForDay(state.AbsoluteDay + 1);
             GUILayout.BeginArea(GetPanelRect(), GUI.skin.box);
-            GUILayout.Label("Weather and Seasons (U19 debug)");
-            GUILayout.Label($"Year {GameCalendar.Year(clock.State.CalendarTicks)}, day {GameCalendar.DayOfYear(clock.State.CalendarTicks)} " +
-                $"{GameCalendar.HourOfDay(clock.State.CalendarTicks):00}:{GameCalendar.MinuteOfHour(clock.State.CalendarTicks):00}");
-            GUILayout.Label($"{state.Season} | {state.Type} | {state.TemperatureCelsius:0.0} C");
-            GUILayout.Label($"Precipitation: {state.Precipitation} {state.PrecipitationPermille / 10f:0}% | " +
-                $"wind {state.WindPermille / 10f:0}%");
-            GUILayout.Label($"Crop {Percent(state.Modifiers.CropGrowthPerThousand)} | outdoor work " +
-                $"{Percent(state.Modifiers.OutdoorWorkPerThousand)}");
-            GUILayout.Label($"Movement {Percent(state.Modifiers.MovementPerThousand)} | wild food " +
-                $"{Percent(state.Modifiers.WildFoodGatheringPerThousand)}");
-            GUILayout.Label($"Health exposure: {state.ExposureKind} risk {state.Modifiers.HealthExposureRiskPermille / 10f:0}%");
+            GUILayout.Label(RussianTextCatalog.Get("debug.weather.title"));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.date", GameCalendar.Year(clock.State.CalendarTicks),
+                GameCalendar.DayOfYear(clock.State.CalendarTicks), GameCalendar.HourOfDay(clock.State.CalendarTicks),
+                GameCalendar.MinuteOfHour(clock.State.CalendarTicks)));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.summary", RussianTextCatalog.Enum(state.Season),
+                RussianTextCatalog.Enum(state.Type), RussianTextCatalog.Decimal(state.TemperatureCelsius)));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.precipitation", RussianTextCatalog.Enum(state.Precipitation),
+                RussianTextCatalog.Decimal(state.PrecipitationPermille / 10f, "0"), RussianTextCatalog.Decimal(state.WindPermille / 10f, "0")));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.crop", Percent(state.Modifiers.CropGrowthPerThousand),
+                Percent(state.Modifiers.OutdoorWorkPerThousand)));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.movement", Percent(state.Modifiers.MovementPerThousand),
+                Percent(state.Modifiers.WildFoodGatheringPerThousand)));
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.health", RussianTextCatalog.Enum(state.ExposureKind),
+                RussianTextCatalog.Decimal(state.Modifiers.HealthExposureRiskPermille / 10f, "0")));
             GUILayout.Space(4f);
-            GUILayout.Label($"Debug next day: {next.Season} / {next.Type} / {next.TemperatureCelsius:0.0} C");
-            GUILayout.Label("Forecast is debug-only; daily state is derived from seed + absolute day.");
+            GUILayout.Label(RussianTextCatalog.Format("debug.weather.tomorrow", RussianTextCatalog.Enum(next.Season),
+                RussianTextCatalog.Enum(next.Type), RussianTextCatalog.Decimal(next.TemperatureCelsius)));
+            GUILayout.Label(RussianTextCatalog.Get("debug.weather.note"));
             GUILayout.EndArea();
         }
 

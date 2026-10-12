@@ -5,6 +5,7 @@ using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Domain.Characters;
 using Game.Presentation.Interaction;
+using Game.Presentation.Localization;
 using Game.Simulation.AI;
 using Game.Simulation.Time;
 using Game.Simulation.Tiers;
@@ -224,36 +225,36 @@ namespace Game.Presentation.AI
             TryGetUiBlockingRect(out var panelRect);
             GUILayout.BeginArea(panelRect, GUI.skin.box);
             GUILayout.Label(snapshot.SimulationTier.HasValue
-                ? $"Canonical selection — {snapshot.Kind} | {snapshot.SimulationTier} | seed {snapshot.WorldSeed} | " +
-                    $"last {snapshot.LastSimulationCalendarTick}/{snapshot.LastSimulationBiologicalTick} | " +
-                    $"pending {snapshot.PendingCalendarTicks}"
-                : "Canonical selection debug — " + snapshot.Kind);
+                ? $"Выбранный объект · {RussianTextCatalog.Enum(snapshot.Kind)} · {RussianTextCatalog.Enum(snapshot.SimulationTier.Value)} · зерно {snapshot.WorldSeed} · " +
+                    $"последние такты {snapshot.LastSimulationCalendarTick}/{snapshot.LastSimulationBiologicalTick} · " +
+                    $"ожидает {snapshot.PendingCalendarTicks}"
+                : "Отладка выбранного объекта · " + RussianTextCatalog.Enum(snapshot.Kind));
             GUILayout.Label(snapshot.SimulationTier.HasValue
-                ? $"StableEntityId: {snapshot.StableId} | abstract {snapshot.AbstractActivityProgress} | " +
-                    $"hash {snapshot.DeterministicStateHash:X16}"
-                : "StableEntityId: " + snapshot.StableId);
+                ? $"Стабильный ID: {snapshot.StableId} · сводный прогресс {snapshot.AbstractActivityProgress} · " +
+                    $"хеш {snapshot.DeterministicStateHash:X16}"
+                : "Стабильный ID: " + snapshot.StableId);
             if (snapshot.CurrentAction.HasValue)
-                GUILayout.Label($"AI: {snapshot.CurrentAction} / {snapshot.ActionPhase}");
+                GUILayout.Label($"ИИ: {RussianTextCatalog.Enum(snapshot.CurrentAction.Value)} / {RussianTextCatalog.Enum(snapshot.ActionPhase.Value)}");
             if (snapshot.Hunger.HasValue)
-                GUILayout.Label($"Hunger: {snapshot.Hunger:0.00}  Energy: {snapshot.Energy:0.00}");
+                GUILayout.Label($"Голод: {snapshot.Hunger:0.00} · энергия: {snapshot.Energy:0.00}");
             if (snapshot.Kind == DevelopmentSelectionKind.BuildingStorage || snapshot.Kind == DevelopmentSelectionKind.Character)
-                GUILayout.Label($"Capacity: {snapshot.Capacity}  occupied: {snapshot.Occupied}  free: {snapshot.FreeCapacity}");
+                GUILayout.Label($"Вместимость: {snapshot.Capacity} · занято: {snapshot.Occupied} · свободно: {snapshot.FreeCapacity}");
             foreach (var amount in snapshot.Resources)
-                GUILayout.Label($"{amount.ResourceId} / {amount.DisplayName}: {amount.Quantity}");
-            if (snapshot.Source.HasValue) GUILayout.Label("Source: " + FormatOwner(snapshot.Source.Value));
-            if (snapshot.Destination.HasValue) GUILayout.Label("Destination: " + FormatOwner(snapshot.Destination.Value));
-            if (snapshot.Target.HasValue) GUILayout.Label("Current target: " + FormatOwner(snapshot.Target.Value));
+                GUILayout.Label($"{RussianTextCatalog.Content("resource", amount.ResourceId.ToString())}: {amount.Quantity}");
+            if (snapshot.Source.HasValue) GUILayout.Label("Источник: " + FormatOwner(snapshot.Source.Value));
+            if (snapshot.Destination.HasValue) GUILayout.Label("Назначение: " + FormatOwner(snapshot.Destination.Value));
+            if (snapshot.Target.HasValue) GUILayout.Label("Текущая цель: " + FormatOwner(snapshot.Target.Value));
             if (snapshot.ActiveClaims.Count == 0)
-                GUILayout.Label("Active claim/job: none");
+                GUILayout.Label("Активный резерв или задание: нет");
             else
                 foreach (var claim in snapshot.ActiveClaims)
                 {
-                    GUILayout.Label($"Claim #{claim.Id}: {claim.Phase}, {claim.ResourceId} x{claim.Quantity.Units}");
-                    GUILayout.Label("Claimant CharacterId: " + claim.Claimant);
+                    GUILayout.Label($"Резерв №{claim.Id}: {RussianTextCatalog.Enum(claim.Phase)}, {RussianTextCatalog.Content("resource", claim.ResourceId.ToString())} x{claim.Quantity.Units}");
+                    GUILayout.Label("Персонаж-владелец: " + claim.Claimant);
                 }
             GUILayout.EndArea();
         }
 
-        private static string FormatOwner(InventoryOwner owner) => $"{owner.Kind} [{owner.Id}]";
+        private static string FormatOwner(InventoryOwner owner) => $"{RussianTextCatalog.Enum(owner.Kind)} [{owner.Id}]";
     }
 }
