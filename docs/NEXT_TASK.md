@@ -1,12 +1,16 @@
 # NEXT_TASK.md
 
-U28 is DONE. U29 remains PARTIAL by explicit user decision; its 1000-Character p95 debt remains open. U30 is IN_PROGRESS in its external-run phase.
+U28 is DONE. U29 remains PARTIAL by explicit user decision; its 1000-Character p95 debt remains open. U30 is IN_PROGRESS after a failed official external run.
 
-## Next authorized task: U30 finalization — verify the external 8+ hour soak
+## Active task: U30 — resolve the failed official soak before finalization
 
 ### Status
 
-IN_PROGRESS. Harness preparation is complete and committed separately from the final result. The user launched the official offline run at `C:\serenity_u30_soak_20261012_run3`; its first heartbeat is `2026-10-12T00:08:26.7481820Z`. Do not mark U30 DONE until that process finishes and a fresh Codex finalizer audits all artifacts.
+IN_PROGRESS. The official run at `C:\serenity_u30_soak_20261012_run3` is complete and audited FAIL: 4,364 seconds instead of 28,800, five watchdog failures, four restarts, zero completed segments and an empty final hash. The first gameplay failure is `Cannot add a condition to a dead character.` in WeatherService at Y1 D35. The user's analysis request has been handled through an artifact/source audit; remediation has not been implemented in this review.
+
+### Required follow-up within U30
+
+Read the audit in `docs/U30_HANDOFF.md`. Repair weather exposure/life-state integration with a dead-resident/day-boundary regression; prevent failed steps from repeatedly advancing a partially processed world while starving heartbeat; preserve aborted-segment incidents/performance/coverage and capture the actual first failure immediately. Reconcile the five-attempt early-stop policy with the U30 prompt's explicit immediate-stop conditions. Validate the same-seed failure boundary from checkpoint 5 in a new evidence directory, then verify focused regressions/build and perform a fresh official eight-hour run. Preserve the failed evidence tree. Do not start U30A or U31.
 
 ### Required finalizer checks
 

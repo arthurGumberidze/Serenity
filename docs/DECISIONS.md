@@ -471,3 +471,7 @@ Every checkpoint stores snapshot-v14 XML plus all representation-neutral Tier ru
 ## D-091 The offline soak process owns a temporary Windows sleep guard (2026-10-12)
 
 The runner calls `SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)` for its process lifetime. This prevents system sleep during an unattended night run without changing the user's persistent power plan; display power-off remains allowed, and the request is cleared explicitly on normal completion or automatically when the process exits.
+
+## D-092 Failed official U30 evidence does not close reliability or memory gates (2026-10-12)
+
+The external seed-3030 run in `C:\serenity_u30_soak_20261012_run3` is audited FAIL after 4,364/28,800 seconds. Weather exposure to a dead Character causes an exception storm and five watchdog attempts. U30 remains IN_PROGRESS and U30A/U31 remain unstarted. A completed aggregate JSON is not proof that its counters include aborted Player segments: this run retains 182,677 gameplay exceptions while aggregate critical errors are six and performance/coverage are zero. Future U30 remediation must preserve aborted-segment evidence and the actual first gameplay failure, maintain trustworthy step recovery, qualify memory readings and reconcile early-stop conditions with the original prompt. This entry records an audit boundary, not an implemented fix or a relaxed gate; the failed artifacts must remain immutable and a fresh passing eight-hour run is still mandatory.
