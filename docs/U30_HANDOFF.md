@@ -6,7 +6,7 @@ ID: U30
 
 Title: Automated tests and 8+ hour soak
 
-Status: IN_PROGRESS — run4 completed the eight-hour runner gate, but independent audit found an unreported persistent AI travel loop and acceptance/telemetry gaps (see the final section)
+Status: IN_PROGRESS — run4 findings have a 2026-10-13 code remediation and short verification below; no replacement eight-hour run is authorized or claimed. U29 remains PARTIAL and U31 BLOCKED.
 
 ## Implemented
 
@@ -85,7 +85,7 @@ Final command `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\seren
 
 ## Required next action
 
-Keep run3 and all preflight trees immutable. Launch the fresh official run into a new folder:
+Historical instruction, superseded by the completed run4 audit and the user's 2026-10-13 prohibition on a new eight-hour run. Keep run3 and all preflight trees immutable. The command used for run4 was:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\Run-Soak-U30.ps1" -Seed 3030 -WallClockHours 8 -CheckpointIntervalMinutes 5 -OutputFolder "C:\serenity_u30_soak_20261012_run4"
@@ -165,3 +165,95 @@ git diff --cached --check
 ```
 
 Integrity/statistics checks returned zero mismatches. This review changes documentation only; no Unity batchmode/test/build or replacement soak was run. Prior tests/build remain historical. Preserve run4, repair AI arrival/liveness detection, align world seed/provenance and workload coverage, and correct telemetry. Verify focused regressions and representative short runs before new official evidence. Do not repeat the unchanged eight-hour run. U29 still requires its own matrix; U31 cannot be finalized.
+
+## Run4 remediation (2026-10-13)
+
+User scope: fix confirmed U30 defects, add tests, perform short checks and a Windows build, document and commit. **No new eight-hour run.** All earlier external evidence is preserved. The product-development proposal is `PRODUCT_ROADMAP_RU.md`; localization, main menu, final world art and hero creation are not implemented by this repair.
+
+### Changes and boundaries
+
+| Finding | Implemented response | Verification / remaining limit |
+|---|---|---|
+| AI self-route after arrival; capture intent lost after unrelated decisions | Arrival completes Travel and retains one AwaitBattle order with original target; capture reconciles that order after a legitimate battle | Regressions cover undefended arrival without false capture and a later defender arrival/battle/capture. Occupation without battle needs a separate gameplay rule |
+| Monitor misses invalid travel loop | Eight identical consecutive travel rejections fail liveness; a stale travel intent without live travel/battle also fails | Intentional waiting at an undefended settlement is not misreported as a route failure |
+| Short control exposes backdated weather illness for a late outdoor entrant | Advance the missing exposure cursor through historical days without applying illness before HealthFamily.LastCalendarTick | Two regressions cover direct/restored state, idempotence and continued future illness; the health authority still rejects backdated writes |
+| Requested seed differs from world | Resolve opt-in soak seed before NewGame bootstrap, then validate canonical seed against config and every segment result | Normal startup seed path is unchanged; independent short-run XML/segment inspection required |
+| Tier hash omits runtime and JSON loses double bits | Evidence schema 2 hashes XML plus every tier continuation field; authoritative numeric payload stores exact IEEE bytes | Publish verifies serialized payload round-trip; resume verifies exact full hash. Old schema-1 soak bundles rejected; gameplay save v15 unchanged |
+| Outcome hash flattens ownership and erases IDs | Hash canonical XML bytes with identity/hierarchy intact; explicitly exclude presentation timing | Cross-run equality is no longer weakened to hide divergence; frame-driven gameplay is not claimed deterministic merely because two fingerprints exist |
+| Subsystem invocation mistaken for activity | Record actual output, active research/travel/fire, successful captures and tier presence; official gate requires observed activity | Presence/activity is not sustained coverage. No forced resource replenishment or artificial victory |
+| Scenario stops exercising useful work | Disable unattended camera input only, retain distance policy; start Physical then transition through battle authority; initialize supply, advance available research, extinguish setup fire, request a funded farm after unlock | Finite research/resources remain real limits; recurring war, births, supply and post-victory coverage need dedicated scenarios/long evidence |
+| Wrong CPU/GC/profiler fields and startup delta | Floating-point CPU, cumulative segment GC, averaged available frame probes, first bootstrap delta excluded | CPU percent uses one-core scale and may exceed 100%; unavailable probes stay -1. Not a U29 performance acceptance |
+| Instrumentation/health-history hot path | Heartbeat references a labelled cached checkpoint hash; health advance/capability/duplicate and weather checks use derived active-condition index | Preserve all canonical history and rebuild index on load. Save/history size is not bounded by this change |
+| Missing provenance and stale final heartbeat | Source commit + all Assets/Packages/ProjectSettings fingerprint + build GUID; run records executable/game DLL/runner SHA; compare segment identity; publish completed heartbeat | Source fingerprint identifies a dirty tested build, not a claim it was built from the later commit alone |
+| PASS contradicts process exit; unreported runtime diagnostics | Nonzero exit with PASS fails closed; Unity error/assert/exception increments critical evidence; native MemoryLeaks/abort_threads retained in result | Native ownership remains unresolved; `native_memory_diagnostics_resolved=false` is not suppressed or treated as leak-free proof |
+
+Tests also update assumptions invalidated by U30A's ten-person start: 10 agents instead of 2, presentation lookup by stable ID, bounded scheduler advancement, unmet production targets and recipe-independent output assertion. None of the failed cases was disabled. Runner fixtures cover healthy, exception, partial JSONL, watchdog, repeated exception/watchdog, corrupt checkpoint and contradictory exit; injected failures are expected to return FAIL.
+
+### Remaining acceptance work
+
+U30 is **not DONE**. Short checks cannot prove eight-hour stability, sustained representative workload or continuous-process leak freedom. A 30-minute restart policy still bounds the memory observation window. Retained health history needs an explicit archival/save-migration policy before claiming bounded indefinite growth. Stable shutdown allocations also appear in the prior normal U31 smoke (1,119,263 bytes), but that does not attribute ownership or exonerate the application. Run4's sustained slow interval has no sufficient causal trace; the U29 matrix and focused profiling remain separate work. Do not launch another eight-hour run without user approval, do not modify run4, and do not finalize U31 from this repair.
+
+### Regression commands and results
+
+Run from `C:\serenity_game`, pinned Editor `C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe`. Unity processes are launched with `Start-Process -WindowStyle Hidden -PassThru`, waited to completion, then exit code and NUnit XML checked. All tests/build below are short preparation work, not the eight-hour gate.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Test-U30Runner.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Verify-U30.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Verify-U29.ps1 -BuildPlayer
+# Final targeted Unity argument sets after the weather-index and test additions:
+-batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testCategory "U30;U18;U19" -testResults C:\serenity_game\Logs\U30-final-editmode.xml -logFile C:\serenity_game\Logs\U30-final-editmode.log
+-batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testCategory "U30;U16A" -testResults C:\serenity_game\Logs\U30-final-playmode.xml -logFile C:\serenity_game\Logs\U30-final-playmode.log
+-batchmode -nographics -quit -projectPath C:\serenity_game -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -logFile C:\serenity_game\Logs\U30-final-build.log
+```
+
+- Runner protocol: **8/8**, including expected nonzero runner exits for injected failures. Latest fixture tree: `C:\Users\Lenovo\AppData\Local\Temp\serenity-u30-runner-tests-df05cc84cf114bb083308e7e8ce60962`.
+- U30 preparation run: 23 EditMode + 7 PlayMode passed at that point. The final targeted EditMode set adds the official observed-workload rejection regression and reruns health/weather: **58/58**. Final U30/U16A PlayMode: **10/10**.
+- Expanded regression: U29 **28/28 EditMode**, **16/16 PlayMode**; required systems **163/163 EditMode**, **38/38 PlayMode**; persistence **35/35**. PostgreSQL: 25 discovered, all skipped because no test database is configured.
+- Earlier verifier attempts exposed outdated ten-settler/production expectations; these were repaired and rerun, not suppressed. The first build compiled successfully but its wrapper rejected a changed source fingerprint, so it is not accepted as a provenance-qualified build. Before/after file manifests are retained for the final build in `Logs/U30-build-source-before.txt` and `Logs/U30-build-source-after.txt`; source equality remains mandatory.
+- Pre-control Windows x64 Mono Development build: **exit 0**, `U00_BUILD_RESULT: Succeeded; errors=0; warnings=2` (pre-existing obsolete benchmark API). After explicitly saving Unity settings before the final comparison, both complete file manifests match. Build GUID `8ad71758da504d0588cec9148132c97e`; source fingerprint `6848B2E5D148159BC801439C998FFB47EA045A9BEAF2B692825331A5F6AAC2DF`. Provenance records base HEAD `8ebeff2f3de31f1c09b036fbdabf816d5695ab94` plus the exact dirty-worktree fingerprint; it does not falsely claim the new changes were already in that base commit. This build log has no JobTempAlloc diagnostic; the rejected earlier build's shutdown diagnostics remain historical and are not silently removed. The additional weather repair below requires and receives a new build rather than reusing this executable.
+
+### Short control 1: additional defect found, not acceptance
+
+`C:\serenity_u30_fix_20261013_short1` is retained unchanged. Command:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Run-Soak-U30.ps1 -Seed 3030 -TestMode -TestWallClockSeconds 180 -TestSegmentSeconds 90 -TestWatchdogSeconds 60 -OutputFolder C:\serenity_u30_fix_20261013_short1
+```
+
+Result **FAIL / exit 1**, `official_gate=false`: 180 actual seconds, 121.25 aggregate productive seconds, one completed segment, five promptly aborted attempts/restarts, five critical/recoverable exceptions, zero watchdog failures. First failure at `2026-10-12T21:26:58.5281062Z`, tick `2616000000000` (day 3 plus 40 minutes), in `WeatherService -> HealthAndFamilyService.ApplyCondition(startCalendarTick)`. The live roster contained a newly due outdoor entrant without an exposure cursor, so old day boundaries were submitted after health had advanced. This was exposed by the corrected seed/scenario, not swallowed or rewritten as success. No partially processed checkpoint was published; the last safe first-failure checkpoint is number 56. The bounded runner retried and retained each failure, instead of generating the old per-frame exception storm.
+
+The follow-up D-105 repair retires unobserved days older than the health watermark, leaves current/future exposure active and preserves exactly-once checkpoints. This failed control supersedes any implication that the preceding successful build/tests alone proved runtime readiness.
+
+### Weather follow-up regression
+
+The same hidden, exit-checked Unity launch method reran:
+
+```powershell
+-batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testCategory "U30;U18;U19" -testResults C:\serenity_game\Logs\U30-weatherfix-editmode.xml -logFile C:\serenity_game\Logs\U30-weatherfix-editmode.log
+-batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testCategory "U30;U16A;U19" -testResults C:\serenity_game\Logs\U30-weatherfix-playmode.xml -logFile C:\serenity_game\Logs\U30-weatherfix-playmode.log
+-batchmode -nographics -quit -projectPath C:\serenity_game -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -logFile C:\serenity_game\Logs\U30-weatherfix-build.log
+```
+
+Final targeted tests: **60/60 EditMode**, **12/12 PlayMode**, zero failures/skips. The two new cases cover a late outdoor entrant before/after service restoration, historical cursor retirement, no duplicate work, continued future illness, and strict rejection of direct backdated health writes. `Verify-U30.ps1` now requires at least 26 U30 EditMode and 7 PlayMode cases rather than silently accepting the old smaller suite.
+
+Final rebuilt Windows Player: **exit 0**, **0 errors / 2 pre-existing obsolete-API warnings**. Build GUID `7bf688e5fd394c078d71bfe7fc5dcbc0`, source fingerprint `624A6B266D624794DBE52A11AAD9E9F08B26F58D9E7122FE24E1959955271A41`, created `2026-10-12T21:35:24.7868731Z`. Before/after manifests are equal. `Builds/Windows/build-provenance.json` and each new run's copied provenance retain the base commit plus this exact tested worktree fingerprint.
+
+### Short control 2: PASS with independently checked schema-2 evidence
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Run-Soak-U30.ps1 -Seed 3030 -TestMode -TestWallClockSeconds 180 -TestSegmentSeconds 90 -TestWatchdogSeconds 60 -OutputFolder C:\serenity_u30_fix_20261013_short2
+& 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' Logs/audit_u30_schema2.py C:\serenity_u30_fix_20261013_short2
+git -c core.safecrlf=false diff --check
+git diff --cached --check
+```
+
+- Runner **exit 0 / PASS**, `official_gate=false`, observed-workload gate true. **186 actual / 180 productive seconds**, 720 committed steps, five calendar days, two completed 90-second segments, one planned restart. Both Player exits 0; zero critical/invariant/watchdog/recoverable errors; empty incident journal. The former day-3 weather failure boundary is crossed successfully after restoration.
+- Independent standard-library audit, with no Unity code import, reconstructs the schema-2 binary canonical encoding. **92 checkpoints, 184 payload SHA-256 values, 92 full runtime canonical hashes and one exact resume chain match**. All persisted worldSeed values and both canonical segment seeds are 3030. Aggregate journal/manifest hashes, final completed runner heartbeat and outcome XML SHA match. All declared executable/game-DLL/runner hashes and the full current-source fingerprint match provenance.
+- 10,273 raw frames reconcile with segment/aggregate counts. Independently computed p50/p95/p99/max: **16.667 / 16.718 / 31.792 / 312.425 ms**. These are short headless checks with two-second checkpoints, not visible/sustained U29 acceptance or evidence about run4's slow interval.
+- Heartbeat tier ranges: **Tier1 23–38, Tier2 50, Tier3 17–31**; all three are present in every one of 720 simulation steps. No forced fixed 25/50/25 claim. CPU readings are nontruncated 15.418–98.736% on a one-core scale. Cumulative segment GC counts are **468 and 472**, not the old misleading zero final intervals.
+- Observed workload: **72 resource units produced**, 720 active-research steps, 96 active-travel steps, six burning steps, one Physical and one Abstract battle step, two capture attempts and **one successful building capture**. Final AI history contains 14 explicit holds and zero rejected self-routes. No AI settlement victory is claimed; later legitimate battle/capture is covered by the strategic regression. Five days do not prove sustained research/farming/supply or post-victory longevity.
+- Two native shutdown MemoryLeaks diagnostics remain, maximum **1,117,880 bytes**, `native_memory_diagnostics_resolved=false`; zero abort_threads warnings. No runaway predicate fired, but this is not proof of leak freedom. The diagnostic is reported, not hidden by PASS.
+- Final outcome SHA-256: `C6EB7B2625D2B87E033D1A5C89F364EBDA6F13F8EAD11C1669068B73C27D3A01`; final checkpoint 92. Old run4 and failed short1 are unchanged. **No new eight-hour run was started.**
+
+The authorized repair/short-verification slice is complete. Parent status remains **U30 IN_PROGRESS / U29 PARTIAL / U31 BLOCKED** for the explicit acceptance limits above. The next product directions require approval to change the active task, not silent activation of a legacy U32 item.

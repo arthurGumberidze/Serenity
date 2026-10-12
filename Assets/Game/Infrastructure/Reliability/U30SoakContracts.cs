@@ -12,7 +12,7 @@ namespace Game.Infrastructure.Reliability
     [Serializable]
     public sealed class U30SoakConfig
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         public const int DefaultPopulation = 100;
         public const int DefaultStepsPerSecond = 4;
         public const double SimulationRealSecondsPerStep = 1d;
@@ -35,6 +35,9 @@ namespace Game.Infrastructure.Reliability
             segment_wall_clock_seconds * steps_per_second, MidpointRounding.AwayFromZero));
 
         public static bool IsRequested(string[] args) => HasArg(args, "-u30Soak");
+
+        public static long ResolveWorldSeed(string[] args, long fallback) =>
+            IsRequested(args) ? IntArg(args, "-u30Seed") : fallback;
 
         public static U30SoakConfig Parse(string[] args)
         {
@@ -148,6 +151,19 @@ namespace Game.Infrastructure.Reliability
         public long global_travel_steps;
         public long strategic_ai_steps;
         public long event_steps;
+        public long production_output_units;
+        public long research_active_steps;
+        public long burning_steps;
+        public long active_travel_steps;
+        public long successful_captures;
+        public long tier1_steps;
+        public long tier2_steps;
+        public long tier3_steps;
+
+        public bool HasObservedWorkloads => production_output_units > 0 && research_active_steps > 0 &&
+            burning_steps > 0 && active_travel_steps > 0 && successful_captures > 0 &&
+            physical_battle_steps > 0 && abstract_battle_steps > 0 &&
+            tier1_steps > 0 && tier2_steps > 0 && tier3_steps > 0;
 
         public bool CoversRequiredSystems => production_steps > 0 && research_steps > 0 && dynasty_checks > 0 &&
             health_steps > 0 && weather_days > 0 && military_checks > 0 &&
@@ -171,6 +187,12 @@ namespace Game.Infrastructure.Reliability
         public int active_battles;
         public int ai_factions;
         public string current_hash;
+        public string current_hash_scope = "last_verified_checkpoint_not_live_world";
+        public int tier1_count;
+        public int tier2_count;
+        public int tier3_count;
+        public int active_health_conditions;
+        public int retained_health_conditions;
         public string last_checkpoint;
         public U30FrameSummary performance;
         public U30Coverage coverage;
@@ -221,6 +243,9 @@ namespace Game.Infrastructure.Reliability
         public ulong off_camera_step_count;
         public ulong deterministic_accumulator;
         public long abstract_activity_progress;
+        // Unity's JSON number round-trip is not bit-exact for doubles. This is the
+        // authoritative numeric payload; the numeric fields above remain readable telemetry.
+        public string numeric_bits;
 
         public static U30TierRuntimeRecord Capture(CharacterSimulationTier currentTier,
             CharacterRuntimeState state) => new U30TierRuntimeRecord
@@ -236,15 +261,34 @@ namespace Game.Infrastructure.Reliability
             last_simulation_biological_tick = state.LastSimulationBiologicalTick,
             off_camera_step_count = state.OffCameraStepCount,
             deterministic_accumulator = state.DeterministicAccumulator,
-            abstract_activity_progress = state.AbstractActivityProgress
+            abstract_activity_progress = state.AbstractActivityProgress,
+            numeric_bits = EncodeNumbers(state)
         };
 
-        public CharacterRuntimeState ToState() => new CharacterRuntimeState(StableEntityId.Parse(character_id),
-            new WorldPosition(position_x, position_y, position_z),
-            new WorldPosition(units_per_day_x, units_per_day_y, units_per_day_z), is_moving, location_key,
-            processed_calendar_ticks, processed_biological_ticks, step_count, hunger, energy,
-            last_simulation_calendar_tick, last_simulation_biological_tick, off_camera_step_count,
-            deterministic_accumulator, abstract_activity_progress);
+        private static string EncodeNumbers(CharacterRuntimeState state)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(state.Position.X); writer.Write(state.Position.Y); writer.Write(state.Position.Z);
+                writer.Write(state.UnitsPerGameDay.X); writer.Write(state.UnitsPerGameDay.Y); writer.Write(state.UnitsPerGameDay.Z);
+                writer.Write(state.Hunger); writer.Write(state.Energy);
+                return Convert.ToBase64String(stream.ToArray());
+            }
+        }
+
+        public CharacterRuntimeState ToState()
+        {
+            var bytes = Convert.FromBase64String(numeric_bits ?? string.Empty);
+            if (bytes.Length != 40) throw new InvalidDataException("Missing or invalid exact U30 numeric payload.");
+            using (var reader = new BinaryReader(new MemoryStream(bytes, false)))
+                return new CharacterRuntimeState(StableEntityId.Parse(character_id),
+                    new WorldPosition(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                    new WorldPosition(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()), is_moving, location_key,
+                    processed_calendar_ticks, processed_biological_ticks, step_count, reader.ReadDouble(), reader.ReadDouble(),
+                    last_simulation_calendar_tick, last_simulation_biological_tick, off_camera_step_count,
+                    deterministic_accumulator, abstract_activity_progress);
+        }
     }
 
     [Serializable]
@@ -256,6 +300,7 @@ namespace Game.Infrastructure.Reliability
     [Serializable]
     public sealed class U30CheckpointMetadata
     {
+        public string canonical_hash_kind = U30Evidence.CanonicalHashKind;
         public int schema_version = U30SoakConfig.CurrentSchemaVersion;
         public int seed;
         public int segment_index;
@@ -274,6 +319,11 @@ namespace Game.Infrastructure.Reliability
     [Serializable]
     public sealed class U30SegmentResult
     {
+        public string build_guid;
+        public long canonical_world_seed;
+        public string outcome_hash_kind = U30Evidence.OutcomeHashKind;
+        public string memory_scope = "bounded_process_segment_not_continuous_8h";
+        public string frame_scope = "post_bootstrap_first_delta_excluded";
         public int schema_version = U30SoakConfig.CurrentSchemaVersion;
         public bool passed;
         public int seed;
@@ -364,6 +414,8 @@ namespace Game.Infrastructure.Reliability
                 failures.Add("missing_segment_or_performance_evidence");
             if (result.coverage == null || !result.coverage.CoversRequiredSystems)
                 failures.Add("incomplete_system_coverage");
+            if (officialGate && (result.coverage == null || !result.coverage.HasObservedWorkloads))
+                failures.Add("incomplete_observed_workloads");
             if (string.IsNullOrWhiteSpace(result.incident_journal_path) ||
                 string.IsNullOrWhiteSpace(result.incident_journal_sha256) ||
                 string.IsNullOrWhiteSpace(result.segment_manifest_path) ||

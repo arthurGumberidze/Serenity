@@ -324,6 +324,34 @@ namespace Game.Tests.Editor
     [TestFixture, Category("U19")]
     public sealed class WeatherHealthTests
     {
+        [TestCase(false), TestCase(true), Category("U30")]
+        public void NewOutdoorArrivalNeverBackdatesHealthAfterAuthorityAdvanced(bool restore)
+        {
+            var registry = new CharacterRegistry();
+            var person = WeatherTestSupport.CreatePerson(40);
+            registry.Add(person);
+            var health = new HealthAndFamilyService(registry, HealthConditionCatalog.CreateStoneAge(), 444);
+            var weather = new WeatherService(444, ClimateProfile.Temperate, health);
+            var watermark = TimeSpan.FromDays(365).Ticks + TimeSpan.FromHours(1).Ticks;
+            health.AdvanceTo(watermark, 0, false);
+            if (restore)
+            {
+                health.RestoreState(health.CaptureState());
+                weather.RestoreState(weather.CaptureState());
+            }
+
+            var caughtUp = weather.AdvanceHealthExposureTo(watermark, new[] { person.Id, person.Id });
+            Assert.That(caughtUp.ProcessedPersonDays, Is.EqualTo(365));
+            Assert.That(caughtUp.ConditionsApplied, Is.Zero);
+            Assert.That(health.Conditions, Is.Empty, "Unobserved historical exposure must not create retroactive illness.");
+            Assert.That(weather.AdvanceHealthExposureTo(watermark, new[] { person.Id }).ProcessedPersonDays, Is.Zero);
+            var future = weather.AdvanceHealthExposureTo(TimeSpan.FromDays(730).Ticks, new[] { person.Id });
+            Assert.That(future.ConditionsApplied, Is.GreaterThan(0), "The fix must not disable future weather illness.");
+            Assert.That(health.Conditions.All(x => x.StartCalendarTick >= watermark), Is.True);
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                health.ApplyCondition(person.Id, new HealthConditionId("sprain"), watermark - 1));
+        }
+
         [Test, Category("U30")]
         public void DeadOutdoorResidentsAdvanceTheirExposureCursorWithoutIllnessAcrossRestore()
         {

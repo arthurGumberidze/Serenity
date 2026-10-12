@@ -57,10 +57,10 @@ if ($LASTEXITCODE -ne 0) { throw 'U30 runner protocol tests failed.' }
 Invoke-U30Unity 'U30-compile' @('-quit')
 Invoke-U30Unity 'U30-editmode' @('-runTests', '-testPlatform', 'EditMode', '-testCategory', 'U30',
     '-testResults', (Join-Path $logPath 'U30-editmode.xml'))
-Assert-U30TestResult 'U30-editmode' 5
+Assert-U30TestResult 'U30-editmode' 26
 Invoke-U30Unity 'U30-playmode' @('-runTests', '-testPlatform', 'PlayMode', '-testCategory', 'U30',
     '-testResults', (Join-Path $logPath 'U30-playmode.xml'))
-Assert-U30TestResult 'U30-playmode' 2
+Assert-U30TestResult 'U30-playmode' 7
 
 if (-not $SkipU29Regression) {
     & (Join-Path $PSScriptRoot 'Verify-U29.ps1') -ProjectPath $ProjectPath -EditorPath $EditorPath `

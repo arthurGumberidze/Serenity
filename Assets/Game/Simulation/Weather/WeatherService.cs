@@ -168,18 +168,24 @@ namespace Game.Simulation.Weather
                 for (var day = firstDay; day <= finalDay; day++)
                 {
                     processed++;
+                    var exposureTick = checked((day + 1) * TimeSpan.TicksPerDay);
+                    // A new outdoor worker/newborn can enter after health has already
+                    // advanced. Retire unseen historical days, but do not invent illness
+                    // before that person's observed exposure or backdate the authority.
+                    if (health != null && exposureTick < health.LastCalendarTick)
+                    {
+                        exposureDays[id] = day;
+                        continue;
+                    }
                     var weather = GetWeatherForDay(day);
                     if (health != null && weather.ExposureKind != WeatherExposureKind.None &&
                         SampleForCharacter(id, day, HealthExposureStream) % 1000UL < (ulong)weather.Modifiers.HealthExposureRiskPermille)
                     {
                         var definitionId = new HealthConditionId(weather.ExposureKind == WeatherExposureKind.Cold
                             ? "cold_stress" : "heat_stress");
-                        var active = health.Conditions.Any(x => x.TargetId == id && x.DefinitionId.Equals(definitionId) &&
-                            (x.State == HealthConditionState.Active || x.State == HealthConditionState.Improving ||
-                             x.State == HealthConditionState.Worsening || x.State == HealthConditionState.Critical));
-                        if (!active)
+                        if (!health.HasActiveCondition(id, definitionId))
                         {
-                            health.ApplyCondition(id, definitionId, checked((day + 1) * TimeSpan.TicksPerDay));
+                            health.ApplyCondition(id, definitionId, exposureTick);
                             applied++;
                         }
                     }

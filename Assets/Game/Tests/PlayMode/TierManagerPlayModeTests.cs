@@ -90,8 +90,10 @@ namespace Game.Tests.PlayMode
             root.AiRuntime.SetPaused(true);
             var id = root.FemaleDemoCharacter.Id;
             var initialTier3Count = root.Tier3Characters.Count;
+            var initialTier1Count = root.CharacterPresentations.Count;
+            Assert.That(initialTier1Count, Is.EqualTo(10), "New Game starts with ten player Characters.");
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier1).Changed, Is.False);
-            Assert.That(root.CharacterPresentations.Count, Is.EqualTo(2));
+            Assert.That(root.CharacterPresentations.Count, Is.EqualTo(initialTier1Count));
             root.Tiers.Transition(id, CharacterSimulationTier.Tier2);
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier2).Changed, Is.False);
             Assert.That(root.Tier2Runtime.Materializer.EntityCount, Is.EqualTo(1));

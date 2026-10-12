@@ -11,7 +11,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Runner fixture compilation failed.' }
 $reports = @()
 $originalMode = $env:SERENITY_U30_FIXTURE_MODE
 try {
-    foreach ($mode in 'healthy','exception','partial','watchdog','exception_loop','watchdog_loop','corrupt') {
+    foreach ($mode in 'healthy','exception','partial','watchdog','exception_loop','watchdog_loop','corrupt','bad_exit') {
         $env:SERENITY_U30_FIXTURE_MODE = $mode
         $output = Join-Path $testRoot $mode
         $seconds = if ($mode -eq 'watchdog_loop') { 24 } elseif ($mode -eq 'exception_loop') { 18 } else { 8 }
@@ -22,12 +22,19 @@ try {
         $result = Get-Content -LiteralPath (Join-Path $output 'soak-result.json') -Raw | ConvertFrom-Json
         $incidents = @(Get-Content -LiteralPath (Join-Path $output 'incidents.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
         $manifest = @(Get-Content -LiteralPath (Join-Path $output 'segment-manifest.jsonl') | ForEach-Object { $_ | ConvertFrom-Json })
+        $finalHeartbeat = Get-Content -LiteralPath (Join-Path $output 'runner-heartbeat.json') -Raw | ConvertFrom-Json
+        if ($finalHeartbeat.state -ne 'completed' -or $finalHeartbeat.productive_simulation_seconds -ne $result.productive_simulation_seconds -or
+            $finalHeartbeat.latest_checkpoint -ne $result.latest_checkpoint) { throw "$mode final heartbeat is stale." }
         if ($result.actual_wall_clock_seconds -lt $seconds) { throw "$mode ended before its deadline." }
         if ($result.performance_samples -le 0 -or $result.coverage.production_steps -le 0) { throw "$mode lost segment evidence." }
         if ($result.incident_journal_sha256 -ne (Get-FileHash -LiteralPath (Join-Path $output 'incidents.jsonl')).Hash.ToLowerInvariant()) {
             throw "$mode journal hash mismatch."
         }
         if ($mode -eq 'healthy') {
+            if ($result.native_memory_diagnostic_count -ne $manifest.Count -or
+                $result.native_memory_diagnostic_max_bytes -ne 1234 -or $result.native_memory_diagnostics_resolved) {
+                throw 'Native shutdown diagnostics were lost or falsely classified as resolved.'
+            }
             if ($exit -ne 0 -or -not $result.passed -or -not $result.checkpoint_resume_verified) { throw 'Healthy fixture failed.' }
             if (@($manifest | Where-Object { $_.exit_code -ne 0 }).Count -ne 0) { throw 'Healthy Player exit code was not retained.' }
         } else {

@@ -349,7 +349,8 @@ namespace Game.Simulation.AI
             foreach (var unitId in state.KnownMilitaryUnits.ToArray())
             {
                 if (!units.TryGet(unitId, out var unit)) continue;
-                var order = state.PendingOrders.LastOrDefault(x => x.Kind == AiDecisionKind.Travel &&
+                var order = state.PendingOrders.LastOrDefault(x =>
+                    (x.Kind == AiDecisionKind.Travel || x.Kind == AiDecisionKind.AwaitBattle) &&
                     x.UnitId == unitId && x.TargetSettlementId.HasValue);
                 if (!order.TargetSettlementId.HasValue) continue;
                 var battle = battles.Battles.Where(x => x.Status == CombatEncounterStatus.Finished &&
@@ -357,11 +358,13 @@ namespace Game.Simulation.AI
                         x.StartCalendarTick >= order.IssuedTick)
                     .OrderByDescending(x => x.StartCalendarTick).ThenByDescending(x => x.BattleId).FirstOrDefault();
                 if (battle == null) continue;
-                var target = state.TargetSettlementId.HasValue
-                    ? map.Settlements.SingleOrDefault(x => x.Id == state.TargetSettlementId.Value) : null;
+                // The order retains capture intent even if an unrelated economic
+                // decision changed the currently displayed strategic target.
+                var target = map.Settlements.SingleOrDefault(x => x.Id == order.TargetSettlementId.Value);
                 if (target == null) continue;
                 var result = capture.Capture(target.Id, state.SideId, battle.BattleId, tick);
                 state.CompleteOrders(AiDecisionKind.Travel);
+                state.CompleteOrders(AiDecisionKind.AwaitBattle);
                 if (result.Captured)
                 {
                     state.AddSettlement(target.Id);
@@ -493,6 +496,19 @@ namespace Game.Simulation.AI
             { Record(faction.Strategic, tick, AiDecisionKind.Travel, AiStrategicGoal.AttackSettlement, 650,
                 "Existing U25 travel order remains in progress.", target.Id, target.LocationId, unit.Id); return; }
             var current = new WorldLocationId(unit.AbstractLocationId);
+            if (current == target.LocationId)
+            {
+                // Arrival is not a new route and is not proof of victory. U25 starts
+                // encounters when a hostile army is present; U26 capture still requires it.
+                faction.Strategic.CompleteOrders(AiDecisionKind.Travel);
+                if (!faction.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.AwaitBattle && x.UnitId == unit.Id))
+                    faction.Strategic.AddOrder(new AiPendingOrder(faction.Strategic.DecisionSequence + 1,
+                        AiDecisionKind.AwaitBattle, tick, unit.Id, target.Id, target.LocationId));
+                Record(faction.Strategic, tick, AiDecisionKind.AwaitBattle, AiStrategicGoal.AttackSettlement,
+                    650, "Arrived at hostile settlement; holding until a canonical battle permits capture.",
+                    target.Id, target.LocationId, unit.Id);
+                return;
+            }
             var next = NextHop(current, target.LocationId);
             if (!next.HasValue)
             { Record(faction.Strategic, tick, AiDecisionKind.Recover, AiStrategicGoal.Recover, 0, "No route to hostile target."); return; }
@@ -505,8 +521,12 @@ namespace Game.Simulation.AI
                 Record(faction.Strategic, tick, AiDecisionKind.Travel, AiStrategicGoal.AttackSettlement, 700,
                     "Issued canonical U25 route leg.", target.Id, target.LocationId, unit.Id);
             }
-            else Record(faction.Strategic, tick, AiDecisionKind.Recover, AiStrategicGoal.Recover, 0,
-                "Travel rejected: " + order.Status);
+            else
+            {
+                faction.Strategic.CompleteOrders(AiDecisionKind.Travel);
+                Record(faction.Strategic, tick, AiDecisionKind.Recover, AiStrategicGoal.Recover, 0,
+                    "Travel rejected: " + order.Status, target.Id, target.LocationId, unit.Id);
+            }
         }
 
         private SettlementState SelectTarget(AiStrategicState state, MilitaryUnitState unit)
@@ -545,7 +565,7 @@ namespace Game.Simulation.AI
 
         private WorldLocationId? NextHop(WorldLocationId origin, WorldLocationId target)
         {
-            if (origin == target) return origin;
+            if (origin == target) return null;
             var frontier = new SortedSet<Tuple<long, string, WorldLocationId>>(Comparer<Tuple<long,string,WorldLocationId>>.Create((a,b) =>
             { var c=a.Item1.CompareTo(b.Item1); if(c!=0)return c; c=string.CompareOrdinal(a.Item2,b.Item2); return c!=0?c:a.Item3.CompareTo(b.Item3); }));
             var distance = new Dictionary<WorldLocationId, long> { [origin] = 0 };

@@ -2,6 +2,8 @@
 
 ## Status
 
+2026-10-13: U30 remediation and short checks do not unblock this gate. No new eight-hour run is authorized. This handoff's UI/input tests prove technical interaction, **not** final Russian UX, a main menu, hero appearance creation or a beautiful completed world; those missing player-facing deliveries are explicitly planned in `PRODUCT_ROADMAP_RU.md`.
+
 **BLOCKED** on 2026-10-12. U31's own integration implementation, tests, Windows build and normal Player smoke pass. It cannot be marked DONE because U29 is PARTIAL and U30 is IN_PROGRESS. No later stage was started.
 
 ## Verified player journey

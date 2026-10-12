@@ -20,6 +20,11 @@ namespace Game.Tests.PlayMode
         {
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
             yield return null;
+            var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.CameraController.enabled = false;
+            // New Game supplies ten settlers: production needs an explicit unmet target.
+            foreach (var resource in root.Resources.All)
+                root.Production.SetTarget(resource.Id, root.Production.GetCanonicalTotal(resource.Id) + 100);
         }
 
         [UnityTest]
@@ -81,8 +86,8 @@ namespace Game.Tests.PlayMode
             root.Production.AdvanceTo(TimeSpan.FromDays(1).Ticks, new[] { second, first });
             var gameObjectsAfter = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None).Length;
 
-            Assert.That(root.Production.GetProducedTotal(new ResourceId("berries")) +
-                root.Production.GetProducedTotal(new ResourceId("stone")), Is.GreaterThan(0));
+            Assert.That(root.Resources.All.Sum(resource => root.Production.GetProducedTotal(resource.Id)),
+                Is.GreaterThan(0), "Batched workers must commit a recipe output, regardless of which unmet stock target wins.");
             Assert.That(gameObjectsAfter, Is.EqualTo(gameObjectsBefore));
             Assert.That(root.Tiers.GetTier(first), Is.EqualTo(CharacterSimulationTier.Tier2));
             Assert.That(root.Tiers.GetTier(second), Is.EqualTo(CharacterSimulationTier.Tier3));

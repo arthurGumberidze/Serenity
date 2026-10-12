@@ -7,7 +7,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Xml.Linq;
 using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Domain.Characters;
@@ -60,6 +59,13 @@ namespace Game.Infrastructure.Reliability
         private long previousCpuTicks;
         private double previousCpuRealtime;
         private double intervalCpuPercent;
+        private long startingCpuTicks;
+        private bool skipInitialFrame = true;
+        private readonly double[] intervalProfilerSums = new double[4];
+        private readonly long[] intervalProfilerCounts = new long[4];
+        private readonly double[] totalProfilerSums = new double[4];
+        private readonly long[] totalProfilerCounts = new long[4];
+        private string checkpointHash = string.Empty;
         private bool memoryRunaway;
         private bool resumeVerified;
         private bool invariantInjected;
@@ -70,6 +76,7 @@ namespace Game.Infrastructure.Reliability
         private bool memoryMetricsVerified;
         private int previousTargetFrameRate;
         private int previousVSyncCount;
+        private bool previousCameraEnabled;
         private int journalRotation = 1;
         private string rawFramesPath;
         private U30FrameSummary worstInterval = new U30FrameSummary();
@@ -94,6 +101,8 @@ namespace Game.Infrastructure.Reliability
             root = compositionRoot ?? throw new ArgumentNullException(nameof(compositionRoot));
             config = soakConfig ?? throw new ArgumentNullException(nameof(soakConfig));
             config.Validate();
+            if (root.ActiveNewGameConfiguration.WorldSeed != config.seed)
+                throw new InvalidOperationException("U30 requested seed differs from canonical world seed.");
             Directory.CreateDirectory(config.output_directory);
             Directory.CreateDirectory(config.checkpoint_root);
             heartbeatPath = Path.Combine(config.output_directory, "heartbeats.jsonl");
@@ -124,6 +133,10 @@ namespace Game.Infrastructure.Reliability
                 enableSaveObservation = true
             };
             U29BenchmarkScenario.Create(root, benchmarkConfig);
+            // An unattended cursor at a screen edge must not pan the camera away from
+            // the workload. Keep the distance policy active; freeze only user input.
+            previousCameraEnabled = root.CameraController.enabled;
+            root.CameraController.enabled = false;
             checkpointCoordinator = root.Saves;
             root.AiRuntime.enabled = false;
             root.AiRuntime.SetPaused(false);
@@ -141,6 +154,8 @@ namespace Game.Infrastructure.Reliability
             // replacement battle with participants who may already be dead or unavailable.
             if (config.segment_index == 1 || string.IsNullOrWhiteSpace(config.resume_from_checkpoint))
                 EnsureRepresentativeWorkloads();
+            captureAttempted = root.Buildings.All.Any(x => x.History.Any(e => e.Kind == BuildingEventKind.Captured));
+            observedWeatherDay = GameCalendar.CompletedDays(root.Clock.State.CalendarTicks);
 
             startedUtc = DateTime.UtcNow;
             startedUtcText = startedUtc.ToString("O", CultureInfo.InvariantCulture);
@@ -150,10 +165,12 @@ namespace Game.Infrastructure.Reliability
             collectionsAtStart = previousCollectionCount = GC.CollectionCount(0);
             process = Process.GetCurrentProcess();
             previousCpuTicks = process.TotalProcessorTime.Ticks;
+            startingCpuTicks = previousCpuTicks;
             previousCpuRealtime = startedRealtime;
             StartRecorders();
             latestCheckpoint = WriteCheckpoint();
             WriteHeartbeat(0d);
+            Application.logMessageReceived += OnUnityDiagnostic;
         }
 
         private void Update()
@@ -207,6 +224,8 @@ namespace Game.Infrastructure.Reliability
         private void LateUpdate()
         {
             if (finished || watchdogInjected) return;
+            // The first delta includes scene/bootstrap/restore time before this controller.
+            if (skipInitialFrame) { skipInitialFrame = false; return; }
             var milliseconds = Time.unscaledDeltaTime * 1000d;
             if (milliseconds <= 0d || double.IsNaN(milliseconds) || double.IsInfinity(milliseconds)) return;
             if (allFrames.Count >= MaximumFrameSamples)
@@ -219,6 +238,10 @@ namespace Game.Infrastructure.Reliability
             }
             intervalFrames.Add(milliseconds);
             allFrames.Add(milliseconds);
+            SampleProfiler(0, mainThreadRecorder, 1000000d);
+            SampleProfiler(1, renderThreadRecorder, 1000000d);
+            SampleProfiler(2, gpuRecorder, 1000000d);
+            SampleProfiler(3, allocationRecorder, 1d);
             var collections = GC.CollectionCount(0);
             intervalCollections += Math.Max(0, collections - previousCollectionCount);
             previousCollectionCount = collections;
@@ -226,6 +249,22 @@ namespace Game.Infrastructure.Reliability
 
         private void AdvanceOneStep()
         {
+            // Exercise finite research progression through the normal command API, not
+            // an eternally idle invocation counter after the first technology completes.
+            if (root.Research.ActiveProject == null && root.Research.AvailableTechnologies.Count > 0)
+                root.Research.Start(root.Research.AvailableTechnologies.OrderBy(x => x.Id).First().Id);
+            if (coverage.physical_battle_steps > 0 && coverage.abstract_battle_steps == 0)
+                foreach (var battle in root.Combat.Encounters.Where(x => x.Status == CombatEncounterStatus.Active &&
+                    x.Mode == BattleMode.Physical).ToArray())
+                    root.Battles.Transition(battle.BattleId, BattleMode.Abstract, root.Clock.State.CalendarTicks);
+            var beforeProduction = ProducedUnits();
+            if (root.Research.ActiveProject != null) coverage.research_active_steps++;
+            if (root.GlobalMap.Travels.Count > 0) coverage.active_travel_steps++;
+            if (root.Buildings.All.Any(x => x.FireStatus == BuildingFireStatus.Burning)) coverage.burning_steps++;
+            var tiers = root.Tiers.ManagedIds.Select(root.Tiers.GetTier).ToArray();
+            if (tiers.Contains(CharacterSimulationTier.Tier1)) coverage.tier1_steps++;
+            if (tiers.Contains(CharacterSimulationTier.Tier2)) coverage.tier2_steps++;
+            if (tiers.Contains(CharacterSimulationTier.Tier3)) coverage.tier3_steps++;
             // Count the representative combat workload at the committed pre-step barrier. A
             // small abstract encounter can legitimately finish inside this single accelerated
             // step, so observing only afterwards would incorrectly report zero coverage.
@@ -236,6 +275,7 @@ namespace Game.Infrastructure.Reliability
             }
             root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(U30SoakConfig.SimulationRealSecondsPerStep));
             simulationSteps++;
+            coverage.production_output_units += Math.Max(0, ProducedUnits() - beforeProduction);
             coverage.production_steps++;
             coverage.research_steps++;
             coverage.dynasty_checks++;
@@ -248,7 +288,26 @@ namespace Game.Infrastructure.Reliability
             var day = GameCalendar.CompletedDays(root.Clock.State.CalendarTicks);
             if (day != observedWeatherDay) { coverage.weather_days++; observedWeatherDay = day; }
             TryExerciseCapture();
+            var fireTarget = root.DemoCropPlotBuilding ?? root.DemoStorageBuilding;
+            if (fireTarget != null && fireTarget.FireStatus == BuildingFireStatus.Burning &&
+                root.Clock.State.CalendarTicks - fireTarget.FireStartTick >= TimeSpan.FromHours(1).Ticks)
+                root.BuildingDamage.ExtinguishBuilding(fireTarget.Id, root.Clock.State.CalendarTicks);
+            // Finite natural sources are intentional. Once farming is unlocked, exercise
+            // the ordinary funded building command instead of replenishing them by fiat.
+            var cropId = new BuildingDefinitionId("primitive_crop_plot");
+            if (root.Clock.State.CalendarTicks % TimeSpan.TicksPerDay == 0 &&
+                root.Research.IsBuildingUnlocked(cropId) &&
+                !root.Production.Sites.Any(x => x.Kind == Game.Domain.Production.ProductionSiteKind.PrimitiveCropPlot) &&
+                root.BuildingPlacementController.TryStartPlacement(cropId))
+            {
+                if (root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(15, 0, 15)))
+                    root.BuildingPlacementController.ConfirmPlacement();
+                root.BuildingPlacementController.CancelPlacement();
+            }
         }
+
+        private long ProducedUnits() => root.Resources.All.Sum(x => root.Production.GetProducedTotal(x.Id)) +
+            root.StrategicAi.Factions.Sum(f => root.Resources.All.Sum(x => f.Production.GetProducedTotal(x.Id)));
 
         private void EnsureRepresentativeWorkloads()
         {
@@ -269,7 +328,17 @@ namespace Game.Infrastructure.Reliability
             }
             if (!root.Combat.Encounters.Any(x => x.Status == CombatEncounterStatus.Active))
             {
-                try { root.StartDemoUnitBattle(BattleMode.Abstract); }
+                try
+                {
+                    root.StartDemoUnitBattle(BattleMode.Physical);
+                    foreach (var unit in root.MilitaryUnits.Units)
+                    {
+                        var sources = unit.Roster.Select(x => new Game.Domain.Resources.InventoryOwner(
+                            Game.Domain.Resources.InventoryOwnerKind.Character, x.CharacterId))
+                            .Where(owner => root.Inventories.TryGet(owner, out _));
+                        root.MilitaryUnits.LoadInitialSupply(unit.Id, root.Inventories, sources);
+                    }
+                }
                 catch (InvalidOperationException exception)
                 {
                     RecordIncident("workload_setup", false, exception.Message, exception);
@@ -302,8 +371,10 @@ namespace Game.Infrastructure.Reliability
                 finishedBattle.Outcome == CombatOutcome.SideBVictory ? finishedBattle.SideB : default;
             if (!victor.IsValid) return;
             var target = root.Buildings.All.FirstOrDefault(x => !x.IsDestroyed && x.OwnerSideId != victor);
+            // Replaying a finished battle after restart must not create additional captures.
             if (target != null)
-                root.BuildingDamage.CaptureBuilding(target.Id, victor, finishedBattle, root.Clock.State.CalendarTicks);
+                if (root.BuildingDamage.CaptureBuilding(target.Id, victor, finishedBattle, root.Clock.State.CalendarTicks).Succeeded)
+                    coverage.successful_captures++;
         }
 
         private void ApplyFailureInjection(double elapsed)
@@ -342,7 +413,8 @@ namespace Game.Infrastructure.Reliability
             if (!File.Exists(fullPath) || !File.Exists(metadataPath) || !File.Exists(tiersPath))
                 throw new InvalidDataException("U30 resume checkpoint bundle is incomplete.");
             var metadata = JsonUtility.FromJson<U30CheckpointMetadata>(File.ReadAllText(metadataPath, Encoding.UTF8));
-            if (metadata == null || !metadata.independently_verified || metadata.seed != config.seed)
+            if (metadata == null || metadata.schema_version != U30SoakConfig.CurrentSchemaVersion ||
+                !metadata.independently_verified || metadata.seed != config.seed)
                 throw new InvalidDataException("U30 resume checkpoint metadata is invalid.");
             if (!string.Equals(Sha256(fullPath), metadata.snapshot_sha256, StringComparison.OrdinalIgnoreCase) ||
                 !string.Equals(Sha256(tiersPath), metadata.tiers_sha256, StringComparison.OrdinalIgnoreCase))
@@ -395,6 +467,7 @@ namespace Game.Infrastructure.Reliability
             var restoredHash = ComputeLogicalStateHash();
             if (!string.Equals(restoredHash, metadata.canonical_state_hash, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("U30 checkpoint logical hash changed during resume.");
+            checkpointHash = restoredHash;
             checkpointSequence = metadata.sequence;
             latestCheckpoint = fullPath;
             resumeVerified = true;
@@ -415,7 +488,10 @@ namespace Game.Infrastructure.Reliability
             codec.Deserialize(File.ReadAllBytes(snapshotPath));
             var tiers = CaptureTiers();
             WriteAtomic(tiersPath, Encoding.UTF8.GetBytes(JsonUtility.ToJson(tiers, true)));
-            JsonUtility.FromJson<U30TierRuntimeCollection>(File.ReadAllText(tiersPath, Encoding.UTF8));
+            var decodedTiers = JsonUtility.FromJson<U30TierRuntimeCollection>(File.ReadAllText(tiersPath, Encoding.UTF8));
+            checkpointHash = U30Evidence.CanonicalHash(codec.Serialize(snapshot), tiers.records);
+            if (checkpointHash != U30Evidence.CanonicalHash(File.ReadAllBytes(snapshotPath), decodedTiers.records))
+                throw new InvalidDataException("U30 checkpoint round-trip changed exact runtime state.");
             var metadata = new U30CheckpointMetadata
             {
                 seed = config.seed,
@@ -426,7 +502,7 @@ namespace Game.Infrastructure.Reliability
                 snapshot_sha256 = Sha256(snapshotPath),
                 tiers_file = tiersPath,
                 tiers_sha256 = Sha256(tiersPath),
-                canonical_state_hash = ComputeLogicalStateHash(snapshot),
+                canonical_state_hash = checkpointHash,
                 calendar_ticks = snapshot.CalendarTicks,
                 simulation_steps = simulationSteps,
                 independently_verified = true
@@ -448,55 +524,13 @@ namespace Game.Infrastructure.Reliability
 
         private string ComputeLogicalStateHash(SaveSnapshot snapshot)
         {
-            var codec = new SaveXmlCodec();
-            var snapshotBytes = codec.Serialize(snapshot);
-            var tiers = new StringBuilder();
-            foreach (var id in root.Tiers.ManagedIds)
-                tiers.Append(id).Append('|').Append((int)root.Tiers.GetTier(id)).Append('\n');
-            using (var hash = SHA256.Create())
-            {
-                hash.TransformBlock(snapshotBytes, 0, snapshotBytes.Length, null, 0);
-                var tierBytes = Encoding.UTF8.GetBytes(tiers.ToString());
-                hash.TransformFinalBlock(tierBytes, 0, tierBytes.Length);
-                return BitConverter.ToString(hash.Hash).Replace("-", string.Empty);
-            }
+            return U30Evidence.CanonicalHash(new SaveXmlCodec().Serialize(snapshot), CaptureTiers().records);
         }
 
-        /// <summary>
-        /// Cross-process outcome fingerprint. Canonical New Game is deterministic, while this
-        /// normalized form remains compatible with older checkpoints that contain generated IDs.
-        /// It replaces 128-bit identity leaves, sorts structured children, and adds the complete
-        /// representation-neutral tier payload without character IDs.
-        /// </summary>
-        private string ComputeRepeatableOutcomeHash()
-        {
-            var codec = new SaveXmlCodec();
-            XDocument document;
-            var xmlBytes = codec.Serialize(checkpointCoordinator.Capture());
-            using (var stream = new MemoryStream(xmlBytes, false))
-                document = XDocument.Load(stream, LoadOptions.None);
-            // Compare the multiset of logical scalar facts. Hierarchical ownership may differ in
-            // the legacy bootstrap solely because pre-U30A Guid identities affect deterministic
-            // iteration order (for example, which equivalent gathering site receives a recipe).
-            // Exact hierarchy/identity is still protected by canonical_state_hash on every resume.
-            var leaves = document.Root.DescendantsAndSelf().Where(x => !x.HasElements)
-                .Select(x => x.Name.LocalName + "=" + NormalizeIdentityLeaf(x.Value))
-                .OrderBy(x => x, StringComparer.Ordinal);
-            // Tier runtime includes frame-scheduled presentation interpolation and is therefore
-            // deliberately excluded from the cross-process logical outcome hash. Its exact values
-            // are still included in canonical_state_hash and validated on every checkpoint resume.
-            var builder = new StringBuilder(string.Join("\n", leaves));
-            using (var hash = SHA256.Create())
-                return BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(builder.ToString())))
-                    .Replace("-", string.Empty);
-        }
-
-        private static string NormalizeIdentityLeaf(string text)
-        {
-            var value = (text ?? string.Empty).Trim();
-            if (value.Length == 32 && value.All(Uri.IsHexDigit)) value = "<stable-id>";
-            return value;
-        }
+        // Preserve identity, ownership and hierarchy. Frame-scheduled presentation is
+        // deliberately outside this outcome hash, but inside every checkpoint hash.
+        private string ComputeRepeatableOutcomeHash() =>
+            U30Evidence.Hash(new SaveXmlCodec().Serialize(checkpointCoordinator.Capture()));
 
         private void WriteHeartbeat(double elapsed)
         {
@@ -519,10 +553,15 @@ namespace Game.Infrastructure.Reliability
                     GameCalendar.HourOfDay(root.Clock.State.CalendarTicks).ToString("D2") + ":" +
                     GameCalendar.MinuteOfHour(root.Clock.State.CalendarTicks).ToString("D2"),
                 population = root.Characters.Count,
+                tier1_count = root.Tiers.ManagedIds.Count(id => root.Tiers.GetTier(id) == CharacterSimulationTier.Tier1),
+                tier2_count = root.Tiers.ManagedIds.Count(id => root.Tiers.GetTier(id) == CharacterSimulationTier.Tier2),
+                tier3_count = root.Tiers.ManagedIds.Count(id => root.Tiers.GetTier(id) == CharacterSimulationTier.Tier3),
+                active_health_conditions = root.HealthFamily.ActiveConditionCount,
+                retained_health_conditions = root.HealthFamily.RetainedConditionCount,
                 resource_units = TotalResources(),
                 active_battles = root.Combat.Encounters.Count(x => x.Status == CombatEncounterStatus.Active),
                 ai_factions = root.StrategicAi.Factions.Count,
-                current_hash = ComputeLogicalStateHash(),
+                current_hash = checkpointHash,
                 last_checkpoint = latestCheckpoint,
                 performance = summary,
                 coverage = coverage,
@@ -541,6 +580,8 @@ namespace Game.Infrastructure.Reliability
                 Encoding.UTF8.GetBytes(JsonUtility.ToJson(progress, true)));
             intervalFrames.Clear();
             intervalCollections = 0;
+            Array.Clear(intervalProfilerSums, 0, intervalProfilerSums.Length);
+            Array.Clear(intervalProfilerCounts, 0, intervalProfilerCounts.Length);
             if (new FileInfo(rawFramesPath).Length >= JournalRotationBytes)
             {
                 journalRotation++;
@@ -563,7 +604,7 @@ namespace Game.Infrastructure.Reliability
             return total;
         }
 
-        private U30FrameSummary CaptureFrameSummary(IReadOnlyCollection<double> values)
+        private U30FrameSummary CaptureFrameSummary(IReadOnlyCollection<double> values, bool entireSegment = false)
         {
             var ordered = values.Count == 0 ? new[] { 0.001d } : values.OrderBy(x => x).ToArray();
             var now = Time.realtimeSinceStartupAsDouble;
@@ -571,11 +612,12 @@ namespace Game.Infrastructure.Reliability
             process.Refresh();
             var cpuTicks = process.TotalProcessorTime.Ticks;
             var cpuSeconds = Math.Max(0.001d, now - previousCpuRealtime);
-            intervalCpuPercent = (cpuTicks - previousCpuTicks) / TimeSpan.TicksPerSecond / cpuSeconds * 100d;
+            intervalCpuPercent = U30Evidence.CpuPercent(cpuTicks - (entireSegment ? startingCpuTicks : previousCpuTicks),
+                entireSegment ? now - startedRealtime : cpuSeconds);
             previousCpuTicks = cpuTicks;
             previousCpuRealtime = now;
             var workingSet = ReadWorkingSet(process);
-            memoryMetricsVerified |= workingSet > 0;
+            memoryMetricsVerified = workingSetSamples.Count == 0 ? workingSet > 0 : memoryMetricsVerified && workingSet > 0;
             var managed = GC.GetTotalMemory(false);
             workingSetSamples.Add(workingSet);
             managedSamples.Add(managed);
@@ -594,12 +636,11 @@ namespace Game.Infrastructure.Reliability
                 samples = values.Count,
                 p50_ms = Percentile(ordered, 50), p95_ms = Percentile(ordered, 95),
                 p99_ms = Percentile(ordered, 99), max_ms = ordered[ordered.Length - 1],
-                main_thread_average_ms = RecorderMilliseconds(mainThreadRecorder),
-                render_thread_average_ms = RecorderMilliseconds(renderThreadRecorder),
-                gpu_average_ms = RecorderMilliseconds(gpuRecorder),
-                // This recorder is a last-frame sample, not an interval allocation average.
-                allocated_bytes_per_frame = -1d,
-                collections = intervalCollections,
+                main_thread_average_ms = ProfilerAverage(0, entireSegment),
+                render_thread_average_ms = ProfilerAverage(1, entireSegment),
+                gpu_average_ms = ProfilerAverage(2, entireSegment),
+                allocated_bytes_per_frame = ProfilerAverage(3, entireSegment),
+                collections = entireSegment ? Math.Max(0, GC.CollectionCount(0) - collectionsAtStart) : intervalCollections,
                 process_cpu_percent = intervalCpuPercent,
                 working_set_bytes = workingSet,
                 managed_heap_bytes = managed
@@ -628,11 +669,12 @@ namespace Game.Infrastructure.Reliability
         {
             if (finished) return;
             finished = true;
+            Application.logMessageReceived -= OnUnityDiagnostic;
             // Tail frames remain durable even when a step fails between scheduled heartbeats.
             if (intervalFrames.Count > 0)
                 AppendDurable(rawFramesPath, JsonUtility.ToJson(new FrameBatch
                     { sequence = heartbeatSequence + 1, frame_ms = intervalFrames.ToArray() }, false) + "\n");
-            var performance = CaptureFrameSummary(allFrames);
+            var performance = CaptureFrameSummary(allFrames, true);
             var result = CreateResult(elapsed, performance, completed, reason);
             result.final_state_hash = completed ? ComputeRepeatableOutcomeHash() : string.Empty;
             WriteAtomic(Path.Combine(config.output_directory, "segment-result.json"),
@@ -650,6 +692,8 @@ namespace Game.Infrastructure.Reliability
                 simulationSteps == config.TargetSimulationSteps;
             var result = new U30SegmentResult
             {
+                build_guid = Application.buildGUID,
+                canonical_world_seed = root.ActiveNewGameConfiguration.WorldSeed,
                 passed = passed,
                 seed = config.seed,
                 segment_index = config.segment_index,
@@ -720,8 +764,20 @@ namespace Game.Infrastructure.Reliability
             catch { return default; }
         }
 
-        private static double RecorderMilliseconds(ProfilerRecorder recorder) =>
-            recorder.Valid && recorder.LastValue > 0 ? recorder.LastValue / 1000000d : -1d;
+        private void SampleProfiler(int index, ProfilerRecorder recorder, double divisor)
+        {
+            if (!recorder.Valid || recorder.Count == 0) return;
+            var value = recorder.LastValue / divisor;
+            if (value < 0 || (index != 3 && value == 0)) return;
+            intervalProfilerSums[index] += value; intervalProfilerCounts[index]++;
+            totalProfilerSums[index] += value; totalProfilerCounts[index]++;
+        }
+
+        private double ProfilerAverage(int index, bool entireSegment)
+        {
+            var count = entireSegment ? totalProfilerCounts[index] : intervalProfilerCounts[index];
+            return count == 0 ? -1 : (entireSegment ? totalProfilerSums[index] : intervalProfilerSums[index]) / count;
+        }
 
         private static void WriteAtomic(string path, byte[] bytes)
         {
@@ -806,8 +862,10 @@ namespace Game.Infrastructure.Reliability
 
         private void OnDestroy()
         {
+            Application.logMessageReceived -= OnUnityDiagnostic;
             DisposeRecorders();
             if (config == null) return;
+            if (root != null && root.CameraController != null) root.CameraController.enabled = previousCameraEnabled;
             Application.targetFrameRate = previousTargetFrameRate;
             QualitySettings.vSyncCount = previousVSyncCount;
         }
@@ -818,6 +876,13 @@ namespace Game.Infrastructure.Reliability
             if (renderThreadRecorder.Valid) renderThreadRecorder.Dispose();
             if (gpuRecorder.Valid) gpuRecorder.Dispose();
             if (allocationRecorder.Valid) allocationRecorder.Dispose();
+        }
+
+        private void OnUnityDiagnostic(string message, string stack, LogType type)
+        {
+            if (finished || (type != LogType.Error && type != LogType.Assert && type != LogType.Exception)) return;
+            criticalErrors++;
+            RecordIncident("unity_diagnostic", true, message + "\n" + stack, null);
         }
 
         private sealed class SnapshotStore : ISaveStore

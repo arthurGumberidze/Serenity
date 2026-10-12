@@ -41,6 +41,9 @@ internal static class U30FakePlayer
         int seed = int.Parse(Arg(args, "-u30Seed"));
         double duration = double.Parse(Arg(args, "-u30SegmentSeconds"), System.Globalization.CultureInfo.InvariantCulture);
         string mode = Environment.GetEnvironmentVariable("SERENITY_U30_FIXTURE_MODE") ?? "healthy";
+        string playerLog = Arg(args, "-logFile");
+        if (playerLog.Length > 0)
+            File.WriteAllText(playerLog, "PlayerConnection::Cleanup##utp:{\"type\":\"MemoryLeaks\",\"allocatedMemory\":1234}\n");
         string resume = Arg(args, "-u30ResumeFromCheckpoint");
         long sequence = segment;
         string checkpointDir = Path.Combine(checkpointRoot, "checkpoint-" + sequence.ToString("D8"));
@@ -49,7 +52,7 @@ internal static class U30FakePlayer
         string tiers = Path.Combine(checkpointDir, "tiers.json");
         File.WriteAllText(checkpoint, "<runnerFixture segment='" + segment + "'/>");
         File.WriteAllText(tiers, "{\"records\":[]}");
-        Write(Path.Combine(checkpointDir, "checkpoint.json"), Obj("schema_version", 1, "seed", seed,
+        Write(Path.Combine(checkpointDir, "checkpoint.json"), Obj("schema_version", 2, "seed", seed,
             "sequence", sequence, "independently_verified", true, "snapshot_file", checkpoint,
             "snapshot_sha256", Hash(checkpoint), "tiers_file", tiers, "tiers_sha256", Hash(tiers)));
         if (mode == "corrupt" && segment == 1)
@@ -73,7 +76,7 @@ internal static class U30FakePlayer
             var performance = Obj("samples", Math.Max(1, (int)(elapsed * 60)), "p50_ms", 16,
                 "p95_ms", 20, "p99_ms", 25, "max_ms", 30, "working_set_bytes", 10000000,
                 "managed_heap_bytes", 1000000, "allocated_bytes_per_frame", -1);
-            result = Obj("passed", false, "completed", false, "aborted", false, "end_reason", "running",
+            result = Obj("schema_version", 2, "canonical_world_seed", seed, "passed", false, "completed", false, "aborted", false, "end_reason", "running",
                 "seed", seed, "segment_index", segment, "actual_wall_clock_seconds", elapsed,
                 "productive_simulation_seconds", Math.Floor(elapsed * 4) / 4,
                 "critical_errors", 0, "invariant_failures", 0, "recoverable_errors", 0,
@@ -115,6 +118,6 @@ internal static class U30FakePlayer
         result["final_state_hash"] = "FIXTURE-OUTCOME";
         result["performance_summary_kind"] = "exact_segment_percentiles";
         Write(Path.Combine(output, "segment-result.json"), result);
-        return 0;
+        return mode == "bad_exit" ? 7 : 0;
     }
 }

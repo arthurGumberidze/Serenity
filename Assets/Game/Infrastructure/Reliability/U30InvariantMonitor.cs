@@ -92,6 +92,14 @@ namespace Game.Infrastructure.Reliability
             foreach (var faction in root.StrategicAi.Factions)
             {
                 var state = faction.Strategic;
+                if (U30Evidence.HasRepeatedTravelRejection(state.RecentDecisions))
+                    failures.Add("ai_repeated_travel_rejection:" + state.Id);
+                foreach (var order in state.PendingOrders.Where(x => x.Kind == Game.Domain.AI.AiDecisionKind.Travel))
+                    if (order.UnitId.HasValue && root.Clock.State.CalendarTicks - order.IssuedTick > TimeSpan.FromDays(2).Ticks &&
+                        !root.GlobalMap.Travels.Any(x => x.UnitId == order.UnitId.Value) &&
+                        !root.Combat.Encounters.Any(x => x.Status == CombatEncounterStatus.Active &&
+                            (x.SideAUnitId == order.UnitId || x.SideBUnitId == order.UnitId)))
+                        failures.Add("ai_stale_travel_order:" + state.Id + ":" + order.Sequence);
                 if (state.TargetSettlementId.HasValue && !settlements.Contains(state.TargetSettlementId.Value))
                     failures.Add("ai_invalid_target_settlement:" + state.Id);
                 if (state.TargetLocationId.HasValue && !locations.Contains(state.TargetLocationId.Value))

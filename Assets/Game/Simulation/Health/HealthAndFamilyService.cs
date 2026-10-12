@@ -45,6 +45,10 @@ namespace Game.Simulation.Health
         private readonly int biologicalTicksPerCalendarTick;
         private readonly Dictionary<StableEntityId, HealthConditionInstanceState> conditions =
             new Dictionary<StableEntityId, HealthConditionInstanceState>();
+        // Derived index, rebuilt on restore. Historical records remain canonical save data,
+        // but recovered/fatal history must not make every tick/capability query slower.
+        private readonly SortedDictionary<StableEntityId, HealthConditionInstanceState> activeConditions =
+            new SortedDictionary<StableEntityId, HealthConditionInstanceState>();
         private readonly Dictionary<StableEntityId, CharacterEventInstanceState> events =
             new Dictionary<StableEntityId, CharacterEventInstanceState>();
         private readonly Dictionary<StableEntityId, PregnancyState> pregnancies =
@@ -74,6 +78,10 @@ namespace Game.Simulation.Health
         public long WorldSeed => worldSeed;
         public long LastCalendarTick { get; private set; }
         public long LastBiologicalTick { get; private set; }
+        public int ActiveConditionCount => activeConditions.Count;
+        public int RetainedConditionCount => conditions.Count;
+        public bool HasActiveCondition(StableEntityId targetId, HealthConditionId definitionId) =>
+            activeConditions.Values.Any(x => x.TargetId == targetId && x.DefinitionId.Equals(definitionId));
         public IReadOnlyList<HealthConditionInstanceState> Conditions => conditions.Values.OrderBy(x => x.InstanceId).ToArray();
         public IReadOnlyList<CharacterEventInstanceState> Events => events.Values.OrderBy(x => x.InstanceId).ToArray();
         public IReadOnlyList<PregnancyState> Pregnancies => pregnancies.Values.OrderBy(x => x.PregnancyId).ToArray();
@@ -98,7 +106,7 @@ namespace Game.Simulation.Health
             var target = characters.Get(targetId);
             if (target.LifeState != CharacterLifeState.Alive) throw new InvalidOperationException("Cannot add a condition to a dead character.");
             var definition = catalog.Get(definitionId);
-            if (conditions.Values.Any(x => x.TargetId == targetId && x.DefinitionId.Equals(definitionId) && IsActive(x.State)))
+            if (HasActiveCondition(targetId, definitionId))
                 throw new InvalidOperationException("The same active condition already exists on this character.");
             var id = DerivedId("condition:" + definitionId, targetId, default, startCalendarTick);
             if (conditions.ContainsKey(id)) throw new InvalidOperationException("Deterministic condition ID collision.");
@@ -108,6 +116,7 @@ namespace Game.Simulation.Health
                 checked(startCalendarTick + ProgressionStep.Ticks), resolve, definition.InitialSeverity,
                 permanent ? HealthConditionState.Permanent : HealthConditionState.Active, 0, false);
             conditions.Add(id, state);
+            activeConditions.Add(id, state);
             return state;
         }
 
@@ -140,7 +149,7 @@ namespace Game.Simulation.Health
             };
             var requestedIndex = Array.FindIndex(escalation, x => x.Equals(requestedDefinitionId));
             if (requestedIndex < 0) throw new ArgumentException("Combat injuries must use an existing U18 injury definition.", nameof(requestedDefinitionId));
-            var active = new HashSet<HealthConditionId>(conditions.Values.Where(x => x.TargetId == targetId && IsActive(x.State))
+            var active = new HashSet<HealthConditionId>(activeConditions.Values.Where(x => x.TargetId == targetId)
                 .Select(x => x.DefinitionId));
             for (var i = requestedIndex; i < escalation.Length; i++)
             {
@@ -160,9 +169,10 @@ namespace Game.Simulation.Health
         {
             characters.Get(targetId);
             var recovered = 0;
-            foreach (var value in conditions.Values.Where(x => x.TargetId == targetId && IsTemporaryActive(x.State)).ToArray())
+            foreach (var value in activeConditions.Values.Where(x => x.TargetId == targetId && IsTemporaryActive(x.State)).ToArray())
             {
                 conditions[value.InstanceId] = CopyCondition(value, state: HealthConditionState.Recovered);
+                activeConditions.Remove(value.InstanceId);
                 recovered++;
             }
             return recovered;
@@ -238,9 +248,9 @@ namespace Game.Simulation.Health
                 throw new ArgumentOutOfRangeException(nameof(calendarTick), "Health/family time cannot move backwards.");
             var transitions = 0;
             var deaths = 0;
-            var conditionSnapshot = conditions.Count == 0
+            var conditionSnapshot = activeConditions.Count == 0
                 ? Array.Empty<HealthConditionInstanceState>()
-                : conditions.Values.OrderBy(x => x.InstanceId).ToArray();
+                : activeConditions.Values.ToArray();
             foreach (var original in conditionSnapshot)
             {
                 var current = original;
@@ -286,6 +296,8 @@ namespace Game.Simulation.Health
                     }
                 }
                 conditions[current.InstanceId] = current;
+                if (IsActive(current.State)) activeConditions[current.InstanceId] = current;
+                else activeConditions.Remove(current.InstanceId);
             }
 
             var births = 0;
@@ -328,7 +340,7 @@ namespace Game.Simulation.Health
             var combat = adult ? 1000 : 0;
             var incapacitated = false;
             var fertility = adult;
-            foreach (var condition in conditions.Values)
+            foreach (var condition in activeConditions.Values)
             {
                 if (condition.TargetId != characterId || !IsActive(condition.State)) continue;
                 var effect = catalog.Get(condition.DefinitionId).Effect;
@@ -380,6 +392,9 @@ namespace Game.Simulation.Health
                 if (!restoredPregnancies.TryAdd(pregnancy.PregnancyId, pregnancy)) throw new ArgumentException("Duplicate pregnancy ID.");
             }
             conditions.Clear(); foreach (var pair in restoredConditions) conditions.Add(pair.Key, pair.Value);
+            activeConditions.Clear();
+            foreach (var pair in restoredConditions)
+                if (IsActive(pair.Value.State)) activeConditions.Add(pair.Key, pair.Value);
             events.Clear(); foreach (var pair in restoredEvents) events.Add(pair.Key, pair.Value);
             pregnancies.Clear(); foreach (var pair in restoredPregnancies) pregnancies.Add(pair.Key, pair.Value);
             LastCalendarTick = state.LastCalendarTick;

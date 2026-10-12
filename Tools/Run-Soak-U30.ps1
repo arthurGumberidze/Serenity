@@ -106,12 +106,18 @@ $firstFailureUtc = ''
 $lastFailureUtc = ''
 $worstP95 = 0.0
 $maximumFrame = 0.0
+$nativeMemoryDiagnosticCount = 0
+$nativeMemoryDiagnosticMaximum = [long]0
+$shutdownThreadWarningCount = 0
 $coverage = [ordered]@{
     production_steps = [long]0; research_steps = [long]0; dynasty_checks = [long]0
     health_steps = [long]0; weather_days = [long]0; military_checks = [long]0
     physical_battle_steps = [long]0; abstract_battle_steps = [long]0; fire_steps = [long]0
     capture_attempts = [long]0; global_travel_steps = [long]0; strategic_ai_steps = [long]0
     event_steps = [long]0
+    production_output_units = [long]0; research_active_steps = [long]0; burning_steps = [long]0
+    active_travel_steps = [long]0; successful_captures = [long]0
+    tier1_steps = [long]0; tier2_steps = [long]0; tier3_steps = [long]0
 }
 $injectionUsed = $false
 $immediateStop = $false
@@ -180,7 +186,7 @@ function Get-U30VerifiedCheckpoint {
             $metadata = Get-Content -LiteralPath $metadataFile.FullName -Raw | ConvertFrom-Json
             $snapshot = [string]$metadata.snapshot_file
             $tiers = [string]$metadata.tiers_file
-            if ($metadata.seed -ne $Seed -or -not $metadata.independently_verified -or -not (Test-Path -LiteralPath $snapshot) -or
+            if ($metadata.schema_version -ne 2 -or $metadata.seed -ne $Seed -or -not $metadata.independently_verified -or -not (Test-Path -LiteralPath $snapshot) -or
                 -not (Test-Path -LiteralPath $tiers)) { throw 'Checkpoint bundle is incomplete.' }
             if ((Get-U30Sha256 $snapshot) -ne ([string]$metadata.snapshot_sha256).ToLowerInvariant() -or
                 (Get-U30Sha256 $tiers) -ne ([string]$metadata.tiers_sha256).ToLowerInvariant()) {
@@ -221,6 +227,22 @@ function Append-U30PlayerIncidents([string]$Path) {
 }
 
 try {
+$buildProvenancePath = Join-Path (Split-Path $PlayerPath -Parent) 'build-provenance.json'
+if (-not $TestMode -and -not (Test-Path -LiteralPath $buildProvenancePath)) {
+    throw 'Official U30 requires a freshly stamped build-provenance.json.'
+}
+$binaryEvidence = @([ordered]@{ path = $PlayerPath; sha256 = Get-U30Sha256 $PlayerPath })
+$managedDirectory = Join-Path (Split-Path $PlayerPath -Parent) (([IO.Path]::GetFileNameWithoutExtension($PlayerPath)) + '_Data\Managed')
+if (Test-Path -LiteralPath $managedDirectory) {
+    $binaryEvidence += @(Get-ChildItem -LiteralPath $managedDirectory -Filter 'Game.*.dll' -File | Sort-Object Name |
+        ForEach-Object { [ordered]@{ path = $_.FullName; sha256 = Get-U30Sha256 $_.FullName } })
+}
+$buildMetadata = if (Test-Path -LiteralPath $buildProvenancePath) { Get-Content -LiteralPath $buildProvenancePath -Raw | ConvertFrom-Json } else { $null }
+Write-U30AtomicJson (Join-Path $OutputFolder 'run-provenance.json') ([ordered]@{
+    schema_version = 2; seed = $Seed; official_gate = -not [bool]$TestMode
+    runner_sha256 = Get-U30Sha256 $PSCommandPath; binaries = $binaryEvidence
+    build = $buildMetadata
+})
 while (-not $immediateStop -and ($timer.Elapsed.TotalSeconds -lt $requestedSeconds -or
     ($criticalErrors -eq 0 -and $productiveSeconds -lt $requestedSeconds))) {
     $segmentIndex++
@@ -312,6 +334,16 @@ while (-not $immediateStop -and ($timer.Elapsed.TotalSeconds -lt $requestedSecon
     $exitCode = $process.ExitCode
     if ($null -eq $exitCode) { $exitCode = if ($watchdogTriggered -or $deadlineTriggered) { -1 } else { -2 } }
     $segmentEnded = [DateTime]::UtcNow
+    if (Test-Path -LiteralPath $playerLog) {
+        foreach ($line in Get-Content -LiteralPath $playerLog) {
+            if ($line -like '*abort_threads: Failed aborting*') { $shutdownThreadWarningCount++ }
+            if ($line -match '##utp:(\{"type":"MemoryLeaks".*\})') {
+                $diagnostic = $Matches[1] | ConvertFrom-Json
+                $nativeMemoryDiagnosticCount++
+                $nativeMemoryDiagnosticMaximum = [Math]::Max($nativeMemoryDiagnosticMaximum, [long]$diagnostic.allocatedMemory)
+            }
+        }
+    }
     $segmentResult = $null
     Append-U30PlayerIncidents $segmentIncidentPath
     $hasFinalResult = Test-Path -LiteralPath $segmentResultPath
@@ -329,8 +361,18 @@ while (-not $immediateStop -and ($timer.Elapsed.TotalSeconds -lt $requestedSecon
         $recoverableErrors++
         Register-U30Failure 'player_crash' "Player exited $exitCode without segment-result.json." $segmentIndex $latestCheckpoint
     }
+    if ($hasFinalResult -and $exitCode -ne 0 -and [bool]$segmentResult.passed) {
+        $criticalErrors++
+        Register-U30Failure 'contradictory_player_exit' "Player reports PASS but exited $exitCode." $segmentIndex $latestCheckpoint
+    }
 
     if ($segmentResult) {
+        if ($segmentResult.schema_version -ne 2 -or $segmentResult.seed -ne $Seed -or
+            $segmentResult.canonical_world_seed -ne $Seed -or
+            ($buildMetadata -and $segmentResult.build_guid -ne $buildMetadata.build_guid)) {
+            $criticalErrors++
+            Register-U30Failure 'segment_identity' 'Schema, canonical seed or build GUID does not match run provenance.' $segmentIndex $latestCheckpoint
+        }
         if ($hasFinalResult -and $segmentResult.completed) { $segmentsCompleted++ }
         # Imported incidents already contributed; reconcile counters without double counting.
         $criticalErrors += [Math]::Max(0, [int]$segmentResult.critical_errors - $segmentCriticalIncidents)
@@ -416,16 +458,27 @@ $coveragePassed = $coverage.production_steps -gt 0 -and $coverage.research_steps
     $coverage.fire_steps -gt 0 -and $coverage.capture_attempts -gt 0 -and $coverage.global_travel_steps -gt 0 -and
     $coverage.strategic_ai_steps -gt 0 -and $coverage.event_steps -gt 0
 $productivePassed = $productiveSeconds -ge $requestedSeconds
+$observedWorkloadsPassed = $coverage.production_output_units -gt 0 -and $coverage.research_active_steps -gt 0 -and
+    $coverage.burning_steps -gt 0 -and $coverage.active_travel_steps -gt 0 -and $coverage.successful_captures -gt 0 -and
+    $coverage.physical_battle_steps -gt 0 -and $coverage.abstract_battle_steps -gt 0 -and
+    $coverage.tier1_steps -gt 0 -and $coverage.tier2_steps -gt 0 -and $coverage.tier3_steps -gt 0
 $passed = $durationPassed -and $productivePassed -and -not $immediateStop -and $criticalErrors -eq 0 -and
     $invariantFailures -eq 0 -and $watchdogFailures -eq 0 -and -not $memoryRunaway -and $memoryMetricsVerified -and
     $resumeVerified -and -not [string]::IsNullOrWhiteSpace($finalStateHash) -and
-    $segmentsCompleted -gt 0 -and $performanceSamples -gt 0 -and $coveragePassed
+    $segmentsCompleted -gt 0 -and $performanceSamples -gt 0 -and $coveragePassed -and ($TestMode -or $observedWorkloadsPassed)
 $summary = if ($passed) {
     "U30 soak completed; worst segment p95 ${worstP95} ms, maximum ${maximumFrame} ms."
 } else {
     "U30 soak failed closed; inspect the incident journal and segment manifest."
 }
 $result = [ordered]@{
+    schema_version = 2; official_gate = -not [bool]$TestMode; observed_workloads_passed = $observedWorkloadsPassed
+    outcome_hash_kind = 'identity-preserving-canonical-xml-v2'
+    memory_scope = 'bounded_process_segments_not_continuous_8h'
+    native_memory_diagnostic_count = $nativeMemoryDiagnosticCount
+    native_memory_diagnostic_max_bytes = $nativeMemoryDiagnosticMaximum
+    native_memory_diagnostics_resolved = ($nativeMemoryDiagnosticCount -eq 0)
+    shutdown_thread_warning_count = $shutdownThreadWarningCount
     passed = $passed; seed = $Seed; requested_wall_clock_seconds = [int]$requestedSeconds
     actual_wall_clock_seconds = $actualSeconds; started_utc = $startedUtc.ToString('O')
     completed_utc = $completedUtc.ToString('O'); critical_errors = $criticalErrors
@@ -445,6 +498,12 @@ $temporaryResult = $resultPath + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'
 [IO.File]::WriteAllText($temporaryResult, ($result | ConvertTo-Json -Depth 16), [Text.UTF8Encoding]::new($false))
 if (Test-Path -LiteralPath $resultPath) { [IO.File]::Replace($temporaryResult, $resultPath, $null) }
 else { [IO.File]::Move($temporaryResult, $resultPath) }
+Write-U30AtomicJson (Join-Path $OutputFolder 'runner-heartbeat.json') ([ordered]@{
+    utc = $completedUtc.ToString('O'); state = 'completed'; passed = $passed
+    actual_wall_clock_seconds = $actualSeconds; productive_simulation_seconds = $productiveSeconds
+    segment_index = $segmentIndex; latest_checkpoint = [string]$latestCheckpoint; result_file = $resultPath
+    critical_errors = $criticalErrors
+})
 
 [void][U30NativePower]::SetThreadExecutionState($u30Continuous)
 if ($passed) { exit 0 }

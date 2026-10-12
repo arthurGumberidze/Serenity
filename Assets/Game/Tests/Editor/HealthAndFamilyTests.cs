@@ -20,6 +20,31 @@ namespace Game.Tests.Editor
     {
         private static readonly long AdultTick = Character.BiologicalTicksPerYear * 20L;
 
+        [Test, Category("U30")]
+        public void HistoricalConditionsDoNotRemainInActiveIndexAndRestoreRebuildsIt()
+        {
+            var fixture = Fixture.Create(77);
+            for (var i = 0; i < 1000; i++)
+            {
+                fixture.Health.ApplyCondition(fixture.Father.Id, new HealthConditionId("minor_cut"), i);
+                Assert.That(fixture.Health.RecoverAll(fixture.Father.Id), Is.EqualTo(1));
+            }
+            fixture.Health.ApplyCondition(fixture.Father.Id, new HealthConditionId("sprain"), 1001);
+            Assert.That(fixture.Health.RetainedConditionCount, Is.EqualTo(1001));
+            Assert.That(fixture.Health.ActiveConditionCount, Is.EqualTo(1));
+            var saved = fixture.Health.CaptureState();
+            fixture.Health.RecoverAll(fixture.Father.Id);
+            fixture.Health.RestoreState(saved);
+            Assert.That(fixture.Health.ActiveConditionCount, Is.EqualTo(1));
+            Assert.That(fixture.Health.HasActiveCondition(fixture.Father.Id, new HealthConditionId("sprain")), Is.True);
+            Assert.That(fixture.Health.HasActiveCondition(fixture.Father.Id, new HealthConditionId("minor_cut")), Is.False);
+            Assert.That(fixture.Health.RetainedConditionCount, Is.EqualTo(1001));
+            fixture.Health.AdvanceTo(TimeSpan.FromDays(10).Ticks, AdultTick + TimeSpan.FromDays(4000).Ticks, false);
+            Assert.That(fixture.Health.HasActiveCondition(fixture.Father.Id, new HealthConditionId("sprain")), Is.False);
+            Assert.That(fixture.Health.ActiveConditionCount, Is.EqualTo(0));
+            Assert.That(fixture.Health.Conditions.Count, Is.EqualTo(1001));
+        }
+
         [Test]
         public void HealthDefinitionsValidateAndStoneAgeCatalogIsSmallDataDrivenSet()
         {

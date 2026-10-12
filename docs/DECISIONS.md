@@ -507,3 +507,25 @@ U31 automation uses the public U27 UI, the normal `LocalSceneCompositionRoot`, r
 ## D-100 A structured soak PASS remains subject to behavioral audit (2026-10-12)
 
 Run4's duration, exact snapshot integrity and restart continuity pass, but its persisted AI history exhibits the invalid-target loop prohibited by the original U30 contract. Reference-validity checks do not establish liveness. Keep U30 IN_PROGRESS and preserve original PASS artifacts without rewriting them. The correction belongs to U26/U25 progression and U30 observation, not an alternative gameplay authority or a relaxed gate. Planned process restarts bound memory conclusions to observed segment length; invocation counters and normalized outcome hashes must not be promoted to sustained-workload or exact-identity evidence. This records an acceptance boundary, not an implemented fix.
+
+## D-101 AI arrival is a persisted hold, not implicit victory
+
+At the target location U26 completes the travel order and retains one AwaitBattle intent with its ordered target. It does not issue a self-route or capture without a canonical victory. Reconciliation accepts travel/hold intent and reads the order's target rather than a transient display objective; later U25 hostile arrival can therefore still lead to U23/U26 capture. U30 observes repeated rejected travel decisions and stale travel orders. A new occupation rule for undefended settlements requires separate gameplay design and is not invented by the reliability harness.
+
+## D-102 U30 evidence schema 2 is exact and explicitly scoped
+
+The CLI seed is resolved before NewGame bootstrap. Checkpoints hash canonical XML plus every tier continuation field using an explicitly versioned binary encoding; floating-point values additionally use exact base64 numeric bits because Unity JSON doubles are not bit-exact. Schema-1 soak bundles remain immutable historical evidence, not eligible schema-2 resumes. Gameplay save format remains v15. Outcome SHA preserves XML identity/ownership/hierarchy and excludes frame-dependent presentation; it is not a claim that an unmeasured repeated run is deterministic.
+
+Heartbeats reference the last verified checkpoint hash, explicitly not a fresh live-world hash. This removes full snapshot serialization from each heartbeat. CPU uses floating-point seconds; profiler values average valid frame observations; segment GC is cumulative and the startup delta is excluded. Process-segment memory, native shutdown diagnostics and invocation versus observed workload coverage are separate evidence. Source/input fingerprint, build GUID, executable/project DLL SHA and runner SHA identify new artifacts, including builds made from an uncommitted worktree.
+
+## D-103 Health history stays canonical while hot queries use a derived active index
+
+Recovered/fatal records are not silently deleted to improve memory graphs. An active-condition index is maintained on apply/recover/advance and rebuilt from validated canonical state on restore. Tick and capability work no longer traverses recovered history. This fixes repeated hot-path history scanning, not the separate long-term history-retention policy; snapshot size and retained-condition count remain visible and archival/schema work stays explicit.
+
+## D-104 Technical integration is not visual product acceptance
+
+The requested development plan preserves existing systems and introduces explicit product acceptance for Russian UI, first launch/main menu, appearance creation, a coherent semi-realistic authored Stone Age region and the first playable hour. Green unit/integration tests alone do not approve art or usability. `PRODUCT_ROADMAP_RU.md` is a proposed delivery order and does not activate unrelated tasks or approve purchases. U29/U30/U31 statuses and the prohibition on a new eight-hour run remain unchanged.
+
+## D-105 Late outdoor entrants cannot receive backdated weather illness (2026-10-13)
+
+The seed-correct short Player control exposed a late outdoor roster entry after the health clock had advanced. A missing exposure cursor previously replayed days from zero and attempted ApplyCondition before HealthFamily.LastCalendarTick, causing a deterministic exception. Weather now retires unobserved historical days older than the health authority's watermark without inventing retroactive illness. Current/future due days still use normal deterministic exposure and health commands. This also avoids treating a newly introduced newborn/worker as observed outdoors before its first roster entry. Direct backdated health mutation remains rejected; weather checkpoint/idempotence and restore rules remain intact. The failed short control is retained as evidence, not rewritten into PASS.

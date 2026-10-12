@@ -41,7 +41,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.ResearchDebug.CaptureWorkerStatus().AssignedCount, Is.EqualTo(1));
             Assert.That(root.ResearchDebug.CaptureWorkerStatus().ActiveCount, Is.Zero);
             Assert.That(root.ResearchDebug.StartSelected(), Is.True);
-            root.AiScheduler.Advance(new GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
+            AdvanceSchedulerUntilResearchActive(root);
             var active = root.ResearchDebug.CaptureWorkerStatus();
             Assert.That(active.ActiveCount, Is.EqualTo(1));
             Assert.That(active.ActiveWorkerIds.Single(), Is.EqualTo(root.MaleDemoCharacter.Id));
@@ -92,7 +92,7 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.Research.AssignWorker(root.MaleDemoCharacter.Id);
             Assert.That(root.Research.Start(new TechnologyId("controlled_fire")), Is.True);
-            root.AiScheduler.Advance(new GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
+            AdvanceSchedulerUntilResearchActive(root);
             Assert.That(root.ResearchDebug.CaptureWorkerStatus().ActiveCount, Is.EqualTo(1));
             root.TimeDebug.SetSpeed(GameSpeed.Maximum);
             root.TimeDebug.TogglePause();
@@ -136,6 +136,14 @@ namespace Game.Tests.PlayMode
             Assert.That(root.SelectionProbe.SelectedCharacterIds,
                 Is.EqualTo(new[] { root.MaleDemoCharacter.Id }));
             root.BuildingPlacementController.CancelPlacement();
+        }
+
+        private static void AdvanceSchedulerUntilResearchActive(LocalSceneCompositionRoot root)
+        {
+            // Ten settlers no longer fit in one scheduler budget; identity sorting
+            // must not require the monarch to be processed on the first iteration.
+            for (var i = 0; i < root.AiAgents.Count && root.ResearchDebug.CaptureWorkerStatus().ActiveCount == 0; i++)
+                root.AiScheduler.Advance(new GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
         }
 
         private static void CompleteTechnology(LocalSceneCompositionRoot root, string technologyId)

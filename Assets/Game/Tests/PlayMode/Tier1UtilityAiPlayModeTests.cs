@@ -31,8 +31,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root.NavigationSurface.navMeshData, Is.Not.Null);
             Assert.That(root.AiRuntime, Is.Not.Null);
             Assert.That(root.AiRuntime.PerAgentAiUpdateCount, Is.Zero);
-            Assert.That(root.AiAgents.Count, Is.EqualTo(2));
-            Assert.That(root.AiScheduler.Count, Is.EqualTo(2));
+            Assert.That(root.AiAgents.Count, Is.EqualTo(10));
+            Assert.That(root.AiScheduler.Count, Is.EqualTo(10));
             Assert.That(root.DemoStorageBuilding, Is.Not.Null);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>() != null), Is.True);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>().isOnNavMesh), Is.True);
@@ -123,7 +123,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.HaulClaims.Count, Is.GreaterThan(0), "No haul claim became observable for debug selection.");
             root.AiRuntime.SetPaused(true);
             var claim = root.HaulClaims.CaptureActive().First();
-            var presenter = root.DemoPresenters.Single(x => x.CharacterId == claim.Claimant);
+            Assert.That(root.CharacterPresentations.TryGet(claim.Claimant, out var presenter), Is.True);
             SelectFromAbove(root, presenter);
             Assert.That(root.SelectionProbe.SelectedCharacterId, Is.EqualTo(claim.Claimant));
             var overlay = Object.FindAnyObjectByType<Tier1AiDebugOverlay>();

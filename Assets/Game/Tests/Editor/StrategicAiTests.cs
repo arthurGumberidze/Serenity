@@ -39,6 +39,38 @@ namespace Game.Tests.Editor
         private static readonly long AdultBiologicalTick = Character.BiologicalTicksPerYear * 20L;
         private static readonly long DecisionStep = TimeSpan.FromHours(6).Ticks;
 
+        [Test, Category("U30")]
+        public void ArrivalWithoutDefenderHoldsWithoutSelfRouteOrUnauthorizedCapture()
+        {
+            var fixture = Fixture.Create(3030);
+            fixture.AdvanceTo(TimeSpan.FromDays(20).Ticks);
+            var state = fixture.Ai.Strategic;
+            Assert.That(state.RecentDecisions.Any(x => x.Kind == AiDecisionKind.AwaitBattle), Is.True);
+            Assert.That(state.RecentDecisions.Any(x => x.Reason.Contains("NoDirectRoute")), Is.False);
+            Assert.That(state.PendingOrders.Any(x => x.Kind == AiDecisionKind.Travel), Is.False);
+            Assert.That(fixture.Map.Settlements.Single(x => x.Id == fixture.PlayerSettlement).OwnerSideId,
+                Is.EqualTo(fixture.PlayerSide));
+            Assert.That(fixture.Battles.Battles, Is.Empty);
+            Assert.That(state.PendingOrders.Count(x => x.Kind == AiDecisionKind.AwaitBattle), Is.EqualTo(1));
+        }
+
+        [Test, Category("U30")]
+        public void HoldingArmyCanResolveLaterBattleAndCaptureItsOrderedTarget()
+        {
+            var fixture = Fixture.Create(26003);
+            fixture.AdvanceTo(TimeSpan.FromDays(20).Ticks);
+            fixture.CreatePlayerDefender();
+            var destination = new WorldLocationId("starter_settlement");
+            var route = fixture.Map.GetRoutes(destination).First();
+            var origin = route.From == destination ? route.To : route.From;
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, origin.Value);
+            Assert.That(fixture.Map.IssueTravelOrder(fixture.PlayerUnitId, destination, fixture.Tick).Issued, Is.True);
+            fixture.AdvanceUntil(() => fixture.Map.Settlements.Single(x => x.Id == fixture.PlayerSettlement)
+                .OwnerSideId == fixture.EnemySide, 500);
+            Assert.That(fixture.Ai.Strategic.PendingOrders, Is.Empty);
+            Assert.That(fixture.Battles.Battles.Any(x => x.Status == CombatEncounterStatus.Finished), Is.True);
+        }
+
         [Test]
         public void DecisionSelectionUsesStableStrategicPriority()
         {
@@ -454,7 +486,7 @@ namespace Game.Tests.Editor
                     new[] { Shelter, Storage, Crop, Uncapturable }, PlayerIds);
             }
 
-            private void CreatePlayerDefender()
+            public void CreatePlayerDefender()
             {
                 PlayerUnitId = new MilitaryUnitId(Id((int)(SeedOffset + Seed % 10000 + 400)));
                 Units.Create(PlayerUnitId, new MilitarySideId(PlayerSide.Value), new[] { PlayerIds[0] },

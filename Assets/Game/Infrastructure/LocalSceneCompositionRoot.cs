@@ -211,7 +211,8 @@ namespace Game.Infrastructure
                 characterCatalog == null || buildingCatalog == null || buildingPlacementController == null)
                 throw new InvalidOperationException("Local scene composition references must be assigned explicitly.");
 
-            ActiveNewGameConfiguration = new NewGameConfiguration(NewGameLaunchState.Consume(developmentWorldSimulationSeed));
+            ActiveNewGameConfiguration = new NewGameConfiguration(U30SoakConfig.ResolveWorldSeed(
+                Environment.GetCommandLineArgs(), NewGameLaunchState.Consume(developmentWorldSimulationSeed)));
             NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration);
             var worldSeed = ActiveNewGameConfiguration.WorldSeed;
             Characters = new CharacterRegistry();

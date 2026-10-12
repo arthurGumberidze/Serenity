@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Characters;
@@ -13,6 +14,46 @@ namespace Game.Tests
     [Category("U30")]
     public sealed class U30SoakTests
     {
+        [Test]
+        public void RequestedSeedReachesBootstrapOnlyWhenSoakIsEnabled()
+        {
+            Assert.That(U30SoakConfig.ResolveWorldSeed(new[] { "-u30Soak", "-u30Seed", "3030" }, 99), Is.EqualTo(3030));
+            Assert.That(U30SoakConfig.ResolveWorldSeed(new[] { "-u30Seed", "3030" }, 99), Is.EqualTo(99));
+        }
+
+        [Test]
+        public void CpuPreservesSubsecondUsageAndReportsUnavailableWindow()
+        {
+            Assert.That(U30Evidence.CpuPercent(TimeSpan.TicksPerSecond / 4, 1), Is.EqualTo(25));
+            Assert.That(U30Evidence.CpuPercent(1, 0), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void LivenessDetectsEightRepeatedRejectionsButNotIntentionalHolding()
+        {
+            var rejected = Enumerable.Range(1, 8).Select(i => new AiDecision(i, i,
+                AiDecisionKind.Recover, AiStrategicGoal.Recover, 0, "Travel rejected: NoDirectRoute")).ToArray();
+            Assert.That(U30Evidence.HasRepeatedTravelRejection(rejected), Is.True);
+            Assert.That(U30Evidence.HasRepeatedTravelRejection(rejected.Take(7)), Is.False);
+            Assert.That(U30Evidence.HasRepeatedTravelRejection(rejected.Take(7).Append(new AiDecision(8, 8,
+                AiDecisionKind.AwaitBattle, AiStrategicGoal.AttackSettlement, 0, "Holding"))), Is.False);
+        }
+
+        [Test]
+        public void JsonRoundTripIsBitExactAndHashCoversRuntimeNotOnlyIdAndTier()
+        {
+            var state = new CharacterRuntimeState(StableEntityId.Parse("00000000000000000000000000003030"),
+                new WorldPosition(1.2345678f, 2, 3), default, true, "remote", 7, 8, 9,
+                0.12345678901234567d, 0.99999999999999989d, 10, 11, 12, 13, 14);
+            var record = U30TierRuntimeRecord.Capture(CharacterSimulationTier.Tier2, state);
+            var decoded = UnityEngine.JsonUtility.FromJson<U30TierRuntimeRecord>(UnityEngine.JsonUtility.ToJson(record));
+            Assert.That(BitConverter.DoubleToInt64Bits(decoded.ToState().Energy), Is.EqualTo(BitConverter.DoubleToInt64Bits(state.Energy)));
+            Assert.That(BitConverter.DoubleToInt64Bits(decoded.ToState().Hunger), Is.EqualTo(BitConverter.DoubleToInt64Bits(state.Hunger)));
+            var original = U30Evidence.CanonicalHash(new byte[] { 1 }, new[] { record });
+            Assert.That(U30Evidence.CanonicalHash(new byte[] { 1 }, new[] { decoded }), Is.EqualTo(original));
+            decoded.deterministic_accumulator++;
+            Assert.That(U30Evidence.CanonicalHash(new byte[] { 1 }, new[] { decoded }), Is.Not.EqualTo(original));
+        }
         [Test]
         public void ConfigParsesSegmentAndRejectsRelativeEvidencePaths()
         {
@@ -68,6 +109,16 @@ namespace Game.Tests
         }
 
         [Test]
+        public void OfficialGateRejectsInvocationOnlyCoverage()
+        {
+            var result = ValidAggregate();
+            result.coverage.production_output_units = 0;
+            Assert.That(result.coverage.CoversRequiredSystems, Is.True);
+            Assert.That(U30SoakResultValidator.Validate(result, true), Does.Contain("incomplete_observed_workloads"));
+            Assert.That(U30SoakResultValidator.Validate(result, true), Does.Contain("passed_flag_contradicts_evidence"));
+        }
+
+        [Test]
         public void TierManagerRestoresExactRepresentationStateAtBarrier()
         {
             var registry = new CharacterRegistry();
@@ -96,7 +147,10 @@ namespace Game.Tests
             {
                 production_steps = 1, research_steps = 1, dynasty_checks = 1, health_steps = 1,
                 weather_days = 1, military_checks = 1, abstract_battle_steps = 1, fire_steps = 1,
-                capture_attempts = 1, global_travel_steps = 1, strategic_ai_steps = 1, event_steps = 1
+                capture_attempts = 1, global_travel_steps = 1, strategic_ai_steps = 1, event_steps = 1,
+                physical_battle_steps = 1, production_output_units = 1, research_active_steps = 1,
+                burning_steps = 1, active_travel_steps = 1, successful_captures = 1,
+                tier1_steps = 1, tier2_steps = 1, tier3_steps = 1
             };
             Assert.That(coverage.CoversRequiredSystems, Is.True);
             coverage.event_steps = 0;
@@ -114,7 +168,10 @@ namespace Game.Tests
             {
                 production_steps = 1, research_steps = 1, dynasty_checks = 1, health_steps = 1,
                 weather_days = 1, military_checks = 1, abstract_battle_steps = 1, fire_steps = 1,
-                capture_attempts = 1, global_travel_steps = 1, strategic_ai_steps = 1, event_steps = 1
+                capture_attempts = 1, global_travel_steps = 1, strategic_ai_steps = 1, event_steps = 1,
+                physical_battle_steps = 1, production_output_units = 1, research_active_steps = 1,
+                burning_steps = 1, active_travel_steps = 1, successful_captures = 1,
+                tier1_steps = 1, tier2_steps = 1, tier3_steps = 1
             },
             incident_journal_path = "incidents.jsonl", incident_journal_sha256 = "AA",
             segment_manifest_path = "segments.jsonl", segment_manifest_sha256 = "BB"

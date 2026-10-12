@@ -1,5 +1,11 @@
 # Architecture — U01
 
+## U30 remediation boundaries
+
+U26 retains AwaitBattle orders at already-reached targets and resolves later battle capture against the persisted order target. No new capture authority is introduced. Health's active-condition index is derived from canonical retained history and rebuilt on load. U30 schema 2 belongs to evidence files only; gameplay snapshot v15 is unchanged. Its exact XML+tier-runtime hash, bit-preserving numeric payload and build/run provenance must not be confused with the XML-only outcome fingerprint or with continuous-process memory proof. Heartbeats carry a labelled last-checkpoint hash rather than serializing a whole world each second.
+
+The Russian product roadmap does not move gameplay state into UI, vendor assets or editor models. Appearance, menu and authored-world work are future tasks with separate visual/user acceptance.
+
 ## Scope and source
 Implemented in U01: five runtime assembly boundaries and Game.Tests (EditMode), dependency checks, and this architecture contract. Runtime files contain assembly metadata only; services below are ownership contracts for later tasks, not implemented gameplay. FRS_Unity.docx sections 4, 33, 39–40 and 42.2–42.7 guide the design. D-008 overrides the original Editor target with Unity 6000.6.4f1.
 
