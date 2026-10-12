@@ -4,10 +4,10 @@
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 
 ## Current milestone / last completed task
-U28 DONE. U29 is PARTIAL by explicit user decision: its benchmark/diagnostic infrastructure and safe optimizations are retained, but the 1000-Character p95 gate is not met. U30 is TODO and has not started.
+U28 DONE. U29 is PARTIAL by explicit user decision: its benchmark/diagnostic infrastructure and safe optimizations are retained, but the 1000-Character p95 gate is not met. U30 is IN_PROGRESS: preparation is complete and the official external run is active, but no 8-hour verdict has been finalized.
 
 ## Active task
-No U30 implementation has started. U29 is frozen as PARTIAL: measured worker/ECS and redundant roster/weather preparation are optimized, the offline matrix/reporting and triggered native trace tooling are preserved, and full 418/102 regressions passed before the final harness-only additions. The clean 180+900 control lowered allocations but did not fix p95. Returning U29 to DONE still requires a complete 12-repeat PASS; the next chat may prepare U30 under the user's accepted sequencing exception.
+U30 preparation provides an offline fail-soft Windows Player runner, segmented performance/heartbeat evidence, atomic verified checkpoints, exact resume, invariant monitoring, bounded watchdog restart/backoff, first-failure reproduction artifacts and aggregate result validation. Two same-seed/config short runs passed with the identical logical hash `38ACBA28253F7E052DAD8696F7F4E0F0CA5BCDFC680339C31413E88BC79FFDE0`; injected invariant and watchdog runs continued through restart/resume, preserved evidence and returned FAIL as required. Focused U30 tests, U29 dependency regressions/persistence and the Windows x64 Mono Development build passed. The official run at `C:\serenity_u30_soak_20261012_run3` began at `2026-10-12T00:08:26.7481820Z`; U30 remains IN_PROGRESS until a separate finalizer verifies its completed `soak-result.json`. U29 remains PARTIAL and U30A/U31 have not started.
 
 ## U29 performance-gate progress
 - Final checkpoint verification (2026-10-12): `& .\Tools\Verify-U29.ps1 -ProjectPath C:\serenity_game -BuildPlayer` passed compile, U29 EditMode 28/28, U29 headless PlayMode 16/16, required EditMode 158/158, required PlayMode 38/38, persistence 35/35, and Windows x64 Mono Development build with 0 errors/2 warnings. PostgreSQL integration discovery found 25/25 and skipped them because no test database was configured. PowerShell parsers passed for all six U29 scripts and `git diff --check` reported no errors. This validates the retained implementation; it does not change the PARTIAL performance verdict.
@@ -353,7 +353,7 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 - Windows Computer Use could not enumerate/attach to the player because its helper failed during setup with `helper_unknown_error`; the exact manual click sequence could not be independently repeated through desktop automation, while the same Pointer InputAction/UI dispatch path passed in both headless and GPU PlayMode.
 
 ## Next action
-U29 is checkpointed as PARTIAL; its residual gate and evidence are in `docs/U29_HANDOFF.md`. Do not run another U29 matrix unless explicitly returning to that debt. U30 is TODO and must begin only in a new chat using the repository prompt; U30A/U31 have not started.
+U29 is checkpointed as PARTIAL; its residual gate and evidence are in `docs/U29_HANDOFF.md`. Do not run another U29 matrix unless explicitly returning to that debt. Wait for the external U30 run at `C:\serenity_u30_soak_20261012_run3`, then use a fresh finalizer to audit its result and either keep U30 IN_PROGRESS with exact failure evidence or mark it DONE in a separate validation commit. U30A/U31 have not started.
 
 U16 final validation command:
 

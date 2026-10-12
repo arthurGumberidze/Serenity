@@ -54,6 +54,7 @@ using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
+using Game.Infrastructure.Reliability;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -161,6 +162,7 @@ namespace Game.Infrastructure
         public LocalGameplaySaveFacade PlayerSaves { get; private set; }
         public GameplayUiController GameplayUi { get; private set; }
         public U29BenchmarkController PerformanceBenchmark { get; private set; }
+        public U30SoakController SoakValidation { get; private set; }
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -422,6 +424,7 @@ namespace Game.Infrastructure
                     Events),
                 pointerRaycaster, input);
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
+            SoakValidation = U30SoakController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

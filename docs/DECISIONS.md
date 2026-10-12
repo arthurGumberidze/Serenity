@@ -459,3 +459,15 @@ When selected markers cannot attribute a sustained failure, an explicit diagnost
 ## D-088 U29 may be checkpointed as PARTIAL without weakening its gate (2026-10-12)
 
 The user explicitly chose to preserve the completed U29 infrastructure and safe optimizations, record the unresolved p95 debt, and prepare U30 in a separate chat rather than spend more runs now. PARTIAL is not DONE: p95 <=33.33 ms at 1000 Characters remains unproven and U31 must not interpret the checkpoint as a passed dependency. U30 may proceed as an explicit sequencing exception because its eight-hour reliability soak can collect additional long-duration performance evidence. It must not rewrite U29 thresholds or silently close the debt. The rejected four-worker experiment is not adopted into runtime or runner defaults.
+
+## D-089 U30 is segmented, fail-soft and finalized from external evidence (2026-10-12)
+
+The official reliability gate runs outside Codex through `Tools/Run-Soak-U30.ps1`. The runner targets at least the requested real duration and the requested productive simulation duration, splits work into restartable Player segments, writes append-only heartbeat/performance/incident/segment evidence, and uses bounded backoff. A recoverable gameplay exception, invariant failure, invalid checkpoint, crash or watchdog restart permanently makes the aggregate verdict FAIL but does not discard later observation. Immediate stop is reserved for exhausted safe recovery or evidence integrity. U30 remains IN_PROGRESS after harness preparation; only a fresh finalizer may mark DONE after auditing an actual result with requested and actual duration at least 28800 seconds.
+
+## D-090 Exact checkpoint identity and repeatable logical outcome use separate hashes (2026-10-12)
+
+Every checkpoint stores snapshot-v14 XML plus all representation-neutral Tier runtime fields, SHA-256 hashes and an exact canonical hash. Resume verifies the bundle, restores canonical time/state first, then transactionally restores exactly one tier projection per StableEntityId; births added during a prior segment are seeded into the canonical registry before transactional load. The cross-process `final_state_hash` separately normalizes legacy GUID identities and frame-scheduled presentation interpolation so same-seed/config runs compare logical outcomes before U30A supplies deterministic New Game identities. The normalized hash never substitutes for exact checkpoint verification.
+
+## D-091 The offline soak process owns a temporary Windows sleep guard (2026-10-12)
+
+The runner calls `SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)` for its process lifetime. This prevents system sleep during an unattended night run without changing the user's persistent power plan; display power-off remains allowed, and the request is cleared explicitly on normal completion or automatically when the process exits.

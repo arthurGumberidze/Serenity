@@ -114,6 +114,77 @@ namespace Game.Simulation.Tiers
             return state;
         }
 
+        /// <summary>
+        /// Restores an explicitly checkpointed representation at a simulation barrier. This is
+        /// intentionally separate from camera-driven transitions: persistence supplies the exact
+        /// representation-neutral runtime state and no transition policy is consulted.
+        /// </summary>
+        public void RestoreRepresentationState(StableEntityId characterId, CharacterSimulationTier targetTier,
+            CharacterRuntimeState checkpointState)
+        {
+            ValidateTier(targetTier);
+            RequireMatchingIdentity(characterId, checkpointState);
+            var sourceTier = GetTier(characterId);
+            AssertExactlyOneActive(characterId, sourceTier);
+            if (!transitioning.Add(characterId))
+                throw new InvalidOperationException("A re-entrant representation restore is not allowed.");
+
+            var character = characters.Get(characterId);
+            var source = adapters[sourceTier];
+            var target = adapters[targetTier];
+            var rollbackState = source.Capture(characterId);
+            RequireMatchingIdentity(characterId, rollbackState);
+
+            try
+            {
+                if (sourceTier == targetTier)
+                {
+                    source.Dematerialize(characterId);
+                    try
+                    {
+                        // Concrete adapters intentionally reject materialization while an old
+                        // projection is active. Same-tier checkpoint restore therefore validates
+                        // only after releasing that projection, while retaining rollbackState for
+                        // the transactional recovery path below.
+                        source.ValidateMaterialization(character, checkpointState);
+                        source.Materialize(character, checkpointState);
+                        AssertExactlyOneActive(characterId, sourceTier);
+                        return;
+                    }
+                    catch (Exception restoreFailure)
+                    {
+                        if (source.IsActive(characterId)) source.Dematerialize(characterId);
+                        source.Materialize(character, rollbackState);
+                        AssertExactlyOneActive(characterId, sourceTier);
+                        throw new TierTransitionException(characterId, sourceTier, targetTier, true,
+                            restoreFailure);
+                    }
+                }
+
+                target.ValidateMaterialization(character, checkpointState);
+                source.Dematerialize(characterId);
+                try
+                {
+                    target.Materialize(character, checkpointState);
+                    tiers[characterId] = targetTier;
+                    AssertExactlyOneActive(characterId, targetTier);
+                }
+                catch (Exception restoreFailure)
+                {
+                    if (target.IsActive(characterId)) target.Dematerialize(characterId);
+                    source.Materialize(character, rollbackState);
+                    tiers[characterId] = sourceTier;
+                    AssertExactlyOneActive(characterId, sourceTier);
+                    throw new TierTransitionException(characterId, sourceTier, targetTier, true,
+                        restoreFailure);
+                }
+            }
+            finally
+            {
+                transitioning.Remove(characterId);
+            }
+        }
+
         public TierTransitionResult Transition(StableEntityId characterId, CharacterSimulationTier targetTier)
         {
             ValidateTier(targetTier);
