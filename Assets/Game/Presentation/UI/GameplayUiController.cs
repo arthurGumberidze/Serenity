@@ -80,6 +80,7 @@ namespace Game.Presentation.UI
         private EventInstanceId? selectedEvent;
         private WorkPriority workPriority = WorkPriority.High;
         private int pendingLoadSlot;
+        private long pendingNewGameSeed;
         private float nextRefresh;
         private ulong lastRefreshHash;
         private bool initialized;
@@ -96,6 +97,7 @@ namespace Game.Presentation.UI
         private long knownFoodShortage;
         private int knownEventHistoryCount;
         private int knownPendingEventCount;
+        private ulong knownCampaignEventSequence;
         private bool suppressNotificationCaptureOnce;
 
         public bool DeveloperUiVisible { get; private set; }
@@ -201,6 +203,26 @@ namespace Game.Presentation.UI
             CloseModal();
             AddNotification("Slot " + index + " loaded. UI rebound to restored state.");
         });
+
+        public void RequestNewGame(long worldSeed)
+        {
+            if (context.StartNewGame == null) throw new InvalidOperationException("New Game is unavailable.");
+            pendingNewGameSeed = worldSeed;
+            modal.Clear();
+            modal.style.display = DisplayStyle.Flex;
+            AddTitle(modal, "Start new game");
+            AddLine(modal, "This replaces the running session with deterministic seed " + worldSeed + ". Continue?");
+            var row = Row();
+            row.Add(ActionButton("New Game", () => ConfirmNewGame(worldSeed), "confirm-new-game"));
+            row.Add(ActionButton("Cancel", CloseModal));
+            modal.Add(row);
+        }
+
+        public void ConfirmNewGame(long worldSeed)
+        {
+            pendingNewGameSeed = 0;
+            context.StartNewGame?.Invoke(worldSeed);
+        }
 
         private void Update()
         {
@@ -709,6 +731,13 @@ namespace Game.Presentation.UI
             }
             if (!selectedUnit.HasValue || !context.Military.TryGet(selectedUnit.Value, out var selected)) return;
             AddSection(mainPanel, "Selected unit actions");
+            AddLine(mainPanel, "Supply: " + (selected.Supply.Initialized
+                ? selected.Supply.Get(context.Military.SupplySettings.FoodResourceId) + " " +
+                  context.Military.SupplySettings.FoodResourceId
+                : "not provisioned"));
+            mainPanel.Add(ActionButton("Resupply", () => TryCommand(() =>
+                context.Military.LoadInitialSupply(selected.Id, context.Inventories,
+                    context.Inventories.All.Select(x => x.Owner)))));
             var roster = Row();
             roster.Add(ActionButton("Add selected", () => TryCommand(() =>
             {
@@ -749,6 +778,19 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, "Save and load");
             AddLine(mainPanel, "Local files are always available. Loading requires confirmation and rebinds the existing UI once.");
+            if (context.StartNewGame != null)
+            {
+                AddSection(mainPanel, "New game");
+                var seed = new TextField("World seed") { value = context.Campaign?.State.WorldSeed.ToString() ?? "20261006" };
+                seed.name = "new-game-seed";
+                mainPanel.Add(seed);
+                mainPanel.Add(ActionButton("Start New Game", () =>
+                {
+                    if (!long.TryParse(seed.value, out var parsed))
+                        throw new InvalidOperationException("World seed must be a whole number.");
+                    RequestNewGame(parsed);
+                }, "new-game-button"));
+            }
             foreach (var slot in context.Saves.ListSlots())
             {
                 AddSection(mainPanel, slot.Label);
@@ -779,9 +821,12 @@ namespace Game.Presentation.UI
             {
                 var captured = location.Id;
                 var settlement = context.GlobalMap.GetSettlementAt(location.Id);
+                var hidden = settlement != null && context.Campaign != null &&
+                             !context.Campaign.CanRevealSettlement(settlement.Id);
                 var owner = settlement == null ? "unclaimed" : settlement.OwnerSideId.Value;
                 mainPanel.Add(ActionButton((selectedLocation == location.Id ? "> " : string.Empty) +
-                    location.Name + "  | " + location.Type + " | " + owner,
+                    (hidden ? "Unknown territory  | settlement | unknown" :
+                        location.Name + "  | " + location.Type + " | " + owner),
                     () => { selectedLocation = captured; RefreshPanel(); }));
             }
             AddSection(mainPanel, "Player armies");
@@ -959,6 +1004,7 @@ namespace Game.Presentation.UI
             var shortage = context.Production.Food.TotalShortage;
             var eventHistoryCount = context.Events?.History.Count ?? 0;
             var pendingEventCount = context.Events?.PendingPlayerEvents.Count ?? 0;
+            var campaignSequence = context.Campaign?.State.EventSequence ?? 0UL;
             if (notificationsPrimed && !suppressNotificationCaptureOnce)
             {
                 if (researchCount > knownResearchCount) AddNotification("Research completed.");
@@ -987,6 +1033,13 @@ namespace Game.Presentation.UI
                     var entry = context.Events.History.Last();
                     AddNotification(context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Title + " resolved.");
                 }
+                if (campaignSequence > knownCampaignEventSequence && context.Campaign != null)
+                {
+                    if (context.Campaign.State.MilitaryVictory)
+                        AddNotification("Military victory recorded. The sandbox continues.");
+                    else if (context.Campaign.State.RivalDiscovered)
+                        AddNotification("A rival dynasty has been discovered.");
+                }
             }
             suppressNotificationCaptureOnce = false;
             notificationsPrimed = true;
@@ -1001,6 +1054,7 @@ namespace Game.Presentation.UI
             knownFoodShortage = shortage;
             knownEventHistoryCount = eventHistoryCount;
             knownPendingEventCount = pendingEventCount;
+            knownCampaignEventSequence = campaignSequence;
         }
 
         private void RefreshTps()
@@ -1018,7 +1072,7 @@ namespace Game.Presentation.UI
                 x.Combatants.Any(c => c.CharacterId == id));
             tpsLabel.text = "TPS  |  " + character.Name.DisplayName + "  |  " +
                 (capabilities.IsIncapacitated ? "INCAPACITATED" : "Health active") + "  |  Combat " +
-                (combat ? "engaged" : "clear") + "  |  T or Esc return to RTS";
+                (combat ? "engaged" : "clear") + "  |  LMB attack  |  T or Esc return to RTS";
         }
 
         private void RefreshGameOver()
@@ -1029,7 +1083,7 @@ namespace Game.Presentation.UI
                 gameOverLabel.style.display = DisplayStyle.Flex;
                 return;
             }
-            if (context.StarterEnemyDefeated())
+            if (context.Campaign?.State.MilitaryVictory == true)
             {
                 gameOverLabel.text = "RIVAL DEFEATED\nThe sandbox continues";
                 gameOverLabel.style.display = DisplayStyle.Flex;
@@ -1098,6 +1152,8 @@ namespace Game.Presentation.UI
             if (!captain.IsValid) throw new InvalidOperationException("No eligible captain in selection.");
             var unit = context.Military.Create(new MilitarySideId("player"), roster, captain);
             context.Military.SetAbstractLocation(unit.Id, context.GlobalMap.ActiveLocationId.Value);
+            context.Military.LoadInitialSupply(unit.Id, context.Inventories,
+                context.Inventories.All.Select(x => x.Owner));
             selectedUnit = unit.Id;
         }
 
@@ -1230,6 +1286,7 @@ namespace Game.Presentation.UI
         private void CloseModal()
         {
             pendingLoadSlot = 0;
+            pendingNewGameSeed = 0;
             modal.style.display = DisplayStyle.None;
             modal.Clear();
         }
@@ -1241,7 +1298,7 @@ namespace Game.Presentation.UI
                        (clock.IsPaused ? 0x8000000000000000UL : 0UL) ^ context.GlobalMap.ComputeStateHash() ^
                        context.Military.ComputeStateHash() ^ context.Combat.ComputeStateHash() ^
                        context.Research.ComputeStateHash() ^ context.Health.ComputeStateHash() ^
-                       (context.Events?.ComputeStateHash() ?? 0UL) ^
+                       (context.Events?.ComputeStateHash() ?? 0UL) ^ (context.Campaign?.ComputeStateHash() ?? 0UL) ^
                        unchecked((ulong)context.Selection.SelectedCharacterIds.Count << 20) ^
                        unchecked((ulong)context.Buildings.All.Sum(x => x.History.Count) << 24) ^
                        unchecked((ulong)context.Work.JobCount << 32);

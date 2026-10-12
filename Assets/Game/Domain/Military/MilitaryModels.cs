@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.AI;
+using Game.Domain.Resources;
 
 namespace Game.Domain.Military
 {
@@ -53,6 +54,62 @@ namespace Game.Domain.Military
     public enum MilitaryUnitStatus { Ready = 1, Engaged = 2, Leaderless = 3, Disbanded = 4 }
     public enum MilitaryUnitRepresentationMode { Detailed = 1, Aggregate = 2 }
     public enum MilitaryUnitOrderKind { Idle = 1, Move = 2, Hold = 3, Engage = 4 }
+    public enum MilitarySupplyCheckpointKind { Travel = 1, Combat = 2 }
+
+    public sealed class MilitarySupplyCheckpointState
+    {
+        public MilitarySupplyCheckpointState(MilitarySupplyCheckpointKind kind, long calendarTick, string key,
+            long requiredUnits = 0, long consumedUnits = 0, int modifierPerThousand = 1000)
+        {
+            if (!Enum.IsDefined(typeof(MilitarySupplyCheckpointKind), kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+            if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (string.IsNullOrWhiteSpace(key) || key != key.Trim() || key.Length > 160)
+                throw new ArgumentException("Supply checkpoint key is invalid.", nameof(key));
+            if (requiredUnits < 0 || consumedUnits < 0 || consumedUnits > requiredUnits)
+                throw new ArgumentOutOfRangeException(nameof(consumedUnits));
+            if (modifierPerThousand < 1 || modifierPerThousand > 10000)
+                throw new ArgumentOutOfRangeException(nameof(modifierPerThousand));
+            Kind = kind; CalendarTick = calendarTick; Key = key;
+            RequiredUnits = requiredUnits; ConsumedUnits = consumedUnits; ModifierPerThousand = modifierPerThousand;
+        }
+        public MilitarySupplyCheckpointKind Kind { get; }
+        public long CalendarTick { get; }
+        public string Key { get; }
+        public long RequiredUnits { get; }
+        public long ConsumedUnits { get; }
+        public int ModifierPerThousand { get; }
+    }
+
+    public sealed class MilitarySupplyState
+    {
+        public MilitarySupplyState(IEnumerable<ResourceAmount> amounts = null,
+            IEnumerable<MilitarySupplyCheckpointState> checkpoints = null, long consumedUnits = 0,
+            bool initialized = false)
+        {
+            if (consumedUnits < 0) throw new ArgumentOutOfRangeException(nameof(consumedUnits));
+            var values = (amounts ?? Array.Empty<ResourceAmount>()).OrderBy(x => x.ResourceId).ToArray();
+            if (values.Any(x => !x.Quantity.IsPositive) || values.Select(x => x.ResourceId).Distinct().Count() != values.Length)
+                throw new ArgumentException("Supply amounts must be positive and unique.", nameof(amounts));
+            var markers = (checkpoints ?? Array.Empty<MilitarySupplyCheckpointState>())
+                .OrderBy(x => x.CalendarTick).ThenBy(x => x.Key, StringComparer.Ordinal).ToArray();
+            if (markers.Any(x => x == null) || markers.Select(x => x.Key).Distinct(StringComparer.Ordinal).Count() != markers.Length)
+                throw new ArgumentException("Supply checkpoints must be non-null and unique.", nameof(checkpoints));
+            Amounts = Array.AsReadOnly(values);
+            Checkpoints = Array.AsReadOnly(markers);
+            ConsumedUnits = consumedUnits;
+            Initialized = initialized;
+        }
+        public IReadOnlyList<ResourceAmount> Amounts { get; }
+        public IReadOnlyList<MilitarySupplyCheckpointState> Checkpoints { get; }
+        public long ConsumedUnits { get; }
+        public bool Initialized { get; }
+        public long Get(ResourceId id)
+        {
+            foreach (var amount in Amounts) if (amount.ResourceId == id) return amount.Quantity.Units;
+            return 0;
+        }
+        public static MilitarySupplyState Empty { get; } = new MilitarySupplyState();
+    }
 
     public sealed class MilitaryUnitMemberState
     {
@@ -119,7 +176,7 @@ namespace Game.Domain.Military
             IEnumerable<MilitaryUnitMemberState> roster, MilitaryUnitStatus status,
             MilitaryUnitRepresentationMode representation, string abstractLocationId,
             int moraleSummary, int cohesion, MilitaryUnitOrderState order,
-            StableEntityId? activeEncounterId, ulong revision)
+            StableEntityId? activeEncounterId, ulong revision, MilitarySupplyState supply = null)
         {
             if (!id.IsValid) throw new ArgumentException("Military unit ID required.", nameof(id));
             if (!ownerSideId.IsValid) throw new ArgumentException("Military side ID required.", nameof(ownerSideId));
@@ -159,6 +216,7 @@ namespace Game.Domain.Military
             Order = order ?? throw new ArgumentNullException(nameof(order));
             ActiveEncounterId = activeEncounterId;
             Revision = revision;
+            Supply = supply ?? MilitarySupplyState.Empty;
         }
 
         public MilitaryUnitId Id { get; }
@@ -173,6 +231,7 @@ namespace Game.Domain.Military
         public MilitaryUnitOrderState Order { get; }
         public StableEntityId? ActiveEncounterId { get; }
         public ulong Revision { get; }
+        public MilitarySupplyState Supply { get; }
         public IReadOnlyList<StableEntityId> ActiveMemberIds => Roster.Where(x => x.IsActive)
             .Select(x => x.CharacterId).ToArray();
     }

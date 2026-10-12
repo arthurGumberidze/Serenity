@@ -14,6 +14,7 @@ using Game.Simulation.Buildings;
 using Game.Simulation.World;
 using Game.Simulation.AI;
 using Game.Simulation.Events;
+using Game.Simulation.Campaign;
 
 namespace Game.Simulation
 {
@@ -33,6 +34,7 @@ namespace Game.Simulation
         private readonly GlobalMapService globalMap;
         private readonly AiStrategicScheduler strategicAi;
         private readonly EventService events;
+        private readonly CampaignProgressService campaign;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -42,7 +44,8 @@ namespace Game.Simulation
             WeatherService weatherService = null, CombatService combatService = null,
             MilitaryUnitService militaryUnitService = null, PlayerControlService playerControlService = null,
             BuildingDamageService buildingDamageService = null, GlobalMapService globalMapService = null,
-            AiStrategicScheduler strategicAiScheduler = null, EventService eventService = null)
+            AiStrategicScheduler strategicAiScheduler = null, EventService eventService = null,
+            CampaignProgressService campaignProgressService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -60,6 +63,7 @@ namespace Game.Simulation
             globalMap = globalMapService;
             strategicAi = strategicAiScheduler;
             events = eventService;
+            campaign = campaignProgressService;
         }
         public SaveSnapshot Capture()
         {
@@ -67,7 +71,7 @@ namespace Game.Simulation
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
-                globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState());
+                globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -124,6 +128,10 @@ namespace Game.Simulation
                     Array.Empty<Game.Domain.Events.EventCooldownState>(),
                     Array.Empty<Game.Domain.Events.EventHistoryEntry>(), 0, 0));
             }
+            if (snapshot.Campaign != null && campaign == null)
+                throw new InvalidOperationException("This save contains campaign state but no campaign service is attached.");
+            if (snapshot.Campaign != null) campaign.RestoreState(snapshot.Campaign);
+            else campaign?.RestoreLegacyDefault();
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

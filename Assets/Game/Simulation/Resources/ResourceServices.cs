@@ -87,10 +87,16 @@ namespace Game.Simulation.Resources
         }
 
         public WorldResourcePile Create(ResourceId resourceId, ResourceQuantity initialQuantity, GridCoordinate coordinate)
+            => Create(resourceId, initialQuantity, coordinate, null);
+
+        public WorldResourcePile Create(ResourceId resourceId, ResourceQuantity initialQuantity,
+            GridCoordinate coordinate, StableEntityId? stableId)
         {
             catalog.Get(resourceId);
             if (!initialQuantity.IsPositive) throw new ArgumentOutOfRangeException(nameof(initialQuantity));
-            var pile = WorldResourcePile.CreateNew(resourceId, coordinate);
+            var pile = stableId.HasValue
+                ? WorldResourcePile.Restore(new WorldResourcePileState(stableId.Value, resourceId, coordinate))
+                : WorldResourcePile.CreateNew(resourceId, coordinate);
             var inventory = new ResourceInventory(pile.InventoryOwner, catalog, long.MaxValue);
             if (!inventory.TryAdd(resourceId, initialQuantity)) throw new InvalidOperationException("Unable to initialize pile.");
             inventories.Add(inventory);

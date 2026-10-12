@@ -25,16 +25,29 @@ public static class U00Build
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
         EditorSettings.serializationMode = SerializationMode.ForceText;
         AssetDatabase.SaveAssets();
-        Directory.CreateDirectory("Builds/Windows");
+        var buildPath = CommandLineValue("-serenityBuildPath") ?? "Builds/Windows/Serenity.exe";
+        var buildDirectory = Path.GetDirectoryName(buildPath);
+        if (string.IsNullOrWhiteSpace(buildDirectory))
+            throw new BuildFailedException("The Windows build path requires a parent directory.");
+        Directory.CreateDirectory(buildDirectory);
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = scenes,
-            locationPathName = "Builds/Windows/Serenity.exe",
+            locationPathName = buildPath,
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.Development
         });
         Debug.Log($"U00_BUILD_RESULT: {report.summary.result}; errors={report.summary.totalErrors}; warnings={report.summary.totalWarnings}");
         if (report.summary.result != BuildResult.Succeeded)
             throw new BuildFailedException("U00 Windows Development build failed.");
+    }
+
+    private static string CommandLineValue(string key)
+    {
+        var arguments = Environment.GetCommandLineArgs();
+        for (var index = 0; index < arguments.Length - 1; index++)
+            if (string.Equals(arguments[index], key, StringComparison.Ordinal))
+                return arguments[index + 1];
+        return null;
     }
 }

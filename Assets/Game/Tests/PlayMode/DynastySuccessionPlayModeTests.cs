@@ -30,7 +30,7 @@ namespace Game.Tests.PlayMode
             var overlay = Object.FindAnyObjectByType<DynastyDebugOverlay>();
             Assert.That(root, Is.Not.Null);
             Assert.That(overlay, Is.SameAs(root.DynastyDebug));
-            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(4));
+            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
             Assert.That(root.Dynasty.CurrentMonarchId, Is.EqualTo(root.MaleDemoCharacter.Id));
             Assert.That(root.Succession.Family.GetOrderedSuccessionCandidates(root.Dynasty,
                 root.MaleDemoCharacter.Id)[0].Id, Is.EqualTo(root.FirstDemoHeir.Id));
@@ -55,10 +55,8 @@ namespace Game.Tests.PlayMode
         public IEnumerator TierThreeHeirBecomesRulerWithoutMaterializingGameObject()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            var state = new CharacterRuntimeState(root.FirstDemoHeir.Id, new WorldPosition(50, 0, 50),
-                default, false, "remote", root.Clock.State.CalendarTicks, root.Clock.State.BiologicalTicks,
-                0, 0d, 1d);
-            root.Tiers.Materialize(root.FirstDemoHeir, CharacterSimulationTier.Tier3, state);
+            if (root.Tiers.GetTier(root.FirstDemoHeir.Id) != CharacterSimulationTier.Tier3)
+                root.Tiers.Transition(root.FirstDemoHeir.Id, CharacterSimulationTier.Tier3);
             var before = root.Succession.Family.GetOrderedSuccessionCandidates(root.Dynasty,
                 root.MaleDemoCharacter.Id)[0].Id;
             root.Tiers.Transition(root.MaleDemoCharacter.Id, CharacterSimulationTier.Tier3);

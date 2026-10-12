@@ -13,6 +13,7 @@ using Game.Simulation.Control;
 using Game.Simulation.Military;
 using Game.Simulation.Time;
 using Game.Simulation.Work;
+using Game.Simulation.Combat;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -34,6 +35,7 @@ namespace Game.Presentation.Control
         private MilitaryUnitService military;
         private WorkManager work;
         private WorldPointerRaycaster raycaster;
+        private CombatService combat;
         private CinemachineCamera rtsCamera;
         private CinemachineCamera thirdPersonCamera;
         private CinemachineThirdPersonFollow thirdPersonFollow;
@@ -49,7 +51,8 @@ namespace Game.Presentation.Control
         public string LastEntryMessage { get; private set; } = string.Empty;
         public CinemachineCamera ThirdPersonCamera => thirdPersonCamera;
         public int CameraRigCount => thirdPersonCamera == null ? 0 : 1;
-        public int SubscriptionCount => initialized ? 3 : 0;
+        public int SubscriptionCount => initialized ? 4 : 0;
+        public ManualCombatAttackStatus LastAttackStatus { get; private set; } = ManualCombatAttackStatus.Invalid;
         public Tier1MovementAuthority MovementAuthority => directMovement?.Authority ?? Tier1MovementAuthority.Autonomous;
         public bool ShowLegacyOverlay { get; set; }
 
@@ -57,7 +60,8 @@ namespace Game.Presentation.Control
             CharacterPresentationRegistry presentationRegistry, Tier1AiRuntimeDriver aiRuntime,
             RtsCameraController rtsCameraController, BuildingPlacementController placementController,
             PlayerControlService playerControl, ICharacterCapabilityProvider capabilityProvider,
-            MilitaryUnitService militaryUnits, WorkManager workManager, WorldPointerRaycaster worldRaycaster)
+            MilitaryUnitService militaryUnits, WorkManager workManager, WorldPointerRaycaster worldRaycaster,
+            CombatService combatService)
         {
             if (initialized) throw new InvalidOperationException("Third-person controller is already initialized.");
             input = inputSource ?? throw new ArgumentNullException(nameof(inputSource));
@@ -71,12 +75,14 @@ namespace Game.Presentation.Control
             military = militaryUnits;
             work = workManager;
             raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
+            combat = combatService ?? throw new ArgumentNullException(nameof(combatService));
             rtsCamera = rtsController.GetComponentInChildren<CinemachineCamera>(true);
             if (rtsCamera == null) throw new InvalidOperationException("RTS Cinemachine camera is required.");
             rtsPriority = rtsCamera.Priority.Value;
             CreateCameraRig();
             input.ControlModeToggled += OnToggleRequested;
             input.ThirdPersonExitRequested += OnExitRequested;
+            input.ThirdPersonAttackRequested += OnAttackRequested;
             control.ControlChanged += ApplyControlState;
             raycaster.RegisterUiBlocker(this);
             input.SetPlayerControlMode(PlayerControlMode.Rts);
@@ -143,6 +149,28 @@ namespace Game.Presentation.Control
         private void OnExitRequested()
         {
             if (control.State.Mode == PlayerControlMode.ThirdPerson) Exit();
+        }
+
+        public ManualCombatAttackStatus TryAttack(StableEntityId targetId)
+        {
+            if (control.State.Mode != PlayerControlMode.ThirdPerson || !activeCharacterId.HasValue ||
+                runtime.Clock.IsPaused)
+                return LastAttackStatus = ManualCombatAttackStatus.Invalid;
+            return LastAttackStatus = combat.TryManualAttack(activeCharacterId.Value, targetId,
+                runtime.Clock.State.CalendarTicks, runtime.Clock.State.BiologicalTicks);
+        }
+
+        private void OnAttackRequested()
+        {
+            if (control.State.Mode != PlayerControlMode.ThirdPerson || !activeCharacterId.HasValue ||
+                runtime.Clock.IsPaused || raycaster.WorldCamera == null)
+            { LastAttackStatus = ManualCombatAttackStatus.Invalid; return; }
+            var ray = new Ray(raycaster.WorldCamera.transform.position, raycaster.WorldCamera.transform.forward);
+            if (!Physics.Raycast(ray, out var hit, 1000f, ~0, QueryTriggerInteraction.Ignore))
+            { LastAttackStatus = ManualCombatAttackStatus.Invalid; return; }
+            var presenter = hit.collider.GetComponentInParent<CharacterPresenter>();
+            LastAttackStatus = presenter != null && presenter.IsBound
+                ? TryAttack(presenter.CharacterId) : ManualCombatAttackStatus.Invalid;
         }
 
         private void ApplyControlState()
@@ -224,7 +252,7 @@ namespace Game.Presentation.Control
                 var order = work != null && work.TryGetAssigned(activeCharacterId.Value, out var job)
                     ? $"suspended order={job.Type}/{job.Status}" : "suspended order=none";
                 GUI.Label(new Rect(18f, overlayRect.y + 96f, 365f, 22f), order);
-                GUI.Label(new Rect(18f, overlayRect.y + 118f, 365f, 22f), "WASD move  Shift run  Mouse look  T/Esc return RTS");
+                GUI.Label(new Rect(18f, overlayRect.y + 118f, 365f, 22f), "WASD move  Shift run  Mouse look  LMB attack  T/Esc RTS");
             }
             else
             {
@@ -240,6 +268,7 @@ namespace Game.Presentation.Control
             {
                 input.ControlModeToggled -= OnToggleRequested;
                 input.ThirdPersonExitRequested -= OnExitRequested;
+                input.ThirdPersonAttackRequested -= OnAttackRequested;
                 input.SetPlayerControlMode(PlayerControlMode.Rts);
             }
             if (control != null) control.ControlChanged -= ApplyControlState;

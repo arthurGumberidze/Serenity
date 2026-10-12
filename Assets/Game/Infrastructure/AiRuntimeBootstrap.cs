@@ -12,6 +12,7 @@ using Game.Domain.Production;
 using Game.Domain.Research;
 using Game.Domain.Resources;
 using Game.Domain.World;
+using Game.Domain.Campaign;
 using Game.Simulation.AI;
 using Game.Simulation.Buildings;
 using Game.Simulation.Dynasties;
@@ -44,8 +45,8 @@ namespace Game.Infrastructure
             var offCameraPosition = new WorldPosition(1000f + settlementLocation.MapX, 0f,
                 1000f + settlementLocation.MapY);
             var side = settlement.OwnerSideId;
-            var dynastyId = Id(worldSeed, "enemy_dynasty", 0);
-            var residentIds = Enumerable.Range(0, 6).Select(i => Id(worldSeed, "enemy_character", i)).ToArray();
+            var dynastyId = DeterministicStableId.Create(worldSeed, "enemy_dynasty");
+            var residentIds = Enumerable.Range(0, 6).Select(i => DeterministicStableId.Create(worldSeed, "enemy_character", i)).ToArray();
             var names = new[] { "Varek", "Sorin", "Marek", "Tovan", "Ilya", "Boran" };
             for (var i = 0; i < residentIds.Length; i++)
             {
@@ -87,7 +88,7 @@ namespace Game.Infrastructure
             AddSource(production, worldSeed, "gather_stone", 3, 120, new WorldPosition(28, 0, 18));
             var construction = new ConstructionFundingService(placement, inventories, resources,
                 new StorageService(inventories, resources), research);
-            var state = AiStrategicState.Create(new AiStateId(Id(worldSeed, "enemy_state", 0)),
+            var state = AiStrategicState.Create(new AiStateId(DeterministicStableId.Create(worldSeed, "enemy_state")),
                 "enemy_state", side, settlement.Id, residentIds[0], calendarTick);
             map.SynchronizeSettlement(settlement.Id, settlement.LocationId, side, settlement.BuildingIds, residentIds);
             return new AiFactionRuntime(state, dynasty, succession, research, production, inventories, worldPiles,
@@ -96,7 +97,7 @@ namespace Game.Infrastructure
 
         private static void AddSource(ProductionService production, long seed, string recipe, int index,
             long amount, WorldPosition position) => production.AddSite(ProductionSite.Restore(
-                new ProductionSiteState(Id(seed, "enemy_source", index), new ProductionRecipeId(recipe),
+                new ProductionSiteState(DeterministicStableId.Create(seed, "enemy_source", index), new ProductionRecipeId(recipe),
                     ProductionSiteKind.NaturalSource, position, amount, amount, CropPlotPhase.Unplanted, 0, 0)));
 
         private static void Seed(ResourceInventory inventory, string resourceId, long amount)
@@ -105,12 +106,5 @@ namespace Game.Infrastructure
                 throw new InvalidOperationException("AI bootstrap inventory capacity is invalid.");
         }
 
-        private static StableEntityId Id(long seed, string purpose, int index)
-        {
-            ulong first = 14695981039346656037UL, second = 1099511628211UL;
-            foreach (var value in seed + "|" + purpose) first = (first ^ value) * 1099511628211UL;
-            foreach (var value in index.ToString()) second = (second ^ value) * 14695981039346656037UL;
-            return StableEntityId.FromDeterministicHash(first, second);
-        }
     }
 }

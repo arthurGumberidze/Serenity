@@ -1,25 +1,15 @@
 # NEXT_TASK.md
 
-U28 is DONE. U29 remains PARTIAL by explicit user decision; its 1000-Character p95 debt remains open. U30 remediation is complete but U30 remains IN_PROGRESS until the fresh external eight-hour run passes.
+U30A is DONE. U29 remains PARTIAL because the mandatory sustained 1000-Character Player p95 gate is still above 33.33 ms. U30 remains IN_PROGRESS until a fresh external eight-hour soak is audited and passes. U31 is the next implementation/integration task, but its final DONE verdict is BLOCKED by both unresolved gates. U32 must not start.
 
-## Next authorized implementation task: U30A — explicit sequencing exception while U30 reruns externally
+## Next task: U31 — MVP Integration Gate
 
-### Status
+U31 may prepare and exercise the normal player path `New Game -> economy/research/construction -> discovery -> military travel/combat -> capture -> victory -> continued sandbox -> Save/Load`. It must reuse U30A's canonical campaign, supply and TPS/U20 paths and may fix integration defects found in that flow. It must not duplicate authorities or reinterpret partial performance/reliability evidence as a pass.
 
-U30 remains IN_PROGRESS. Its failed run3 is immutable evidence; the weather/runner remediation and checkpoint-5 preflight are complete. The user will launch the fresh official run at `C:\serenity_u30_soak_20261012_run4` overnight and explicitly authorized work on U30A, then U31, while that external process is pending. This sequencing permission does not turn U30 or U29 into DONE and does not waive any U31 gate.
+Final U31 completion requires every dependency in `docs/TASK_GRAPH.md` to be DONE, including:
 
-### U30 external command
+- U29: fresh qualifying performance evidence with the 1000-Character worst-repeat p95 at or below 33.33 ms and all existing integrity gates.
+- U30: a separately audited full external soak with requested and actual wall-clock duration at least 28,800 seconds, zero disqualifying incidents, verified memory/checkpoint resume and complete immutable evidence.
+- U30A: already DONE with snapshot v15 and the focused evidence recorded in `docs/U30A_HANDOFF.md`.
 
-`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\Run-Soak-U30.ps1" -Seed 3030 -WallClockHours 8 -CheckpointIntervalMinutes 5 -OutputFolder "C:\serenity_u30_soak_20261012_run4"`
-
-Do not reuse any previous output directory. Preserve run3 and all preflight trees. A fresh finalizer must audit run4 before U30 can become DONE.
-
-### U30A scope
-
-Follow `serenity_automation/serenity_night_automation_v3/prompts/U30A_PROMPT.txt`. Record this user-authorized dependency sequencing exception in the U30A handoff. Implement and validate U30A without weakening U29/U30 gates. U31 may be prepared after U30A, but its final MVP gate remains blocked by every unmet dependency/result and must report them honestly.
-
-### Required finalizer checks
-
-Read `docs/U30_HANDOFF.md`, `docs/SOAK_TESTING.md`, and `C:\serenity_u30_soak_20261012_run4\soak-result.json`. Verify exit/result evidence, `requested_wall_clock_seconds >= 28800`, `actual_wall_clock_seconds >= requested_wall_clock_seconds`, productive duration, zero critical/invariant/watchdog failures, no runaway-memory flag, verified memory metrics and checkpoint/resume, non-empty final logical hash, complete aggregate coverage, append-only journal/manifest hashes, raw performance evidence and independently verified checkpoint bundles. Inspect all segment and progress results and the first-failure bundle if present.
-
-If every gate passes, update U30 to DONE and commit `U30: validate 8 hour soak`. If the run is incomplete, short, missing evidence, or reports any critical incident, leave U30 IN_PROGRESS and document the exact failure. U29 remains PARTIAL regardless of U30 reliability evidence.
+Do not change U29 or U30 status from U31. A dedicated finalizer must audit their own evidence. If either remains PARTIAL/IN_PROGRESS/FAILED, U31 remains BLOCKED even when its gameplay integration tests pass.

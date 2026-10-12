@@ -27,6 +27,7 @@ using Game.Simulation.Weather;
 using Game.Simulation.Work;
 using Game.Simulation.World;
 using Game.Simulation.Events;
+using Game.Simulation.Campaign;
 using UnityEngine;
 
 namespace Game.Presentation.UI
@@ -86,7 +87,8 @@ namespace Game.Presentation.UI
             Action<bool> setPaused, Action<Game.Simulation.Time.GameSpeed> setSpeed,
             Action requestEnterGlobal, Action<WorldLocationId> requestEnterLocation,
             Action<StableEntityId> requestEnterBattle, Action<bool> setDeveloperUiVisible,
-            IEnumerable<Behaviour> legacyDebugOverlays, EventService events = null)
+            IEnumerable<Behaviour> legacyDebugOverlays, EventService events = null,
+            CampaignProgressService campaign = null, Action<long> startNewGame = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -126,6 +128,8 @@ namespace Game.Presentation.UI
             SetDeveloperUiVisible = setDeveloperUiVisible ?? throw new ArgumentNullException(nameof(setDeveloperUiVisible));
             LegacyDebugOverlays = new List<Behaviour>(legacyDebugOverlays ?? Array.Empty<Behaviour>()).AsReadOnly();
             Events = events;
+            Campaign = campaign;
+            StartNewGame = startNewGame;
         }
 
         public Func<GameClock> Clock { get; }
@@ -166,5 +170,7 @@ namespace Game.Presentation.UI
         public Action<bool> SetDeveloperUiVisible { get; }
         public IReadOnlyList<Behaviour> LegacyDebugOverlays { get; }
         public EventService Events { get; }
+        public CampaignProgressService Campaign { get; }
+        public Action<long> StartNewGame { get; }
     }
 }

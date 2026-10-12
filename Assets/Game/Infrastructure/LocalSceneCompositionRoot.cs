@@ -49,15 +49,18 @@ using Game.Presentation.Control;
 using Game.Presentation.UI;
 using Game.Domain.World;
 using Game.Domain.Events;
+using Game.Domain.Campaign;
 using Game.Simulation;
 using Game.Simulation.World;
 using Game.Simulation.Events;
+using Game.Simulation.Campaign;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
 using Game.Infrastructure.Reliability;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 namespace Game.Infrastructure
 {
@@ -163,6 +166,10 @@ namespace Game.Infrastructure
         public GameplayUiController GameplayUi { get; private set; }
         public U29BenchmarkController PerformanceBenchmark { get; private set; }
         public U30SoakController SoakValidation { get; private set; }
+        public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
+        public NewGameBootstrapResult NewGame { get; private set; }
+        public CampaignProgressService CampaignProgress { get; private set; }
+        public IReadOnlyList<StableEntityId> PlayerCharacterIds => NewGame.PlayerCharacters.Select(x => x.Id).ToArray();
         public Building DemoCropPlotBuilding { get; private set; }
         public BuildingPresenter DemoCropPlotPresenter { get; private set; }
         public IReadOnlyList<WorldResourcePilePresenter> DemoPilePresenters => demoPilePresenters;
@@ -202,10 +209,13 @@ namespace Game.Infrastructure
                 characterCatalog == null || buildingCatalog == null || buildingPlacementController == null)
                 throw new InvalidOperationException("Local scene composition references must be assigned explicitly.");
 
+            ActiveNewGameConfiguration = new NewGameConfiguration(NewGameLaunchState.Consume(developmentWorldSimulationSeed));
+            NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration);
+            var worldSeed = ActiveNewGameConfiguration.WorldSeed;
             Characters = new CharacterRegistry();
             HealthFamily = new HealthAndFamilyService(Characters, HealthConditionCatalog.CreateStoneAge(),
-                developmentWorldSimulationSeed);
-            Weather = new WeatherService(developmentWorldSimulationSeed, ClimateProfile.Temperate, HealthFamily);
+                worldSeed);
+            Weather = new WeatherService(worldSeed, ClimateProfile.Temperate, HealthFamily);
             CharacterPresentations = new CharacterPresentationRegistry();
             CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations);
 
@@ -237,28 +247,26 @@ namespace Game.Infrastructure
             buildingPlacementController.BuildingPlaced += OnBuildingPlaced;
 
             // DEV_BOOTSTRAP_ONLY: finite canonical piles for the U09 LocalGameplay slice.
-            SpawnDemoPile("wood_log", 30, new GridCoordinate(-8, -2), new Color(0.45f, 0.25f, 0.1f));
-            SpawnDemoPile("plant_fiber", 20, new GridCoordinate(-6, -2), new Color(0.45f, 0.7f, 0.2f));
-            SpawnDemoPile("stone", 10, new GridCoordinate(-4, -2), new Color(0.45f, 0.45f, 0.45f));
-            SpawnDemoPile("hide", 5, new GridCoordinate(-2, -2), new Color(0.7f, 0.45f, 0.25f));
+            SpawnDemoPile("wood_log", 30, new GridCoordinate(-8, -2), new Color(0.45f, 0.25f, 0.1f), 0);
+            SpawnDemoPile("plant_fiber", 20, new GridCoordinate(-6, -2), new Color(0.45f, 0.7f, 0.2f), 1);
+            SpawnDemoPile("stone", 10, new GridCoordinate(-4, -2), new Color(0.45f, 0.45f, 0.45f), 2);
+            SpawnDemoPile("hide", 5, new GridCoordinate(-2, -2), new Color(0.7f, 0.45f, 0.25f), 3);
 
             SpawnDemoStorage();
             BuildNavigationSurface();
 
-            var dynastyId = DemoId(100);
-            MaleDemoCharacter = CreateDemoCharacter("Aren", CharacterSex.Male, DemoId(1), dynastyId, null);
-            FemaleDemoCharacter = CreateDemoCharacter("Mira", CharacterSex.Female, DemoId(2), null, null);
-            FirstDemoHeir = CreateDemoCharacter("Cale", CharacterSex.Male, DemoId(3), dynastyId,
-                new[] { Parent(MaleDemoCharacter.Id, ParentRole.Father), Parent(FemaleDemoCharacter.Id, ParentRole.Mother) });
-            SecondDemoHeir = CreateDemoCharacter("Doran", CharacterSex.Male, DemoId(4), dynastyId,
-                new[] { Parent(MaleDemoCharacter.Id, ParentRole.Father), Parent(FemaleDemoCharacter.Id, ParentRole.Mother) });
-            Characters.Add(MaleDemoCharacter);
-            Characters.Add(FemaleDemoCharacter);
-            Characters.Add(FirstDemoHeir);
-            Characters.Add(SecondDemoHeir);
-            Characters.LinkSpouses(MaleDemoCharacter.Id, FemaleDemoCharacter.Id);
-            Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id), Resources, 8));
-            Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, FemaleDemoCharacter.Id), Resources, 8));
+            var playerCharacters = NewGame.PlayerCharacters.Select(Character.Restore).ToArray();
+            foreach (var character in playerCharacters)
+            {
+                Characters.Add(character);
+                Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, character.Id), Resources, 128));
+            }
+            MaleDemoCharacter = Characters.Get(NewGame.MonarchId);
+            FemaleDemoCharacter = Characters.Get(NewGame.SpouseId);
+            FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
+            SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
+            Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id))
+                .TryAdd(new ResourceId("berries"), new ResourceQuantity(60));
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
 
@@ -266,18 +274,17 @@ namespace Game.Infrastructure
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
             Production.Population = Characters.Count;
             SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
-                new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere);
+                new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere, 0);
             SpawnProductionSource("gather_fiber", 60, new WorldPosition(-8f, 0f, 7f),
-                new Color(0.3f, 0.7f, 0.2f), PrimitiveType.Capsule);
+                new Color(0.3f, 0.7f, 0.2f), PrimitiveType.Capsule, 1);
             SpawnProductionSource("chop_wood", 80, new WorldPosition(-4f, 0f, 9f),
-                new Color(0.35f, 0.2f, 0.08f), PrimitiveType.Cylinder);
+                new Color(0.35f, 0.2f, 0.08f), PrimitiveType.Cylinder, 2);
             SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
-                new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere);
+                new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere, 3);
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
 
             Clock = new GameClock(new GameTimeState(0, Character.BiologicalTicksPerYear * 20L, 1, false));
-            Dynasty = DynastyState.Create(dynastyId, "House Serenity", MaleDemoCharacter.Id,
-                MaleDemoCharacter.Id, new[] { MaleDemoCharacter.Id, FirstDemoHeir.Id, SecondDemoHeir.Id });
+            Dynasty = DynastyState.Restore(NewGame.Dynasty);
             PlayerRealm = new PlayerRealmState(MaleDemoCharacter.Id);
             GameRun = new GameRunState();
             Succession = new SuccessionService(Characters, Dynasty, PlayerRealm, GameRun);
@@ -314,7 +321,7 @@ namespace Game.Infrastructure
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
-                OffCameraSimulationSettings.ForWorld(developmentWorldSimulationSeed));
+                OffCameraSimulationSettings.ForWorld(worldSeed));
             var tier1 = new Tier1CharacterAdapter(characterCatalog, CharacterPresentations, CharacterSpawner,
                 AiRuntime, AiAgents);
             var tier2 = new Tier2CharacterAdapter(Tier2Runtime);
@@ -323,11 +330,14 @@ namespace Game.Infrastructure
             Tiers = new TierManager(Characters, tier1, tier2, Tier3Adapter);
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
+            for (var i = 2; i < playerCharacters.Length; i++)
+                Tiers.Materialize(playerCharacters[i], CharacterSimulationTier.Tier3,
+                    new CharacterRuntimeState(playerCharacters[i].Id, new WorldPosition(-6 + i * 1.5f, 0, 4),
+                        default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             TierPolicy = new TierDistancePolicy(Tiers);
             Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
-                developmentWorldSimulationSeed, Tiers);
-            Combat.RegisterSide(MaleDemoCharacter.Id, new CombatSideId("player"));
-            Combat.RegisterSide(FemaleDemoCharacter.Id, new CombatSideId("player"));
+                worldSeed, Tiers);
+            foreach (var character in playerCharacters) Combat.RegisterSide(character.Id, new CombatSideId("player"));
             CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
@@ -340,9 +350,9 @@ namespace Game.Infrastructure
                 AiScheduler, new MilitarySideId("player"));
             Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
                 MilitaryCombat, PlayerControl);
-            GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks), MilitaryUnits,
+            GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
                 Battles);
-            StarterSettlementId = new SettlementId(DemoId(500));
+            StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
             SynchronizeStarterSettlement();
             ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,
                 MilitaryRepresentations, Battles, PlayerControl);
@@ -351,13 +361,13 @@ namespace Game.Infrastructure
                 Production, Inventories, WorldPiles, Weather, Combat, BuildingOccupancy);
             var strategicDefinitions = buildingCatalog.Entries.Select(entry =>
                 buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))).ToArray();
-            StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(developmentWorldSimulationSeed,
+            StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(worldSeed,
                 Clock.State.CalendarTicks, Clock.State.BiologicalTicks, Characters, HealthFamily, Tiers, GlobalMap, Buildings,
                 BuildingPlacementService, Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather);
             HealthFamily.BindSuccession(StarterEnemyAi.Succession);
             BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
                 StarterEnemyAi.WorldPiles);
-            StrategicAi = new AiStrategicScheduler(developmentWorldSimulationSeed, Characters, HealthFamily,
+            StrategicAi = new AiStrategicScheduler(worldSeed, Characters, HealthFamily,
                 MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
             StrategicAi.AddFaction(StarterEnemyAi);
             var eventTargets = new CharacterEventTargetSource(Characters,
@@ -365,14 +375,17 @@ namespace Game.Infrastructure
                 () => StarterEnemyAi.Residents,
                 () => Clock.State.BiologicalTicks);
             Events = new EventService(StoneAgeEventCatalog.Create(), eventTargets,
-                new CanonicalEventEffectExecutor(Characters, HealthFamily), developmentWorldSimulationSeed,
+                new CanonicalEventEffectExecutor(Characters, HealthFamily), worldSeed,
                 Clock.State.CalendarTicks);
+            CampaignProgress = new CampaignProgressService(ActiveNewGameConfiguration, new CombatSideId("player"),
+                StarterEnemyAi, GlobalMap, MilitaryUnits, StrategicAi, Battles, Clock.State.CalendarTicks);
             gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
                 () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
             Combat.BindMovementSuppression(PlayerControl);
+            Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
@@ -396,7 +409,7 @@ namespace Game.Infrastructure
             ThirdPersonControl = gameObject.AddComponent<ThirdPersonControlController>();
             ThirdPersonControl.Initialize(input, selectionProbe, CharacterPresentations, AiRuntime,
                 cameraController, buildingPlacementController, PlayerControl, HealthFamily, MilitaryUnits, Work,
-                pointerRaycaster);
+                pointerRaycaster, Combat);
             GlobalMapBridge = gameObject.AddComponent<GlobalMapRuntimeBridge>();
             GlobalMapBridge.Initialize(this);
 
@@ -405,9 +418,9 @@ namespace Game.Infrastructure
                 ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
-            Saves = new SaveCoordinator(DemoId(600), Clock, saveStore, Production, Research, Succession,
+            Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events);
+                Events, CampaignProgress);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -421,7 +434,7 @@ namespace Game.Infrastructure
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
-                    Events),
+                    Events, CampaignProgress, StartNewGame),
                 pointerRaycaster, input);
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
             SoakValidation = U30SoakController.AttachIfRequested(this);
@@ -461,6 +474,7 @@ namespace Game.Infrastructure
             Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkerBuffer, false);
             PerformanceBenchmark?.RecordWorkersAndWeatherAllocation();
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            CampaignProgress.AdvanceTo(targetCalendarTick);
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
@@ -527,12 +541,19 @@ namespace Game.Infrastructure
             GameplayUi?.RefreshNow();
         }
 
+        public void StartNewGame(long worldSeed)
+        {
+            NewGameLaunchState.Request(worldSeed);
+            SceneManager.LoadScene(gameObject.scene.name, LoadSceneMode.Single);
+        }
+
         public CombatEncounterState StartDemoCombat()
         {
             var active = Combat.Encounters.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active);
             if (active != null) return active;
             PrepareDemoCombatants(out var player, out var enemy);
-            var encounterId = DemoId(200 + Combat.Encounters.Count);
+            var encounterId = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed,
+                "demo_encounter", Combat.Encounters.Count);
             return Combat.CreateEncounter(encounterId, new CombatSideId("player"), new CombatSideId("enemy"),
                 player, enemy, Clock.State.CalendarTicks,
                 id => id == MaleDemoCharacter.Id || id == enemy[0]
@@ -545,12 +566,15 @@ namespace Game.Infrastructure
             if (active != null) return active;
             PrepareDemoCombatants(out var player, out var enemy);
             var playerUnit = MilitaryUnits.TryGetForMember(player[0], out var existingPlayer)
-                ? existingPlayer : MilitaryUnits.Create(new MilitaryUnitId(DemoId(300)),
+                ? existingPlayer : MilitaryUnits.Create(new MilitaryUnitId(DeterministicStableId.Create(
+                    ActiveNewGameConfiguration.WorldSeed, "demo_player_unit")),
                     new MilitarySideId("player"), player, player[0]);
             var enemyUnit = MilitaryUnits.TryGetForMember(enemy[0], out var existingEnemy)
-                ? existingEnemy : MilitaryUnits.Create(new MilitaryUnitId(DemoId(301)),
+                ? existingEnemy : MilitaryUnits.Create(new MilitaryUnitId(DeterministicStableId.Create(
+                    ActiveNewGameConfiguration.WorldSeed, "demo_enemy_unit")),
                     new MilitarySideId("enemy"), enemy, enemy[0]);
-            var battleId = DemoId(400 + Combat.Encounters.Count);
+            var battleId = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed,
+                "demo_battle", Combat.Encounters.Count);
             if (mode == BattleMode.Abstract)
             {
                 MilitaryRepresentations.Transition(playerUnit.Id, MilitaryUnitRepresentationMode.Aggregate);
@@ -572,7 +596,7 @@ namespace Game.Infrastructure
             enemy = new StableEntityId[4];
             for (var i = 0; i < enemy.Length; i++)
             {
-                var id = DemoId(20 + i);
+                var id = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "demo_raider", i);
                 if (!Characters.TryGet(id, out var character))
                 {
                     character = CreateDemoCharacter("Raider" + (i + 1), i % 2 == 0 ? CharacterSex.Male : CharacterSex.Female,
@@ -587,7 +611,7 @@ namespace Game.Infrastructure
         }
 
         private CombatWeaponId DemoWeapon(StableEntityId id) =>
-            id == MaleDemoCharacter.Id || id == DemoId(20)
+            id == MaleDemoCharacter.Id || id == DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "demo_raider", 0)
                 ? new CombatWeaponId("stone_axe") : new CombatWeaponId("stone_spear");
 
         private void EnsureTier1(Character character, WorldPosition position)
@@ -607,7 +631,9 @@ namespace Game.Infrastructure
         {
             // DEV_BOOTSTRAP_ONLY: a free completed basket makes the autonomous hauling slice immediately observable.
             var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("storage_basket"));
-            DemoStorageBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(5, 5), BuildingOrientation.North);
+            DemoStorageBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(5, 5),
+                BuildingOrientation.North, new CombatSideId("player"),
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 0));
             Storage.Attach(DemoStorageBuilding, definition);
             DemoStorageBuilding.MarkCompleted();
             DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
@@ -617,7 +643,8 @@ namespace Game.Infrastructure
         {
             var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("primitive_crop_plot"));
             DemoCropPlotBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(8, 5),
-                BuildingOrientation.North);
+                BuildingOrientation.North, new CombatSideId("player"),
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 1));
             DemoCropPlotBuilding.MarkCompleted();
             DemoCropPlotPresenter = BuildingSpawner.Spawn(DemoCropPlotBuilding);
             RegisterCropPlot(DemoCropPlotBuilding, DemoCropPlotPresenter);
@@ -650,9 +677,12 @@ namespace Game.Infrastructure
         }
 
         private void SpawnProductionSource(string recipeId, long amount, WorldPosition position, Color color,
-            PrimitiveType primitive)
+            PrimitiveType primitive, int index)
         {
-            var site = ProductionSite.CreateNatural(new ProductionRecipeId(recipeId), position, amount);
+            var site = ProductionSite.Restore(new ProductionSiteState(
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", index),
+                new ProductionRecipeId(recipeId), ProductionSiteKind.NaturalSource, position, amount, amount,
+                CropPlotPhase.Unplanted, 0, 0));
             Production.AddSite(site);
             var view = GameObject.CreatePrimitive(primitive);
             view.transform.position = new Vector3(position.X, position.Y + 0.5f, position.Z);
@@ -673,9 +703,10 @@ namespace Game.Infrastructure
             NavigationSurface.BuildNavMesh();
         }
 
-        private void SpawnDemoPile(string id, long units, GridCoordinate coordinate, Color color)
+        private void SpawnDemoPile(string id, long units, GridCoordinate coordinate, Color color, int index)
         {
-            var pile = WorldPiles.Create(new ResourceId(id), new ResourceQuantity(units), coordinate);
+            var pile = WorldPiles.Create(new ResourceId(id), new ResourceQuantity(units), coordinate,
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_pile", index));
             var view = GameObject.CreatePrimitive(PrimitiveType.Cube);
             view.transform.position = buildingGridOrigin + new Vector3(coordinate.X * buildingGridSize, 0.35f,
                 coordinate.Z * buildingGridSize);
@@ -703,7 +734,17 @@ namespace Game.Infrastructure
         private static ParentLink Parent(StableEntityId id, ParentRole role) =>
             new ParentLink(id, role, ParentageKind.Biological, true);
 
-        private static StableEntityId DemoId(int value) =>
-            StableEntityId.Parse(value.ToString("x32"));
+    }
+
+    internal static class NewGameLaunchState
+    {
+        private static long? requestedSeed;
+        public static void Request(long seed) => requestedSeed = seed;
+        public static long Consume(long fallback)
+        {
+            var result = requestedSeed ?? fallback;
+            requestedSeed = null;
+            return result;
+        }
     }
 }

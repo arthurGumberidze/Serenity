@@ -92,7 +92,8 @@
         { "name": "Move", "type": "Value", "id": "77ed0256-4e96-405f-b8d6-dd7c095d6e3f", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
         { "name": "Look", "type": "PassThrough", "id": "0f5ee99d-1c0d-4c20-a8d7-748a26672d52", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
         { "name": "Run", "type": "Button", "id": "b6cc038d-e897-45c3-98e4-76083398e2dd", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": true },
-        { "name": "Exit", "type": "Button", "id": "f0a92517-64b6-46fa-ad04-17ec96a950ff", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+        { "name": "Exit", "type": "Button", "id": "f0a92517-64b6-46fa-ad04-17ec96a950ff", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+        { "name": "Attack", "type": "Button", "id": "6ccf8438-6a63-43db-8dd4-9aa9930f0909", "expectedControlType": "Button", "processors": "", "interactions": "Press(behavior=1)", "initialStateCheck": false }
       ],
       "bindings": [
         { "name": "WASD", "id": "6e56c0f5-691f-48a7-91aa-bc1f8b522f84", "path": "2DVector", "interactions": "", "processors": "", "groups": "", "action": "Move", "isComposite": true, "isPartOfComposite": false },
@@ -102,7 +103,8 @@
         { "name": "right", "id": "4b25a1c4-8c27-4794-93a7-a8f7d9d3f63a", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Move", "isComposite": false, "isPartOfComposite": true },
         { "name": "", "id": "a81bdcb2-38ed-48e6-ab9c-3b692e7d1949", "path": "<Pointer>/delta", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Look", "isComposite": false, "isPartOfComposite": false },
         { "name": "", "id": "18b9baaf-ee30-4ac8-842d-89944f3a5a34", "path": "<Keyboard>/leftShift", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Run", "isComposite": false, "isPartOfComposite": false },
-        { "name": "", "id": "ae5ab43a-55bd-471c-bfc0-c887e4f85628", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Exit", "isComposite": false, "isPartOfComposite": false }
+        { "name": "", "id": "ae5ab43a-55bd-471c-bfc0-c887e4f85628", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Exit", "isComposite": false, "isPartOfComposite": false },
+        { "name": "", "id": "3792833f-4e0d-411f-b441-9c4dd8ebba0b", "path": "<Mouse>/leftButton", "interactions": "", "processors": "", "groups": "Keyboard&Mouse", "action": "Attack", "isComposite": false, "isPartOfComposite": false }
       ]
     }
   ],

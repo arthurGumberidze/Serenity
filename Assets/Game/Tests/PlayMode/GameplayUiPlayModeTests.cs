@@ -198,7 +198,8 @@ namespace Game.Tests.PlayMode
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             ui.RefreshNow();
             Submit(ButtonWithText(ui, "Captain = selected"));
-            Assert.That(unit.CaptainId, Is.EqualTo(root.DemoPresenters[0].CharacterId));
+            Assert.That(root.MilitaryUnits.Get(unit.Id).CaptainId,
+                Is.EqualTo(root.DemoPresenters[0].CharacterId));
 
             var monarchId = root.Dynasty.CurrentMonarchId.Value;
             Assert.That(root.CharacterPresentations.TryGet(monarchId, out var monarch), Is.True);

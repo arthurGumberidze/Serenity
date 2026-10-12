@@ -7,6 +7,7 @@ using Game.Domain.Military;
 using Game.Domain.World;
 using Game.Simulation.Combat;
 using Game.Simulation.Military;
+using Game.Domain.Campaign;
 
 namespace Game.Simulation.World
 {
@@ -98,9 +99,13 @@ namespace Game.Simulation.World
                 return new TravelOrderResult(TravelOrderStatus.InvalidOrigin);
             var route = routes.SingleOrDefault(x => x.Connects(origin, destination));
             if (route == null) return new TravelOrderResult(TravelOrderStatus.NoDirectRoute);
-            var modifier = travelDurationModifier?.Invoke(origin, destination, departureTick) ?? 1000;
-            if (modifier <= 0 || modifier > 10000)
+            var weatherModifier = travelDurationModifier?.Invoke(origin, destination, departureTick) ?? 1000;
+            if (weatherModifier <= 0 || weatherModifier > 10000)
                 throw new InvalidOperationException("Global travel duration modifier must be in 1..10000 per-thousand.");
+            var supply = units.ConsumeSupplyCheckpoint(unitId, MilitarySupplyCheckpointKind.Travel, departureTick,
+                "travel:" + unitId + ":" + departureTick + ":" + destination.Value);
+            var modifier = checked((int)Math.Min(10000L,
+                (weatherModifier * (long)supply.ModifierPerThousand + 999L) / 1000L));
             var scaled = checked(route.TravelDurationTicks * (long)modifier);
             var duration = Math.Max(1L, checked((scaled + 999L) / 1000L));
             var travel = new WorldTravelState(unitId, origin, destination, departureTick,
@@ -267,7 +272,7 @@ namespace Game.Simulation.World
 
     public static class StarterGlobalMap
     {
-        public static GlobalMapSaveState Create(long initialTick = 0)
+        public static GlobalMapSaveState Create(long initialTick = 0, long worldSeed = 0)
         {
             var player = new WorldLocationId("starter_settlement");
             var enemy = new WorldLocationId("enemy_settlement");
@@ -294,13 +299,11 @@ namespace Game.Simulation.World
             };
             var settlements = new[]
             {
-                new SettlementState(new SettlementId(Id(500)), player, new CombatSideId("player"), null, null),
-                new SettlementState(new SettlementId(Id(501)), enemy, new CombatSideId("enemy"), null, null)
+                new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "player_settlement")), player, new CombatSideId("player"), null, null),
+                new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "enemy_settlement")), enemy, new CombatSideId("enemy"), null, null)
             };
             return new GlobalMapSaveState("starter_graph_v1", GameWorldMode.Local, player, locations, routes,
                 settlements, null, initialTick);
         }
-
-        private static StableEntityId Id(int value) => StableEntityId.Parse(value.ToString("x32"));
     }
 }

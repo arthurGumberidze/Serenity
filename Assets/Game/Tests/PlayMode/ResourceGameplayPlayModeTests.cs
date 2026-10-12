@@ -28,7 +28,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.DemoPilePresenters.Count, Is.EqualTo(4));
             Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.WorldPile), Is.EqualTo(4));
-            Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.EqualTo(2));
+            Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.EqualTo(10));
             Assert.That(root.DemoPilePresenters.Sum(x => x.Quantity.Units), Is.EqualTo(65));
             Assert.That(root.DemoPresenters.Count, Is.EqualTo(2));
             if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)

@@ -145,7 +145,7 @@ namespace Game.Presentation.AI
         {
             if (authority != Tier1MovementAuthority.DirectPlayer) return;
             Stop();
-            agent.updateRotation = true;
+            if (agent != null) agent.updateRotation = true;
             authority = Tier1MovementAuthority.Autonomous;
         }
 

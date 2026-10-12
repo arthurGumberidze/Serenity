@@ -36,6 +36,7 @@ namespace Game.Presentation.Input
         private InputAction thirdPersonLookAction;
         private InputAction thirdPersonRunAction;
         private InputAction thirdPersonExitAction;
+        private InputAction thirdPersonAttackAction;
         private PlayerControlMode controlMode = PlayerControlMode.Rts;
 
         public Vector2 Move => ReadVector2(moveAction);
@@ -63,6 +64,7 @@ namespace Game.Presentation.Input
         public event Action TimeFasterRequested;
         public event Action ControlModeToggled;
         public event Action ThirdPersonExitRequested;
+        public event Action ThirdPersonAttackRequested;
 
         public InputActionAsset Actions => actionAsset;
 
@@ -131,6 +133,7 @@ namespace Game.Presentation.Input
             thirdPersonLookAction = thirdPersonMap.FindAction("Look", true);
             thirdPersonRunAction = thirdPersonMap.FindAction("Run", true);
             thirdPersonExitAction = thirdPersonMap.FindAction("Exit", true);
+            thirdPersonAttackAction = thirdPersonMap.FindAction("Attack", true);
         }
 
         private void EnableActions()
@@ -159,6 +162,8 @@ namespace Game.Presentation.Input
             controlModeToggleAction.performed += OnControlModeToggle;
             thirdPersonExitAction.performed -= OnThirdPersonExit;
             thirdPersonExitAction.performed += OnThirdPersonExit;
+            thirdPersonAttackAction.performed -= OnThirdPersonAttack;
+            thirdPersonAttackAction.performed += OnThirdPersonAttack;
             timeMap.Enable();
             modeMap.Enable();
             ApplyControlModeMaps();
@@ -179,6 +184,7 @@ namespace Game.Presentation.Input
             if (timeFasterAction != null) timeFasterAction.performed -= OnTimeFaster;
             if (controlModeToggleAction != null) controlModeToggleAction.performed -= OnControlModeToggle;
             if (thirdPersonExitAction != null) thirdPersonExitAction.performed -= OnThirdPersonExit;
+            if (thirdPersonAttackAction != null) thirdPersonAttackAction.performed -= OnThirdPersonAttack;
             cameraMap?.Disable();
             pointerMap?.Disable();
             buildingMap?.Disable();
@@ -206,6 +212,7 @@ namespace Game.Presentation.Input
         private void OnTimeFaster(InputAction.CallbackContext context) => TimeFasterRequested?.Invoke();
         private void OnControlModeToggle(InputAction.CallbackContext context) => ControlModeToggled?.Invoke();
         private void OnThirdPersonExit(InputAction.CallbackContext context) => ThirdPersonExitRequested?.Invoke();
+        private void OnThirdPersonAttack(InputAction.CallbackContext context) => ThirdPersonAttackRequested?.Invoke();
 
         public void SetPlayerControlMode(PlayerControlMode mode)
         {

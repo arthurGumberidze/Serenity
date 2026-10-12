@@ -12,6 +12,7 @@ using Game.Domain.Buildings;
 using Game.Domain.World;
 using Game.Domain.AI;
 using Game.Domain.Events;
+using Game.Domain.Campaign;
 
 namespace Game.Domain
 {
@@ -32,7 +33,8 @@ namespace Game.Domain
         public const int GlobalMapVersion = 12;
         public const int StrategicAiVersion = 13;
         public const int EventVersion = 14;
-        public const int CurrentVersion = EventVersion;
+        public const int CampaignVersion = 15;
+        public const int CurrentVersion = CampaignVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -52,6 +54,7 @@ namespace Game.Domain
         public GlobalMapSaveState GlobalMap { get; }
         public AiStrategicSaveState StrategicAi { get; }
         public EventSaveState Events { get; }
+        public CampaignProgressSaveState Campaign { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
@@ -59,14 +62,16 @@ namespace Game.Domain
             WeatherSaveState weather = null, CombatSaveState combat = null,
             MilitaryUnitSaveState military = null, PlayerControlSaveState playerControl = null,
             BuildingWorldSaveState buildingWorld = null, GlobalMapSaveState globalMap = null,
-            AiStrategicSaveState strategicAi = null, EventSaveState events = null)
+            AiStrategicSaveState strategicAi = null, EventSaveState events = null,
+            CampaignProgressSaveState campaign = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
                 formatVersion != WeatherVersion && formatVersion != CombatVersion &&
                 formatVersion != MilitaryVersion && formatVersion != PlayerControlVersion &&
                 formatVersion != BattleVersion && formatVersion != BuildingVersion &&
-                formatVersion != GlobalMapVersion && formatVersion != StrategicAiVersion && formatVersion != CurrentVersion)
+                formatVersion != GlobalMapVersion && formatVersion != StrategicAiVersion &&
+                formatVersion != EventVersion && formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -91,6 +96,7 @@ namespace Game.Domain
             GlobalMap = globalMap;
             StrategicAi = strategicAi;
             Events = events;
+            Campaign = campaign;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

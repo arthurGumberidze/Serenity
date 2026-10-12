@@ -189,6 +189,7 @@ namespace Game.Simulation.Combat
             new Dictionary<StableEntityId, StableEntityId>();
         private readonly long worldSeed;
         private IExternalCharacterActivityOwner movementSuppression;
+        private Func<StableEntityId, long, int> combatModifier;
 
         public CombatService(CharacterRegistry characterRegistry, HealthAndFamilyService healthService,
             ICombatPositionProvider positionProvider, long simulationWorldSeed,
@@ -216,6 +217,14 @@ namespace Game.Simulation.Combat
             if (movementSuppression != null && !ReferenceEquals(movementSuppression, owner))
                 throw new InvalidOperationException("Combat movement suppression is already bound.");
             movementSuppression = owner;
+        }
+
+        public void BindCombatModifier(Func<StableEntityId, long, int> modifier)
+        {
+            if (modifier == null) throw new ArgumentNullException(nameof(modifier));
+            if (combatModifier != null && combatModifier != modifier)
+                throw new InvalidOperationException("Combat modifier is already bound.");
+            combatModifier = modifier;
         }
 
         public void RegisterSide(StableEntityId characterId, CombatSideId sideId)
@@ -301,6 +310,35 @@ namespace Game.Simulation.Combat
             if (attacker.SideId == target.SideId || !targeting.IsValidTarget(target)) return false;
             encounter.Combatants[attackerId] = attacker.With(assignedTargetId: targetId, targetId: targetId);
             return true;
+        }
+
+        public ManualCombatAttackStatus TryManualAttack(StableEntityId attackerId, StableEntityId targetId,
+            long calendarTick, long biologicalTick)
+        {
+            if (calendarTick < LastCalendarTick) return ManualCombatAttackStatus.Invalid;
+            if (!activeEncounterByCharacter.TryGetValue(attackerId, out var encounterId) ||
+                !activeEncounterByCharacter.TryGetValue(targetId, out var targetEncounterId) || encounterId != targetEncounterId)
+                return ManualCombatAttackStatus.Invalid;
+            var encounter = encounters[encounterId];
+            if (encounter.Status != CombatEncounterStatus.Active || encounter.Mode != BattleMode.Physical)
+                return ManualCombatAttackStatus.Invalid;
+            var attacker = RefreshEligibility(encounter, encounter.Combatants[attackerId]);
+            var target = RefreshEligibility(encounter, encounter.Combatants[targetId]);
+            if (!IsActiveCombatant(attacker) || !targeting.IsValidTarget(target) || attacker.SideId == target.SideId)
+                return ManualCombatAttackStatus.Invalid;
+            encounter.Combatants[attackerId] = attacker.With(assignedTargetId: targetId, targetId: targetId,
+                state: CombatantState.Attacking);
+            if (!positions.TryGetPosition(attackerId, out var attackerPosition) ||
+                !positions.TryGetPosition(targetId, out var targetPosition)) return ManualCombatAttackStatus.Invalid;
+            var attackerStats = EffectiveStats(attackerId, attacker.WeaponId, calendarTick);
+            if (attackerPosition.DistanceSquared(targetPosition) > attackerStats.RangeMetres * attackerStats.RangeMetres)
+                return ManualCombatAttackStatus.OutOfRange;
+            if (calendarTick < attacker.NextAttackTick) return ManualCombatAttackStatus.Cooldown;
+            ResolveAttack(encounter, attacker, targetId, attackerStats, calendarTick, biologicalTick);
+            encounter.LastTick = Math.Max(encounter.LastTick, calendarTick);
+            LastCalendarTick = Math.Max(LastCalendarTick, calendarTick);
+            ResolveOutcome(encounter);
+            return ManualCombatAttackStatus.Hit;
         }
 
         public void AdvanceTo(long calendarTick, long biologicalTick)
@@ -537,7 +575,7 @@ namespace Game.Simulation.Combat
                 }
                 combatant = combatant.With(targetId: targetId.Value);
                 encounter.Combatants[id] = combatant;
-                var attackerStats = stats.Get(id, combatant.WeaponId);
+                var attackerStats = EffectiveStats(id, combatant.WeaponId, calendarTick);
                 if (!positions.TryGetPosition(id, out var attackerPosition) ||
                     !positions.TryGetPosition(targetId.Value, out var targetPosition)) continue;
                 var range = attackerStats.RangeMetres;
@@ -551,6 +589,11 @@ namespace Game.Simulation.Combat
                     continue;
                 }
                 StopUnlessSuppressed(id);
+                if (IsMovementSuppressed(id))
+                {
+                    encounter.Combatants[id] = combatant.With(state: CombatantState.Attacking);
+                    continue;
+                }
                 if (calendarTick < combatant.NextAttackTick)
                 {
                     encounter.Combatants[id] = combatant.With(state: CombatantState.Attacking);
@@ -603,7 +646,7 @@ namespace Game.Simulation.Combat
                     encounter.Combatants[id] = combatant;
                     if (nextStep < combatant.NextAttackTick) continue;
                     ResolveAttack(encounter, combatant, targetId.Value,
-                        stats.Get(id, combatant.WeaponId), nextStep, biologicalTick);
+                        EffectiveStats(id, combatant.WeaponId, nextStep), nextStep, biologicalTick);
                 }
                 encounter.LastTick = nextStep;
                 ResolveOutcome(encounter);
@@ -794,6 +837,18 @@ namespace Game.Simulation.Combat
         private bool IsMovementSuppressed(StableEntityId characterId) =>
             movementSuppression != null && movementSuppression.IsExternallyControlled(characterId);
 
+        private CombatStats EffectiveStats(StableEntityId characterId, CombatWeaponId weaponId, long calendarTick)
+        {
+            var value = stats.Get(characterId, weaponId);
+            var modifier = combatModifier?.Invoke(characterId, calendarTick) ?? 1000;
+            if (modifier < 1 || modifier > 1000)
+                throw new InvalidOperationException("Combat modifier must be in 1..1000 per-thousand.");
+            return modifier == 1000 ? value : new CombatStats(
+                Math.Max(0, value.AttackPower * modifier / 1000), value.Defense,
+                value.AttackIntervalTicks, value.RangeMillimetres, value.MovementPerThousand,
+                value.MoraleInfluence);
+        }
+
         private void MoveToUnlessSuppressed(StableEntityId characterId, WorldPosition target, float stoppingDistance)
         {
             if (!IsMovementSuppressed(characterId)) positions.MoveTo(characterId, target, stoppingDistance);
@@ -862,6 +917,8 @@ namespace Game.Simulation.Combat
             for (var i = 0; i < value.Length; i++) Add(ref hash, value[i]);
         }
     }
+
+    public enum ManualCombatAttackStatus { Hit = 1, OutOfRange = 2, Cooldown = 3, Invalid = 4 }
 
     public enum CombatCommandStatus { Created = 1, Assigned = 2, InvalidSelection = 3, NotHostile = 4, Ineligible = 5 }
 

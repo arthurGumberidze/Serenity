@@ -8,12 +8,53 @@ using Game.Domain.Combat;
 using Game.Domain.Health;
 using Game.Domain.Military;
 using Game.Domain.Work;
+using Game.Domain.Resources;
 using Game.Simulation.Combat;
 using Game.Simulation.Tiers;
 using Game.Simulation.Work;
 
 namespace Game.Simulation.Military
 {
+    public sealed class MilitarySupplySettings
+    {
+        public MilitarySupplySettings(ResourceId foodResourceId, long initialFoodPerMember,
+            long travelFoodPerMember, long combatFoodPerMember, int shortageMovementDurationPerThousand,
+            int shortageCombatPerThousand, int shortageMoraleLoss)
+        {
+            if (!foodResourceId.IsValid) throw new ArgumentException("Food resource is required.", nameof(foodResourceId));
+            if (initialFoodPerMember < 0 || travelFoodPerMember < 0 || combatFoodPerMember < 0)
+                throw new ArgumentOutOfRangeException();
+            if (shortageMovementDurationPerThousand < 1000 || shortageMovementDurationPerThousand > 10000 ||
+                shortageCombatPerThousand < 1 || shortageCombatPerThousand > 1000 ||
+                shortageMoraleLoss < 0 || shortageMoraleLoss > 1000)
+                throw new ArgumentOutOfRangeException();
+            FoodResourceId = foodResourceId; InitialFoodPerMember = initialFoodPerMember;
+            TravelFoodPerMember = travelFoodPerMember; CombatFoodPerMember = combatFoodPerMember;
+            ShortageMovementDurationPerThousand = shortageMovementDurationPerThousand;
+            ShortageCombatPerThousand = shortageCombatPerThousand; ShortageMoraleLoss = shortageMoraleLoss;
+        }
+        public ResourceId FoodResourceId { get; }
+        public long InitialFoodPerMember { get; }
+        public long TravelFoodPerMember { get; }
+        public long CombatFoodPerMember { get; }
+        public int ShortageMovementDurationPerThousand { get; }
+        public int ShortageCombatPerThousand { get; }
+        public int ShortageMoraleLoss { get; }
+        public static MilitarySupplySettings StoneAge { get; } = new MilitarySupplySettings(
+            new ResourceId("berries"), 6, 1, 1, 1500, 700, 75);
+    }
+
+    public readonly struct MilitarySupplyConsumptionResult
+    {
+        public MilitarySupplyConsumptionResult(bool processed, long required, long consumed, int modifierPerThousand)
+        { Processed = processed; Required = required; Consumed = consumed; ModifierPerThousand = modifierPerThousand; }
+        public bool Processed { get; }
+        public long Required { get; }
+        public long Consumed { get; }
+        public int ModifierPerThousand { get; }
+        public bool FullySupplied => Consumed >= Required;
+    }
+
     public enum CommanderAssignmentStatus
     {
         Assigned = 1,
@@ -64,6 +105,11 @@ namespace Game.Simulation.Military
             public MilitaryUnitOrderState Order;
             public StableEntityId? EncounterId;
             public ulong Revision;
+            public readonly Dictionary<ResourceId, long> Supply = new Dictionary<ResourceId, long>();
+            public readonly Dictionary<string, MilitarySupplyCheckpointState> SupplyCheckpoints =
+                new Dictionary<string, MilitarySupplyCheckpointState>(StringComparer.Ordinal);
+            public long ConsumedSupplyUnits;
+            public bool SupplyInitialized;
         }
 
         private readonly CharacterRegistry characters;
@@ -71,12 +117,17 @@ namespace Game.Simulation.Military
         private readonly Dictionary<MilitaryUnitId, Unit> units = new Dictionary<MilitaryUnitId, Unit>();
         private readonly Dictionary<StableEntityId, MilitaryUnitId> activeMembership =
             new Dictionary<StableEntityId, MilitaryUnitId>();
+        private readonly MilitarySupplySettings supplySettings;
 
-        public MilitaryUnitService(CharacterRegistry characterRegistry, ICharacterCapabilityProvider capabilityProvider)
+        public MilitaryUnitService(CharacterRegistry characterRegistry, ICharacterCapabilityProvider capabilityProvider,
+            MilitarySupplySettings settings = null)
         {
             characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             capabilities = capabilityProvider ?? throw new ArgumentNullException(nameof(capabilityProvider));
+            supplySettings = settings ?? MilitarySupplySettings.StoneAge;
         }
+
+        public MilitarySupplySettings SupplySettings => supplySettings;
 
         public IReadOnlyList<MilitaryUnitState> Units => units.Values.OrderBy(x => x.Id).Select(Capture).ToArray();
 
@@ -144,6 +195,107 @@ namespace Game.Simulation.Military
         {
             state = null;
             return activeMembership.TryGetValue(characterId, out var unitId) && TryGet(unitId, out state);
+        }
+
+        public long LoadInitialSupply(MilitaryUnitId id, ResourceInventoryRegistry inventories,
+            IEnumerable<InventoryOwner> sourceOwners)
+        {
+            if (inventories == null) throw new ArgumentNullException(nameof(inventories));
+            var unit = Require(id);
+            var wasInitialized = unit.SupplyInitialized;
+            var desired = checked(unit.Roster.Values.Count(x => x.IsActive) * supplySettings.InitialFoodPerMember);
+            var current = unit.Supply.TryGetValue(supplySettings.FoodResourceId, out var amount) ? amount : 0L;
+            var remaining = Math.Max(0L, desired - current);
+            if (remaining == 0)
+            {
+                if (!wasInitialized)
+                {
+                    unit.SupplyInitialized = true;
+                    unit.Revision++;
+                }
+                return 0;
+            }
+            var sources = (sourceOwners ?? throw new ArgumentNullException(nameof(sourceOwners))).Distinct()
+                .OrderBy(x => x.Kind).ThenBy(x => x.Id).Select(inventories.Get).ToArray();
+            var deductions = new List<Tuple<ResourceInventory, long>>();
+            foreach (var source in sources)
+            {
+                var take = Math.Min(remaining, source.GetAmount(supplySettings.FoodResourceId).Units);
+                if (take > 0) deductions.Add(Tuple.Create(source, take));
+                remaining -= take;
+                if (remaining == 0) break;
+            }
+            var loaded = desired - current - remaining;
+            var charged = new List<Tuple<ResourceInventory, long>>();
+            try
+            {
+                foreach (var deduction in deductions)
+                {
+                    if (!deduction.Item1.TryRemove(supplySettings.FoodResourceId, new ResourceQuantity(deduction.Item2)))
+                        throw new InvalidOperationException("Supply funding changed during transfer.");
+                    charged.Add(deduction);
+                }
+                if (loaded > 0)
+                    unit.Supply[supplySettings.FoodResourceId] = checked(current + loaded);
+                unit.SupplyInitialized = true;
+                if (!wasInitialized || loaded > 0)
+                    unit.Revision++;
+                return loaded;
+            }
+            catch
+            {
+                for (var i = charged.Count - 1; i >= 0; i--)
+                    charged[i].Item1.TryAdd(supplySettings.FoodResourceId, new ResourceQuantity(charged[i].Item2));
+                throw;
+            }
+        }
+
+        public MilitarySupplyConsumptionResult ConsumeSupplyCheckpoint(MilitaryUnitId id,
+            MilitarySupplyCheckpointKind kind, long calendarTick, string key)
+        {
+            var unit = Require(id);
+            if (!unit.SupplyInitialized)
+                return new MilitarySupplyConsumptionResult(false, 0, 0, 1000);
+            if (unit.SupplyCheckpoints.TryGetValue(key, out var prior))
+                return new MilitarySupplyConsumptionResult(false, prior.RequiredUnits, prior.ConsumedUnits,
+                    prior.ModifierPerThousand);
+            var active = unit.Roster.Values.Count(x => x.IsActive);
+            var perMember = kind == MilitarySupplyCheckpointKind.Travel
+                ? supplySettings.TravelFoodPerMember : supplySettings.CombatFoodPerMember;
+            var required = checked(active * perMember);
+            var available = unit.Supply.TryGetValue(supplySettings.FoodResourceId, out var value) ? value : 0L;
+            var consumed = Math.Min(required, available);
+            if (consumed > 0)
+            {
+                var next = available - consumed;
+                if (next == 0) unit.Supply.Remove(supplySettings.FoodResourceId);
+                else unit.Supply[supplySettings.FoodResourceId] = next;
+                unit.ConsumedSupplyUnits = checked(unit.ConsumedSupplyUnits + consumed);
+            }
+            if (consumed < required) unit.Morale = Math.Max(0, unit.Morale - supplySettings.ShortageMoraleLoss);
+            var modifier = consumed >= required ? 1000 : kind == MilitarySupplyCheckpointKind.Travel
+                ? supplySettings.ShortageMovementDurationPerThousand : supplySettings.ShortageCombatPerThousand;
+            var marker = new MilitarySupplyCheckpointState(kind, calendarTick, key, required, consumed, modifier);
+            unit.SupplyCheckpoints.Add(marker.Key, marker);
+            unit.Revision++;
+            return new MilitarySupplyConsumptionResult(true, required, consumed, modifier);
+        }
+
+        public int GetTravelDurationModifier(MilitaryUnitId id) =>
+            SupplyModifier(Require(id), MilitarySupplyCheckpointKind.Travel);
+
+        public int GetCombatModifier(StableEntityId characterId)
+        {
+            if (!activeMembership.TryGetValue(characterId, out var unitId)) return 1000;
+            return SupplyModifier(Require(unitId), MilitarySupplyCheckpointKind.Combat);
+        }
+
+        public int ConsumeCombatSupplyForCharacter(StableEntityId characterId, long calendarTick)
+        {
+            if (!activeMembership.TryGetValue(characterId, out var unitId)) return 1000;
+            var bucket = calendarTick / TimeSpan.TicksPerHour;
+            return ConsumeSupplyCheckpoint(unitId, MilitarySupplyCheckpointKind.Combat,
+                checked(bucket * TimeSpan.TicksPerHour), "combat:" + unitId + ":" + bucket).ModifierPerThousand;
         }
 
         public CommanderAssignmentStatus AssignCaptain(MilitaryUnitId id, StableEntityId captainId)
@@ -380,6 +532,16 @@ namespace Game.Simulation.Military
                 Add(ref hash, unit.Order.Sequence.ToString());
                 Add(ref hash, unit.ActiveEncounterId?.ToString() ?? string.Empty);
                 Add(ref hash, unit.Revision.ToString());
+                Add(ref hash, unit.Supply.ConsumedUnits.ToString());
+                Add(ref hash, unit.Supply.Initialized ? "1" : "0");
+                foreach (var amount in unit.Supply.Amounts)
+                { Add(ref hash, amount.ResourceId.ToString()); Add(ref hash, amount.Quantity.Units.ToString()); }
+                foreach (var checkpoint in unit.Supply.Checkpoints)
+                {
+                    Add(ref hash, ((int)checkpoint.Kind).ToString()); Add(ref hash, checkpoint.CalendarTick.ToString());
+                    Add(ref hash, checkpoint.Key); Add(ref hash, checkpoint.RequiredUnits.ToString());
+                    Add(ref hash, checkpoint.ConsumedUnits.ToString()); Add(ref hash, checkpoint.ModifierPerThousand.ToString());
+                }
                 foreach (var member in unit.Roster)
                 {
                     Add(ref hash, member.CharacterId.ToString());
@@ -419,7 +581,9 @@ namespace Game.Simulation.Military
 
         private static MilitaryUnitState Capture(Unit unit) => new MilitaryUnitState(unit.Id, unit.Side,
             unit.CaptainId, unit.Roster.Values, unit.Status, unit.Representation, unit.Location, unit.Morale,
-            unit.Cohesion, unit.Order, unit.EncounterId, unit.Revision);
+            unit.Cohesion, unit.Order, unit.EncounterId, unit.Revision,
+            new MilitarySupplyState(unit.Supply.Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))),
+                unit.SupplyCheckpoints.Values, unit.ConsumedSupplyUnits, unit.SupplyInitialized));
 
         private static Unit Restore(MilitaryUnitState state)
         {
@@ -438,7 +602,20 @@ namespace Game.Simulation.Military
                 Revision = state.Revision
             };
             foreach (var member in state.Roster) unit.Roster.Add(member.CharacterId, member);
+            foreach (var amount in state.Supply.Amounts) unit.Supply.Add(amount.ResourceId, amount.Quantity.Units);
+            foreach (var checkpoint in state.Supply.Checkpoints) unit.SupplyCheckpoints.Add(checkpoint.Key, checkpoint);
+            unit.ConsumedSupplyUnits = state.Supply.ConsumedUnits;
+            unit.SupplyInitialized = state.Supply.Initialized;
             return unit;
+        }
+
+        private int SupplyModifier(Unit unit, MilitarySupplyCheckpointKind kind)
+        {
+            var available = unit.Supply.TryGetValue(supplySettings.FoodResourceId, out var value) ? value : 0L;
+            if (!unit.SupplyInitialized) return 1000;
+            if (available > 0) return 1000;
+            return kind == MilitarySupplyCheckpointKind.Travel
+                ? supplySettings.ShortageMovementDurationPerThousand : supplySettings.ShortageCombatPerThousand;
         }
 
         private static StableEntityId[] OrderedDistinctRequired(IEnumerable<StableEntityId> ids)

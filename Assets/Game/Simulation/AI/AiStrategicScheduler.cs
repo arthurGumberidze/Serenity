@@ -478,6 +478,8 @@ namespace Game.Simulation.AI
             var unit = units.Create(id, new MilitarySideId(faction.Strategic.SideId.Value), roster, captain,
                 MilitaryUnitRepresentationMode.Aggregate,
                 map.Settlements.Single(x => x.Id == faction.Strategic.HomeSettlementId).LocationId.Value);
+            units.LoadInitialSupply(unit.Id, faction.Inventories,
+                faction.Inventories.All.Select(x => x.Owner));
             faction.Strategic.AddUnit(unit.Id);
             Record(faction.Strategic, tick, AiDecisionKind.FormMilitaryUnit, AiStrategicGoal.FormArmy, 750,
                 "Created a U21 unit from eligible canonical Characters.", unitId: unit.Id);

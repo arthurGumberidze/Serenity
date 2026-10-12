@@ -479,3 +479,23 @@ The external seed-3030 run in `C:\serenity_u30_soak_20261012_run3` is audited FA
 ## D-093 U30 recovery discards partial steps and retains live aborted-attempt evidence (2026-10-12)
 
 Weather exposure treats a canonical dead resident as ineligible for a new condition while advancing that resident's exactly-once day cursor; unknown identities remain errors and HealthAndFamilyService remains the mutation authority. A callback exception may occur after the clock or earlier services mutate, so the U30 Player records it and exits the attempt without checkpointing that partial state. PowerShell imports complete JSONL records while the Player runs, captures the original failure/reproduction, and aggregates atomic progress evidence even after watchdog termination. Repeated failures continue with bounded backoff to the real deadline while a verified checkpoint or deterministic fresh bootstrap is safe; attempt count alone is not an immediate-stop condition. Raw frames rotate, per-segment sampling is bounded, working-set availability is a positive PASS gate and unqualified allocation samples are unavailable rather than zero. The checkpoint-5 regression crossed the original Y1 D35 failure with zero incidents. This changes U30 evidence/recovery behavior without weakening its eight-hour acceptance gate.
+
+## D-094 New Game identities derive from seed, role and stable index (2026-10-12)
+
+Normal New Game has one immutable `NewGameConfiguration` and derives the session, ten player Characters, six AI Characters, dynasties, settlements, starting buildings, resource piles and other canonical bootstrap identities from world seed, semantic role and stable index. The player roster is always ten and includes a valid monarch, spouse and two heirs. Starting the same seed/config produces the same logical initial state; a different seed changes it. Scene reload is the composition reset boundary, and the one-use requested seed prevents duplicate roots, UI documents or subscriptions. Player-created entities after bootstrap may still use ordinary generated IDs.
+
+## D-095 Discovery and victory are canonical campaign facts (2026-10-12)
+
+`CampaignProgressService` owns rival discovery, discovery tick/marker, victory tick/marker and audit sequence. Discovery occurs exactly once when a player unit reaches a rival settlement or another canonical shared-contact path is reported; presentation merely hides or reveals rival detail. Victory occurs only after a finished hostile battle won by the player has been processed through the existing U26 settlement-capture transaction and the shared no-settlement defeat rule confirms the AI side is defeated. Victory is a banner/event state, not a clock stop, so sandbox play and Save/Load continue.
+
+## D-096 Stone Age military supply is conserved inventory state (2026-10-12)
+
+U21 military units own a persisted supply checkpoint state, but berries remain canonical quantities in existing resource inventories. Resupply transfers berries atomically from an eligible owner inventory into the unit ledger; rollback preserves conservation. U25 travel and U20 combat consume configured amounts at stable exactly-once checkpoints. Shortage applies fixed-point travel, combat and morale modifiers through those existing authorities. Representation changes never refill or duplicate supply, and v1-v14 snapshots load with an explicit empty/uninitialized default that preserves legacy behavior.
+
+## D-097 TPS attack is an input adapter over U20 (2026-10-12)
+
+The ThirdPerson Attack action is a press-only left-mouse command. `ThirdPersonControlController` resolves the aimed canonical target and delegates to `CombatService.TryManualAttack`; U20 remains the sole authority for encounter membership, hostile-side validation, range, weapon profile, cooldown, damage, injury, morale and battle outcome. Pause rejects the command, holding the button does not create repeated attacks, and physical/abstract/direct-control transitions preserve the same unit, Character and battle identities.
+
+## D-098 Snapshot v15 appends supply and campaign state (2026-10-12)
+
+Snapshot v15 strictly serializes per-unit supply/checkpoints and the campaign discovery/victory audit. Restore validates detached state before committing and never replays discovery or victory notifications. V1-v14 decode with safe empty campaign and uninitialized supply defaults; PostgreSQL remains an opaque snapshot store. The U30 resume composition must bind `CampaignProgressService` to the v15 coordinator, while the isolated U30A Windows build path is a verifier option and does not change the normal release path.

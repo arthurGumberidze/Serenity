@@ -369,7 +369,7 @@ namespace Game.Infrastructure.Reliability
             checkpointCoordinator = new SaveCoordinator(snapshot.SessionId, root.Clock, store,
                 root.Production, root.Research, root.Succession, root.HealthFamily, root.Weather, root.Combat,
                 root.MilitaryUnits, root.PlayerControl, root.BuildingDamage, root.GlobalMap, root.StrategicAi,
-                root.Events);
+                root.Events, root.CampaignProgress);
             checkpointCoordinator.Load(CheckpointSlotId);
             root.RebindAfterLoad(checkpointCoordinator.Clock);
 
@@ -463,11 +463,10 @@ namespace Game.Infrastructure.Reliability
         }
 
         /// <summary>
-        /// Cross-process outcome fingerprint. The current bootstrap predates deterministic New Game
-        /// (U30A) and allocates several stable IDs with Guid.NewGuid; exact checkpoint hashes must
-        /// retain those identities, while repeatability evidence must compare the logical payload.
-        /// This canonical form replaces 128-bit identity leaves and sorts structured children, then
-        /// adds the complete representation-neutral tier payload without character IDs.
+        /// Cross-process outcome fingerprint. Canonical New Game is deterministic, while this
+        /// normalized form remains compatible with older checkpoints that contain generated IDs.
+        /// It replaces 128-bit identity leaves, sorts structured children, and adds the complete
+        /// representation-neutral tier payload without character IDs.
         /// </summary>
         private string ComputeRepeatableOutcomeHash()
         {
