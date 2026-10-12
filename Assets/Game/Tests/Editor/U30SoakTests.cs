@@ -47,6 +47,16 @@ namespace Game.Tests
         }
 
         [Test]
+        public void AggregateValidatorRejectsUnproductiveWaitingAndUnavailableMemory()
+        {
+            var result = ValidAggregate();
+            result.productive_simulation_seconds = 28799;
+            result.memory_metrics_verified = false;
+            Assert.That(U30SoakResultValidator.Validate(result, true), Does.Contain("short_productive_duration"));
+            Assert.That(U30SoakResultValidator.Validate(result, true), Does.Contain("memory_metrics_unverified"));
+        }
+
+        [Test]
         public void TierRuntimeRecordRoundTripsEveryContinuationField()
         {
             var id = StableEntityId.Parse("00000000000000000000000000003030");
@@ -98,7 +108,8 @@ namespace Game.Tests
             passed = true, seed = 1, requested_wall_clock_seconds = 28800, actual_wall_clock_seconds = 28800,
             started_utc = "2026-10-12T00:00:00.0000000Z", completed_utc = "2026-10-12T08:00:00.0000000Z",
             checkpoint_resume_verified = true, final_state_hash = "ABC", summary = "pass",
-            segments_completed = 2, productive_simulation_seconds = 28790, performance_samples = 10,
+            segments_completed = 2, productive_simulation_seconds = 28800, performance_samples = 10,
+            memory_metrics_verified = true,
             coverage = new U30Coverage
             {
                 production_steps = 1, research_steps = 1, dynasty_checks = 1, health_steps = 1,

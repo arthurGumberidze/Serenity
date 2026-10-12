@@ -6,7 +6,7 @@ ID: U30
 
 Title: Automated tests and 8+ hour soak
 
-Status: IN_PROGRESS — official external run audited FAIL; remediation and a fresh eight-hour run remain required
+Status: IN_PROGRESS — failed official run remediated and preflighted; a fresh eight-hour run remains required
 
 ## Implemented
 
@@ -73,6 +73,22 @@ Each restored attempt starts at tick `28800000000000` and reaches the same failu
 
 Read-only PowerShell checks used `Get-Content ... | ConvertFrom-Json`, streaming `System.IO.File.OpenText` parsing/counting of all five Player incident journals, `Get-FileHash -Algorithm SHA256` for the aggregate journals and all 18 snapshot/tier payloads, checkpoint-index inspection and `rg -n` plus line-numbered reads of the weather, health, composition, controller and runner sources. `git status --porcelain` was empty before documentation updates. `git diff --check` passed; the reviewed diff changes only PROJECT_STATE, TASK_GRAPH, NEXT_TASK, DECISIONS and this handoff. No gameplay/harness implementation, Player rerun or Unity tests/build occurred in this audit; earlier preparation results remain historical evidence only.
 
+## Remediation and preflight (2026-10-12)
+
+Dead residents now advance their deterministic weather-exposure cursor without receiving a new condition; unknown IDs still fail atomically and direct health mutation on a dead Character remains rejected. A gameplay exception ends the Player attempt immediately after durable incident/result writes, so no checkpoint is published from the partially processed world. The orchestrator imports incidents live and exactly once, preserves the true first Player failure plus a complete checkpoint reproduction command, consumes atomic progress evidence when a Player is killed, preserves aborted coverage/performance and continues repeated restart loops with bounded backoff through the real deadline. Malformed newest checkpoint metadata no longer prevents fallback. A 60 FPS headless cap plus exact rotating raw-frame journals bounds segment memory; process working set is refreshed with a native Windows fallback, and a PASS requires verified memory telemetry. Unqualified last-frame allocation values are reported unavailable rather than zero.
+
+`Tools/Test-U30Runner.ps1` passed seven protocol fixtures: healthy, gameplay exception, partial JSONL, watchdog, repeated gameplay exception, repeated watchdog and corrupt checkpoint. The repeated cases continued beyond five failed attempts to their requested deadline. The verifier now runs these automatically.
+
+`C:\serenity_u30_preflight_20261012_run4` used seed 3030 and resumed the failed run's checkpoint 5. It crossed the old failure boundary through game day 35 and returned PASS: 60 productive/72 actual seconds, three completed/resumed segments, 3,318 performance samples, five weather days, abstract-battle coverage, zero-byte incident journal, zero critical/invariant/watchdog/recoverable errors, verified working set and no runaway signal. All 33 snapshot/tier hashes and aggregate journal/manifest hashes match. Every Player exit code is 0. Final logical hash is `46B480B158091A574F604F3CA6A79A3CD8B64CEA02DE9A14837EAA2804E9BB88`.
+
+Final command `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\Verify-U30.ps1" -ProjectPath "C:\serenity_game" -StepTimeoutSeconds 1200` passed runner protocols; U30 EditMode 8/8 and PlayMode 2/2; U29 EditMode 28/28 and PlayMode 16/16; required EditMode 160/160 and PlayMode 38/38; persistence 35/35; Windows x64 Mono Development build with 0 errors/4 pre-existing obsolete-API warnings. PostgreSQL discovery found 25 and skipped all because no test database is configured. `git diff --check` passed. A Unity licensing refresh line appears in the successful build log but did not affect the build result.
+
 ## Required next action
 
-Within U30, repair dead-resident weather exposure and cover its day boundary with a regression. Make exception recovery preserve a trustworthy step barrier and allow heartbeat/failure evidence without an exception on every frame. Aggregate retained evidence even when a Player is watchdog-terminated; capture the first gameplay failure immediately and bound repeated-incident/frame buffering without erasing earlier evidence. Reconcile early-stop policy with the original prompt. Reproduce from checkpoint 5 using seed 3030 into a fresh output tree, verify focused tests/dependency regressions/build, then perform a new official eight-hour run and audit every gate. Keep this failed evidence tree immutable. U30 stays IN_PROGRESS; U29 stays PARTIAL; do not start U30A/U31.
+Keep run3 and all preflight trees immutable. Launch the fresh official run into a new folder:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\Run-Soak-U30.ps1" -Seed 3030 -WallClockHours 8 -CheckpointIntervalMinutes 5 -OutputFolder "C:\serenity_u30_soak_20261012_run4"
+```
+
+After it exits, audit every gate and only then mark U30 DONE. U30 remains IN_PROGRESS and U29 remains PARTIAL. The user explicitly authorized U30A implementation while the external run is pending; this does not relax either gate or permit a false U31 completion.

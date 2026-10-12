@@ -1,11 +1,12 @@
 param(
-    [string]$ProjectPath = (Split-Path $PSScriptRoot -Parent),
+    [string]$ProjectPath,
     [string]$EditorPath = 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe',
     [int]$StepTimeoutSeconds = 1200,
     [switch]$SkipU29Regression
 )
 
 $ErrorActionPreference = 'Stop'
+if ([string]::IsNullOrWhiteSpace($ProjectPath)) { $ProjectPath = Split-Path -Path $PSScriptRoot -Parent }
 $ProjectPath = (Resolve-Path -LiteralPath $ProjectPath).Path
 $logPath = Join-Path $ProjectPath 'Logs'
 New-Item -ItemType Directory -Force -Path $logPath | Out-Null
@@ -49,6 +50,9 @@ $parseErrors = $null
 [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'Run-Soak-U30.ps1'),
     [ref]$null, [ref]$parseErrors) | Out-Null
 if ($parseErrors.Count -ne 0) { throw "Run-Soak-U30.ps1 parser errors: $($parseErrors[0].Message)" }
+
+& (Join-Path $PSScriptRoot 'Test-U30Runner.ps1') -ProjectPath $ProjectPath
+if ($LASTEXITCODE -ne 0) { throw 'U30 runner protocol tests failed.' }
 
 Invoke-U30Unity 'U30-compile' @('-quit')
 Invoke-U30Unity 'U30-editmode' @('-runTests', '-testPlatform', 'EditMode', '-testCategory', 'U30',

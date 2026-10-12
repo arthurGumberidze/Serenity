@@ -1,19 +1,25 @@
 # NEXT_TASK.md
 
-U28 is DONE. U29 remains PARTIAL by explicit user decision; its 1000-Character p95 debt remains open. U30 is IN_PROGRESS after a failed official external run.
+U28 is DONE. U29 remains PARTIAL by explicit user decision; its 1000-Character p95 debt remains open. U30 remediation is complete but U30 remains IN_PROGRESS until the fresh external eight-hour run passes.
 
-## Active task: U30 — resolve the failed official soak before finalization
+## Next authorized implementation task: U30A — explicit sequencing exception while U30 reruns externally
 
 ### Status
 
-IN_PROGRESS. The official run at `C:\serenity_u30_soak_20261012_run3` is complete and audited FAIL: 4,364 seconds instead of 28,800, five watchdog failures, four restarts, zero completed segments and an empty final hash. The first gameplay failure is `Cannot add a condition to a dead character.` in WeatherService at Y1 D35. The user's analysis request has been handled through an artifact/source audit; remediation has not been implemented in this review.
+U30 remains IN_PROGRESS. Its failed run3 is immutable evidence; the weather/runner remediation and checkpoint-5 preflight are complete. The user will launch the fresh official run at `C:\serenity_u30_soak_20261012_run4` overnight and explicitly authorized work on U30A, then U31, while that external process is pending. This sequencing permission does not turn U30 or U29 into DONE and does not waive any U31 gate.
 
-### Required follow-up within U30
+### U30 external command
 
-Read the audit in `docs/U30_HANDOFF.md`. Repair weather exposure/life-state integration with a dead-resident/day-boundary regression; prevent failed steps from repeatedly advancing a partially processed world while starving heartbeat; preserve aborted-segment incidents/performance/coverage and capture the actual first failure immediately. Reconcile the five-attempt early-stop policy with the U30 prompt's explicit immediate-stop conditions. Validate the same-seed failure boundary from checkpoint 5 in a new evidence directory, then verify focused regressions/build and perform a fresh official eight-hour run. Preserve the failed evidence tree. Do not start U30A or U31.
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\Run-Soak-U30.ps1" -Seed 3030 -WallClockHours 8 -CheckpointIntervalMinutes 5 -OutputFolder "C:\serenity_u30_soak_20261012_run4"`
+
+Do not reuse any previous output directory. Preserve run3 and all preflight trees. A fresh finalizer must audit run4 before U30 can become DONE.
+
+### U30A scope
+
+Follow `serenity_automation/serenity_night_automation_v3/prompts/U30A_PROMPT.txt`. Record this user-authorized dependency sequencing exception in the U30A handoff. Implement and validate U30A without weakening U29/U30 gates. U31 may be prepared after U30A, but its final MVP gate remains blocked by every unmet dependency/result and must report them honestly.
 
 ### Required finalizer checks
 
-Read `docs/U30_HANDOFF.md`, `docs/SOAK_TESTING.md`, and `C:\serenity_u30_soak_20261012_run3\soak-result.json`. Verify exit/result evidence, `requested_wall_clock_seconds >= 28800`, `actual_wall_clock_seconds >= requested_wall_clock_seconds`, zero critical/invariant/watchdog failures, no runaway-memory flag, verified checkpoint/resume, non-empty final logical hash, complete aggregate coverage, append-only journal/manifest hashes, and independently verified checkpoint bundles. Inspect all segment results and the first-failure bundle if present.
+Read `docs/U30_HANDOFF.md`, `docs/SOAK_TESTING.md`, and `C:\serenity_u30_soak_20261012_run4\soak-result.json`. Verify exit/result evidence, `requested_wall_clock_seconds >= 28800`, `actual_wall_clock_seconds >= requested_wall_clock_seconds`, productive duration, zero critical/invariant/watchdog failures, no runaway-memory flag, verified memory metrics and checkpoint/resume, non-empty final logical hash, complete aggregate coverage, append-only journal/manifest hashes, raw performance evidence and independently verified checkpoint bundles. Inspect all segment and progress results and the first-failure bundle if present.
 
-If every gate passes, update U30 to DONE and commit `U30: validate 8 hour soak`. If the run is incomplete, short, missing evidence, or reports any critical incident, leave U30 IN_PROGRESS and document the exact failure. Do not start U30A or U31. U29 remains PARTIAL regardless of U30 reliability evidence.
+If every gate passes, update U30 to DONE and commit `U30: validate 8 hour soak`. If the run is incomplete, short, missing evidence, or reports any critical incident, leave U30 IN_PROGRESS and document the exact failure. U29 remains PARTIAL regardless of U30 reliability evidence.

@@ -65,6 +65,8 @@ namespace Game.Infrastructure.Reliability
             if (segment_index < 1) throw new InvalidOperationException("U30 segment index must be positive.");
             if (!FinitePositive(segment_wall_clock_seconds))
                 throw new InvalidOperationException("U30 segment duration must be finite and positive.");
+            if (segment_wall_clock_seconds > 1800d)
+                throw new InvalidOperationException("U30 segments are bounded to thirty minutes.");
             if (checkpoint_interval_seconds < 1)
                 throw new InvalidOperationException("U30 checkpoint interval must be positive.");
             if (steps_per_second < 1 || steps_per_second > 60)
@@ -172,6 +174,10 @@ namespace Game.Infrastructure.Reliability
         public string last_checkpoint;
         public U30FrameSummary performance;
         public U30Coverage coverage;
+        public int performance_samples;
+        public bool checkpoint_resume_verified;
+        public bool memory_runaway_detected;
+        public bool memory_metrics_verified;
     }
 
     [Serializable]
@@ -188,6 +194,8 @@ namespace Game.Infrastructure.Reliability
         public string message;
         public string exception;
         public string reproduction_command;
+        public int seed;
+        public string scenario;
     }
 
     [Serializable]
@@ -291,6 +299,12 @@ namespace Game.Infrastructure.Reliability
         public U30FrameSummary performance;
         public U30Coverage coverage;
         public string summary;
+        public bool completed;
+        public bool aborted;
+        public string end_reason;
+        public string performance_summary_kind;
+        public bool memory_metrics_verified;
+        public string raw_frames_journal;
     }
 
     [Serializable]
@@ -306,6 +320,7 @@ namespace Game.Infrastructure.Reliability
         public int invariant_failures;
         public int watchdog_failures;
         public bool memory_runaway_detected;
+        public bool memory_metrics_verified;
         public bool checkpoint_resume_verified;
         public string final_state_hash;
         public string summary;
@@ -332,6 +347,8 @@ namespace Game.Infrastructure.Reliability
             if (result.requested_wall_clock_seconds <= 0) failures.Add("invalid_requested_duration");
             if (officialGate && result.requested_wall_clock_seconds < 28800) failures.Add("official_duration_below_8h");
             if (result.actual_wall_clock_seconds < result.requested_wall_clock_seconds) failures.Add("short_actual_duration");
+            if (result.productive_simulation_seconds < result.requested_wall_clock_seconds)
+                failures.Add("short_productive_duration");
             if (string.IsNullOrWhiteSpace(result.started_utc) || string.IsNullOrWhiteSpace(result.completed_utc) ||
                 !DateTime.TryParse(result.started_utc, null, DateTimeStyles.RoundtripKind, out _) ||
                 !DateTime.TryParse(result.completed_utc, null, DateTimeStyles.RoundtripKind, out _))
@@ -340,6 +357,7 @@ namespace Game.Infrastructure.Reliability
             if (result.invariant_failures != 0) failures.Add("invariant_failures");
             if (result.watchdog_failures != 0) failures.Add("watchdog_failures");
             if (result.memory_runaway_detected) failures.Add("memory_runaway");
+            if (!result.memory_metrics_verified) failures.Add("memory_metrics_unverified");
             if (!result.checkpoint_resume_verified) failures.Add("checkpoint_resume_unverified");
             if (string.IsNullOrWhiteSpace(result.final_state_hash)) failures.Add("missing_final_state_hash");
             if (result.segments_completed < 1 || result.performance_samples < 1)

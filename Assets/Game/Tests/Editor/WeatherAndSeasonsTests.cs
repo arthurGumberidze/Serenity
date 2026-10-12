@@ -324,6 +324,44 @@ namespace Game.Tests.Editor
     [TestFixture, Category("U19")]
     public sealed class WeatherHealthTests
     {
+        [Test, Category("U30")]
+        public void DeadOutdoorResidentsAdvanceTheirExposureCursorWithoutIllnessAcrossRestore()
+        {
+            var registry = new CharacterRegistry();
+            var dead = WeatherTestSupport.CreatePerson(940);
+            dead.MarkDead(0);
+            var living = WeatherTestSupport.CreatePerson(941);
+            registry.Add(dead);
+            registry.Add(living);
+            var health = new HealthAndFamilyService(registry, HealthConditionCatalog.CreateStoneAge(), 3030);
+            var weather = new WeatherService(3030, ClimateProfile.Temperate, health);
+            var tick = TimeSpan.FromDays(35).Ticks;
+            Assert.DoesNotThrow(() => weather.AdvanceHealthExposureTo(tick, new[] { dead.Id, living.Id, dead.Id }));
+            Assert.That(health.Conditions.Any(x => x.TargetId == dead.Id), Is.False);
+            Assert.That(weather.ExposureCheckpoints.Single(x => x.CharacterId == dead.Id).LastProcessedDay, Is.EqualTo(34));
+            var saved = weather.CaptureState();
+            weather.RestoreState(saved);
+            Assert.That(weather.AdvanceHealthExposureTo(tick, new[] { dead.Id, living.Id }).ProcessedPersonDays, Is.Zero);
+            Assert.DoesNotThrow(() => weather.AdvanceHealthExposureTo(TimeSpan.FromDays(365).Ticks, new[] { dead.Id }));
+            Assert.That(health.Conditions.Any(x => x.TargetId == dead.Id), Is.False);
+            Assert.Throws<InvalidOperationException>(() => health.ApplyCondition(dead.Id, new HealthConditionId("cold_stress"), tick));
+        }
+
+        [Test, Category("U30")]
+        public void UnknownOutdoorIdentityIsRejectedBeforeAnyWeatherOrHealthMutation()
+        {
+            var registry = new CharacterRegistry();
+            var living = WeatherTestSupport.CreatePerson(942);
+            registry.Add(living);
+            var health = new HealthAndFamilyService(registry, HealthConditionCatalog.CreateStoneAge(), 3030);
+            var weather = new WeatherService(3030, ClimateProfile.Temperate, health);
+            var before = weather.ComputeStateHash();
+            Assert.Catch(() => weather.AdvanceHealthExposureTo(TimeSpan.FromDays(35).Ticks,
+                new[] { living.Id, WeatherTestSupport.Id(943) }));
+            Assert.That(weather.ComputeStateHash(), Is.EqualTo(before));
+            Assert.That(health.Conditions, Is.Empty);
+        }
+
         [Test, Category("U29")]
         public void ExposureSkipsSettledPeopleButCatchesNewArrivalsAndEarlierRestore()
         {

@@ -146,6 +146,8 @@ namespace Game.Simulation.Weather
             {
                 if (!id.IsValid)
                     throw new ArgumentException("Outdoor character IDs must be valid.", nameof(outdoorCharacters));
+                // Resolve every identity before mutation, including already-settled residents.
+                if (health != null) health.IsCharacterAlive(id);
                 if (finalDay >= 0 && (!exposureDays.TryGetValue(id, out var lastDay) || lastDay < finalDay))
                     outdoorCharacterBuffer.Add(id);
             }
@@ -155,6 +157,13 @@ namespace Game.Simulation.Weather
             var applied = 0;
             foreach (var id in outdoorCharacterBuffer)
             {
+                // Dead residents can remain in canonical tier/worker rosters. Retire their due
+                // exposure cursor without adding illness or revisiting their history on every tick.
+                if (health != null && !health.IsCharacterAlive(id))
+                {
+                    exposureDays[id] = finalDay;
+                    continue;
+                }
                 var firstDay = exposureDays.TryGetValue(id, out var savedDay) ? savedDay + 1 : 0;
                 for (var day = firstDay; day <= finalDay; day++)
                 {

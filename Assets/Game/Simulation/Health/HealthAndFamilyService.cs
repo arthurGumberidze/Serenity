@@ -79,6 +79,10 @@ namespace Game.Simulation.Health
         public IReadOnlyList<PregnancyState> Pregnancies => pregnancies.Values.OrderBy(x => x.PregnancyId).ToArray();
         public IReadOnlyList<CharacterEventDefinition> EventDefinitions => eventDefinitions.Values.OrderBy(x => x.Id).ToArray();
 
+        /// <summary>Read the canonical life state; unknown identities remain an input error.</summary>
+        public bool IsCharacterAlive(StableEntityId targetId) =>
+            characters.Get(targetId).LifeState == CharacterLifeState.Alive;
+
         public void BindSuccession(SuccessionService service)
         {
             if (service == null) throw new ArgumentNullException(nameof(service));

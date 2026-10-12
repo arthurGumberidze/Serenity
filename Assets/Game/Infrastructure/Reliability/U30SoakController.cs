@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml.Linq;
 using Game.Domain;
@@ -25,6 +26,8 @@ namespace Game.Infrastructure.Reliability
     public sealed class U30SoakController : MonoBehaviour
     {
         private const double HeartbeatIntervalSeconds = 1d;
+        private const int MaximumFrameSamples = 262144;
+        private const long JournalRotationBytes = 32L * 1024L * 1024L;
         private static readonly StableEntityId CheckpointSlotId =
             StableEntityId.Parse("00000000000000000000000000003000");
 
@@ -64,6 +67,12 @@ namespace Game.Infrastructure.Reliability
         private bool watchdogInjected;
         private bool captureAttempted;
         private bool finished;
+        private bool memoryMetricsVerified;
+        private int previousTargetFrameRate;
+        private int previousVSyncCount;
+        private int journalRotation = 1;
+        private string rawFramesPath;
+        private U30FrameSummary worstInterval = new U30FrameSummary();
         private string latestCheckpoint = string.Empty;
         private string heartbeatPath;
         private string performancePath;
@@ -90,8 +99,9 @@ namespace Game.Infrastructure.Reliability
             heartbeatPath = Path.Combine(config.output_directory, "heartbeats.jsonl");
             performancePath = Path.Combine(config.output_directory, "performance-0001.jsonl");
             incidentPath = Path.Combine(config.output_directory, "incidents.jsonl");
+            rawFramesPath = Path.Combine(config.output_directory, "frames-0001.jsonl");
             File.WriteAllText(Path.Combine(config.output_directory, "performance-index.jsonl"),
-                "{\"file\":\"performance-0001.jsonl\",\"rotation\":1}\n", new UTF8Encoding(false));
+                "{\"file\":\"performance-0001.jsonl\",\"frames\":\"frames-0001.jsonl\",\"rotation\":1}\n", new UTF8Encoding(false));
 
             var benchmarkConfig = new U29BenchmarkConfig
             {
@@ -118,9 +128,19 @@ namespace Game.Infrastructure.Reliability
             root.AiRuntime.enabled = false;
             root.AiRuntime.SetPaused(false);
             root.AiRuntime.SetSpeed(GameSpeed.Maximum);
+            // The accelerated canonical workload remains four fixed steps/second. An uncapped
+            // headless render loop only burns CPU and fills instrumentation buffers.
+            previousTargetFrameRate = Application.targetFrameRate;
+            previousVSyncCount = QualitySettings.vSyncCount;
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 60;
 
             if (!string.IsNullOrWhiteSpace(config.resume_from_checkpoint)) RestoreCheckpoint(config.resume_from_checkpoint);
-            EnsureRepresentativeWorkloads();
+            // Bootstrap finite representative workloads once. Later internal segments resume the
+            // canonical outcomes and aggregate their earlier coverage instead of fabricating a
+            // replacement battle with participants who may already be dead or unavailable.
+            if (config.segment_index == 1 || string.IsNullOrWhiteSpace(config.resume_from_checkpoint))
+                EnsureRepresentativeWorkloads();
 
             startedUtc = DateTime.UtcNow;
             startedUtcText = startedUtc.ToString("O", CultureInfo.InvariantCulture);
@@ -178,8 +198,9 @@ namespace Game.Infrastructure.Reliability
                 criticalErrors++;
                 recoverableErrors++;
                 RecordIncident("recoverable_exception", true, exception.Message, exception);
-                // A single failed step remains evidence, but the segment continues until its deadline.
-                nextHeartbeat = Math.Min(nextHeartbeat, now);
+                // The clock or earlier callbacks may already have mutated. Never advance or
+                // publish a recovery checkpoint from this partially processed world.
+                FinishAttempt(elapsed, false, "gameplay_exception");
             }
         }
 
@@ -188,6 +209,14 @@ namespace Game.Infrastructure.Reliability
             if (finished || watchdogInjected) return;
             var milliseconds = Time.unscaledDeltaTime * 1000d;
             if (milliseconds <= 0d || double.IsNaN(milliseconds) || double.IsInfinity(milliseconds)) return;
+            if (allFrames.Count >= MaximumFrameSamples)
+            {
+                criticalErrors++;
+                recoverableErrors++;
+                RecordIncident("frame_buffer_limit", true, "Bounded frame buffer exhausted; restart required.", null);
+                FinishAttempt(Time.realtimeSinceStartupAsDouble - startedRealtime, false, "frame_buffer_limit");
+                return;
+            }
             intervalFrames.Add(milliseconds);
             allFrames.Add(milliseconds);
             var collections = GC.CollectionCount(0);
@@ -473,6 +502,11 @@ namespace Game.Infrastructure.Reliability
         private void WriteHeartbeat(double elapsed)
         {
             var summary = CaptureFrameSummary(intervalFrames);
+            worstInterval.samples = allFrames.Count;
+            worstInterval.p50_ms = Math.Max(worstInterval.p50_ms, summary.p50_ms);
+            worstInterval.p95_ms = Math.Max(worstInterval.p95_ms, summary.p95_ms);
+            worstInterval.p99_ms = Math.Max(worstInterval.p99_ms, summary.p99_ms);
+            worstInterval.max_ms = Math.Max(worstInterval.max_ms, summary.max_ms);
             var heartbeat = new U30HeartbeatRecord
             {
                 segment_index = config.segment_index,
@@ -492,12 +526,31 @@ namespace Game.Infrastructure.Reliability
                 current_hash = ComputeLogicalStateHash(),
                 last_checkpoint = latestCheckpoint,
                 performance = summary,
-                coverage = coverage
+                coverage = coverage,
+                performance_samples = allFrames.Count,
+                checkpoint_resume_verified = resumeVerified,
+                memory_runaway_detected = memoryRunaway,
+                memory_metrics_verified = memoryMetricsVerified
             };
             AppendDurable(heartbeatPath, JsonUtility.ToJson(heartbeat, false) + "\n");
             AppendDurable(performancePath, JsonUtility.ToJson(summary, false) + "\n");
+            AppendDurable(rawFramesPath, JsonUtility.ToJson(new FrameBatch
+                { sequence = heartbeatSequence, frame_ms = intervalFrames.ToArray() }, false) + "\n");
+            var progress = CreateResult(elapsed, worstInterval, false, "running");
+            progress.performance_summary_kind = "worst_interval_percentiles";
+            WriteAtomic(Path.Combine(config.output_directory, "segment-progress.json"),
+                Encoding.UTF8.GetBytes(JsonUtility.ToJson(progress, true)));
             intervalFrames.Clear();
             intervalCollections = 0;
+            if (new FileInfo(rawFramesPath).Length >= JournalRotationBytes)
+            {
+                journalRotation++;
+                rawFramesPath = Path.Combine(config.output_directory, "frames-" + journalRotation.ToString("D4") + ".jsonl");
+                performancePath = Path.Combine(config.output_directory, "performance-" + journalRotation.ToString("D4") + ".jsonl");
+                AppendDurable(Path.Combine(config.output_directory, "performance-index.jsonl"),
+                    "{\"file\":\"" + Path.GetFileName(performancePath) + "\",\"frames\":\"" +
+                    Path.GetFileName(rawFramesPath) + "\",\"rotation\":" + journalRotation + "}\n");
+            }
         }
 
         private long TotalResources()
@@ -516,19 +569,22 @@ namespace Game.Infrastructure.Reliability
             var ordered = values.Count == 0 ? new[] { 0.001d } : values.OrderBy(x => x).ToArray();
             var now = Time.realtimeSinceStartupAsDouble;
             if (process == null) process = Process.GetCurrentProcess();
+            process.Refresh();
             var cpuTicks = process.TotalProcessorTime.Ticks;
             var cpuSeconds = Math.Max(0.001d, now - previousCpuRealtime);
             intervalCpuPercent = (cpuTicks - previousCpuTicks) / TimeSpan.TicksPerSecond / cpuSeconds * 100d;
             previousCpuTicks = cpuTicks;
             previousCpuRealtime = now;
-            var workingSet = process.WorkingSet64;
+            var workingSet = ReadWorkingSet(process);
+            memoryMetricsVerified |= workingSet > 0;
             var managed = GC.GetTotalMemory(false);
             workingSetSamples.Add(workingSet);
             managedSamples.Add(managed);
             if (workingSetSamples.Count >= 3)
             {
                 var middle = workingSetSamples[workingSetSamples.Count / 2];
-                memoryRunaway |= U29BenchmarkStatistics.IsRunawayGrowth(workingSetSamples[0], middle, workingSet,
+                memoryRunaway |= workingSetSamples[0] > 0 && middle > 0 && workingSet > 0 &&
+                    U29BenchmarkStatistics.IsRunawayGrowth(workingSetSamples[0], middle, workingSet,
                     U29BenchmarkConfig.WorkingSetGrowthLimitBytes);
                 middle = managedSamples[managedSamples.Count / 2];
                 memoryRunaway |= U29BenchmarkStatistics.IsRunawayGrowth(managedSamples[0], middle, managed,
@@ -542,8 +598,8 @@ namespace Game.Infrastructure.Reliability
                 main_thread_average_ms = RecorderMilliseconds(mainThreadRecorder),
                 render_thread_average_ms = RecorderMilliseconds(renderThreadRecorder),
                 gpu_average_ms = RecorderMilliseconds(gpuRecorder),
-                allocated_bytes_per_frame = allocationRecorder.Valid && allocationRecorder.LastValue >= 0
-                    ? allocationRecorder.LastValue : -1d,
+                // This recorder is a last-frame sample, not an interval allocation average.
+                allocated_bytes_per_frame = -1d,
                 collections = intervalCollections,
                 process_cpu_percent = intervalCpuPercent,
                 working_set_bytes = workingSet,
@@ -563,18 +619,35 @@ namespace Game.Infrastructure.Reliability
         private void Complete(double elapsed)
         {
             if (finished) return;
-            // Stop scheduling before durable finalization. If finalization itself fails, the
-            // external watchdog records/restarts the stalled segment instead of hammering disk in
-            // an exception loop.
-            finished = true;
             ValidateInvariants();
             latestCheckpoint = WriteCheckpoint();
+            WriteHeartbeat(elapsed);
+            FinishAttempt(elapsed, true, "segment_complete");
+        }
+
+        private void FinishAttempt(double elapsed, bool completed, string reason)
+        {
+            if (finished) return;
+            finished = true;
+            // Tail frames remain durable even when a step fails between scheduled heartbeats.
+            if (intervalFrames.Count > 0)
+                AppendDurable(rawFramesPath, JsonUtility.ToJson(new FrameBatch
+                    { sequence = heartbeatSequence + 1, frame_ms = intervalFrames.ToArray() }, false) + "\n");
             var performance = CaptureFrameSummary(allFrames);
-            var finalHash = ComputeRepeatableOutcomeHash();
+            var result = CreateResult(elapsed, performance, completed, reason);
+            result.final_state_hash = completed ? ComputeRepeatableOutcomeHash() : string.Empty;
+            WriteAtomic(Path.Combine(config.output_directory, "segment-result.json"),
+                Encoding.UTF8.GetBytes(JsonUtility.ToJson(result, true)));
+            DisposeRecorders();
+            Application.Quit(result.passed ? 0 : 2);
+        }
+
+        private U30SegmentResult CreateResult(double elapsed, U30FrameSummary performance, bool completed, string reason)
+        {
             // A segment is a recovery boundary, not an independent full-night scenario. Some
             // finite workloads (notably a battle) can complete before later segments start; the
             // external runner aggregates coverage across the whole requested wall-clock run.
-            var passed = criticalErrors == 0 && invariantFailures == 0 && !memoryRunaway &&
+            var passed = completed && criticalErrors == 0 && invariantFailures == 0 && !memoryRunaway && memoryMetricsVerified &&
                 simulationSteps == config.TargetSimulationSteps;
             var result = new U30SegmentResult
             {
@@ -594,7 +667,7 @@ namespace Game.Infrastructure.Reliability
                 memory_runaway_detected = memoryRunaway,
                 checkpoint_resume_verified = resumeVerified,
                 performance_samples = allFrames.Count,
-                final_state_hash = finalHash,
+                final_state_hash = string.Empty,
                 latest_checkpoint = latestCheckpoint,
                 incident_journal = incidentPath,
                 heartbeat_journal = heartbeatPath,
@@ -602,24 +675,29 @@ namespace Game.Infrastructure.Reliability
                 performance = performance,
                 coverage = coverage,
                 summary = passed ? "Segment completed without a critical reliability failure." :
-                    "Segment completed with reliability evidence that fails the U30 gate."
+                    "Segment retained reliability evidence that fails the U30 gate.",
+                completed = completed,
+                aborted = !completed && reason != "running",
+                end_reason = reason,
+                performance_summary_kind = "exact_segment_percentiles",
+                memory_metrics_verified = memoryMetricsVerified,
+                raw_frames_journal = rawFramesPath
             };
-            WriteAtomic(Path.Combine(config.output_directory, "segment-result.json"),
-                Encoding.UTF8.GetBytes(JsonUtility.ToJson(result, true)));
-            DisposeRecorders();
-            Application.Quit(passed ? 0 : 2);
+            return result;
         }
 
         private void RecordIncident(string kind, bool critical, string message, Exception exception)
         {
             var record = new U30IncidentRecord
             {
+                seed = config.seed,
+                scenario = "u30-representative-100",
                 segment_index = config.segment_index,
                 utc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
                 kind = kind,
                 critical = critical,
                 calendar_ticks = root == null || root.Clock == null ? 0 : root.Clock.State.CalendarTicks,
-                state_hash = root == null || checkpointCoordinator == null ? string.Empty : ComputeLogicalStateHash(),
+                state_hash = SafeStateHash(),
                 checkpoint = latestCheckpoint,
                 message = message ?? string.Empty,
                 exception = exception == null ? string.Empty : exception.ToString(),
@@ -687,7 +765,53 @@ namespace Game.Infrastructure.Reliability
                 return BitConverter.ToString(hash.ComputeHash(stream)).Replace("-", string.Empty);
         }
 
-        private void OnDestroy() => DisposeRecorders();
+        private string SafeStateHash()
+        {
+            try { return root == null || checkpointCoordinator == null ? string.Empty : ComputeLogicalStateHash(); }
+            catch (Exception) { return string.Empty; } // Invalid partial state must not prevent its exception journal.
+        }
+
+        [Serializable]
+        private sealed class FrameBatch
+        {
+            public long sequence;
+            public double[] frame_ms;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ProcessMemoryCounters
+        {
+            public uint size;
+            public uint pageFaultCount;
+            public UIntPtr peakWorkingSet;
+            public UIntPtr workingSet;
+            public UIntPtr quotaPeakPagedPool, quotaPagedPool, quotaPeakNonPagedPool, quotaNonPagedPool;
+            public UIntPtr pageFileUsage, peakPageFileUsage;
+        }
+
+        [DllImport("psapi.dll", SetLastError = true)]
+        private static extern bool GetProcessMemoryInfo(IntPtr handle, out ProcessMemoryCounters counters, uint size);
+
+        private static long ReadWorkingSet(Process value)
+        {
+            var bytes = value.WorkingSet64;
+            if (bytes > 0) return bytes;
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                var size = (uint)Marshal.SizeOf<ProcessMemoryCounters>();
+                if (GetProcessMemoryInfo(value.Handle, out var counters, size))
+                    return checked((long)counters.workingSet.ToUInt64());
+            }
+            return -1;
+        }
+
+        private void OnDestroy()
+        {
+            DisposeRecorders();
+            if (config == null) return;
+            Application.targetFrameRate = previousTargetFrameRate;
+            QualitySettings.vSyncCount = previousVSyncCount;
+        }
 
         private void DisposeRecorders()
         {

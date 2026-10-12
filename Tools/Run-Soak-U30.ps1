@@ -11,7 +11,10 @@ param(
     [switch]$TestMode,
     [int]$TestWallClockSeconds = 30,
     [int]$TestSegmentSeconds = 10,
+    [ValidateRange(1, 600)]
     [int]$TestWatchdogSeconds = 4,
+    [ValidateRange(0, 30)]
+    [int]$TestRestartBackoffSeconds = 0,
     [ValidateSet('None', 'Invariant', 'Exception', 'Watchdog')]
     [string]$InjectFailure = 'None'
 )
@@ -95,6 +98,7 @@ $segmentsCompleted = 0
 $productiveSeconds = 0.0
 $performanceSamples = [long]0
 $memoryRunaway = $false
+$memoryMetricsVerified = $true
 $resumeVerified = $false
 $latestCheckpoint = $ResumeFromCheckpoint
 $finalStateHash = ''
@@ -111,7 +115,7 @@ $coverage = [ordered]@{
 }
 $injectionUsed = $false
 $immediateStop = $false
-$consecutiveNoProgressSegments = 0
+$attemptFailures = 0
 
 function Get-U30Sha256([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -124,36 +128,59 @@ function Write-U30JsonLine([string]$Path, [object]$Value) {
     try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
 }
 
-function Register-U30Failure([string]$Kind, [string]$Message, [int]$Segment, [string]$Checkpoint) {
-    $now = [DateTime]::UtcNow.ToString('O')
+function Save-U30Incident([object]$Record) {
+    Write-U30JsonLine $incidentJournal $Record
+    if (-not $Record.critical) { return }
+    $now = [string]$Record.utc
     if ([string]::IsNullOrWhiteSpace($script:firstFailureUtc)) { $script:firstFailureUtc = $now }
     $script:lastFailureUtc = $now
-    $record = [ordered]@{
-        schema_version = 1; utc = $now; kind = $Kind; critical = $true; segment_index = $Segment
-        message = $Message; checkpoint = [string]$Checkpoint
-    }
-    Write-U30JsonLine $incidentJournal $record
+    $record = $Record
     $bundle = Join-Path $OutputFolder 'first-failure'
     if (-not (Test-Path -LiteralPath $bundle)) {
         New-Item -ItemType Directory -Path $bundle -Force | Out-Null
         [IO.File]::WriteAllText((Join-Path $bundle 'failure.json'),
             ($record | ConvertTo-Json -Depth 16), [Text.UTF8Encoding]::new($false))
-        $repro = "& '$PSScriptRoot\Run-Soak-U30.ps1' -Seed $Seed -WallClockHours 8 " +
-            "-CheckpointIntervalMinutes $CheckpointIntervalMinutes -OutputFolder '<absolute-external-path>'"
+        $reproOutput = $OutputFolder + '-repro-' + [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
+        $repro = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File '$PSScriptRoot\Run-Soak-U30.ps1' " +
+            "-Seed $Seed -WallClockHours 8 -CheckpointIntervalMinutes $CheckpointIntervalMinutes " +
+            "-OutputFolder '" + $reproOutput.Replace("'", "''") + "'"
+        if (-not [string]::IsNullOrWhiteSpace([string]$record.checkpoint)) {
+            $repro += " -ResumeFromCheckpoint '" + ([string]$record.checkpoint).Replace("'", "''") + "'"
+        }
         [IO.File]::WriteAllText((Join-Path $bundle 'repro.ps1'), $repro + "`r`n",
             [Text.UTF8Encoding]::new($false))
     }
 }
 
+function Register-U30Failure([string]$Kind, [string]$Message, [int]$Segment, [string]$Checkpoint) {
+    Save-U30Incident ([ordered]@{
+        schema_version = 1; utc = [DateTime]::UtcNow.ToString('O'); kind = $Kind; critical = $true
+        segment_index = $Segment; message = $Message; checkpoint = [string]$Checkpoint
+    })
+}
+
+function Write-U30AtomicJson([string]$Path, [object]$Value) {
+    $temporary = $Path + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'
+    [IO.File]::WriteAllText($temporary, ($Value | ConvertTo-Json -Depth 16), [Text.UTF8Encoding]::new($false))
+    if (Test-Path -LiteralPath $Path) {
+        $backup = $Path + '.replace-backup'
+        try { [IO.File]::Replace($temporary, $Path, $backup) }
+        finally { if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Force } }
+    }
+    else { [IO.File]::Move($temporary, $Path) }
+}
+
 function Get-U30VerifiedCheckpoint {
+    # Directory order is the published sequence. Malformed metadata is handled inside the
+    # validation catch instead of aborting the sort before fallback is possible.
     $metadataFiles = @(Get-ChildItem -LiteralPath $checkpointRoot -Filter 'checkpoint.json' -Recurse -File |
-        Sort-Object { [long]((Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json).sequence) } -Descending)
+        Sort-Object FullName -Descending)
     foreach ($metadataFile in $metadataFiles) {
         try {
             $metadata = Get-Content -LiteralPath $metadataFile.FullName -Raw | ConvertFrom-Json
             $snapshot = [string]$metadata.snapshot_file
             $tiers = [string]$metadata.tiers_file
-            if (-not $metadata.independently_verified -or -not (Test-Path -LiteralPath $snapshot) -or
+            if ($metadata.seed -ne $Seed -or -not $metadata.independently_verified -or -not (Test-Path -LiteralPath $snapshot) -or
                 -not (Test-Path -LiteralPath $tiers)) { throw 'Checkpoint bundle is incomplete.' }
             if ((Get-U30Sha256 $snapshot) -ne ([string]$metadata.snapshot_sha256).ToLowerInvariant() -or
                 (Get-U30Sha256 $tiers) -ne ([string]$metadata.tiers_sha256).ToLowerInvariant()) {
@@ -171,17 +198,35 @@ function Get-U30VerifiedCheckpoint {
 
 function Append-U30PlayerIncidents([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
-    $content = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8)
-    if ([string]::IsNullOrWhiteSpace($content)) { return }
-    $bytes = [Text.UTF8Encoding]::new($false).GetBytes($content.TrimEnd() + "`n")
-    $stream = [IO.File]::Open($incidentJournal, [IO.FileMode]::Append, [IO.FileAccess]::Write, [IO.FileShare]::Read)
-    try { $stream.Write($bytes, 0, $bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+    $reader = $null
+    try {
+        [void]$stream.Seek($script:incidentOffset, [IO.SeekOrigin]::Begin)
+        $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8)
+        while (-not $reader.EndOfStream) {
+            $line = $reader.ReadLine()
+            $next = $script:incidentOffset + [Text.Encoding]::UTF8.GetByteCount($line) + 1L
+            # JSONL writers use LF. Do not consume a partial write at EOF.
+            if ($next -gt $stream.Length) { break }
+            $record = $line | ConvertFrom-Json
+            $script:incidentOffset = $next
+            Save-U30Incident $record
+            if ($record.critical) { $script:criticalErrors++; $script:segmentCriticalIncidents++ }
+            if ($record.kind -eq 'invariant_failure') { $script:invariantFailures++; $script:segmentInvariantIncidents++ }
+            if ($record.kind -eq 'recoverable_exception' -or $record.kind -eq 'frame_buffer_limit') {
+                $script:recoverableErrors++; $script:segmentRecoverableIncidents++
+            }
+        }
+    } finally { if ($reader) { $reader.Dispose() } else { $stream.Dispose() } }
 }
 
-while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
+try {
+while (-not $immediateStop -and ($timer.Elapsed.TotalSeconds -lt $requestedSeconds -or
+    ($criticalErrors -eq 0 -and $productiveSeconds -lt $requestedSeconds))) {
     $segmentIndex++
     if ($segmentIndex -gt 1) { $playerRestarts++ }
-    $remaining = $requestedSeconds - $productiveSeconds
+    $remaining = if ($criticalErrors -eq 0) { $requestedSeconds - $productiveSeconds }
+        else { $requestedSeconds - $timer.Elapsed.TotalSeconds }
     $segmentSeconds = [Math]::Max(1, [Math]::Min($plannedSegmentSeconds, [Math]::Ceiling($remaining)))
     $segmentDirectory = Join-Path $segmentsFolder ('segment-{0:D4}' -f $segmentIndex)
     New-Item -ItemType Directory -Path $segmentDirectory -Force | Out-Null
@@ -190,6 +235,13 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
     $playerLog = Join-Path $segmentDirectory 'player.log'
     $heartbeatPath = Join-Path $segmentDirectory 'heartbeats.jsonl'
     $segmentResultPath = Join-Path $segmentDirectory 'segment-result.json'
+    $segmentProgressPath = Join-Path $segmentDirectory 'segment-progress.json'
+    $segmentIncidentPath = Join-Path $segmentDirectory 'incidents.jsonl'
+    $incidentOffset = 0L
+    $segmentCriticalIncidents = 0
+    $segmentInvariantIncidents = 0
+    $segmentRecoverableIncidents = 0
+    $startCheckpoint = $latestCheckpoint
     $segmentStarted = [DateTime]::UtcNow
 
     $arguments = @(
@@ -213,16 +265,32 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
 
     $process = Start-Process -FilePath $PlayerPath -ArgumentList $arguments -PassThru -WindowStyle Hidden `
         -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    # Cache the native process handle before a very short Player can exit. Without this,
+    # some PowerShell/.NET combinations expose a null ExitCode after WaitForExit.
+    $processHandle = $process.Handle
     $lastHeartbeatUtc = [DateTime]::UtcNow
     $lastHeartbeatLength = -1L
     $watchdogTriggered = $false
+    $deadlineTriggered = $false
     while (-not $process.HasExited) {
+        Append-U30PlayerIncidents $segmentIncidentPath
+        Write-U30AtomicJson (Join-Path $OutputFolder 'runner-heartbeat.json') ([ordered]@{
+            utc = [DateTime]::UtcNow.ToString('O'); actual_wall_clock_seconds = $timer.Elapsed.TotalSeconds
+            segment_index = $segmentIndex; pid = $process.Id; critical_errors = $criticalErrors
+            productive_simulation_seconds = $productiveSeconds; latest_checkpoint = [string]$latestCheckpoint
+        })
         if (Test-Path -LiteralPath $heartbeatPath) {
             $item = Get-Item -LiteralPath $heartbeatPath
             if ($item.Length -ne $lastHeartbeatLength) {
                 $lastHeartbeatLength = $item.Length
                 $lastHeartbeatUtc = [DateTime]::UtcNow
             }
+        }
+        if ($criticalErrors -gt 0 -and $timer.Elapsed.TotalSeconds -ge $requestedSeconds) {
+            $deadlineTriggered = $true
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            $process.WaitForExit()
+            break
         }
         if (([DateTime]::UtcNow - $lastHeartbeatUtc).TotalSeconds -gt $watchdogSeconds) {
             $watchdogTriggered = $true
@@ -231,6 +299,8 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
             $watchdogFailures++
             $criticalErrors++
             $recoverableErrors++
+            $verified = Get-U30VerifiedCheckpoint
+            if ($verified) { $latestCheckpoint = $verified }
             Register-U30Failure 'watchdog' "No Player heartbeat for $watchdogSeconds seconds." $segmentIndex $latestCheckpoint
             break
         }
@@ -238,32 +308,38 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
         $process.Refresh()
     }
     $process.WaitForExit()
+    $process.Refresh()
     $exitCode = $process.ExitCode
+    if ($null -eq $exitCode) { $exitCode = if ($watchdogTriggered -or $deadlineTriggered) { -1 } else { -2 } }
     $segmentEnded = [DateTime]::UtcNow
     $segmentResult = $null
-    if (Test-Path -LiteralPath $segmentResultPath) {
-        try { $segmentResult = Get-Content -LiteralPath $segmentResultPath -Raw | ConvertFrom-Json }
+    Append-U30PlayerIncidents $segmentIncidentPath
+    $hasFinalResult = Test-Path -LiteralPath $segmentResultPath
+    $evidencePath = if ($hasFinalResult) { $segmentResultPath } else { $segmentProgressPath }
+    if (Test-Path -LiteralPath $evidencePath) {
+        try { $segmentResult = Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json }
         catch {
             $criticalErrors++
             $recoverableErrors++
             Register-U30Failure 'segment_result_parse' $_.Exception.Message $segmentIndex $latestCheckpoint
         }
-    } elseif (-not $watchdogTriggered) {
+    }
+    if (-not $hasFinalResult -and -not $watchdogTriggered -and -not $deadlineTriggered) {
         $criticalErrors++
         $recoverableErrors++
         Register-U30Failure 'player_crash' "Player exited $exitCode without segment-result.json." $segmentIndex $latestCheckpoint
     }
 
     if ($segmentResult) {
-        $segmentsCompleted++
-        $criticalErrors += [int]$segmentResult.critical_errors
-        $invariantFailures += [int]$segmentResult.invariant_failures
-        $recoverableErrors += [int]$segmentResult.recoverable_errors
+        if ($hasFinalResult -and $segmentResult.completed) { $segmentsCompleted++ }
+        # Imported incidents already contributed; reconcile counters without double counting.
+        $criticalErrors += [Math]::Max(0, [int]$segmentResult.critical_errors - $segmentCriticalIncidents)
+        $invariantFailures += [Math]::Max(0, [int]$segmentResult.invariant_failures - $segmentInvariantIncidents)
+        $recoverableErrors += [Math]::Max(0, [int]$segmentResult.recoverable_errors - $segmentRecoverableIncidents)
         $memoryRunaway = $memoryRunaway -or [bool]$segmentResult.memory_runaway_detected
+        $memoryMetricsVerified = $memoryMetricsVerified -and [bool]$segmentResult.memory_metrics_verified
         $resumeVerified = $resumeVerified -or [bool]$segmentResult.checkpoint_resume_verified
         $productiveSeconds += [double]$segmentResult.productive_simulation_seconds
-        if ([double]$segmentResult.productive_simulation_seconds -gt 0) { $consecutiveNoProgressSegments = 0 }
-        else { $consecutiveNoProgressSegments++ }
         $performanceSamples += [long]$segmentResult.performance_samples
         if (-not [string]::IsNullOrWhiteSpace([string]$segmentResult.final_state_hash)) {
             $finalStateHash = [string]$segmentResult.final_state_hash
@@ -277,30 +353,26 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
                 $coverage[$name] = [long]$coverage[$name] + [long]$segmentResult.coverage.$name
             }
         }
-        Append-U30PlayerIncidents ([string]$segmentResult.incident_journal)
-        if (-not [bool]$segmentResult.passed -and [int]$segmentResult.critical_errors -eq 0 -and
+        if ($hasFinalResult -and -not [bool]$segmentResult.passed -and [int]$segmentResult.critical_errors -eq 0 -and
             [int]$segmentResult.invariant_failures -eq 0 -and -not [bool]$segmentResult.memory_runaway_detected) {
             $criticalErrors++
             Register-U30Failure 'segment_gate' ([string]$segmentResult.summary) $segmentIndex ([string]$segmentResult.latest_checkpoint)
         }
     }
-    else {
-        $consecutiveNoProgressSegments++
-    }
 
     $verified = Get-U30VerifiedCheckpoint
     if (-not [string]::IsNullOrWhiteSpace($verified)) { $latestCheckpoint = $verified }
-    elseif ([string]::IsNullOrWhiteSpace($latestCheckpoint)) {
-        $criticalErrors++
-        Register-U30Failure 'no_recovery_checkpoint' 'No verified checkpoint or fresh-start recovery path is available.' $segmentIndex ''
-        $immediateStop = $true
-    }
+    else { $latestCheckpoint = $null } # A new deterministic bootstrap remains the safe final fallback.
 
     Write-U30JsonLine $segmentManifest ([ordered]@{
         schema_version = 1; segment_index = $segmentIndex; started_utc = $segmentStarted.ToString('O')
-        completed_utc = $segmentEnded.ToString('O'); start_checkpoint = [string]$ResumeFromCheckpoint
+        completed_utc = $segmentEnded.ToString('O'); start_checkpoint = [string]$startCheckpoint
         end_checkpoint = [string]$latestCheckpoint; pid = $process.Id; exit_code = $exitCode
-        end_reason = if ($watchdogTriggered) { 'watchdog_restart' } elseif ($segmentResult) { 'segment_complete' } else { 'player_exit' }
+        end_reason = if ($watchdogTriggered) { 'watchdog_restart' } elseif ($deadlineTriggered) { 'deadline' }
+            elseif ($hasFinalResult) { [string]$segmentResult.end_reason } else { 'player_exit' }
+        completed = [bool]($hasFinalResult -and $segmentResult.completed)
+        evidence_file = [string]$evidencePath
+        performance_summary_kind = if ($segmentResult) { [string]$segmentResult.performance_summary_kind } else { 'unavailable' }
         sample_count = if ($segmentResult) { [long]$segmentResult.performance_samples } else { 0 }
         p50_ms = if ($segmentResult) { [double]$segmentResult.performance.p50_ms } else { 0 }
         p95_ms = if ($segmentResult) { [double]$segmentResult.performance.p95_ms } else { 0 }
@@ -309,16 +381,29 @@ while ($productiveSeconds -lt $requestedSeconds -and -not $immediateStop) {
     })
     $ResumeFromCheckpoint = $latestCheckpoint
 
-    if ($watchdogTriggered -or (-not $segmentResult) -or $exitCode -ne 0) {
-        $backoff = [Math]::Min(30, [Math]::Pow(2, [Math]::Min(4, $recoverableErrors)))
-        if ($consecutiveNoProgressSegments -ge 5) {
-            $criticalErrors++
-            Register-U30Failure 'recovery_exhausted' 'Five consecutive segments made no productive simulation progress.' $segmentIndex $latestCheckpoint
-            $immediateStop = $true
-        } elseif ($productiveSeconds -lt $requestedSeconds) {
-            Start-Sleep -Seconds $backoff
+    if ($watchdogTriggered -or (-not $hasFinalResult) -or $exitCode -ne 0) {
+        $attemptFailures++
+        $backoff = [Math]::Min(30, [Math]::Pow(2, [Math]::Min(5, $attemptFailures)))
+        if ($TestMode -and $TestRestartBackoffSeconds -gt 0) { $backoff = $TestRestartBackoffSeconds }
+        # Repeated gameplay failures do not cancel an otherwise safe night of observation.
+        while ($backoff -gt 0 -and $timer.Elapsed.TotalSeconds -lt $requestedSeconds) {
+            Write-U30AtomicJson (Join-Path $OutputFolder 'runner-heartbeat.json') ([ordered]@{
+                utc = [DateTime]::UtcNow.ToString('O'); actual_wall_clock_seconds = $timer.Elapsed.TotalSeconds
+                segment_index = $segmentIndex; state = 'restart_backoff'; critical_errors = $criticalErrors
+                productive_simulation_seconds = $productiveSeconds; latest_checkpoint = [string]$latestCheckpoint
+            })
+            Start-Sleep -Seconds 1
+            $backoff--
         }
     }
+}
+} catch {
+    $criticalErrors++
+    $immediateStop = $true
+    if ($process -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+    Register-U30Failure 'orchestration_failure' $_.Exception.Message $segmentIndex $latestCheckpoint
+} finally {
+    [void][U30NativePower]::SetThreadExecutionState($u30Continuous)
 }
 
 $timer.Stop()
@@ -332,7 +417,7 @@ $coveragePassed = $coverage.production_steps -gt 0 -and $coverage.research_steps
     $coverage.strategic_ai_steps -gt 0 -and $coverage.event_steps -gt 0
 $productivePassed = $productiveSeconds -ge $requestedSeconds
 $passed = $durationPassed -and $productivePassed -and -not $immediateStop -and $criticalErrors -eq 0 -and
-    $invariantFailures -eq 0 -and $watchdogFailures -eq 0 -and -not $memoryRunaway -and
+    $invariantFailures -eq 0 -and $watchdogFailures -eq 0 -and -not $memoryRunaway -and $memoryMetricsVerified -and
     $resumeVerified -and -not [string]::IsNullOrWhiteSpace($finalStateHash) -and
     $segmentsCompleted -gt 0 -and $performanceSamples -gt 0 -and $coveragePassed
 $summary = if ($passed) {
@@ -346,6 +431,7 @@ $result = [ordered]@{
     completed_utc = $completedUtc.ToString('O'); critical_errors = $criticalErrors
     invariant_failures = $invariantFailures; watchdog_failures = $watchdogFailures
     memory_runaway_detected = $memoryRunaway; checkpoint_resume_verified = $resumeVerified
+    memory_metrics_verified = $memoryMetricsVerified
     final_state_hash = $finalStateHash; summary = $summary; recoverable_errors = $recoverableErrors
     player_restarts = $playerRestarts; segments_completed = $segmentsCompleted
     productive_simulation_seconds = [Math]::Round($productiveSeconds, 3)
