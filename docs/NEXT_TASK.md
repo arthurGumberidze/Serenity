@@ -12,4 +12,6 @@ Do not reinterpret short controls, preflights or the U31 Player smoke as U29/U30
 
 ## Proposed player-facing continuation
 
+2026-10-13 planning update: the user approved undefended occupation rules for the roadmap (P7, D-106), not immediate implementation. A handoff prompt for P1 Russian UI is prepared for the next conversation; this does not activate P1 in the current chat. A fresh eight-hour runner command is supplied for manual use, but no run was launched and no acceptance status changed. If a user-started run is active, preserve its executable, data folder, runner and evidence; do not overwrite the running build during later verification.
+
 After this repair commit, ask the user to approve switching the active task to the first bounded delivery in `PRODUCT_ROADMAP_RU.md`: Russian UI and intelligible action/denial feedback, then a real main menu. The approved visual reference camp, hero appearance editor and authored region follow in that order. Do not silently activate the legacy U32 row or expand this remediation into all seven eras. Technical U31 integration acceptance does not replace visual/UX acceptance.
