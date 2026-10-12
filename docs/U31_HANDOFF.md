@@ -84,3 +84,7 @@ Therefore U31 remains BLOCKED even though its own gate passes.
 Verified remaining issues are only the failed U29 sustained 1000-Character p95 gate, the missing independently audited U30 eight-hour pass, and the non-informative black hidden-window smoke screenshot. Do not use the U31 smoke as replacement evidence.
 
 Next: close U29 with a fresh qualifying full matrix; run and audit the fresh U30 eight-hour output; then rerun `Tools\Verify-U31.ps1` and finalize U31 in a dedicated commit if both dependencies are DONE. No later stage was started.
+
+## Subsequent U30 audit qualification (2026-10-12)
+
+The previous missing-eight-hour-result blocker is superseded: run4 completed with runner PASS and verified duration/checkpoint integrity. Independent review found AI stuck in repeated NoDirectRoute after arrival at an undefended hostile settlement, undetected by the U30 monitor. Existing U31 tests do not cover that prolonged arrival/recovery state. The earlier statement that no gameplay-authority defect remained is limited to those tested scenarios. U30 remains IN_PROGRESS pending remediation and stronger evidence; U31 remains BLOCKED with U29 still PARTIAL. Full findings are in the final section of U30_HANDOFF. No new U31 validation or gameplay edit was made in this audit.

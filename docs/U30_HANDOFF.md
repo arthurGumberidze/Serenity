@@ -6,7 +6,7 @@ ID: U30
 
 Title: Automated tests and 8+ hour soak
 
-Status: IN_PROGRESS — failed official run remediated and preflighted; a fresh eight-hour run remains required
+Status: IN_PROGRESS — run4 completed the eight-hour runner gate, but independent audit found an unreported persistent AI travel loop and acceptance/telemetry gaps (see the final section)
 
 ## Implemented
 
@@ -92,3 +92,76 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\serenity_game\Tools\
 ```
 
 After it exits, audit every gate and only then mark U30 DONE. U30 remains IN_PROGRESS and U29 remains PARTIAL. The user explicitly authorized U30A implementation while the external run is pending; this does not relax either gate or permit a false U31 completion.
+
+## Independent run4 audit (2026-10-12, after completion)
+
+### Verdict
+
+The external run is complete and its original result reports **runner PASS** under the implemented predicates. Independent review does **not** approve U30 DONE: persisted AI decisions demonstrate a sustained invalid travel loop, prohibited by the original U30 requirement but not detected by the monitor. This is a gameplay/monitoring finding, not a crash or artifact-integrity failure. U30 remains IN_PROGRESS, U29 PARTIAL and U31 BLOCKED. Earlier statements that run4 does not exist are historical and superseded by this audit. No gameplay/harness code or external artifact was modified.
+
+### Duration and independently verified integrity
+
+- Result: `C:\serenity_u30_soak_20261012_run4\soak-result.json`, SHA-256 `C750450D1B292175EF00D1EA4257949B1591E0D9E1E2CBACDDA350938F95425C`.
+- UTC interval `2026-10-12T12:04:35.5402795Z` to `2026-10-12T20:06:50.7813372Z` (15:04:35–23:06:50 Moscow). Timestamp difference: 28,935.241 seconds; runner Stopwatch: 28,934 whole seconds. Both exceed 28,800; the approximately 1.24-second difference does not affect acceptance duration.
+- All 16 segments pass, complete without abortion, report `segment_complete`, and have Player exit code 0. Fifteen restarts are planned 30-minute boundaries, not crashes/watchdogs. The external PowerShell exit code is not independently retained.
+- Each segment completes 7,200 steps; total 115,200. Productive duration is defined as steps/4, totaling 28,800 seconds, not CPU time. Continuous calendar progression reaches `691200000000000` ticks: 800 calendar days, Y3 D71 00:00. Weather coverage 816 includes segment-boundary recounting, not 816 distinct days (801 observed day numbers).
+- All 27,977 heartbeat lines and corresponding performance/frame batches parse, agree and have contiguous sequences. Simulation ticks are monotonic. All 1,475,102 raw frame samples reconcile with segment/aggregate counts; independent percentile calculations match every segment result.
+- Journal hashes match: incidents `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` (empty) and manifest `4A84461BE3958DB3639CD172F1A558ADD0A482C31097E6491AF6E1E9D87F9CAB`.
+- All 113 checkpoint index entries match metadata. All **226 XML/tier payload SHA-256 checks** and **113 independently reconstructed canonical hashes** pass. All **15 resume chains** match previous final checkpoints and first-heartbeat restored hashes.
+- Each segment outcome hash is independently reproduced from normalized XML leaves. Final hash: `86A49005B9EAF2BD303A52029EAF29BC2EB00887A782BCB8BF65B7657C5C0A7D`.
+- Canonical hashing covers XML plus ID/tier pairs, NOT full tier-runtime values. Fourteen restart tier payloads match exactly; first restart changes eleven energy values by approximately 1.1e-16 (floating-point JSON round-trip scale). This is not material gameplay corruption, but comments claiming full runtime hash validation are too strong. The normalized final hash discards identity/ownership hierarchy and cannot replace exact comparisons or prove a repeated eight-hour deterministic run.
+
+### Blocking finding: persistent AI arrival loop
+
+The AI unit `9c5158cfdab064bfa5da56b7aa1801da` traverses two route legs to `starter_settlement`. The player demo army remains at the distinct `local` location, so no hostile-unit battle starts at the settlement. AI decision 8 at tick `1512000000000` (Y1 D2 18:00, about 63 productive seconds into the run) first records `Travel rejected: NoDirectRoute`. Decision 3201 at the final tick records the same rejection. Across bounded histories in all checkpoints there are **3,067 distinct directly observed rejected decision sequences**; gaps in retained histories are not counted as observations. Final pending travel order is still sequence 6, issued at tick `1080000000000`.
+
+Cause traced in code: `AiStrategicScheduler.NextHop` returns the origin when origin equals target; `Travel` issues a self-route; `GlobalMapService.IssueTravelOrder` rejects it. The scheduler lacks arrival/no-defender progression in this branch. Recover clears current target detail while the stale travel order persists. `U30InvariantMonitor` validates target references and unique order IDs but not repeated failures or stale-order progress. Thus zero recorded invariant failures does not satisfy the original "no AI invalid target loops" requirement.
+
+Remediation belongs to U26/U25 progression, with a focused arrival-at-undefended-settlement regression and U30 liveness observation. This review does not implement a fix or choose a new capture rule.
+
+### Workload and reproducibility limits
+
+- Reported seed is 3030, while saved health/weather/combat/AI/events/campaign world seeds are all **20261006**. The CLI seed controls harness metadata and benchmark Character identities; the normal scene bootstraps its own default before the soak attaches. The present runner does not configure one authoritative world seed.
+- Initial checkpoint: **104 Characters, tiers 23/50/31**, after demo raiders/representation changes. Checkpoint 2 (about five minutes): **105 Characters, tiers 0/53/52**. Every later published checkpoint has zero Tier1; final tiers 0/55/50. The active tier policy means this is not sustained 25/50/25 presentation load or U29 evidence.
+- One abstract battle ends in the first step (five in-game minutes); zero physical battle steps. Building history records one actual storage capture. The 16 capture attempts include per-segment re-entry, not 16 captures. No AI settlement capture or military victory occurs.
+- Real player production totals 240 berries/32 plant fiber, plateaued by checkpoint 6 (about 25 minutes, calendar day 41.67) and unchanged thereafter. Food consumed ends at 300; shortage at 5,299. Player research adds controlled_fire and then has no active project. AI funds a shelter and continues producing berries, reaching 324. Subsystem step counters are invocation coverage, not counts of successful actions or sustained activity.
+- One birth raises registry count 104 to 105. Aren dies at calendar day 360 and one succession persists; final registry includes 104 living and one dead Character. Health/weather/events continue without the old weather/dead-character exception. Events retain 128 history entries plus 556 archived records; two player offers remain unselected. These are useful long-duration exercises.
+- Both demo combat units keep uninitialized supply and no checkpoints. AI supply has two travel checkpoints, six berries consumed and twelve remaining. Sustained combat supply, shortage and post-victory play are not exercised here.
+- No immutable commit/build GUID/binary-hash manifest accompanies this run. Logs identify Unity 6000.6.4f1, Mono under Builds/Windows and Intel Arc/D3D11; current DLL timestamps alone are not immutable provenance.
+
+### Performance and memory
+
+Full raw distribution: p50 **16.667100 ms**, p95 **16.801396 ms**, p99 **74.915698 ms**, mean **19.557105 ms**, maximum **30,368.522644 ms**. There are 31,399 frames over 33.33 ms (2.129% of frames, 16.418% of recorded frame time), 6,509 over 100 ms and 770 over one second. Aggregate p95 hides concentrated bad intervals.
+
+| Segment | p95 ms | p99 ms | max ms | Samples |
+|---:|---:|---:|---:|---:|
+| 1 | 16.971 | 43.435 | 2021.546 | 103358 |
+| 5 | 16.926 | 111.091 | 2372.471 | 86372 |
+| 6 | 134.410 | 1340.899 | 30368.523 | 31833 |
+| 7 | 34.541 | 433.897 | 4888.950 | 55474 |
+| 8 | 17.116 | 206.039 | 6064.948 | 78244 |
+| 16 | 16.705 | 83.528 | 1555.787 | 100368 |
+
+The bad interval is concentrated in segments 5–8, about 17:04–19:06 Moscow. Segment 6's 30-second maximum is its first recorded frame, including startup/restore boundary time, not evidence of a 30-second steady-state stall. Excluding batches from its first 30 seconds still leaves p95 about **131.193 ms** and maximum **9,840.203 ms**. Longest heartbeat gap is about 9.02 seconds, below the 600-second watchdog. No subsystem trace or machine-load history can establish the cause; GPU, other processes and temperature remain unproven explanations.
+
+All working-set readings are positive: **393.87–465.01 MiB**. Managed live memory ranges **5.23–36.38 MiB**. The implemented runaway predicate never fires (32 MiB managed/128 MiB working-set thresholds, three-point growth), but resets every 30 minutes. It cannot exclude smaller leaks in one continuously running eight-hour process. Five-minute managed minima grow from roughly 6.0 to 9.3 MiB. XML grows **180,798 → 1,708,970 bytes**; final health subtree is about 1.36 MB with **2,683 conditions: 2,682 recovered, one fatal**. Health advancement keeps sorting/scanning retained conditions. This is measurable retained-state growth/scaling risk, not proof of an unmanaged leak.
+
+Interval journals record **129,780 GC counter increments**, about 270/min (5,420 in segment 1 versus 10,022 in segment 16). Final segment `collections=0` is the reset last interval, not a segment total. Per-heartbeat snapshot capture/serialization/hashing adds instrumentation work; cost attribution needs profiling. Mono generation-zero counts do not alone prove major GC pauses.
+
+CPU reporting truncates sub-second usage because `(cpuTicks - previousCpuTicks) / TimeSpan.TicksPerSecond` performs integer division. Profiler fields named average use `LastValue`, not interval averages. GPU/render and allocation values are unavailable (`-1`), not zero cost.
+
+All Player logs contain a shutdown `MemoryLeaks` record of approximately 1.115–1.118 MB, mostly Manager, without growth across segments. Ownership/baseline investigation is needed before declaring no leaks; this is not evidence of runaway growth. ICU text fallback warnings recur. Segment 5 also logs three shutdown `abort_threads: Failed aborting id ... mono_thread_manage will ignore it` messages, while exiting 0 with a complete result. These are retained runtime shutdown diagnostics, not managed gameplay exceptions. No managed exception/assert/crash was found. Final runner heartbeat is the last live snapshot (27,000 productive seconds/checkpoint 106); segment 16/checkpoint 113 and the completed result supersede it.
+
+### Audit commands and next action
+
+Local ignored analysis files: `Logs/audit_u30_run4.py`, `Logs/audit_u30_state.py`, `Logs/U30-run4-independent-audit.json`, `Logs/U30-run4-state-audit.txt` under `C:\serenity_game`. The scripts parse full JSONL/XML, reconstruct SHA-256/canonical/outcome hashes, compare restart state, and recalculate interpolated percentiles from all frames.
+
+```powershell
+& 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' Logs/audit_u30_run4.py > Logs/U30-run4-independent-audit.json
+& 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' Logs/audit_u30_state.py > Logs/U30-run4-state-audit.txt
+rg -n 'Exception|error|assert|crash|failed|MemoryLeaks' C:\serenity_u30_soak_20261012_run4/segments -g '*.log'
+git diff --check
+git diff --cached --check
+```
+
+Integrity/statistics checks returned zero mismatches. This review changes documentation only; no Unity batchmode/test/build or replacement soak was run. Prior tests/build remain historical. Preserve run4, repair AI arrival/liveness detection, align world seed/provenance and workload coverage, and correct telemetry. Verify focused regressions and representative short runs before new official evidence. Do not repeat the unchanged eight-hour run. U29 still requires its own matrix; U31 cannot be finalized.
