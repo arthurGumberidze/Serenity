@@ -1,15 +1,11 @@
 # NEXT_TASK.md
 
-U30A is DONE. U29 remains PARTIAL because the mandatory sustained 1000-Character Player p95 gate is still above 33.33 ms. U30 remains IN_PROGRESS until a fresh external eight-hour soak is audited and passes. U31 is the next implementation/integration task, but its final DONE verdict is BLOCKED by both unresolved gates. U32 must not start.
+U31's integration implementation is validated but its final gate is BLOCKED. Do not add more U31 gameplay scope unless a regression is found.
 
-## Next task: U31 — MVP Integration Gate
+## Exact remaining gates
 
-U31 may prepare and exercise the normal player path `New Game -> economy/research/construction -> discovery -> military travel/combat -> capture -> victory -> continued sandbox -> Save/Load`. It must reuse U30A's canonical campaign, supply and TPS/U20 paths and may fix integration defects found in that flow. It must not duplicate authorities or reinterpret partial performance/reliability evidence as a pass.
+1. Finalize U29 separately from fresh qualifying performance evidence. The complete 100/300/500/1000 matrix must pass every integrity gate and the worst sustained 1000-Character Player p95 must be at or below 33.33 ms. The current retained sustained control is 38.216 ms, so U29 remains PARTIAL.
+2. Run and independently audit the fresh U30 external soak at `C:\serenity_u30_soak_20261012_run4`. Requested and actual wall-clock duration must both be at least 28,800 seconds, productive duration and aggregate coverage must be complete, incidents/invariants/watchdogs must be zero, memory and checkpoint resume must be verified, journal/manifest/checkpoint hashes must match and the final logical hash must be non-empty. U30 remains IN_PROGRESS until that audit passes.
+3. Only after U29 and U30 are DONE, rerun `Tools\Verify-U31.ps1`, audit `docs\U31_HANDOFF.md`, and change U31 from BLOCKED to DONE in a dedicated finalization commit.
 
-Final U31 completion requires every dependency in `docs/TASK_GRAPH.md` to be DONE, including:
-
-- U29: fresh qualifying performance evidence with the 1000-Character worst-repeat p95 at or below 33.33 ms and all existing integrity gates.
-- U30: a separately audited full external soak with requested and actual wall-clock duration at least 28,800 seconds, zero disqualifying incidents, verified memory/checkpoint resume and complete immutable evidence.
-- U30A: already DONE with snapshot v15 and the focused evidence recorded in `docs/U30A_HANDOFF.md`.
-
-Do not change U29 or U30 status from U31. A dedicated finalizer must audit their own evidence. If either remains PARTIAL/IN_PROGRESS/FAILED, U31 remains BLOCKED even when its gameplay integration tests pass.
+Do not reinterpret short controls, preflights or the U31 Player smoke as U29/U30 acceptance evidence. Do not modify existing U29/U30 evidence while finalizing U31.

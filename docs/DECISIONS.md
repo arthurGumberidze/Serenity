@@ -499,3 +499,7 @@ The ThirdPerson Attack action is a press-only left-mouse command. `ThirdPersonCo
 ## D-098 Snapshot v15 appends supply and campaign state (2026-10-12)
 
 Snapshot v15 strictly serializes per-unit supply/checkpoints and the campaign discovery/victory audit. Restore validates detached state before committing and never replays discovery or victory notifications. V1-v14 decode with safe empty campaign and uninitialized supply defaults; PostgreSQL remains an opaque snapshot store. The U30 resume composition must bind `CampaignProgressService` to the v15 coordinator, while the isolated U30A Windows build path is a verifier option and does not change the normal release path.
+
+## D-099 U31 acceptance adapters command the normal composition and own no gameplay truth (2026-10-12)
+
+U31 automation uses the public U27 UI, the normal `LocalSceneCompositionRoot`, real Input System actions and the established U09/U15/U16/U20-U28 services. Its command-line Player smoke is attached only for `-u31Smoke`, records assertions/screenshots, and may request UI New Game/Save/Load; it stores no canonical state and is absent from ordinary startup behavior. Long logical intervals may be accelerated through the existing GameClock/runtime and production commands, while battle outcome, capture, defeat and victory remain owned by U20/U23/U26/U30A. U31 evidence is isolated from U29/U30 evidence and cannot satisfy either external gate.

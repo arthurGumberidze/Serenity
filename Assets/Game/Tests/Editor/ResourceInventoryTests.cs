@@ -77,6 +77,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        [Category("U31")]
         public void ExactTransferConservesTotalAndFailuresDoNotMutateEitherOwner()
         {
             var catalog = NewCatalog();

@@ -55,6 +55,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        [Category("U31")]
         public void ValidTravelOrderHasDeterministicTicksAndArrivesExactlyOnce()
         {
             var fixture = Fixture.Create(2);
@@ -158,6 +159,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        [Category("U31")]
         public void RestoredMidTravelContinuesWithoutTeleportOrDuplicateArrival()
         {
             var source = Fixture.Create(2);

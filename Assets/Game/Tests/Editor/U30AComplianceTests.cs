@@ -14,6 +14,7 @@ namespace Game.Tests.Editor
 {
     [TestFixture]
     [Category("U30A")]
+    [Category("U31")]
     public sealed class U30AComplianceTests
     {
         [Test]

@@ -296,6 +296,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        [Category("U31")]
         public void LogicalOutcomeIsDeterministicAndCollectionOrderIndependent()
         {
             var first = Fixture.Create(5, 5);

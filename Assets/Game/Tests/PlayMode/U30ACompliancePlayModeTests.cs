@@ -21,6 +21,7 @@ using Object = UnityEngine.Object;
 namespace Game.Tests.PlayMode
 {
     [Category("U30A")]
+    [Category("U31")]
     public sealed class U30ACompliancePlayModeTests
     {
         private string saveDirectory;

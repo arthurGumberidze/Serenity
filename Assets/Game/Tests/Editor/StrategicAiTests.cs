@@ -54,6 +54,7 @@ namespace Game.Tests.Editor
 
         [Test]
         [Category("U30A")]
+        [Category("U31")]
         public void BootstrapIsSeedDeterministicCanonicalAndEconomicallyIsolated()
         {
             var first = Fixture.Create(26001);
@@ -151,6 +152,7 @@ namespace Game.Tests.Editor
 
         [Test]
         [Category("U30A")]
+        [Category("U31")]
         public void FinishedPlayerVictoryCapturesWholeStateAndDefeatsAiCoherently()
         {
             var fixture = Fixture.Create(26005, defender: true);

@@ -206,6 +206,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        [Category("U31")]
         public void CaptureAfterVictoryChangesOnlyOwnerAndCancelsOldTask()
         {
             var fixture = new Fixture();

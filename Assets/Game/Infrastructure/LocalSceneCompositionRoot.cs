@@ -57,6 +57,7 @@ using Game.Simulation.Campaign;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
 using Game.Infrastructure.Reliability;
+using Game.Infrastructure.Integration;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -166,6 +167,7 @@ namespace Game.Infrastructure
         public GameplayUiController GameplayUi { get; private set; }
         public U29BenchmarkController PerformanceBenchmark { get; private set; }
         public U30SoakController SoakValidation { get; private set; }
+        public U31PlayerSmokeController PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -438,6 +440,7 @@ namespace Game.Infrastructure
                 pointerRaycaster, input);
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
             SoakValidation = U30SoakController.AttachIfRequested(this);
+            PlayerSmoke = U31PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
