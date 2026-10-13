@@ -456,3 +456,9 @@ U30 run4 audit qualification (2026-10-12): current AI invariants check reference
 `UserSettingsStore` persists a versioned atomic JSON file under `Serenity/Settings`, separately from `Serenity/Saves` and snapshot v15. `UserSettingsRuntime` applies display, audio, quality, UI scale, camera speed and binding overrides to existing Unity/Input System presentation authorities. No preference enters Domain, Simulation or the canonical save payload.
 
 `LocalGameplaySaveFacade` hashes serialized canonical snapshots only at Save/Load baselines and on an explicit exit query. The gameplay menu warns when the current hash differs; this is not a per-frame dirty flag and does not add another simulation authority. Developer panels remain disabled by normal composition. `P2PlayerSmokeController` is command-line-only acceptance instrumentation and owns no gameplay state.
+
+## P3 reference-world presentation boundary
+
+`P3ReferenceSceneBuilder` authors reusable project-owned meshes/materials and the `LocalGameplay` composition, while `StoneAgeReferenceCampPresentation` binds disposable equipment, fire, ambience and surface treatment to existing canonical presenters. Characters, shelter and storage are still created and registered by `LocalSceneCompositionRoot`; their `StableEntityId` values and save state are never copied into the reference component. Decorative trees, rocks, grass, shore and water own no simulation truth.
+
+`WeatherPresentationController` remains a projection of `WeatherService`. Its explicit clear/rain preview is reserved for visual validation and blocks ordinary refresh only while the preview is active; it does not write canonical weather. Particle materials are serialized project assets so Player shader stripping cannot invalidate runtime initialization. `P3PlayerSmokeController` is attached only for `-p3Smoke`, enters through the normal Main Menu/New Game path, records canonical-link assertions and screenshots, and owns no gameplay state.

@@ -51,6 +51,7 @@ namespace Game.Presentation.Control
         public DirectControlEligibilityFailure LastEntryFailure { get; private set; }
         public string LastEntryMessage { get; private set; } = string.Empty;
         public CinemachineCamera ThirdPersonCamera => thirdPersonCamera;
+        public bool IsThirdPersonCameraActive => thirdPersonCamera != null && thirdPersonCamera.Priority.Value > 0;
         public int CameraRigCount => thirdPersonCamera == null ? 0 : 1;
         public int SubscriptionCount => initialized ? 4 : 0;
         public ManualCombatAttackStatus LastAttackStatus { get; private set; } = ManualCombatAttackStatus.Invalid;

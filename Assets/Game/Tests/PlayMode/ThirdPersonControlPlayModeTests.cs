@@ -10,6 +10,7 @@ using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Infrastructure;
 using Game.Presentation.AI;
+using Game.Presentation.Localization;
 using Game.Simulation.Control;
 using Game.Simulation.Time;
 using Game.Simulation.Tiers;
@@ -82,7 +83,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root.ThirdPersonControl.TryEnterSelected().IsEligible, Is.False);
             root.SelectionProbe.SelectCharacters(root.DemoPresenters.Take(2));
             Assert.That(root.ThirdPersonControl.TryEnterSelected().IsEligible, Is.False);
-            Assert.That(root.ThirdPersonControl.LastEntryMessage, Does.Contain("Multiple"));
+            Assert.That(root.ThirdPersonControl.LastEntryMessage,
+                Is.EqualTo(RussianTextCatalog.Get("debug.tps.multiple")));
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[1] });
             Assert.That(root.ThirdPersonControl.TryEnterSelected().Failure,
                 Is.EqualTo(DirectControlEligibilityFailure.NotPlayerControlledRole));

@@ -1,6 +1,6 @@
 # Serenity Asset Registry
 
-Checked on 2026-10-04. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
+Checked on 2026-10-13. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
 
 Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`, `DEFERRED`, and `LICENSE_REVIEW_REQUIRED`. Visual grades are A (near-direct fit), B (fit after normalization), C (Tier 2/placeholder), D (style mismatch), and X (source/license blocked).
 
@@ -121,6 +121,22 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Rig/animation/LOD: Tier 2 humanoid is unrigged single-mesh placeholder; shelter/storage are static; no additional LOD
 - Visual grade/status: C, `PLACEHOLDER_ONLY`
 - Notes: these close the pipeline/test-scene acceptance slots without pretending to be final art.
+
+### SERENITY-P3-REFERENCE-CAMP
+
+- Name: P3 Stone Age shore-camp reference set
+- Type/category: project-owned scene composition, procedural meshes, URP materials, particle mask and audio synthesis
+- Source/author/license: Serenity project-owned code and generated Unity assets; no external source files
+- Date created/checked: 2026-10-13
+- Commercial use: YES; attribution: NO
+- Asset paths: `Assets/Game/Art/Meshes/P3`, `Assets/Game/Art/Materials/P3`, `Assets/Scenes/LocalGameplay.unity`
+- Generator: `Assets/Game/Infrastructure/Editor/P3ReferenceSceneBuilder.cs`; repeatable and idempotent
+- Runtime dependencies: approved HODAART-LPCC3 wrappers, WIZARDHAT-STONEAGE-NATURE tree/rock/campfire wrappers, WIZARDHAT-STONEAGE-WEAPONS axe/spear wrappers, and SERENITY-PRIMITIVE-PLACEHOLDERS shelter/storage
+- Contents: curved shore and water meshes, grass clusters, ground/shore/water/sky/fire/building/particle materials, soft particle mask, scene layout, campfire/rain/shore presentation and procedural loop audio
+- Scale/pivots: 1 Unity unit = 1 metre; generated meshes use world-metre dimensions; imported content retains approved wrapper normalization
+- Collider/LOD status: existing approved wrapper colliders are retained; project-owned decorative meshes have no gameplay colliders; no new authored LODs
+- Visual grade/status: B/C reference baseline, `APPROVED_RUNTIME`; coherent and readable but not final production art
+- Notes: P3 imported no new vendor package and used none of the license-review-required staging/existing packages. Hodaart people and primitive shelter/storage remain explicit grade-C placeholders pending a separately approved compatible art source.
 
 ## Staging packages considered but not imported
 

@@ -69,6 +69,7 @@ namespace Game.Infrastructure
             if (SessionLaunchState.TryConsumeFeedback(out var feedbackKey, out var feedbackSlot))
                 SetStatus(F(feedbackKey, feedbackSlot));
             P2PlayerSmokeController.AttachIfRequested(this);
+            P3PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()

@@ -46,6 +46,7 @@ using Game.Presentation.Military;
 using Game.Domain.Control;
 using Game.Simulation.Control;
 using Game.Presentation.Control;
+using Game.Presentation.Environment;
 using Game.Presentation.UI;
 using Game.Domain.World;
 using Game.Domain.Events;
@@ -109,6 +110,9 @@ namespace Game.Infrastructure
         public ConstructionFundingService Construction { get; private set; }
         public Building DemoStorageBuilding { get; private set; }
         public BuildingPresenter DemoStoragePresenter { get; private set; }
+        public Building DemoShelterBuilding { get; private set; }
+        public BuildingPresenter DemoShelterPresenter { get; private set; }
+        public StoneAgeReferenceCampPresentation ReferenceCamp { get; private set; }
         public NavMeshSurface NavigationSurface { get; private set; }
         public GameClock Clock { get; private set; }
         public Tier1AiAgentRegistry AiAgents { get; private set; }
@@ -168,6 +172,7 @@ namespace Game.Infrastructure
         public U29BenchmarkController PerformanceBenchmark { get; private set; }
         public U30SoakController SoakValidation { get; private set; }
         public U31PlayerSmokeController PlayerSmoke { get; private set; }
+        public P3PlayerSmokeController P3PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -256,6 +261,7 @@ namespace Game.Infrastructure
             SpawnDemoPile("hide", 5, new GridCoordinate(-2, -2), new Color(0.7f, 0.45f, 0.25f), 3);
 
             SpawnDemoStorage();
+            SpawnDemoShelter();
             BuildNavigationSurface();
 
             var playerCharacters = NewGame.PlayerCharacters.Select(Character.Restore).ToArray();
@@ -272,6 +278,8 @@ namespace Game.Infrastructure
                 .TryAdd(new ResourceId("berries"), new ResourceQuantity(60));
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
+            ReferenceCamp = GetComponent<StoneAgeReferenceCampPresentation>();
+            ReferenceCamp?.Initialize(demoPresenters[0], demoPresenters[1], DemoShelterPresenter, DemoStoragePresenter);
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
@@ -314,7 +322,7 @@ namespace Game.Infrastructure
             WeatherDebug = gameObject.AddComponent<WeatherDebugOverlay>();
             WeatherDebug.Initialize(Weather, Clock, pointerRaycaster);
             WeatherPresentation = gameObject.AddComponent<WeatherPresentationController>();
-            WeatherPresentation.Initialize(Weather);
+            WeatherPresentation.Initialize(Weather, ReferenceCamp != null ? ReferenceCamp.RainParticleMaterial : null);
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
@@ -465,6 +473,7 @@ namespace Game.Infrastructure
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
             SoakValidation = U30SoakController.AttachIfRequested(this);
             PlayerSmoke = U31PlayerSmokeController.AttachIfRequested(this);
+            P3PlayerSmoke = P3PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
@@ -669,6 +678,16 @@ namespace Game.Infrastructure
             Storage.Attach(DemoStorageBuilding, definition);
             DemoStorageBuilding.MarkCompleted();
             DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
+        }
+
+        private void SpawnDemoShelter()
+        {
+            var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("primitive_shelter"));
+            DemoShelterBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(-7, 4),
+                BuildingOrientation.South, new CombatSideId("player"),
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 2));
+            DemoShelterBuilding.MarkCompleted();
+            DemoShelterPresenter = BuildingSpawner.Spawn(DemoShelterBuilding);
         }
 
         private void SpawnDemoCropPlot()

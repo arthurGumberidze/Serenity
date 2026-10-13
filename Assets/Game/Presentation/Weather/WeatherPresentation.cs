@@ -15,19 +15,51 @@ namespace Game.Presentation.Weather
         private WeatherService weather;
         private long displayedDay = -1;
         private Light sun;
+        private ParticleSystem rainParticles;
+        private AudioSource rainAudio;
+        private Material rainMaterial;
+        private AudioClip rainClip;
+        private bool previewActive;
+        private bool ownsRainMaterial;
 
-        public void Initialize(WeatherService service)
+        public bool IsRaining { get; private set; }
+        public ParticleSystem RainParticles => rainParticles;
+        public AudioSource RainAudio => rainAudio;
+
+        public void Initialize(WeatherService service, Material particleMaterial = null)
         {
             weather = service ?? throw new ArgumentNullException(nameof(service));
+            rainMaterial = particleMaterial;
             sun = FindDirectionalLight();
+            CreateRainPresentation();
         }
 
         public void Refresh(long calendarTick)
         {
-            if (weather == null) return;
+            if (weather == null || previewActive) return;
             var state = weather.GetWeatherAtCalendarTick(calendarTick);
             if (state.AbsoluteDay == displayedDay) return;
             displayedDay = state.AbsoluteDay;
+            ApplyState(state);
+        }
+
+        /// <summary>Presentation-only preview used by visual validation. Canonical weather is never mutated.</summary>
+        public void ShowPreview(WeatherState state)
+        {
+            previewActive = true;
+            displayedDay = -1;
+            ApplyState(state);
+        }
+
+        public void ClearPreview(long calendarTick)
+        {
+            previewActive = false;
+            displayedDay = -1;
+            Refresh(calendarTick);
+        }
+
+        private void ApplyState(WeatherState state)
+        {
             var overcast = state.Type == WeatherType.Cloudy || state.Precipitation != PrecipitationType.None;
             RenderSettings.fog = overcast;
             RenderSettings.fogColor = state.Snowing ? new Color(0.72f, 0.77f, 0.82f) : new Color(0.36f, 0.42f, 0.48f);
@@ -40,6 +72,94 @@ namespace Game.Presentation.Weather
                 sun.color = state.Type == WeatherType.ColdSnap || state.Type == WeatherType.Snow
                     ? new Color(0.78f, 0.86f, 1f) : new Color(1f, 0.94f, 0.82f);
             }
+            IsRaining = state.Precipitation == PrecipitationType.Rain;
+            if (rainParticles != null)
+            {
+                var emission = rainParticles.emission;
+                emission.rateOverTime = state.Type == WeatherType.HeavyRain ? 1450f : 680f;
+                rainParticles.gameObject.SetActive(IsRaining);
+                if (IsRaining && !rainParticles.isPlaying) rainParticles.Play();
+            }
+            if (rainAudio != null)
+            {
+                rainAudio.volume = state.Type == WeatherType.HeavyRain ? 0.24f : 0.14f;
+                if (IsRaining && !rainAudio.isPlaying) rainAudio.Play();
+                else if (!IsRaining && rainAudio.isPlaying) rainAudio.Stop();
+            }
+        }
+
+        private void CreateRainPresentation()
+        {
+            if (rainParticles != null) return;
+            var rainObject = new GameObject("P3 Rain Presentation");
+            rainObject.transform.SetParent(transform, false);
+            rainParticles = rainObject.AddComponent<ParticleSystem>();
+            var main = rainParticles.main;
+            main.loop = true;
+            main.startLifetime = 1.4f;
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.05f);
+            main.startColor = new Color(0.68f, 0.79f, 0.9f, 0.6f);
+            main.maxParticles = 2600;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = 2.4f;
+            var emission = rainParticles.emission;
+            emission.rateOverTime = 680f;
+            var shape = rainParticles.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(32f, 1f, 32f);
+            var renderer = rainParticles.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = 0.08f;
+            renderer.lengthScale = 4.5f;
+            if (rainMaterial == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+                if (shader == null) throw new InvalidOperationException("A rain particle shader is required.");
+                rainMaterial = new Material(shader) { name = "P3 Rain Runtime Material" };
+                rainMaterial.color = new Color(0.68f, 0.79f, 0.9f, 0.52f);
+                ownsRainMaterial = true;
+            }
+            renderer.sharedMaterial = rainMaterial;
+
+            rainAudio = rainObject.AddComponent<AudioSource>();
+            rainAudio.loop = true;
+            rainAudio.playOnAwake = false;
+            rainAudio.spatialBlend = 0f;
+            rainAudio.volume = 0.14f;
+            rainClip = CreateRainLoop();
+            rainAudio.clip = rainClip;
+            rainObject.SetActive(false);
+        }
+
+        private static AudioClip CreateRainLoop()
+        {
+            const int sampleRate = 22050;
+            const int seconds = 4;
+            var samples = new float[sampleRate * seconds];
+            var random = new System.Random(3019);
+            var filtered = 0f;
+            for (var i = 0; i < samples.Length; i++)
+            {
+                var noise = (float)(random.NextDouble() * 2d - 1d);
+                filtered = filtered * 0.74f + noise * 0.26f;
+                samples[i] = filtered * 0.13f;
+            }
+            var clip = AudioClip.Create("P3 Rain Loop", samples.Length, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private void LateUpdate()
+        {
+            if (!IsRaining || rainParticles == null || UnityEngine.Camera.main == null) return;
+            rainParticles.transform.position = UnityEngine.Camera.main.transform.position + Vector3.up * 13f;
+        }
+
+        private void OnDestroy()
+        {
+            if (ownsRainMaterial && rainMaterial != null) Destroy(rainMaterial);
+            if (rainClip != null) Destroy(rainClip);
         }
 
         private static Light FindDirectionalLight()
