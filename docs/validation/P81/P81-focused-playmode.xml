@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4,3815372">
+  <test-suite type="TestSuite" id="1173" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.381537" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1339" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.368713" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="38796" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1340" name="Game" fullname="Game" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.365449" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1341" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.362449" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1342" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="128" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.357926" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1244" name="P81VisualPrototypePlayModeTests" fullname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" classname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.351526" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P81" />
+              </properties>
+              <test-case id="1245" name="BenchmarkLoadsWithStableAppearanceAndVisibleCharacter" fullname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests.BenchmarkLoadsWithStableAppearanceAndVisibleCharacter" methodname="BenchmarkLoadsWithStableAppearanceAndVisibleCharacter" classname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" runstate="Runnable" seed="919348255" result="Passed" start-time="2026-10-13 22:35:31Z" end-time="2026-10-13 22:35:35Z" duration="4.333187" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

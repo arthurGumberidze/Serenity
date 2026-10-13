@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0,4097299">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="501" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.409730" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1568" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.393099" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="3748" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1569" name="Game" fullname="Game" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.385766" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1570" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.364555" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1571" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="345" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.355080" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1368" name="P81VisualPrototypeTests" fullname="Game.Tests.Editor.P81VisualPrototypeTests" classname="Game.Tests.Editor.P81VisualPrototypeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.343964" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P81" />
+              </properties>
+              <test-case id="1370" name="AppearanceIsStableDataAndVisualProviderHasFallback" fullname="Game.Tests.Editor.P81VisualPrototypeTests.AppearanceIsStableDataAndVisualProviderHasFallback" methodname="AppearanceIsStableDataAndVisualProviderHasFallback" classname="Game.Tests.Editor.P81VisualPrototypeTests" runstate="Runnable" seed="222647141" result="Passed" start-time="2026-10-13 22:35:07Z" end-time="2026-10-13 22:35:08Z" duration="0.216458" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1372" name="GeneratedMaterialAndMeshAssetsAreReusable" fullname="Game.Tests.Editor.P81VisualPrototypeTests.GeneratedMaterialAndMeshAssetsAreReusable" methodname="GeneratedMaterialAndMeshAssetsAreReusable" classname="Game.Tests.Editor.P81VisualPrototypeTests" runstate="Runnable" seed="1462150216" result="Passed" start-time="2026-10-13 22:35:08Z" end-time="2026-10-13 22:35:08Z" duration="0.003263" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1371" name="OfficialUmaDependencyAndSelectiveContentArePinned" fullname="Game.Tests.Editor.P81VisualPrototypeTests.OfficialUmaDependencyAndSelectiveContentArePinned" methodname="OfficialUmaDependencyAndSelectiveContentArePinned" classname="Game.Tests.Editor.P81VisualPrototypeTests" runstate="Runnable" seed="1068857706" result="Passed" start-time="2026-10-13 22:35:08Z" end-time="2026-10-13 22:35:08Z" duration="0.002172" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1369" name="SceneContainsScopedNaturalPbrBenchmark" fullname="Game.Tests.Editor.P81VisualPrototypeTests.SceneContainsScopedNaturalPbrBenchmark" methodname="SceneContainsScopedNaturalPbrBenchmark" classname="Game.Tests.Editor.P81VisualPrototypeTests" runstate="Runnable" seed="631269861" result="Passed" start-time="2026-10-13 22:35:08Z" end-time="2026-10-13 22:35:08Z" duration="0.100044" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

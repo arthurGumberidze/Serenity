@@ -1,10 +1,29 @@
 # Serenity Asset Registry
 
-Checked on 2026-10-13. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
+Checked on 2026-10-14. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
 
 Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`, `DEFERRED`, and `LICENSE_REVIEW_REQUIRED`. Visual grades are A (near-direct fit), B (fit after normalization), C (Tier 2/placeholder), D (style mismatch), and X (source/license blocked).
 
 ## Approved runtime packages
+
+### UMA-3.1F3
+
+- Name: UMA 3 (Unity Multipurpose Avatar), release 3.1f3
+- Type/category: modular runtime character generation, Human Male 3.0 content and URP/SRP materials
+- Source: official UMA Steering Group GitHub repository and release package
+- URL: https://github.com/umasteeringgroup/UMA/releases/tag/v3.1f3
+- Author: UMA Steering Group
+- License: MIT for the repository/package; retained `LICENSE.md` is resolved through the UPM package
+- Date acquired: 2026-10-13/14
+- Commercial use: YES
+- Attribution: license notice retained
+- Package dependency: `com.umasteeringgroup.uma` pinned to tag `v3.1f3` / commit `c92bf29f6f1c17c8bf05d6465288e76b2dfedd08`
+- Imported path: `Assets/Game/Art/ThirdParty/UMA3`; selected source content plus the non-sample SRP subset from official `UMA31_f3.unitypackage`
+- Runtime use: `UMADynamicCharacterAvatar-NoPhysics_NoLOD.prefab` in the P8.1 benchmark; Serenity `AppearanceState` remains the canonical save-state and UMA remains a replaceable Presentation provider
+- Import scope: races, slots, overlays, textures, wearables, animation, DNA, expressions, poses, getting-started prefab and required URP/SRP materials; demo scenes, tests, vehicles, sample GUI, HDRP and UMA2 compatibility content are excluded
+- Size/performance: about 692 MiB selected runtime source; the P8.1 generated Human Male 3.0 smoke has one renderer, 16,277 vertices and 29,430 triangles before later LOD/budget work
+- Visual grade/status: B prototype source, `APPROVED_RUNTIME`; modular and materially closer to the requested stylized-natural/PBR direction, but final group art and LOD acceptance belong to later P8 stages
+- Notes: the user explicitly accepted a large asset footprint. The complete 1.03 GiB release archive and checkout remain ignored under `Library`; only selected runtime dependencies are committed.
 
 ### HODAART-LPCC3
 
@@ -154,7 +173,34 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Visual grade/status: B/C provisional authored baseline, `APPROVED_RUNTIME`; coherent and gameplay-readable, but final visual acceptance remains open
 - Notes: P5 bought or imported no package, edits no vendor source, and does not authorize any license-review-required staging asset.
 
+### SERENITY-P81-VISUAL-BENCHMARK
+
+- Name: P8.1 stylized-natural visual benchmark
+- Type/category: project-owned procedural shore/meadow/forest/stone composition, PBR materials, lighting and fallback character modules
+- Source/author/license: Serenity project-owned code and generated Unity assets; no external source files
+- Date created/checked: 2026-10-13/14
+- Commercial use: YES; attribution: NO
+- Asset paths: `Assets/Game/Art/Meshes/P81`, `Assets/Game/Art/Materials/P81`, `Assets/Game/Art/Textures/P81`, `Assets/Scenes/LocalGameplay.unity`
+- Generator: `Assets/Game/Infrastructure/Editor/P81VisualPrototypeBuilder.cs`; repeatable and idempotent
+- Runtime dependencies: URP 17.6, approved UMA-3.1F3, and existing Serenity camera/composition boundaries
+- Contents: compact meadow/shore/water study; five brown-trunk trees with irregular crowns; shoreline stones; calm palette; generated albedo/normal assets; local key light/reflection probe; one modular UMA character and project-owned fail-safe visual
+- Canonical state: stable Character ID and data-only `AppearanceState`; neither UMA nor fallback GameObjects own save-state
+- Visual grade/status: B prototype, `APPROVED_RUNTIME` for the P8.1 benchmark only; it deliberately does not replace the full map, army/group presentation or production UI
+- Notes: machine acceptance covers URP Lit/PBR material presence, brown trunks, stable appearance, successful UMA generation and a visible Player screenshot. Final taste approval and propagation to the whole game remain later P8 stages.
+
 ## Staging packages considered but not imported
+
+### UNITY-URP-TERRAIN-SAMPLE
+
+- Name: Terrain Sample Asset Pack
+- Type/category: terrain/environment reference
+- Source: Unity Asset Store, official Unity Technologies publisher, asset ID 213197
+- URL: https://assetstore.unity.com/packages/3d/environments/terrain-sample-asset-pack-213197
+- License: Standard Unity Asset Store EULA / Companion License; free listing
+- Compatibility checked: listing reports URP support for Unity 6000.x; package size is about 2.8 GiB
+- Status: `DEFERRED`; acquisition requires an authenticated Unity Asset Store/Package Manager account in the user's Editor session, which was unavailable to batch automation
+- Runtime/import path: none
+- Notes: the blocker is account authorization, not package size. P8.1 therefore uses a project-owned deterministic terrain/shore benchmark and does not claim the Terrain Sample was imported.
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |
 |---|---|---|---|---|---|---|---|

@@ -1,0 +1,12 @@
+{
+    "passed": true,
+    "benchmark_present": true,
+    "natural_materials_present": true,
+    "brown_trunks_present": true,
+    "stable_appearance_present": true,
+    "character_visible": true,
+    "character_provider": "uma3",
+    "stable_character_id": "81000000000000000000000000000001",
+    "screenshot": "C:\\serenity_game\\Logs\\P81-player-smoke-final3\\p81-visual-prototype.png",
+    "error": ""
+}

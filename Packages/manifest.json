@@ -16,6 +16,7 @@
     "com.unity.timeline": "6.6.0",
     "com.unity.ugui": "2.6.0",
     "com.unity.visualscripting": "1.9.11",
+    "com.umasteeringgroup.uma": "https://github.com/umasteeringgroup/UMA.git?path=/UMAProject/Assets/UMA#v3.1f3",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#v4.5.0"
   }
 }

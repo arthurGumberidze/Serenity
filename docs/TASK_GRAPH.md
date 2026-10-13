@@ -21,7 +21,13 @@ Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a
 | P5 | DONE | Обитаемый регион | P3,P4 | Связный читаемый Stone Age регион без обязательных кубов. |
 | P6 | DONE | Понятный первый час | P2,P5 | Опциональный маршрут проходит реальные Work/Production/Research/Event/Military/Map команды, объясняет блокировки и сохраняет P4/P5 identity; ручная UX-приёмка пользователя остаётся открытой до P8. |
 | P7 | DONE | Полный каменный век | P4,P5,P6 | Связный маршрут до войны/наследования; симметричное занятие пустого поселения, бой при защите, победа/поражение, продолжение и Save/Load проверены. |
-| P8 | TODO | Масштаб и выпуск | P7,U29,U30,U31 | Финальная матрица/soak/gates и отдельная визуальная/UX приёмка. |
+| P8 | IN_PROGRESS | Визуальное производство, масштаб и выпуск | P7 | Зонтик P8.1–P8.6: выбранное направление последовательно распространено на продукт, затем честно закрыты U29/U30/U31 и выпускная приёмка. |
+| P8.1 | DONE | Визуальный прототип и выбор базового набора | P7 | В малом Player-стенде согласованы стилизованно-естественные PBR берег/земля/лес/камень, спокойная палитра, коричневые стволы, свет/атмосфера и один настраиваемый персонаж; без преждевременной переделки всей карты, групп и UI. |
+| P8.2 | TODO | Новая игровая карта | P8.1 | Направление P8.1 перенесено на связный авторский регион P5 с читаемыми маршрутами, биомами, ресурсами, стартовой и вражеской территориями; каноническая навигация/строительство/Save-Load сохранены. |
+| P8.3 | BLOCKED | Персонажи и группы в игровом масштабе | P8.2 | Герой, жители, соперники и малые отряды используют согласованный модульный вид, экипировку, анимацию и LOD/бюджеты без переноса canonical state в vendor-компоненты. |
+| P8.4 | BLOCKED | Постройки, ресурсы и эффекты | P8.3 | Каменный век получает согласованный P8.1 визуальный язык для зданий, производств, ресурсов, огня, воды и погоды с читаемыми gameplay-состояниями. |
+| P8.5 | BLOCKED | Финальный UI и пользовательская приёмка | P8.4 | Производственный UI согласован с миром; открытые визуальная, first-hour UX и длинная campaign/balance приёмки P3/P5/P6/P7 пройдены отдельно от автоматических тестов. |
+| P8.6 | BLOCKED | Производительность, endurance и выпуск | P8.5 | На финальном художественном контенте без ослабления порогов закрыты U29, U30 и U31, Windows build/Player evidence и выпускной маршрут. |
 
 | ID | Status | Task | Depends on | Phase | Definition of Done |
 |---|---|---|---|---|---|
@@ -70,6 +76,8 @@ Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
 
 Product sequencing note (2026-10-13): by explicit user decision, `PRODUCT_ROADMAP_RU.md` directions P1–P7 execute sequentially before final U29/U30/U31 qualification. This does not change the statuses or relax the gates above. P8 performs final profiling, history/native-memory closure, the complete U29 matrix, continuous-process endurance, a fresh segmented eight-hour U30 and U31 finalization against the feature-complete first-era build. Each P direction runs in a separate Codex chat from committed predecessor state; no concurrent shared-checkout edits.
+
+P8 staging note (2026-10-14): P8 is split into P8.1–P8.6 so art direction is accepted on a compact reversible benchmark before it is multiplied across the map, population, buildings/effects and UI. P8.1 imports approved UMA 3.1f3 runtime/SRP content and adds a deterministic URP benchmark in `LocalGameplay`; the official Unity Terrain Sample remains deferred because acquisition requires an authenticated Unity account, not because of its size. Focused P8.1 and affected P3–P5 tests pass; build/Player evidence is recorded in `P81_HANDOFF.md`. P8.2 is the only next unblocked product task. U29/U30/U31 statuses and thresholds are unchanged and belong to P8.6.
 
 Completion note (2026-10-13): P6 adds a dismissible seven-stage first-hour projection over existing canonical selection, work, shelter/storage, food production, research, event/danger and scouting evidence. Settlement and Character panels explain the starting group, food horizon, needs and current actions; blocked work/research/military/travel actions show a fix. P6 passed 3/3 focused EditMode, 2/2 focused headless PlayMode, 2/2 D3D11 PlayMode, 20/20 affected EditMode and 33/33 affected PlayMode; the Windows Development build and visible Player route passed with P4/P5 Save/Load identity intact. Manual usability acceptance remains open. P7 is next; U29/U30/U31 statuses are unchanged.
 

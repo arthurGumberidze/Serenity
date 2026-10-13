@@ -1,14 +1,15 @@
 # NEXT_TASK.md
 
-The active product task is P8: scale, qualify and prepare the completed Stone Age slice for release. P1 through P7 are DONE at their implementation/evidence boundaries. Begin from the committed P7 campaign; do not add a new era or unrelated product scope.
+The active product task is **P8.2: новая игровая карта**. P8.1 is DONE at its implementation/evidence boundary and defines the reversible visual benchmark; do not redo P8.1 or start P8.3–P8.6 in the same task.
 
-Run the deferred technical qualification without weakening its recorded gates:
+Apply the accepted P8.1 stylized-natural/PBR direction to the complete authored P5 region:
 
-1. Resolve U29's sustained 1000-Character result (currently 38.216 ms p95 against the 33.33 ms gate), then run the complete qualifying matrix.
-2. Close U30's native-memory/history/continuous-process and workload/telemetry gaps. Preserve `C:\serenity_u30_soak_20261012_run4`; launch a new eight-hour run only as the explicit P8 qualification after prerequisites and short controls are green.
-3. Re-run the connected U31 gate after U29 and U30 are honestly DONE, including persistence/build/normal Player and configured PostgreSQL handling.
-4. Conduct the separate user-facing acceptance still open from P3/P5/P6/P7: visual coherence, first-hour usability and long-route Stone Age balance. Automated evidence does not decide taste.
+1. Rebuild the connected local map as one readable Stone Age region with shore/water, settlement clearings, forest, stone, resources, travel route and rival territory.
+2. Preserve every canonical P5/P7 location, resource, building, NavMesh, construction and Save/Load identity. Art and vendor components remain replaceable Presentation.
+3. Keep the calm palette, visibly brown trunks, natural silhouettes, coherent lighting/atmosphere and metre scale established by P8.1. Do not expand into final group character art or production UI; those are P8.3 and P8.5.
+4. Reuse the approved UMA 3.1f3 and project-owned material pipeline. The official Unity Terrain Sample is still deferred until the user authenticates Unity Asset Store/Package Manager; its size is approved and is not the blocker.
+5. Add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence. Visual approval remains a separate user decision.
 
-Preserve snapshot v17, stable identities and the canonical P7 occupation rules. Do not hide failed evidence, reinterpret earlier soak artifacts, relax thresholds, purchase/import Asset Store content without approval, or change Unity 6000.6.4f1 outside a migration task.
+P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not be changed during P8.2.
 
-Completion requires the exact P8 matrix, short controls before any long run, Windows Development build, visible Player acceptance evidence, updated docs and a commit with a `P8:` prefix.
+Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.2:`.

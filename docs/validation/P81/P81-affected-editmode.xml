@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0,9566887">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="501" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.956689" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1568" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.934773" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="9036" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1569" name="Game" fullname="Game" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.927134" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1570" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="497" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.917225" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1571" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="345" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.881186" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1354" name="P3ReferenceCampTests" fullname="Game.Tests.Editor.P3ReferenceCampTests" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.344952" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P3" />
+              </properties>
+              <test-case id="1355" name="LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" fullname="Game.Tests.Editor.P3ReferenceCampTests.LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" methodname="LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="732336305" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.241081" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1357" name="P3MeshesAndMaterialsAreReusableProjectAssets" fullname="Game.Tests.Editor.P3ReferenceCampTests.P3MeshesAndMaterialsAreReusableProjectAssets" methodname="P3MeshesAndMaterialsAreReusableProjectAssets" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="1195968302" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.001933" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1356" name="ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" fullname="Game.Tests.Editor.P3ReferenceCampTests.ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" methodname="ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="494613205" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.083327" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1358" name="P4AppearanceTests" fullname="Game.Tests.Editor.P4AppearanceTests" classname="Game.Tests.Editor.P4AppearanceTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.120491" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P4" />
+              </properties>
+              <test-case id="1361" name="AppearanceVersionRoundTripsEveryStablePartIdAndLegacyDefaultsAreDeterministic" fullname="Game.Tests.Editor.P4AppearanceTests.AppearanceVersionRoundTripsEveryStablePartIdAndLegacyDefaultsAreDeterministic" methodname="AppearanceVersionRoundTripsEveryStablePartIdAndLegacyDefaultsAreDeterministic" classname="Game.Tests.Editor.P4AppearanceTests" runstate="Runnable" seed="617132464" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.085037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1360" name="FemaleRulerConfigurationPreservesFamilyDynastyAndSuccessionAuthority" fullname="Game.Tests.Editor.P4AppearanceTests.FemaleRulerConfigurationPreservesFamilyDynastyAndSuccessionAuthority" methodname="FemaleRulerConfigurationPreservesFamilyDynastyAndSuccessionAuthority" classname="Game.Tests.Editor.P4AppearanceTests" runstate="Runnable" seed="478833850" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.002579" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1362" name="MissingSavedContentFallsBackOnlyInPresentationWithoutMutatingCanonicalIds" fullname="Game.Tests.Editor.P4AppearanceTests.MissingSavedContentFallsBackOnlyInPresentationWithoutMutatingCanonicalIds" methodname="MissingSavedContentFallsBackOnlyInPresentationWithoutMutatingCanonicalIds" classname="Game.Tests.Editor.P4AppearanceTests" runstate="Runnable" seed="2018968771" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.007313" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Appearance profile 'removed_profile' is unavailable or incompatible; using 'hodaart_adult_a'. Canonical saved IDs were preserved.
+]]></output>
+              </test-case>
+              <test-case id="1359" name="StableAppearanceIdsAndRandomizeAreDeterministicAndBounded" fullname="Game.Tests.Editor.P4AppearanceTests.StableAppearanceIdsAndRandomizeAreDeterministicAndBounded" methodname="StableAppearanceIdsAndRandomizeAreDeterministicAndBounded" classname="Game.Tests.Editor.P4AppearanceTests" runstate="Runnable" seed="1252159759" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.003398" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1363" name="P5InhabitableRegionTests" fullname="Game.Tests.Editor.P5InhabitableRegionTests" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.334598" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P5" />
+              </properties>
+              <test-case id="1364" name="LocalSceneContainsOneCoherentAuthoredRegion" fullname="Game.Tests.Editor.P5InhabitableRegionTests.LocalSceneContainsOneCoherentAuthoredRegion" methodname="LocalSceneContainsOneCoherentAuthoredRegion" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="294031540" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.081837" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1366" name="LocalTerritoriesCorrespondToCanonicalStarterMap" fullname="Game.Tests.Editor.P5InhabitableRegionTests.LocalTerritoriesCorrespondToCanonicalStarterMap" methodname="LocalTerritoriesCorrespondToCanonicalStarterMap" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="743822196" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:14Z" duration="0.094478" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1367" name="P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" fullname="Game.Tests.Editor.P5InhabitableRegionTests.P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" methodname="P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="1804765324" result="Passed" start-time="2026-10-13 22:46:14Z" end-time="2026-10-13 22:46:15Z" duration="0.077231" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1365" name="VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" fullname="Game.Tests.Editor.P5InhabitableRegionTests.VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" methodname="VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="413517622" result="Passed" start-time="2026-10-13 22:46:15Z" end-time="2026-10-13 22:46:15Z" duration="0.077126" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
