@@ -95,5 +95,29 @@ namespace Game.Presentation.Characters
             spawner.Despawn(presenter);
             continuity.Remove(characterId);
         }
+
+        /// <summary>Rebuilds only the disposable view after canonical Save/Load appearance replacement.</summary>
+        public CharacterPresenter RebuildPresentation(Character character)
+        {
+            if (character == null) throw new ArgumentNullException(nameof(character));
+            if (!presentations.TryGet(character.Id, out var current) || current == null || !current.IsBound)
+                throw new InvalidOperationException("Tier 1 presentation is not active.");
+            var state = Capture(character.Id);
+            aiRuntime.Unregister(character.Id);
+            spawner.Despawn(current);
+            var replacement = spawner.Spawn(character,
+                new Vector3(state.Position.X, state.Position.Y, state.Position.Z), Quaternion.identity);
+            try
+            {
+                aiRuntime.Register(character, replacement, new Tier1Needs(state.Hunger, state.Energy));
+                continuity[character.Id] = state;
+                return replacement;
+            }
+            catch
+            {
+                spawner.Despawn(replacement);
+                throw;
+            }
+        }
     }
 }

@@ -26,8 +26,9 @@ namespace Game.Tests.PlayMode
             yield return null;
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root, Is.Not.Null);
-            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(4));
-            Assert.That(root.CharacterPresentations.Count, Is.EqualTo(2));
+            Assert.That(root.NewGame.PlayerCharacters.Count, Is.EqualTo(10));
+            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
+            Assert.That(root.CharacterPresentations.Count, Is.GreaterThanOrEqualTo(2));
             Assert.That(root.DemoPresenters.Count, Is.EqualTo(2));
 
             foreach (var presenter in root.DemoPresenters)

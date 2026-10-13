@@ -55,6 +55,7 @@ using Game.Simulation;
 using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
+using Game.Simulation.Characters;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
 using Game.Infrastructure.Reliability;
@@ -88,10 +89,12 @@ namespace Game.Infrastructure
         public CharacterRegistry Characters { get; private set; }
         public CharacterPresentationRegistry CharacterPresentations { get; private set; }
         public CharacterPresentationSpawner CharacterSpawner { get; private set; }
+        public CharacterAppearanceService Appearances { get; private set; }
         public Character MaleDemoCharacter { get; private set; }
         public Character FemaleDemoCharacter { get; private set; }
         public Character FirstDemoHeir { get; private set; }
         public Character SecondDemoHeir { get; private set; }
+        public Tier1CharacterAdapter Tier1Adapter { get; private set; }
         public IReadOnlyList<CharacterPresenter> DemoPresenters => demoPresenters;
         public BuildingRegistry Buildings { get; private set; }
         public BuildingOccupancyGrid BuildingOccupancy { get; private set; }
@@ -216,16 +219,25 @@ namespace Game.Infrastructure
                 characterCatalog == null || buildingCatalog == null || buildingPlacementController == null)
                 throw new InvalidOperationException("Local scene composition references must be assigned explicitly.");
 
-            ActiveNewGameConfiguration = new NewGameConfiguration(U30SoakConfig.ResolveWorldSeed(
-                Environment.GetCommandLineArgs(), NewGameLaunchState.Consume(developmentWorldSimulationSeed)));
-            NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration);
+            var requestedConfiguration = NewGameLaunchState.Consume(developmentWorldSimulationSeed);
+            var resolvedWorldSeed = U30SoakConfig.ResolveWorldSeed(Environment.GetCommandLineArgs(),
+                requestedConfiguration.WorldSeed);
+            ActiveNewGameConfiguration = resolvedWorldSeed == requestedConfiguration.WorldSeed
+                ? requestedConfiguration
+                : new NewGameConfiguration(resolvedWorldSeed, requestedConfiguration.ConfigurationId,
+                    requestedConfiguration.RivalKnownAtStart, requestedConfiguration.RulerName,
+                    requestedConfiguration.DynastyName, requestedConfiguration.RulerSex,
+                    requestedConfiguration.RulerAppearanceProfileId);
+            var appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
+            NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration, appearanceCatalog);
             var worldSeed = ActiveNewGameConfiguration.WorldSeed;
             Characters = new CharacterRegistry();
+            Appearances = new CharacterAppearanceService(Characters, appearanceCatalog, worldSeed);
             HealthFamily = new HealthAndFamilyService(Characters, HealthConditionCatalog.CreateStoneAge(),
                 worldSeed);
             Weather = new WeatherService(worldSeed, ClimateProfile.Temperate, HealthFamily);
             CharacterPresentations = new CharacterPresentationRegistry();
-            CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations);
+            CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations, Appearances);
 
             InteractionMode = new LocalInteractionMode();
             Buildings = new BuildingRegistry();
@@ -270,6 +282,7 @@ namespace Game.Infrastructure
                 Characters.Add(character);
                 Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, character.Id), Resources, 128));
             }
+            Appearances.RestoreState(NewGame.Appearances);
             MaleDemoCharacter = Characters.Get(NewGame.MonarchId);
             FemaleDemoCharacter = Characters.Get(NewGame.SpouseId);
             FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
@@ -333,12 +346,12 @@ namespace Game.Infrastructure
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
                 OffCameraSimulationSettings.ForWorld(worldSeed));
-            var tier1 = new Tier1CharacterAdapter(characterCatalog, CharacterPresentations, CharacterSpawner,
+            Tier1Adapter = new Tier1CharacterAdapter(characterCatalog, CharacterPresentations, CharacterSpawner,
                 AiRuntime, AiAgents);
             var tier2 = new Tier2CharacterAdapter(Tier2Runtime);
             Tier3Adapter = new Tier3CharacterAdapter(Tier3Characters, OffCameraSimulation,
                 () => new SimulationTimePoint(Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
-            Tiers = new TierManager(Characters, tier1, tier2, Tier3Adapter);
+            Tiers = new TierManager(Characters, Tier1Adapter, tier2, Tier3Adapter);
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             for (var i = 2; i < playerCharacters.Length; i++)
@@ -375,6 +388,7 @@ namespace Game.Infrastructure
             StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(worldSeed,
                 Clock.State.CalendarTicks, Clock.State.BiologicalTicks, Characters, HealthFamily, Tiers, GlobalMap, Buildings,
                 BuildingPlacementService, Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather);
+            Appearances.EnsureDefaults(Characters.GetAll());
             HealthFamily.BindSuccession(StarterEnemyAi.Succession);
             BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
                 StarterEnemyAi.WorldPiles);
@@ -431,7 +445,7 @@ namespace Game.Infrastructure
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events, CampaignProgress);
+                Events, CampaignProgress, Appearances);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -535,6 +549,7 @@ namespace Game.Infrastructure
 
         private void OnChildBorn(Character child)
         {
+            Appearances.GetOrCreate(child);
             var state = new CharacterRuntimeState(child.Id, default, default, false, "local",
                 lastSimulationCalendarTick: Clock.State.CalendarTicks,
                 lastSimulationBiologicalTick: Clock.State.BiologicalTicks);
@@ -569,6 +584,7 @@ namespace Game.Infrastructure
             AiRuntime.RebindClock(Clock);
             Tier3Adapter.RebaseAfterLoad(new SimulationTimePoint(Clock.State.CalendarTicks,
                 Clock.State.BiologicalTicks));
+            RefreshTier1AppearanceAfterLoad();
             selectionProbe.ClearSelection();
             Production.Population = Characters.Count;
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
@@ -581,6 +597,24 @@ namespace Game.Infrastructure
         {
             NewGameLaunchState.Request(worldSeed);
             SceneManager.LoadScene(gameObject.scene.name, LoadSceneMode.Single);
+        }
+
+        private void RefreshTier1AppearanceAfterLoad()
+        {
+            var activeIds = Characters.GetAll().Where(x =>
+                    Tiers.TryGetTier(x.Id, out var tier) && tier == CharacterSimulationTier.Tier1 &&
+                    CharacterPresentations.TryGet(x.Id, out var presenter) && presenter != null && presenter.IsBound)
+                .Select(x => x.Id).ToArray();
+            for (var i = 0; i < activeIds.Length; i++)
+            {
+                var character = Characters.Get(activeIds[i]);
+                Tier1Adapter.RebuildPresentation(character);
+            }
+            demoPresenters.Clear();
+            if (CharacterPresentations.TryGet(MaleDemoCharacter.Id, out var ruler)) demoPresenters.Add(ruler);
+            if (CharacterPresentations.TryGet(FemaleDemoCharacter.Id, out var spouse)) demoPresenters.Add(spouse);
+            if (demoPresenters.Count >= 2 && demoPresenters[0] != null && demoPresenters[1] != null)
+                ReferenceCamp?.RebindCharacterTools(demoPresenters[0], demoPresenters[1]);
         }
 
         public void ReturnToMainMenu()
@@ -789,12 +823,14 @@ namespace Game.Infrastructure
 
     internal static class NewGameLaunchState
     {
-        private static long? requestedSeed;
-        public static void Request(long seed) => requestedSeed = seed;
-        public static long Consume(long fallback)
+        private static NewGameConfiguration requestedConfiguration;
+        public static void Request(long seed) => Request(new NewGameConfiguration(seed));
+        public static void Request(NewGameConfiguration configuration) =>
+            requestedConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        public static NewGameConfiguration Consume(long fallback)
         {
-            var result = requestedSeed ?? fallback;
-            requestedSeed = null;
+            var result = requestedConfiguration ?? new NewGameConfiguration(fallback);
+            requestedConfiguration = null;
             return result;
         }
     }

@@ -13,7 +13,7 @@ namespace Game.Simulation.Campaign
     {
         public NewGameBootstrapResult(NewGameConfiguration configuration, IEnumerable<CharacterState> playerCharacters,
             DynastyStateSnapshot dynasty, StableEntityId monarchId, StableEntityId spouseId,
-            StableEntityId firstHeirId, StableEntityId secondHeirId)
+            StableEntityId firstHeirId, StableEntityId secondHeirId, AppearanceWorldSaveState appearances)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             var characters = (playerCharacters ?? throw new ArgumentNullException(nameof(playerCharacters))).ToArray();
@@ -27,6 +27,9 @@ namespace Game.Simulation.Campaign
             SpouseId = spouseId;
             FirstHeirId = firstHeirId;
             SecondHeirId = secondHeirId;
+            Appearances = appearances ?? throw new ArgumentNullException(nameof(appearances));
+            if (appearances.Characters.Count != 10 || appearances.Characters.Select(x => x.CharacterId).Distinct().Count() != 10)
+                throw new ArgumentException("Every starting Character requires one appearance.", nameof(appearances));
         }
 
         public NewGameConfiguration Configuration { get; }
@@ -36,6 +39,7 @@ namespace Game.Simulation.Campaign
         public StableEntityId SpouseId { get; }
         public StableEntityId FirstHeirId { get; }
         public StableEntityId SecondHeirId { get; }
+        public AppearanceWorldSaveState Appearances { get; }
     }
 
     public static class NewGameBootstrap
@@ -43,21 +47,35 @@ namespace Game.Simulation.Campaign
         private static readonly string[] Names =
             { "Aren", "Mira", "Cale", "Doran", "Pela", "Neris", "Tarin", "Elda", "Rovan", "Sela" };
 
-        public static NewGameBootstrapResult Create(NewGameConfiguration configuration)
+        public static NewGameBootstrapResult Create(NewGameConfiguration configuration,
+            AppearanceDefinitionCatalog appearanceCatalog = null)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
+            appearanceCatalog = appearanceCatalog ?? StoneAgeAppearanceProfiles.CreateCatalog();
+            var rulerProfile = appearanceCatalog.Get(configuration.RulerAppearanceProfileId);
+            if (rulerProfile.Sex != configuration.RulerSex)
+                throw new ArgumentException("Ruler appearance is incompatible with ruler sex.", nameof(configuration));
             var dynastyId = DeterministicStableId.Create(configuration.WorldSeed, "player_dynasty");
             var ids = Enumerable.Range(0, 10)
                 .Select(i => DeterministicStableId.Create(configuration.WorldSeed, "player_character", i)).ToArray();
             var values = new CharacterState[10];
             for (var i = 0; i < values.Length; i++)
             {
-                var parents = i == 2 || i == 3
-                    ? new[] { Parent(ids[0], ParentRole.Father), Parent(ids[1], ParentRole.Mother) }
+                var sex = i == 0 ? configuration.RulerSex : i == 1
+                    ? (configuration.RulerSex == CharacterSex.Male ? CharacterSex.Female : CharacterSex.Male)
+                    : i == 4 || i == 7 || i == 9 ? CharacterSex.Female : CharacterSex.Male;
+                var parentLinks = i == 2 || i == 3
+                    ? new[]
+                    {
+                        Parent(configuration.RulerSex == CharacterSex.Male ? ids[0] : ids[1], ParentRole.Father),
+                        Parent(configuration.RulerSex == CharacterSex.Female ? ids[0] : ids[1], ParentRole.Mother)
+                    }
                     : Array.Empty<ParentLink>();
-                values[i] = new CharacterState(ids[i], new CharacterName(Names[i]),
-                    i == 1 || i == 4 || i == 7 || i == 9 ? CharacterSex.Female : CharacterSex.Male,
-                    0, CharacterLifeState.Alive, null, parents,
+                var name = i == 0 ? configuration.RulerName : i == 1 && configuration.RulerSex == CharacterSex.Female
+                    ? "Aren" : Names[i];
+                values[i] = new CharacterState(ids[i], new CharacterName(name),
+                    sex,
+                    0, CharacterLifeState.Alive, null, parentLinks,
                     i == 0 ? ids[1] : i == 1 ? ids[0] : (StableEntityId?)null,
                     i <= 3 && i != 1 ? dynastyId : (StableEntityId?)null,
                     i <= 3 && i != 1 ? dynastyId : (StableEntityId?)null,
@@ -68,9 +86,16 @@ namespace Game.Simulation.Campaign
                     new CharacterAttributes(new CharacterAttributeValue(50), new CharacterAttributeValue(50)),
                     BodyHealth.Healthy, new Wealth(0), new Influence(i == 0 ? 100 : 10), null);
             }
-            var dynasty = DynastyState.Create(dynastyId, "House Serenity", ids[0], ids[0],
+            var dynasty = DynastyState.Create(dynastyId, configuration.DynastyName, ids[0], ids[0],
                 new[] { ids[0], ids[2], ids[3] }).CaptureState();
-            return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3]);
+            var appearances = new List<AppearanceState>(values.Length);
+            for (var i = 0; i < values.Length; i++)
+            {
+                var profile = i == 0 ? rulerProfile : appearanceCatalog.DefaultFor(values[i].Sex);
+                appearances.Add(profile.CreateState(ids[i]));
+            }
+            return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3],
+                new AppearanceWorldSaveState(appearances));
         }
 
         private static ParentLink Parent(StableEntityId id, ParentRole role) =>

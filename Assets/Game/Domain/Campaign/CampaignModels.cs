@@ -2,6 +2,7 @@ using System;
 using Game.Domain.AI;
 using Game.Domain.Combat;
 using Game.Domain.World;
+using Game.Domain.Characters;
 
 namespace Game.Domain.Campaign
 {
@@ -32,7 +33,8 @@ namespace Game.Domain.Campaign
         public const string DefaultConfigurationId = "stone_age_mvp_v1";
 
         public NewGameConfiguration(long worldSeed, string configurationId = DefaultConfigurationId,
-            bool rivalKnownAtStart = false)
+            bool rivalKnownAtStart = false, string rulerName = "Aren", string dynastyName = "House Serenity",
+            CharacterSex rulerSex = CharacterSex.Male, AppearanceProfileId? rulerAppearanceProfileId = null)
         {
             if (string.IsNullOrWhiteSpace(configurationId) || configurationId != configurationId.Trim() ||
                 configurationId.Length > 64)
@@ -40,11 +42,25 @@ namespace Game.Domain.Campaign
             WorldSeed = worldSeed;
             ConfigurationId = configurationId;
             RivalKnownAtStart = rivalKnownAtStart;
+            RulerName = new CharacterName(rulerName).GivenName;
+            if (string.IsNullOrWhiteSpace(dynastyName) || dynastyName != dynastyName.Trim() || dynastyName.Length > 64)
+                throw new ArgumentException("Dynasty name must be trimmed and at most 64 characters.", nameof(dynastyName));
+            for (var i = 0; i < dynastyName.Length; i++)
+                if (char.IsControl(dynastyName[i])) throw new ArgumentException("Dynasty name contains control characters.", nameof(dynastyName));
+            if (!Enum.IsDefined(typeof(CharacterSex), rulerSex)) throw new ArgumentOutOfRangeException(nameof(rulerSex));
+            DynastyName = dynastyName;
+            RulerSex = rulerSex;
+            RulerAppearanceProfileId = rulerAppearanceProfileId ??
+                (rulerSex == CharacterSex.Male ? StoneAgeAppearanceProfiles.AdultA : StoneAgeAppearanceProfiles.AdultB);
         }
 
         public long WorldSeed { get; }
         public string ConfigurationId { get; }
         public bool RivalKnownAtStart { get; }
+        public string RulerName { get; }
+        public string DynastyName { get; }
+        public CharacterSex RulerSex { get; }
+        public AppearanceProfileId RulerAppearanceProfileId { get; }
         public StableEntityId SessionId => DeterministicStableId.Create(WorldSeed, ConfigurationId + ":session");
     }
 

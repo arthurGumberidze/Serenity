@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Game.Domain.Characters;
 using UnityEngine;
 
@@ -10,25 +12,66 @@ namespace Game.Presentation.Characters
         [Serializable]
         private struct Entry
         {
+            public string ProfileId;
             public CharacterSex Sex;
+            public string BodyId;
+            public string FaceId;
+            public string SkinId;
+            public string HairId;
+            public string BeardId;
+            public string HairColorId;
+            public string ClothingId;
             public GameObject Prefab;
         }
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();
+        private readonly HashSet<string> reportedFallbacks = new HashSet<string>(StringComparer.Ordinal);
 
         public void Configure(GameObject malePrefab, GameObject femalePrefab)
         {
             entries = new[]
             {
-                new Entry { Sex = CharacterSex.Male, Prefab = malePrefab },
-                new Entry { Sex = CharacterSex.Female, Prefab = femalePrefab }
+                EntryFor(StoneAgeAppearanceProfiles.CreateCatalog().Get(StoneAgeAppearanceProfiles.AdultA), malePrefab),
+                EntryFor(StoneAgeAppearanceProfiles.CreateCatalog().Get(StoneAgeAppearanceProfiles.AdultB), femalePrefab)
             };
         }
+
+        public AppearanceDefinitionCatalog CreateDefinitionCatalog() => new AppearanceDefinitionCatalog(
+            (entries ?? Array.Empty<Entry>()).Select(Definition));
 
         public GameObject Resolve(Character character)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));
             return Resolve(character.Sex);
+        }
+
+        public GameObject Resolve(Character character, AppearanceState appearance, out AppearanceState resolvedAppearance)
+        {
+            if (character == null) throw new ArgumentNullException(nameof(character));
+            return Resolve(character.Sex, appearance, out resolvedAppearance);
+        }
+
+        public GameObject Resolve(CharacterSex sex, AppearanceState appearance, out AppearanceState resolvedAppearance)
+        {
+            if (appearance == null) throw new ArgumentNullException(nameof(appearance));
+            var catalog = CreateDefinitionCatalog();
+            if (catalog.TryGet(appearance.ProfileId, out var requested) && requested.Sex == sex)
+            {
+                var exact = FindEntry(requested.Id);
+                ValidatePrefab(exact.Prefab, exact.ProfileId);
+                resolvedAppearance = requested.CreateState(appearance.CharacterId);
+                return exact.Prefab;
+            }
+
+            var fallback = catalog.DefaultFor(sex);
+            var fallbackEntry = FindEntry(fallback.Id);
+            ValidatePrefab(fallbackEntry.Prefab, fallbackEntry.ProfileId);
+            resolvedAppearance = fallback.CreateState(appearance.CharacterId);
+            var key = appearance.ProfileId + "->" + fallback.Id;
+            if (reportedFallbacks.Add(key))
+                Debug.LogWarning("Appearance profile '" + appearance.ProfileId + "' is unavailable or incompatible; using '" +
+                                 fallback.Id + "'. Canonical saved IDs were preserved.");
+            return fallbackEntry.Prefab;
         }
 
         public GameObject Resolve(CharacterSex sex)
@@ -52,6 +95,41 @@ namespace Game.Presentation.Characters
             if (match.GetComponent<CharacterPresenter>() == null)
                 throw new InvalidOperationException("Character presentation prefab has no CharacterPresenter: " + match.name + ".");
             return match;
+        }
+
+        private Entry FindEntry(AppearanceProfileId profileId)
+        {
+            var matches = entries.Where(x => string.Equals(x.ProfileId, profileId.Value, StringComparison.Ordinal)).ToArray();
+            if (matches.Length != 1)
+                throw new InvalidOperationException("Character presentation catalog must contain exactly one entry for " + profileId + ".");
+            return matches[0];
+        }
+
+        private static Entry EntryFor(AppearanceProfileDefinition definition, GameObject prefab) => new Entry
+        {
+            ProfileId = definition.Id.Value,
+            Sex = definition.Sex,
+            BodyId = definition.BodyId.Value,
+            FaceId = definition.FaceId.Value,
+            SkinId = definition.SkinId.Value,
+            HairId = definition.HairId.Value,
+            BeardId = definition.BeardId.Value,
+            HairColorId = definition.HairColorId.Value,
+            ClothingId = definition.ClothingId.Value,
+            Prefab = prefab
+        };
+
+        private static AppearanceProfileDefinition Definition(Entry entry) => new AppearanceProfileDefinition(
+            new AppearanceProfileId(entry.ProfileId), entry.Sex, new AppearancePartId(entry.BodyId),
+            new AppearancePartId(entry.FaceId), new AppearancePartId(entry.SkinId),
+            new AppearancePartId(entry.HairId), new AppearancePartId(entry.BeardId),
+            new AppearancePartId(entry.HairColorId), new AppearancePartId(entry.ClothingId));
+
+        private static void ValidatePrefab(GameObject prefab, string profileId)
+        {
+            if (prefab == null) throw new InvalidOperationException("Character presentation prefab is missing for " + profileId + ".");
+            if (prefab.GetComponent<CharacterPresenter>() == null)
+                throw new InvalidOperationException("Character presentation prefab has no CharacterPresenter: " + prefab.name + ".");
         }
     }
 }

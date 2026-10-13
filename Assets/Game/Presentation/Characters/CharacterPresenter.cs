@@ -18,6 +18,7 @@ namespace Game.Presentation.Characters
         [SerializeField] private Transform leftHandSocket;
 
         private Character character;
+        private AppearanceState appearance;
         private CharacterPresentationRegistry registry;
         private bool hasSpeedParameter;
         private bool hasMovingParameter;
@@ -30,6 +31,7 @@ namespace Game.Presentation.Characters
 
         public bool IsBound => character != null;
         public Character Character => character;
+        public AppearanceState Appearance => appearance;
         public StableEntityId CharacterId => character != null ? character.Id : default;
         public Animator Animator => animator;
         public Transform RightHandSocket => rightHandSocket;
@@ -47,7 +49,8 @@ namespace Game.Presentation.Characters
             InvalidateAnimatorState();
         }
 
-        public void Bind(Character domainCharacter, CharacterPresentationRegistry presentationRegistry)
+        public void Bind(Character domainCharacter, CharacterPresentationRegistry presentationRegistry,
+            AppearanceState resolvedAppearance = null)
         {
             if (domainCharacter == null) throw new ArgumentNullException(nameof(domainCharacter));
             if (presentationRegistry == null) throw new ArgumentNullException(nameof(presentationRegistry));
@@ -55,6 +58,8 @@ namespace Game.Presentation.Characters
 
             presentationRegistry.Register(domainCharacter.Id, this);
             character = domainCharacter;
+            appearance = resolvedAppearance ?? StoneAgeAppearanceProfiles.CreateCatalog()
+                .DefaultFor(domainCharacter.Sex).CreateState(domainCharacter.Id);
             registry = presentationRegistry;
             CacheAnimatorParameters();
             InvalidateAnimatorState();
@@ -68,6 +73,7 @@ namespace Game.Presentation.Characters
             IsSelected = false;
             registry?.Unregister(character.Id, this);
             character = null;
+            appearance = null;
             registry = null;
         }
 

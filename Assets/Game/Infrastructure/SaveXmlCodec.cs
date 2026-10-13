@@ -25,7 +25,7 @@ using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V15 adds campaign progress and unit supply.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V16 adds canonical Character appearance.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -68,6 +68,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeEvents(snapshot.Events));
             if (snapshot.FormatVersion >= SaveSnapshot.CampaignVersion)
                 root.Add(SerializeCampaign(snapshot.Campaign));
+            if (snapshot.FormatVersion >= SaveSnapshot.AppearanceVersion)
+                root.Add(SerializeAppearance(snapshot.Appearance));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -101,6 +103,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.BattleVersion && version != SaveSnapshot.BuildingVersion &&
                         version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.StrategicAiVersion &&
                         version != SaveSnapshot.EventVersion &&
+                        version != SaveSnapshot.CampaignVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -130,11 +133,14 @@ namespace Game.Infrastructure
                         ? DeserializeEvents(root.Element("events")) : null;
                     var campaign = version >= SaveSnapshot.CampaignVersion
                         ? DeserializeCampaign(root.Element("campaign")) : null;
+                    var appearance = version >= SaveSnapshot.AppearanceVersion
+                        ? DeserializeAppearance(root.Element("appearance")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
-                        combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign);
+                        combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
+                        appearance);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1228,6 +1234,44 @@ namespace Game.Infrastructure
                 OptionalStableId(element, "sourceBattleId"), ULong(element, "eventSequence"));
         }
 
+        private static XElement SerializeAppearance(AppearanceWorldSaveState state)
+        {
+            var element = new XElement("appearance");
+            if (state == null) return element;
+            element.Add(state.Characters.Select(value => new XElement("character",
+                new XElement("characterId", value.CharacterId.ToString()),
+                new XElement("profileId", value.ProfileId.Value),
+                new XElement("bodyId", value.BodyId.Value),
+                new XElement("faceId", value.FaceId.Value),
+                new XElement("skinId", value.SkinId.Value),
+                new XElement("hairId", value.HairId.Value),
+                new XElement("beardId", value.BeardId.Value),
+                new XElement("hairColorId", value.HairColorId.Value),
+                new XElement("clothingId", value.ClothingId.Value))));
+            return element;
+        }
+
+        private static AppearanceWorldSaveState DeserializeAppearance(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing appearance state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty appearance state.");
+                return null;
+            }
+            return new AppearanceWorldSaveState(Items(element, "character", value =>
+            {
+                RequireFields(value, new[] { "characterId", "profileId", "bodyId", "faceId", "skinId", "hairId",
+                    "beardId", "hairColorId", "clothingId" });
+                return new AppearanceState(StableEntityId.Parse(Value(value, "characterId")),
+                    new AppearanceProfileId(Value(value, "profileId")),
+                    new AppearancePartId(Value(value, "bodyId")), new AppearancePartId(Value(value, "faceId")),
+                    new AppearancePartId(Value(value, "skinId")), new AppearancePartId(Value(value, "hairId")),
+                    new AppearancePartId(Value(value, "beardId")), new AppearancePartId(Value(value, "hairColorId")),
+                    new AppearancePartId(Value(value, "clothingId")));
+            }));
+        }
+
         private static MilitaryUnitId? OptionalUnit(XElement parent, string name)
         { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(value); }
         private static SettlementId? OptionalSettlement(XElement parent, string name)
@@ -1251,6 +1295,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.StrategicAiVersion) fields = fields.Concat(new[] { "strategicAi" });
             if (version >= SaveSnapshot.EventVersion) fields = fields.Concat(new[] { "events" });
             if (version >= SaveSnapshot.CampaignVersion) fields = fields.Concat(new[] { "campaign" });
+            if (version >= SaveSnapshot.AppearanceVersion) fields = fields.Concat(new[] { "appearance" });
             return fields.ToArray();
         }
 

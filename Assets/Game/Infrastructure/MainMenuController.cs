@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Game.Domain.Campaign;
+using Game.Domain.Characters;
 using Game.Infrastructure.Integration;
+using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Localization;
 using Game.Presentation.UI;
+using Game.Simulation.Campaign;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -30,6 +34,7 @@ namespace Game.Infrastructure
         private static readonly Color Text = new Color(0.94f, 0.91f, 0.82f, 1f);
 
         [SerializeField] private InputActionAsset actionAsset;
+        [SerializeField] private CharacterPresentationCatalog characterCatalog;
 
         private UIDocument document;
         private PanelSettings panelSettings;
@@ -43,6 +48,20 @@ namespace Game.Infrastructure
         private UserSettingsData workingSettings;
         private int? latestUsableSlot;
         private long suggestedSeed;
+        private AppearanceDefinitionCatalog appearanceCatalog;
+        private RulerCreationDraft rulerDraft;
+        private int rulerRandomSequence;
+        private TextField rulerSeedField;
+        private TextField rulerNameField;
+        private TextField dynastyNameField;
+        private DropdownField appearanceProfileField;
+        private VisualElement appearanceParts;
+        private RenderTexture previewTexture;
+        private GameObject previewRoot;
+        private GameObject previewCharacter;
+        private Camera previewCamera;
+        private float previewYaw = 165f;
+        private float previewZoom = 3.2f;
 
         public VisualElement RootVisual => root;
         public MainMenuView CurrentView { get; private set; }
@@ -50,11 +69,20 @@ namespace Game.Infrastructure
         public bool ExitRequested { get; private set; }
         public UserSettingsData Settings => settings?.Clone();
 
-        public void Configure(InputActionAsset actions) => actionAsset = actions;
+        public RulerCreationDraft RulerDraft => rulerDraft;
+        public bool HasLiveRulerPreview => previewCharacter != null && previewCamera != null && previewTexture != null;
+
+        public void Configure(InputActionAsset actions, CharacterPresentationCatalog presentations = null)
+        {
+            actionAsset = actions;
+            characterCatalog = presentations;
+        }
 
         private void Awake()
         {
             if (actionAsset == null) throw new InvalidOperationException("Main menu input actions are required.");
+            if (characterCatalog == null) throw new InvalidOperationException("P4 character presentation catalog is required.");
+            appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
             var saveDirectory = ResolveSaveDirectory();
             saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory));
             settingsStore = UserSettingsStore.CreateDefault();
@@ -70,6 +98,7 @@ namespace Game.Infrastructure
                 SetStatus(F(feedbackKey, feedbackSlot));
             P2PlayerSmokeController.AttachIfRequested(this);
             P3PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P4PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -82,6 +111,7 @@ namespace Game.Infrastructure
 
         public void ShowMain()
         {
+            DisposeRulerPreview();
             CurrentView = MainMenuView.Main;
             CloseModal();
             RefreshSlots();
@@ -107,23 +137,59 @@ namespace Game.Infrastructure
 
         public void OpenNewGame()
         {
+            DisposeRulerPreview();
             CurrentView = MainMenuView.NewGame;
             content.Clear();
             AddHeading(T("menu.new_game"), 32);
             AddLine(T("menu.new_game.explanation"));
-            var seed = new TextField(T("menu.new_game.seed")) { value = suggestedSeed.ToString(), name = "world-seed" };
-            StyleField(seed);
-            content.Add(seed);
+            rulerDraft = RulerCreationService.CreateDefault(suggestedSeed, appearanceCatalog);
+            rulerRandomSequence = 0;
+
+            rulerSeedField = new TextField(T("menu.new_game.seed"))
+                { value = suggestedSeed.ToString(), name = "world-seed" };
+            rulerNameField = new TextField(T("menu.new_game.ruler_name"))
+                { value = rulerDraft.RulerName, name = "ruler-name" };
+            dynastyNameField = new TextField(T("menu.new_game.dynasty_name"))
+                { value = rulerDraft.DynastyName, name = "dynasty-name" };
+            StyleField(rulerSeedField); StyleField(rulerNameField); StyleField(dynastyNameField);
+            content.Add(rulerSeedField); content.Add(rulerNameField); content.Add(dynastyNameField);
+
+            appearanceProfileField = new DropdownField(T("menu.new_game.appearance"),
+                appearanceCatalog.Profiles.Select(ProfileLabel).ToList(), 0) { name = "appearance-profile" };
+            StyleField(appearanceProfileField);
+            appearanceProfileField.RegisterValueChangedCallback(change =>
+                ApplyProfile(appearanceCatalog.Profiles.First(x => ProfileLabel(x) == change.newValue)));
+            content.Add(appearanceProfileField);
+
+            var previewCard = Card();
+            previewCard.name = "ruler-preview-card";
+            var previewImage = new Image { name = "ruler-preview", scaleMode = ScaleMode.ScaleToFit };
+            previewImage.style.height = 300;
+            previewImage.style.backgroundColor = new Color(0.025f, 0.035f, 0.025f, 1f);
+            previewCard.Add(previewImage);
+            var previewControls = ButtonRow();
+            previewControls.Add(ActionButton("↶", () => RotatePreview(-20f), "preview-rotate-left"));
+            previewControls.Add(ActionButton("↷", () => RotatePreview(20f), "preview-rotate-right"));
+            var zoom = new Slider(T("menu.new_game.preview_zoom"), 2.2f, 5.2f)
+                { value = previewZoom, name = "preview-zoom" };
+            zoom.style.flexGrow = 1f;
+            zoom.RegisterValueChangedCallback(change => SetPreviewZoom(change.newValue));
+            previewControls.Add(zoom);
+            previewCard.Add(previewControls);
+            content.Add(previewCard);
+
+            appearanceParts = Card();
+            appearanceParts.name = "appearance-parts";
+            content.Add(appearanceParts);
+            CreateRulerPreview(previewImage);
+            RefreshAppearanceParts();
             AddMuted(T("menu.new_game.p4_note"));
             var row = ButtonRow();
+            row.Add(ActionButton(T("menu.new_game.randomize"), RandomizeRuler, "randomize-ruler-button"));
+            row.Add(ActionButton(T("menu.new_game.reset"), ResetRuler, "reset-ruler-button"));
             row.Add(ActionButton(T("menu.start"), () =>
             {
-                if (!long.TryParse(seed.value, out var value) || value <= 0)
-                {
-                    SetStatus(T("menu.new_game.seed_error"));
-                    return;
-                }
-                StartNewGame(value);
+                TryStartEditedNewGame();
             }, "start-new-game-button"));
             row.Add(ActionButton(T("menu.back"), ShowMain, "back-button"));
             content.Add(row);
@@ -135,6 +201,63 @@ namespace Game.Infrastructure
             NewGameLaunchState.Request(worldSeed);
             ShowLoading(T("menu.loading.new_game"));
             SceneManager.LoadScene("LocalGameplay", LoadSceneMode.Single);
+        }
+
+        public void StartNewGame(NewGameConfiguration configuration)
+        {
+            NewGameLaunchState.Request(configuration ?? throw new ArgumentNullException(nameof(configuration)));
+            ShowLoading(T("menu.loading.new_game"));
+            SceneManager.LoadScene("LocalGameplay", LoadSceneMode.Single);
+        }
+
+        public bool TryStartEditedNewGame()
+        {
+            try
+            {
+                if (!long.TryParse(rulerSeedField?.value, out var worldSeed) || worldSeed <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(worldSeed));
+                var profile = SelectedProfile();
+                rulerDraft = RulerCreationService.Create(worldSeed, rulerNameField.value, dynastyNameField.value,
+                    profile.Id, appearanceCatalog);
+                StartNewGame(rulerDraft.ToConfiguration());
+                return true;
+            }
+            catch (Exception exception) when (exception is ArgumentException || exception is InvalidOperationException)
+            {
+                SetStatus(T("menu.new_game.editor_error"));
+                return false;
+            }
+        }
+
+        public void RandomizeRuler()
+        {
+            if (!long.TryParse(rulerSeedField?.value, out var seed) || seed <= 0)
+            {
+                SetStatus(T("menu.new_game.seed_error"));
+                return;
+            }
+            rulerDraft = RulerCreationService.Randomize(seed, rulerRandomSequence++, appearanceCatalog);
+            ApplyDraftToEditor();
+        }
+
+        public void ResetRuler()
+        {
+            if (!long.TryParse(rulerSeedField?.value, out var seed) || seed <= 0) seed = suggestedSeed;
+            rulerRandomSequence = 0;
+            rulerDraft = RulerCreationService.CreateDefault(seed, appearanceCatalog);
+            ApplyDraftToEditor();
+        }
+
+        public void RotatePreview(float degrees)
+        {
+            previewYaw = Mathf.Repeat(previewYaw + degrees, 360f);
+            if (previewCharacter != null) previewCharacter.transform.rotation = Quaternion.Euler(0f, previewYaw, 0f);
+        }
+
+        public void SetPreviewZoom(float distance)
+        {
+            previewZoom = Mathf.Clamp(distance, 2.2f, 5.2f);
+            if (previewCamera != null) previewCamera.transform.position = new Vector3(1000f, 1.05f, -previewZoom);
         }
 
         public void OpenLoad()
@@ -324,6 +447,126 @@ namespace Game.Infrastructure
             content.Add(field);
         }
 
+        private void ApplyDraftToEditor()
+        {
+            rulerSeedField.value = rulerDraft.WorldSeed.ToString();
+            rulerNameField.value = rulerDraft.RulerName;
+            dynastyNameField.value = rulerDraft.DynastyName;
+            appearanceProfileField.SetValueWithoutNotify(ProfileLabel(rulerDraft.Profile));
+            RebuildPreviewCharacter(rulerDraft.Profile);
+            RefreshAppearanceParts();
+            SetStatus(string.Empty);
+        }
+
+        private void ApplyProfile(AppearanceProfileDefinition profile)
+        {
+            RebuildPreviewCharacter(profile);
+            RefreshAppearanceParts();
+        }
+
+        private AppearanceProfileDefinition SelectedProfile()
+        {
+            var label = appearanceProfileField?.value;
+            return appearanceCatalog.Profiles.FirstOrDefault(x => ProfileLabel(x) == label) ??
+                   appearanceCatalog.DefaultFor(CharacterSex.Male);
+        }
+
+        private static string ProfileLabel(AppearanceProfileDefinition profile) =>
+            profile.Id == StoneAgeAppearanceProfiles.AdultA
+                ? "Взрослый A — мужчина"
+                : "Взрослая B — женщина";
+
+        private void RefreshAppearanceParts()
+        {
+            if (appearanceParts == null) return;
+            appearanceParts.Clear();
+            var profile = SelectedProfile();
+            AddLine(appearanceParts, T("menu.new_game.integrated_profile"));
+            AddLine(appearanceParts, T("menu.new_game.body") + ": " + profile.BodyId.Value);
+            AddLine(appearanceParts, T("menu.new_game.face") + ": " + profile.FaceId.Value);
+            AddLine(appearanceParts, T("menu.new_game.skin") + ": " + profile.SkinId.Value);
+            AddLine(appearanceParts, T("menu.new_game.hair") + ": " + profile.HairId.Value);
+            AddLine(appearanceParts, T("menu.new_game.beard") + ": " + profile.BeardId.Value);
+            AddLine(appearanceParts, T("menu.new_game.hair_color") + ": " + profile.HairColorId.Value);
+            AddLine(appearanceParts, T("menu.new_game.clothing") + ": " + profile.ClothingId.Value);
+        }
+
+        private void CreateRulerPreview(Image image)
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                image.tooltip = T("menu.new_game.preview_headless");
+                return;
+            }
+            previewTexture = new RenderTexture(512, 512, 24, RenderTextureFormat.ARGB32)
+            {
+                name = "P4 Ruler Preview"
+            };
+            previewTexture.Create();
+            image.image = previewTexture;
+
+            previewRoot = new GameObject("P4 Ruler Preview Root");
+            DontDestroyOnLoad(previewRoot);
+            var cameraObject = new GameObject("P4 Ruler Preview Camera");
+            cameraObject.transform.SetParent(previewRoot.transform, false);
+            previewCamera = cameraObject.AddComponent<Camera>();
+            previewCamera.targetTexture = previewTexture;
+            previewCamera.clearFlags = CameraClearFlags.SolidColor;
+            previewCamera.backgroundColor = new Color(0.035f, 0.05f, 0.035f, 1f);
+            previewCamera.cullingMask = 1 << 31;
+            previewCamera.fieldOfView = 32f;
+            SetPreviewZoom(previewZoom);
+            previewCamera.transform.LookAt(new Vector3(1000f, 1.05f, 0f));
+
+            var lightObject = new GameObject("P4 Ruler Preview Light");
+            lightObject.layer = 31;
+            lightObject.transform.SetParent(previewRoot.transform, false);
+            lightObject.transform.position = new Vector3(998.5f, 3.5f, -2f);
+            lightObject.transform.LookAt(new Vector3(1000f, 1f, 0f));
+            var previewLight = lightObject.AddComponent<Light>();
+            previewLight.type = LightType.Directional;
+            previewLight.intensity = 1.5f;
+            previewLight.cullingMask = 1 << 31;
+            RebuildPreviewCharacter(SelectedProfile());
+        }
+
+        private void RebuildPreviewCharacter(AppearanceProfileDefinition profile)
+        {
+            if (previewRoot == null) return;
+            if (previewCharacter != null) Destroy(previewCharacter);
+            var appearance = profile.CreateState(rulerDraft.Appearance.CharacterId);
+            var prefab = characterCatalog.Resolve(profile.Sex, appearance, out _);
+            previewCharacter = Instantiate(prefab, new Vector3(1000f, 0f, 0f),
+                Quaternion.Euler(0f, previewYaw, 0f), previewRoot.transform);
+            previewCharacter.name = "P4 Ruler Preview " + profile.Id.Value;
+            SetLayerRecursively(previewCharacter, 31);
+            foreach (var behaviour in previewCharacter.GetComponentsInChildren<MonoBehaviour>(true))
+                behaviour.enabled = false;
+        }
+
+        private static void SetLayerRecursively(GameObject value, int layer)
+        {
+            value.layer = layer;
+            for (var i = 0; i < value.transform.childCount; i++)
+                SetLayerRecursively(value.transform.GetChild(i).gameObject, layer);
+        }
+
+        private void DisposeRulerPreview()
+        {
+            if (previewRoot != null) Destroy(previewRoot);
+            previewRoot = null;
+            previewCharacter = null;
+            previewCamera = null;
+            if (previewTexture != null)
+            {
+                previewTexture.Release();
+                Destroy(previewTexture);
+            }
+            previewTexture = null;
+        }
+
+        private void OnDestroy() => DisposeRulerPreview();
+
         private void AddSlider(string label, float low, float high, float value, Action<float> set)
         {
             var slider = new Slider(label, low, high) { value = value };
@@ -386,6 +629,7 @@ namespace Game.Infrastructure
 
         private void ShowLoading(string message)
         {
+            DisposeRulerPreview();
             content.Clear();
             AddHeading(T("menu.loading"), 34);
             AddLine(message);

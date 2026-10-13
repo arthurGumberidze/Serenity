@@ -13,7 +13,23 @@ MonoBehaviour:
   m_Name: CharacterPresentationCatalog
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Characters.CharacterPresentationCatalog
   entries:
-  - Sex: 1
+  - ProfileId: hodaart_adult_a
+    Sex: 1
+    BodyId: hodaart_a_body
+    FaceId: hodaart_a_face
+    SkinId: hodaart_a_skin
+    HairId: hodaart_a_hair
+    BeardId: hodaart_a_beard
+    HairColorId: hodaart_a_hair_color
+    ClothingId: hodaart_a_stone_age_clothing
     Prefab: {fileID: 3781896792343893160, guid: b86154e7fac3f1447a471960cf6eedce, type: 3}
-  - Sex: 2
+  - ProfileId: hodaart_adult_b
+    Sex: 2
+    BodyId: hodaart_b_body
+    FaceId: hodaart_b_face
+    SkinId: hodaart_b_skin
+    HairId: hodaart_b_hair
+    BeardId: none
+    HairColorId: hodaart_b_hair_color
+    ClothingId: hodaart_b_stone_age_clothing
     Prefab: {fileID: 6667813782548362799, guid: c8c59b0e267550e4a8af27a739d91a01, type: 3}

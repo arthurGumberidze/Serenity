@@ -4,6 +4,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using Game.Presentation.Characters;
 
 namespace Game.Infrastructure.Editor
 {
@@ -21,11 +22,16 @@ namespace Game.Infrastructure.Editor
                 throw new FileNotFoundException("Local gameplay scene is required.", U05LocalSceneBuilder.ScenePath);
             if (!File.Exists(U25GlobalMapSceneBuilder.ScenePath))
                 throw new FileNotFoundException("Global map scene is required.", U25GlobalMapSceneBuilder.ScenePath);
+            var characterCatalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(
+                U05LocalSceneBuilder.CharacterCatalogPath);
+            if (characterCatalog == null)
+                throw new FileNotFoundException("Character presentation catalog is required.",
+                    U05LocalSceneBuilder.CharacterCatalogPath);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "MainMenu";
             var menuObject = new GameObject("Main Menu");
-            menuObject.AddComponent<MainMenuController>().Configure(actions);
+            menuObject.AddComponent<MainMenuController>().Configure(actions, characterCatalog);
 
             var cameraObject = new GameObject("Menu Camera");
             cameraObject.tag = "MainCamera";
