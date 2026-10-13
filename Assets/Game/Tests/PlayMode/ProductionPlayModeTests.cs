@@ -34,7 +34,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root, Is.Not.Null);
             Assert.That(root.Production, Is.Not.Null);
             Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(5));
-            Assert.That(root.Production.Sites.Count, Is.EqualTo(4));
+            Assert.That(root.Production.Sites.Count, Is.GreaterThanOrEqualTo(4),
+                "The reference camp has at least the original sources; P5 may add authored regional sources.");
             Assert.That(root.DemoCropPlotBuilding, Is.Null);
 
             var initialRemaining = root.Production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource)

@@ -62,6 +62,8 @@ namespace Game.Presentation.UI
         private VisualElement statusBar;
         private VisualElement tpsHud;
         private VisualElement modal;
+        private VisualElement onboardingCard;
+        private Button onboardingToggleButton;
         private Label resourcesLabel;
         private Label dateLabel;
         private Label weatherLabel;
@@ -100,6 +102,7 @@ namespace Game.Presentation.UI
         private int knownPendingEventCount;
         private ulong knownCampaignEventSequence;
         private bool suppressNotificationCaptureOnce;
+        private readonly FirstHourOnboardingProgress onboarding = new FirstHourOnboardingProgress();
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -108,6 +111,9 @@ namespace Game.Presentation.UI
         public IReadOnlyList<string> Notifications => notificationFeed.AsReadOnly();
         public string Locale => RussianTextCatalog.Locale;
         public float UiScale => panelSettings?.scale ?? 1f;
+        public bool OnboardingVisible => onboarding.Visible;
+        public FirstHourStage OnboardingStage => onboarding.CurrentStage;
+        public int OnboardingCompletedCount => onboarding.CompletedCount;
 
         public void SetUiScale(float value)
         {
@@ -148,6 +154,8 @@ namespace Game.Presentation.UI
                 point.y >= Screen.height - 372f) return true;
             if (notifications.resolvedStyle.display != DisplayStyle.None && point.x >= Screen.width - 392f &&
                 point.y >= 80f && point.y <= 260f) return true;
+            if (onboarding.Visible && point.x >= 724f && point.x <= 1176f && point.y >= 84f && point.y <= 330f)
+                return true;
             return modal.resolvedStyle.display != DisplayStyle.None;
         }
 
@@ -155,7 +163,13 @@ namespace Game.Presentation.UI
         {
             activePanel = activePanel == panel ? GameplayPanel.None : panel;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
-            RefreshPanel();
+            RefreshNow();
+        }
+
+        public void SetOnboardingVisible(bool visible)
+        {
+            onboarding.SetVisible(visible);
+            RefreshOnboarding();
         }
 
         public void SetDeveloperUiVisible(bool visible)
@@ -172,7 +186,9 @@ namespace Game.Presentation.UI
         public void RefreshNow()
         {
             if (context == null || root == null) return;
+            ObserveOnboardingSignals();
             RefreshHud();
+            RefreshOnboarding();
             CaptureNotifications();
             RefreshNotifications();
             RefreshInspector();
@@ -388,6 +404,9 @@ namespace Game.Presentation.UI
             navigation.style.backgroundColor = PanelColor;
             navigation.style.paddingTop = 8; navigation.style.paddingLeft = 8; navigation.style.paddingRight = 8;
             navigation.pickingMode = PickingMode.Position;
+            onboardingToggleButton = ActionButton(T("ui.onboarding.hide"),
+                () => SetOnboardingVisible(!onboarding.Visible), "onboarding-toggle");
+            navigation.Add(onboardingToggleButton);
             AddNavigation(T("ui.nav.build"), GameplayPanel.Build);
             AddNavigation(T("ui.nav.settlement"), GameplayPanel.Economy);
             AddNavigation(T("ui.nav.research"), GameplayPanel.Research);
@@ -398,6 +417,18 @@ namespace Game.Presentation.UI
             AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global);
             if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events);
             root.Add(navigation);
+
+            onboardingCard = Panel("onboarding-card");
+            onboardingCard.style.position = Position.Absolute;
+            onboardingCard.style.left = 724; onboardingCard.style.top = 84; onboardingCard.style.width = 452;
+            onboardingCard.style.maxHeight = 246;
+            onboardingCard.style.paddingLeft = 14; onboardingCard.style.paddingRight = 14;
+            onboardingCard.style.paddingTop = 12; onboardingCard.style.paddingBottom = 12;
+            onboardingCard.style.backgroundColor = new Color(0.09f, 0.105f, 0.07f, 0.97f);
+            onboardingCard.style.borderLeftColor = AccentColor;
+            onboardingCard.style.borderLeftWidth = 3;
+            onboardingCard.pickingMode = PickingMode.Position;
+            root.Add(onboardingCard);
 
             mainPanel = new ScrollView(ScrollViewMode.Vertical) { name = "main-panel" };
             StylePanel(mainPanel);
@@ -468,10 +499,149 @@ namespace Game.Presentation.UI
             root.Add(modal);
         }
 
+        private void ObserveOnboardingSignals()
+        {
+            var berries = new ResourceId("berries");
+            var shelter = context.Buildings.All.Any(x => x.DefinitionId == new BuildingDefinitionId("primitive_shelter") &&
+                                                          x.IsOperational);
+            var storage = context.Buildings.All.Any(x => x.DefinitionId == new BuildingDefinitionId("storage_basket") &&
+                                                          x.IsOperational && context.Inventories.TryGet(
+                                                              new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
+            var researchStarted = context.Research.ActiveProject != null || context.Research.CompletedTechnologies.Any(x =>
+                x.ToString() != "basic_survival" && x.ToString() != "gathering");
+            var dangerHandled = (context.Events?.History.Count ?? 0) > 0 ||
+                                context.Health.Conditions.Any(x => x.State != HealthConditionState.Recovered) ||
+                                context.Battles.Battles.Any(x => x.BattleHistory.Count > 0);
+            var scoutingStarted = context.Campaign?.State.RivalDiscovered == true || context.GlobalMap.Travels.Any(x =>
+                context.Military.TryGet(x.UnitId, out var unit) && unit.OwnerSideId.Value == "player");
+            onboarding.Observe(new FirstHourSignals(
+                context.Selection.SelectedCharacterIds.Count > 0,
+                context.Work.Jobs.Count > 0,
+                activePanel == GameplayPanel.Economy,
+                shelter,
+                storage,
+                TotalResource(berries) > 0,
+                context.Production.GetProducedTotal(berries) > 0,
+                researchStarted,
+                dangerHandled,
+                scoutingStarted));
+        }
+
+        private void RefreshOnboarding()
+        {
+            if (onboardingCard == null || onboardingToggleButton == null) return;
+            onboardingToggleButton.text = T(onboarding.Visible ? "ui.onboarding.hide" : "ui.onboarding.show");
+            onboardingCard.style.display = onboarding.Visible ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!onboarding.Visible) return;
+
+            onboardingCard.Clear();
+            var stage = onboarding.CurrentStage;
+            AddTitle(onboardingCard, F("ui.onboarding.progress", onboarding.CompletedCount, onboarding.StepCount));
+            AddMuted(onboardingCard, T("ui.onboarding.route"));
+            AddSection(onboardingCard, T(OnboardingKey(stage, "title")));
+            AddLine(onboardingCard, T(OnboardingKey(stage, "body")));
+            var reason = OnboardingReason(stage);
+            if (!string.IsNullOrEmpty(reason)) AddMuted(onboardingCard, F("ui.onboarding.reason", reason));
+            var row = Row();
+            if (stage != FirstHourStage.Complete)
+                row.Add(ActionButton(T(OnboardingKey(stage, "action")), PerformOnboardingAction,
+                    "onboarding-primary"));
+            row.Add(ActionButton(T("ui.onboarding.hide"), () => SetOnboardingVisible(false), "onboarding-hide"));
+            onboardingCard.Add(row);
+        }
+
+        private void PerformOnboardingAction()
+        {
+            switch (onboarding.CurrentStage)
+            {
+                case FirstHourStage.InspectGroup:
+                    SetStatus(T("ui.onboarding.inspect.action_hint"));
+                    break;
+                case FirstHourStage.AssignWork:
+                    OpenPanel(GameplayPanel.Work);
+                    break;
+                case FirstHourStage.InspectShelterAndStorage:
+                case FirstHourStage.SecureFood:
+                    OpenPanel(GameplayPanel.Economy);
+                    break;
+                case FirstHourStage.StartResearch:
+                    OpenPanel(GameplayPanel.Research);
+                    break;
+                case FirstHourStage.ResolveEventOrDanger:
+                    OpenPanel(GameplayPanel.Events);
+                    break;
+                case FirstHourStage.BeginScouting:
+                    var playerUnit = context.Military.Units.FirstOrDefault(x => x.OwnerSideId.Value == "player");
+                    OpenPanel(playerUnit == null || playerUnit.Representation != MilitaryUnitRepresentationMode.Aggregate
+                        ? GameplayPanel.Military
+                        : GameplayPanel.Global);
+                    break;
+            }
+        }
+
+        private void OpenPanel(GameplayPanel panel)
+        {
+            activePanel = panel;
+            mainPanel.style.display = DisplayStyle.Flex;
+            RefreshNow();
+        }
+
+        private string OnboardingReason(FirstHourStage stage)
+        {
+            switch (stage)
+            {
+                case FirstHourStage.InspectGroup:
+                    return T("ui.onboarding.inspect.reason");
+                case FirstHourStage.AssignWork:
+                    if (context.Selection.SelectedCharacterIds.Count == 0) return T("ui.work.need_selection");
+                    if (context.Work.Groups.Count == 0) return T("ui.onboarding.work.create_group");
+                    return T("ui.onboarding.work.issue_job");
+                case FirstHourStage.InspectShelterAndStorage:
+                    return T("ui.onboarding.shelter.reason");
+                case FirstHourStage.SecureFood:
+                    if (TotalResource(new ResourceId("berries")) == 0) return T("ui.onboarding.food.empty");
+                    return T("ui.onboarding.food.produce");
+                case FirstHourStage.StartResearch:
+                    return context.Selection.SelectedCharacterIds.Count == 0
+                        ? T("ui.onboarding.research.select")
+                        : T("ui.onboarding.research.start");
+                case FirstHourStage.ResolveEventOrDanger:
+                    return (context.Events?.PendingPlayerEvents.Count ?? 0) > 0
+                        ? T("ui.onboarding.event.pending")
+                        : T("ui.onboarding.event.wait");
+                case FirstHourStage.BeginScouting:
+                    var unit = context.Military.Units.FirstOrDefault(x => x.OwnerSideId.Value == "player");
+                    if (unit == null) return T("ui.onboarding.scout.create_unit");
+                    if (unit.Representation != MilitaryUnitRepresentationMode.Aggregate)
+                        return T("ui.onboarding.scout.aggregate");
+                    if (context.GlobalMap.Mode == GameWorldMode.Local) return T("ui.onboarding.scout.open_map");
+                    return T("ui.onboarding.scout.travel");
+                default:
+                    return T("ui.onboarding.complete.reason");
+            }
+        }
+
+        private static string OnboardingKey(FirstHourStage stage, string suffix)
+        {
+            string name;
+            switch (stage)
+            {
+                case FirstHourStage.InspectGroup: name = "inspect"; break;
+                case FirstHourStage.AssignWork: name = "work"; break;
+                case FirstHourStage.InspectShelterAndStorage: name = "shelter"; break;
+                case FirstHourStage.SecureFood: name = "food"; break;
+                case FirstHourStage.StartResearch: name = "research"; break;
+                case FirstHourStage.ResolveEventOrDanger: name = "event"; break;
+                case FirstHourStage.BeginScouting: name = "scout"; break;
+                default: name = "complete"; break;
+            }
+            return "ui.onboarding." + name + "." + suffix;
+        }
+
         private void RefreshHud()
         {
             var clock = context.Clock();
-            var alive = context.Characters.CountAlive();
+            var alive = PlayerAliveCount();
             resourcesLabel.text = F("ui.hud.population", alive) + "   " + string.Join("   ", context.Resources.All
                 .Where(x => x.Id.ToString() == "berries" || x.Id.ToString() == "wood_log" ||
                             x.Id.ToString() == "stone" || x.Id.ToString() == "plant_fiber" || x.Id.ToString() == "hide")
@@ -564,6 +734,27 @@ namespace Game.Presentation.UI
         private void DrawEconomyPanel()
         {
             AddTitle(mainPanel, T("ui.economy.title"));
+            var shelterReady = context.Buildings.All.Any(x =>
+                x.DefinitionId == new BuildingDefinitionId("primitive_shelter") && x.IsOperational);
+            var storageReady = context.Buildings.All.Any(x =>
+                x.DefinitionId == new BuildingDefinitionId("storage_basket") && x.IsOperational &&
+                context.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
+            var playerIds = PlayerCharacterIds();
+            var population = playerIds.Count(id => context.Characters.TryGet(id, out var person) &&
+                                                   person.LifeState == CharacterLifeState.Alive);
+            var berryUnits = TotalResource(new ResourceId("berries"));
+            var foodDays = population == 0 ? 0d : berryUnits * context.Production.Settings.FoodTicksPerPersonUnit.TotalDays / population;
+            AddSection(mainPanel, T("ui.economy.overview"));
+            AddLine(mainPanel, F("ui.economy.ruler_population", CharacterName(context.Dynasty.CurrentMonarchId), population));
+            AddLine(mainPanel, F("ui.economy.camp_ready", T(shelterReady ? "ui.economy.ready" : "ui.economy.missing"),
+                T(storageReady ? "ui.economy.ready" : "ui.economy.missing")));
+            AddLine(mainPanel, F("ui.economy.food_days", berryUnits, RussianTextCatalog.Decimal(foodDays, "0.#")));
+            if (foodDays < 5d) AddMuted(mainPanel, T("ui.economy.food_warning"));
+            AddSection(mainPanel, T("ui.economy.starting_group"));
+            foreach (var person in playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)
+                         .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(10))
+                AddLine(mainPanel, F("ui.economy.person", RussianTextCatalog.PersonName(person.Name.DisplayName),
+                    person.AgeInCompletedYears(context.Clock().State.BiologicalTicks), ProfessionName(person.ProfessionId?.ToString())));
             var storage = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray();
             AddLine(mainPanel, F("ui.economy.storage", storage.Sum(x => x.TotalUnits), storage.Sum(x => x.Capacity)));
             foreach (var definition in context.Resources.All)
@@ -641,11 +832,16 @@ namespace Game.Presentation.UI
                 })));
             }
             var workerRow = Row();
-            workerRow.Add(ActionButton(T("ui.research.assign"), () => TryCommand(() =>
-                SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds))))));
-            workerRow.Add(ActionButton(T("ui.research.remove"), () => TryCommand(() =>
-                SetStatus(F("ui.research.removed_count", context.Research.UnassignWorkers(context.Selection.SelectedCharacterIds))))));
+            var assign = ActionButton(T("ui.research.assign"), () => TryCommand(() =>
+                SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds)))));
+            var remove = ActionButton(T("ui.research.remove"), () => TryCommand(() =>
+                SetStatus(F("ui.research.removed_count", context.Research.UnassignWorkers(context.Selection.SelectedCharacterIds)))));
+            assign.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
+            remove.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
+            workerRow.Add(assign);
+            workerRow.Add(remove);
             mainPanel.Add(workerRow);
+            if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.research.need_selection"));
             foreach (var technology in context.Research.Catalog.All)
             {
                 var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
@@ -679,12 +875,15 @@ namespace Game.Presentation.UI
                 });
                 mainPanel.Add(button);
             }
-            mainPanel.Add(ActionButton(T("ui.work.create"), () => TryCommand(() =>
+            var createGroup = ActionButton(T("ui.work.create"), () => TryCommand(() =>
             {
                 if (context.Selection.SelectedCharacterIds.Count == 0) throw PlayerError("ui.work.need_selection");
                 selectedGroup = context.Work.CreateGroup(F("ui.work.default_name", context.Work.Groups.Count + 1),
                     context.Selection.SelectedCharacterIds).Id;
-            })));
+            }));
+            createGroup.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
+            mainPanel.Add(createGroup);
+            if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.work.need_selection"));
             if (!selectedGroup.HasValue || !context.Work.Groups.TryGet(selectedGroup.Value, out var current))
             {
                 AddMuted(mainPanel, T("ui.work.select_group"));
@@ -759,7 +958,13 @@ namespace Game.Presentation.UI
         private void DrawMilitaryPanel()
         {
             AddTitle(mainPanel, T("ui.military.title"));
-            mainPanel.Add(ActionButton(T("ui.military.create"), () => TryCommand(CreatePlayerUnit)));
+            var hasSelectedCharacters = context.Selection.SelectedCharacterIds.Count > 0;
+            var hasCaptain = context.Selection.SelectedCharacterIds.Any(id => context.Health.GetCapabilities(id).CanFight);
+            var createUnit = ActionButton(T("ui.military.create"), () => TryCommand(CreatePlayerUnit));
+            createUnit.SetEnabled(hasSelectedCharacters && hasCaptain);
+            mainPanel.Add(createUnit);
+            if (!hasSelectedCharacters) AddMuted(mainPanel, T("ui.military.need_characters"));
+            else if (!hasCaptain) AddMuted(mainPanel, T("ui.military.no_captain"));
             var index = 1;
             foreach (var unit in context.Military.Units)
             {
@@ -895,6 +1100,7 @@ namespace Game.Presentation.UI
                 if (!result.Issued) throw new PlayerFacingException(TravelReason(result.Status));
                 AddNotification(F("ui.map.departed", LocationName(selectedLocation.Value)));
             }));
+            travelButton.SetEnabled(selectedUnit.HasValue && selectedLocation.HasValue);
             actions.Add(travelButton);
             actions.Add(ActionButton(T("ui.map.enter_location"), () => TryCommand(() =>
             {
@@ -902,6 +1108,8 @@ namespace Game.Presentation.UI
                 context.RequestEnterLocation(selectedLocation.Value);
             })));
             mainPanel.Add(actions);
+            if (!selectedUnit.HasValue || !selectedLocation.HasValue)
+                AddMuted(mainPanel, T("ui.map.need_unit_destination"));
             AddSection(mainPanel, T("ui.map.battles"));
             foreach (var battle in context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active))
             {
@@ -960,6 +1168,10 @@ namespace Game.Presentation.UI
             AddLine(inspector, F("ui.character.profession", ProfessionName(character.ProfessionId?.ToString())));
             AddLine(inspector, F("ui.character.health", capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("common.active"),
                 Percent(capabilities.WorkPerThousand), Percent(capabilities.ResearchPerThousand)));
+            if (context.AiAgents.TryGet(id, out var agent))
+                AddLine(inspector, F("ui.character.needs", RussianTextCatalog.Percent(agent.Needs.Hunger),
+                    RussianTextCatalog.Percent(agent.Needs.Energy), E(agent.CurrentAction), E(agent.Phase)));
+            else AddMuted(inspector, T("ui.character.offcamera"));
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
                 x.State != HealthConditionState.Recovered).ToArray();
             AddLine(inspector, F("ui.character.conditions", conditions.Length == 0 ? T("common.none") : string.Join(", ", conditions.Select(x =>
@@ -1040,8 +1252,8 @@ namespace Game.Presentation.UI
         private void CaptureNotifications()
         {
             var researchCount = context.Research.CompletedTechnologies.Count;
-            var characterCount = context.Characters.Count;
-            var aliveCount = context.Characters.CountAlive();
+            var characterCount = PlayerCharacterIds().Count;
+            var aliveCount = PlayerAliveCount();
             var dynastyCount = context.Dynasty.History.Count;
             var conditionCount = context.Health.Conditions.Count;
             var buildingHistory = context.Buildings.All.Sum(x => x.History.Count);
@@ -1217,6 +1429,15 @@ namespace Game.Presentation.UI
             foreach (var inventory in context.Inventories.All) total = checked(total + inventory.GetAmount(id).Units);
             return total;
         }
+
+        private IReadOnlyList<StableEntityId> PlayerCharacterIds()
+        {
+            var configured = context.PlayerCharacterIds();
+            return configured.Count > 0 ? configured : context.Characters.GetAll().Select(x => x.Id).ToArray();
+        }
+
+        private int PlayerAliveCount() => PlayerCharacterIds().Count(id =>
+            context.Characters.TryGet(id, out var character) && character.LifeState == CharacterLifeState.Alive);
 
         private string BuildingLockReason(BuildingDefinitionId id)
         {

@@ -178,6 +178,7 @@ namespace Game.Infrastructure
         public U31PlayerSmokeController PlayerSmoke { get; private set; }
         public P3PlayerSmokeController P3PlayerSmoke { get; private set; }
         public P5PlayerSmokeController P5PlayerSmoke { get; private set; }
+        public P6PlayerSmokeController P6PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -458,7 +459,8 @@ namespace Game.Infrastructure
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
-                    Events, CampaignProgress, StartNewGame, ReturnToMainMenu),
+                    Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
+                    () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray()),
                 pointerRaycaster, input);
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
@@ -488,6 +490,7 @@ namespace Game.Infrastructure
             PlayerSmoke = U31PlayerSmokeController.AttachIfRequested(this);
             P3PlayerSmoke = P3PlayerSmokeController.AttachIfRequested(this);
             P5PlayerSmoke = P5PlayerSmokeController.AttachIfRequested(this);
+            P6PlayerSmoke = P6PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

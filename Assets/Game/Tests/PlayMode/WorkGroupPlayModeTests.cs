@@ -243,10 +243,11 @@ namespace Game.Tests.PlayMode
                     arrivalPositions.Add(job.AssigneeId.Value,
                         root.DemoPresenters.Single(x => x.CharacterId == job.AssigneeId.Value).transform.position);
             Assert.That(result.Jobs.All(x => x.Status == WorkJobStatus.Completed), Is.True);
+            Assert.That(root.DemoPresenters.Any(presenter =>
+                Vector3.Distance(start[presenter.CharacterId], presenter.transform.position) > 2f), Is.True,
+                "The formation command must cause meaningful group movement even when one member starts near a slot.");
             foreach (var presenter in root.DemoPresenters)
             {
-                Assert.That(Vector3.Distance(start[presenter.CharacterId], presenter.transform.position),
-                    Is.GreaterThan(2f));
                 Assert.That(Vector3.Distance(clickedTarget, arrivalPositions[presenter.CharacterId]),
                     Is.LessThan(2.5f));
             }
@@ -338,10 +339,17 @@ namespace Game.Tests.PlayMode
             var pile = root.DemoPilePresenters.OrderBy(x => x.PileId.ToString()).First();
             var source = new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId);
             var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage, root.DemoStorageBuilding.Id);
-            var initialTotal = root.Inventories.All.Sum(x => x.GetAmount(pile.ResourceId).Units);
-            var initialSource = root.Inventories.Get(source).GetAmount(pile.ResourceId).Units;
-            var initialStorage = root.Inventories.Get(destination).GetAmount(pile.ResourceId).Units;
-            var jobs = root.WorkDebug.AssignCurrentGroupHaul(source, destination, pile.ResourceId,
+            var resourceId = pile.ResourceId;
+            var sourceInventory = root.Inventories.Get(source);
+            var available = sourceInventory.GetAmount(resourceId).Units;
+            Assert.That(available, Is.GreaterThanOrEqualTo(2));
+            if (available > 2)
+                Assert.That(sourceInventory.TryRemove(resourceId, new ResourceQuantity(available - 2)), Is.True,
+                    "Leave only the two units reserved by manual jobs so ambient P5 workers cannot race this test.");
+            var initialTotal = root.Inventories.All.Sum(x => x.GetAmount(resourceId).Units);
+            var initialSource = sourceInventory.GetAmount(resourceId).Units;
+            var initialStorage = root.Inventories.Get(destination).GetAmount(resourceId).Units;
+            var jobs = root.WorkDebug.AssignCurrentGroupHaul(source, destination, resourceId,
                 new ResourceQuantity(1), WorkPriority.Urgent);
             Assert.That(jobs.Count, Is.EqualTo(2));
             root.AiRuntime.SetPaused(false);
@@ -349,9 +357,9 @@ namespace Game.Tests.PlayMode
             var timeout = Time.realtimeSinceStartup + 20f;
             while (Time.realtimeSinceStartup < timeout && jobs.Any(x => !x.IsTerminal)) yield return null;
             Assert.That(jobs.All(x => x.Status == WorkJobStatus.Completed), Is.True);
-            Assert.That(root.Inventories.Get(source).GetAmount(pile.ResourceId).Units, Is.EqualTo(initialSource - 2));
-            Assert.That(root.Inventories.Get(destination).GetAmount(pile.ResourceId).Units, Is.EqualTo(initialStorage + 2));
-            Assert.That(root.Inventories.All.Sum(x => x.GetAmount(pile.ResourceId).Units), Is.EqualTo(initialTotal));
+            Assert.That(root.Inventories.Get(source).GetAmount(resourceId).Units, Is.EqualTo(initialSource - 2));
+            Assert.That(root.Inventories.Get(destination).GetAmount(resourceId).Units, Is.EqualTo(initialStorage + 2));
+            Assert.That(root.Inventories.All.Sum(x => x.GetAmount(resourceId).Units), Is.EqualTo(initialTotal));
             Assert.That(jobs.All(x => x.ClaimState == WorkClaimState.Released), Is.True);
 
             timeout = Time.realtimeSinceStartup + 5f;

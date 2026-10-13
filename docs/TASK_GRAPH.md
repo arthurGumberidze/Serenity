@@ -19,7 +19,7 @@ Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a
 | P3 | DONE | Эталонная сцена и арт-производство | P2 | Реальный Player содержит проверенный эталон лагеря/персонажей; направление обратимо, финальная визуальная приёмка пользователем остаётся открытой до P8. |
 | P4 | DONE | Создание и внешность героя | P3 | Герой/династия/AppearanceState сохраняются и одинаково отображаются после переходов и Save/Load. |
 | P5 | DONE | Обитаемый регион | P3,P4 | Связный читаемый Stone Age регион без обязательных кубов. |
-| P6 | TODO | Понятный первый час | P2,P5 | Новый игрок проходит начальный цикл и понимает причины остановки действий. |
+| P6 | DONE | Понятный первый час | P2,P5 | Опциональный маршрут проходит реальные Work/Production/Research/Event/Military/Map команды, объясняет блокировки и сохраняет P4/P5 identity; ручная UX-приёмка пользователя остаётся открытой до P8. |
 | P7 | TODO | Полный каменный век | P4,P5,P6 | Связный маршрут до войны/наследования, включая утверждённое занятие пустого поселения. |
 | P8 | TODO | Масштаб и выпуск | P7,U29,U30,U31 | Финальная матрица/soak/gates и отдельная визуальная/UX приёмка. |
 
@@ -70,6 +70,8 @@ Diagnostic follow-up (2026-10-12): `Tools/Run-U29-Diagnostic.cmd` now provides a
 | U38 | TODO | Эпохи после каменного века | U16,U31 | POST | Следующая эпоха не ломает save/data schemas. |
 
 Product sequencing note (2026-10-13): by explicit user decision, `PRODUCT_ROADMAP_RU.md` directions P1–P7 execute sequentially before final U29/U30/U31 qualification. This does not change the statuses or relax the gates above. P8 performs final profiling, history/native-memory closure, the complete U29 matrix, continuous-process endurance, a fresh segmented eight-hour U30 and U31 finalization against the feature-complete first-era build. Each P direction runs in a separate Codex chat from committed predecessor state; no concurrent shared-checkout edits.
+
+Completion note (2026-10-13): P6 adds a dismissible seven-stage first-hour projection over existing canonical selection, work, shelter/storage, food production, research, event/danger and scouting evidence. Settlement and Character panels explain the starting group, food horizon, needs and current actions; blocked work/research/military/travel actions show a fix. P6 passed 3/3 focused EditMode, 2/2 focused headless PlayMode, 2/2 D3D11 PlayMode, 20/20 affected EditMode and 33/33 affected PlayMode; the Windows Development build and visible Player route passed with P4/P5 Save/Load identity intact. Manual usability acceptance remains open. P7 is next; U29/U30/U31 statuses are unchanged.
 
 Completion note (2026-10-06): U14 deterministic Tier 3 catch-up, keyed RNG, tier-path equivalence and 1,000/10,000-character scale coverage are complete. This historical note predates the U15 completion below.
 

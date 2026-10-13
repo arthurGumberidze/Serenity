@@ -480,3 +480,11 @@ Runtime binding is `P5 resource anchor -> deterministic player_source StableEnti
 Navigation and construction remain the existing `NavMeshSurface`, `BuildingPlacementService`, funding and research paths. Authored water is non-walkable, resource/obstacle wrappers retain colliders and clearings remain ordinary buildable ground. The local player/rival anchors bind by stable `WorldLocationId` to the existing six-location `GlobalMapService`; the schematic global view is a projection of that same model, not an alternate local map.
 
 Season presentation is `WeatherService -> WeatherPresentationController -> P5InhabitableRegionPresentation`. Renderer property blocks tint ground/routes, foliage and water and toggle snow coverage without mutating weather or save state. `P5PlayerSmokeController` exists only under `-p5Smoke`; it drives public production, research, building, manual movement, TPS, map and Save/Load paths and owns no gameplay truth.
+
+## P6 first-hour guidance boundary
+
+The onboarding flow is `canonical services + current UI observation -> FirstHourSignals -> FirstHourOnboardingProgress -> GameplayUiController card`. `FirstHourOnboardingProgress` is in-memory Presentation state only. Its completed-stage set and visible flag are neither canonical save data nor user preferences; hiding it cannot change or erase gameplay, and loading a world leaves all authority in the existing services.
+
+The card's primary actions navigate to existing Gameplay UI panels. Commands remain `GameplayUiController -> WorkManager / ProductionService / ResearchService / EventService / MilitaryUnitService / GlobalMapService`; the guide never invokes a hidden tutorial mutation. Settlement summary and Character needs are projections over Character/Dynasty, Building/Inventory, Production and Tier1 AI state. Disabled buttons pair availability with Russian remediation text.
+
+`P6PlayerSmokeController` exists only under `-p6Smoke`. It enters through the normal Main Menu/New Game route, drives the same canonical services, renders the real UI at each milestone, and validates P4 appearance plus P5 finite-source/map/travel identity through Save/Load. It is acceptance instrumentation, not a runtime gameplay owner.
