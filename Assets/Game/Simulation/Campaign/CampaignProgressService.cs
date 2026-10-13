@@ -4,6 +4,7 @@ using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Campaign;
 using Game.Domain.Combat;
+using Game.Domain.Dynasties;
 using Game.Domain.Military;
 using Game.Domain.World;
 using Game.Simulation.AI;
@@ -20,18 +21,23 @@ namespace Game.Simulation.Campaign
         private readonly MilitaryUnitService units;
         private readonly AiStrategicScheduler strategicAi;
         private readonly BattleResolutionService battles;
+        private readonly GameRunState playerGameRun;
+        private readonly AiFactionRuntime rivalFaction;
         private CampaignProgressSaveState state;
 
         public CampaignProgressService(NewGameConfiguration configuration, CombatSideId playerSideId,
             AiFactionRuntime rival, GlobalMapService globalMap, MilitaryUnitService militaryUnits,
-            AiStrategicScheduler scheduler, BattleResolutionService battleService, long initialTick)
+            AiStrategicScheduler scheduler, BattleResolutionService battleService, long initialTick,
+            GameRunState gameRunState = null)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             map = globalMap ?? throw new ArgumentNullException(nameof(globalMap));
             units = militaryUnits ?? throw new ArgumentNullException(nameof(militaryUnits));
             strategicAi = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             battles = battleService ?? throw new ArgumentNullException(nameof(battleService));
+            playerGameRun = gameRunState;
             if (rival == null) throw new ArgumentNullException(nameof(rival));
+            rivalFaction = rival;
             state = new CampaignProgressSaveState(configuration.WorldSeed, configuration.ConfigurationId,
                 playerSideId, rival.Strategic.Id, rival.Strategic.HomeSettlementId,
                 configuration.RivalKnownAtStart, configuration.RivalKnownAtStart ? initialTick : (long?)null,
@@ -46,20 +52,27 @@ namespace Game.Simulation.Campaign
             if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
             if (!state.RivalDiscovered && HasCanonicalContact()) MarkDiscovered(calendarTick);
             TryCaptureAfterPlayerVictory(calendarTick);
+            if (!rivalFaction.Strategic.IsDefeated &&
+                StateDefeatRule.IsDefeated(map, rivalFaction.Strategic.SideId))
+                rivalFaction.Strategic.MarkDefeated(AiDefeatReason.NoControlledSettlement);
             var rival = strategicAi.Factions.Single(x => x.Strategic.Id == state.RivalStateId);
             if (!state.MilitaryVictory && rival.Strategic.IsDefeated &&
                 rival.Strategic.DefeatReason == AiDefeatReason.NoControlledSettlement)
             {
                 var battle = FindPlayerVictoryBattle();
-                if (battle != null)
+                var occupation = FindPlayerOccupationVictory();
+                if (battle != null || occupation != null)
                 {
                     if (!state.RivalDiscovered) MarkDiscovered(calendarTick);
                     state = new CampaignProgressSaveState(state.WorldSeed, state.ConfigurationId, state.PlayerSideId,
                         state.RivalStateId, state.RivalHomeSettlementId, true, state.DiscoveredTick, true,
-                        calendarTick, state.RivalStateId, state.RivalHomeSettlementId, battle.BattleId,
-                        state.EventSequence + 1);
+                        calendarTick, state.RivalStateId, state.RivalHomeSettlementId, battle?.BattleId,
+                        state.EventSequence + 1, occupation?.OccupationId);
                 }
             }
+            if (playerGameRun != null && playerGameRun.Status == GameRunStatus.Running &&
+                StateDefeatRule.IsDefeated(map, state.PlayerSideId))
+                playerGameRun.End(GameOverReason.NoControlledSettlement);
         }
 
         public CampaignProgressSaveState CaptureState() => state;
@@ -90,6 +103,7 @@ namespace Game.Simulation.Campaign
             Add(ref hash, state.RivalHomeSettlementId.ToString()); Add(ref hash, state.RivalDiscovered ? "1" : "0");
             Add(ref hash, state.DiscoveredTick?.ToString() ?? string.Empty); Add(ref hash, state.MilitaryVictory ? "1" : "0");
             Add(ref hash, state.VictoryTick?.ToString() ?? string.Empty); Add(ref hash, state.SourceBattleId?.ToString() ?? string.Empty);
+            Add(ref hash, state.SourceOccupationId?.ToString() ?? string.Empty);
             Add(ref hash, state.EventSequence.ToString());
             return hash;
         }
@@ -131,6 +145,12 @@ namespace Game.Simulation.Campaign
             if (home == null) return null;
             return FindBattleFromUnits(home);
         }
+
+        private SettlementOccupationEventState FindPlayerOccupationVictory() => map.OccupationEvents
+            .Where(x => x.Kind == SettlementOccupationEventKind.Completed &&
+                        x.SettlementId == state.RivalHomeSettlementId &&
+                        x.ClaimantSideId == state.PlayerSideId)
+            .OrderByDescending(x => x.CalendarTick).ThenByDescending(x => x.Sequence).FirstOrDefault();
 
         private CombatEncounterState FindBattleFromUnits(SettlementState home)
         {

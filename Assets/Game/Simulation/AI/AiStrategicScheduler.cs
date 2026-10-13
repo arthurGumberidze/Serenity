@@ -64,12 +64,13 @@ namespace Game.Simulation.AI
     {
         public AiDecisionFacts(bool economyShortage, bool hasResearch, bool canConstruct, bool hasArmy,
             bool hasMilitaryCandidates, bool hasTarget, bool isTravelling, bool hasActiveBattle,
-            bool canCapture, bool needsCaptain)
+            bool canCapture, bool needsCaptain, bool isOccupying = false)
         {
             EconomyShortage = economyShortage; HasResearch = hasResearch; CanConstruct = canConstruct;
             HasArmy = hasArmy; HasMilitaryCandidates = hasMilitaryCandidates; HasTarget = hasTarget;
             IsTravelling = isTravelling; HasActiveBattle = hasActiveBattle; CanCapture = canCapture;
             NeedsCaptain = needsCaptain;
+            IsOccupying = isOccupying;
         }
         public bool EconomyShortage { get; }
         public bool HasResearch { get; }
@@ -81,6 +82,7 @@ namespace Game.Simulation.AI
         public bool HasActiveBattle { get; }
         public bool CanCapture { get; }
         public bool NeedsCaptain { get; }
+        public bool IsOccupying { get; }
     }
 
     public sealed class AiDecisionService
@@ -89,6 +91,7 @@ namespace Game.Simulation.AI
         {
             if (facts.CanCapture) return AiDecisionKind.Capture;
             if (facts.HasActiveBattle) return AiDecisionKind.AwaitBattle;
+            if (facts.IsOccupying) return AiDecisionKind.Occupy;
             if (facts.IsTravelling) return AiDecisionKind.Travel;
             if (facts.CanConstruct) return AiDecisionKind.ConstructBuilding;
             if (!facts.HasArmy && facts.HasMilitaryCandidates) return AiDecisionKind.FormMilitaryUnit;
@@ -109,7 +112,7 @@ namespace Game.Simulation.AI
     public enum SettlementCaptureStatus
     {
         Captured = 1, AlreadyOwned = 2, MissingSettlement = 3, BattleNotFinished = 4,
-        NotVictoriousSide = 5, BuildingRejected = 6
+        NotVictoriousSide = 5, BuildingRejected = 6, OccupationNotReady = 7
     }
 
     public readonly struct SettlementCaptureResult
@@ -155,6 +158,26 @@ namespace Game.Simulation.AI
                 settlement.BuildingIds, settlement.ResidentCharacterIds);
             return new SettlementCaptureResult(SettlementCaptureStatus.Captured);
         }
+
+        public SettlementCaptureResult CaptureOccupation(SettlementOccupationState occupation, long tick)
+        {
+            if (occupation == null || !map.IsOccupationReady(occupation, tick))
+                return new SettlementCaptureResult(SettlementCaptureStatus.OccupationNotReady);
+            var settlement = map.Settlements.SingleOrDefault(x => x.Id == occupation.SettlementId);
+            if (settlement == null) return new SettlementCaptureResult(SettlementCaptureStatus.MissingSettlement);
+            if (settlement.OwnerSideId == occupation.ClaimantSideId)
+                return new SettlementCaptureResult(SettlementCaptureStatus.AlreadyOwned);
+            if (buildings != null && settlement.BuildingIds.Count > 0)
+            {
+                var result = buildings.CaptureBuildingsAfterOccupation(settlement.BuildingIds,
+                    occupation.ClaimantSideId, occupation.OccupationId, tick);
+                if (!result.Succeeded)
+                    return new SettlementCaptureResult(SettlementCaptureStatus.BuildingRejected, result.Failure);
+            }
+            map.SynchronizeSettlement(settlement.Id, settlement.LocationId, occupation.ClaimantSideId,
+                settlement.BuildingIds, settlement.ResidentCharacterIds);
+            return new SettlementCaptureResult(SettlementCaptureStatus.Captured);
+        }
     }
 
     public sealed class AiStrategicScheduler
@@ -185,6 +208,7 @@ namespace Game.Simulation.AI
             battles = battleService ?? throw new ArgumentNullException(nameof(battleService));
             buildingRegistry = buildings ?? throw new ArgumentNullException(nameof(buildings));
             capture = new SettlementCaptureService(map, battles, buildingDamage);
+            map.BindOccupationCapture((occupation, tick) => capture.CaptureOccupation(occupation, tick).Captured);
             settings = strategicSettings ?? AiStrategicSettings.StoneAge;
             decisions = decisionService ?? new AiDecisionService();
         }
@@ -350,9 +374,18 @@ namespace Game.Simulation.AI
             {
                 if (!units.TryGet(unitId, out var unit)) continue;
                 var order = state.PendingOrders.LastOrDefault(x =>
-                    (x.Kind == AiDecisionKind.Travel || x.Kind == AiDecisionKind.AwaitBattle) &&
+                    (x.Kind == AiDecisionKind.Travel || x.Kind == AiDecisionKind.AwaitBattle ||
+                     x.Kind == AiDecisionKind.Occupy) &&
                     x.UnitId == unitId && x.TargetSettlementId.HasValue);
                 if (!order.TargetSettlementId.HasValue) continue;
+                var orderedTarget = map.Settlements.SingleOrDefault(x => x.Id == order.TargetSettlementId.Value);
+                if (orderedTarget != null && orderedTarget.OwnerSideId == state.SideId)
+                {
+                    state.CompleteOrders(AiDecisionKind.Travel);
+                    state.CompleteOrders(AiDecisionKind.AwaitBattle);
+                    state.CompleteOrders(AiDecisionKind.Occupy);
+                    continue;
+                }
                 var battle = battles.Battles.Where(x => x.Status == CombatEncounterStatus.Finished &&
                         (x.SideAUnitId == unitId || x.SideBUnitId == unitId) &&
                         x.StartCalendarTick >= order.IssuedTick)
@@ -402,7 +435,8 @@ namespace Game.Simulation.AI
                 hasSettlementBuilding && candidates.Length >= settings.MinimumArmySize, target != null,
                 unit != null && map.Travels.Any(x => x.UnitId == unit.Id),
                 unit != null && unit.ActiveEncounterId.HasValue, false,
-                unit != null && !unit.CaptainId.HasValue);
+                unit != null && !unit.CaptainId.HasValue,
+                unit != null && map.Occupations.Any(x => x.ClaimantUnitId == unit.Id));
             var selected = decisions.Select(facts);
             switch (selected)
             {
@@ -424,6 +458,10 @@ namespace Game.Simulation.AI
                 case AiDecisionKind.AwaitBattle:
                     Record(state, tick, selected, AiStrategicGoal.AttackSettlement, 950, "Canonical battle is active.",
                         state.TargetSettlementId, state.TargetLocationId, unit.Id); break;
+                case AiDecisionKind.Occupy:
+                    Record(state, tick, selected, AiStrategicGoal.CaptureSettlement, 925,
+                        "Canonical undefended occupation is in progress.", state.TargetSettlementId,
+                        state.TargetLocationId, unit.Id); break;
                 default:
                     Record(state, tick, AiDecisionKind.Recover, AiStrategicGoal.Recover, 100,
                         "No valid strategic command is currently available."); break;
@@ -498,9 +536,20 @@ namespace Game.Simulation.AI
             var current = new WorldLocationId(unit.AbstractLocationId);
             if (current == target.LocationId)
             {
-                // Arrival is not a new route and is not proof of victory. U25 starts
-                // encounters when a hostile army is present; U26 capture still requires it.
                 faction.Strategic.CompleteOrders(AiDecisionKind.Travel);
+                var occupation = map.Occupations.SingleOrDefault(x => x.SettlementId == target.Id &&
+                    x.ClaimantUnitId == unit.Id);
+                if (occupation != null)
+                {
+                    faction.Strategic.CompleteOrders(AiDecisionKind.AwaitBattle);
+                    if (!faction.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.Occupy && x.UnitId == unit.Id))
+                        faction.Strategic.AddOrder(new AiPendingOrder(faction.Strategic.DecisionSequence + 1,
+                            AiDecisionKind.Occupy, tick, unit.Id, target.Id, target.LocationId));
+                    Record(faction.Strategic, tick, AiDecisionKind.Occupy, AiStrategicGoal.CaptureSettlement,
+                        925, "Holding the undefended settlement for canonical occupation completion.",
+                        target.Id, target.LocationId, unit.Id);
+                    return;
+                }
                 if (!faction.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.AwaitBattle && x.UnitId == unit.Id))
                     faction.Strategic.AddOrder(new AiPendingOrder(faction.Strategic.DecisionSequence + 1,
                         AiDecisionKind.AwaitBattle, tick, unit.Id, target.Id, target.LocationId));

@@ -124,8 +124,9 @@ namespace Game.Simulation.Dynasties
             {
                 if (PlayerRealm.CurrentRulerId != Dynasty.CurrentMonarchId)
                     throw new InvalidOperationException("Player ruler must match the active monarch.");
-                if (GameRun.Status != GameRunStatus.Running)
-                    throw new InvalidOperationException("An active dynasty requires a running game.");
+                if (GameRun.Status != GameRunStatus.Running &&
+                    GameRun.GameOverReason != GameOverReason.NoControlledSettlement)
+                    throw new InvalidOperationException("An active dynasty requires a running realm or settlement-loss Game Over.");
                 var monarch = characters.Get(Dynasty.CurrentMonarchId.Value);
                 if (monarch.LifeState != CharacterLifeState.Alive)
                     throw new InvalidOperationException("Active current monarch must be alive.");

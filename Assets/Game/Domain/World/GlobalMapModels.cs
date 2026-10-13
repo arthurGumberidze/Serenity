@@ -49,6 +49,16 @@ namespace Game.Domain.World
 
     public enum WorldLocationType { Settlement = 1, Wilderness = 2, BattleSite = 3 }
     public enum GameWorldMode { Local = 1, Global = 2 }
+    public enum SettlementOccupationEventKind { Started = 1, Interrupted = 2, Completed = 3 }
+    public enum SettlementOccupationInterruptionReason
+    {
+        None = 0,
+        DefendersArrived = 1,
+        ClaimantUnavailable = 2,
+        HostileContested = 3,
+        OwnerChanged = 4,
+        CaptureRejected = 5
+    }
 
     public sealed class WorldLocationState
     {
@@ -139,11 +149,92 @@ namespace Game.Domain.World
         public long ArrivalTick { get; }
     }
 
+    /// <summary>Canonical in-progress settlement occupation. It is not a synthetic battle.</summary>
+    public sealed class SettlementOccupationState
+    {
+        public SettlementOccupationState(StableEntityId occupationId, SettlementId settlementId,
+            WorldLocationId locationId, MilitaryUnitId claimantUnitId, CombatSideId claimantSideId,
+            long startTick, long requiredDurationTicks, long lastEvaluatedTick)
+        {
+            if (!occupationId.IsValid || !settlementId.IsValid || !locationId.IsValid ||
+                !claimantUnitId.IsValid || !claimantSideId.IsValid)
+                throw new ArgumentException("Occupation identity and references are required.");
+            if (startTick < 0 || requiredDurationTicks <= 0 || lastEvaluatedTick < startTick ||
+                lastEvaluatedTick > checked(startTick + requiredDurationTicks))
+                throw new ArgumentOutOfRangeException(nameof(lastEvaluatedTick));
+            OccupationId = occupationId;
+            SettlementId = settlementId;
+            LocationId = locationId;
+            ClaimantUnitId = claimantUnitId;
+            ClaimantSideId = claimantSideId;
+            StartTick = startTick;
+            RequiredDurationTicks = requiredDurationTicks;
+            LastEvaluatedTick = lastEvaluatedTick;
+        }
+
+        public StableEntityId OccupationId { get; }
+        public SettlementId SettlementId { get; }
+        public WorldLocationId LocationId { get; }
+        public MilitaryUnitId ClaimantUnitId { get; }
+        public CombatSideId ClaimantSideId { get; }
+        public long StartTick { get; }
+        public long RequiredDurationTicks { get; }
+        public long LastEvaluatedTick { get; }
+        public long CompletionTick => checked(StartTick + RequiredDurationTicks);
+        public long ProgressTicks => Math.Min(RequiredDurationTicks, Math.Max(0, LastEvaluatedTick - StartTick));
+
+        public SettlementOccupationState EvaluateAt(long tick) => new SettlementOccupationState(OccupationId,
+            SettlementId, LocationId, ClaimantUnitId, ClaimantSideId, StartTick, RequiredDurationTicks,
+            Math.Min(CompletionTick, Math.Max(LastEvaluatedTick, tick)));
+    }
+
+    public sealed class SettlementOccupationEventState
+    {
+        public SettlementOccupationEventState(ulong sequence, StableEntityId occupationId,
+            SettlementId settlementId, MilitaryUnitId claimantUnitId, CombatSideId claimantSideId,
+            SettlementOccupationEventKind kind, SettlementOccupationInterruptionReason interruptionReason,
+            long calendarTick, long progressTicks)
+        {
+            if (sequence == 0 || !occupationId.IsValid || !settlementId.IsValid ||
+                !claimantUnitId.IsValid || !claimantSideId.IsValid)
+                throw new ArgumentException("Occupation event identity is invalid.");
+            if (!Enum.IsDefined(typeof(SettlementOccupationEventKind), kind) ||
+                !Enum.IsDefined(typeof(SettlementOccupationInterruptionReason), interruptionReason))
+                throw new ArgumentOutOfRangeException();
+            if ((kind == SettlementOccupationEventKind.Interrupted) !=
+                (interruptionReason != SettlementOccupationInterruptionReason.None))
+                throw new ArgumentException("Only interrupted occupation events carry an interruption reason.");
+            if (calendarTick < 0 || progressTicks < 0) throw new ArgumentOutOfRangeException();
+            Sequence = sequence;
+            OccupationId = occupationId;
+            SettlementId = settlementId;
+            ClaimantUnitId = claimantUnitId;
+            ClaimantSideId = claimantSideId;
+            Kind = kind;
+            InterruptionReason = interruptionReason;
+            CalendarTick = calendarTick;
+            ProgressTicks = progressTicks;
+        }
+
+        public ulong Sequence { get; }
+        public StableEntityId OccupationId { get; }
+        public SettlementId SettlementId { get; }
+        public MilitaryUnitId ClaimantUnitId { get; }
+        public CombatSideId ClaimantSideId { get; }
+        public SettlementOccupationEventKind Kind { get; }
+        public SettlementOccupationInterruptionReason InterruptionReason { get; }
+        public long CalendarTick { get; }
+        public long ProgressTicks { get; }
+    }
+
     public sealed class GlobalMapSaveState
     {
         public GlobalMapSaveState(string graphId, GameWorldMode mode, WorldLocationId activeLocationId,
             IEnumerable<WorldLocationState> locations, IEnumerable<WorldRouteState> routes,
-            IEnumerable<SettlementState> settlements, IEnumerable<WorldTravelState> travels, long lastProcessedTick)
+            IEnumerable<SettlementState> settlements, IEnumerable<WorldTravelState> travels, long lastProcessedTick,
+            IEnumerable<SettlementOccupationState> occupations = null,
+            IEnumerable<SettlementOccupationEventState> occupationEvents = null,
+            ulong occupationEventSequence = 0)
         {
             if (string.IsNullOrWhiteSpace(graphId) || graphId.Length > 64 || graphId != graphId.Trim())
                 throw new ArgumentException("Graph ID must be trimmed and at most 64 characters.", nameof(graphId));
@@ -172,6 +263,20 @@ namespace Game.Domain.World
                 !locationSet.Contains(x.Destination) || !routeValues.Any(route => route.Connects(x.Origin, x.Destination))) ||
                 travelValues.Select(x => x.UnitId).Distinct().Count() != travelValues.Length)
                 throw new ArgumentException("Travel states must be unique and follow a configured route.", nameof(travels));
+            var occupationValues = (occupations ?? Enumerable.Empty<SettlementOccupationState>()).ToArray();
+            if (occupationValues.Any(x => x == null || !settlementValues.Any(s => s.Id == x.SettlementId &&
+                    s.LocationId == x.LocationId) || x.LastEvaluatedTick > lastProcessedTick) ||
+                occupationValues.Select(x => x.OccupationId).Distinct().Count() != occupationValues.Length ||
+                occupationValues.Select(x => x.SettlementId).Distinct().Count() != occupationValues.Length)
+                throw new ArgumentException("Occupation states must be unique and reference their settlement.", nameof(occupations));
+            var occupationEventValues = (occupationEvents ?? Enumerable.Empty<SettlementOccupationEventState>()).
+                OrderBy(x => x.Sequence).ToArray();
+            if (occupationEventValues.Any(x => x == null || !settlementValues.Any(s => s.Id == x.SettlementId) ||
+                    x.CalendarTick > lastProcessedTick) ||
+                occupationEventValues.Select(x => x.Sequence).Distinct().Count() != occupationEventValues.Length ||
+                occupationEventValues.Where((x, i) => i > 0 && x.Sequence <= occupationEventValues[i - 1].Sequence).Any() ||
+                occupationEventValues.Any(x => x.Sequence > occupationEventSequence))
+                throw new ArgumentException("Occupation history is invalid.", nameof(occupationEvents));
 
             GraphId = graphId;
             Mode = mode;
@@ -180,6 +285,9 @@ namespace Game.Domain.World
             Routes = Array.AsReadOnly(routeValues.OrderBy(RouteKey, StringComparer.Ordinal).ToArray());
             Settlements = Array.AsReadOnly(settlementValues.OrderBy(x => x.Id).ToArray());
             Travels = Array.AsReadOnly(travelValues.OrderBy(x => x.UnitId).ToArray());
+            Occupations = Array.AsReadOnly(occupationValues.OrderBy(x => x.SettlementId).ToArray());
+            OccupationEvents = Array.AsReadOnly(occupationEventValues);
+            OccupationEventSequence = occupationEventSequence;
             LastProcessedTick = lastProcessedTick;
         }
 
@@ -190,6 +298,9 @@ namespace Game.Domain.World
         public IReadOnlyList<WorldRouteState> Routes { get; }
         public IReadOnlyList<SettlementState> Settlements { get; }
         public IReadOnlyList<WorldTravelState> Travels { get; }
+        public IReadOnlyList<SettlementOccupationState> Occupations { get; }
+        public IReadOnlyList<SettlementOccupationEventState> OccupationEvents { get; }
+        public ulong OccupationEventSequence { get; }
         public long LastProcessedTick { get; }
 
         private static string RouteKey(WorldRouteState route) => route.From.CompareTo(route.To) < 0

@@ -40,18 +40,20 @@ namespace Game.Tests.Editor
         private static readonly long DecisionStep = TimeSpan.FromHours(6).Ticks;
 
         [Test, Category("U30")]
-        public void ArrivalWithoutDefenderHoldsWithoutSelfRouteOrUnauthorizedCapture()
+        public void ArrivalWithoutDefenderCompletesCanonicalOccupationWithoutFabricatedBattle()
         {
             var fixture = Fixture.Create(3030);
             fixture.AdvanceTo(TimeSpan.FromDays(20).Ticks);
             var state = fixture.Ai.Strategic;
-            Assert.That(state.RecentDecisions.Any(x => x.Kind == AiDecisionKind.AwaitBattle), Is.True);
+            Assert.That(fixture.Map.OccupationEvents.Any(x => x.Kind == SettlementOccupationEventKind.Started), Is.True);
             Assert.That(state.RecentDecisions.Any(x => x.Reason.Contains("NoDirectRoute")), Is.False);
             Assert.That(state.PendingOrders.Any(x => x.Kind == AiDecisionKind.Travel), Is.False);
             Assert.That(fixture.Map.Settlements.Single(x => x.Id == fixture.PlayerSettlement).OwnerSideId,
-                Is.EqualTo(fixture.PlayerSide));
+                Is.EqualTo(fixture.EnemySide));
             Assert.That(fixture.Battles.Battles, Is.Empty);
-            Assert.That(state.PendingOrders.Count(x => x.Kind == AiDecisionKind.AwaitBattle), Is.EqualTo(1));
+            Assert.That(fixture.Map.OccupationEvents.Count(x => x.Kind == SettlementOccupationEventKind.Completed),
+                Is.EqualTo(1));
+            Assert.That(state.PendingOrders, Is.Empty);
         }
 
         [Test, Category("U30")]
@@ -65,10 +67,111 @@ namespace Game.Tests.Editor
             var origin = route.From == destination ? route.To : route.From;
             fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, origin.Value);
             Assert.That(fixture.Map.IssueTravelOrder(fixture.PlayerUnitId, destination, fixture.Tick).Issued, Is.True);
-            fixture.AdvanceUntil(() => fixture.Map.Settlements.Single(x => x.Id == fixture.PlayerSettlement)
-                .OwnerSideId == fixture.EnemySide, 500);
+            fixture.AdvanceUntil(() => fixture.Battles.Battles.Any(x => x.Status == CombatEncounterStatus.Finished), 500);
             Assert.That(fixture.Ai.Strategic.PendingOrders, Is.Empty);
             Assert.That(fixture.Battles.Battles.Any(x => x.Status == CombatEncounterStatus.Finished), Is.True);
+        }
+
+        [Test, Category("P7")]
+        public void OccupationRulesAreExplicitSymmetricAndRequireNoFabricatedBattle()
+        {
+            var playerCapture = Fixture.Create(7001);
+            Assert.That(playerCapture.Map.OccupationSettings.DurationTicks, Is.EqualTo(TimeSpan.FromHours(24).Ticks));
+            Assert.That(playerCapture.Map.OccupationSettings.MinimumCombatCapableOccupiers, Is.EqualTo(1));
+            Assert.That(playerCapture.Map.OccupationSettings.MinimumCombatCapableDefenders, Is.EqualTo(1));
+            Assert.That(playerCapture.Map.OccupationSettings.RetainProgressAfterInterruption, Is.False);
+            playerCapture.CreatePlayerDefender();
+            playerCapture.Units.SetAbstractLocation(playerCapture.PlayerUnitId, "enemy_settlement");
+            playerCapture.Map.AdvanceTo(0);
+            var occupation = playerCapture.Map.Occupations.Single();
+            playerCapture.Map.AdvanceTo(occupation.CompletionTick);
+            Assert.That(playerCapture.Map.Settlements.Single(x => x.Id == playerCapture.EnemySettlement).OwnerSideId,
+                Is.EqualTo(playerCapture.PlayerSide));
+            Assert.That(playerCapture.Battles.Battles, Is.Empty);
+
+            var enemyCapture = Fixture.Create(7002);
+            var enemyUnit = new MilitaryUnitId(Id(97002));
+            enemyCapture.Units.Create(enemyUnit, new MilitarySideId(enemyCapture.EnemySide.Value),
+                new[] { enemyCapture.Ai.Residents[0] }, enemyCapture.Ai.Residents[0],
+                MilitaryUnitRepresentationMode.Aggregate, "starter_settlement");
+            enemyCapture.Map.AdvanceTo(0);
+            var enemyOccupation = enemyCapture.Map.Occupations.Single();
+            enemyCapture.Map.AdvanceTo(enemyOccupation.CompletionTick);
+            Assert.That(enemyCapture.Map.Settlements.Single(x => x.Id == enemyCapture.PlayerSettlement).OwnerSideId,
+                Is.EqualTo(enemyCapture.EnemySide));
+            Assert.That(enemyCapture.Battles.Battles, Is.Empty);
+        }
+
+        [Test, Category("P7")]
+        public void MidOccupationRoundTripCompletesOwnershipExactlyOnce()
+        {
+            var fixture = Fixture.Create(7003);
+            fixture.CreatePlayerDefender();
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, "enemy_settlement");
+            fixture.Map.AdvanceTo(0);
+            fixture.Map.AdvanceTo(TimeSpan.FromHours(12).Ticks);
+            var before = fixture.Map.Occupations.Single();
+            var codec = new SaveXmlCodec();
+            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(97003),
+                new GameTimeState(TimeSpan.FromHours(12).Ticks, 0, 1, false), 400,
+                military: fixture.Units.CaptureState(), globalMap: fixture.Map.CaptureState());
+            var restored = codec.Deserialize(codec.Serialize(snapshot));
+            Assert.That(restored.GlobalMap.Occupations.Single().OccupationId, Is.EqualTo(before.OccupationId));
+            Assert.That(restored.GlobalMap.Occupations.Single().ProgressTicks, Is.EqualTo(TimeSpan.FromHours(12).Ticks));
+            fixture.Map.RestoreState(restored.GlobalMap);
+            fixture.Map.AdvanceTo(before.CompletionTick);
+            fixture.Map.AdvanceTo(before.CompletionTick + TimeSpan.FromDays(2).Ticks);
+            Assert.That(fixture.Map.Settlements.Single(x => x.Id == fixture.EnemySettlement).OwnerSideId,
+                Is.EqualTo(fixture.PlayerSide));
+            Assert.That(fixture.Map.OccupationEvents.Count(x => x.Kind == SettlementOccupationEventKind.Completed),
+                Is.EqualTo(1));
+            Assert.That(fixture.Buildings.All.SelectMany(x => x.History)
+                .Count(x => x.Kind == BuildingEventKind.Captured), Is.EqualTo(
+                    fixture.Map.Settlements.Single(x => x.Id == fixture.EnemySettlement).BuildingIds.Count));
+        }
+
+        [Test, Category("P7")]
+        public void DefenderAtCompletionWinsSameTickOrderingAndStartsRealBattle()
+        {
+            var fixture = Fixture.Create(7004);
+            fixture.CreatePlayerDefender();
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, "enemy_settlement");
+            fixture.Map.AdvanceTo(0);
+            var occupation = fixture.Map.Occupations.Single();
+            var defender = new MilitaryUnitId(Id(97004));
+            fixture.Units.Create(defender, new MilitarySideId(fixture.EnemySide.Value),
+                new[] { fixture.Ai.Residents[0] }, fixture.Ai.Residents[0],
+                MilitaryUnitRepresentationMode.Aggregate, "enemy_settlement");
+            fixture.Map.AdvanceTo(occupation.CompletionTick);
+            Assert.That(fixture.Map.Settlements.Single(x => x.Id == fixture.EnemySettlement).OwnerSideId,
+                Is.EqualTo(fixture.EnemySide));
+            Assert.That(fixture.Map.Occupations, Is.Empty);
+            Assert.That(fixture.Map.OccupationEvents.Last().Kind, Is.EqualTo(SettlementOccupationEventKind.Interrupted));
+            Assert.That(fixture.Map.OccupationEvents.Last().InterruptionReason,
+                Is.EqualTo(SettlementOccupationInterruptionReason.DefendersArrived));
+            Assert.That(fixture.Battles.Battles.Single().Status, Is.EqualTo(CombatEncounterStatus.Active));
+        }
+
+        [Test, Category("P7")]
+        public void ClaimantLossFullyResetsProgressAndCreatesNewAttempt()
+        {
+            var fixture = Fixture.Create(7005);
+            fixture.CreatePlayerDefender();
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, "enemy_settlement");
+            fixture.Map.AdvanceTo(0);
+            var first = fixture.Map.Occupations.Single();
+            fixture.Map.AdvanceTo(TimeSpan.FromHours(6).Ticks);
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, "river_ford");
+            fixture.Map.AdvanceTo(TimeSpan.FromHours(7).Ticks);
+            Assert.That(fixture.Map.Occupations, Is.Empty);
+            Assert.That(fixture.Map.OccupationEvents.Last().InterruptionReason,
+                Is.EqualTo(SettlementOccupationInterruptionReason.ClaimantUnavailable));
+            fixture.Units.SetAbstractLocation(fixture.PlayerUnitId, "enemy_settlement");
+            fixture.Map.AdvanceTo(TimeSpan.FromHours(8).Ticks);
+            var second = fixture.Map.Occupations.Single();
+            Assert.That(second.OccupationId, Is.Not.EqualTo(first.OccupationId));
+            Assert.That(second.StartTick, Is.EqualTo(TimeSpan.FromHours(8).Ticks));
+            Assert.That(second.ProgressTicks, Is.Zero);
         }
 
         [Test]
@@ -77,6 +180,7 @@ namespace Game.Tests.Editor
             var service = new AiDecisionService();
             Assert.That(service.Select(Facts(canCapture: true, hasActiveBattle: true)), Is.EqualTo(AiDecisionKind.Capture));
             Assert.That(service.Select(Facts(hasActiveBattle: true, isTravelling: true)), Is.EqualTo(AiDecisionKind.AwaitBattle));
+            Assert.That(service.Select(Facts(isOccupying: true, isTravelling: true)), Is.EqualTo(AiDecisionKind.Occupy));
             Assert.That(service.Select(Facts(isTravelling: true, canConstruct: true)), Is.EqualTo(AiDecisionKind.Travel));
             Assert.That(service.Select(Facts(canConstruct: true, hasResearch: true)), Is.EqualTo(AiDecisionKind.ConstructBuilding));
             Assert.That(service.Select(Facts(hasMilitaryCandidates: true, hasResearch: true)), Is.EqualTo(AiDecisionKind.FormMilitaryUnit));
@@ -281,9 +385,9 @@ namespace Game.Tests.Editor
         private static AiDecisionFacts Facts(bool economyShortage = false, bool hasResearch = false,
             bool canConstruct = false, bool hasArmy = false, bool hasMilitaryCandidates = false,
             bool hasTarget = false, bool isTravelling = false, bool hasActiveBattle = false,
-            bool canCapture = false, bool needsCaptain = false) => new AiDecisionFacts(economyShortage,
+            bool canCapture = false, bool needsCaptain = false, bool isOccupying = false) => new AiDecisionFacts(economyShortage,
                 hasResearch, canConstruct, hasArmy, hasMilitaryCandidates, hasTarget, isTravelling,
-                hasActiveBattle, canCapture, needsCaptain);
+                hasActiveBattle, canCapture, needsCaptain, isOccupying);
 
         private static string Digest(Fixture fixture)
         {

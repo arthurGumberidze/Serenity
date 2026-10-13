@@ -179,6 +179,7 @@ namespace Game.Infrastructure
         public P3PlayerSmokeController P3PlayerSmoke { get; private set; }
         public P5PlayerSmokeController P5PlayerSmoke { get; private set; }
         public P6PlayerSmokeController P6PlayerSmoke { get; private set; }
+        public P7PlayerSmokeController P7PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -403,7 +404,7 @@ namespace Game.Infrastructure
                 new CanonicalEventEffectExecutor(Characters, HealthFamily), worldSeed,
                 Clock.State.CalendarTicks);
             CampaignProgress = new CampaignProgressService(ActiveNewGameConfiguration, new CombatSideId("player"),
-                StarterEnemyAi, GlobalMap, MilitaryUnits, StrategicAi, Battles, Clock.State.CalendarTicks);
+                StarterEnemyAi, GlobalMap, MilitaryUnits, StrategicAi, Battles, Clock.State.CalendarTicks, GameRun);
             gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
                 () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
@@ -491,6 +492,7 @@ namespace Game.Infrastructure
             P3PlayerSmoke = P3PlayerSmokeController.AttachIfRequested(this);
             P5PlayerSmoke = P5PlayerSmokeController.AttachIfRequested(this);
             P6PlayerSmoke = P6PlayerSmokeController.AttachIfRequested(this);
+            P7PlayerSmoke = P7PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

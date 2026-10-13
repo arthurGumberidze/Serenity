@@ -27,7 +27,8 @@ namespace Game.Domain.Dynasties
     public enum GameOverReason
     {
         None = 0,
-        DynastyExtinction = 1
+        DynastyExtinction = 1,
+        NoControlledSettlement = 2
     }
 
     public static class SuccessionRuleIds
@@ -259,8 +260,14 @@ namespace Game.Domain.Dynasties
                 throw new ArgumentOutOfRangeException(nameof(reason));
             if (Status == GameRunStatus.GameOver)
             {
-                if (GameOverReason != reason) throw new InvalidOperationException("Game is already over for another reason.");
-                return;
+                if (GameOverReason == reason) return;
+                if (GameOverReason == GameOverReason.NoControlledSettlement &&
+                    reason == GameOverReason.DynastyExtinction)
+                {
+                    GameOverReason = reason;
+                    return;
+                }
+                throw new InvalidOperationException("Game is already over for another reason.");
             }
             Status = GameRunStatus.GameOver;
             GameOverReason = reason;
@@ -332,8 +339,9 @@ namespace Game.Domain.Dynasties
             if (dynasty.Status == DynastyStatus.Active && currentRulerId != dynasty.CurrentMonarchId)
                 throw new ArgumentException("Player ruler must match the active monarch.", nameof(currentRulerId));
             if (dynasty.Status == DynastyStatus.Active &&
-                (runStatus != GameRunStatus.Running || gameOverReason != GameOverReason.None))
-                throw new ArgumentException("An active dynasty requires a running game.");
+                !((runStatus == GameRunStatus.Running && gameOverReason == GameOverReason.None) ||
+                  (runStatus == GameRunStatus.GameOver && gameOverReason == GameOverReason.NoControlledSettlement)))
+                throw new ArgumentException("An active dynasty requires a running realm or settlement-loss Game Over.");
             if (dynasty.Status == DynastyStatus.Extinct &&
                 (currentRulerId.HasValue || runStatus != GameRunStatus.GameOver || gameOverReason != GameOverReason.DynastyExtinction))
                 throw new ArgumentException("Extinct dynasty must produce dynasty-extinction Game Over.");

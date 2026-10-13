@@ -25,7 +25,7 @@ using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V16 adds canonical Character appearance.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V17 adds canonical settlement occupation.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -61,13 +61,15 @@ namespace Game.Infrastructure
             if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
                 root.Add(SerializeBuildingWorld(snapshot.BuildingWorld));
             if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
-                root.Add(SerializeGlobalMap(snapshot.GlobalMap));
+                root.Add(SerializeGlobalMap(snapshot.GlobalMap,
+                    snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.StrategicAiVersion)
                 root.Add(SerializeStrategicAi(snapshot.StrategicAi));
             if (snapshot.FormatVersion >= SaveSnapshot.EventVersion)
                 root.Add(SerializeEvents(snapshot.Events));
             if (snapshot.FormatVersion >= SaveSnapshot.CampaignVersion)
-                root.Add(SerializeCampaign(snapshot.Campaign));
+                root.Add(SerializeCampaign(snapshot.Campaign,
+                    snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.AppearanceVersion)
                 root.Add(SerializeAppearance(snapshot.Appearance));
             using (var stream = new MemoryStream())
@@ -103,7 +105,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.BattleVersion && version != SaveSnapshot.BuildingVersion &&
                         version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.StrategicAiVersion &&
                         version != SaveSnapshot.EventVersion &&
-                        version != SaveSnapshot.CampaignVersion &&
+                        version != SaveSnapshot.CampaignVersion && version != SaveSnapshot.AppearanceVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -126,13 +128,13 @@ namespace Game.Infrastructure
                     var buildingWorld = version >= SaveSnapshot.BuildingVersion
                         ? DeserializeBuildingWorld(root.Element("buildingWorld")) : null;
                     var globalMap = version >= SaveSnapshot.GlobalMapVersion
-                        ? DeserializeGlobalMap(root.Element("globalMap")) : null;
+                        ? DeserializeGlobalMap(root.Element("globalMap"), version >= SaveSnapshot.OccupationVersion) : null;
                     var strategicAi = version >= SaveSnapshot.StrategicAiVersion
                         ? DeserializeStrategicAi(root.Element("strategicAi")) : null;
                     var events = version >= SaveSnapshot.EventVersion
                         ? DeserializeEvents(root.Element("events")) : null;
                     var campaign = version >= SaveSnapshot.CampaignVersion
-                        ? DeserializeCampaign(root.Element("campaign")) : null;
+                        ? DeserializeCampaign(root.Element("campaign"), version >= SaveSnapshot.OccupationVersion) : null;
                     var appearance = version >= SaveSnapshot.AppearanceVersion
                         ? DeserializeAppearance(root.Element("appearance")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
@@ -866,7 +868,7 @@ namespace Game.Infrastructure
             return new BuildingWorldSaveState(buildings, piles, Long(element, "lastFireTick"));
         }
 
-        private static XElement SerializeGlobalMap(GlobalMapSaveState state)
+        private static XElement SerializeGlobalMap(GlobalMapSaveState state, bool includeOccupation)
         {
             var element = new XElement("globalMap");
             if (state == null) return element;
@@ -889,11 +891,29 @@ namespace Game.Infrastructure
                     new XElement("unitId", value.UnitId.ToString()), new XElement("origin", value.Origin.ToString()),
                     new XElement("destination", value.Destination.ToString()),
                     new XElement("departureTick", value.DepartureTick),
-                    new XElement("arrivalTick", value.ArrivalTick)))));
+                    new XElement("arrivalTick", value.ArrivalTick)))),
+                includeOccupation ? new XElement("occupations", state.Occupations.Select(value => new XElement("occupation",
+                    new XElement("id", value.OccupationId.ToString()),
+                    new XElement("settlementId", value.SettlementId.ToString()),
+                    new XElement("locationId", value.LocationId.ToString()),
+                    new XElement("claimantUnitId", value.ClaimantUnitId.ToString()),
+                    new XElement("claimantSideId", value.ClaimantSideId.Value),
+                    new XElement("startTick", value.StartTick),
+                    new XElement("durationTicks", value.RequiredDurationTicks),
+                    new XElement("lastEvaluatedTick", value.LastEvaluatedTick)))) : null,
+                includeOccupation ? new XElement("occupationEvents", state.OccupationEvents.Select(value => new XElement("event",
+                    new XElement("sequence", value.Sequence), new XElement("occupationId", value.OccupationId.ToString()),
+                    new XElement("settlementId", value.SettlementId.ToString()),
+                    new XElement("claimantUnitId", value.ClaimantUnitId.ToString()),
+                    new XElement("claimantSideId", value.ClaimantSideId.Value), new XElement("kind", (int)value.Kind),
+                    new XElement("reason", (int)value.InterruptionReason),
+                    new XElement("calendarTick", value.CalendarTick),
+                    new XElement("progressTicks", value.ProgressTicks)))) : null,
+                includeOccupation ? new XElement("occupationEventSequence", state.OccupationEventSequence) : null);
             return element;
         }
 
-        private static GlobalMapSaveState DeserializeGlobalMap(XElement element)
+        private static GlobalMapSaveState DeserializeGlobalMap(XElement element, bool includeOccupation)
         {
             if (element == null) throw new FormatException("Missing global-map state.");
             if (!element.HasElements)
@@ -901,8 +921,10 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty global-map state.");
                 return null;
             }
-            RequireFields(element, new[] { "graphId", "mode", "activeLocationId", "lastProcessedTick",
-                "locations", "routes", "settlements", "travels" });
+            var fields = new[] { "graphId", "mode", "activeLocationId", "lastProcessedTick",
+                "locations", "routes", "settlements", "travels" }.AsEnumerable();
+            if (includeOccupation) fields = fields.Concat(new[] { "occupations", "occupationEvents", "occupationEventSequence" });
+            RequireFields(element, fields.ToArray());
             var locations = Items(element.Element("locations"), "location", item =>
             {
                 RequireFields(item, new[] { "id", "name", "type", "mapX", "mapY" });
@@ -931,9 +953,33 @@ namespace Game.Infrastructure
                     new WorldLocationId(Value(item, "origin")), new WorldLocationId(Value(item, "destination")),
                     Long(item, "departureTick"), Long(item, "arrivalTick"));
             });
+            var occupations = includeOccupation ? Items(element.Element("occupations"), "occupation", item =>
+            {
+                RequireFields(item, new[] { "id", "settlementId", "locationId", "claimantUnitId", "claimantSideId",
+                    "startTick", "durationTicks", "lastEvaluatedTick" });
+                return new SettlementOccupationState(StableEntityId.Parse(Value(item, "id")),
+                    new SettlementId(StableEntityId.Parse(Value(item, "settlementId"))),
+                    new WorldLocationId(Value(item, "locationId")), MilitaryUnitId.Parse(Value(item, "claimantUnitId")),
+                    new CombatSideId(Value(item, "claimantSideId")), Long(item, "startTick"),
+                    Long(item, "durationTicks"), Long(item, "lastEvaluatedTick"));
+            }) : Array.Empty<SettlementOccupationState>();
+            var occupationEvents = includeOccupation ? Items(element.Element("occupationEvents"), "event", item =>
+            {
+                RequireFields(item, new[] { "sequence", "occupationId", "settlementId", "claimantUnitId",
+                    "claimantSideId", "kind", "reason", "calendarTick", "progressTicks" });
+                return new SettlementOccupationEventState(ULong(item, "sequence"),
+                    StableEntityId.Parse(Value(item, "occupationId")),
+                    new SettlementId(StableEntityId.Parse(Value(item, "settlementId"))),
+                    MilitaryUnitId.Parse(Value(item, "claimantUnitId")),
+                    new CombatSideId(Value(item, "claimantSideId")),
+                    (SettlementOccupationEventKind)Int(item, "kind"),
+                    (SettlementOccupationInterruptionReason)Int(item, "reason"),
+                    Long(item, "calendarTick"), Long(item, "progressTicks"));
+            }) : Array.Empty<SettlementOccupationEventState>();
             return new GlobalMapSaveState(Value(element, "graphId"), (GameWorldMode)Int(element, "mode"),
                 new WorldLocationId(Value(element, "activeLocationId")), locations, routes, settlements, travels,
-                Long(element, "lastProcessedTick"));
+                Long(element, "lastProcessedTick"), occupations, occupationEvents,
+                includeOccupation ? ULong(element, "occupationEventSequence") : 0UL);
         }
 
         private static XElement SerializeStrategicAi(AiStrategicSaveState state)
@@ -1186,7 +1232,7 @@ namespace Game.Infrastructure
                 return new EventTargetRef((EventTargetKind)Int(value, "kind"), Value(value, "id"));
             });
 
-        private static XElement SerializeCampaign(CampaignProgressSaveState state)
+        private static XElement SerializeCampaign(CampaignProgressSaveState state, bool includeOccupation)
         {
             var element = new XElement("campaign");
             if (state == null) return element;
@@ -1202,11 +1248,12 @@ namespace Game.Infrastructure
                 new XElement("defeatedStateId", state.DefeatedStateId.HasValue ? state.DefeatedStateId.Value.ToString() : string.Empty),
                 new XElement("capturedSettlementId", state.CapturedSettlementId.HasValue ? state.CapturedSettlementId.Value.ToString() : string.Empty),
                 OptionalId("sourceBattleId", state.SourceBattleId),
-                new XElement("eventSequence", state.EventSequence));
+                new XElement("eventSequence", state.EventSequence),
+                includeOccupation ? OptionalId("sourceOccupationId", state.SourceOccupationId) : null);
             return element;
         }
 
-        private static CampaignProgressSaveState DeserializeCampaign(XElement element)
+        private static CampaignProgressSaveState DeserializeCampaign(XElement element, bool includeOccupation)
         {
             if (element == null) throw new FormatException("Missing campaign state.");
             if (!element.HasElements)
@@ -1214,9 +1261,11 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty campaign state.");
                 return null;
             }
-            RequireFields(element, new[] { "worldSeed", "configurationId", "playerSideId", "rivalStateId",
+            var fields = new[] { "worldSeed", "configurationId", "playerSideId", "rivalStateId",
                 "rivalHomeSettlementId", "rivalDiscovered", "discoveredTick", "militaryVictory", "victoryTick",
-                "defeatedStateId", "capturedSettlementId", "sourceBattleId", "eventSequence" });
+                "defeatedStateId", "capturedSettlementId", "sourceBattleId", "eventSequence" }.AsEnumerable();
+            if (includeOccupation) fields = fields.Concat(new[] { "sourceOccupationId" });
+            RequireFields(element, fields.ToArray());
             var discovered = Value(element, "discoveredTick");
             var victory = Value(element, "victoryTick");
             var defeated = Value(element, "defeatedStateId");
@@ -1231,7 +1280,8 @@ namespace Game.Infrastructure
                 string.IsNullOrEmpty(victory) ? (long?)null : XmlConvert.ToInt64(victory),
                 string.IsNullOrEmpty(defeated) ? (AiStateId?)null : new AiStateId(StableEntityId.Parse(defeated)),
                 string.IsNullOrEmpty(captured) ? (SettlementId?)null : new SettlementId(StableEntityId.Parse(captured)),
-                OptionalStableId(element, "sourceBattleId"), ULong(element, "eventSequence"));
+                OptionalStableId(element, "sourceBattleId"), ULong(element, "eventSequence"),
+                includeOccupation ? OptionalStableId(element, "sourceOccupationId") : null);
         }
 
         private static XElement SerializeAppearance(AppearanceWorldSaveState state)

@@ -16,7 +16,8 @@ namespace Game.Domain.Buildings
     public enum BuildingCaptureFailure
     {
         None = 0, MissingBuilding = 1, InvalidOwner = 2, SameOwner = 3, Destroyed = 4,
-        NotCapturable = 5, MissingBattle = 6, BattleNotFinished = 7, NotVictoriousSide = 8
+        NotCapturable = 5, MissingBattle = 6, BattleNotFinished = 7, NotVictoriousSide = 8,
+        MissingOccupation = 9
     }
 
     public sealed class BuildingEventState

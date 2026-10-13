@@ -1,17 +1,14 @@
 # NEXT_TASK.md
 
-The active product task is P7: finish the connected Stone Age game. P1 through P6 are DONE at their implementation/evidence boundaries. Begin from the committed P6 first-hour route and make one coherent campaign from settlement economy, construction, research, weather, health/family and succession through scouting, supplied war, battle, occupation/capture, victory or defeat and continued play. Do not begin P8.
+The active product task is P8: scale, qualify and prepare the completed Stone Age slice for release. P1 through P7 are DONE at their implementation/evidence boundaries. Begin from the committed P7 campaign; do not add a new era or unrelated product scope.
 
-Implement the user-approved symmetric undefended-settlement occupation rule recorded in `PRODUCT_ROADMAP_RU.md` and D-106: defenders require combat; without defenders an arriving hostile army begins a canonical, data-driven occupation; arriving defenders can interrupt it; ownership changes exactly once only after completion and then evaluates the common state-defeat rule. Occupation progress and interruption must persist through Save/Load and remain identical for player and AI. Resolve duration, defender eligibility, progress reset/retention, claimant loss and same-tick defender-arrival ordering explicitly in data/tests before claiming completion; do not fabricate a battle or add UI-only state.
+Run the deferred technical qualification without weakening its recorded gates:
 
-Balance and expose the complete first-era route: stable food/work/building progression, research unlocks, visible birth/age/succession feedback, independent AI growth and supply, discovery, RTS/TPS battle, capture, victory/defeat, continuation and menu/restart/load. Commands and outcomes must continue through existing canonical services. Preserve P4 appearance, P5 world/resource/map identity and P6 optional guidance across Save/Load. No new Asset Store dependency without approval.
+1. Resolve U29's sustained 1000-Character result (currently 38.216 ms p95 against the 33.33 ms gate), then run the complete qualifying matrix.
+2. Close U30's native-memory/history/continuous-process and workload/telemetry gaps. Preserve `C:\serenity_u30_soak_20261012_run4`; launch a new eight-hour run only as the explicit P8 qualification after prerequisites and short controls are green.
+3. Re-run the connected U31 gate after U29 and U30 are honestly DONE, including persistence/build/normal Player and configured PostgreSQL handling.
+4. Conduct the separate user-facing acceptance still open from P3/P5/P6/P7: visual coherence, first-hour usability and long-route Stone Age balance. Automated evidence does not decide taste.
 
-Completion requires focused P7 tests, affected gameplay/persistence regressions, a Windows Development build and a real visible Player campaign route covering both defended combat and undefended occupation, interruption, Save/Load mid-occupation, victory/defeat and continuation. Record remaining visual/balance limitations and keep P3/P5 visual plus P6 usability acceptance explicitly open for the user. Update project docs and commit with a `P7:` prefix. Do not reinterpret P7 evidence as P8 performance/endurance acceptance.
+Preserve snapshot v17, stable identities and the canonical P7 occupation rules. Do not hide failed evidence, reinterpret earlier soak artifacts, relax thresholds, purchase/import Asset Store content without approval, or change Unity 6000.6.4f1 outside a migration task.
 
-## Deferred technical gates for P8
-
-1. U29 remains PARTIAL: the retained 1000-Character sustained control is 38.216 ms p95 versus the 33.33 ms gate. Run the complete qualifying matrix only in P8.
-2. U30 remains IN_PROGRESS. Preserve `C:\serenity_u30_soak_20261012_run4`; do not launch another eight-hour run without separate authorization before P8.
-3. U31 remains BLOCKED on U29/U30 even though its existing integration tests pass. Finalize it only after P7 and qualifying P8 evidence.
-
-Do not modify existing U29/U30 evidence, run U29 final qualification, launch a new eight-hour U30, or mark U31 DONE while implementing P7.
+Completion requires the exact P8 matrix, short controls before any long run, Windows Development build, visible Player acceptance evidence, updated docs and a commit with a `P8:` prefix.

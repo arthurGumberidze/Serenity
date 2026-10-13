@@ -37,7 +37,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void V15RoundTripPreservesCampaignAndConservedSupplyAuditState()
+        public void CurrentRoundTripPreservesCampaignAndConservedSupplyAuditState()
         {
             var unitId = new MilitaryUnitId(Id(301010));
             var memberA = Id(301011);
@@ -68,7 +68,7 @@ namespace Game.Tests.Editor
             var decoded = codec.Deserialize(codec.Serialize(snapshot));
             var restored = decoded.Military.Units.Single();
 
-            Assert.That(decoded.FormatVersion, Is.EqualTo(SaveSnapshot.CampaignVersion));
+            Assert.That(decoded.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(restored.Supply.Initialized, Is.True);
             Assert.That(restored.Supply.Get(new ResourceId("berries")), Is.EqualTo(7));
             Assert.That(restored.Supply.ConsumedUnits, Is.EqualTo(5));

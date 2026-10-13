@@ -38,7 +38,8 @@ namespace Game.Domain.AI
     public enum AiDecisionKind
     {
         None = 0, Produce = 1, StartResearch = 2, ConstructBuilding = 3, FormMilitaryUnit = 4,
-        AssignCaptain = 5, Travel = 6, AwaitBattle = 7, Capture = 8, Recover = 9, Defeated = 10
+        AssignCaptain = 5, Travel = 6, AwaitBattle = 7, Capture = 8, Recover = 9, Defeated = 10,
+        Occupy = 11
     }
 
     public enum AiDefeatReason { None = 0, NoControlledSettlement = 1, DynastyExtinct = 2 }

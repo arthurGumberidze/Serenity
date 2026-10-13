@@ -11,6 +11,31 @@ using Game.Domain.Campaign;
 
 namespace Game.Simulation.World
 {
+    public sealed class SettlementOccupationSettings
+    {
+        public SettlementOccupationSettings(long durationTicks, int minimumCombatCapableOccupiers,
+            int minimumCombatCapableDefenders, bool retainProgressAfterInterruption, int historyLimit)
+        {
+            if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
+            if (minimumCombatCapableOccupiers <= 0) throw new ArgumentOutOfRangeException(nameof(minimumCombatCapableOccupiers));
+            if (minimumCombatCapableDefenders <= 0) throw new ArgumentOutOfRangeException(nameof(minimumCombatCapableDefenders));
+            if (historyLimit <= 0 || historyLimit > 1024) throw new ArgumentOutOfRangeException(nameof(historyLimit));
+            DurationTicks = durationTicks;
+            MinimumCombatCapableOccupiers = minimumCombatCapableOccupiers;
+            MinimumCombatCapableDefenders = minimumCombatCapableDefenders;
+            RetainProgressAfterInterruption = retainProgressAfterInterruption;
+            HistoryLimit = historyLimit;
+        }
+
+        public long DurationTicks { get; }
+        public int MinimumCombatCapableOccupiers { get; }
+        public int MinimumCombatCapableDefenders { get; }
+        public bool RetainProgressAfterInterruption { get; }
+        public int HistoryLimit { get; }
+        public static SettlementOccupationSettings StoneAge { get; } = new SettlementOccupationSettings(
+            TimeSpan.FromHours(24).Ticks, 1, 1, false, 64);
+    }
+
     public enum TravelOrderStatus
     {
         Issued = 1,
@@ -51,14 +76,23 @@ namespace Game.Simulation.World
             new Dictionary<SettlementId, SettlementState>();
         private readonly Dictionary<MilitaryUnitId, WorldTravelState> travels =
             new Dictionary<MilitaryUnitId, WorldTravelState>();
+        private readonly Dictionary<SettlementId, SettlementOccupationState> occupations =
+            new Dictionary<SettlementId, SettlementOccupationState>();
+        private readonly List<SettlementOccupationEventState> occupationEvents =
+            new List<SettlementOccupationEventState>();
+        private readonly SettlementOccupationSettings occupationSettings;
+        private Func<SettlementOccupationState, long, bool> occupationCapture;
+        private ulong occupationEventSequence;
 
         public GlobalMapService(GlobalMapSaveState initialState, MilitaryUnitService militaryUnits,
             BattleResolutionService battleResolution = null,
-            Func<WorldLocationId, WorldLocationId, long, int> durationModifier = null)
+            Func<WorldLocationId, WorldLocationId, long, int> durationModifier = null,
+            SettlementOccupationSettings settlementOccupationSettings = null)
         {
             units = militaryUnits ?? throw new ArgumentNullException(nameof(militaryUnits));
             battles = battleResolution;
             travelDurationModifier = durationModifier;
+            occupationSettings = settlementOccupationSettings ?? SettlementOccupationSettings.StoneAge;
             RestoreState(initialState ?? throw new ArgumentNullException(nameof(initialState)));
         }
 
@@ -70,6 +104,17 @@ namespace Game.Simulation.World
         public IReadOnlyList<WorldRouteState> Routes => routes.ToArray();
         public IReadOnlyList<SettlementState> Settlements => settlements.Values.OrderBy(x => x.Id).ToArray();
         public IReadOnlyList<WorldTravelState> Travels => travels.Values.OrderBy(x => x.UnitId).ToArray();
+        public IReadOnlyList<SettlementOccupationState> Occupations => occupations.Values.OrderBy(x => x.SettlementId).ToArray();
+        public IReadOnlyList<SettlementOccupationEventState> OccupationEvents => occupationEvents.ToArray();
+        public ulong OccupationEventSequence => occupationEventSequence;
+        public SettlementOccupationSettings OccupationSettings => occupationSettings;
+
+        public void BindOccupationCapture(Func<SettlementOccupationState, long, bool> capture)
+        {
+            if (capture == null) throw new ArgumentNullException(nameof(capture));
+            if (occupationCapture != null) throw new InvalidOperationException("Occupation capture is already bound.");
+            occupationCapture = capture;
+        }
 
         public WorldLocationState GetLocation(WorldLocationId id) => locations.TryGetValue(id, out var value)
             ? value : throw new KeyNotFoundException("Unknown world location: " + id);
@@ -120,13 +165,18 @@ namespace Game.Simulation.World
         public IReadOnlyList<StableEntityId> AdvanceTo(long calendarTick)
         {
             if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
-            var due = travels.Values.Where(x => x.ArrivalTick <= calendarTick)
-                .OrderBy(x => x.ArrivalTick).ThenBy(x => x.UnitId).ToArray();
             var started = new List<StableEntityId>();
-            foreach (var arrivalGroup in due.GroupBy(x => x.ArrivalTick).OrderBy(x => x.Key))
+            while (true)
             {
+                var nextArrival = travels.Values.Where(x => x.ArrivalTick > LastProcessedTick && x.ArrivalTick <= calendarTick)
+                    .Select(x => x.ArrivalTick).DefaultIfEmpty(long.MaxValue).Min();
+                var nextCompletion = occupations.Values.Where(x => x.CompletionTick > LastProcessedTick &&
+                        x.CompletionTick <= calendarTick).Select(x => x.CompletionTick)
+                    .DefaultIfEmpty(long.MaxValue).Min();
+                var milestone = Math.Min(calendarTick, Math.Min(nextArrival, nextCompletion));
                 var arrivedLocations = new HashSet<WorldLocationId>();
-                foreach (var travel in arrivalGroup)
+                foreach (var travel in travels.Values.Where(x => x.ArrivalTick <= milestone)
+                             .OrderBy(x => x.ArrivalTick).ThenBy(x => x.UnitId).ToArray())
                 {
                     if (!travels.Remove(travel.UnitId)) continue;
                     units.SetAbstractLocation(travel.UnitId, travel.Destination.Value);
@@ -134,9 +184,15 @@ namespace Game.Simulation.World
                     arrivedLocations.Add(travel.Destination);
                 }
                 foreach (var location in arrivedLocations.OrderBy(x => x))
-                    StartHostileEncounters(location, arrivalGroup.Key, started);
+                    StartHostileEncounters(location, milestone, started);
+
+                // Restored/directly placed armies must use the same co-location rule as arrivals.
+                foreach (var location in settlements.Values.Select(x => x.LocationId).Distinct().OrderBy(x => x))
+                    StartHostileEncounters(location, milestone, started);
+                ReconcileOccupations(milestone);
+                LastProcessedTick = milestone;
+                if (milestone == calendarTick) break;
             }
-            LastProcessedTick = calendarTick;
             return started;
         }
 
@@ -153,7 +209,8 @@ namespace Game.Simulation.World
         }
 
         public GlobalMapSaveState CaptureState() => new GlobalMapSaveState(GraphId, Mode, ActiveLocationId,
-            Locations, Routes, Settlements, Travels, LastProcessedTick);
+            Locations, Routes, Settlements, Travels, LastProcessedTick, Occupations, OccupationEvents,
+            occupationEventSequence);
 
         public void RestoreState(GlobalMapSaveState state)
         {
@@ -167,6 +224,16 @@ namespace Game.Simulation.World
                 if (unit.ActiveEncounterId.HasValue || unit.Representation != MilitaryUnitRepresentationMode.Aggregate)
                     throw new ArgumentException("Only idle aggregate units may have saved global travel.", nameof(state));
             }
+            foreach (var occupation in state.Occupations)
+            {
+                if (!units.TryGet(occupation.ClaimantUnitId, out var unit) ||
+                    unit.OwnerSideId.Value != occupation.ClaimantSideId.Value ||
+                    !string.Equals(unit.AbstractLocationId, occupation.LocationId.Value, StringComparison.Ordinal))
+                    throw new ArgumentException("Saved occupation claimant is unavailable or misplaced.", nameof(state));
+                var settlement = state.Settlements.Single(x => x.Id == occupation.SettlementId);
+                if (settlement.OwnerSideId == occupation.ClaimantSideId)
+                    throw new ArgumentException("Saved occupation claimant already owns the settlement.", nameof(state));
+            }
             GraphId = state.GraphId;
             Mode = state.Mode;
             ActiveLocationId = state.ActiveLocationId;
@@ -179,6 +246,11 @@ namespace Game.Simulation.World
             foreach (var value in state.Settlements) settlements.Add(value.Id, value);
             travels.Clear();
             foreach (var value in state.Travels) travels.Add(value.UnitId, value);
+            occupations.Clear();
+            foreach (var value in state.Occupations) occupations.Add(value.SettlementId, value);
+            occupationEvents.Clear();
+            occupationEvents.AddRange(state.OccupationEvents);
+            occupationEventSequence = state.OccupationEventSequence;
         }
 
         public ulong ComputeStateHash()
@@ -211,7 +283,112 @@ namespace Game.Simulation.World
                 Add(ref hash, travel.Destination.Value); Add(ref hash, travel.DepartureTick.ToString());
                 Add(ref hash, travel.ArrivalTick.ToString());
             }
+            foreach (var occupation in Occupations)
+            {
+                Add(ref hash, occupation.OccupationId.ToString()); Add(ref hash, occupation.SettlementId.ToString());
+                Add(ref hash, occupation.ClaimantUnitId.ToString()); Add(ref hash, occupation.ClaimantSideId.Value);
+                Add(ref hash, occupation.StartTick.ToString()); Add(ref hash, occupation.RequiredDurationTicks.ToString());
+                Add(ref hash, occupation.LastEvaluatedTick.ToString());
+            }
+            foreach (var value in OccupationEvents)
+            {
+                Add(ref hash, value.Sequence.ToString()); Add(ref hash, value.OccupationId.ToString());
+                Add(ref hash, ((int)value.Kind).ToString()); Add(ref hash, ((int)value.InterruptionReason).ToString());
+                Add(ref hash, value.CalendarTick.ToString()); Add(ref hash, value.ProgressTicks.ToString());
+            }
             return hash;
+        }
+
+        internal bool IsOccupationReady(SettlementOccupationState value, long tick) => value != null &&
+            occupations.TryGetValue(value.SettlementId, out var current) &&
+            current.OccupationId == value.OccupationId && tick >= current.CompletionTick;
+
+        private void ReconcileOccupations(long tick)
+        {
+            foreach (var settlement in Settlements)
+            {
+                var presence = GetMilitaryPresence(settlement.LocationId)
+                    .Where(x => x.Representation == MilitaryUnitRepresentationMode.Aggregate &&
+                                x.Status != MilitaryUnitStatus.Disbanded &&
+                                units.GetRosterSummary(x.Id).CombatCapable > 0)
+                    .OrderBy(x => x.Id).ToArray();
+                var defenders = presence.Where(x => x.OwnerSideId.Value == settlement.OwnerSideId.Value).ToArray();
+                var hostile = presence.Where(x => x.OwnerSideId.Value != settlement.OwnerSideId.Value &&
+                                                  !x.ActiveEncounterId.HasValue).ToArray();
+
+                if (occupations.TryGetValue(settlement.Id, out var active))
+                {
+                    var claimant = presence.SingleOrDefault(x => x.Id == active.ClaimantUnitId &&
+                        !x.ActiveEncounterId.HasValue);
+                    if (settlement.OwnerSideId == active.ClaimantSideId)
+                    { Interrupt(active, tick, SettlementOccupationInterruptionReason.OwnerChanged); continue; }
+                    if (defenders.Length >= occupationSettings.MinimumCombatCapableDefenders)
+                    { Interrupt(active, tick, SettlementOccupationInterruptionReason.DefendersArrived); continue; }
+                    if (presence.Any(x => x.OwnerSideId.Value != settlement.OwnerSideId.Value &&
+                                          x.OwnerSideId.Value != active.ClaimantSideId.Value))
+                    { Interrupt(active, tick, SettlementOccupationInterruptionReason.HostileContested); continue; }
+                    if (claimant == null || units.GetRosterSummary(claimant.Id).CombatCapable <
+                        occupationSettings.MinimumCombatCapableOccupiers)
+                    { Interrupt(active, tick, SettlementOccupationInterruptionReason.ClaimantUnavailable); continue; }
+
+                    active = active.EvaluateAt(tick);
+                    occupations[settlement.Id] = active;
+                    if (tick < active.CompletionTick) continue;
+                    if (occupationCapture == null)
+                        throw new InvalidOperationException("Occupation reached completion without a capture authority.");
+                    if (occupationCapture(active, tick))
+                    {
+                        RecordOccupation(active, SettlementOccupationEventKind.Completed,
+                            SettlementOccupationInterruptionReason.None, tick);
+                        occupations.Remove(settlement.Id);
+                    }
+                    else Interrupt(active, tick, SettlementOccupationInterruptionReason.CaptureRejected);
+                    continue;
+                }
+
+                if (defenders.Length >= occupationSettings.MinimumCombatCapableDefenders || hostile.Length == 0)
+                    continue;
+                var hostileSides = hostile.Select(x => x.OwnerSideId.Value).Distinct(StringComparer.Ordinal).ToArray();
+                if (hostileSides.Length != 1) continue;
+                var newClaimant = hostile.First(x => x.OwnerSideId.Value == hostileSides[0] &&
+                    units.GetRosterSummary(x.Id).CombatCapable >= occupationSettings.MinimumCombatCapableOccupiers);
+                var occupation = new SettlementOccupationState(OccupationId(settlement.Id, newClaimant.Id, tick),
+                    settlement.Id, settlement.LocationId, newClaimant.Id,
+                    new CombatSideId(newClaimant.OwnerSideId.Value), tick, occupationSettings.DurationTicks, tick);
+                occupations.Add(settlement.Id, occupation);
+                RecordOccupation(occupation, SettlementOccupationEventKind.Started,
+                    SettlementOccupationInterruptionReason.None, tick);
+            }
+        }
+
+        private void Interrupt(SettlementOccupationState value, long tick,
+            SettlementOccupationInterruptionReason reason)
+        {
+            var evaluated = value.EvaluateAt(tick);
+            RecordOccupation(evaluated, SettlementOccupationEventKind.Interrupted, reason, tick);
+            occupations.Remove(value.SettlementId);
+            // Stone Age policy is an explicit full reset. A future retention policy needs a separate state model.
+            if (occupationSettings.RetainProgressAfterInterruption)
+                throw new NotSupportedException("Retained occupation progress is not implemented for this ruleset.");
+        }
+
+        private void RecordOccupation(SettlementOccupationState value, SettlementOccupationEventKind kind,
+            SettlementOccupationInterruptionReason reason, long tick)
+        {
+            occupationEvents.Add(new SettlementOccupationEventState(++occupationEventSequence,
+                value.OccupationId, value.SettlementId, value.ClaimantUnitId, value.ClaimantSideId,
+                kind, reason, tick, value.EvaluateAt(tick).ProgressTicks));
+            if (occupationEvents.Count > occupationSettings.HistoryLimit)
+                occupationEvents.RemoveRange(0, occupationEvents.Count - occupationSettings.HistoryLimit);
+        }
+
+        private static StableEntityId OccupationId(SettlementId settlementId, MilitaryUnitId claimant, long tick)
+        {
+            ulong first = 14695981039346656037UL;
+            Add(ref first, "settlement_occupation"); Add(ref first, settlementId.ToString());
+            ulong second = 14695981039346656037UL;
+            Add(ref second, claimant.ToString()); Add(ref second, tick.ToString());
+            return StableEntityId.FromDeterministicHash(first, second);
         }
 
         internal void CommitMode(GameWorldMode mode, WorldLocationId activeLocation)
@@ -225,7 +402,8 @@ namespace Game.Simulation.World
         {
             if (battles == null) return;
             var candidates = GetMilitaryPresence(location).Where(x => !x.ActiveEncounterId.HasValue &&
-                x.Representation == MilitaryUnitRepresentationMode.Aggregate).OrderBy(x => x.Id).ToList();
+                x.Representation == MilitaryUnitRepresentationMode.Aggregate &&
+                units.GetRosterSummary(x.Id).CombatCapable > 0).OrderBy(x => x.Id).ToList();
             while (candidates.Count > 1)
             {
                 var first = candidates[0];

@@ -101,6 +101,8 @@ namespace Game.Presentation.UI
         private int knownEventHistoryCount;
         private int knownPendingEventCount;
         private ulong knownCampaignEventSequence;
+        private ulong knownOccupationEventSequence;
+        private int knownAdultCount;
         private bool suppressNotificationCaptureOnce;
         private readonly FirstHourOnboardingProgress onboarding = new FirstHourOnboardingProgress();
 
@@ -938,7 +940,20 @@ namespace Game.Presentation.UI
                 ? context.Characters.Get(context.Dynasty.CurrentMonarchId.Value) : null;
             AddLine(mainPanel, F("ui.dynasty.spouse", CharacterName(monarch?.SpouseId)));
             var children = monarch == null ? Array.Empty<Character>() : context.Family.GetChildren(monarch.Id).ToArray();
-            AddLine(mainPanel, F("ui.dynasty.children", children.Length == 0 ? T("common.none") : string.Join(", ", children.Select(x => RussianTextCatalog.PersonName(x.Name.DisplayName)))));
+            var biologicalTick = context.Clock().State.BiologicalTicks;
+            AddLine(mainPanel, F("ui.dynasty.children", children.Length == 0 ? T("common.none") : string.Join(", ", children.Select(x =>
+            {
+                var age = x.AgeInCompletedYears(biologicalTick);
+                return F("ui.dynasty.child", RussianTextCatalog.PersonName(x.Name.DisplayName), age,
+                    T(age >= Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears
+                        ? "ui.dynasty.adult" : "ui.dynasty.minor"));
+            }))));
+            var pregnancies = context.Health.Pregnancies.Where(x => x.Status == PregnancyStatus.Active &&
+                context.Dynasty.Contains(x.MotherId)).OrderBy(x => x.DueCalendarTick).ToArray();
+            AddLine(mainPanel, F("ui.dynasty.pregnancies", pregnancies.Length));
+            foreach (var pregnancy in pregnancies.Take(4))
+                AddMuted(mainPanel, F("ui.dynasty.pregnancy", CharacterName(pregnancy.MotherId),
+                    FormatDuration(Math.Max(0, pregnancy.DueCalendarTick - context.Clock().State.CalendarTicks))));
             var heir = context.Dynasty.CurrentMonarchId.HasValue
                 ? context.Family.GetOrderedSuccessionCandidates(context.Dynasty, context.Dynasty.CurrentMonarchId.Value).FirstOrDefault()
                 : null;
@@ -1058,6 +1073,19 @@ namespace Game.Presentation.UI
             AddTitle(mainPanel, T("ui.map.title"));
             AddLine(mainPanel, F("ui.map.mode_location", E(context.GlobalMap.Mode),
                 LocationName(context.GlobalMap.ActiveLocationId)));
+            if (context.GlobalMap.Occupations.Count > 0)
+            {
+                AddSection(mainPanel, T("ui.map.occupations"));
+                foreach (var occupation in context.GlobalMap.Occupations)
+                {
+                    var remaining = Math.Max(0, occupation.CompletionTick - context.Clock().State.CalendarTicks);
+                    AddLine(mainPanel, F("ui.map.occupation", LocationName(occupation.LocationId),
+                        SideName(occupation.ClaimantSideId),
+                        RussianTextCatalog.Percent((double)occupation.ProgressTicks / occupation.RequiredDurationTicks),
+                        FormatDuration(remaining)));
+                }
+                AddMuted(mainPanel, T("ui.map.occupation_help"));
+            }
             if (context.GlobalMap.Mode == GameWorldMode.Local)
             {
                 mainPanel.Add(ActionButton(T("ui.map.open"), context.RequestEnterGlobal));
@@ -1263,6 +1291,10 @@ namespace Game.Presentation.UI
             var eventHistoryCount = context.Events?.History.Count ?? 0;
             var pendingEventCount = context.Events?.PendingPlayerEvents.Count ?? 0;
             var campaignSequence = context.Campaign?.State.EventSequence ?? 0UL;
+            var occupationSequence = context.GlobalMap.OccupationEventSequence;
+            var adultCount = PlayerCharacterIds().Count(id => context.Characters.Get(id)
+                .AgeInCompletedYears(context.Clock().State.BiologicalTicks) >=
+                Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears);
             if (notificationsPrimed && !suppressNotificationCaptureOnce)
             {
                 if (researchCount > knownResearchCount) AddNotification(T("ui.notification.research"));
@@ -1299,6 +1331,17 @@ namespace Game.Presentation.UI
                     else if (context.Campaign.State.RivalDiscovered)
                         AddNotification(T("ui.notification.discovery"));
                 }
+                if (occupationSequence > knownOccupationEventSequence)
+                {
+                    var change = context.GlobalMap.OccupationEvents.Last();
+                    var key = change.Kind == SettlementOccupationEventKind.Started
+                        ? "ui.notification.occupation_started"
+                        : change.Kind == SettlementOccupationEventKind.Completed
+                            ? "ui.notification.occupation_completed"
+                            : "ui.notification.occupation_interrupted";
+                    AddNotification(F(key, SideName(change.ClaimantSideId)));
+                }
+                if (adultCount > knownAdultCount) AddNotification(T("ui.notification.adulthood"));
             }
             suppressNotificationCaptureOnce = false;
             notificationsPrimed = true;
@@ -1314,6 +1357,8 @@ namespace Game.Presentation.UI
             knownEventHistoryCount = eventHistoryCount;
             knownPendingEventCount = pendingEventCount;
             knownCampaignEventSequence = campaignSequence;
+            knownOccupationEventSequence = occupationSequence;
+            knownAdultCount = adultCount;
         }
 
         private void RefreshTps()

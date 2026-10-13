@@ -31,6 +31,16 @@ namespace Game.Tests.Editor
                 new[] { Id(1), Id(2) }));
         }
 
+        [Test, Category("P7")]
+        public void DynastyExtinctionSupersedesEarlierSettlementLossReason()
+        {
+            var run = new GameRunState();
+            run.End(GameOverReason.NoControlledSettlement);
+            run.End(GameOverReason.DynastyExtinction);
+            Assert.That(run.Status, Is.EqualTo(GameRunStatus.GameOver));
+            Assert.That(run.GameOverReason, Is.EqualTo(GameOverReason.DynastyExtinction));
+        }
+
         [Test]
         public void FamilyQueryDerivesParentsChildrenSiblingsAndDescendants()
         {

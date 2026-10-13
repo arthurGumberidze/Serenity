@@ -69,7 +69,8 @@ namespace Game.Domain.Campaign
         public CampaignProgressSaveState(long worldSeed, string configurationId, CombatSideId playerSideId,
             AiStateId rivalStateId, SettlementId rivalHomeSettlementId, bool rivalDiscovered,
             long? discoveredTick, bool militaryVictory, long? victoryTick, AiStateId? defeatedStateId,
-            SettlementId? capturedSettlementId, StableEntityId? sourceBattleId, ulong eventSequence)
+            SettlementId? capturedSettlementId, StableEntityId? sourceBattleId, ulong eventSequence,
+            StableEntityId? sourceOccupationId = null)
         {
             if (string.IsNullOrWhiteSpace(configurationId) || configurationId != configurationId.Trim() ||
                 configurationId.Length > 64)
@@ -81,8 +82,11 @@ namespace Game.Domain.Campaign
                 throw new ArgumentException("Discovery marker and tick must agree.", nameof(discoveredTick));
             if (militaryVictory != victoryTick.HasValue || victoryTick < 0 ||
                 militaryVictory != defeatedStateId.HasValue || militaryVictory != capturedSettlementId.HasValue ||
-                militaryVictory != sourceBattleId.HasValue)
+                militaryVictory != (sourceBattleId.HasValue || sourceOccupationId.HasValue) ||
+                sourceBattleId.HasValue && sourceOccupationId.HasValue)
                 throw new ArgumentException("Victory marker and audit fields must agree.", nameof(victoryTick));
+            if (sourceOccupationId.HasValue && !sourceOccupationId.Value.IsValid)
+                throw new ArgumentException("Occupation source must be valid.", nameof(sourceOccupationId));
             if (militaryVictory && !rivalDiscovered)
                 throw new ArgumentException("Military victory requires prior contact.", nameof(militaryVictory));
             if (eventSequence != (ulong)((rivalDiscovered ? 1 : 0) + (militaryVictory ? 1 : 0)))
@@ -99,6 +103,7 @@ namespace Game.Domain.Campaign
             DefeatedStateId = defeatedStateId;
             CapturedSettlementId = capturedSettlementId;
             SourceBattleId = sourceBattleId;
+            SourceOccupationId = sourceOccupationId;
             EventSequence = eventSequence;
         }
 
@@ -114,6 +119,7 @@ namespace Game.Domain.Campaign
         public AiStateId? DefeatedStateId { get; }
         public SettlementId? CapturedSettlementId { get; }
         public StableEntityId? SourceBattleId { get; }
+        public StableEntityId? SourceOccupationId { get; }
         public ulong EventSequence { get; }
     }
 }

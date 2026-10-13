@@ -277,6 +277,29 @@ namespace Game.Simulation.Buildings
                 if (!evaluation.Succeeded) return evaluation;
             }
 
+            return CommitCapture(ids, newOwnerSideId, calendarTick);
+        }
+
+        public BuildingCaptureResult CaptureBuildingsAfterOccupation(IEnumerable<StableEntityId> buildingIds,
+            CombatSideId newOwnerSideId, StableEntityId occupationId, long calendarTick)
+        {
+            if (buildingIds == null) throw new ArgumentNullException(nameof(buildingIds));
+            if (!occupationId.IsValid)
+                return new BuildingCaptureResult(BuildingCaptureFailure.MissingOccupation, default);
+            var ids = buildingIds.Distinct().OrderBy(x => x).ToArray();
+            if (ids.Any(x => !x.IsValid))
+                return new BuildingCaptureResult(BuildingCaptureFailure.MissingBuilding, default);
+            foreach (var id in ids)
+            {
+                var evaluation = EvaluateOwnershipTransfer(id, newOwnerSideId);
+                if (!evaluation.Succeeded) return evaluation;
+            }
+            return CommitCapture(ids, newOwnerSideId, calendarTick);
+        }
+
+        private BuildingCaptureResult CommitCapture(IReadOnlyList<StableEntityId> ids,
+            CombatSideId newOwnerSideId, long calendarTick)
+        {
             // Cancel old-owner work before publishing any ownership mutation. Once prevalidated,
             // Building.Capture cannot reject on the single simulation owner thread.
             foreach (var id in ids)
@@ -308,6 +331,21 @@ namespace Game.Simulation.Buildings
                 encounter.Outcome == CombatOutcome.SideBVictory ? encounter.SideB : default;
             if (!victor.IsValid || victor != newOwnerSideId || victor == building.OwnerSideId)
                 return new BuildingCaptureResult(BuildingCaptureFailure.NotVictoriousSide, building.OwnerSideId);
+            return new BuildingCaptureResult(BuildingCaptureFailure.None, newOwnerSideId);
+        }
+
+        private BuildingCaptureResult EvaluateOwnershipTransfer(StableEntityId buildingId,
+            CombatSideId newOwnerSideId)
+        {
+            if (!newOwnerSideId.IsValid) return new BuildingCaptureResult(BuildingCaptureFailure.InvalidOwner, default);
+            if (!buildings.TryGet(buildingId, out var building))
+                return new BuildingCaptureResult(BuildingCaptureFailure.MissingBuilding, default);
+            if (building.OwnerSideId == newOwnerSideId)
+                return new BuildingCaptureResult(BuildingCaptureFailure.SameOwner, building.OwnerSideId);
+            if (building.IsDestroyed)
+                return new BuildingCaptureResult(BuildingCaptureFailure.Destroyed, building.OwnerSideId);
+            if (!Definition(building).Capturable)
+                return new BuildingCaptureResult(BuildingCaptureFailure.NotCapturable, building.OwnerSideId);
             return new BuildingCaptureResult(BuildingCaptureFailure.None, newOwnerSideId);
         }
 
