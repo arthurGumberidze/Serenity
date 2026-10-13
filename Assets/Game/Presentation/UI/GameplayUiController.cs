@@ -231,6 +231,34 @@ namespace Game.Presentation.UI
             context.StartNewGame?.Invoke(worldSeed);
         }
 
+        public void RequestReturnToMainMenu()
+        {
+            if (context.RequestMainMenu == null) throw PlayerError("ui.status.command_failed");
+            if (!context.Saves.HasUnsavedChanges)
+            {
+                context.RequestMainMenu.Invoke();
+                return;
+            }
+
+            modal.Clear();
+            modal.style.display = DisplayStyle.Flex;
+            AddTitle(modal, T("ui.modal.main_menu.title"));
+            AddLine(modal, T("ui.modal.main_menu.unsaved"));
+            var row = Row();
+            row.Add(ActionButton(T("ui.modal.main_menu.leave"), ConfirmReturnToMainMenu,
+                "confirm-main-menu"));
+            row.Add(ActionButton(T("common.cancel"), CloseModal, "cancel-main-menu"));
+            modal.Add(row);
+        }
+
+        public void ConfirmReturnToMainMenu()
+        {
+            CloseModal();
+            context.RequestMainMenu?.Invoke();
+        }
+
+        public void CancelModal() => CloseModal();
+
         private void Update()
         {
             if (!initialized) return;
@@ -404,6 +432,9 @@ namespace Game.Presentation.UI
             statusLabel = new Label(T("ui.status.player"));
             statusLabel.style.flexGrow = 1;
             statusBar.Add(statusLabel);
+            var mainMenuButton = ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "main-menu-button");
+            mainMenuButton.style.marginRight = 150;
+            statusBar.Add(mainMenuButton);
             root.Add(statusBar);
 
             tpsHud = Panel("tps-hud");

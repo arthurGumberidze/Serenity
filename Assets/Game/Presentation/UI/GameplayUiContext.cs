@@ -48,13 +48,15 @@ namespace Game.Presentation.UI
 
     public sealed class GameplaySaveSlotInfo
     {
-        public GameplaySaveSlotInfo(int index, string label, bool exists, bool isCorrupt, string detail)
+        public GameplaySaveSlotInfo(int index, string label, bool exists, bool isCorrupt, string detail,
+            long? worldSeed = null)
         {
             Index = index;
             Label = label ?? string.Empty;
             Exists = exists;
             IsCorrupt = isCorrupt;
             Detail = detail ?? string.Empty;
+            WorldSeed = worldSeed;
         }
 
         public int Index { get; }
@@ -62,11 +64,13 @@ namespace Game.Presentation.UI
         public bool Exists { get; }
         public bool IsCorrupt { get; }
         public string Detail { get; }
+        public long? WorldSeed { get; }
     }
 
     public interface IGameplaySaveFacade
     {
         IReadOnlyList<GameplaySaveSlotInfo> ListSlots();
+        bool HasUnsavedChanges { get; }
         void Save(int slotIndex);
         void Load(int slotIndex);
     }
@@ -88,7 +92,8 @@ namespace Game.Presentation.UI
             Action requestEnterGlobal, Action<WorldLocationId> requestEnterLocation,
             Action<StableEntityId> requestEnterBattle, Action<bool> setDeveloperUiVisible,
             IEnumerable<Behaviour> legacyDebugOverlays, EventService events = null,
-            CampaignProgressService campaign = null, Action<long> startNewGame = null)
+            CampaignProgressService campaign = null, Action<long> startNewGame = null,
+            Action requestMainMenu = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -130,6 +135,7 @@ namespace Game.Presentation.UI
             Events = events;
             Campaign = campaign;
             StartNewGame = startNewGame;
+            RequestMainMenu = requestMainMenu;
         }
 
         public Func<GameClock> Clock { get; }
@@ -172,5 +178,6 @@ namespace Game.Presentation.UI
         public EventService Events { get; }
         public CampaignProgressService Campaign { get; }
         public Action<long> StartNewGame { get; }
+        public Action RequestMainMenu { get; }
     }
 }

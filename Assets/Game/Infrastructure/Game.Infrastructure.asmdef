@@ -6,7 +6,8 @@
     "Game.Simulation",
     "Game.ECS",
     "Game.Presentation",
-    "Unity.AI.Navigation"
+    "Unity.AI.Navigation",
+    "Unity.InputSystem"
   ],
   "overrideReferences": true,
   "precompiledReferences": ["Npgsql.dll"],

@@ -437,8 +437,31 @@ namespace Game.Infrastructure
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
-                    Events, CampaignProgress, StartNewGame),
+                    Events, CampaignProgress, StartNewGame, ReturnToMainMenu),
                 pointerRaycaster, input);
+
+            var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
+            UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
+
+            if (SessionLaunchState.TryConsumeLoad(out var startupSlot))
+            {
+                try
+                {
+                    PlayerSaves.Load(startupSlot);
+                }
+                catch (Exception exception) when (exception is System.IO.IOException ||
+                                                  exception is UnauthorizedAccessException ||
+                                                  exception is System.IO.InvalidDataException ||
+                                                  exception is NotSupportedException ||
+                                                  exception is ArgumentException ||
+                                                  exception is InvalidOperationException)
+                {
+                    Debug.LogException(exception);
+                    SessionLaunchState.ReportLoadFailure(startupSlot);
+                    SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
+                    return;
+                }
+            }
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
             SoakValidation = U30SoakController.AttachIfRequested(this);
             PlayerSmoke = U31PlayerSmokeController.AttachIfRequested(this);
@@ -549,6 +572,11 @@ namespace Game.Infrastructure
         {
             NewGameLaunchState.Request(worldSeed);
             SceneManager.LoadScene(gameObject.scene.name, LoadSceneMode.Single);
+        }
+
+        public void ReturnToMainMenu()
+        {
+            SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
         }
 
         public CombatEncounterState StartDemoCombat()

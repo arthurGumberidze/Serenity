@@ -65,7 +65,7 @@ namespace Game.Infrastructure
                 {
                     var snapshot = Load(slotId);
                     result.Add(new SaveSlotMetadata(slotId, snapshot.SessionId, snapshot.CalendarTicks,
-                        snapshot.GlobalMap?.Mode, modified, false, string.Empty));
+                        snapshot.GlobalMap?.Mode, modified, false, string.Empty, ResolveWorldSeed(snapshot)));
                 }
                 catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException ||
                                                   exception is InvalidDataException || exception is NotSupportedException ||
@@ -76,6 +76,17 @@ namespace Game.Infrastructure
                 }
             }
             return result;
+        }
+
+        private static long? ResolveWorldSeed(SaveSnapshot snapshot)
+        {
+            if (snapshot.Campaign != null) return snapshot.Campaign.WorldSeed;
+            if (snapshot.Events != null) return snapshot.Events.WorldSeed;
+            if (snapshot.StrategicAi != null) return snapshot.StrategicAi.WorldSeed;
+            if (snapshot.Combat != null) return snapshot.Combat.WorldSeed;
+            if (snapshot.Weather != null) return snapshot.Weather.WorldSeed;
+            if (snapshot.HealthFamily != null) return snapshot.HealthFamily.WorldSeed;
+            return null;
         }
     }
 }

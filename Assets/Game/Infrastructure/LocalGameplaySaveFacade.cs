@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using Game.Domain;
 using Game.Domain.Time;
 using Game.Presentation.UI;
@@ -16,6 +17,8 @@ namespace Game.Infrastructure
         private readonly LocalSceneCompositionRoot root;
         private readonly SaveCoordinator coordinator;
         private readonly ISaveSlotCatalog catalog;
+        private readonly SaveXmlCodec codec = new SaveXmlCodec();
+        private byte[] savedFingerprint;
 
         public LocalGameplaySaveFacade(LocalSceneCompositionRoot compositionRoot, SaveCoordinator saveCoordinator,
             ISaveSlotCatalog slotCatalog)
@@ -42,17 +45,31 @@ namespace Game.Infrastructure
                       GameCalendar.DayOfYear(slot.CalendarTicks.Value),
                       slot.Mode.HasValue ? RussianTextCatalog.Enum(slot.Mode.Value) : RussianTextCatalog.Get("ui.hud.mode.local"),
                       slot.LastWriteUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
-                result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), true, slot.IsCorrupt, detail));
+                result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), true,
+                    slot.IsCorrupt, detail, slot.WorldSeed));
             }
             return result;
         }
 
-        public void Save(int slotIndex) => coordinator.Save(SlotId(slotIndex));
+        public bool HasUnsavedChanges => savedFingerprint == null || !Fingerprint().SequenceEqual(savedFingerprint);
+
+        public void Save(int slotIndex)
+        {
+            coordinator.Save(SlotId(slotIndex));
+            savedFingerprint = Fingerprint();
+        }
 
         public void Load(int slotIndex)
         {
             coordinator.Load(SlotId(slotIndex));
             root.RebindAfterLoad(coordinator.Clock);
+            savedFingerprint = Fingerprint();
+        }
+
+        private byte[] Fingerprint()
+        {
+            using (var hash = SHA256.Create())
+                return hash.ComputeHash(codec.Serialize(coordinator.Capture()));
         }
 
         public static StableEntityId SlotId(int slotIndex)

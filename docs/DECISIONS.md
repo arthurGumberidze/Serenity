@@ -541,3 +541,9 @@ By explicit user decision, product directions P1 through P7 now execute sequenti
 ## D-108 Russian localization is a presentation boundary (2026-10-13)
 
 `ru-RU` is the default shipped locale. Stable player-facing keys live in `RussianTextCatalog`; content/event/enum identifiers and save v15 remain canonical English IDs so persistence, deterministic hashes and service contracts do not change. Supplied fictional person/dynasty names are transliterated only when displayed. Missing translations log once and degrade to a neutral Russian fallback, while unexpected exceptions are logged technically and replaced with a safe Russian player message. Legacy diagnostic overlays are also translated because they are visible game surfaces, but stable IDs may remain visible there by design. No external localization package or Asset Store dependency is added.
+
+## D-109 Startup reconstructs identity before canonical load and preferences remain external (2026-10-13)
+
+The separate `MainMenu` scene may inspect only validated slot metadata. A usable metadata record includes the world seed already present in canonical v6+ save sections; Continue/Load passes that seed through the existing one-use New Game launch state so `LocalGameplay` reconstructs the same deterministic StableEntityIds before `SaveCoordinator.Load`. A corrupt, missing or older seedless slot is explained and left untouched. No failed load falls back to a new game.
+
+Volume, display, quality, UI scale, camera speed and primary key overrides live in a versioned atomic user-preferences JSON file outside snapshot v15. Exit dirty detection compares the canonical serialized snapshot against the last successful Save/Load fingerprint only when queried. The menu, preference file and fingerprint do not become gameplay authorities.
