@@ -99,6 +99,7 @@ namespace Game.Infrastructure
             P2PlayerSmokeController.AttachIfRequested(this);
             P3PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P4PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P5PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()

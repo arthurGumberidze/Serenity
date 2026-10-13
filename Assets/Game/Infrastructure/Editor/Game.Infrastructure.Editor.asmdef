@@ -5,6 +5,7 @@
     "Game.Infrastructure",
     "Game.Domain",
     "Game.Presentation",
+    "Unity.AI.Navigation",
     "Unity.InputSystem",
     "Unity.Cinemachine"
   ],

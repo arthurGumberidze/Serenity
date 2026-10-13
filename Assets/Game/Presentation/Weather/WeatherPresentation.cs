@@ -3,6 +3,7 @@ using Game.Domain.Time;
 using Game.Domain.Weather;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
+using Game.Presentation.Environment;
 using Game.Simulation.Time;
 using Game.Simulation.Weather;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Game.Presentation.Weather
         private AudioSource rainAudio;
         private Material rainMaterial;
         private AudioClip rainClip;
+        private P5InhabitableRegionPresentation region;
         private bool previewActive;
         private bool ownsRainMaterial;
 
@@ -26,10 +28,12 @@ namespace Game.Presentation.Weather
         public ParticleSystem RainParticles => rainParticles;
         public AudioSource RainAudio => rainAudio;
 
-        public void Initialize(WeatherService service, Material particleMaterial = null)
+        public void Initialize(WeatherService service, Material particleMaterial = null,
+            P5InhabitableRegionPresentation inhabitableRegion = null)
         {
             weather = service ?? throw new ArgumentNullException(nameof(service));
             rainMaterial = particleMaterial;
+            region = inhabitableRegion;
             sun = FindDirectionalLight();
             CreateRainPresentation();
         }
@@ -86,6 +90,7 @@ namespace Game.Presentation.Weather
                 if (IsRaining && !rainAudio.isPlaying) rainAudio.Play();
                 else if (!IsRaining && rainAudio.isPlaying) rainAudio.Stop();
             }
+            region?.ApplySeason(state.Season, state.Snowing);
         }
 
         private void CreateRainPresentation()

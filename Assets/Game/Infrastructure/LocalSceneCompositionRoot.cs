@@ -116,6 +116,7 @@ namespace Game.Infrastructure
         public Building DemoShelterBuilding { get; private set; }
         public BuildingPresenter DemoShelterPresenter { get; private set; }
         public StoneAgeReferenceCampPresentation ReferenceCamp { get; private set; }
+        public P5InhabitableRegionPresentation InhabitableRegion { get; private set; }
         public NavMeshSurface NavigationSurface { get; private set; }
         public GameClock Clock { get; private set; }
         public Tier1AiAgentRegistry AiAgents { get; private set; }
@@ -176,6 +177,7 @@ namespace Game.Infrastructure
         public U30SoakController SoakValidation { get; private set; }
         public U31PlayerSmokeController PlayerSmoke { get; private set; }
         public P3PlayerSmokeController P3PlayerSmoke { get; private set; }
+        public P5PlayerSmokeController P5PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -246,6 +248,8 @@ namespace Game.Infrastructure
                 new BuildingGridBounds(-45, -45, 45, 45));
             if (buildingCatalog.ResourceCatalog == null) throw new InvalidOperationException("Building catalog has no resource catalog.");
             Resources = buildingCatalog.ResourceCatalog.CreateCatalog();
+            InhabitableRegion = GetComponent<P5InhabitableRegionPresentation>();
+            InhabitableRegion?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -297,14 +301,7 @@ namespace Game.Infrastructure
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
             Production.Population = Characters.Count;
-            SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
-                new Color(0.65f, 0.15f, 0.35f), PrimitiveType.Sphere, 0);
-            SpawnProductionSource("gather_fiber", 60, new WorldPosition(-8f, 0f, 7f),
-                new Color(0.3f, 0.7f, 0.2f), PrimitiveType.Capsule, 1);
-            SpawnProductionSource("chop_wood", 80, new WorldPosition(-4f, 0f, 9f),
-                new Color(0.35f, 0.2f, 0.08f), PrimitiveType.Cylinder, 2);
-            SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
-                new Color(0.45f, 0.45f, 0.48f), PrimitiveType.Sphere, 3);
+            SpawnRegionProductionSources();
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
 
             Clock = new GameClock(new GameTimeState(0, Character.BiologicalTicksPerYear * 20L, 1, false));
@@ -335,7 +332,8 @@ namespace Game.Infrastructure
             WeatherDebug = gameObject.AddComponent<WeatherDebugOverlay>();
             WeatherDebug.Initialize(Weather, Clock, pointerRaycaster);
             WeatherPresentation = gameObject.AddComponent<WeatherPresentationController>();
-            WeatherPresentation.Initialize(Weather, ReferenceCamp != null ? ReferenceCamp.RainParticleMaterial : null);
+            WeatherPresentation.Initialize(Weather, ReferenceCamp != null ? ReferenceCamp.RainParticleMaterial : null,
+                InhabitableRegion);
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
@@ -377,6 +375,7 @@ namespace Game.Infrastructure
             GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
                 Battles);
             StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
+            InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
             ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,
                 MilitaryRepresentations, Battles, PlayerControl);
@@ -488,6 +487,7 @@ namespace Game.Infrastructure
             SoakValidation = U30SoakController.AttachIfRequested(this);
             PlayerSmoke = U31PlayerSmokeController.AttachIfRequested(this);
             P3PlayerSmoke = P3PlayerSmokeController.AttachIfRequested(this);
+            P5PlayerSmoke = P5PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
@@ -587,6 +587,7 @@ namespace Game.Infrastructure
             RefreshTier1AppearanceAfterLoad();
             selectionProbe.ClearSelection();
             Production.Population = Characters.Count;
+            RebindRegionResourcePresenters();
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             if (GlobalMap.Mode == GameWorldMode.Local) ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
             GlobalMapBridge.ReconcileAfterLoad();
@@ -761,21 +762,64 @@ namespace Game.Infrastructure
             productionPresenters.Add(presenter);
         }
 
+        private void SpawnRegionProductionSources()
+        {
+            if (InhabitableRegion != null)
+            {
+                foreach (var anchor in InhabitableRegion.ResourceAnchors.OrderBy(x => x.StableIndex))
+                    SpawnProductionSource(anchor.RecipeId, anchor.Amount,
+                        new WorldPosition(anchor.VisualRoot.position.x, anchor.VisualRoot.position.y,
+                            anchor.VisualRoot.position.z), anchor.ActiveColor, anchor.StableIndex,
+                        anchor.VisualRoot.gameObject);
+                return;
+            }
+            SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
+                new Color(0.65f, 0.15f, 0.35f), 0, null, PrimitiveType.Sphere);
+            SpawnProductionSource("gather_fiber", 60, new WorldPosition(-8f, 0f, 7f),
+                new Color(0.3f, 0.7f, 0.2f), 1, null, PrimitiveType.Capsule);
+            SpawnProductionSource("chop_wood", 80, new WorldPosition(-4f, 0f, 9f),
+                new Color(0.35f, 0.2f, 0.08f), 2, null, PrimitiveType.Cylinder);
+            SpawnProductionSource("gather_stone", 80, new WorldPosition(1f, 0f, 9f),
+                new Color(0.45f, 0.45f, 0.48f), 3, null, PrimitiveType.Sphere);
+        }
+
         private void SpawnProductionSource(string recipeId, long amount, WorldPosition position, Color color,
-            PrimitiveType primitive, int index)
+            int index, GameObject authoredView, PrimitiveType fallbackPrimitive = PrimitiveType.Sphere)
         {
             var site = ProductionSite.Restore(new ProductionSiteState(
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", index),
                 new ProductionRecipeId(recipeId), ProductionSiteKind.NaturalSource, position, amount, amount,
                 CropPlotPhase.Unplanted, 0, 0));
             Production.AddSite(site);
-            var view = GameObject.CreatePrimitive(primitive);
-            view.transform.position = new Vector3(position.X, position.Y + 0.5f, position.Z);
-            view.transform.localScale = primitive == PrimitiveType.Cylinder
-                ? new Vector3(0.8f, 1.6f, 0.8f) : Vector3.one;
-            var presenter = view.AddComponent<ProductionSourcePresenter>();
+            var view = authoredView != null ? authoredView : GameObject.CreatePrimitive(fallbackPrimitive);
+            if (authoredView == null)
+            {
+                view.transform.position = new Vector3(position.X, position.Y + 0.5f, position.Z);
+                view.transform.localScale = fallbackPrimitive == PrimitiveType.Cylinder
+                    ? new Vector3(0.8f, 1.6f, 0.8f) : Vector3.one;
+            }
+            var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, color);
             productionPresenters.Add(presenter);
+        }
+
+        private void RebindRegionResourcePresenters()
+        {
+            if (InhabitableRegion == null) return;
+            foreach (var anchor in InhabitableRegion.ResourceAnchors)
+            {
+                var id = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed,
+                    "player_source", anchor.StableIndex);
+                var presenter = anchor.VisualRoot.GetComponent<ProductionSourcePresenter>();
+                if (Production.TryGetSite(id, out var site))
+                {
+                    anchor.VisualRoot.gameObject.SetActive(true);
+                    if (presenter == null) presenter = anchor.VisualRoot.gameObject.AddComponent<ProductionSourcePresenter>();
+                    presenter.Bind(site, anchor.ActiveColor);
+                    if (!productionPresenters.Contains(presenter)) productionPresenters.Add(presenter);
+                }
+                else if (presenter != null) anchor.VisualRoot.gameObject.SetActive(false);
+            }
         }
 
         private void BuildNavigationSurface()
@@ -792,15 +836,22 @@ namespace Game.Infrastructure
         {
             var pile = WorldPiles.Create(new ResourceId(id), new ResourceQuantity(units), coordinate,
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_pile", index));
-            var view = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            view.transform.position = buildingGridOrigin + new Vector3(coordinate.X * buildingGridSize, 0.35f,
-                coordinate.Z * buildingGridSize);
-            view.transform.localScale = new Vector3(0.75f, 0.7f, 0.75f);
+            var authoredAnchor = InhabitableRegion?.GetPileAnchor(index);
+            var view = authoredAnchor != null ? authoredAnchor.gameObject : GameObject.CreatePrimitive(PrimitiveType.Cube);
+            if (authoredAnchor == null)
+            {
+                view.transform.position = buildingGridOrigin + new Vector3(coordinate.X * buildingGridSize, 0.35f,
+                    coordinate.Z * buildingGridSize);
+                view.transform.localScale = new Vector3(0.75f, 0.7f, 0.75f);
+            }
             var renderer = view.GetComponent<Renderer>();
-            var block = new MaterialPropertyBlock();
-            block.SetColor("_BaseColor", color);
-            renderer.SetPropertyBlock(block);
-            var presenter = view.AddComponent<WorldResourcePilePresenter>();
+            if (renderer != null)
+            {
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", color);
+                renderer.SetPropertyBlock(block);
+            }
+            var presenter = view.GetComponent<WorldResourcePilePresenter>() ?? view.AddComponent<WorldResourcePilePresenter>();
             presenter.Bind(pile, Inventories.Get(pile.InventoryOwner));
             demoPilePresenters.Add(presenter);
         }

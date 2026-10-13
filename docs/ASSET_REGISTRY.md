@@ -138,6 +138,22 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Visual grade/status: B/C reference baseline, `APPROVED_RUNTIME`; coherent and readable but not final production art
 - Notes: P3 imported no new vendor package and used none of the license-review-required staging/existing packages. Hodaart people and primitive shelter/storage remain explicit grade-C placeholders pending a separately approved compatible art source.
 
+### SERENITY-P5-INHABITABLE-REGION
+
+- Name: P5 authored inhabitable-region extension
+- Type/category: project-owned route, resource, supply and territory presentation assets plus scene composition
+- Source/author/license: Serenity project-owned code and generated Unity assets; no external source files
+- Date created/checked: 2026-10-13
+- Commercial use: YES; attribution: NO
+- Asset paths: `Assets/Game/Art/Meshes/P3/P5_*`, `Assets/Game/Art/Materials/P3/P5_*`, `Assets/Scenes/LocalGameplay.unity`
+- Generator: `Assets/Game/Infrastructure/Editor/P5RegionSceneBuilder.cs`, delegating to the idempotent P3/P5 scene recipe
+- Runtime dependencies: the approved P3 runtime set and its registered Serenity wrappers; Unity AI Navigation already present in the project
+- Contents: authored route strip, supply-cache and territory-totem meshes; route, berry, fibre and rival-territory materials; expanded forest/stone/grass layout; canonical visible berry/fibre/tree/stone nodes; buildable clearings and rival territory
+- Scale/pivots: 1 Unity unit = 1 metre; generated meshes are authored in metre-scale local coordinates
+- Collider/LOD status: resource and supply views have simple colliders; tree/rock wrapper colliders remain; water is marked non-walkable and shore is collidable; lightweight generated meshes have no additional LOD
+- Visual grade/status: B/C provisional authored baseline, `APPROVED_RUNTIME`; coherent and gameplay-readable, but final visual acceptance remains open
+- Notes: P5 bought or imported no package, edits no vendor source, and does not authorize any license-review-required staging asset.
+
 ## Staging packages considered but not imported
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |
