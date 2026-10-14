@@ -13,29 +13,30 @@ namespace Game.Tests.Editor
         public void OpenScene() => EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
 
         [Test]
-        public void BenchmarkUsesOfficialTerrainContentAndPreservesExistingMap()
+        public void OfficialTerrainContentIsPromotedIntoTheGameplayMap()
         {
-            var benchmark = Object.FindAnyObjectByType<P91RealisticWorldBenchmark>();
-            Assert.That(benchmark, Is.Not.Null);
-            Assert.DoesNotThrow(benchmark.ValidateConfiguration);
-            Assert.That(benchmark.SourceAsset, Does.Contain("213197"));
-            Assert.That(benchmark.Terrain.terrainData.terrainLayers, Has.Length.GreaterThanOrEqualTo(4));
-            Assert.That(benchmark.Terrain.terrainData.terrainLayers.All(x =>
+            var region = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(region, Is.Not.Null);
+            Assert.DoesNotThrow(region.ValidateConfiguration);
+            Assert.That(region.SourceAsset, Does.Contain("213197"));
+            Assert.That(region.Terrain.terrainData.terrainLayers, Has.Length.GreaterThanOrEqualTo(4));
+            Assert.That(region.Terrain.terrainData.terrainLayers.All(x =>
                 x != null && UnityEditor.AssetDatabase.GetAssetPath(x).StartsWith("Assets/TerrainDemoScene_URP/")), Is.True);
-            Assert.That(GameObject.Find("P3 Reference World"), Is.Not.Null, "P9.1 must not delete the legacy map.");
+            Assert.That(GameObject.Find("P9.1 Realistic World Benchmark"), Is.Null);
+            Assert.That(GameObject.Find("P3 Reference World"), Is.Null);
         }
 
         [Test]
-        public void BenchmarkHasDenseValidEnvironmentAndPhysicalTerrain()
+        public void PromotedTerrainHasDenseValidEnvironmentAndPhysicalTerrain()
         {
-            var benchmark = Object.FindAnyObjectByType<P91RealisticWorldBenchmark>();
-            Assert.That(benchmark.Trees.Count, Is.GreaterThanOrEqualTo(24));
-            Assert.That(benchmark.Rocks.Count, Is.GreaterThanOrEqualTo(12));
-            Assert.That(benchmark.Foliage.Count, Is.GreaterThanOrEqualTo(48));
-            Assert.That(benchmark.Terrain.GetComponent<TerrainCollider>(), Is.Not.Null);
-            Assert.That(benchmark.Trees.Concat(benchmark.Rocks).All(x =>
+            var region = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(region.Trees.Count, Is.GreaterThanOrEqualTo(40));
+            Assert.That(region.Rocks.Count, Is.GreaterThanOrEqualTo(22));
+            Assert.That(region.Foliage.Count, Is.GreaterThanOrEqualTo(96));
+            Assert.That(region.Terrain.GetComponent<Collider>(), Is.Not.Null);
+            Assert.That(region.Trees.Concat(region.Rocks).All(x =>
                 x.GetComponentInChildren<Collider>(true) != null), Is.True);
-            Assert.That(benchmark.WaterRenderer.sharedMaterial.shader.name, Is.Not.EqualTo("Hidden/InternalErrorShader"));
+            Assert.That(region.WaterRenderer.sharedMaterial.shader.name, Is.Not.EqualTo("Hidden/InternalErrorShader"));
         }
     }
 }

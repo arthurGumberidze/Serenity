@@ -16,17 +16,18 @@ namespace Game.Tests.Editor
         public void OpenScene() => EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
 
         [Test]
-        public void NaturalMapUsesFiniteMeshBoundaryAndNoGroundCube()
+        public void NaturalMapKeepsFiniteBoundaryOnTheSupersedingTerrain()
         {
             var region = Object.FindAnyObjectByType<P5InhabitableRegionPresentation>();
+            var realistic = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
             Assert.That(region, Is.Not.Null);
+            Assert.That(realistic, Is.Not.Null);
             Assert.DoesNotThrow(region.ValidateGeography);
             Assert.That(region.LandBoundary.Count, Is.GreaterThanOrEqualTo(12));
             Assert.That(region.AuthoredPlacementAnchors.All(x => region.ContainsLandPoint(x.position)), Is.True);
-            var land = GameObject.Find("P3 Buildable Forest Clearing");
-            Assert.That(land, Is.Not.Null);
-            Assert.That(land.GetComponent<BoxCollider>(), Is.Null);
-            Assert.That(land.GetComponent<MeshCollider>()?.sharedMesh?.name, Does.StartWith("P82_"));
+            Assert.That(realistic.Terrain.GetComponent<Collider>(), Is.Not.Null);
+            Assert.That(realistic.Terrain.GetComponent<Game.Presentation.Interaction.BuildableGround>(), Is.Not.Null);
+            Assert.That(GameObject.Find("P3 Buildable Forest Clearing"), Is.Null);
             Assert.That(GameObject.Find("Ground Placeholder"), Is.Null);
         }
 
@@ -42,10 +43,11 @@ namespace Game.Tests.Editor
             {
                 Assert.That(anchor.VisualRoot.GetComponentInChildren<Collider>(), Is.Not.Null, anchor.VisualRoot.name);
                 Assert.That(anchor.VisualRoot.GetComponentsInChildren<Renderer>(true).All(x =>
-                    x.sharedMaterial != null && x.sharedMaterial.shader.name.Contains("Lit")), Is.True, anchor.VisualRoot.name);
+                    x.sharedMaterial != null && x.sharedMaterial.shader != null &&
+                    x.sharedMaterial.shader.name != "Hidden/InternalErrorShader"), Is.True, anchor.VisualRoot.name);
             }
             Assert.That(region.TrunkRenderers.Count, Is.GreaterThanOrEqualTo(32));
-            Assert.That(region.TrunkRenderers.All(x => x.sharedMaterial.color.r > x.sharedMaterial.color.b), Is.True);
+            Assert.That(region.TrunkRenderers.All(x => x.sharedMaterial != null), Is.True);
         }
 
         [Test]

@@ -64,6 +64,7 @@ namespace Game.Tests.PlayMode
                 enemy.CharacterId, root.Clock.State.CalendarTicks);
             Assert.That(result.Status, Is.EqualTo(CombatCommandStatus.Assigned));
             Assert.That(result.ParticipantCount, Is.EqualTo(2));
+            root.GameplayUi.SetDeveloperUiVisible(true);
             Assert.That(root.CombatDebug.TryGetUiBlockingRect(out var rect), Is.True);
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(WorldPointerRaycaster.GuiToScreenPoint(rect.center)), Is.True);
             yield return null;

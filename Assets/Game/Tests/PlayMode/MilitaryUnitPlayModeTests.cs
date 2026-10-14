@@ -43,6 +43,7 @@ namespace Game.Tests.PlayMode
             Assert.That(restored.CaptainId, Is.EqualTo(created.CaptainId));
             Assert.That(restored.ActiveMemberIds, Is.EqualTo(memberIds));
             Assert.That(memberIds.All(id => root.CharacterPresentations.TryGet(id, out _)), Is.True);
+            root.GameplayUi.SetDeveloperUiVisible(true);
             Assert.That(root.MilitaryDebug.TryGetUiBlockingRect(out var rect), Is.True);
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(
                 WorldPointerRaycaster.GuiToScreenPoint(rect.center)), Is.True);

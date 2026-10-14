@@ -91,7 +91,9 @@ namespace Game.Tests.PlayMode
             var id = root.FemaleDemoCharacter.Id;
             var initialTier3Count = root.Tier3Characters.Count;
             var initialTier1Count = root.CharacterPresentations.Count;
-            Assert.That(initialTier1Count, Is.EqualTo(10), "New Game starts with ten player Characters.");
+            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
+            Assert.That(initialTier1Count, Is.EqualTo(2),
+                "New Game starts with two nearby Tier 1 presenters and keeps the remaining residents aggregated.");
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier1).Changed, Is.False);
             Assert.That(root.CharacterPresentations.Count, Is.EqualTo(initialTier1Count));
             root.Tiers.Transition(id, CharacterSimulationTier.Tier2);

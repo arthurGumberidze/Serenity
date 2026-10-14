@@ -11,15 +11,17 @@ namespace Game.Presentation.Characters
         private readonly CharacterPresentationRegistry registry;
         private readonly CharacterAppearanceService appearances;
         private readonly Transform parent;
+        private readonly Func<Vector3, Vector3> positionProjector;
 
         public CharacterPresentationSpawner(CharacterPresentationCatalog catalog,
             CharacterPresentationRegistry registry, CharacterAppearanceService appearanceService = null,
-            Transform parent = null)
+            Transform parent = null, Func<Vector3, Vector3> presentationPositionProjector = null)
         {
             this.catalog = catalog != null ? catalog : throw new ArgumentNullException(nameof(catalog));
             this.registry = registry ?? throw new ArgumentNullException(nameof(registry));
             appearances = appearanceService;
             this.parent = parent;
+            positionProjector = presentationPositionProjector;
         }
 
         public CharacterPresenter Spawn(Character character, Vector3 position, Quaternion rotation)
@@ -29,7 +31,8 @@ namespace Game.Presentation.Characters
                 ? appearances.GetOrCreate(character)
                 : catalog.CreateDefinitionCatalog().DefaultFor(character.Sex).CreateState(character.Id);
             var prefab = catalog.Resolve(character, requested, out var resolved);
-            var instance = UnityEngine.Object.Instantiate(prefab, position, rotation, parent);
+            var presentationPosition = positionProjector != null ? positionProjector(position) : position;
+            var instance = UnityEngine.Object.Instantiate(prefab, presentationPosition, rotation, parent);
             var presenter = instance.GetComponent<CharacterPresenter>();
             try
             {

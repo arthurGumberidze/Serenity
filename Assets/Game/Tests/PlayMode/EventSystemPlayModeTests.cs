@@ -52,8 +52,8 @@ namespace Game.Tests.PlayMode
             root.GameplayUi.SetPanel(GameplayPanel.Events);
             root.GameplayUi.RefreshNow();
             Assert.That(PanelText(root.GameplayUi), Does.Contain(RussianTextCatalog.Get("ui.events.title")));
-            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(200, 200)), Is.True);
             yield return null;
+            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(200, 200)), Is.True);
         }
 
         [UnityTest]

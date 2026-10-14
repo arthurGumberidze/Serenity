@@ -36,10 +36,10 @@ namespace Game.Tests.Editor
             Assert.That(camp.TreeCount, Is.GreaterThanOrEqualTo(14));
             Assert.That(camp.RockCount, Is.GreaterThanOrEqualTo(8));
             Assert.That(camp.GrassClusterCount, Is.GreaterThanOrEqualTo(36));
-            Assert.That(GameObject.Find("P3 Buildable Forest Clearing"), Is.Not.Null);
-            Assert.That(GameObject.Find("P3 Curved Shore"), Is.Not.Null);
-            Assert.That(GameObject.Find("P3 Water Edge"), Is.Not.Null);
-            Assert.That(GameObject.Find("P3 Reference World"), Is.Not.Null);
+            Assert.That(GameObject.Find("P9.2 Player Building Plateau"), Is.Not.Null);
+            Assert.That(GameObject.Find("P9.2 Coastal Water"), Is.Not.Null);
+            Assert.That(GameObject.Find("P9.2 Realistic Gameplay Region"), Is.Not.Null);
+            Assert.That(GameObject.Find("P3 Reference World"), Is.Null);
             Assert.That(Object.FindObjectsByType<Renderer>(FindObjectsInactive.Include)
                 .Where(x => x.enabled).All(x => x.sharedMaterial != null), Is.True);
         }
@@ -48,27 +48,24 @@ namespace Game.Tests.Editor
         public void ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
-            var allowed = new[]
-            {
-                "Assets/Game/Art/Prefabs/Environment/Serenity_Tree.prefab",
-                "Assets/Game/Art/Prefabs/Environment/Serenity_Rock.prefab",
-                "Assets/Game/Art/Prefabs/Props/Serenity_Campfire.prefab",
-                "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageNature/Models/Tree_01.fbx",
-                "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageNature/Models/Rock_01.fbx",
-                "Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageNature/Models/Campfire_01.fbx"
-            };
-            var world = GameObject.Find("P3 Reference World");
+            const string campfire = "Assets/Game/Art/Prefabs/Props/Serenity_Campfire.prefab";
+            var world = GameObject.Find("P9.2 Realistic Gameplay Region");
             Assert.That(world, Is.Not.Null);
             var prefabPaths = world.GetComponentsInChildren<Transform>(true)
                 .Select(x => PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(x.gameObject))
                 .Where(x => !string.IsNullOrEmpty(x)).Distinct().ToArray();
-            Assert.That(prefabPaths, Is.SubsetOf(allowed));
-            Assert.That(prefabPaths, Does.Contain(allowed[0]));
-            Assert.That(prefabPaths, Does.Contain(allowed[1]));
-            Assert.That(prefabPaths, Does.Contain(allowed[2]));
+            Assert.That(prefabPaths, Is.Not.Empty);
+            Assert.That(prefabPaths.All(path => path.StartsWith("Assets/TerrainDemoScene_URP/") ||
+                path.StartsWith("Assets/Game/Art/Prefabs/") ||
+                path.StartsWith("Assets/Game/Art/ThirdParty/WizardHatStudio/StoneageNature/")), Is.True,
+                string.Join("\n", prefabPaths));
+            Assert.That(prefabPaths.Any(path => path.StartsWith("Assets/TerrainDemoScene_URP/Prefabs/Trees/")), Is.True);
+            Assert.That(prefabPaths.Any(path => path.StartsWith("Assets/TerrainDemoScene_URP/Prefabs/Rocks/")), Is.True);
+            Assert.That(prefabPaths, Does.Contain(campfire));
 
             var registry = File.ReadAllText(Path.GetFullPath("docs/ASSET_REGISTRY.md"));
             Assert.That(registry, Does.Contain("WIZARDHAT-STONEAGE-NATURE"));
+            Assert.That(registry, Does.Contain("UNITY-URP-TERRAIN-SAMPLE"));
             Assert.That(registry, Does.Contain("APPROVED_RUNTIME"));
             Assert.That(registry, Does.Contain("SERENITY-PRIMITIVE-PLACEHOLDERS"));
         }

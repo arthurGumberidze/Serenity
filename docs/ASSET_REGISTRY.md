@@ -219,10 +219,20 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Runtime/import path: `Assets/TerrainDemoScene_URP`; 769 selected files, approximately 2308.9 MiB source footprint
 - Import scope: Terrain layers/textures, trees, rocks, details/foliage, water, skybox resources, required materials/models/Shader Graphs and third-party notices
 - Excluded scope: demo scenes, sample scripts, UI, bookmarks, shots, lighting rigs, volume profiles, animation, authored demo Terrain data/brushes/palettes and package-proposed dependency downgrades
-- Runtime use: P9.1 96 m benchmark Terrain with four official layers, 64 trees, 24 rocks, 240 foliage instances and official water/rock/tree presentation
-- Package impact: existing package versions preserved; only built-in `com.unity.modules.terrain` 1.0.0 enabled
-- Visual grade/status: A/B source quality, `APPROVED_RUNTIME`; P9.1 benchmark accepted as technically and visually representative, full gameplay-map replacement belongs to P9.2
-- Notes: vendor assets are not edited. The P9.1 scene recipe is project-owned, isolated and reversible; the old map remains present until P9.2 validation.
+- Runtime use: P9.2 canonical 128 m gameplay Terrain with four official layers, 76 trees, 44 rocks, 288 foliage instances and official water/rock/tree presentation; P9.1 benchmark assets remain as reversible source history
+- Package impact: existing package versions preserved; built-in `com.unity.modules.terrain` and `com.unity.modules.terrainphysics` 1.0.0 enabled
+- Visual grade/status: A/B source quality, `APPROVED_RUNTIME`; P9.2 gameplay-map replacement accepted through RTS/TPS Player evidence
+- Notes: vendor assets are not edited. Project-owned P9.2 TerrainData/material/scene recipes compose the selected source; canonical gameplay state remains outside vendor and presentation assets.
+
+### SERENITY-P92-REALISTIC-GAMEPLAY-REGION
+
+- Name: Serenity P9.2 Realistic Gameplay Region
+- Type/category: project-owned Terrain composition and runtime presentation binding
+- Source/license: Serenity-owned authoring code/data composed from `UNITY-URP-TERRAIN-SAMPLE`
+- Runtime path: `Assets/Game/Art/Terrain/P92`, `Assets/Game/Art/Materials/P92`, `Assets/Game/Presentation/Environment/P92RealisticGameplayRegion.cs`
+- Runtime use: canonical six-location/24-resource local region projection, terrain-height projection for disposable building/Character presentation, seasons/weather and physical Terrain collision
+- Stable-content rule: resource indices 0–23 and all established `StableEntityId`/`WorldLocationId` values are preserved; TerrainData, anchors and renderers own no mutable gameplay/save truth
+- Visual grade/status: B production environment pass, `APPROVED_RUNTIME`; settlement/building/Character finish continues in P9.3
 
 ## Staging packages considered but not imported
 

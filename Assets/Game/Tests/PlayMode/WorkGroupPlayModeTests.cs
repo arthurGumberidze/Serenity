@@ -187,7 +187,9 @@ namespace Game.Tests.PlayMode
             root.SelectionProbe.SelectCharacters(root.DemoPresenters);
             var group = root.WorkDebug.CreateGroupFromSelection("Scouts");
             var start = root.DemoPresenters.ToDictionary(x => x.CharacterId, x => x.transform.position);
-            var jobs = root.WorkDebug.AssignCurrentGroupMove(new WorldPosition(0f, 0f, 9f), WorkPriority.Urgent);
+            var destination = root.RealisticGameplayRegion.ProjectToGround(new Vector3(12f, 0f, 4f));
+            var jobs = root.WorkDebug.AssignCurrentGroupMove(
+                new WorldPosition(destination.x, destination.y, destination.z), WorkPriority.Urgent);
             Assert.That(jobs.Count, Is.EqualTo(2));
             root.AiRuntime.SetPaused(false);
 

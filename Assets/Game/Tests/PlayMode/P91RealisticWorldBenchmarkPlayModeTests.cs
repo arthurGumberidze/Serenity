@@ -18,14 +18,15 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator BenchmarkLoadsInNormalGameplayWithoutOwningSimulationState()
+        public IEnumerator OfficialTerrainLoadsAsTheNormalGameplayProjectionWithoutOwningSimulationState()
         {
-            var benchmark = Object.FindAnyObjectByType<P91RealisticWorldBenchmark>();
-            Assert.That(benchmark, Is.Not.Null);
-            Assert.DoesNotThrow(benchmark.ValidateConfiguration);
-            Assert.That(benchmark.enabled, Is.True);
-            Assert.That(benchmark.GetComponents<MonoBehaviour>(), Has.Length.EqualTo(1));
-            Assert.That(benchmark.Terrain.gameObject.activeInHierarchy, Is.True);
+            var region = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(region, Is.Not.Null);
+            Assert.DoesNotThrow(region.ValidateConfiguration);
+            Assert.That(region.enabled, Is.True);
+            Assert.That(region.GetComponents<MonoBehaviour>(), Has.Length.EqualTo(1));
+            Assert.That(region.Terrain.gameObject.activeInHierarchy, Is.True);
+            Assert.That(Object.FindAnyObjectByType<P91RealisticWorldBenchmark>(), Is.Null);
             yield return null;
         }
     }

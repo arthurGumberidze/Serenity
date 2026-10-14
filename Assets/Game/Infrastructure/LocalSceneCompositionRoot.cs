@@ -187,6 +187,8 @@ namespace Game.Infrastructure
         public P82PlayerSmokeController P82PlayerSmoke { get; private set; }
         public P83PlayerSmokeController P83PlayerSmoke { get; private set; }
         public P91PlayerSmokeController P91PlayerSmoke { get; private set; }
+        public P92PlayerSmokeController P92PlayerSmoke { get; private set; }
+        public P92RealisticGameplayRegion RealisticGameplayRegion { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -253,7 +255,8 @@ namespace Game.Infrastructure
                 worldSeed);
             Weather = new WeatherService(worldSeed, ClimateProfile.Temperate, HealthFamily);
             CharacterPresentations = new CharacterPresentationRegistry();
-            CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations, Appearances);
+            CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations, Appearances,
+                presentationPositionProjector: ProjectToGameplayGround);
 
             InteractionMode = new LocalInteractionMode();
             Buildings = new BuildingRegistry();
@@ -264,6 +267,8 @@ namespace Game.Infrastructure
             Resources = buildingCatalog.ResourceCatalog.CreateCatalog();
             InhabitableRegion = GetComponent<P5InhabitableRegionPresentation>();
             InhabitableRegion?.ValidateConfiguration();
+            RealisticGameplayRegion = FindAnyObjectByType<P92RealisticGameplayRegion>();
+            RealisticGameplayRegion?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -278,7 +283,9 @@ namespace Game.Infrastructure
             gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources, pointerRaycaster);
             BuildingPresentations = new BuildingPresentationRegistry();
             BuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
-                buildingGridSize, buildingGridOrigin, null, Inventories);
+                buildingGridSize, buildingGridOrigin, null, Inventories,
+                RealisticGameplayRegion == null ? null : position =>
+                    RealisticGameplayRegion.ProjectToGround(position).y);
             selectionProbe.Configure(input, pointerRaycaster, InteractionMode);
             buildingPlacementController.Initialize(BuildingPlacementService, BuildingSpawner, InteractionMode,
                 Construction, FundingSources);
@@ -307,8 +314,10 @@ namespace Game.Infrastructure
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
             Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id))
                 .TryAdd(new ResourceId("berries"), new ResourceQuantity(60));
-            demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter, new Vector3(-3f, 0f, 0f), Quaternion.identity));
-            demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter, new Vector3(3f, 0f, 0f), Quaternion.identity));
+            demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
+                ProjectToGameplayGround(new Vector3(-3f, 0f, 0f)), Quaternion.identity));
+            demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter,
+                ProjectToGameplayGround(new Vector3(3f, 0f, 0f)), Quaternion.identity));
             ReferenceCamp = GetComponent<StoneAgeReferenceCampPresentation>();
             ReferenceCamp?.Initialize(demoPresenters[0], demoPresenters[1], DemoShelterPresenter, DemoStoragePresenter);
 
@@ -511,6 +520,7 @@ namespace Game.Infrastructure
             P82PlayerSmoke = P82PlayerSmokeController.AttachIfRequested(this);
             P83PlayerSmoke = P83PlayerSmokeController.AttachIfRequested(this);
             P91PlayerSmoke = P91PlayerSmokeController.AttachIfRequested(this);
+            P92PlayerSmoke = P92PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
@@ -882,11 +892,15 @@ namespace Game.Infrastructure
         {
             NavigationSurface = gameObject.AddComponent<NavMeshSurface>();
             NavigationSurface.collectObjects = CollectObjects.Volume;
-            NavigationSurface.center = new Vector3(0f, 1f, 0f);
-            NavigationSurface.size = new Vector3(100f, 8f, 100f);
+            NavigationSurface.center = new Vector3(0f, 3f, 0f);
+            NavigationSurface.size = RealisticGameplayRegion == null
+                ? new Vector3(100f, 8f, 100f) : new Vector3(120f, 24f, 120f);
             NavigationSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             NavigationSurface.BuildNavMesh();
         }
+
+        private Vector3 ProjectToGameplayGround(Vector3 position) => RealisticGameplayRegion == null
+            ? position : RealisticGameplayRegion.ProjectToGround(position, 0.04f);
 
         private void SpawnDemoPile(string id, long units, GridCoordinate coordinate, Color color, int index)
         {

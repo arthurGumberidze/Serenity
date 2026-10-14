@@ -40,12 +40,12 @@ namespace Game.Tests.PlayMode
             yield return null;
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var marker = Object.FindObjectsByType<SelectableMarker>()
-                .OrderBy(candidate => Vector3.Distance(candidate.transform.position, Vector3.zero)).First();
+                .OrderBy(candidate => candidate.name).First();
             var collider = marker.GetComponentInChildren<Collider>(true);
             Assert.That(collider, Is.Not.Null);
             var screenPoint = PointerSelectionTestPoint.AimCameraAtUnblockedPoint(root, collider.bounds.center);
             Assert.That(screenPoint.z, Is.GreaterThan(0f));
-            Assert.That(root.PointerRaycaster.TryGetWorldHit(screenPoint, out var hit), Is.True);
+            Assert.That(root.PointerRaycaster.TryGetSelectableHit(screenPoint, out var hit), Is.True);
             Assert.That(hit.collider.GetComponentInParent<SelectableMarker>(), Is.SameAs(marker));
             Assert.That(root.SelectionProbe.TrySelectAt(screenPoint), Is.True);
             Assert.That(root.SelectionProbe.Selected, Is.SameAs(marker));

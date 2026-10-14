@@ -6,7 +6,8 @@
     "Game.Simulation",
     "Unity.InputSystem",
     "Unity.Cinemachine",
-    "UnityEngine.TerrainModule"
+    "UnityEngine.TerrainModule",
+    "UnityEngine.TerrainPhysicsModule"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,

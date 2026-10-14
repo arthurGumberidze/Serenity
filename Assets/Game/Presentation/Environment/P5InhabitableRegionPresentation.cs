@@ -50,6 +50,8 @@ namespace Game.Presentation.Environment
         [SerializeField] private Renderer[] seasonalGround = Array.Empty<Renderer>();
         [SerializeField] private Renderer[] seasonalFoliage = Array.Empty<Renderer>();
         [SerializeField] private Renderer waterRenderer;
+        [SerializeField] private Terrain seasonalTerrain;
+        [SerializeField] private Material seasonalTerrainMaterial;
         [SerializeField] private Vector2[] landBoundary = Array.Empty<Vector2>();
         [SerializeField] private Transform[] authoredPlacementAnchors = Array.Empty<Transform>();
         [SerializeField] private Renderer[] trunkRenderers = Array.Empty<Renderer>();
@@ -62,6 +64,7 @@ namespace Game.Presentation.Environment
         public Transform PlayerTerritoryAnchor => playerTerritoryAnchor;
         public Transform RivalTerritoryAnchor => rivalTerritoryAnchor;
         public Renderer WaterRenderer => waterRenderer;
+        public Terrain SeasonalTerrain => seasonalTerrain;
         public IReadOnlyList<Transform> RouteWaypoints => routeWaypoints;
         public IReadOnlyList<Transform> BuildableAreaAnchors => buildableAreaAnchors;
         public IReadOnlyList<Transform> ObstacleAnchors => obstacleAnchors;
@@ -116,6 +119,12 @@ namespace Game.Presentation.Environment
             ValidateGeography();
         }
 
+        public void ConfigureTerrainProjection(Terrain terrain, Material material)
+        {
+            seasonalTerrain = terrain;
+            seasonalTerrainMaterial = material;
+        }
+
         public bool ContainsLandPoint(Vector3 worldPoint)
         {
             if (landBoundary.Length < 3) return true;
@@ -166,6 +175,15 @@ namespace Game.Presentation.Environment
             };
             ApplyTint(seasonalGround, ground);
             ApplyTint(seasonalFoliage, foliage);
+            if (seasonalTerrain != null && seasonalTerrainMaterial != null)
+            {
+                var terrainTint = Color.Lerp(Color.white, ground, SnowCoverVisible ? 0.32f : 0.13f);
+                if (seasonalTerrainMaterial.HasProperty("_BaseColor"))
+                    seasonalTerrainMaterial.SetColor("_BaseColor", terrainTint);
+                if (seasonalTerrainMaterial.HasProperty("_Color"))
+                    seasonalTerrainMaterial.SetColor("_Color", terrainTint);
+                seasonalTerrain.materialTemplate = seasonalTerrainMaterial;
+            }
             if (waterRenderer != null)
                 ApplyTint(new[] { waterRenderer }, season == Season.Winter
                     ? new Color(0.62f, 0.78f, 0.86f) : new Color(0.72f, 0.9f, 1f));

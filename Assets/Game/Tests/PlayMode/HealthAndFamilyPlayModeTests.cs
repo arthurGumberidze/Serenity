@@ -29,6 +29,7 @@ namespace Game.Tests.PlayMode
             var overlay = Object.FindAnyObjectByType<HealthFamilyDebugOverlay>();
             Assert.That(root, Is.Not.Null);
             Assert.That(overlay, Is.SameAs(root.HealthFamilyDebug));
+            root.GameplayUi.SetDeveloperUiVisible(true);
             Assert.That(overlay.TryGetUiBlockingRect(out var rect), Is.True);
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(
                 WorldPointerRaycaster.GuiToScreenPoint(rect.center)), Is.True);

@@ -31,8 +31,9 @@ namespace Game.Tests.PlayMode
             Assert.That(root.NavigationSurface.navMeshData, Is.Not.Null);
             Assert.That(root.AiRuntime, Is.Not.Null);
             Assert.That(root.AiRuntime.PerAgentAiUpdateCount, Is.Zero);
-            Assert.That(root.AiAgents.Count, Is.EqualTo(10));
-            Assert.That(root.AiScheduler.Count, Is.EqualTo(10));
+            Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
+            Assert.That(root.AiAgents.Count, Is.EqualTo(2));
+            Assert.That(root.AiScheduler.Count, Is.EqualTo(2));
             Assert.That(root.DemoStorageBuilding, Is.Not.Null);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>() != null), Is.True);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>().isOnNavMesh), Is.True);

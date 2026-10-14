@@ -13,9 +13,11 @@ namespace Game.Presentation.Buildings
         private readonly float gridSize;
         private readonly Vector3 origin;
         private readonly ResourceInventoryRegistry inventories;
+        private readonly Func<Vector3, float> groundHeight;
 
         public BuildingPresentationSpawner(BuildingPresentationCatalog catalog, BuildingPresentationRegistry registry,
-            float gridSize, Vector3 origin, Transform parent = null, ResourceInventoryRegistry inventoryRegistry = null)
+            float gridSize, Vector3 origin, Transform parent = null, ResourceInventoryRegistry inventoryRegistry = null,
+            Func<Vector3, float> groundHeightResolver = null)
         {
             this.catalog = catalog != null ? catalog : throw new ArgumentNullException(nameof(catalog));
             this.registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -24,6 +26,7 @@ namespace Game.Presentation.Buildings
             this.origin = origin;
             this.parent = parent;
             inventories = inventoryRegistry;
+            groundHeight = groundHeightResolver;
         }
 
         public BuildingPresenter Spawn(Building building)
@@ -63,15 +66,23 @@ namespace Game.Presentation.Buildings
             UnityEngine.Object.Destroy(presenter.gameObject);
         }
 
-        public Vector3 GridToWorld(GridCoordinate coordinate) => origin + new Vector3(coordinate.X * gridSize,
-            coordinate.Level * gridSize, coordinate.Z * gridSize);
+        public Vector3 GridToWorld(GridCoordinate coordinate) => ResolveGround(origin + new Vector3(
+            coordinate.X * gridSize, coordinate.Level * gridSize, coordinate.Z * gridSize), coordinate.Level);
 
         public Vector3 GridToWorld(GridCoordinate coordinate, BuildingDefinition definition, BuildingOrientation orientation)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             var footprint = definition.Footprint.Rotate(orientation);
-            return origin + new Vector3((coordinate.X + (footprint.Width - 1) * 0.5f) * gridSize,
-                coordinate.Level * gridSize, (coordinate.Z + (footprint.Depth - 1) * 0.5f) * gridSize);
+            return ResolveGround(origin + new Vector3((coordinate.X + (footprint.Width - 1) * 0.5f) * gridSize,
+                coordinate.Level * gridSize, (coordinate.Z + (footprint.Depth - 1) * 0.5f) * gridSize),
+                coordinate.Level);
+        }
+
+        private Vector3 ResolveGround(Vector3 position, int level)
+        {
+            if (groundHeight == null || level != 0) return position;
+            position.y = groundHeight(position);
+            return position;
         }
     }
 }

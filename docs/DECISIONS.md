@@ -641,3 +641,11 @@ The user-authenticated Unity URP Terrain Sample 1.0.3 (Asset Store 213197) is ad
 P9.1 is an isolated 96 m Terrain benchmark inside normal `LocalGameplay`, not a parallel world authority. It demonstrates the source at RTS and ground viewpoints while the P3/P5/P8.2 map remains intact. `P91RealisticWorldBenchmark` and its generator own replaceable Presentation only; canonical territories, production sites, building placement, navigation contracts, weather, characters and saves remain unchanged. This makes visual inspection and package compatibility independently reversible.
 
 P9.2 is the only task allowed to migrate gameplay anchors to the accepted Terrain and remove the superseded visual map. Removal is gated by focused and affected tests, NavMesh/construction/selection/weather/Save-Load proof, Windows build and visible RTS/TPS Player evidence. P9 does not resume or alter the checkpointed P8.6/U29/U30/U31 qualification gates.
+
+## D-124 P9.2 makes physical Terrain the sole visible local-world projection without moving authority (2026-10-14)
+
+The accepted official Terrain source is composed into one project-owned 128 m Unity Terrain for normal `LocalGameplay`. It carries four PBR Terrain layers, water, vegetation, rocks, route/buildable shaping and the physical `TerrainCollider`; Unity's built-in Terrain Physics module 1.0.0 is enabled so that collider is retained in Player builds. Vendor assets remain unedited and the generated TerrainData/material/scene recipe remains replaceable Presentation.
+
+The six canonical locations, resource indices 0–23, established stable IDs and finite source amounts are preserved exactly. Building and Character presenters may resolve Terrain height for rendered placement, but canonical coordinates and snapshot payloads are not rewritten. Weather/season projection may tint the Terrain material, while `WeatherService` remains authoritative. Navigation, construction, production, map ownership and Save/Load continue through their existing services.
+
+The P9.2 builder may remove the obsolete visible P3/P5/P8.1/P8.2/P9.1 scene roots only after validating the complete successor Terrain, anchors, routes, water, resources and density. Historical generators and source assets stay in the repository for reversibility. This decision closes only P9.2; it does not change P8.6/U29/U30/U31 status.

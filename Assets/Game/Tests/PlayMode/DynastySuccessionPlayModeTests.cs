@@ -34,6 +34,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Dynasty.CurrentMonarchId, Is.EqualTo(root.MaleDemoCharacter.Id));
             Assert.That(root.Succession.Family.GetOrderedSuccessionCandidates(root.Dynasty,
                 root.MaleDemoCharacter.Id)[0].Id, Is.EqualTo(root.FirstDemoHeir.Id));
+            root.GameplayUi.SetDeveloperUiVisible(true);
             Assert.That(overlay.TryGetUiBlockingRect(out var rect), Is.True);
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(
                 Game.Presentation.Interaction.WorldPointerRaycaster.GuiToScreenPoint(rect.center)), Is.True);

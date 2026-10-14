@@ -22,6 +22,7 @@ using Object = UnityEngine.Object;
 namespace Game.Tests.PlayMode
 {
     [Category("U31")]
+    [Category("GPU")]
     public sealed class U31GpuPlayModeTests
     {
         private string saveDirectory;

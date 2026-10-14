@@ -1,5 +1,7 @@
 using System.IO;
 using System.Linq;
+using Game.Domain.Characters;
+using Game.Presentation.Characters;
 using Game.Presentation.Environment;
 using NUnit.Framework;
 using UnityEditor;
@@ -13,31 +15,31 @@ namespace Game.Tests.Editor
     public sealed class P81VisualPrototypeTests
     {
         [Test]
-        public void SceneContainsScopedNaturalPbrBenchmark()
+        public void ProductionSceneSupersedesScopedBenchmarkWithOfficialNaturalPbrTerrain()
         {
             EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
-            var prototype = Object.FindAnyObjectByType<P81VisualPrototypePresentation>();
-            Assert.That(prototype, Is.Not.Null);
-            Assert.DoesNotThrow(prototype.ValidateConfiguration);
-            Assert.That(prototype.EnvironmentRenderers.Count, Is.GreaterThanOrEqualTo(8));
-            Assert.That(prototype.TrunkRenderers.Count, Is.GreaterThanOrEqualTo(3));
-            Assert.That(prototype.EnvironmentRenderers.All(x => x.sharedMaterial != null &&
-                x.sharedMaterial.shader.name.Contains("Lit")), Is.True);
-            Assert.That(prototype.TrunkRenderers.All(x => x.sharedMaterial.color.r >
-                x.sharedMaterial.color.b * 2f), Is.True);
+            var production = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(Object.FindAnyObjectByType<P81VisualPrototypePresentation>(), Is.Null);
+            Assert.That(production, Is.Not.Null);
+            Assert.DoesNotThrow(production.ValidateConfiguration);
+            Assert.That(production.Trees.Count, Is.GreaterThanOrEqualTo(40));
+            Assert.That(production.Rocks.Count, Is.GreaterThanOrEqualTo(22));
+            Assert.That(production.Trees.Concat(production.Rocks).SelectMany(x =>
+                x.GetComponentsInChildren<Renderer>(true)).All(x => x.sharedMaterial != null &&
+                x.sharedMaterial.shader.name != "Hidden/InternalErrorShader"), Is.True);
         }
 
         [Test]
         public void AppearanceIsStableDataAndVisualProviderHasFallback()
         {
-            EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
-            var prototype = Object.FindAnyObjectByType<P81VisualPrototypePresentation>();
-            var appearance = prototype.CanonicalAppearance;
-            Assert.That(appearance.CharacterId.ToString(), Is.EqualTo("81000000000000000000000000000001"));
-            Assert.That(appearance.ProfileId.Value, Is.EqualTo("uma_human_male_30"));
-            Assert.That(prototype.HasVisibleCharacter, Is.True);
-            Assert.That(GameObject.Find("P81 Project Character Fallback"), Is.Not.Null);
-            Assert.That(GameObject.Find("P81 UMA Character Prototype"), Is.Not.Null);
+            var guid = AssetDatabase.FindAssets("t:CharacterPresentationCatalog").Single();
+            var catalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(
+                AssetDatabase.GUIDToAssetPath(guid));
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.CreateDefinitionCatalog().Get(StoneAgeAppearanceProfiles.UmaMale).Id.Value,
+                Is.EqualTo("uma_human_male_30"));
+            Assert.That(catalog.Resolve(CharacterSex.Male), Is.Not.Null);
+            Assert.That(catalog.UmaAvatarPrefab, Is.Not.Null);
         }
 
         [Test]

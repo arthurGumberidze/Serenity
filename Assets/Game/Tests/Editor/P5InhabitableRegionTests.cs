@@ -27,9 +27,11 @@ namespace Game.Tests.Editor
             Assert.That(region.RouteWaypoints.Count, Is.GreaterThanOrEqualTo(4));
             Assert.That(region.BuildableAreaAnchors.Count, Is.GreaterThanOrEqualTo(2));
             Assert.That(region.ObstacleAnchors.Count, Is.GreaterThanOrEqualTo(40));
-            Assert.That(GameObject.Find("P5 Rival Territory enemy_settlement"), Is.Not.Null);
-            Assert.That(GameObject.Find("P5 Player Buildable Clearing"), Is.Not.Null);
-            Assert.That(GameObject.Find("P5 South Meadow Buildable Area"), Is.Not.Null);
+            var productionRegion = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(productionRegion, Is.Not.Null);
+            Assert.That(productionRegion.TryGetLocationAnchor("enemy_settlement", out _), Is.True);
+            Assert.That(GameObject.Find("P9.2 Player Building Plateau"), Is.Not.Null);
+            Assert.That(GameObject.Find("P9.2 South Building Plateau"), Is.Not.Null);
         }
 
         [Test]
@@ -73,7 +75,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void P5UsesOnlyApprovedWrappersAndProjectOwnedAssets()
+        public void LegacyP5AssetsRemainAvailableAndProductionUsesApprovedOfficialPrefabs()
         {
             foreach (var path in new[]
             {
@@ -87,16 +89,17 @@ namespace Game.Tests.Editor
             }) Assert.That(AssetDatabase.LoadMainAssetAtPath(path), Is.Not.Null, path);
 
             EditorSceneManager.OpenScene("Assets/Scenes/LocalGameplay.unity", OpenSceneMode.Single);
-            var region = Object.FindAnyObjectByType<P5InhabitableRegionPresentation>();
-            var authoredWorld = GameObject.Find("P3 Reference World");
-            Assert.That(authoredWorld, Is.Not.Null);
-            var prefabPaths = authoredWorld.GetComponentsInChildren<Transform>(true)
+            var productionRegion = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
+            Assert.That(productionRegion, Is.Not.Null);
+            Assert.That(GameObject.Find("P3 Reference World"), Is.Null);
+            var prefabPaths = productionRegion.GetComponentsInChildren<Transform>(true)
                 .Where(x => PrefabUtility.IsAnyPrefabInstanceRoot(x.gameObject) &&
                     PrefabUtility.GetOutermostPrefabInstanceRoot(x.gameObject) == x.gameObject)
                 .Select(x => PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(x.gameObject))
                 .Where(x => !string.IsNullOrEmpty(x)).Distinct().ToArray();
             Assert.That(prefabPaths, Is.Not.Empty);
-            Assert.That(prefabPaths.All(path => path.StartsWith("Assets/Game/Art/Prefabs/")), Is.True);
+            Assert.That(prefabPaths.All(path => path.StartsWith("Assets/TerrainDemoScene_URP/") ||
+                path.StartsWith("Assets/Game/Art/Prefabs/")), Is.True);
         }
     }
 }

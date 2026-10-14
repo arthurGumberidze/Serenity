@@ -116,6 +116,7 @@ namespace Game.Infrastructure
             P84PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P85PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P91PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P92PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
