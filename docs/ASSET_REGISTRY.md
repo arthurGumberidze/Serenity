@@ -232,7 +232,7 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Runtime path: `Assets/Game/Art/Terrain/P92`, `Assets/Game/Art/Materials/P92`, `Assets/Game/Presentation/Environment/P92RealisticGameplayRegion.cs`
 - Runtime use: canonical six-location/24-resource local region projection, terrain-height projection for disposable building/Character presentation, seasons/weather and physical Terrain collision
 - Stable-content rule: resource indices 0–23 and all established `StableEntityId`/`WorldLocationId` values are preserved; TerrainData, anchors and renderers own no mutable gameplay/save truth
-- Visual grade/status: B production environment pass, `APPROVED_RUNTIME`; settlement/building/Character finish continues in P9.3
+- Visual grade/status: B terrain-migration baseline, `APPROVED_RUNTIME`; full biome density/zoning is P9.3, while settlement/building/Character finish is P9.4
 
 ## Staging packages considered but not imported
 

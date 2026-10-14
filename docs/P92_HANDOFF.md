@@ -1,6 +1,6 @@
 # P9.2 handoff — realistic gameplay region
 
-Status: **DONE** on 2026-10-14. Next task: **P9.3 — production-quality settlements and characters**.
+Status: **DONE** on 2026-10-14. Next task: **P9.3 — Биомы и наполненный мир**. Settlement and Character polish belongs to P9.4.
 
 ## Delivered
 
@@ -53,4 +53,8 @@ Broad EditMode regression used the same command shape with `-testPlatform EditMo
 
 ## P9.3 starting point
 
-The environment is now coherent and physical, but the current project-owned shelter/storage/camp props and some Character presentation still read as prototype geometry next to the official Terrain source. P9.3 should improve those assets through the existing catalogs/presenters, preserve all canonical IDs and state, and retain the P9.2 Terrain/nav/resource composition.
+P9.2 supplies physical Terrain and a working gameplay composition, but its 76 trees, 44 rocks and 288 foliage instances are a terrain-migration baseline, not a fully populated biome pass. P9.3 must fill the entire accessible local region with distinct forest, undergrowth, grasses, rocks, soils, shoreline and resource formations at believable density and scale. Scatter deterministically, justify LOD/colliders, retain clickable resources, navigation, all canonical IDs and state, and the P9.2 Terrain/routes/buildable composition. Use only approved assets or documented project-derived work. The current project-owned shelter/storage/camp props and some Character presentation still read as prototype geometry; these are explicitly P9.4 scope, not a reason to skip P9.3.
+
+## Coordination correction (2026-10-14)
+
+The prior next-task label was an erroneous stage assignment. This documentation-only correction restores the user-approved P9.3–P9.6 order; it changes no scene/code, test result, asset entitlement or P8.6/U29/U30/U31 qualification status. P9.2 verification evidence above remains the exact record, including the broad EditMode timing failure. The coordinator checked `git status --short`, the `P9.2` commit prefix, `NEXT_TASK.md`, the task graph/handoff/registry references and `git diff --check` before starting P9.3. No Unity test or build was rerun for this documentation-only correction.
