@@ -1,5 +1,11 @@
 # PROJECT_STATE.md
 
+P9.1 is DONE (2026-10-14). The authenticated official Unity URP Terrain Sample 1.0.3 (Asset Store 213197) is now selectively imported under `Assets/TerrainDemoScene_URP`: runtime Terrain layers/textures, trees, rocks, details, water, skybox resources and required Shader Graphs only. Demo scenes, cameras, bookmarks, lighting rigs, volumes, UI, sample scripts, animation and authored demo Terrain data are excluded. The current URP 17.6.0, Input System 1.20.0 and other project package versions were preserved; only the built-in `com.unity.modules.terrain` 1.0.0 module was enabled.
+
+`LocalGameplay` contains a separate, reversible `P9.1 Realistic World Benchmark` alongside the unchanged P3/P5/P8.2 world. It uses a 96 m procedural Unity Terrain with four official PBR layers, 64 official SpeedTree/Conifer instances, 24 official rock instances, 240 foliage instances, a water pool, physical Terrain/tree/rock colliders and the existing project sky/light direction. `P91RealisticWorldBenchmark` is presentation-only and owns no save, navigation, resource, construction or simulation authority. P9.2 owns any migration/replacement of the old map; P9.1 deliberately deletes nothing outside its own idempotent root/TerrainData.
+
+P9.1 verification passed: focused EditMode 2/2, focused PlayMode 1/1 and P8.2 preservation EditMode 3/3. The final Windows x64 Mono Development build reported `U00_BUILD_RESULT: Succeeded; errors=0; warnings=40`; the first uncached build spent about 46 minutes compiling/writing official shader assets, while the cached rebuild succeeded normally. The final visible 1280×720 D3D11 Player smoke passed all source/layer/density/shader/screenshot flags and produced inspected RTS/TPS images under `Logs/P91-player-smoke-camera-final-20261014-165947`. U29/U30/U31 were not run and their statuses remain unchanged. Exact commands and caveats are in `docs/P91_HANDOFF.md`.
+
 ## Engine
 Unity 6000.6.4f1 (12bfff696524), approved override D-008; URP 17.6.0; AI Navigation 2.0.12; Windows x64 Mono Development.
 

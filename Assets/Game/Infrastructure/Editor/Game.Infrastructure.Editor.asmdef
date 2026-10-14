@@ -7,7 +7,8 @@
     "Game.Presentation",
     "Unity.AI.Navigation",
     "Unity.InputSystem",
-    "Unity.Cinemachine"
+    "Unity.Cinemachine",
+    "UnityEngine.TerrainModule"
   ],
   "includePlatforms": ["Editor"],
   "autoReferenced": false,

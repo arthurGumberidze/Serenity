@@ -18,7 +18,8 @@
     "Unity.Burst",
     "Unity.Collections",
     "Unity.Entities",
-    "Unity.Mathematics"
+    "Unity.Mathematics",
+    "UnityEngine.TerrainModule"
   ],
   "rootNamespace": "Game.Tests",
   "name": "Game.Tests"

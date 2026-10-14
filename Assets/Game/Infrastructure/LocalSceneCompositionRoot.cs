@@ -186,6 +186,7 @@ namespace Game.Infrastructure
         public P81PlayerSmokeController P81PlayerSmoke { get; private set; }
         public P82PlayerSmokeController P82PlayerSmoke { get; private set; }
         public P83PlayerSmokeController P83PlayerSmoke { get; private set; }
+        public P91PlayerSmokeController P91PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -509,6 +510,7 @@ namespace Game.Infrastructure
             P81PlayerSmoke = P81PlayerSmokeController.AttachIfRequested(this);
             P82PlayerSmoke = P82PlayerSmokeController.AttachIfRequested(this);
             P83PlayerSmoke = P83PlayerSmokeController.AttachIfRequested(this);
+            P91PlayerSmoke = P91PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

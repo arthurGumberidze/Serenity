@@ -1,13 +1,12 @@
 # NEXT_TASK.md
 
-There is no active task.
+Active task: **P9.2 — перенос игрового региона на новый реалистичный мир**.
 
-On 2026-10-14 the user explicitly ended P8.6 qualification and requested completion without further performance, endurance, connected, regression or Player runs. The retained implementation is a **PARTIAL checkpoint**, not proof that the release gates passed.
+Starting point: P9.1 selectively imported and proved Unity URP Terrain Sample 1.0.3 in a separate `LocalGameplay` benchmark. Read `docs/P91_HANDOFF.md` before changing the scene.
 
-If qualification is resumed later, the next unblocked work is still P8.6:
+Required scope:
 
-1. Run a fresh complete U29 matrix at 100/300/500/1000 Characters after the retained Tier1 LOD/path-allocation fixes. The 1000-Character Player p95 gate remains <=33.33 ms and every required repeat must produce valid evidence.
-2. Only after U29 passes, run the approved fresh continuous-process eight-hour U30 route and close its native-memory/bounded-history requirements.
-3. Only after U29 and U30 pass, run U31 including PostgreSQL integration when configured, full regressions, Windows Development build and visible normal-Player evidence.
-
-Do not reinterpret the 1000-Character diagnostic smoke, the failed earlier matrix, the interrupted replacement matrix, historical U30 run4 or existing U31 tests as completion. See `docs/P86_HANDOFF.md`.
+1. Move the canonical P5/P8.2 gameplay anchors (territories, all six resource families, routes, buildable areas, obstacles and water boundary) onto the accepted Terrain composition without changing their stable IDs or Domain/Simulation authorities.
+2. Rebuild and verify NavMesh, construction placement, selection, RTS/TPS camera access, weather/season projection, local/global resource links and Save/Load rebinding.
+3. Only after focused + affected regressions, Windows build and visible RTS/TPS Player evidence pass, remove the superseded P3/P5/P8.2 visual map objects. Keep the P9.1 generator/source assets reversible.
+4. Do not run U29/U30/U31 or reinterpret the P8.6 checkpoint. Their statuses remain PARTIAL / IN_PROGRESS / BLOCKED; see `docs/P86_HANDOFF.md`.

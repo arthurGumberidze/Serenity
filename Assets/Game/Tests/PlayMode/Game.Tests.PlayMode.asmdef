@@ -13,7 +13,8 @@
     "Unity.Burst",
     "Unity.Collections",
     "Unity.Entities",
-    "Unity.Mathematics"
+    "Unity.Mathematics",
+    "UnityEngine.TerrainModule"
   ],
   "optionalUnityReferences": ["TestAssemblies"],
   "autoReferenced": false,

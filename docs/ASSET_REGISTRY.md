@@ -204,19 +204,27 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Visual grade/status: B authored product pass, `APPROVED_RUNTIME`; final character/building/effect/UI and whole-product visual acceptance remain P8.3–P8.5
 - Notes: no new vendor package was imported, no vendor source was edited, and no license-review-required staging asset is referenced. The deferred official Terrain Sample is not claimed as used.
 
-## Staging packages considered but not imported
+## Newly approved runtime environment
 
 ### UNITY-URP-TERRAIN-SAMPLE
 
-- Name: Terrain Sample Asset Pack
-- Type/category: terrain/environment reference
+- Name: Unity URP Terrain | Terrain Sample Project, package 1.0.3
+- Type/category: realistic URP terrain/environment source
 - Source: Unity Asset Store, official Unity Technologies publisher, asset ID 213197
-- URL: https://assetstore.unity.com/packages/3d/environments/terrain-sample-asset-pack-213197
-- License: Standard Unity Asset Store EULA / Companion License; free listing
-- Compatibility checked: listing reports URP support for Unity 6000.x; package size is about 2.8 GiB
-- Status: `DEFERRED`; acquisition requires an authenticated Unity Asset Store/Package Manager account in the user's Editor session, which was unavailable to batch automation
-- Runtime/import path: none
-- Notes: the blocker is account authorization, not package size. P8.1 therefore uses a project-owned deterministic terrain/shore benchmark and does not claim the Terrain Sample was imported.
+- URL: https://assetstore.unity.com/packages/3d/environments/landscapes/unity-urp-terrain-terrain-sample-project-213197
+- License: Standard Unity Asset Store EULA; listing also identifies the Unity Companion License terms for supplied Unity content
+- Date acquired/imported: user-downloaded and explicitly approved for import on 2026-10-14
+- Commercial use: YES under the applicable Unity Asset Store/Companion terms; raw redistribution is not authorized
+- Compatibility verified: source package targets Unity 6000.3; imported and built under approved Unity 6000.6.4f1 with URP 17.6.0
+- Runtime/import path: `Assets/TerrainDemoScene_URP`; 769 selected files, approximately 2308.9 MiB source footprint
+- Import scope: Terrain layers/textures, trees, rocks, details/foliage, water, skybox resources, required materials/models/Shader Graphs and third-party notices
+- Excluded scope: demo scenes, sample scripts, UI, bookmarks, shots, lighting rigs, volume profiles, animation, authored demo Terrain data/brushes/palettes and package-proposed dependency downgrades
+- Runtime use: P9.1 96 m benchmark Terrain with four official layers, 64 trees, 24 rocks, 240 foliage instances and official water/rock/tree presentation
+- Package impact: existing package versions preserved; only built-in `com.unity.modules.terrain` 1.0.0 enabled
+- Visual grade/status: A/B source quality, `APPROVED_RUNTIME`; P9.1 benchmark accepted as technically and visually representative, full gameplay-map replacement belongs to P9.2
+- Notes: vendor assets are not edited. The P9.1 scene recipe is project-owned, isolated and reversible; the old map remains present until P9.2 validation.
+
+## Staging packages considered but not imported
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |
 |---|---|---|---|---|---|---|---|

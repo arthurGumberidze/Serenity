@@ -5,7 +5,8 @@
     "Game.Domain",
     "Game.Simulation",
     "Unity.InputSystem",
-    "Unity.Cinemachine"
+    "Unity.Cinemachine",
+    "UnityEngine.TerrainModule"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,
