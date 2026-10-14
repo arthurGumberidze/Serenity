@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="12" result="Passed" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-14 00:47:44Z" end-time="2026-10-14 00:47:45Z" duration="0,3446152">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="510" result="Passed" start-time="2026-10-14 00:47:44Z" end-time="2026-10-14 00:47:45Z" duration="0.344615" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1579" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:47:44Z" end-time="2026-10-14 00:47:45Z" duration="0.315751" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19516" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1580" name="Game" fullname="Game" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:47:44Z" end-time="2026-10-14 00:47:45Z" duration="0.285240" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1581" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:47:44Z" end-time="2026-10-14 00:47:45Z" duration="0.265979" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1169" name="WorkGroupAndJobTests" fullname="Game.Tests.WorkGroupAndJobTests" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.192734" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="U11" />
+            </properties>
+            <test-case id="1179" name="CriticalEnergyPreemptsManualOrderUntilRestCompletes" fullname="Game.Tests.WorkGroupAndJobTests.CriticalEnergyPreemptsManualOrderUntilRestCompletes" methodname="CriticalEnergyPreemptsManualOrderUntilRestCompletes" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="969210411" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.079272" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1174" name="ExclusiveTargetAndCharacterOwnershipRejectConflictingJobs" fullname="Game.Tests.WorkGroupAndJobTests.ExclusiveTargetAndCharacterOwnershipRejectConflictingJobs" methodname="ExclusiveTargetAndCharacterOwnershipRejectConflictingJobs" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="1470383870" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.005556" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1170" name="GroupCreateRejectsDuplicateAndRemovesWithoutTouchingCharacter" fullname="Game.Tests.WorkGroupAndJobTests.GroupCreateRejectsDuplicateAndRemovesWithoutTouchingCharacter" methodname="GroupCreateRejectsDuplicateAndRemovesWithoutTouchingCharacter" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="688974656" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.011355" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1175" name="GroupDistributionIsDeterministicAndNeverDuplicatesAssignees" fullname="Game.Tests.WorkGroupAndJobTests.GroupDistributionIsDeterministicAndNeverDuplicatesAssignees" methodname="GroupDistributionIsDeterministicAndNeverDuplicatesAssignees" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="793486379" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.010760" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1172" name="JobLifecycleIsQueryableAcrossEveryTerminalState" fullname="Game.Tests.WorkGroupAndJobTests.JobLifecycleIsQueryableAcrossEveryTerminalState" methodname="JobLifecycleIsQueryableAcrossEveryTerminalState" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="726434607" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.002650" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1180" name="ManualHaulCancelAndFailureReleaseClaimsWithoutDuplicatingResources" fullname="Game.Tests.WorkGroupAndJobTests.ManualHaulCancelAndFailureReleaseClaimsWithoutDuplicatingResources" methodname="ManualHaulCancelAndFailureReleaseClaimsWithoutDuplicatingResources" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="2134500210" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.016883" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1181" name="ManualHaulUsesCanonicalTransferThenReturnsToAutonomousUtility" fullname="Game.Tests.WorkGroupAndJobTests.ManualHaulUsesCanonicalTransferThenReturnsToAutonomousUtility" methodname="ManualHaulUsesCanonicalTransferThenReturnsToAutonomousUtility" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="2105211282" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.002209" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1176" name="ManualMoveCommandCreatesDeterministicFormationAndRejectsUnavailableTier" fullname="Game.Tests.WorkGroupAndJobTests.ManualMoveCommandCreatesDeterministicFormationAndRejectsUnavailableTier" methodname="ManualMoveCommandCreatesDeterministicFormationAndRejectsUnavailableTier" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="1976136362" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.021229" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1178" name="ManualMovePreemptsInterruptibleAutonomousHaulAndReleasesItsClaim" fullname="Game.Tests.WorkGroupAndJobTests.ManualMovePreemptsInterruptibleAutonomousHaulAndReleasesItsClaim" methodname="ManualMovePreemptsInterruptibleAutonomousHaulAndReleasesItsClaim" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="1832546582" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.000901" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1171" name="MembershipIsUniqueAcrossCanonicalGroupsAndRoundTripsDetachedState" fullname="Game.Tests.WorkGroupAndJobTests.MembershipIsUniqueAcrossCanonicalGroupsAndRoundTripsDetachedState" methodname="MembershipIsUniqueAcrossCanonicalGroupsAndRoundTripsDetachedState" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="1338781388" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.002455" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1177" name="OneHundredTwentyEightNpcGroupOperationsStayCentralized" fullname="Game.Tests.WorkGroupAndJobTests.OneHundredTwentyEightNpcGroupOperationsStayCentralized" methodname="OneHundredTwentyEightNpcGroupOperationsStayCentralized" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="879211938" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.012730" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1173" name="QueuedJobsAssignByPriorityThenStableJobId" fullname="Game.Tests.WorkGroupAndJobTests.QueuedJobsAssignByPriorityThenStableJobId" methodname="QueuedJobsAssignByPriorityThenStableJobId" classname="Game.Tests.WorkGroupAndJobTests" runstate="Runnable" seed="2019910302" result="Passed" start-time="2026-10-14 00:47:45Z" end-time="2026-10-14 00:47:45Z" duration="0.002187" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

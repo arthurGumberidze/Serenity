@@ -39,10 +39,23 @@ namespace Game.Simulation.Work
         public int JobCount => jobs.Count;
         public IReadOnlyList<WorkOrder> Jobs => jobs.Values.OrderBy(x => x.Id).ToArray();
 
-        public WorkGroup CreateGroup(string displayName, IEnumerable<StableEntityId> memberIds)
+        public WorkGroup CreateGroup(string displayName, IEnumerable<StableEntityId> memberIds,
+            WorkGroupRole role = WorkGroupRole.General)
         {
             if (memberIds == null) throw new ArgumentNullException(nameof(memberIds));
-            var group = WorkGroup.CreateNew(displayName);
+            var group = WorkGroup.CreateNew(displayName, role);
+            return AddGroup(group, memberIds);
+        }
+
+        public WorkGroup CreateGroup(WorkGroupId id, string displayName, IEnumerable<StableEntityId> memberIds,
+            WorkGroupRole role)
+        {
+            if (memberIds == null) throw new ArgumentNullException(nameof(memberIds));
+            return AddGroup(WorkGroup.CreateWithId(id, displayName, role), memberIds);
+        }
+
+        private WorkGroup AddGroup(WorkGroup group, IEnumerable<StableEntityId> memberIds)
+        {
             foreach (var memberId in memberIds.OrderBy(x => x.ToString(), StringComparer.Ordinal))
             {
                 RequireCharacter(memberId);
@@ -78,16 +91,24 @@ namespace Game.Simulation.Work
 
         public WorkOrder CreateHaulJob(StableEntityId? assigneeId, InventoryOwner source,
             InventoryOwner destination, ResourceId resourceId, ResourceQuantity quantity, WorkPriority priority,
-            WorkGroupId? groupId = null)
+            WorkGroupId? groupId = null, WorldPosition sourcePosition = default, bool exclusiveTarget = false)
         {
             if (source.Kind != InventoryOwnerKind.WorldPile)
                 throw new ArgumentException("Manual haul source must be a world pile.", nameof(source));
             if (destination.Kind != InventoryOwnerKind.BuildingStorage)
                 throw new ArgumentException("Manual haul destination must be building storage.", nameof(destination));
             return Create(WorkJobType.Haul, priority,
-                WorkTarget.ForEntity(WorkTargetKind.WorldPile, source.Id),
+                WorkTarget.ForEntity(WorkTargetKind.WorldPile, source.Id, sourcePosition),
                 WorkTarget.ForEntity(WorkTargetKind.BuildingStorage, destination.Id), assigneeId, groupId,
-                resourceId, quantity, false);
+                resourceId, quantity, exclusiveTarget);
+        }
+
+        public WorkOrder CreateDirectJob(WorkJobType type, StableEntityId? assigneeId, WorkTarget target,
+            WorkPriority priority, WorkGroupId groupId, bool exclusiveTarget = true)
+        {
+            if (type == WorkJobType.Move || type == WorkJobType.Haul)
+                throw new ArgumentException("Use the specialized move/haul factory.", nameof(type));
+            return Create(type, priority, target, null, assigneeId, groupId, null, default, exclusiveTarget);
         }
 
         public IReadOnlyList<WorkOrder> CreateGroupMoveJobs(WorkGroupId groupId, WorldPosition target,
@@ -162,6 +183,10 @@ namespace Game.Simulation.Work
             return job.RequeueAssigned();
         }
 
+        public bool Unassign(JobId id) => Get(id).Unassign();
+
+        public void SetPriority(JobId id, WorkPriority priority) => Get(id).SetPriority(priority);
+
         public bool Complete(JobId id) => Finish(Get(id), WorkJobStatus.Completed);
         public bool Cancel(JobId id) => Finish(Get(id), WorkJobStatus.Cancelled);
         public bool Fail(JobId id) => Finish(Get(id), WorkJobStatus.Failed);
@@ -169,6 +194,64 @@ namespace Game.Simulation.Work
         public void SetClaimState(JobId id, WorkClaimState state) => SetClaimState(Get(id), state);
 
         public bool HasOpenJob(StableEntityId characterId) => jobs.Values.Any(x => x.AssigneeId == characterId && !x.IsTerminal);
+
+        public bool IsTargetReserved(WorkTarget target) => exclusiveTargets.ContainsKey(target);
+
+        public bool TryGetOpenJobForTarget(WorkTarget target, out WorkOrder job)
+        {
+            job = null;
+            return exclusiveTargets.TryGetValue(target, out var id) && jobs.TryGetValue(id.Value, out job) && !job.IsTerminal;
+        }
+
+        public WorkSaveState CaptureState() => new WorkSaveState(nextJobId,
+            Groups.All.Select(x => x.CaptureState()), Jobs.Select(Capture));
+
+        public void RestoreState(WorkSaveState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            jobs.Clear();
+            exclusiveTargets.Clear();
+            Groups.Clear();
+            foreach (var groupState in state.Groups.OrderBy(x => x.Id))
+            {
+                var group = AddGroup(WorkGroup.CreateWithId(groupState.Id, groupState.DisplayName, groupState.Role),
+                    groupState.MemberIds);
+                if (groupState.CommanderId.HasValue) group.SetCommander(groupState.CommanderId.Value);
+            }
+            foreach (var saved in state.Jobs.OrderBy(x => x.Id))
+            {
+                if (saved.Id <= 0 || jobs.ContainsKey(saved.Id))
+                    throw new InvalidOperationException("Work save contains a duplicate or invalid job identity.");
+                WorkGroup group = null;
+                if (saved.GroupId.HasValue)
+                {
+                    if (!Groups.TryGet(saved.GroupId.Value, out group))
+                        throw new InvalidOperationException("Work save references an unknown group.");
+                }
+                if (saved.AssigneeId.HasValue)
+                {
+                    RequireEligible(saved.AssigneeId.Value, saved.Type);
+                    if (saved.GroupId.HasValue && !group.Contains(saved.AssigneeId.Value))
+                        throw new InvalidOperationException("Saved assignee is not a member of the job group.");
+                }
+                var order = new WorkOrder(new JobId(saved.Id), saved.Type, saved.Priority, saved.Target,
+                    saved.Destination, saved.AssigneeId, saved.GroupId, saved.ResourceId, saved.Quantity,
+                    saved.ExclusiveTarget);
+                order.RestoreRuntime(saved.Status, saved.ClaimState);
+                jobs.Add(saved.Id, order);
+                if (saved.ExclusiveTarget && !order.IsTerminal)
+                {
+                    if (exclusiveTargets.ContainsKey(saved.Target))
+                        throw new InvalidOperationException("Work save contains a conflicting exclusive target.");
+                    exclusiveTargets.Add(saved.Target, order.Id);
+                }
+            }
+            nextJobId = Math.Max(state.NextJobId, jobs.Count == 0 ? 1L : jobs.Keys.Max() + 1L);
+            var duplicate = jobs.Values.Where(x => !x.IsTerminal && x.AssigneeId.HasValue)
+                .GroupBy(x => x.AssigneeId.Value).FirstOrDefault(x => x.Count() > 1);
+            if (duplicate != null)
+                throw new InvalidOperationException("Work save assigns multiple open jobs to one character.");
+        }
 
         private WorkOrder Create(WorkJobType type, WorkPriority priority, WorkTarget target,
             WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
@@ -193,6 +276,10 @@ namespace Game.Simulation.Work
             if (exclusiveTarget) exclusiveTargets.Add(target, job.Id);
             return job;
         }
+
+        private static WorkOrderState Capture(WorkOrder job) => new WorkOrderState(job.Id.Value,
+            job.Type, job.Priority, job.Target, job.Destination, job.AssigneeId, job.GroupId,
+            job.ResourceId, job.Quantity, job.ExclusiveTarget, job.Status, job.ClaimState);
 
         private bool Finish(WorkOrder job, WorkJobStatus terminalStatus)
         {

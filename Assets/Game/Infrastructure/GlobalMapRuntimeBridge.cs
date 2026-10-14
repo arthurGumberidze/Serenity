@@ -101,7 +101,7 @@ namespace Game.Infrastructure
             root.CameraController.enabled = false;
             root.Input.enabled = false;
             controller.Initialize(root.GlobalMap, root.MilitaryUnits, root.Battles, root.ModeTransitions,
-                root.Production, () => root.Clock.State.CalendarTicks, _ =>
+                root.Production, root.DirectWorkCommands, () => root.Clock.State.CalendarTicks, _ =>
                 {
                     root.ApplyLocalLocationScope(root.GlobalMap.ActiveLocationId);
                     StartCoroutine(ReturnToLocal());

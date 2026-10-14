@@ -80,7 +80,8 @@ namespace Game.Presentation.UI
         public GameplayUiContext(Func<GameClock> clock, CharacterRegistry characters,
             SelectionProbe selection, ResourceCatalog resources, ResourceInventoryRegistry inventories,
             SettlementResourceView storedResources, ProductionService production, ResearchService research,
-            Tier1AiAgentRegistry aiAgents, WorkManager work, CharacterPresentationRegistry presentations,
+            Tier1AiAgentRegistry aiAgents, WorkManager work, DirectWorkCommandService directWork,
+            CharacterPresentationRegistry presentations,
             ManualMoveCommandService manualMoveCommands, WorldPileService worldPiles, BuildingRegistry buildings, BuildingPresentationCatalog buildingCatalog,
             BuildingPlacementController buildingPlacement, HealthAndFamilyService health,
             WeatherService weather, DynastyState dynasty, FamilyTreeQuery family, GameRunState gameRun,
@@ -105,6 +106,7 @@ namespace Game.Presentation.UI
             Research = research ?? throw new ArgumentNullException(nameof(research));
             AiAgents = aiAgents ?? throw new ArgumentNullException(nameof(aiAgents));
             Work = work ?? throw new ArgumentNullException(nameof(work));
+            DirectWork = directWork ?? throw new ArgumentNullException(nameof(directWork));
             Presentations = presentations ?? throw new ArgumentNullException(nameof(presentations));
             ManualMoveCommands = manualMoveCommands ?? throw new ArgumentNullException(nameof(manualMoveCommands));
             WorldPiles = worldPiles ?? throw new ArgumentNullException(nameof(worldPiles));
@@ -149,6 +151,7 @@ namespace Game.Presentation.UI
         public ResearchService Research { get; }
         public Tier1AiAgentRegistry AiAgents { get; }
         public WorkManager Work { get; }
+        public DirectWorkCommandService DirectWork { get; }
         public CharacterPresentationRegistry Presentations { get; }
         public ManualMoveCommandService ManualMoveCommands { get; }
         public WorldPileService WorldPiles { get; }

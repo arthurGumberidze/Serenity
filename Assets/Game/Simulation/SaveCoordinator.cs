@@ -16,6 +16,7 @@ using Game.Simulation.AI;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
 using Game.Simulation.Characters;
+using Game.Simulation.Work;
 
 namespace Game.Simulation
 {
@@ -37,6 +38,7 @@ namespace Game.Simulation
         private readonly EventService events;
         private readonly CampaignProgressService campaign;
         private readonly CharacterAppearanceService appearance;
+        private readonly WorkManager work;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -48,7 +50,7 @@ namespace Game.Simulation
             BuildingDamageService buildingDamageService = null, GlobalMapService globalMapService = null,
             AiStrategicScheduler strategicAiScheduler = null, EventService eventService = null,
             CampaignProgressService campaignProgressService = null,
-            CharacterAppearanceService appearanceService = null)
+            CharacterAppearanceService appearanceService = null, WorkManager workManager = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -68,6 +70,7 @@ namespace Game.Simulation
             events = eventService;
             campaign = campaignProgressService;
             appearance = appearanceService;
+            work = workManager;
         }
         public SaveSnapshot Capture()
         {
@@ -76,7 +79,7 @@ namespace Game.Simulation
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
-                appearance?.CaptureState());
+                appearance?.CaptureState(), work?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -141,6 +144,9 @@ namespace Game.Simulation
                 throw new InvalidOperationException("This save contains appearance state but no appearance service is attached.");
             if (snapshot.Appearance != null) appearance.RestoreState(snapshot.Appearance);
             else appearance?.RestoreLegacyDefaults();
+            if (snapshot.Work != null && work == null)
+                throw new InvalidOperationException("This save contains work state but no work manager is attached.");
+            if (snapshot.Work != null) work.RestoreState(snapshot.Work);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

@@ -6,6 +6,20 @@ using Game.Domain.Resources;
 
 namespace Game.Domain.Work
 {
+    public enum WorkGroupRole
+    {
+        General = 0,
+        Gatherers = 1,
+        Builders = 2,
+        Haulers = 3,
+        Crafters = 4,
+        FarmersGatherers = 5,
+        Scientists = 6,
+        Scouts = 7,
+        Warriors = 8,
+        Caregivers = 9
+    }
+
     public readonly struct WorkGroupId : IEquatable<WorkGroupId>, IComparable<WorkGroupId>
     {
         public WorkGroupId(StableEntityId value)
@@ -29,7 +43,7 @@ namespace Game.Domain.Work
     public readonly struct WorkGroupState
     {
         public WorkGroupState(WorkGroupId id, string displayName, StableEntityId[] memberIds,
-            StableEntityId? commanderId)
+            StableEntityId? commanderId, WorkGroupRole role = WorkGroupRole.General)
         {
             if (!id.IsValid) throw new ArgumentException("Valid group identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 64)
@@ -38,37 +52,46 @@ namespace Game.Domain.Work
             DisplayName = displayName.Trim();
             MemberIds = memberIds ?? Array.Empty<StableEntityId>();
             CommanderId = commanderId;
+            Role = role;
         }
 
         public WorkGroupId Id { get; }
         public string DisplayName { get; }
         public IReadOnlyList<StableEntityId> MemberIds { get; }
         public StableEntityId? CommanderId { get; }
+        public WorkGroupRole Role { get; }
     }
 
     public sealed class WorkGroup
     {
         private readonly HashSet<StableEntityId> members = new HashSet<StableEntityId>();
 
-        private WorkGroup(WorkGroupId id, string displayName)
+        private WorkGroup(WorkGroupId id, string displayName, WorkGroupRole role)
         {
             if (!id.IsValid) throw new ArgumentException("Valid group identity required.", nameof(id));
             Id = id;
+            if (!Enum.IsDefined(typeof(WorkGroupRole), role)) throw new ArgumentOutOfRangeException(nameof(role));
+            Role = role;
             Rename(displayName);
         }
 
         public WorkGroupId Id { get; }
         public string DisplayName { get; private set; }
         public StableEntityId? CommanderId { get; private set; }
+        public WorkGroupRole Role { get; }
         public int MemberCount => members.Count;
         public IReadOnlyList<StableEntityId> Members => members
             .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
 
-        public static WorkGroup CreateNew(string displayName) => new WorkGroup(WorkGroupId.NewId(), displayName);
+        public static WorkGroup CreateNew(string displayName, WorkGroupRole role = WorkGroupRole.General) =>
+            new WorkGroup(WorkGroupId.NewId(), displayName, role);
+
+        public static WorkGroup CreateWithId(WorkGroupId id, string displayName, WorkGroupRole role) =>
+            new WorkGroup(id, displayName, role);
 
         public static WorkGroup Restore(WorkGroupState state)
         {
-            var group = new WorkGroup(state.Id, state.DisplayName);
+            var group = new WorkGroup(state.Id, state.DisplayName, state.Role);
             foreach (var member in state.MemberIds) group.AddMember(member);
             if (state.CommanderId.HasValue) group.SetCommander(state.CommanderId.Value);
             return group;
@@ -104,7 +127,7 @@ namespace Game.Domain.Work
             CommanderId = characterId;
         }
 
-        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId);
+        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId, Role);
     }
 
     public sealed class WorkGroupRegistry
@@ -154,6 +177,12 @@ namespace Game.Domain.Work
             membership.Remove(characterId);
             return true;
         }
+
+        public void Clear()
+        {
+            groups.Clear();
+            membership.Clear();
+        }
     }
 
     public readonly struct JobId : IEquatable<JobId>, IComparable<JobId>
@@ -173,10 +202,18 @@ namespace Game.Domain.Work
         public static bool operator !=(JobId left, JobId right) => !left.Equals(right);
     }
 
-    public enum WorkJobType { Haul = 0, Move = 1 }
-    public enum WorkPriority { Low = 0, Normal = 1, High = 2, Urgent = 3 }
+    public enum WorkJobType
+    {
+        Haul = 0, Move = 1, Gather = 2, Build = 3, Craft = 4, Farm = 5,
+        Research = 6, Scout = 7, Military = 8, Care = 9
+    }
+    public enum WorkPriority { Low = 0, Normal = 1, High = 2, Urgent = 3, Immediate = 4 }
     public enum WorkJobStatus { Queued = 0, Assigned = 1, Active = 2, Completed = 3, Cancelled = 4, Failed = 5 }
-    public enum WorkTargetKind { WorldPosition = 0, Character = 1, WorldPile = 2, BuildingStorage = 3 }
+    public enum WorkTargetKind
+    {
+        WorldPosition = 0, Character = 1, WorldPile = 2, BuildingStorage = 3,
+        ProductionSite = 4, Building = 5, Research = 6, WorldLocation = 7
+    }
     public enum WorkClaimState { None = 0, Reserved = 1, Carrying = 2, Released = 3 }
 
     public readonly struct WorkTarget : IEquatable<WorkTarget>
@@ -197,10 +234,13 @@ namespace Game.Domain.Work
             new WorkTarget(WorkTargetKind.WorldPosition, default, position);
 
         public static WorkTarget ForEntity(WorkTargetKind kind, StableEntityId id)
+            => ForEntity(kind, id, default);
+
+        public static WorkTarget ForEntity(WorkTargetKind kind, StableEntityId id, WorldPosition position)
         {
             if (kind == WorkTargetKind.WorldPosition) throw new ArgumentOutOfRangeException(nameof(kind));
             if (!id.IsValid) throw new ArgumentException("Valid target identity required.", nameof(id));
-            return new WorkTarget(kind, id, default);
+            return new WorkTarget(kind, id, position);
         }
 
         public bool Equals(WorkTarget other) => Kind == other.Kind && EntityId == other.EntityId && Position.Equals(other.Position);
@@ -284,6 +324,23 @@ namespace Game.Domain.Work
             return true;
         }
 
+        public bool Unassign()
+        {
+            if (IsTerminal) return false;
+            AssigneeId = null;
+            Status = WorkJobStatus.Queued;
+            ClaimState = WorkClaimState.Released;
+            return true;
+        }
+
+        public void RestoreRuntime(WorkJobStatus status, WorkClaimState claimState)
+        {
+            if (!Enum.IsDefined(typeof(WorkJobStatus), status)) throw new ArgumentOutOfRangeException(nameof(status));
+            if (!Enum.IsDefined(typeof(WorkClaimState), claimState)) throw new ArgumentOutOfRangeException(nameof(claimState));
+            Status = status;
+            ClaimState = claimState;
+        }
+
         public bool Finish(WorkJobStatus terminalStatus)
         {
             if (terminalStatus != WorkJobStatus.Completed && terminalStatus != WorkJobStatus.Cancelled &&
@@ -299,5 +356,44 @@ namespace Game.Domain.Work
             if (!Enum.IsDefined(typeof(WorkClaimState), state)) throw new ArgumentOutOfRangeException(nameof(state));
             ClaimState = state;
         }
+    }
+
+    public readonly struct WorkOrderState
+    {
+        public WorkOrderState(long id, WorkJobType type, WorkPriority priority, WorkTarget target,
+            WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
+            ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget,
+            WorkJobStatus status, WorkClaimState claimState)
+        {
+            Id = id; Type = type; Priority = priority; Target = target; Destination = destination;
+            AssigneeId = assigneeId; GroupId = groupId; ResourceId = resourceId; Quantity = quantity;
+            ExclusiveTarget = exclusiveTarget; Status = status; ClaimState = claimState;
+        }
+        public long Id { get; }
+        public WorkJobType Type { get; }
+        public WorkPriority Priority { get; }
+        public WorkTarget Target { get; }
+        public WorkTarget? Destination { get; }
+        public StableEntityId? AssigneeId { get; }
+        public WorkGroupId? GroupId { get; }
+        public ResourceId? ResourceId { get; }
+        public ResourceQuantity Quantity { get; }
+        public bool ExclusiveTarget { get; }
+        public WorkJobStatus Status { get; }
+        public WorkClaimState ClaimState { get; }
+    }
+
+    public sealed class WorkSaveState
+    {
+        public WorkSaveState(long nextJobId, IEnumerable<WorkGroupState> groups, IEnumerable<WorkOrderState> jobs)
+        {
+            if (nextJobId <= 0) throw new ArgumentOutOfRangeException(nameof(nextJobId));
+            NextJobId = nextJobId;
+            Groups = (groups ?? Array.Empty<WorkGroupState>()).ToArray();
+            Jobs = (jobs ?? Array.Empty<WorkOrderState>()).ToArray();
+        }
+        public long NextJobId { get; }
+        public IReadOnlyList<WorkGroupState> Groups { get; }
+        public IReadOnlyList<WorkOrderState> Jobs { get; }
     }
 }

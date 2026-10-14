@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12,1914821">
+  <test-suite type="TestSuite" id="1181" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.191482" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1355" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.166256" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="16760" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1356" name="Game" fullname="Game" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.155904" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1357" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.149653" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1358" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="134" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.143542" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1258" name="P83WorkGroupPlayModeTests" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:36Z" duration="12.132694" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P83" />
+              </properties>
+              <test-case id="1260" name="ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" methodname="ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="1820884331" result="Passed" start-time="2026-10-14 01:06:24Z" end-time="2026-10-14 01:06:34Z" duration="9.574711" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_853327747_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_511532963_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+]]></output>
+              </test-case>
+              <test-case id="1261" name="GlobalResourceMarkerIssuesSameCanonicalGatherOrder" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.GlobalResourceMarkerIssuesSameCanonicalGatherOrder" methodname="GlobalResourceMarkerIssuesSameCanonicalGatherOrder" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="1751209245" result="Passed" start-time="2026-10-14 01:06:34Z" end-time="2026-10-14 01:06:35Z" duration="1.490036" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_84016112_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_855275852_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1259" name="SelectedResourceCreatesCanonicalPrioritizedGroupOrder" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.SelectedResourceCreatesCanonicalPrioritizedGroupOrder" methodname="SelectedResourceCreatesCanonicalPrioritizedGroupOrder" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="1081872150" result="Passed" start-time="2026-10-14 01:06:35Z" end-time="2026-10-14 01:06:36Z" duration="1.007391" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_624118591_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Genb_237765503_UMA30_Eyelashes_UMA_EYELASHES', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

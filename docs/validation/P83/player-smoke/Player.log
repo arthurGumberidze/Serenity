@@ -1,0 +1,248 @@
+Mono path[0] = 'C:/serenity_game/Builds/P83/Serenity_Data/Managed'
+Mono config path = 'C:/serenity_game/Builds/P83/MonoBleedingEdge/etc'
+CodeReloadManager initialized
+Found 2 interfaces on host : 0) 198.18.0.1 1) 192.168.0.113
+Player connection [2820]  Target information:
+
+Player connection [2820]  * "[IP] 198.18.0.1 [Port] 55000 [Flags] 2 [Guid] 3977651684 [EditorId] 417520452 [Version] 1048832 [Id] WindowsPlayer(2,DESKTOP-HJ2LN4L) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] Serenity" 
+
+Player connection [2820]  * "[IP] 192.168.0.113 [Port] 55000 [Flags] 2 [Guid] 3977651684 [EditorId] 417520452 [Version] 1048832 [Id] WindowsPlayer(2,DESKTOP-HJ2LN4L) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] Serenity" 
+
+Player connection [2820] Started UDP target info broadcast (1) on [225.0.0.222:54997].
+
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.6.4f1 (12bfff696524)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/serenity_game/Builds/P83/Serenity_Data/UnitySubsystems
+Forcing GfxDevice: Direct3D 11
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: Intel(R) Arc(TM) Graphics (ID=0x7d55)
+    Vendor:   Intel
+    VRAM:     48456 MB
+    Driver:   32.0.101.8508
+Begin MonoManager ReloadAssembly
+- Finished resetting the current domain, in  0.011 seconds
+[Physics::Module] Selected backend (deferred post-plugins).
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+Using Windows.Gaming.Input
+UnloadTime: 4.394400 ms
+Unloading 6 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 4.345000 ms
+Unloading 4 unused Assets / (6.7 KB). Loaded Objects now: 7028.
+Memory consumption went from 277.4 MB to 277.4 MB.
+Total: 4.216200 ms (FindLiveObjects: 0.403800 ms CreateObjectMapping: 0.059400 ms MarkObjects: 3.586300 ms  DeleteObjects: 0.037300 ms)
+
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Gen_285048154', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object,UnityEngine.Object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:66)
+UnityEngine.Debug:LogWarning (object,UnityEngine.Object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:226)
+UMA.UMAGeneratorPro:UpdateUV () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorPro.cs:1252)
+UMA.UMAGeneratorPro:ProcessTexture (UMA.UMAGeneratorBase,UMA.UMAData,bool,int) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorPro.cs:540)
+UMA.UMAGeneratorBuiltin:GenerateSingleUMAWithQuality (UMA.UMAData,bool) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:934)
+UMA.UMAGeneratorBuiltin:GenerateSingleUMA (UMA.UMAData,bool) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:842)
+UMA.UMAGeneratorBuiltin:StartDirtyUpdateCore (UMA.UMAMeshCombineTimeSlice) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:1578)
+UMA.UMAGeneratorBuiltin:StartDirtyUpdate (UMA.UMAMeshCombineTimeSlice) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:1559)
+UMA.UMAGeneratorBuiltin:OnDirtyUpdate () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:1475)
+UMA.UMAGeneratorBuiltin:RunDirtyUpdate (UMA.UMAMeshCombineTimeSlice) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:1510)
+UMA.UMAGeneratorBuiltin:WorkInternal () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:608)
+UMA.UMAGeneratorBuiltin:Work () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:525)
+UMA.UMAGeneratorBuiltin:Update () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:488)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 226)
+
+UMA generated material has no usable atlas area. Texture generation was skipped and identity UVs were retained so mesh generation can continue. This usually means the base OverlayDataAsset has no texture, SlotData.overlayScale is zero, or the slot uses an Atlas/NoAtlas UMAMaterial when it should use an existing material. UMAMaterial='UMAMaterial_UMA_SRP_DiffuseAlpha', materialType=Atlas, UnityMaterial='UMA_SRP_DiffuseAlpha_URP_Gen_242006593', cropResolution=(1024.00, 1024.00), resolutionScale=(1.00, 1.00), slots=[UMA30_Eyelashes(asset='UMA30_Eyelashes_slot', overlayScale=1)].
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object,UnityEngine.Object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:66)
+UnityEngine.Debug:LogWarning (object,UnityEngine.Object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:226)
+UMA.UMAGeneratorPro:UpdateUV () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorPro.cs:1252)
+UMA.UMAGeneratorPro:ProcessTexture (UMA.UMAGeneratorBase,UMA.UMAData,bool,int) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorPro.cs:540)
+UMA.UMAGeneratorBuiltin:GenerateSingleUMAWithQuality (UMA.UMAData,bool) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:934)
+UMA.UMAGeneratorBuiltin:GenerateSingleUMA (UMA.UMAData,bool) (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/StandardAssets/UMA/Scripts/UMAGeneratorBuiltin.cs:842)
+UMA.CharacterSystem.DynamicCharacterAvatar:GenerateNow () (at ./Library/PackageCache/com.umasteeringgroup.uma@6088bc83cd10/Core/DynamicCharacterSystem/Scripts/DynamicCharacterAvatar.cs:895)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+Game.Presentation.Environment.P81VisualPrototypePresentation/<ResolveVisualProvider>d__25:MoveNext () (at C:/serenity_game/Assets/Game/Presentation/Environment/P81VisualPrototypePresentation.cs:84)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 226)
+
+ICU Data not available: falling back to minimal text segmentation (basic line breaking rules only, emoji sequences may not render correctly). The data is automatically assigned to the PanelSettings in the editor if the advanced text option is enabled in the project settings. It will not be present on PanelSettings created at runtime, so make sure the build contains at least one PanelSettings asset to get full international text support.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:LogWarning (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:223)
+UnityEngine.UIElements.UITKTextHandle:GetICUAsset () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:419)
+UnityEngine.TextCore.Text.TextHandle:InitTextLib () (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextHandle.cs:746)
+UnityEngine.UIElements.UITKTextHandle:EnsureIsReadyForJobs () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:192)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareTextElementForJobsOnMainThread (UnityEngine.UIElements.TextElement) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:113)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:168)
+UnityEngine.UIElements.TextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/TextJobSystem.cs:25)
+UnityEngine.UIElements.VisualTreeLayoutUpdater:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeLayoutUpdater.cs:245)
+UnityEngine.UIElements.VisualTreeUpdater:UpdateVisualTreePhase (UnityEngine.UIElements.VisualTreeUpdatePhase) (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeUpdater.cs:146)
+UnityEngine.UIElements.Panel:ValidateLayout () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:1662)
+UnityEngine.UIElements.BaseRuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:2014)
+UnityEngine.UIElements.RuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/GameObjects/RuntimePanel.cs:335)
+UnityEngine.UIElements.UIElementsRuntimeUtility:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/UIElementsRuntimeUtility.cs:349)
+UnityEngine.UIElements.UIElementsRuntimeUtilityNative:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/Native/UIElementsUtility.bindings.cs:18)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 223)
+
+No ICU data provided. Falling back to minimal text segmentation (basic line breaking rules only, emoji sequences may not render correctly).
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.TextCore.Text.TextLib:GetInstance (byte[])
+UnityEngine.TextCore.Text.TextLib:.ctor (byte[]) (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextGenerator/TextLib.bindings.cs:23)
+UnityEngine.TextCore.Text.TextHandle:InitTextLib () (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextHandle.cs:747)
+UnityEngine.UIElements.UITKTextHandle:EnsureIsReadyForJobs () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:192)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareTextElementForJobsOnMainThread (UnityEngine.UIElements.TextElement) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:113)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:168)
+UnityEngine.UIElements.TextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/TextJobSystem.cs:25)
+UnityEngine.UIElements.VisualTreeLayoutUpdater:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeLayoutUpdater.cs:245)
+UnityEngine.UIElements.VisualTreeUpdater:UpdateVisualTreePhase (UnityEngine.UIElements.VisualTreeUpdatePhase) (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeUpdater.cs:146)
+UnityEngine.UIElements.Panel:ValidateLayout () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:1662)
+UnityEngine.UIElements.BaseRuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:2014)
+UnityEngine.UIElements.RuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/GameObjects/RuntimePanel.cs:335)
+UnityEngine.UIElements.UIElementsRuntimeUtility:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/UIElementsRuntimeUtility.cs:349)
+UnityEngine.UIElements.UIElementsRuntimeUtilityNative:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/Native/UIElementsUtility.bindings.cs:18)
+
+[C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs line 23]
+
+Shader 'Hidden/Universal Render Pipeline/GaussianDepthOfField' is not supported or has been stripped from the build (in 'GaussianDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldGaussianPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldGaussianPostProcessPass.cs:24)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:56)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/GaussianDepthOfField' is not supported or has been stripped from the build (in 'GaussianDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldGaussianPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldGaussianPostProcessPass.cs:25)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:56)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/BokehDepthOfField' is not supported or has been stripped from the build (in 'BokehDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldBokehPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldBokehProcessPass.cs:26)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:57)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/PaniniProjection' is not supported or has been stripped from the build (in 'PaniniProjection'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.PaniniProjectionPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/PaniniProjectionPostProcessPass.cs:19)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:64)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+GPU Resident Drawer created.
+Reduced additional punctual light shadows resolution by 2 to make 7 shadow maps fit in the 2048x2048 shadow atlas. To avoid this, increase shadow atlas size, decrease big shadow resolutions, or reduce the number of shadow maps active in the same frame
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+UnityEngine.Rendering.Universal.Internal.AdditionalLightsShadowCasterPass:Setup (UnityEngine.Rendering.Universal.UniversalRenderingData,UnityEngine.Rendering.Universal.UniversalCameraData,UnityEngine.Rendering.Universal.UniversalLightData,UnityEngine.Rendering.Universal.UniversalShadowData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/AdditionalLightsShadowCasterPass.cs:460)
+UnityEngine.Rendering.Universal.UniversalRenderer:OnBeforeRendering (UnityEngine.Rendering.RenderGraphModule.RenderGraph) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererRenderGraph.cs:808)
+UnityEngine.Rendering.Universal.UniversalRenderer:OnRecordRenderGraph (UnityEngine.Rendering.RenderGraphModule.RenderGraph,UnityEngine.Rendering.ScriptableRenderContext) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererRenderGraph.cs:695)
+UnityEngine.Rendering.Universal.ScriptableRenderer:RecordRenderGraph (UnityEngine.Rendering.RenderGraphModule.RenderGraph,UnityEngine.Rendering.ScriptableRenderContext) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRenderer.cs:967)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RecordAndExecuteRenderGraph (UnityEngine.Rendering.RenderGraphModule.RenderGraph,UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.ScriptableRenderer,UnityEngine.Rendering.CommandBuffer,UnityEngine.Camera) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderPipelineRenderGraph.cs:27)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderPipeline.cs:1062)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderPipeline.cs:1275)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderPipeline.cs:629)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipeline.cs:58)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:159)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+P83_PLAYER_SMOKE PASSED C:\serenity_game\docs\validation\P83\player-smoke\p83-player-smoke.json
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.P83PlayerSmokeController/<Run>d__5:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/P83PlayerSmokeController.cs:144)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+GPU Resident Drawer disposed.
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+CodeReloadManager destroyed
+Leak Detected : Persistent allocates 2 individual allocations. To find out more, run with the command line argument '-native-leak-detection EnabledWithStackTrace' and reproduce the leak again.
+PlayerConnection::Cleanup##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1791939919637,"processId":24784,"allocatedMemory":1686469,"memoryLabels":[{"Default":10488},{"Thread":3584},{"Manager":1024524},{"GfxDevice":72},{"GfxThread":10800},{"Animation":3000},{"Serialization":17416},{"Input":2440},{"TextLib":23991},{"ScriptingNativeRuntime":548936},{"BaseObject":3384},{"Renderer":8},{"File":1056},{"String":861},{"Utility":32768},{"PoolAlloc":1680},{"ScriptManager":5696},{"CodeReload":440},{"CloudService":288},{"VR":1928},{"Video":144},{"NativeArray":462},{"Subsystems":96},{"Gui":119},{"CoreBusinessMetrics":128}]}

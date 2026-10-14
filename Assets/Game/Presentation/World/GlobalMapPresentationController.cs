@@ -11,6 +11,8 @@ using Game.Simulation.Combat;
 using Game.Simulation.Military;
 using Game.Simulation.World;
 using Game.Simulation.Production;
+using Game.Simulation.Work;
+using Game.Domain.Work;
 using Game.Presentation.Localization;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -51,6 +53,8 @@ namespace Game.Presentation.World
         private BattleResolutionService battles;
         private GameModeTransitionService transitions;
         private ProductionService production;
+        private DirectWorkCommandService directWork;
+        private WorkPriority resourcePriority = WorkPriority.High;
         private Func<long> currentTick;
         private Action<GameModeTransitionResult> localEntered;
         private readonly Dictionary<WorldLocationId, GameObject> locationMarkers =
@@ -82,7 +86,7 @@ namespace Game.Presentation.World
 
         public void Initialize(GlobalMapService globalMap, MilitaryUnitService militaryUnits,
             BattleResolutionService battleResolution, GameModeTransitionService modeTransitions,
-            ProductionService productionService, Func<long> tickProvider,
+            ProductionService productionService, DirectWorkCommandService directWorkCommands, Func<long> tickProvider,
             Action<GameModeTransitionResult> onLocalEntered)
         {
             map = globalMap ?? throw new ArgumentNullException(nameof(globalMap));
@@ -90,6 +94,7 @@ namespace Game.Presentation.World
             battles = battleResolution ?? throw new ArgumentNullException(nameof(battleResolution));
             transitions = modeTransitions ?? throw new ArgumentNullException(nameof(modeTransitions));
             production = productionService ?? throw new ArgumentNullException(nameof(productionService));
+            directWork = directWorkCommands ?? throw new ArgumentNullException(nameof(directWorkCommands));
             currentTick = tickProvider ?? throw new ArgumentNullException(nameof(tickProvider));
             localEntered = onLocalEntered;
             BuildStaticMap();
@@ -240,11 +245,17 @@ namespace Game.Presentation.World
             if (map == null) return;
             if (selectedResource != null)
             {
-                GUILayout.BeginArea(new Rect(Screen.width - 310, 180, 292, 154), GUI.skin.box);
+                GUILayout.BeginArea(new Rect(Screen.width - 310, 180, 292, 230), GUI.skin.box);
                 GUILayout.Label(RussianTextCatalog.Content("resource", selectedResource.ResourceId.ToString()));
                 GUILayout.Label($"Источников на местности: {selectedResource.SiteIds.Count}");
                 var remaining = selectedResource.SiteIds.Sum(id => production.TryGetSite(id, out var site) ? site.RemainingAmount : 0L);
                 GUILayout.Label($"Доступно: {remaining}");
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Обычный")) resourcePriority = WorkPriority.Normal;
+                if (GUILayout.Button("Высокий")) resourcePriority = WorkPriority.High;
+                if (GUILayout.Button("Прямо сейчас")) resourcePriority = WorkPriority.Immediate;
+                GUILayout.EndHorizontal();
+                if (GUILayout.Button("Собирать")) IssueSelectedResourceWork();
                 if (GUILayout.Button("Перейти к источникам поселения")) EnterSelectedResourceLocation();
                 GUILayout.EndArea();
             }
@@ -305,6 +316,16 @@ namespace Game.Presentation.World
             if (selectedResource == null) return;
             var result = transitions.EnterLocation(new WorldLocationId("starter_settlement"), currentTick());
             if (result.Changed) localEntered?.Invoke(result);
+        }
+
+        public WorkOrder IssueSelectedResourceWork()
+        {
+            if (selectedResource == null || selectedResource.SiteIds.Count == 0)
+                throw new InvalidOperationException("Resource marker is not selected.");
+            var siteId = selectedResource.SiteIds.First(id => production.TryGetSite(id, out _));
+            var site = production.Sites.First(x => x.Id == siteId);
+            return directWork.Issue(WorkJobType.Gather,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite, site.Id, site.Position), resourcePriority);
         }
 
         private void TrySelectResourceAt(Vector2 screenPoint)

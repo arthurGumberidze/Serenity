@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-14 00:46:50Z" end-time="2026-10-14 00:46:51Z" duration="0,277818">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="510" result="Passed" start-time="2026-10-14 00:46:50Z" end-time="2026-10-14 00:46:51Z" duration="0.277818" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1579" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:46:50Z" end-time="2026-10-14 00:46:51Z" duration="0.242137" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27452" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1580" name="Game" fullname="Game" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.227738" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1581" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="506" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.213726" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1036" name="P83WorkGroupTests" fullname="Game.Tests.P83WorkGroupTests" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.194158" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="P83" />
+            </properties>
+            <test-case id="1040" name="ExclusiveTargetConflictCancelAndReprioritizeAreSafe" fullname="Game.Tests.P83WorkGroupTests.ExclusiveTargetConflictCancelAndReprioritizeAreSafe" methodname="ExclusiveTargetConflictCancelAndReprioritizeAreSafe" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="57452621" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.083922" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1039" name="ImmediatePriorityDoesNotOverrideCriticalRestProtection" fullname="Game.Tests.P83WorkGroupTests.ImmediatePriorityDoesNotOverrideCriticalRestProtection" methodname="ImmediatePriorityDoesNotOverrideCriticalRestProtection" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="1585547097" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.002022" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="ImmediatePriorityPreemptsOnlySafeWorkAndReleasesOldAssignment" fullname="Game.Tests.P83WorkGroupTests.ImmediatePriorityPreemptsOnlySafeWorkAndReleasesOldAssignment" methodname="ImmediatePriorityPreemptsOnlySafeWorkAndReleasesOldAssignment" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="1992927399" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.005666" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="NineRoleGroupsAndNearestSuitableAssignmentAreDeterministic" fullname="Game.Tests.P83WorkGroupTests.NineRoleGroupsAndNearestSuitableAssignmentAreDeterministic" methodname="NineRoleGroupsAndNearestSuitableAssignmentAreDeterministic" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="231456032" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.008031" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="PlannerAndWorkManagerHaveNoPerNpcUpdateLoop" fullname="Game.Tests.P83WorkGroupTests.PlannerAndWorkManagerHaveNoPerNpcUpdateLoop" methodname="PlannerAndWorkManagerHaveNoPerNpcUpdateLoop" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="681765732" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.000660" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1041" name="WorkStateRoundTripsThroughStrictV18Codec" fullname="Game.Tests.P83WorkGroupTests.WorkStateRoundTripsThroughStrictV18Codec" methodname="WorkStateRoundTripsThroughStrictV18Codec" classname="Game.Tests.P83WorkGroupTests" runstate="Runnable" seed="1792205925" result="Passed" start-time="2026-10-14 00:46:51Z" end-time="2026-10-14 00:46:51Z" duration="0.067279" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

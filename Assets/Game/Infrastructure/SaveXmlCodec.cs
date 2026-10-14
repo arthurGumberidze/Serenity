@@ -21,11 +21,12 @@ using Game.Domain.Buildings;
 using Game.Domain.World;
 using Game.Domain.Events;
 using Game.Domain.Campaign;
+using Game.Domain.Work;
 using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V17 adds canonical settlement occupation.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V18 adds canonical work groups and orders.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -72,6 +73,8 @@ namespace Game.Infrastructure
                     snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.AppearanceVersion)
                 root.Add(SerializeAppearance(snapshot.Appearance));
+            if (snapshot.FormatVersion >= SaveSnapshot.WorkVersion)
+                root.Add(SerializeWork(snapshot.Work));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -106,6 +109,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.StrategicAiVersion &&
                         version != SaveSnapshot.EventVersion &&
                         version != SaveSnapshot.CampaignVersion && version != SaveSnapshot.AppearanceVersion &&
+                        version != SaveSnapshot.OccupationVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -137,12 +141,14 @@ namespace Game.Infrastructure
                         ? DeserializeCampaign(root.Element("campaign"), version >= SaveSnapshot.OccupationVersion) : null;
                     var appearance = version >= SaveSnapshot.AppearanceVersion
                         ? DeserializeAppearance(root.Element("appearance")) : null;
+                    var work = version >= SaveSnapshot.WorkVersion
+                        ? DeserializeWork(root.Element("work")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance);
+                        appearance, work);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1322,6 +1328,80 @@ namespace Game.Infrastructure
             }));
         }
 
+        private static XElement SerializeWork(WorkSaveState state)
+        {
+            var element = new XElement("work");
+            if (state == null) return element;
+            element.Add(new XElement("nextJobId", state.NextJobId));
+            element.Add(new XElement("groups", state.Groups.Select(group => new XElement("group",
+                new XElement("id", group.Id.ToString()), new XElement("name", group.DisplayName),
+                new XElement("role", (int)group.Role), OptionalId("commanderId", group.CommanderId),
+                new XElement("members", group.MemberIds.Select(id => new XElement("member", id.ToString())))))));
+            element.Add(new XElement("jobs", state.Jobs.Select(job => new XElement("job",
+                new XElement("id", job.Id), new XElement("type", (int)job.Type),
+                new XElement("priority", (int)job.Priority), SerializeTarget("target", job.Target),
+                new XElement("hasDestination", job.Destination.HasValue),
+                job.Destination.HasValue ? SerializeTarget("destination", job.Destination.Value) : new XElement("destination"),
+                OptionalId("assigneeId", job.AssigneeId),
+                new XElement("groupId", job.GroupId.HasValue ? job.GroupId.Value.ToString() : string.Empty),
+                new XElement("resourceId", job.ResourceId.HasValue ? job.ResourceId.Value.ToString() : string.Empty),
+                new XElement("quantity", job.Quantity.Units), new XElement("exclusive", job.ExclusiveTarget),
+                new XElement("status", (int)job.Status), new XElement("claim", (int)job.ClaimState)))));
+            return element;
+        }
+
+        private static WorkSaveState DeserializeWork(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing work state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty work state.");
+                return null;
+            }
+            RequireFields(element, new[] { "nextJobId", "groups", "jobs" });
+            var groups = Items(element.Element("groups"), "group", value =>
+            {
+                RequireFields(value, new[] { "id", "name", "role", "commanderId", "members" });
+                return new WorkGroupState(new WorkGroupId(StableEntityId.Parse(Value(value, "id"))),
+                    Value(value, "name"), Items(value.Element("members"), "member", x => StableEntityId.Parse(Scalar(x))),
+                    OptionalStableId(value, "commanderId"), (WorkGroupRole)Int(value, "role"));
+            });
+            var jobs = Items(element.Element("jobs"), "job", value =>
+            {
+                RequireFields(value, new[] { "id", "type", "priority", "target", "hasDestination", "destination",
+                    "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim" });
+                var hasDestination = XmlConvert.ToBoolean(Value(value, "hasDestination"));
+                var destinationElement = value.Element("destination");
+                if (!hasDestination && destinationElement.HasElements) throw new FormatException("Unexpected work destination.");
+                var groupText = Value(value, "groupId");
+                var resourceText = Value(value, "resourceId");
+                return new WorkOrderState(Long(value, "id"), (WorkJobType)Int(value, "type"),
+                    (WorkPriority)Int(value, "priority"), DeserializeTarget(value.Element("target")),
+                    hasDestination ? (WorkTarget?)DeserializeTarget(destinationElement) : null,
+                    OptionalStableId(value, "assigneeId"), string.IsNullOrEmpty(groupText) ? (WorkGroupId?)null :
+                        new WorkGroupId(StableEntityId.Parse(groupText)),
+                    string.IsNullOrEmpty(resourceText) ? (ResourceId?)null : new ResourceId(resourceText),
+                    new ResourceQuantity(Long(value, "quantity")), XmlConvert.ToBoolean(Value(value, "exclusive")),
+                    (WorkJobStatus)Int(value, "status"), (WorkClaimState)Int(value, "claim"));
+            });
+            return new WorkSaveState(Long(element, "nextJobId"), groups, jobs);
+        }
+
+        private static XElement SerializeTarget(string name, WorkTarget target) => new XElement(name,
+            new XElement("kind", (int)target.Kind), new XElement("entityId", target.EntityId.IsValid ? target.EntityId.ToString() : string.Empty),
+            new XElement("x", XmlConvert.ToString(target.Position.X)), new XElement("y", XmlConvert.ToString(target.Position.Y)),
+            new XElement("z", XmlConvert.ToString(target.Position.Z)));
+
+        private static WorkTarget DeserializeTarget(XElement element)
+        {
+            RequireFields(element, new[] { "kind", "entityId", "x", "y", "z" });
+            var kind = (WorkTargetKind)Int(element, "kind");
+            var position = new WorldPosition(XmlConvert.ToSingle(Value(element, "x")),
+                XmlConvert.ToSingle(Value(element, "y")), XmlConvert.ToSingle(Value(element, "z")));
+            if (kind == WorkTargetKind.WorldPosition) return WorkTarget.At(position);
+            return WorkTarget.ForEntity(kind, StableEntityId.Parse(Value(element, "entityId")), position);
+        }
+
         private static MilitaryUnitId? OptionalUnit(XElement parent, string name)
         { var value = Value(parent, name); return string.IsNullOrEmpty(value) ? (MilitaryUnitId?)null : MilitaryUnitId.Parse(value); }
         private static SettlementId? OptionalSettlement(XElement parent, string name)
@@ -1346,6 +1426,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.EventVersion) fields = fields.Concat(new[] { "events" });
             if (version >= SaveSnapshot.CampaignVersion) fields = fields.Concat(new[] { "campaign" });
             if (version >= SaveSnapshot.AppearanceVersion) fields = fields.Concat(new[] { "appearance" });
+            if (version >= SaveSnapshot.WorkVersion) fields = fields.Concat(new[] { "work" });
             return fields.ToArray();
         }
 

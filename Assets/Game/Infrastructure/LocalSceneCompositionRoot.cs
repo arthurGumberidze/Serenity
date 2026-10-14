@@ -124,6 +124,7 @@ namespace Game.Infrastructure
         public Tier1AiScheduler AiScheduler { get; private set; }
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
+        public DirectWorkCommandService DirectWorkCommands { get; private set; }
         public WorkDebugOverlay WorkDebug { get; private set; }
         public ManualMoveCommandService ManualMoveCommands { get; private set; }
         public ManualMoveInputController ManualMoveInput { get; private set; }
@@ -182,6 +183,7 @@ namespace Game.Infrastructure
         public P7PlayerSmokeController P7PlayerSmoke { get; private set; }
         public P81PlayerSmokeController P81PlayerSmoke { get; private set; }
         public P82PlayerSmokeController P82PlayerSmoke { get; private set; }
+        public P83PlayerSmokeController P83PlayerSmoke { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -360,6 +362,8 @@ namespace Game.Infrastructure
                 Tiers.Materialize(playerCharacters[i], CharacterSimulationTier.Tier3,
                     new CharacterRuntimeState(playerCharacters[i].Id, new WorldPosition(-6 + i * 1.5f, 0, 4),
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
+            DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
+            DirectWorkCommands.EnsureRoleGroups();
             TierPolicy = new TierDistancePolicy(Tiers);
             Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
                 worldSeed, Tiers);
@@ -448,14 +452,14 @@ namespace Game.Infrastructure
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events, CampaignProgress, Appearances);
+                Events, CampaignProgress, Appearances, Work);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
                 .ToArray();
             GameplayUi = gameObject.AddComponent<GameplayUiController>();
             GameplayUi.Initialize(new GameplayUiContext(() => Clock, Characters, selectionProbe, Resources,
-                    Inventories, StoredResources, Production, Research, AiAgents, Work, CharacterPresentations,
+                    Inventories, StoredResources, Production, Research, AiAgents, Work, DirectWorkCommands, CharacterPresentations,
                     ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
                     HealthFamily, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
                     MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
@@ -497,6 +501,7 @@ namespace Game.Infrastructure
             P7PlayerSmoke = P7PlayerSmokeController.AttachIfRequested(this);
             P81PlayerSmoke = P81PlayerSmokeController.AttachIfRequested(this);
             P82PlayerSmoke = P82PlayerSmokeController.AttachIfRequested(this);
+            P83PlayerSmoke = P83PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()
@@ -510,6 +515,7 @@ namespace Game.Infrastructure
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
+            DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
             var targetCalendarTick = Clock.State.CalendarTicks;
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
@@ -597,6 +603,8 @@ namespace Game.Infrastructure
             selectionProbe.ClearSelection();
             Production.Population = Characters.Count;
             RebindRegionResourcePresenters();
+            DirectWorkCommands.EnsureRoleGroups();
+            DirectWorkCommands.ReevaluateQueued();
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             if (GlobalMap.Mode == GameWorldMode.Local) ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
             GlobalMapBridge.ReconcileAfterLoad();

@@ -45,7 +45,8 @@ namespace Game.Domain.AI
         ManualMove = 3,
         ManualHaul = 4,
         Produce = 5,
-        Research = 6
+        Research = 6,
+        ManualTask = 7
     }
 
     public enum AiActionPhase

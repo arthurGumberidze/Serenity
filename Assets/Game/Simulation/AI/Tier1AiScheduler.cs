@@ -99,6 +99,25 @@ namespace Game.Simulation.AI
             entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
         }
 
+        public bool CanInterruptForDirectWork(StableEntityId characterId)
+        {
+            if (!byId.TryGetValue(characterId, out var entry)) return false;
+            if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId)) return false;
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy) return false;
+            return entry.Action == null || entry.Action.IsInterruptible;
+        }
+
+        public bool TryInterruptForDirectWork(StableEntityId characterId)
+        {
+            if (!CanInterruptForDirectWork(characterId) || !byId.TryGetValue(characterId, out var entry)) return false;
+            entry.Action?.Cancel();
+            entry.Action = null;
+            entry.Movement.Stop();
+            entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+            entry.NextThinkTicks = calendarTicks;
+            return true;
+        }
+
         public void Register(Character character, Tier1AiAgentState agent, ITier1MovementDriver movement)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));
@@ -381,7 +400,7 @@ namespace Game.Simulation.AI
                         settings.MovementTimeout);
                 }
             }
-            else
+            else if (job.Type == WorkJobType.Haul)
             {
                 var source = new InventoryOwner(InventoryOwnerKind.WorldPile, job.Target.EntityId);
                 var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage,
@@ -399,11 +418,37 @@ namespace Game.Simulation.AI
                     entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
                 }
             }
+            else if (job.Type == WorkJobType.Gather || job.Type == WorkJobType.Farm || job.Type == WorkJobType.Craft)
+            {
+                if (world.Production != null && entry.Movement.IsAvailable &&
+                    world.Production.TryReserveAtSite(entry.Agent.CharacterId, job.Target.EntityId, out var productionJob))
+                {
+                    var production = new ProductionActionExecution(entry.Agent, entry.Movement,
+                        world.Production, settings, productionJob);
+                    entry.Action = new ManualProductionActionExecution(production, work, job);
+                }
+                else
+                {
+                    work.Fail(job.Id);
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                }
+            }
+            else if (!entry.Movement.IsAvailable)
+            {
+                work.Fail(job.Id);
+                entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+            }
+            else
+            {
+                entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
+                    settings.MovementTimeout);
+            }
             entry.LastActionTicks = calendarTicks;
         }
 
         private static bool IsManual(UtilityActionKind kind) =>
-            kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul;
+            kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul ||
+            kind == UtilityActionKind.ManualTask;
 
         private void AdvanceResearch()
         {

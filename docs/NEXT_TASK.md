@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-The active product task is **P8.3: рабочие группы и простые задания**. P8.1 and P8.2 are DONE at their implementation/evidence boundaries; do not redo them or start P8.4–P8.6 in the same task.
+The active product task is **P8.4: полноценный редактор внешности**. P8.1–P8.3 are DONE at their implementation/evidence boundaries; do not redo them or start P8.5/P8.6 in the same task.
 
-Make settlement work directly controllable on the accepted P8.2 map:
+Build the full player-facing appearance editor over the existing canonical `AppearanceState` and approved UMA provider:
 
-1. Implement the direct player flow **click an object → choose an action → assign priority** for supported resource, construction, hauling, crafting, farming/gathering, research, scouting, military and care targets.
-2. Expose assignable groups for добытчики, строители, носильщики, ремесленники, земледельцы/собиратели, учёные, разведчики, воины and лекари/смотрители. Reuse the canonical U11 work-group/job authorities instead of creating UI-owned assignments.
-3. Add the explicit priority **«Прямо сейчас»** and make scheduler/reservation behavior deterministic, conflict-safe and observable. No per-NPC `Update` loop is allowed.
-4. Preserve `StableEntityId`, Tier1↔Tier2↔Tier3 behavior, canonical inventories/jobs/reservations and Save/Load across assignment, interruption, reprioritization and restore.
-5. Add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence for direct commands, group assignment, priority, contention and Save/Load. Do not expand into the P8.4 appearance editor or P8.5 interface restyle.
+1. Expose every compatible supported appearance parameter honestly; do not fabricate modular options that the admitted content cannot render.
+2. Keep `StableEntityId`, identity, family, dynasty, health and simulation state in their existing authorities. UMA/vendor objects remain replaceable Presentation projections.
+3. Make preview, New Game, normal Tier1 presentation, Tier1↔Tier2↔Tier3 transitions and Save/Load resolve the same canonical appearance.
+4. Preserve v1-v18 save compatibility and add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence.
+5. Do not expand into the P8.5 interface restyle or P8.6 integration/qualification gates.
 
-P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not be changed during P8.3.
+P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not change during P8.4.
 
-Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.3:`.
+Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.4:`.

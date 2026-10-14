@@ -1,0 +1,13 @@
+{
+    "passed": true,
+    "nine_role_groups": true,
+    "click_action_priority": true,
+    "deterministic_assignment": true,
+    "conflict_safe": true,
+    "immediate_safe_preemption": true,
+    "save_load_exact": true,
+    "global_resource_action": true,
+    "local_screenshot": "C:\\serenity_game\\docs\\validation\\P83\\player-smoke\\p83-local-work.png",
+    "global_screenshot": "C:\\serenity_game\\docs\\validation\\P83\\player-smoke\\p83-global-work.png",
+    "error": ""
+}

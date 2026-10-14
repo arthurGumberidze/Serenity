@@ -107,7 +107,7 @@ namespace Game.Tests.PlayMode
             root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
             ui.SetPanel(GameplayPanel.Work);
             Submit(ButtonWithText(ui, "Create from selected characters"));
-            Assert.That(root.Work.Groups.Count, Is.EqualTo(1));
+            Assert.That(root.Work.Groups.Count, Is.EqualTo(10));
 
             ui.SetPanel(GameplayPanel.Research);
             Submit(ButtonWithText(ui, "Assign selected"));

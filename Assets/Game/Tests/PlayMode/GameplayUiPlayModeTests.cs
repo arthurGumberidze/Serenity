@@ -174,7 +174,7 @@ namespace Game.Tests.PlayMode
             root.SelectionProbe.SelectCharacters(root.DemoPresenters);
             ui.SetPanel(GameplayPanel.Work);
             Submit(ButtonWithText(ui, "Create from selected characters"));
-            var group = root.Work.Groups.All.Single();
+            var group = root.Work.Groups.All.Single(x => x.Role == WorkGroupRole.General);
             var name = ui.RootVisual.Q<TextField>("work-group-name");
             name.value = "Builders";
             Submit(ButtonWithText(ui, "Rename"));

@@ -268,6 +268,35 @@ namespace Game.Simulation.Production
             return true;
         }
 
+        /// <summary>Reserves the exact player-selected site, bypassing only automatic economic target selection.</summary>
+        public bool TryReserveAtSite(StableEntityId workerId, StableEntityId siteId, out ProductionJob job)
+        {
+            if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
+            if (!siteId.IsValid) throw new ArgumentException("Site identity required.", nameof(siteId));
+            job = default;
+            if (capabilities != null && !capabilities.GetCapabilities(workerId).CanPerformOrdinaryWork) return false;
+            if (workerTasks.TryGetValue(workerId, out var existingId) && tasks.TryGetValue(existingId, out var existing))
+            {
+                if (existing.IsTerminal || existing.SiteId != siteId || !IsSiteOperational(siteId)) return false;
+                job = new ProductionJob(existing, sites[siteId].Position);
+                return true;
+            }
+            if (!inventories.TryGet(new InventoryOwner(InventoryOwnerKind.Character, workerId), out _) ||
+                !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable || siteClaims.ContainsKey(siteId) ||
+                !IsSiteOperational(siteId)) return false;
+            var recipe = recipes.Get(site.RecipeId);
+            if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
+            var kind = TaskKindFor(site);
+            if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe)) return false;
+            if (!InputsAvailable(recipe)) return false;
+            var task = ProductionTask.Create(workerId, site.Id, site.RecipeId, kind, recipe.WorkRequiredTicks);
+            tasks.Add(task.Id, task);
+            siteClaims.Add(site.Id, task.Id);
+            workerTasks.Add(workerId, task.Id);
+            job = new ProductionJob(task, site.Position);
+            return true;
+        }
+
         public bool HasEligibleWork(StableEntityId workerId, WorldPosition workerPosition)
         {
             if (!workerId.IsValid) return false;

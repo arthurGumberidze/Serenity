@@ -20,6 +20,7 @@ using Game.Domain.Events;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
+using Game.Presentation.Resources;
 using Game.Simulation.Control;
 using Game.Simulation.Military;
 using Game.Simulation.Research;
@@ -876,10 +877,15 @@ namespace Game.Presentation.UI
                     RefreshPanel();
                 });
                 mainPanel.Add(button);
+                AddMuted(mainPanel, group.Role + " · " + group.Members.Count(id => !context.Work.HasOpenJob(id)) +
+                    "/" + group.MemberCount + " доступно");
             }
             var createGroup = ActionButton(T("ui.work.create"), () => TryCommand(() =>
             {
                 if (context.Selection.SelectedCharacterIds.Count == 0) throw PlayerError("ui.work.need_selection");
+                foreach (var id in context.Selection.SelectedCharacterIds)
+                    if (context.Work.Groups.TryGetForMember(id, out var previous))
+                        context.Work.RemoveMember(previous.Id, id);
                 selectedGroup = context.Work.CreateGroup(F("ui.work.default_name", context.Work.Groups.Count + 1),
                     context.Selection.SelectedCharacterIds).Id;
             }));
@@ -892,6 +898,11 @@ namespace Game.Presentation.UI
                 return;
             }
             AddSection(mainPanel, current.DisplayName);
+            var diagnosticType = JobTypeForRole(current.Role);
+            if (diagnosticType.HasValue)
+                foreach (var candidate in context.DirectWork.GetCandidates(diagnosticType.Value, default))
+                    AddMuted(mainPanel, CharacterName(candidate.CharacterId) + " · пригодность " +
+                        candidate.Suitability + " · " + candidate.Reason);
             var rename = new TextField(T("ui.work.name")) { value = current.DisplayName, name = "work-group-name" };
             StyleTextField(rename);
             mainPanel.Add(rename);
@@ -900,7 +911,12 @@ namespace Game.Presentation.UI
             membership.Add(ActionButton(T("ui.work.add_selected"), () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds)
-                    if (!current.Contains(id)) context.Work.AddMember(current.Id, id);
+                    if (!current.Contains(id))
+                    {
+                        if (context.Work.Groups.TryGetForMember(id, out var previous))
+                            context.Work.RemoveMember(previous.Id, id);
+                        context.Work.AddMember(current.Id, id);
+                    }
             })));
             membership.Add(ActionButton(T("ui.work.remove_selected"), () => TryCommand(() =>
             {
@@ -914,7 +930,7 @@ namespace Game.Presentation.UI
             mainPanel.Add(membership);
             AddLine(mainPanel, F("ui.work.commander_priority", CharacterName(current.CommanderId), E(workPriority)));
             var priority = Row();
-            foreach (WorkPriority value in Enum.GetValues(typeof(WorkPriority)))
+            foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
             {
                 var captured = value;
                 priority.Add(ActionButton(E(value), () => { workPriority = captured; RefreshPanel(); }));
@@ -928,7 +944,17 @@ namespace Game.Presentation.UI
             mainPanel.Add(commands);
             AddMuted(mainPanel, T("ui.work.help"));
             foreach (var job in context.Work.Jobs.Where(x => x.GroupId == current.Id).OrderByDescending(x => x.Id).Take(10))
+            {
                 AddLine(mainPanel, F("ui.work.job", job.Id, E(job.Type), E(job.Priority), E(job.Status), E(job.ClaimState)));
+                if (!job.IsTerminal)
+                {
+                    var captured = job.Id;
+                    var jobActions = Row();
+                    jobActions.Add(ActionButton("Прямо сейчас", () => TryCommand(() => context.Work.SetPriority(captured, WorkPriority.Immediate))));
+                    jobActions.Add(ActionButton("Отменить", () => TryCommand(() => context.Work.Cancel(captured))));
+                    mainPanel.Add(jobActions);
+                }
+            }
         }
 
         private void DrawDynastyPanel()
@@ -1181,6 +1207,8 @@ namespace Game.Presentation.UI
                 AddLine(inspector, T("ui.selection.resource_pile"));
                 AddLine(inspector, Content("resource", pile.ResourceId.ToString()) + ": " +
                     inventory.GetAmount(pile.ResourceId).Units);
+                DrawDirectPriority();
+                inspector.Add(ActionButton("Перенести", () => TryCommand(() => IssueSelectedPileHaul(pile))));
                 return;
             }
             var source = context.Selection.SelectedProductionSourcePresenter;
@@ -1191,6 +1219,11 @@ namespace Game.Presentation.UI
                 AddLine(inspector, Content("recipe", recipe.Id.ToString()));
                 AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
                 AddLine(inspector, Content("resource", recipe.Outputs[0].ResourceId.ToString()));
+                DrawDirectPriority();
+                inspector.Add(ActionButton(source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
+                    () => TryCommand(() => IssueDirect(source.Site.Kind == ProductionSiteKind.NaturalSource
+                        ? WorkJobType.Gather : WorkJobType.Farm,
+                        WorkTarget.ForEntity(WorkTargetKind.ProductionSite, source.Site.Id, source.Site.Position)))));
                 inspector.Add(ActionButton(T("ui.selection.open_economy"), () => SetPanel(GameplayPanel.Economy)));
                 return;
             }
@@ -1253,6 +1286,18 @@ namespace Game.Presentation.UI
             tps.SetEnabled(eligibility.IsEligible);
             actions.Add(tps);
             inspector.Add(actions);
+            DrawDirectPriority();
+            var direct = Row();
+            var targetPosition = context.AiAgents.TryGet(id, out var selectedAgent) ? selectedAgent.Position : default;
+            direct.Add(ActionButton("Уход", () => TryCommand(() => IssueDirect(WorkJobType.Care,
+                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
+            direct.Add(ActionButton("Исследовать", () => TryCommand(() => IssueDirect(WorkJobType.Research,
+                WorkTarget.ForEntity(WorkTargetKind.Research, id, targetPosition)))));
+            direct.Add(ActionButton("Разведать", () => TryCommand(() => IssueDirect(WorkJobType.Scout,
+                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
+            direct.Add(ActionButton("Военная задача", () => TryCommand(() => IssueDirect(WorkJobType.Military,
+                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
+            inspector.Add(direct);
             if (!eligibility.IsEligible) AddMuted(inspector, F("ui.character.tps_unavailable", EligibilityReason(eligibility.Failure)));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", id));
         }
@@ -1275,6 +1320,11 @@ namespace Game.Presentation.UI
                     AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
                         site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
             }
+            DrawDirectPriority();
+            var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
+                new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
+            inspector.Add(ActionButton(building.IsOperational ? "Изготавливать" : "Строить",
+                () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));
         }
 
@@ -1452,6 +1502,54 @@ namespace Game.Presentation.UI
             if (source == null || destination == null) throw PlayerError("ui.work.no_haul_route");
             context.Work.CreateGroupHaulJobs(groupId, source.InventoryOwner, destination.Owner, source.ResourceId,
                 new ResourceQuantity(1), workPriority);
+        }
+
+        private void DrawDirectPriority()
+        {
+            AddMuted(inspector, "Приоритет: " + (workPriority == WorkPriority.Immediate ? "Прямо сейчас" : E(workPriority)));
+            var row = Row();
+            foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
+            {
+                var captured = value;
+                row.Add(ActionButton(value == WorkPriority.Immediate ? "Прямо сейчас" : E(value),
+                    () => { workPriority = captured; RefreshInspector(); }));
+            }
+            inspector.Add(row);
+        }
+
+        private static WorkJobType? JobTypeForRole(WorkGroupRole role)
+        {
+            switch (role)
+            {
+                case WorkGroupRole.Gatherers: return WorkJobType.Gather;
+                case WorkGroupRole.Builders: return WorkJobType.Build;
+                case WorkGroupRole.Haulers: return WorkJobType.Haul;
+                case WorkGroupRole.Crafters: return WorkJobType.Craft;
+                case WorkGroupRole.FarmersGatherers: return WorkJobType.Farm;
+                case WorkGroupRole.Scientists: return WorkJobType.Research;
+                case WorkGroupRole.Scouts: return WorkJobType.Scout;
+                case WorkGroupRole.Warriors: return WorkJobType.Military;
+                case WorkGroupRole.Caregivers: return WorkJobType.Care;
+                default: return null;
+            }
+        }
+
+        private void IssueDirect(WorkJobType type, WorkTarget target)
+        {
+            var job = context.DirectWork.Issue(type, target, workPriority);
+            SetStatus("Задание #" + job.Id + ": " + E(type));
+        }
+
+        private void IssueSelectedPileHaul(WorldResourcePilePresenter pile)
+        {
+            var destination = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
+                    x.Capacity > x.TotalUnits).OrderBy(x => x.Owner.Id).FirstOrDefault();
+            if (destination == null) throw PlayerError("ui.work.no_haul_route");
+            var position = pile.transform.position;
+            var job = context.DirectWork.IssueHaul(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId),
+                destination.Owner, pile.ResourceId, new ResourceQuantity(1),
+                new WorldPosition(position.x, position.y, position.z), workPriority);
+            SetStatus("Задание #" + job.Id + ": переноска");
         }
 
         private void CancelGroupJobs(WorkGroupId groupId)
