@@ -28,10 +28,10 @@ namespace Game.Infrastructure
     [DisallowMultipleComponent]
     public sealed class MainMenuController : MonoBehaviour
     {
-        private static readonly Color Background = new Color(0.035f, 0.045f, 0.035f, 1f);
-        private static readonly Color Panel = new Color(0.075f, 0.09f, 0.065f, 0.98f);
-        private static readonly Color Accent = new Color(0.68f, 0.52f, 0.26f, 1f);
-        private static readonly Color Text = new Color(0.94f, 0.91f, 0.82f, 1f);
+        private static readonly Color Background = SerenityUiDesign.Canvas;
+        private static readonly Color Panel = SerenityUiDesign.Surface;
+        private static readonly Color Accent = SerenityUiDesign.Accent;
+        private static readonly Color Text = SerenityUiDesign.Text;
 
         [SerializeField] private InputActionAsset actionAsset;
         [SerializeField] private CharacterPresentationCatalog characterCatalog;
@@ -70,6 +70,7 @@ namespace Game.Infrastructure
         public bool ContinueAvailable => latestUsableSlot.HasValue;
         public bool ExitRequested { get; private set; }
         public UserSettingsData Settings => settings?.Clone();
+        public float UiScale => panelSettings?.scale ?? 1f;
 
         public RulerCreationDraft RulerDraft => rulerDraft;
         public bool HasLiveRulerPreview => previewCharacter != null && previewCamera != null && previewTexture != null;
@@ -108,6 +109,7 @@ namespace Game.Infrastructure
             P82PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P83PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P84PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P85PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -125,13 +127,17 @@ namespace Game.Infrastructure
             CloseModal();
             RefreshSlots();
             content.Clear();
+            SetMenuLayout(MainMenuView.Main);
             AddHeading(T("menu.title"), 42);
             AddMuted(T("menu.subtitle"));
             AddSpacer(18);
             var continueButton = MenuButton(T("menu.continue"), ContinueGame, "continue-button");
             continueButton.SetEnabled(ContinueAvailable);
+            continueButton.EnableInClassList(SerenityUiDesign.PrimaryButtonClass, ContinueAvailable);
             content.Add(continueButton);
-            content.Add(MenuButton(T("menu.new_game"), OpenNewGame, "new-game-button"));
+            var newGameButton = MenuButton(T("menu.new_game"), OpenNewGame, "new-game-button");
+            newGameButton.EnableInClassList(SerenityUiDesign.PrimaryButtonClass, !ContinueAvailable);
+            content.Add(newGameButton);
             content.Add(MenuButton(T("menu.load"), OpenLoad, "load-button"));
             content.Add(MenuButton(T("menu.settings"), OpenSettings, "settings-button"));
             content.Add(MenuButton(T("menu.exit"), RequestExit, "exit-button"));
@@ -149,10 +155,25 @@ namespace Game.Infrastructure
             DisposeRulerPreview();
             CurrentView = MainMenuView.NewGame;
             content.Clear();
+            SetMenuLayout(MainMenuView.NewGame);
             AddHeading(T("menu.new_game"), 32);
             AddLine(T("menu.new_game.explanation"));
             rulerDraft = RulerCreationService.CreateDefault(suggestedSeed, appearanceCatalog);
             rulerRandomSequence = 0;
+
+            var editorGrid = new VisualElement { name = "ruler-editor-grid" };
+            editorGrid.AddToClassList("serenity-editor-grid");
+            editorGrid.style.flexWrap = Wrap.NoWrap;
+            var identityColumn = Card();
+            identityColumn.name = "ruler-identity-column";
+            identityColumn.AddToClassList("serenity-editor-column");
+            identityColumn.style.width = new Length(50, LengthUnit.Percent);
+            var appearanceColumn = Card();
+            appearanceColumn.name = "ruler-appearance-column";
+            appearanceColumn.AddToClassList("serenity-editor-column");
+            appearanceColumn.style.width = new Length(50, LengthUnit.Percent);
+            editorGrid.Add(identityColumn);
+            editorGrid.Add(appearanceColumn);
 
             rulerSeedField = new TextField(T("menu.new_game.seed"))
                 { value = suggestedSeed.ToString(), name = "world-seed" };
@@ -161,7 +182,7 @@ namespace Game.Infrastructure
             dynastyNameField = new TextField(T("menu.new_game.dynasty_name"))
                 { value = rulerDraft.DynastyName, name = "dynasty-name" };
             StyleField(rulerSeedField); StyleField(rulerNameField); StyleField(dynastyNameField);
-            content.Add(rulerSeedField); content.Add(rulerNameField); content.Add(dynastyNameField);
+            identityColumn.Add(rulerSeedField); identityColumn.Add(rulerNameField); identityColumn.Add(dynastyNameField);
 
             appearanceProfileField = new DropdownField(T("menu.new_game.appearance"),
                 appearanceCatalog.Profiles.Select(ProfileLabel).ToList(), ProfileLabel(rulerDraft.Profile))
@@ -169,13 +190,13 @@ namespace Game.Infrastructure
             StyleField(appearanceProfileField);
             appearanceProfileField.RegisterValueChangedCallback(change =>
                 ApplyProfile(appearanceCatalog.Profiles.First(x => ProfileLabel(x) == change.newValue)));
-            content.Add(appearanceProfileField);
+            identityColumn.Add(appearanceProfileField);
 
             var previewCard = Card();
             previewCard.name = "ruler-preview-card";
             var previewImage = new Image { name = "ruler-preview", scaleMode = ScaleMode.ScaleToFit };
-            previewImage.style.height = 300;
-            previewImage.style.backgroundColor = new Color(0.025f, 0.035f, 0.025f, 1f);
+            previewImage.style.height = 348;
+            previewImage.AddToClassList("serenity-preview");
             previewCard.Add(previewImage);
             var previewControls = ButtonRow();
             previewControls.Add(ActionButton("↶", () => RotatePreview(-20f), "preview-rotate-left"));
@@ -186,23 +207,33 @@ namespace Game.Infrastructure
             zoom.RegisterValueChangedCallback(change => SetPreviewZoom(change.newValue));
             previewControls.Add(zoom);
             previewCard.Add(previewControls);
-            content.Add(previewCard);
+            identityColumn.Add(previewCard);
 
             appearanceParts = Card();
             appearanceParts.name = "appearance-parts";
-            content.Add(appearanceParts);
+            appearanceColumn.Add(appearanceParts);
             CreateRulerPreview(previewImage);
             RefreshAppearanceParts();
-            AddMuted("Все доступные совместимые параметры применяются к UMA в предпросмотре. Одежда пока ограничена одним проверенным комплектом.");
+            AddMuted(appearanceColumn,
+                "Все доступные совместимые параметры применяются к UMA в предпросмотре. Одежда пока ограничена одним проверенным комплектом.");
+            content.Add(editorGrid);
             var row = ButtonRow();
             row.Add(ActionButton(T("menu.new_game.randomize"), RandomizeRuler, "randomize-ruler-button"));
             row.Add(ActionButton(T("menu.new_game.reset"), ResetRuler, "reset-ruler-button"));
-            row.Add(ActionButton(T("menu.start"), () =>
+            var startButton = ActionButton(T("menu.start"), () =>
             {
                 TryStartEditedNewGame();
-            }, "start-new-game-button"));
+            }, "start-new-game-button");
+            startButton.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+            row.Add(startButton);
             row.Add(ActionButton(T("menu.back"), ShowMain, "back-button"));
             content.Add(row);
+        }
+
+        public void SetUiScale(float value)
+        {
+            if (panelSettings == null) throw new InvalidOperationException("Main menu UI is not initialized.");
+            panelSettings.scale = Mathf.Clamp(value, 1f, 1.5f);
         }
 
         public void StartNewGame(long worldSeed)
@@ -274,6 +305,7 @@ namespace Game.Infrastructure
             CurrentView = MainMenuView.Load;
             RefreshSlots();
             content.Clear();
+            SetMenuLayout(MainMenuView.Load);
             AddHeading(T("menu.load"), 32);
             AddLine(T("menu.load.explanation"));
             foreach (var slot in saveCatalog.ListSlots())
@@ -393,6 +425,7 @@ namespace Game.Infrastructure
         private void DrawSettings()
         {
             content.Clear();
+            SetMenuLayout(MainMenuView.Settings);
             AddHeading(T("menu.settings"), 32);
             AddLine(T("menu.settings.explanation"));
 
@@ -706,35 +739,47 @@ namespace Game.Infrastructure
             root = document.rootVisualElement;
             root.name = "main-menu-root";
             root.style.flexGrow = 1f;
-            root.style.backgroundColor = Background;
-            root.style.color = Text;
             root.style.alignItems = Align.Center;
             root.style.justifyContent = Justify.Center;
+            SerenityUiDesign.ApplyRoot(root, "serenity-main-menu");
+            root.RegisterCallback<GeometryChangedEvent>(_ => ApplySafeArea());
 
-            content = new ScrollView(ScrollViewMode.Vertical) { name = "menu-content" };
+            var atmosphere = new VisualElement { name = "menu-atmosphere" };
+            atmosphere.style.position = Position.Absolute;
+            atmosphere.style.left = 0; atmosphere.style.right = 0;
+            atmosphere.style.top = 0; atmosphere.style.bottom = 0;
+            atmosphere.pickingMode = PickingMode.Ignore;
+            atmosphere.AddToClassList("serenity-menu-atmosphere");
+            root.Add(atmosphere);
+
+            var menuScroll = new ScrollView(ScrollViewMode.Vertical) { name = "menu-content" };
+            menuScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            content = menuScroll;
             content.style.width = 620;
             content.style.maxHeight = 820;
             content.style.paddingLeft = 38; content.style.paddingRight = 38;
             content.style.paddingTop = 30; content.style.paddingBottom = 30;
-            content.style.backgroundColor = Panel;
+            content.AddToClassList("serenity-menu-shell");
             root.Add(content);
 
             status = new Label { name = "menu-status" };
             status.style.position = Position.Absolute;
             status.style.left = 24; status.style.right = 24; status.style.bottom = 18;
             status.style.unityTextAlign = TextAnchor.MiddleCenter;
-            status.style.whiteSpace = WhiteSpace.Normal;
-            status.style.color = new Color(0.86f, 0.76f, 0.52f, 1f);
+            status.AddToClassList("serenity-status");
             root.Add(status);
 
             modal = new VisualElement { name = "menu-modal" };
             modal.style.position = Position.Absolute;
-            modal.style.left = 520; modal.style.right = 520; modal.style.top = 330;
+            modal.style.left = new Length(31, LengthUnit.Percent);
+            modal.style.right = new Length(31, LengthUnit.Percent);
+            modal.style.top = new Length(35, LengthUnit.Percent);
             modal.style.paddingLeft = 24; modal.style.paddingRight = 24;
             modal.style.paddingTop = 20; modal.style.paddingBottom = 20;
-            modal.style.backgroundColor = new Color(0.09f, 0.08f, 0.055f, 1f);
+            modal.AddToClassList(SerenityUiDesign.ModalClass);
             modal.style.display = DisplayStyle.None;
             root.Add(modal);
+            ApplySafeArea();
         }
 
         private void RefreshSlots() => latestUsableSlot = saveCatalog.LatestUsableSlot();
@@ -762,6 +807,8 @@ namespace Game.Infrastructure
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.unityTextAlign = TextAnchor.MiddleCenter;
             label.style.marginBottom = 12;
+            label.style.color = SerenityUiDesign.Text;
+            label.AddToClassList(SerenityUiDesign.TitleClass);
             content.Add(label);
         }
 
@@ -770,9 +817,9 @@ namespace Game.Infrastructure
         private static void AddLine(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.whiteSpace = WhiteSpace.Normal;
             label.style.fontSize = 16;
             label.style.marginBottom = 10;
+            label.AddToClassList(SerenityUiDesign.BodyClass);
             parent.Add(label);
         }
 
@@ -781,9 +828,8 @@ namespace Game.Infrastructure
         private static void AddMuted(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.whiteSpace = WhiteSpace.Normal;
-            label.style.color = new Color(0.7f, 0.69f, 0.62f, 1f);
             label.style.marginBottom = 12;
+            label.AddToClassList(SerenityUiDesign.MutedClass);
             parent.Add(label);
         }
 
@@ -797,6 +843,8 @@ namespace Game.Infrastructure
         private Button MenuButton(string text, Action action, string name)
         {
             var button = ActionButton(text, action, name);
+            button.AddToClassList("serenity-menu-button");
+            button.style.marginRight = 0;
             button.style.height = 54;
             button.style.fontSize = 20;
             button.style.marginBottom = 10;
@@ -806,20 +854,16 @@ namespace Game.Infrastructure
         private static Button ActionButton(string text, Action action, string name = null)
         {
             var button = new Button(action) { text = text, name = name ?? string.Empty };
-            button.style.minHeight = 38;
             button.style.marginRight = 8;
             button.style.marginBottom = 8;
-            button.style.backgroundColor = Accent;
-            button.style.color = Color.white;
-            button.style.whiteSpace = WhiteSpace.Normal;
+            SerenityUiDesign.StyleButton(button);
             return button;
         }
 
         private static VisualElement ButtonRow()
         {
             var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.flexWrap = Wrap.Wrap;
+            row.AddToClassList(SerenityUiDesign.RowClass);
             row.style.marginTop = 14;
             return row;
         }
@@ -827,19 +871,28 @@ namespace Game.Infrastructure
         private static VisualElement Card()
         {
             var card = new VisualElement();
-            card.style.paddingLeft = 16; card.style.paddingRight = 16;
-            card.style.paddingTop = 12; card.style.paddingBottom = 12;
-            card.style.marginBottom = 10;
-            card.style.backgroundColor = new Color(0.11f, 0.125f, 0.095f, 1f);
+            SerenityUiDesign.StyleCard(card);
             return card;
         }
 
         private static void StyleField(VisualElement field)
         {
-            field.style.marginTop = 6;
-            field.style.marginBottom = 8;
-            field.style.minHeight = 34;
-            field.style.whiteSpace = WhiteSpace.Normal;
+            SerenityUiDesign.StyleField(field);
+        }
+
+        private void SetMenuLayout(MainMenuView view)
+        {
+            if (content == null) return;
+            content.style.width = view == MainMenuView.NewGame ? 1120 :
+                view == MainMenuView.Main ? 580 : 760;
+            content.style.maxWidth = new Length(94, LengthUnit.Percent);
+            content.style.maxHeight = new Length(90, LengthUnit.Percent);
+            content.EnableInClassList("serenity-menu-editor", view == MainMenuView.NewGame);
+        }
+
+        private void ApplySafeArea()
+        {
+            SerenityUiDesign.ApplySafeArea(root, Screen.safeArea, Screen.width, Screen.height);
         }
 
         private void SetStatus(string message) => status.text = message ?? string.Empty;

@@ -40,10 +40,10 @@ namespace Game.Presentation.UI
     public sealed class GameplayUiController : MonoBehaviour, IWorldPointerUiBlocker, IWorldPointerUiRegionBlocker
     {
         private const float AutomaticRefreshIntervalSeconds = 1f;
-        private static readonly Color PanelColor = new Color(0.075f, 0.085f, 0.07f, 0.96f);
-        private static readonly Color HeaderColor = new Color(0.15f, 0.18f, 0.12f, 0.98f);
-        private static readonly Color AccentColor = new Color(0.66f, 0.52f, 0.28f, 1f);
-        private static readonly Color TextColor = new Color(0.92f, 0.90f, 0.82f, 1f);
+        private static readonly Color PanelColor = SerenityUiDesign.Surface;
+        private static readonly Color HeaderColor = SerenityUiDesign.SurfaceRaised;
+        private static readonly Color AccentColor = SerenityUiDesign.Accent;
+        private static readonly Color TextColor = SerenityUiDesign.Text;
         private static readonly GameSpeed[] Speeds =
         {
             GameSpeed.Normal, GameSpeed.Fast, GameSpeed.Faster, GameSpeed.VeryFast, GameSpeed.Maximum
@@ -149,23 +149,19 @@ namespace Game.Presentation.UI
         public bool IsGuiPointBlocked(Vector2 point)
         {
             if (!isActiveAndEnabled || root == null) return false;
-            if (point.y <= 72f) return true;
-            if (point.x >= 12f && point.x <= 150f && point.y >= 84f && point.y <= Screen.height - 12f) return true;
-            if (mainPanel.resolvedStyle.display != DisplayStyle.None && point.x >= 158f && point.x <= 638f &&
-                point.y >= 84f && point.y <= Screen.height - 54f) return true;
-            if (inspector.resolvedStyle.display != DisplayStyle.None && point.x >= Screen.width - 432f &&
-                point.y >= Screen.height - 372f) return true;
-            if (notifications.resolvedStyle.display != DisplayStyle.None && point.x >= Screen.width - 392f &&
-                point.y >= 80f && point.y <= 260f) return true;
-            if (onboarding.Visible && point.x >= 724f && point.x <= 1176f && point.y >= 84f && point.y <= 330f)
-                return true;
-            return modal.resolvedStyle.display != DisplayStyle.None;
+            var screenPoint = new Vector2(point.x, Screen.height - point.y);
+            var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
+            if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
+                Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
+                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint)) return true;
+            return Blocks(modal, panelPoint);
         }
 
         public void SetPanel(GameplayPanel panel)
         {
             activePanel = activePanel == panel ? GameplayPanel.None : panel;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
+            RefreshNavigationSelection();
             RefreshNow();
         }
 
@@ -369,43 +365,48 @@ namespace Game.Presentation.UI
             root = document.rootVisualElement;
             root.name = "gameplay-ui-root";
             root.style.flexGrow = 1f;
-            root.style.color = TextColor;
+            SerenityUiDesign.ApplyRoot(root, "serenity-gameplay");
             root.pickingMode = PickingMode.Ignore;
+            root.RegisterCallback<GeometryChangedEvent>(_ => ApplyResponsiveLayout());
         }
 
         private void BuildLayout()
         {
             topBar = Panel("top-hud");
             topBar.style.position = Position.Absolute;
-            topBar.style.left = 0; topBar.style.right = 0; topBar.style.top = 0; topBar.style.height = 72;
+            topBar.style.left = 10; topBar.style.right = 10; topBar.style.top = 10; topBar.style.height = 68;
             topBar.style.flexDirection = FlexDirection.Row;
             topBar.style.alignItems = Align.Center;
-            topBar.style.paddingLeft = 12; topBar.style.paddingRight = 12;
-            topBar.style.backgroundColor = HeaderColor;
+            topBar.style.paddingLeft = 10; topBar.style.paddingRight = 10;
+            SerenityUiDesign.StyleSurface(topBar, true);
             topBar.pickingMode = PickingMode.Position;
-            resourcesLabel = HudLabel(460);
-            dateLabel = HudLabel(220);
-            weatherLabel = HudLabel(250);
-            modeLabel = HudLabel(135);
-            alertLabel = HudLabel(135);
+            resourcesLabel = HudLabel(350);
+            dateLabel = HudLabel(175);
+            weatherLabel = HudLabel(210);
+            modeLabel = HudLabel(112);
+            alertLabel = HudLabel(105);
             topBar.Add(resourcesLabel);
             topBar.Add(dateLabel);
             topBar.Add(weatherLabel);
             topBar.Add(modeLabel);
             topBar.Add(alertLabel);
-            topBar.Add(ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button"));
+            var pause = ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button");
+            pause.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+            topBar.Add(pause);
             foreach (var speed in Speeds)
             {
                 var captured = speed;
-                topBar.Add(ActionButton("x" + (int)speed, () => context.SetSpeed(captured), "speed-" + (int)speed));
+                var speedButton = ActionButton("x" + (int)speed, () => context.SetSpeed(captured), "speed-" + (int)speed);
+                speedButton.AddToClassList("serenity-time-button");
+                topBar.Add(speedButton);
             }
             root.Add(topBar);
 
             navigation = Panel("navigation");
             navigation.style.position = Position.Absolute;
-            navigation.style.left = 12; navigation.style.top = 84; navigation.style.bottom = 54; navigation.style.width = 174;
-            navigation.style.backgroundColor = PanelColor;
-            navigation.style.paddingTop = 8; navigation.style.paddingLeft = 8; navigation.style.paddingRight = 8;
+            navigation.style.left = 10; navigation.style.top = 88; navigation.style.bottom = 58; navigation.style.width = 166;
+            navigation.style.paddingTop = 8; navigation.style.paddingLeft = 7; navigation.style.paddingRight = 7;
+            SerenityUiDesign.StyleSurface(navigation);
             navigation.pickingMode = PickingMode.Position;
             onboardingToggleButton = ActionButton(T("ui.onboarding.hide"),
                 () => SetOnboardingVisible(!onboarding.Visible), "onboarding-toggle");
@@ -421,45 +422,47 @@ namespace Game.Presentation.UI
             if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events);
             root.Add(navigation);
 
-            onboardingCard = Panel("onboarding-card");
+            var onboardingScroll = new ScrollView(ScrollViewMode.Vertical) { name = "onboarding-card" };
+            onboardingScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            onboardingCard = onboardingScroll;
             onboardingCard.style.position = Position.Absolute;
-            onboardingCard.style.left = 724; onboardingCard.style.top = 84; onboardingCard.style.width = 452;
+            onboardingCard.style.right = 10; onboardingCard.style.top = 226; onboardingCard.style.width = 354;
             onboardingCard.style.maxHeight = 246;
             onboardingCard.style.paddingLeft = 14; onboardingCard.style.paddingRight = 14;
             onboardingCard.style.paddingTop = 12; onboardingCard.style.paddingBottom = 12;
-            onboardingCard.style.backgroundColor = new Color(0.09f, 0.105f, 0.07f, 0.97f);
-            onboardingCard.style.borderLeftColor = AccentColor;
-            onboardingCard.style.borderLeftWidth = 3;
+            SerenityUiDesign.StyleCard(onboardingCard);
             onboardingCard.pickingMode = PickingMode.Position;
             root.Add(onboardingCard);
 
             mainPanel = new ScrollView(ScrollViewMode.Vertical) { name = "main-panel" };
             StylePanel(mainPanel);
+            mainPanel.AddToClassList("serenity-main-panel");
             mainPanel.style.position = Position.Absolute;
-            mainPanel.style.left = 194; mainPanel.style.top = 84; mainPanel.style.bottom = 54; mainPanel.style.width = 520;
+            mainPanel.style.left = 186; mainPanel.style.top = 88; mainPanel.style.bottom = 58; mainPanel.style.width = 486;
             mainPanel.style.display = DisplayStyle.None;
             mainPanel.pickingMode = PickingMode.Position;
             root.Add(mainPanel);
 
             inspector = new ScrollView(ScrollViewMode.Vertical) { name = "selection-inspector" };
             StylePanel(inspector);
+            inspector.AddToClassList("serenity-inspector");
             inspector.style.position = Position.Absolute;
-            inspector.style.right = 12; inspector.style.bottom = 54; inspector.style.width = 420; inspector.style.maxHeight = 360;
+            inspector.style.right = 10; inspector.style.top = 482; inspector.style.bottom = 58; inspector.style.width = 354;
             inspector.pickingMode = PickingMode.Position;
             root.Add(inspector);
 
             notifications = Panel("notifications");
             notifications.style.position = Position.Absolute;
-            notifications.style.right = 12; notifications.style.top = 80; notifications.style.width = 380;
-            notifications.style.maxHeight = 176; notifications.style.paddingLeft = 10; notifications.style.paddingRight = 10;
-            notifications.style.backgroundColor = new Color(0.05f, 0.055f, 0.045f, 0.88f);
+            notifications.style.right = 10; notifications.style.top = 88; notifications.style.width = 354;
+            notifications.style.maxHeight = 126; notifications.style.paddingLeft = 10; notifications.style.paddingRight = 10;
+            notifications.AddToClassList("serenity-notifications");
             notifications.pickingMode = PickingMode.Position;
             root.Add(notifications);
 
             statusBar = Panel("status-bar");
             statusBar.style.position = Position.Absolute;
-            statusBar.style.left = 0; statusBar.style.right = 0; statusBar.style.bottom = 0; statusBar.style.height = 42;
-            statusBar.style.backgroundColor = HeaderColor;
+            statusBar.style.left = 10; statusBar.style.right = 10; statusBar.style.bottom = 8; statusBar.style.height = 42;
+            SerenityUiDesign.StyleSurface(statusBar, true);
             statusBar.style.flexDirection = FlexDirection.Row;
             statusBar.style.alignItems = Align.Center;
             statusBar.style.paddingLeft = 12;
@@ -467,14 +470,16 @@ namespace Game.Presentation.UI
             statusLabel.style.flexGrow = 1;
             statusBar.Add(statusLabel);
             var mainMenuButton = ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "main-menu-button");
-            mainMenuButton.style.marginRight = 150;
+            mainMenuButton.style.marginRight = 8;
             statusBar.Add(mainMenuButton);
             root.Add(statusBar);
 
             tpsHud = Panel("tps-hud");
             tpsHud.style.position = Position.Absolute;
-            tpsHud.style.left = 650; tpsHud.style.right = 450; tpsHud.style.bottom = 58;
-            tpsHud.style.backgroundColor = PanelColor;
+            tpsHud.style.left = new Length(36, LengthUnit.Percent);
+            tpsHud.style.right = new Length(31, LengthUnit.Percent);
+            tpsHud.style.bottom = 58;
+            SerenityUiDesign.StyleSurface(tpsHud, true);
             tpsHud.style.paddingLeft = 12; tpsHud.style.paddingRight = 12;
             tpsLabel = new Label();
             tpsHud.Add(tpsLabel);
@@ -484,9 +489,13 @@ namespace Game.Presentation.UI
             gameOverLabel = new Label();
             gameOverLabel.name = "game-over";
             gameOverLabel.style.position = Position.Absolute;
-            gameOverLabel.style.left = 500; gameOverLabel.style.right = 500; gameOverLabel.style.top = 350;
+            gameOverLabel.style.left = new Length(28, LengthUnit.Percent);
+            gameOverLabel.style.right = new Length(28, LengthUnit.Percent);
+            gameOverLabel.style.top = new Length(38, LengthUnit.Percent);
             gameOverLabel.style.paddingTop = 24; gameOverLabel.style.paddingBottom = 24;
-            gameOverLabel.style.backgroundColor = new Color(0.25f, 0.03f, 0.02f, 0.96f);
+            gameOverLabel.style.backgroundColor = new Color(0.24f, 0.075f, 0.045f, 0.97f);
+            gameOverLabel.style.borderLeftColor = SerenityUiDesign.Danger;
+            gameOverLabel.style.borderLeftWidth = 4;
             gameOverLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             gameOverLabel.style.fontSize = 24;
             gameOverLabel.style.display = DisplayStyle.None;
@@ -494,12 +503,15 @@ namespace Game.Presentation.UI
 
             modal = Panel("confirmation-modal");
             modal.style.position = Position.Absolute;
-            modal.style.left = 560; modal.style.right = 560; modal.style.top = 310;
+            modal.style.left = new Length(31, LengthUnit.Percent);
+            modal.style.right = new Length(31, LengthUnit.Percent);
+            modal.style.top = new Length(34, LengthUnit.Percent);
             modal.style.paddingLeft = 20; modal.style.paddingRight = 20; modal.style.paddingTop = 16; modal.style.paddingBottom = 16;
-            modal.style.backgroundColor = new Color(0.09f, 0.08f, 0.055f, 0.99f);
+            modal.AddToClassList(SerenityUiDesign.ModalClass);
             modal.style.display = DisplayStyle.None;
             modal.pickingMode = PickingMode.Position;
             root.Add(modal);
+            ApplyResponsiveLayout();
         }
 
         private void ObserveOnboardingSignals()
@@ -586,6 +598,7 @@ namespace Game.Presentation.UI
         {
             activePanel = panel;
             mainPanel.style.display = DisplayStyle.Flex;
+            RefreshNavigationSelection();
             RefreshNow();
         }
 
@@ -658,7 +671,12 @@ namespace Game.Presentation.UI
             var pendingEvents = context.Events?.PendingPlayerEvents.Count ?? 0;
             alertLabel.text = F("ui.hud.alerts", notificationFeed.Count) +
                               (pendingEvents > 0 ? F("ui.hud.pending_events", pendingEvents) : string.Empty);
-            topBar.Q<Button>("pause-button").text = T(clock.IsPaused ? "ui.action.resume" : "ui.action.pause");
+            var pauseButton = topBar.Q<Button>("pause-button");
+            pauseButton.text = T(clock.IsPaused ? "ui.action.resume" : "ui.action.pause");
+            SerenityUiDesign.SetSelected(pauseButton, clock.IsPaused);
+            foreach (var speed in Speeds)
+                SerenityUiDesign.SetSelected(topBar.Q<Button>("speed-" + (int)speed), speed == clock.Speed);
+            RefreshNavigationSelection();
         }
 
         private void RefreshPanel()
@@ -695,9 +713,12 @@ namespace Game.Presentation.UI
                 var definition = context.Events.Catalog.Get(instance.DefinitionId);
                 var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
                 var captured = instance.InstanceId;
-                mainPanel.Add(ActionButton((selectedEvent == instance.InstanceId ? T("common.selected_marker") : string.Empty) +
+                var pendingButton = ActionButton((selectedEvent == instance.InstanceId ? T("common.selected_marker") : string.Empty) +
                     EventTitle(instance.DefinitionId, node.Id),
-                    () => { selectedEvent = captured; RefreshPanel(); }));
+                    () => { selectedEvent = captured; RefreshPanel(); });
+                pendingButton.AddToClassList("serenity-card-action");
+                SerenityUiDesign.SetSelected(pendingButton, selectedEvent == instance.InstanceId);
+                mainPanel.Add(pendingButton);
                 AddMuted(mainPanel, string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)));
             }
             if (!selectedEvent.HasValue || pending.All(x => x.InstanceId != selectedEvent.Value))
@@ -725,13 +746,18 @@ namespace Game.Presentation.UI
             }
             AddSection(mainPanel, T("ui.events.history"));
             if (context.Events.History.Count == 0) AddMuted(mainPanel, T("ui.events.no_history"));
+            var history = new Foldout { text = T("ui.events.history"), value = false, name = "event-history-foldout" };
+            history.AddToClassList("serenity-foldout");
             foreach (var entry in context.Events.History.Reverse().Take(12))
             {
                 var definition = context.Events.Catalog.Get(entry.DefinitionId);
                 var title = EventTitle(entry.DefinitionId, definition.Nodes[0].Id);
-                AddLine(mainPanel, F("ui.events.history_line", title, E(entry.Status), EventOutcome(entry.OutcomeCode)));
-                AddMuted(mainPanel, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
+                var card = SerenityUiDesign.Card();
+                AddLine(card, F("ui.events.history_line", title, E(entry.Status), EventOutcome(entry.OutcomeCode)));
+                AddMuted(card, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
+                history.Add(card);
             }
+            if (context.Events.History.Count > 0) mainPanel.Add(history);
         }
 
         private void DrawEconomyPanel()
@@ -765,6 +791,7 @@ namespace Game.Presentation.UI
                 var target = context.Production.GetTarget(definition.Id);
                 var total = context.Production.GetCanonicalTotal(definition.Id);
                 var row = Row();
+                SerenityUiDesign.StyleCard(row);
                 row.Add(new Label(F("ui.economy.resource_line", Content("resource", definition.Id.ToString()),
                     context.StoredResources.GetStoredTotal(definition.Id).Units, total, target)));
                 row.Add(ActionButton("-5", () => TryCommand(() =>
@@ -807,11 +834,16 @@ namespace Game.Presentation.UI
                     definition.ConstructionCost.Select(x => Content("resource", x.ResourceId.ToString()) + " " + x.Quantity.Units)));
                 var shortage = BuildingResourceShortage(definition);
                 var reason = !available ? BuildingLockReason(definition.Id) : shortage;
+                var card = SerenityUiDesign.Card();
+                AddSection(card, Content("building", definition.Id.ToString()));
+                AddMuted(card, cost);
                 var button = ActionButton(Content("building", definition.Id.ToString()) + " · " + cost,
                     () => StartBuilding(definition.Id));
                 button.SetEnabled(available && string.IsNullOrEmpty(shortage));
-                mainPanel.Add(button);
-                if (!string.IsNullOrEmpty(reason)) AddMuted(mainPanel, reason);
+                button.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+                card.Add(button);
+                if (!string.IsNullOrEmpty(reason)) AddMuted(card, reason);
+                mainPanel.Add(card);
             }
             if (context.BuildingPlacement.IsActive)
                 AddLine(mainPanel, F("ui.build.placement", Content("building", context.BuildingPlacement.ActiveDefinitionId.ToString()),
@@ -845,21 +877,32 @@ namespace Game.Presentation.UI
             workerRow.Add(remove);
             mainPanel.Add(workerRow);
             if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.research.need_selection"));
+            var locked = new Foldout { text = T("enum.ResearchAvailability.Locked"), value = false,
+                name = "locked-research-foldout" };
+            locked.AddToClassList("serenity-foldout");
             foreach (var technology in context.Research.Catalog.All)
             {
                 var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
                     active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
                     context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" : "enum.ResearchAvailability.Locked";
-                AddSection(mainPanel, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
-                AddMuted(mainPanel, F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
+                var card = SerenityUiDesign.Card();
+                AddSection(card, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
+                AddMuted(card, F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
                     string.Join(", ", technology.Prerequisites.Select(x => Content("technology", x.ToString())))));
-                AddMuted(mainPanel, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
+                AddMuted(card, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
                     technology.Unlocks.Count == 0 ? T("ui.research.capability") :
                     string.Join(", ", technology.Unlocks.Select(UnlockName))));
                 if (stateKey == "enum.ResearchAvailability.Available" && active == null)
-                    mainPanel.Add(ActionButton(F("ui.research.start", Content("technology", technology.Id.ToString())),
-                        () => TryCommand(() => context.Research.Start(technology.Id))));
+                {
+                    var start = ActionButton(F("ui.research.start", Content("technology", technology.Id.ToString())),
+                        () => TryCommand(() => context.Research.Start(technology.Id)));
+                    start.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+                    card.Add(start);
+                }
+                if (stateKey == "enum.ResearchAvailability.Locked") locked.Add(card);
+                else mainPanel.Add(card);
             }
+            if (locked.childCount > 1) mainPanel.Add(locked);
         }
 
         private void DrawWorkPanel()
@@ -876,6 +919,8 @@ namespace Game.Presentation.UI
                     SelectGroupPresenters();
                     RefreshPanel();
                 });
+                button.AddToClassList("serenity-card-action");
+                SerenityUiDesign.SetSelected(button, selectedGroup == group.Id);
                 mainPanel.Add(button);
                 AddMuted(mainPanel, group.Role + " · " + group.Members.Count(id => !context.Work.HasOpenJob(id)) +
                     "/" + group.MemberCount + " доступно");
@@ -933,7 +978,9 @@ namespace Game.Presentation.UI
             foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
             {
                 var captured = value;
-                priority.Add(ActionButton(E(value), () => { workPriority = captured; RefreshPanel(); }));
+                var priorityButton = ActionButton(E(value), () => { workPriority = captured; RefreshPanel(); });
+                SerenityUiDesign.SetSelected(priorityButton, workPriority == value);
+                priority.Add(priorityButton);
             }
             mainPanel.Add(priority);
             var commands = Row();
@@ -1082,15 +1129,17 @@ namespace Game.Presentation.UI
             }
             foreach (var slot in context.Saves.ListSlots())
             {
-                AddSection(mainPanel, F("ui.save.slot", slot.Index));
-                AddLine(mainPanel, slot.Exists ? slot.Detail : T("ui.save.empty_slot"));
+                var card = SerenityUiDesign.Card("save-slot-" + slot.Index);
+                AddSection(card, F("ui.save.slot", slot.Index));
+                AddLine(card, slot.Exists ? slot.Detail : T("ui.save.empty_slot"));
                 var row = Row();
                 row.Add(ActionButton(T("common.save"), () => SaveSlot(slot.Index)));
                 var load = ActionButton(T("common.load"), () => RequestLoadSlot(slot.Index));
                 load.SetEnabled(slot.Exists && !slot.IsCorrupt);
                 row.Add(load);
-                mainPanel.Add(row);
-                if (slot.IsCorrupt) AddMuted(mainPanel, T("ui.save.corrupt_slot"));
+                card.Add(row);
+                if (slot.IsCorrupt) AddMuted(card, T("ui.save.corrupt_slot"));
+                mainPanel.Add(card);
             }
         }
 
@@ -1126,10 +1175,13 @@ namespace Game.Presentation.UI
                 var hidden = settlement != null && context.Campaign != null &&
                              !context.Campaign.CanRevealSettlement(settlement.Id);
                 var owner = settlement == null ? T("ui.map.unclaimed") : SideName(settlement.OwnerSideId);
-                mainPanel.Add(ActionButton((selectedLocation == location.Id ? T("common.selected_marker") : string.Empty) +
+                var locationButton = ActionButton((selectedLocation == location.Id ? T("common.selected_marker") : string.Empty) +
                     (hidden ? T("ui.map.hidden") :
                         F("ui.map.location", LocationName(location.Id), E(location.Type), owner)),
-                    () => { selectedLocation = captured; RefreshPanel(); }));
+                    () => { selectedLocation = captured; RefreshPanel(); });
+                locationButton.AddToClassList("serenity-card-action");
+                SerenityUiDesign.SetSelected(locationButton, selectedLocation == location.Id);
+                mainPanel.Add(locationButton);
             }
             AddSection(mainPanel, T("ui.map.player_armies"));
             var index = 1;
@@ -1141,8 +1193,11 @@ namespace Game.Presentation.UI
                 var detail = travel == null ? LocationName(unit.AbstractLocationId) :
                     F("ui.map.travel_eta", LocationName(travel.Origin), LocationName(travel.Destination),
                         FormatDuration(Math.Max(0, travel.ArrivalTick - context.Clock().State.CalendarTicks)));
-                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + UnitLabel(unit, index++) + " · " + detail,
-                    () => { selectedUnit = captured; RefreshPanel(); }));
+                var unitButton = ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + UnitLabel(unit, index++) + " · " + detail,
+                    () => { selectedUnit = captured; RefreshPanel(); });
+                unitButton.AddToClassList("serenity-card-action");
+                SerenityUiDesign.SetSelected(unitButton, selectedUnit == unit.Id);
+                mainPanel.Add(unitButton);
             }
             var actions = Row();
             var travelButton = ActionButton(T("ui.map.travel"), () => TryCommand(() =>
@@ -1511,8 +1566,10 @@ namespace Game.Presentation.UI
             foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
             {
                 var captured = value;
-                row.Add(ActionButton(value == WorkPriority.Immediate ? "Прямо сейчас" : E(value),
-                    () => { workPriority = captured; RefreshInspector(); }));
+                var button = ActionButton(value == WorkPriority.Immediate ? "Прямо сейчас" : E(value),
+                    () => { workPriority = captured; RefreshInspector(); });
+                SerenityUiDesign.SetSelected(button, workPriority == value);
+                row.Add(button);
             }
             inspector.Add(row);
         }
@@ -1758,8 +1815,46 @@ namespace Game.Presentation.UI
 
         private void AddNavigation(string label, GameplayPanel panel)
         {
-            navigation.Add(ActionButton(label, () => SetPanel(panel), "nav-" + panel.ToString().ToLowerInvariant()));
+            var button = ActionButton(label, () => SetPanel(panel), "nav-" + panel.ToString().ToLowerInvariant());
+            SerenityUiDesign.StyleButton(button, navigation: true);
+            navigation.Add(button);
         }
+
+        private void RefreshNavigationSelection()
+        {
+            if (navigation == null) return;
+            foreach (GameplayPanel panel in Enum.GetValues(typeof(GameplayPanel)))
+            {
+                if (panel == GameplayPanel.None) continue;
+                SerenityUiDesign.SetSelected(navigation.Q<Button>("nav-" + panel.ToString().ToLowerInvariant()),
+                    activePanel == panel);
+            }
+        }
+
+        private void ApplyResponsiveLayout()
+        {
+            if (root == null) return;
+            SerenityUiDesign.ApplySafeArea(root, Screen.safeArea, Screen.width, Screen.height);
+            var width = root.resolvedStyle.width;
+            var compact = !float.IsNaN(width) && width > 0f && width < 1380f;
+            root.EnableInClassList("serenity-compact", compact);
+            if (topBar == null) return;
+            resourcesLabel.style.width = compact ? 286 : 350;
+            dateLabel.style.width = compact ? 145 : 175;
+            weatherLabel.style.width = compact ? 172 : 210;
+            modeLabel.style.width = compact ? 92 : 112;
+            alertLabel.style.width = compact ? 86 : 105;
+            navigation.style.width = compact ? 150 : 166;
+            mainPanel.style.left = compact ? 170 : 186;
+            mainPanel.style.width = compact ? 430 : 486;
+            inspector.style.width = compact ? 322 : 354;
+            notifications.style.width = compact ? 322 : 354;
+            onboardingCard.style.width = compact ? 322 : 354;
+            inspector.style.top = onboarding.Visible ? 482 : 226;
+        }
+
+        private static bool Blocks(VisualElement element, Vector2 point) => element != null &&
+            element.resolvedStyle.display != DisplayStyle.None && element.worldBound.Contains(point);
 
         private static string T(string key) => RussianTextCatalog.Get(key);
         private static string F(string key, params object[] arguments) => RussianTextCatalog.Format(key, arguments);
@@ -1821,23 +1916,14 @@ namespace Game.Presentation.UI
 
         private static void StylePanel(VisualElement value)
         {
-            value.style.backgroundColor = PanelColor;
-            value.style.color = TextColor;
+            SerenityUiDesign.StyleSurface(value);
             value.style.paddingLeft = 12; value.style.paddingRight = 12;
             value.style.paddingTop = 10; value.style.paddingBottom = 10;
         }
 
         private static void StyleTextField(TextField field)
         {
-            field.style.color = TextColor;
-            var input = field.Q<VisualElement>(TextField.textInputUssName);
-            if (input == null) return;
-            input.style.color = TextColor;
-            input.style.backgroundColor = HeaderColor;
-            input.style.borderLeftColor = AccentColor;
-            input.style.borderRightColor = AccentColor;
-            input.style.borderTopColor = AccentColor;
-            input.style.borderBottomColor = AccentColor;
+            SerenityUiDesign.StyleField(field);
         }
 
         private static Label HudLabel(float width)
@@ -1846,6 +1932,7 @@ namespace Game.Presentation.UI
             label.style.width = width;
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             label.style.whiteSpace = WhiteSpace.Normal;
+            label.AddToClassList(SerenityUiDesign.ChipClass);
             return label;
         }
 
@@ -1854,57 +1941,42 @@ namespace Game.Presentation.UI
             var button = new Button(action) { text = label, name = name ?? string.Empty };
             button.style.marginTop = 3; button.style.marginBottom = 3;
             button.style.marginLeft = 2; button.style.marginRight = 2;
-            button.style.minHeight = 28;
-            button.style.backgroundColor = new Color(0.20f, 0.22f, 0.16f, 1f);
-            button.style.color = TextColor;
-            button.style.borderBottomColor = AccentColor;
-            button.style.borderBottomWidth = 1;
+            SerenityUiDesign.StyleButton(button);
             return button;
         }
 
         private static VisualElement Row()
         {
             var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.flexWrap = Wrap.Wrap;
+            row.AddToClassList(SerenityUiDesign.RowClass);
             return row;
         }
 
         private static void AddTitle(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.fontSize = 18;
-            label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.marginBottom = 8;
-            label.style.color = AccentColor;
+            label.AddToClassList(SerenityUiDesign.TitleClass);
             parent.Add(label);
         }
 
         private static void AddSection(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.marginTop = 9;
-            label.style.marginBottom = 3;
-            label.style.whiteSpace = WhiteSpace.Normal;
+            label.AddToClassList(SerenityUiDesign.SectionClass);
             parent.Add(label);
         }
 
         private static void AddLine(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.whiteSpace = WhiteSpace.Normal;
-            label.style.marginBottom = 2;
+            label.AddToClassList(SerenityUiDesign.BodyClass);
             parent.Add(label);
         }
 
         private static void AddMuted(VisualElement parent, string text)
         {
             var label = new Label(text);
-            label.style.whiteSpace = WhiteSpace.Normal;
-            label.style.color = new Color(0.68f, 0.68f, 0.62f, 1f);
-            label.style.fontSize = 11;
-            label.style.marginBottom = 3;
+            label.AddToClassList(SerenityUiDesign.MutedClass);
             parent.Add(label);
         }
     }

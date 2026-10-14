@@ -1,1 +1,451 @@
 @import url("unity-theme://default");
+
+/*
+ * P8.5 presentation theme. The palette mirrors the natural stone, moss, bark and firelight
+ * of the authored region. All selectors are presentation-only and preserve the stable element
+ * names used by automated navigation.
+ */
+
+.serenity-root {
+    color: rgb(243, 234, 216);
+    font-size: 14px;
+}
+
+.serenity-main-menu {
+    background-color: rgb(17, 23, 16);
+}
+
+.serenity-menu-atmosphere {
+    background-color: rgb(14, 21, 13);
+    border-left-width: 18px;
+    border-right-width: 18px;
+    border-top-width: 18px;
+    border-bottom-width: 18px;
+    border-left-color: rgba(87, 107, 65, 0.2);
+    border-right-color: rgba(87, 107, 65, 0.2);
+    border-top-color: rgba(201, 155, 74, 0.1);
+    border-bottom-color: rgba(201, 155, 74, 0.1);
+}
+
+.serenity-surface {
+    background-color: rgba(27, 36, 25, 0.97);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(201, 155, 74, 0.28);
+    border-right-color: rgba(201, 155, 74, 0.28);
+    border-top-color: rgba(201, 155, 74, 0.28);
+    border-bottom-color: rgba(201, 155, 74, 0.28);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.serenity-surface-raised {
+    background-color: rgba(37, 48, 32, 0.98);
+    border-left-color: rgba(225, 188, 114, 0.48);
+    border-right-color: rgba(225, 188, 114, 0.48);
+    border-top-color: rgba(225, 188, 114, 0.48);
+    border-bottom-color: rgba(225, 188, 114, 0.48);
+}
+
+.serenity-card {
+    background-color: rgba(48, 58, 40, 0.86);
+    border-left-width: 3px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(201, 155, 74, 0.7);
+    border-right-color: rgba(231, 219, 192, 0.12);
+    border-top-color: rgba(231, 219, 192, 0.12);
+    border-bottom-color: rgba(231, 219, 192, 0.12);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-top: 4px;
+    margin-bottom: 7px;
+}
+
+.serenity-card.is-selected {
+    background-color: rgba(69, 78, 51, 0.98);
+    border-left-color: rgb(225, 188, 114);
+    border-right-color: rgba(225, 188, 114, 0.72);
+    border-top-color: rgba(225, 188, 114, 0.72);
+    border-bottom-color: rgba(225, 188, 114, 0.72);
+}
+
+.serenity-button {
+    min-height: 34px;
+    color: rgb(243, 234, 216);
+    background-color: rgb(47, 58, 40);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(225, 188, 114, 0.42);
+    border-right-color: rgba(225, 188, 114, 0.42);
+    border-top-color: rgba(225, 188, 114, 0.42);
+    border-bottom-color: rgba(225, 188, 114, 0.42);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding-left: 12px;
+    padding-right: 12px;
+    white-space: normal;
+    transition-property: background-color, border-left-color, border-right-color, border-top-color, border-bottom-color, color;
+    transition-duration: 0.12s;
+}
+
+.serenity-button:hover {
+    color: rgb(255, 248, 232);
+    background-color: rgb(62, 75, 50);
+    border-left-color: rgb(225, 188, 114);
+    border-right-color: rgb(225, 188, 114);
+    border-top-color: rgb(225, 188, 114);
+    border-bottom-color: rgb(225, 188, 114);
+}
+
+.serenity-button:active {
+    color: rgb(255, 255, 255);
+    background-color: rgb(91, 74, 42);
+    border-left-color: rgb(255, 218, 145);
+    border-right-color: rgb(255, 218, 145);
+    border-top-color: rgb(255, 218, 145);
+    border-bottom-color: rgb(255, 218, 145);
+}
+
+.serenity-button:focus {
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(255, 218, 145);
+    border-right-color: rgb(255, 218, 145);
+    border-top-color: rgb(255, 218, 145);
+    border-bottom-color: rgb(255, 218, 145);
+}
+
+.serenity-button:disabled {
+    color: rgba(243, 234, 216, 0.44);
+    background-color: rgba(35, 40, 32, 0.82);
+    border-left-color: rgba(185, 181, 165, 0.18);
+    border-right-color: rgba(185, 181, 165, 0.18);
+    border-top-color: rgba(185, 181, 165, 0.18);
+    border-bottom-color: rgba(185, 181, 165, 0.18);
+}
+
+.serenity-button-primary {
+    color: rgb(26, 28, 20);
+    background-color: rgb(201, 155, 74);
+    -unity-font-style: bold;
+}
+
+.serenity-button-primary:hover {
+    color: rgb(20, 22, 16);
+    background-color: rgb(225, 188, 114);
+}
+
+.serenity-nav-button {
+    min-height: 40px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    -unity-text-align: middle-left;
+    border-left-width: 3px;
+    border-left-color: transparent;
+    background-color: rgba(36, 45, 31, 0.76);
+}
+
+.serenity-nav-button.is-selected {
+    color: rgb(255, 246, 225);
+    background-color: rgb(65, 75, 50);
+    border-left-color: rgb(225, 188, 114);
+}
+
+.serenity-card-action {
+    min-height: 46px;
+    -unity-text-align: middle-left;
+    border-left-width: 3px;
+    border-left-color: rgba(201, 155, 74, 0.64);
+    background-color: rgba(48, 58, 40, 0.9);
+}
+
+.serenity-card-action.is-selected {
+    color: rgb(255, 248, 232);
+    background-color: rgb(69, 78, 51);
+    border-left-color: rgb(225, 188, 114);
+}
+
+.serenity-time-button {
+    min-width: 42px;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.serenity-time-button.is-selected,
+#pause-button.is-selected {
+    color: rgb(25, 28, 20);
+    background-color: rgb(225, 188, 114);
+    -unity-font-style: bold;
+}
+
+.serenity-title {
+    color: rgb(225, 188, 114);
+    font-size: 23px;
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-bottom: 10px;
+}
+
+.serenity-section-title {
+    color: rgb(243, 234, 216);
+    font-size: 15px;
+    -unity-font-style: bold;
+    white-space: normal;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.serenity-body {
+    color: rgb(243, 234, 216);
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.serenity-muted {
+    color: rgb(185, 181, 165);
+    font-size: 12px;
+    white-space: normal;
+    margin-bottom: 5px;
+}
+
+.serenity-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.serenity-chip {
+    min-height: 44px;
+    background-color: rgba(45, 56, 39, 0.9);
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(201, 155, 74, 0.48);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-right: 6px;
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.serenity-field {
+    color: rgb(243, 234, 216);
+    min-height: 38px;
+    margin-top: 5px;
+    margin-bottom: 7px;
+    white-space: normal;
+}
+
+.serenity-field .unity-base-field__label {
+    color: rgb(216, 207, 187);
+    min-width: 145px;
+    white-space: normal;
+}
+
+.serenity-field .unity-base-text-field__input,
+.serenity-field .unity-popup-field__input,
+.serenity-field .unity-slider__input {
+    color: rgb(243, 234, 216);
+    background-color: rgb(22, 29, 20);
+    border-left-color: rgba(225, 188, 114, 0.52);
+    border-right-color: rgba(225, 188, 114, 0.52);
+    border-top-color: rgba(225, 188, 114, 0.52);
+    border-bottom-color: rgba(225, 188, 114, 0.52);
+}
+
+.serenity-root .unity-scroller {
+    background-color: rgb(22, 29, 20);
+    min-width: 14px;
+    min-height: 14px;
+}
+
+.serenity-root .unity-scroller__slider {
+    background-color: rgb(74, 84, 57);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(225, 188, 114, 0.55);
+    border-right-color: rgba(225, 188, 114, 0.55);
+    border-top-color: rgba(225, 188, 114, 0.55);
+    border-bottom-color: rgba(225, 188, 114, 0.55);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.serenity-root .unity-scroller__slider:hover {
+    background-color: rgb(96, 105, 70);
+}
+
+.serenity-root .unity-scroller .unity-base-slider__tracker {
+    background-color: rgb(22, 29, 20);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.serenity-root .unity-scroller .unity-base-slider__dragger {
+    background-color: rgb(74, 84, 57);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(201, 155, 74);
+    border-right-color: rgb(201, 155, 74);
+    border-top-color: rgb(201, 155, 74);
+    border-bottom-color: rgb(201, 155, 74);
+}
+
+.serenity-root .unity-scroller .unity-base-slider__dragger-border {
+    background-color: transparent;
+}
+
+.serenity-root .unity-scroller__low-button,
+.serenity-root .unity-scroller__high-button {
+    color: rgb(225, 188, 114);
+    background-color: rgb(37, 48, 32);
+    border-left-color: rgba(225, 188, 114, 0.38);
+    border-right-color: rgba(225, 188, 114, 0.38);
+    border-top-color: rgba(225, 188, 114, 0.38);
+    border-bottom-color: rgba(225, 188, 114, 0.38);
+}
+
+.serenity-modal {
+    background-color: rgb(30, 36, 25);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(225, 188, 114);
+    border-right-color: rgb(225, 188, 114);
+    border-top-color: rgb(225, 188, 114);
+    border-bottom-color: rgb(225, 188, 114);
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom-left-radius: 9px;
+    border-bottom-right-radius: 9px;
+}
+
+.serenity-foldout {
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+.serenity-foldout > .unity-foldout__toggle {
+    color: rgb(225, 188, 114);
+    background-color: rgba(37, 48, 32, 0.92);
+    min-height: 36px;
+    -unity-font-style: bold;
+}
+
+.serenity-menu-shell {
+    background-color: rgba(27, 36, 25, 0.97);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(225, 188, 114, 0.35);
+    border-right-color: rgba(225, 188, 114, 0.35);
+    border-top-color: rgba(225, 188, 114, 0.35);
+    border-bottom-color: rgba(225, 188, 114, 0.35);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.serenity-menu-button {
+    width: 100%;
+    -unity-text-align: middle-center;
+    letter-spacing: 0.4px;
+}
+
+.serenity-editor-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.serenity-editor-column {
+    min-width: 410px;
+    flex-grow: 1;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.serenity-preview {
+    background-color: rgb(13, 18, 13);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(225, 188, 114, 0.3);
+    border-right-color: rgba(225, 188, 114, 0.3);
+    border-top-color: rgba(225, 188, 114, 0.3);
+    border-bottom-color: rgba(225, 188, 114, 0.3);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.serenity-status {
+    color: rgb(225, 188, 114);
+    background-color: rgba(17, 23, 16, 0.88);
+    border-top-width: 1px;
+    border-top-color: rgba(225, 188, 114, 0.28);
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-left: 12px;
+    padding-right: 12px;
+    white-space: normal;
+}
+
+.serenity-compact {
+    font-size: 13px;
+}
+
+.serenity-compact .serenity-chip {
+    font-size: 12px;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.serenity-compact .serenity-button {
+    padding-left: 9px;
+    padding-right: 9px;
+}
+
+#tps-hud {
+    overflow: hidden;
+}
+
+#tps-hud .unity-label {
+    white-space: normal;
+    -unity-text-align: middle-center;
+}

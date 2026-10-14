@@ -14,6 +14,7 @@ using Game.Simulation.Production;
 using Game.Simulation.Work;
 using Game.Domain.Work;
 using Game.Presentation.Localization;
+using Game.Presentation.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -71,6 +72,15 @@ namespace Game.Presentation.World
         private float nextRefreshTime;
         private readonly List<GlobalResourceMarker> resourceMarkers = new List<GlobalResourceMarker>();
         private GlobalResourceMarker selectedResource;
+        private GUIStyle mapPanelStyle;
+        private GUIStyle mapTitleStyle;
+        private GUIStyle mapLabelStyle;
+        private GUIStyle mapButtonStyle;
+        private GUIStyle mapSelectedButtonStyle;
+        private GUIStyle mapDisabledReasonStyle;
+        private Texture2D mapPanelTexture;
+        private Texture2D mapButtonTexture;
+        private Texture2D mapSelectedTexture;
 
         public Camera MapCamera => mapCamera;
         public int LocationMarkerCount => locationMarkers.Count;
@@ -243,30 +253,33 @@ namespace Game.Presentation.World
         private void OnGUI()
         {
             if (map == null) return;
+            EnsureUiStyles();
+            var safe = Screen.safeArea;
             if (selectedResource != null)
             {
-                GUILayout.BeginArea(new Rect(Screen.width - 310, 180, 292, 230), GUI.skin.box);
-                GUILayout.Label(RussianTextCatalog.Content("resource", selectedResource.ResourceId.ToString()));
-                GUILayout.Label($"Источников на местности: {selectedResource.SiteIds.Count}");
+                GUILayout.BeginArea(new Rect(safe.xMax - 326, safe.yMin + 176, 306, 252), mapPanelStyle);
+                GUILayout.Label(RussianTextCatalog.Content("resource", selectedResource.ResourceId.ToString()), mapTitleStyle);
+                GUILayout.Label($"Источников на местности: {selectedResource.SiteIds.Count}", mapLabelStyle);
                 var remaining = selectedResource.SiteIds.Sum(id => production.TryGetSite(id, out var site) ? site.RemainingAmount : 0L);
-                GUILayout.Label($"Доступно: {remaining}");
+                GUILayout.Label($"Доступно: {remaining}", mapLabelStyle);
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Обычный")) resourcePriority = WorkPriority.Normal;
-                if (GUILayout.Button("Высокий")) resourcePriority = WorkPriority.High;
-                if (GUILayout.Button("Прямо сейчас")) resourcePriority = WorkPriority.Immediate;
+                if (GUILayout.Button("Обычный", resourcePriority == WorkPriority.Normal ? mapSelectedButtonStyle : mapButtonStyle)) resourcePriority = WorkPriority.Normal;
+                if (GUILayout.Button("Высокий", resourcePriority == WorkPriority.High ? mapSelectedButtonStyle : mapButtonStyle)) resourcePriority = WorkPriority.High;
+                if (GUILayout.Button("Сейчас", resourcePriority == WorkPriority.Immediate ? mapSelectedButtonStyle : mapButtonStyle)) resourcePriority = WorkPriority.Immediate;
                 GUILayout.EndHorizontal();
-                if (GUILayout.Button("Собирать")) IssueSelectedResourceWork();
-                if (GUILayout.Button("Перейти к источникам поселения")) EnterSelectedResourceLocation();
+                if (GUILayout.Button("Собирать", mapButtonStyle)) IssueSelectedResourceWork();
+                if (GUILayout.Button("Перейти к источникам поселения", mapButtonStyle)) EnterSelectedResourceLocation();
                 GUILayout.EndArea();
             }
             if (!ShowDeveloperUi) return;
-            GUILayout.BeginArea(new Rect(12, 12, 390, 860), GUI.skin.box);
-            GUILayout.Label(RussianTextCatalog.Format("debug.map.title", TimeSpan.FromTicks(currentTick())));
-            GUILayout.Label(RussianTextCatalog.Format("debug.map.mode", RussianTextCatalog.Enum(map.Mode), LocationName(map.ActiveLocationId)));
-            GUILayout.Label(RussianTextCatalog.Get("debug.map.locations"));
+            GUILayout.BeginArea(new Rect(safe.xMin + 12, safe.yMin + 12, 390, Mathf.Min(860, safe.height - 24)), mapPanelStyle);
+            GUILayout.Label(RussianTextCatalog.Format("debug.map.title", TimeSpan.FromTicks(currentTick())), mapTitleStyle);
+            GUILayout.Label(RussianTextCatalog.Format("debug.map.mode", RussianTextCatalog.Enum(map.Mode), LocationName(map.ActiveLocationId)), mapLabelStyle);
+            GUILayout.Label(RussianTextCatalog.Get("debug.map.locations"), mapTitleStyle);
             foreach (var location in map.Locations)
-                if (GUILayout.Button(RussianTextCatalog.Format("debug.map.location", LocationName(location.Id), RussianTextCatalog.Enum(location.Type)))) selectedLocation = location.Id;
-            GUILayout.Label(RussianTextCatalog.Get("debug.map.units"));
+                if (GUILayout.Button(RussianTextCatalog.Format("debug.map.location", LocationName(location.Id), RussianTextCatalog.Enum(location.Type)),
+                    selectedLocation == location.Id ? mapSelectedButtonStyle : mapButtonStyle)) selectedLocation = location.Id;
+            GUILayout.Label(RussianTextCatalog.Get("debug.map.units"), mapTitleStyle);
             foreach (var unit in units.Units.Where(x => x.Representation == MilitaryUnitRepresentationMode.Aggregate))
             {
                 var summary = units.GetRosterSummary(unit.Id);
@@ -276,16 +289,17 @@ namespace Game.Presentation.World
                         TimeSpan.FromTicks(Math.Max(0, travel.ArrivalTick - currentTick())));
                 if (GUILayout.Button(RussianTextCatalog.Format("debug.map.unit", unit.Id,
                     unit.OwnerSideId.Value == "player" ? RussianTextCatalog.Get("ui.side.player") : RussianTextCatalog.Get("ui.side.enemy"),
-                    summary.CombatCapable, detail)))
+                    summary.CombatCapable, detail), selectedUnit == unit.Id ? mapSelectedButtonStyle : mapButtonStyle))
                     selectedUnit = unit.Id;
             }
-            if (selectedLocation.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_location", LocationName(selectedLocation.Value)));
-            if (selectedUnit.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_unit", selectedUnit.Value));
+            if (selectedLocation.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_location", LocationName(selectedLocation.Value)), mapLabelStyle);
+            if (selectedUnit.HasValue) GUILayout.Label(RussianTextCatalog.Format("debug.map.selected_unit", selectedUnit.Value), mapLabelStyle);
             GUI.enabled = selectedLocation.HasValue && selectedUnit.HasValue;
-            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.move")))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.move"), mapButtonStyle))
                 map.IssueTravelOrder(selectedUnit.Value, selectedLocation.Value, currentTick());
+            if (!GUI.enabled) GUILayout.Label("Сначала выберите место и отряд.", mapDisabledReasonStyle);
             GUI.enabled = selectedLocation.HasValue;
-            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter")))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter"), mapButtonStyle))
             {
                 var result = transitions.EnterLocation(selectedLocation.Value, currentTick());
                 if (result.Changed) localEntered?.Invoke(result);
@@ -294,13 +308,67 @@ namespace Game.Presentation.World
             var activeBattle = battles.Battles.FirstOrDefault(x => x.Status == CombatEncounterStatus.Active &&
                 x.Mode == BattleMode.Abstract);
             GUI.enabled = activeBattle != null;
-            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter_battle")))
+            if (GUILayout.Button(RussianTextCatalog.Get("debug.map.enter_battle"), mapButtonStyle))
             {
                 var result = transitions.EnterBattle(activeBattle.BattleId, currentTick());
                 if (result.Changed) localEntered?.Invoke(result);
             }
             GUI.enabled = true;
             GUILayout.EndArea();
+        }
+
+        private void EnsureUiStyles()
+        {
+            if (mapPanelStyle != null) return;
+            mapPanelTexture = SolidTexture(SerenityUiDesign.Surface);
+            mapButtonTexture = SolidTexture(SerenityUiDesign.SurfaceSoft);
+            mapSelectedTexture = SolidTexture(new Color(0.27f, 0.31f, 0.2f, 1f));
+            mapPanelStyle = new GUIStyle(GUI.skin.box)
+            {
+                normal = { background = mapPanelTexture, textColor = SerenityUiDesign.Text },
+                padding = new RectOffset(14, 14, 12, 12)
+            };
+            mapTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                normal = { textColor = SerenityUiDesign.AccentBright },
+                fontSize = 16, fontStyle = FontStyle.Bold, wordWrap = true,
+                margin = new RectOffset(3, 3, 5, 7)
+            };
+            mapLabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                normal = { textColor = SerenityUiDesign.Text }, wordWrap = true, fontSize = 13
+            };
+            mapButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                normal = { background = mapButtonTexture, textColor = SerenityUiDesign.Text },
+                hover = { background = mapSelectedTexture, textColor = Color.white },
+                active = { background = mapSelectedTexture, textColor = Color.white },
+                wordWrap = true, fixedHeight = 0f, padding = new RectOffset(9, 9, 7, 7),
+                margin = new RectOffset(2, 2, 3, 3)
+            };
+            mapSelectedButtonStyle = new GUIStyle(mapButtonStyle)
+            {
+                normal = { background = mapSelectedTexture, textColor = SerenityUiDesign.AccentBright },
+                fontStyle = FontStyle.Bold
+            };
+            mapDisabledReasonStyle = new GUIStyle(mapLabelStyle)
+            {
+                normal = { textColor = SerenityUiDesign.TextMuted }, fontSize = 11
+            };
+        }
+
+        private static Texture2D SolidTexture(Color color)
+        {
+            var texture = new Texture2D(1, 1, TextureFormat.RGBA32, false) { hideFlags = HideFlags.HideAndDontSave };
+            texture.SetPixel(0, 0, color); texture.Apply();
+            return texture;
+        }
+
+        private void OnDestroy()
+        {
+            if (mapPanelTexture != null) Destroy(mapPanelTexture);
+            if (mapButtonTexture != null) Destroy(mapButtonTexture);
+            if (mapSelectedTexture != null) Destroy(mapSelectedTexture);
         }
 
         public void SelectResourceMarker(GlobalResourceMarker marker)
