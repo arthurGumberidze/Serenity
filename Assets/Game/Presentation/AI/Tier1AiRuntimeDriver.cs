@@ -8,6 +8,7 @@ using Game.Simulation.AI;
 using Game.Simulation.Time;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Game.Presentation.AI
 {
@@ -19,6 +20,7 @@ namespace Game.Presentation.AI
         private const int PresentationRefreshSlicesAtTargetRate = 30;
         private const float AnimationRefreshIntervalSeconds = 0.1f;
         private const int MaximumAnimationRefreshesPerFrame = 8;
+        public const int HighDetailCrowdBudget = 8;
         private const float AvailabilitySweepIntervalSeconds = 1f;
         private static readonly ProfilerMarker AdvanceMarker = new ProfilerMarker("Serenity.Tier1.Advance");
         private static readonly ProfilerMarker SchedulerMarker = new ProfilerMarker("Serenity.Tier1.Scheduler");
@@ -26,9 +28,14 @@ namespace Game.Presentation.AI
             new ProfilerMarker("Serenity.Tier1.SimulationCallbacks");
         private static readonly ProfilerMarker MovementPresentationMarker =
             new ProfilerMarker("Serenity.Tier1.MovementPresentation");
+        private static readonly ProfilerMarker LightweightMovementMarker =
+            new ProfilerMarker("Serenity.Tier1.LightweightMovement");
         private static readonly ProfilerMarker AnimationMarker =
             new ProfilerMarker("Serenity.Tier1.AnimationPresentation");
+        private static readonly ProfilerMarker LightweightRenderingMarker =
+            new ProfilerMarker("Serenity.Tier1.LightweightRendering");
         private readonly List<NavMeshMovementDriver> movements = new List<NavMeshMovementDriver>();
+        private readonly Matrix4x4[] lightweightMatrices = new Matrix4x4[1023];
         private GameClock clock;
         private Tier1AiScheduler scheduler;
         private Func<int> movementModifierProvider;
@@ -37,6 +44,8 @@ namespace Game.Presentation.AI
         private double animationRefreshBudget;
         private int animationRefreshCursor;
         private float nextAvailabilitySweep;
+        private Mesh lightweightMesh;
+        private Material lightweightMaterial;
 
         public GameClock Clock => clock;
         public Tier1AiScheduler Scheduler => scheduler;
@@ -47,6 +56,7 @@ namespace Game.Presentation.AI
         public long SchedulerAllocatedBytes { get; private set; }
         public long SimulationCallbackAllocatedBytes { get; private set; }
         public long MovementPresentationAllocatedBytes { get; private set; }
+        public int LastLightweightDrawCount { get; private set; }
         public event Action<GameTimeAdvance> SimulationAdvanced;
 
         public void Initialize(GameClock gameClock, Tier1AiScheduler aiScheduler,
@@ -76,6 +86,7 @@ namespace Game.Presentation.AI
             var state = new Tier1AiAgentState(character.Id, position, needs);
             scheduler.Register(character, state, movement);
             movements.Add(movement);
+            RefreshCrowdDetailLevels();
             return state;
         }
 
@@ -89,6 +100,7 @@ namespace Game.Presentation.AI
                 movements.RemoveAt(i);
                 removed = true;
             }
+            if (removed) RefreshCrowdDetailLevels();
             return scheduler != null && scheduler.Unregister(characterId) || removed;
         }
 
@@ -180,16 +192,21 @@ namespace Game.Presentation.AI
                 }
             }
             var deltaSeconds = Time.unscaledDeltaTime;
+            using (LightweightMovementMarker.Auto())
+                for (var index = 0; index < movements.Count; index++)
+                    movements[index].AdvanceLightweight(deltaSeconds, clock.IsPaused);
             using (AdvanceMarker.Auto())
                 Advance(TimeSpan.FromSeconds(deltaSeconds), TakeMovementPresentationBudget(deltaSeconds));
             using (AnimationMarker.Auto())
                 RefreshAnimationPresentation(TakeAnimationPresentationBudget(deltaSeconds), now);
+            using (LightweightRenderingMarker.Auto()) DrawLightweightPresenters();
         }
 
         private void OnDestroy()
         {
             scheduler?.Reset();
             movements.Clear();
+            if (lightweightMaterial != null) Destroy(lightweightMaterial);
             SimulationAdvanced = null;
         }
 
@@ -246,6 +263,50 @@ namespace Game.Presentation.AI
                 if (animationRefreshCursor >= movements.Count) animationRefreshCursor = 0;
                 movements[animationRefreshCursor].RefreshAnimation(unscaledTime);
                 animationRefreshCursor++;
+            }
+        }
+
+        private void RefreshCrowdDetailLevels()
+        {
+            for (var index = 0; index < movements.Count; index++)
+                movements[index].SetCrowdDetail(index < HighDetailCrowdBudget);
+        }
+
+        private void DrawLightweightPresenters()
+        {
+            LastLightweightDrawCount = 0;
+            for (var index = 0; index < movements.Count; index++)
+            {
+                var presenter = movements[index].Presenter;
+                if (presenter == null || !presenter.UsesLightweightVisual) continue;
+                EnsureLightweightRenderResources(presenter);
+                if (lightweightMesh == null || lightweightMaterial == null) continue;
+                var transform = presenter.transform;
+                lightweightMatrices[LastLightweightDrawCount++] = Matrix4x4.TRS(
+                    transform.position + Vector3.up * 0.9f, transform.rotation,
+                    new Vector3(0.38f, 0.9f, 0.38f));
+            }
+            if (LastLightweightDrawCount == 0 || lightweightMesh == null || lightweightMaterial == null) return;
+            Graphics.DrawMeshInstanced(lightweightMesh, 0, lightweightMaterial, lightweightMatrices,
+                LastLightweightDrawCount, null, ShadowCastingMode.Off, false, gameObject.layer);
+        }
+
+        private void EnsureLightweightRenderResources(CharacterPresenter presenter)
+        {
+            if (lightweightMesh == null)
+            {
+                var template = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                template.SetActive(false);
+                lightweightMesh = template.GetComponent<MeshFilter>().sharedMesh;
+                Destroy(template);
+            }
+            if (lightweightMaterial == null && presenter.LightweightMaterial != null)
+            {
+                lightweightMaterial = new Material(presenter.LightweightMaterial)
+                {
+                    name = "Tier1 Lightweight Instanced Material"
+                };
+                lightweightMaterial.enableInstancing = true;
             }
         }
     }

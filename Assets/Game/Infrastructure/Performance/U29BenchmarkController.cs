@@ -196,7 +196,11 @@ namespace Game.Infrastructure.Performance
         private void LateUpdate()
         {
             if (root != null && config != null && !completing && root.CameraController != null)
-                root.CameraController.transform.position = cameraAnchor;
+            {
+                var cameraTransform = root.CameraController.transform;
+                if ((cameraTransform.position - cameraAnchor).sqrMagnitude > 0.00000001f)
+                    cameraTransform.position = cameraAnchor;
+            }
         }
 
         private void BeginMeasurement(double now)

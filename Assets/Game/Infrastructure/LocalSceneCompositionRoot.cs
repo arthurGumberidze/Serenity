@@ -69,6 +69,8 @@ namespace Game.Infrastructure
 {
     public sealed class LocalSceneCompositionRoot : MonoBehaviour
     {
+        private const float TierPolicyRefreshIntervalSeconds = 0.5f;
+        private const long WeatherRosterRefreshIntervalTicks = TimeSpan.TicksPerMinute;
         [SerializeField] private LocalGameplayInputSource input;
         [SerializeField] private RtsCameraController cameraController;
         [SerializeField] private WorldPointerRaycaster pointerRaycaster;
@@ -194,7 +196,12 @@ namespace Game.Infrastructure
         private readonly List<WorldResourcePilePresenter> demoPilePresenters = new List<WorldResourcePilePresenter>();
         private readonly List<ProductionSourcePresenter> productionPresenters = new List<ProductionSourcePresenter>();
         private readonly List<StableEntityId> abstractWorkerBuffer = new List<StableEntityId>();
+        private readonly List<StableEntityId> tier2WorkerBuffer = new List<StableEntityId>();
+        private readonly List<StableEntityId> tier3WorkerCache = new List<StableEntityId>();
         private readonly List<StableEntityId> outdoorWorkerBuffer = new List<StableEntityId>();
+        private long tier3WorkerCacheRevision = -1;
+        private long nextWeatherRosterRefreshTick;
+        private float nextTierPolicyRefreshTime;
 
         public void Configure(LocalGameplayInputSource inputSource, RtsCameraController controller,
             WorldPointerRaycaster raycaster, SelectionProbe selection, CharacterPresentationCatalog catalog,
@@ -525,18 +532,21 @@ namespace Game.Infrastructure
             Tier2Runtime.AdvanceResearch(Research, targetCalendarTick);
             Tier3Adapter.AdvanceResearchToCurrent(Research);
             PerformanceBenchmark?.RecordTier3AndResearchAllocation();
-            abstractWorkerBuffer.Clear();
-            Tier2Runtime.ConsumeProductionWorkers(abstractWorkerBuffer);
-            var managedIds = Tiers.ManagedIds;
-            for (var i = 0; i < managedIds.Count; i++)
-                if (Tiers.GetTier(managedIds[i]) == CharacterSimulationTier.Tier3)
-                    abstractWorkerBuffer.Add(managedIds[i]);
-            SortAndRemoveDuplicates(abstractWorkerBuffer);
-            outdoorWorkerBuffer.Clear();
-            Production.CollectActiveWorkerIds(outdoorWorkerBuffer);
-            outdoorWorkerBuffer.AddRange(abstractWorkerBuffer);
-            // Weather validates/deduplicates only its due subset; sorting this whole list again is redundant.
-            Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkerBuffer, false);
+            tier2WorkerBuffer.Clear();
+            Tier2Runtime.ConsumeProductionWorkers(tier2WorkerBuffer);
+            RefreshTier3WorkerCache();
+            MergeSortedDistinct(tier2WorkerBuffer, tier3WorkerCache, abstractWorkerBuffer);
+            if (targetCalendarTick >= nextWeatherRosterRefreshTick)
+            {
+                outdoorWorkerBuffer.Clear();
+                Production.CollectActiveWorkerIds(outdoorWorkerBuffer);
+                outdoorWorkerBuffer.AddRange(abstractWorkerBuffer);
+                // Exposure changes only at completed-day boundaries. A deterministic one-game-minute roster
+                // cadence still catches new outdoor workers long before the next boundary without rescanning
+                // every canonical resident on every rendered frame.
+                Weather.AdvanceHealthExposureTo(targetCalendarTick, outdoorWorkerBuffer, false);
+                nextWeatherRosterRefreshTick = checked(targetCalendarTick + WeatherRosterRefreshIntervalTicks);
+            }
             PerformanceBenchmark?.RecordWorkersAndWeatherAllocation();
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
             CampaignProgress.AdvanceTo(targetCalendarTick);
@@ -547,19 +557,46 @@ namespace Game.Infrastructure
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             WeatherPresentation.Refresh(targetCalendarTick);
-            var focus = cameraController.transform.position;
-            TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
+            if (Time.unscaledTime >= nextTierPolicyRefreshTime)
+            {
+                var focus = cameraController.transform.position;
+                TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
+                nextTierPolicyRefreshTime = Time.unscaledTime + TierPolicyRefreshIntervalSeconds;
+            }
             PerformanceBenchmark?.RecordPresentationAndTierPolicyAllocation();
         }
 
-        private static void SortAndRemoveDuplicates(List<StableEntityId> values)
+        private void RefreshTier3WorkerCache()
         {
-            values.Sort();
-            if (values.Count < 2) return;
-            var write = 1;
-            for (var read = 1; read < values.Count; read++)
-                if (values[read] != values[write - 1]) values[write++] = values[read];
-            if (write < values.Count) values.RemoveRange(write, values.Count - write);
+            if (tier3WorkerCacheRevision == Tiers.Revision) return;
+            tier3WorkerCache.Clear();
+            var managedIds = Tiers.ManagedIds;
+            for (var index = 0; index < managedIds.Count; index++)
+                if (Tiers.GetTier(managedIds[index]) == CharacterSimulationTier.Tier3)
+                    tier3WorkerCache.Add(managedIds[index]);
+            tier3WorkerCacheRevision = Tiers.Revision;
+        }
+
+        private static void MergeSortedDistinct(IReadOnlyList<StableEntityId> first,
+            IReadOnlyList<StableEntityId> second, List<StableEntityId> destination)
+        {
+            destination.Clear();
+            var firstIndex = 0;
+            var secondIndex = 0;
+            while (firstIndex < first.Count || secondIndex < second.Count)
+            {
+                StableEntityId next;
+                if (secondIndex >= second.Count || firstIndex < first.Count && first[firstIndex].CompareTo(second[secondIndex]) < 0)
+                    next = first[firstIndex++];
+                else if (firstIndex >= first.Count || second[secondIndex].CompareTo(first[firstIndex]) < 0)
+                    next = second[secondIndex++];
+                else
+                {
+                    next = first[firstIndex++];
+                    secondIndex++;
+                }
+                if (destination.Count == 0 || destination[destination.Count - 1] != next) destination.Add(next);
+            }
         }
 
         private void OnChildBorn(Character child)

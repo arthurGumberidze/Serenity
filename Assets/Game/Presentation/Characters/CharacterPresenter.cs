@@ -27,7 +27,13 @@ namespace Game.Presentation.Characters
         private bool? displayedPaused;
         private bool manualAnimationInitialized;
         private bool automaticMovementAnimation;
+        private bool automaticAnimationAllowed = true;
         private float disableAutomaticAnimationAfter = float.PositiveInfinity;
+        private SkinnedMeshRenderer[] detailedRenderers = Array.Empty<SkinnedMeshRenderer>();
+        private bool[] detailedRendererDefaults = Array.Empty<bool>();
+        private GameObject detailedVisualRoot;
+        private Material lightweightMaterial;
+        private bool lightweightVisual;
 
         public bool IsBound => character != null;
         public Character Character => character;
@@ -37,8 +43,28 @@ namespace Game.Presentation.Characters
         public Transform RightHandSocket => rightHandSocket;
         public Transform LeftHandSocket => leftHandSocket;
         public bool IsSelected { get; private set; }
+        public bool UsesLightweightVisual => lightweightVisual;
+        public Material LightweightMaterial => lightweightMaterial;
+        public bool DetailedVisualActive => detailedVisualRoot == null || detailedVisualRoot.activeSelf;
 
-        public void SetSelected(bool selected) => IsSelected = selected;
+        public void SetSelected(bool selected)
+        {
+            IsSelected = selected;
+            ApplyVisualDetail(automaticAnimationAllowed || selected);
+            if (animator == null || !Application.isPlaying || displayedMoving != true) return;
+            if (selected) EnableAutomaticMovementAnimation();
+            else if (!automaticAnimationAllowed) DisableAutomaticMovementAnimation();
+        }
+
+        public void SetAutomaticAnimationAllowed(bool allowed)
+        {
+            if (automaticAnimationAllowed == allowed) return;
+            automaticAnimationAllowed = allowed;
+            ApplyVisualDetail(allowed || IsSelected);
+            if (animator == null || !Application.isPlaying) return;
+            if (allowed && displayedMoving == true) EnableAutomaticMovementAnimation();
+            else if (!allowed && !IsSelected) DisableAutomaticMovementAnimation();
+        }
 
         public void Configure(Animator targetAnimator, Transform rightHand, Transform leftHand)
         {
@@ -61,6 +87,7 @@ namespace Game.Presentation.Characters
             appearance = resolvedAppearance ?? StoneAgeAppearanceProfiles.CreateCatalog()
                 .DefaultFor(domainCharacter.Sex).CreateState(domainCharacter.Id);
             registry = presentationRegistry;
+            CacheDetailedRenderers();
             CacheAnimatorParameters();
             InvalidateAnimatorState();
             SetMovementSpeed(0f);
@@ -94,8 +121,10 @@ namespace Game.Presentation.Characters
                 displayedMoving = moving;
             }
             if (!Application.isPlaying) return;
-            if (moving)
+            if (moving && (automaticAnimationAllowed || IsSelected))
                 EnableAutomaticMovementAnimation();
+            else if (moving)
+                DisableAutomaticMovementAnimation();
             else if (automaticMovementAnimation)
                 BeginAutomaticMovementAnimationStop();
         }
@@ -154,6 +183,7 @@ namespace Game.Presentation.Characters
             displayedPaused = null;
             manualAnimationInitialized = false;
             automaticMovementAnimation = false;
+            automaticAnimationAllowed = true;
             disableAutomaticAnimationAfter = float.PositiveInfinity;
         }
 
@@ -187,6 +217,37 @@ namespace Game.Presentation.Characters
             // The controller's locomotion-to-idle transition is 0.15 seconds. Let Unity evaluate that transition
             // smoothly before the shared scheduler freezes the resulting idle pose.
             disableAutomaticAnimationAfter = Time.unscaledTime + 0.2f;
+        }
+
+        private void DisableAutomaticMovementAnimation()
+        {
+            automaticMovementAnimation = false;
+            disableAutomaticAnimationAfter = float.PositiveInfinity;
+            animator.enabled = false;
+        }
+
+        private void CacheDetailedRenderers()
+        {
+            detailedRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            detailedRendererDefaults = detailedRenderers.Select(renderer => renderer != null && renderer.enabled).ToArray();
+            detailedVisualRoot = animator != null && animator.gameObject != gameObject ? animator.gameObject : null;
+            lightweightMaterial = detailedRenderers.SelectMany(renderer => renderer != null
+                    ? renderer.sharedMaterials
+                    : Array.Empty<Material>())
+                .FirstOrDefault(material => material != null);
+        }
+
+        private void ApplyVisualDetail(bool detailed)
+        {
+            if (!Application.isPlaying || detailedRenderers.Length == 0) return;
+            if (detailed && detailedVisualRoot != null && !detailedVisualRoot.activeSelf)
+                detailedVisualRoot.SetActive(true);
+            for (var index = 0; index < detailedRenderers.Length; index++)
+                if (detailedRenderers[index] != null)
+                    detailedRenderers[index].enabled = detailed && detailedRendererDefaults[index];
+            lightweightVisual = !detailed && lightweightMaterial != null;
+            if (!detailed && detailedVisualRoot != null && detailedVisualRoot.activeSelf)
+                detailedVisualRoot.SetActive(false);
         }
     }
 }

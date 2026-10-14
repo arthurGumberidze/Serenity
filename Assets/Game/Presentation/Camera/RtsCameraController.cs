@@ -49,8 +49,10 @@ namespace Game.Presentation.CameraControl
             if (input == null || cameraMount == null || unscaledDeltaTime < 0f)
                 return;
 
-            var yaw = transform.eulerAngles.y + input.Rotate * settings.RotationSpeed * unscaledDeltaTime;
-            transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            var currentYaw = transform.eulerAngles.y;
+            var yaw = currentYaw + input.Rotate * settings.RotationSpeed * unscaledDeltaTime;
+            if (Mathf.Abs(Mathf.DeltaAngle(currentYaw, yaw)) > 0.0001f)
+                transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
             var translation = RtsCameraMath.HorizontalMotion(input.Move, yaw)
                 * settings.MoveSpeed * unscaledDeltaTime;
@@ -66,13 +68,18 @@ namespace Game.Presentation.CameraControl
                 var drag = input.PanDelta * (settings.DragPanSpeed * currentZoom / screenSize.y);
                 translation += RtsCameraMath.HorizontalVector(new Vector2(-drag.x, -drag.y), yaw);
             }
-            transform.position = RtsCameraMath.ClampToBounds(transform.position + translation,
+            var position = RtsCameraMath.ClampToBounds(transform.position + translation,
                 settings.BoundsMin, settings.BoundsMax);
+            if ((position - transform.position).sqrMagnitude > 0.00000001f) transform.position = position;
 
             targetZoom = Mathf.Clamp(targetZoom - input.Zoom * settings.ZoomSpeed,
                 settings.MinZoom, settings.MaxZoom);
-            currentZoom = Mathf.MoveTowards(currentZoom, targetZoom, settings.ZoomSmoothing * unscaledDeltaTime);
-            ApplyCameraMount();
+            var zoom = Mathf.MoveTowards(currentZoom, targetZoom, settings.ZoomSmoothing * unscaledDeltaTime);
+            if (Mathf.Abs(zoom - currentZoom) > 0.0001f)
+            {
+                currentZoom = zoom;
+                ApplyCameraMount();
+            }
         }
 
         private void Initialize()

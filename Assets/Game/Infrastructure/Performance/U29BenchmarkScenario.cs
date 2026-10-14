@@ -163,7 +163,8 @@ namespace Game.Infrastructure.Performance
             var restoreCoordinator = new SaveCoordinator(restoredSnapshot.SessionId, root.Clock,
                 new SingleSnapshotStore(restoredSnapshot), root.Production, root.Research, root.Succession,
                 root.HealthFamily, root.Weather, root.Combat, root.MilitaryUnits, root.PlayerControl,
-                root.BuildingDamage, root.GlobalMap, root.StrategicAi, root.Events);
+                root.BuildingDamage, root.GlobalMap, root.StrategicAi, root.Events, root.CampaignProgress,
+                root.Appearances, root.Work);
             stopwatch.Restart();
             restoreCoordinator.Load(StableEntityId.Parse("00000000000000000000000000002900"));
             root.RebindAfterLoad(restoreCoordinator.Clock);
@@ -241,17 +242,16 @@ namespace Game.Infrastructure.Performance
             var anchor = root.CameraController.transform.position;
             foreach (var id in ids.OrderBy(x => x))
             {
+                var position = PositionFor(target, ordinal++, anchor);
+                var state = new CharacterRuntimeState(id, position, default, false, "local",
+                    lastSimulationCalendarTick: root.Clock.State.CalendarTicks,
+                    lastSimulationBiologicalTick: root.Clock.State.BiologicalTicks);
                 if (root.Tiers.TryGetTier(id, out var existing))
                 {
-                    if (existing != target) root.Tiers.Transition(id, target);
-                    ordinal++;
+                    root.Tiers.RestoreRepresentationState(id, target, state);
                     continue;
                 }
-                var position = PositionFor(target, ordinal++, anchor);
-                root.Tiers.Materialize(root.Characters.Get(id), target,
-                    new CharacterRuntimeState(id, position, default, false, "local",
-                        lastSimulationCalendarTick: root.Clock.State.CalendarTicks,
-                        lastSimulationBiologicalTick: root.Clock.State.BiologicalTicks));
+                root.Tiers.Materialize(root.Characters.Get(id), target, state);
             }
         }
 
@@ -294,7 +294,7 @@ namespace Game.Infrastructure.Performance
             var angle = ordinal * 2.39996323d;
             var radius = tier == CharacterSimulationTier.Tier1 ? 8d + ordinal % 8 :
                 tier == CharacterSimulationTier.Tier2 ? 36d + ordinal % 8 : 120d + ordinal % 16;
-            return new WorldPosition(anchor.x + (float)(Math.Cos(angle) * radius), anchor.y,
+            return new WorldPosition(anchor.x + (float)(Math.Cos(angle) * radius), 0f,
                 anchor.z + (float)(Math.Sin(angle) * radius));
         }
 

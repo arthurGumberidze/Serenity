@@ -58,6 +58,7 @@ namespace Game.Simulation.Tiers
         }
 
         public int Count => tiers.Count;
+        public long Revision { get; private set; }
         public IReadOnlyList<StableEntityId> ManagedIds => orderedIds;
 
         public void BindTransitionGuard(ICharacterTierTransitionGuard guard)
@@ -80,6 +81,7 @@ namespace Game.Simulation.Tiers
             RequireMatchingIdentity(characterId, state);
             tiers.Add(characterId, tier);
             InsertOrdered(characterId);
+            Revision = checked(Revision + 1);
         }
 
         public void Materialize(Character character, CharacterSimulationTier tier, CharacterRuntimeState state)
@@ -97,6 +99,7 @@ namespace Game.Simulation.Tiers
                 throw new InvalidOperationException("Tier adapter did not activate the requested representation.");
             tiers.Add(character.Id, tier);
             InsertOrdered(character.Id);
+            Revision = checked(Revision + 1);
         }
 
         public CharacterSimulationTier GetTier(StableEntityId characterId) => tiers.TryGetValue(characterId, out var tier)
@@ -167,6 +170,7 @@ namespace Game.Simulation.Tiers
                 {
                     target.Materialize(character, checkpointState);
                     tiers[characterId] = targetTier;
+                    Revision = checked(Revision + 1);
                     AssertExactlyOneActive(characterId, targetTier);
                 }
                 catch (Exception restoreFailure)
@@ -218,6 +222,7 @@ namespace Game.Simulation.Tiers
                     if (!target.IsActive(characterId))
                         throw new InvalidOperationException("Target adapter did not activate its representation.");
                     tiers[characterId] = targetTier;
+                    Revision = checked(Revision + 1);
                     AssertExactlyOneActive(characterId, targetTier);
                     return new TierTransitionResult(characterId, sourceTier, targetTier, true);
                 }

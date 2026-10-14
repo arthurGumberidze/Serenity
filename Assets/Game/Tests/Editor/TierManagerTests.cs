@@ -80,10 +80,25 @@ namespace Game.Tests
         public void SameTierTransitionIsNoOpAndDoesNotDuplicateRepresentation()
         {
             var setup = CreateManager();
+            var revision = setup.Manager.Revision;
             var result = setup.Manager.Transition(setup.Character.Id, CharacterSimulationTier.Tier1);
             Assert.That(result.Changed, Is.False);
+            Assert.That(setup.Manager.Revision, Is.EqualTo(revision));
             Assert.That(setup.Tier1.MaterializeCount, Is.EqualTo(0));
             Assert.That(setup.Manager.CountActiveRepresentations(setup.Character.Id), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void RepresentationRevisionChangesOnlyAfterSuccessfulRosterMutation()
+        {
+            var setup = CreateManager();
+            Assert.That(setup.Manager.Revision, Is.EqualTo(1));
+            setup.Manager.Transition(setup.Character.Id, CharacterSimulationTier.Tier2);
+            Assert.That(setup.Manager.Revision, Is.EqualTo(2));
+            setup.Tier1.FailNextMaterialization = true;
+            Assert.Throws<TierTransitionException>(() =>
+                setup.Manager.Transition(setup.Character.Id, CharacterSimulationTier.Tier1));
+            Assert.That(setup.Manager.Revision, Is.EqualTo(2));
         }
 
         [Test]

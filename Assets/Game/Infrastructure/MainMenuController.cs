@@ -99,6 +99,11 @@ namespace Game.Infrastructure
             if (loadedSettings.WasCorrupt) SetStatus(T("menu.settings.corrupt"));
             if (SessionLaunchState.TryConsumeFeedback(out var feedbackKey, out var feedbackSlot))
                 SetStatus(F(feedbackKey, feedbackSlot));
+            if (TechnicalScenarioLaunch.TryResolveWorldSeed(Environment.GetCommandLineArgs(), out var technicalSeed))
+            {
+                StartNewGame(technicalSeed);
+                return;
+            }
             P2PlayerSmokeController.AttachIfRequested(this);
             P3PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P4PlayerSmokeController.LaunchFromMenuIfRequested(this);

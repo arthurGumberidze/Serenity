@@ -13,6 +13,7 @@ namespace Game.Presentation.Environment
     [DisallowMultipleComponent]
     public sealed class StoneAgeReferenceCampPresentation : MonoBehaviour
     {
+        private const float FireLightRefreshIntervalSeconds = 1f / 15f;
         [SerializeField] private Transform campfireAnchor;
         [SerializeField] private Renderer waterRenderer;
         [SerializeField] private GameObject stoneAxePrefab;
@@ -34,6 +35,7 @@ namespace Game.Presentation.Environment
         private ParticleSystem flameParticles;
         private ParticleSystem smokeParticles;
         private bool initialized;
+        private float nextFireLightRefresh;
 
         public bool IsInitialized => initialized;
         public Transform CampfireAnchor => campfireAnchor;
@@ -229,6 +231,8 @@ namespace Game.Presentation.Environment
         private void Update()
         {
             if (!initialized || fireLight == null) return;
+            if (Time.unscaledTime < nextFireLightRefresh) return;
+            nextFireLightRefresh = Time.unscaledTime + FireLightRefreshIntervalSeconds;
             fireLight.intensity = 2.05f + Mathf.Sin(Time.unscaledTime * 8.2f) * 0.18f +
                 Mathf.Sin(Time.unscaledTime * 13.7f) * 0.08f;
         }

@@ -20,9 +20,18 @@ namespace Game.Presentation.AI
         private readonly NavMeshAgent agent;
         private readonly float baseSpeed;
         private readonly StableEntityId characterId;
+        private readonly NavMeshPath lightweightPath = new NavMeshPath();
         private MovementState state;
         private Tier1MovementAuthority authority;
         private float appliedAgentSpeed = float.NaN;
+        private readonly Vector3[] lightweightCorners = new Vector3[64];
+        private int lightweightCornerCount;
+        private Vector3 requestedDestination;
+        private int lightweightCornerIndex;
+        private float requestedStoppingDistance;
+        private float lightweightSpeed;
+        private bool hasRequestedDestination;
+        private bool crowdDetailEnabled = true;
 
         public NavMeshMovementDriver(CharacterPresenter presenter, float baseSpeed)
         {
@@ -31,6 +40,7 @@ namespace Game.Presentation.AI
             if (baseSpeed <= 0f || float.IsNaN(baseSpeed) || float.IsInfinity(baseSpeed))
                 throw new ArgumentOutOfRangeException(nameof(baseSpeed));
             this.baseSpeed = baseSpeed;
+            lightweightSpeed = baseSpeed;
             characterId = presenter.CharacterId;
             agent = presenter.GetComponent<NavMeshAgent>();
             if (agent == null) agent = presenter.gameObject.AddComponent<NavMeshAgent>();
@@ -58,10 +68,46 @@ namespace Game.Presentation.AI
                 return new WorldPosition(position.x, position.y, position.z);
             }
         }
-        public bool IsAvailable => presenter != null && presenter.IsBound && agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+        public bool IsAvailable => presenter != null && presenter.IsBound && agent != null &&
+                                   (!crowdDetailEnabled && authority != Tier1MovementAuthority.DirectPlayer ||
+                                    agent.isActiveAndEnabled && agent.isOnNavMesh);
         public bool HasBoundPresenter => presenter != null && presenter.IsBound;
         public NavMeshAgent Agent => agent;
         public Tier1MovementAuthority Authority => authority;
+        public bool CrowdDetailEnabled => crowdDetailEnabled;
+        public CharacterPresenter Presenter => presenter;
+
+        public void SetCrowdDetail(bool enabled)
+        {
+            crowdDetailEnabled = enabled;
+            if (authority == Tier1MovementAuthority.DirectPlayer) return;
+            presenter.SetAutomaticAnimationAllowed(enabled);
+            if (enabled)
+            {
+                if (!EnableAgentAtPresenter())
+                {
+                    state = MovementState.Failed;
+                    return;
+                }
+                agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
+                if (state == MovementState.Moving && hasRequestedDestination)
+                {
+                    agent.stoppingDistance = requestedStoppingDistance;
+                    agent.isStopped = false;
+                    state = agent.SetDestination(requestedDestination) ? MovementState.Moving : MovementState.Failed;
+                }
+                return;
+            }
+            if (agent != null && agent.enabled)
+            {
+                if (agent.isOnNavMesh)
+                {
+                    agent.isStopped = true;
+                    agent.ResetPath();
+                }
+                agent.enabled = false;
+            }
+        }
 
         public MovementState State
         {
@@ -69,6 +115,7 @@ namespace Game.Presentation.AI
             {
                 if (!IsAvailable) return MovementState.Failed;
                 if (state != MovementState.Moving) return state;
+                if (!UsesNavMeshAgent) return state;
                 if (agent.pathPending) return MovementState.Moving;
                 if (agent.pathStatus == NavMeshPathStatus.PathInvalid) return MovementState.Failed;
                 if (agent.remainingDistance <= agent.stoppingDistance + 0.05f && agent.velocity.sqrMagnitude <= 0.04f)
@@ -86,6 +133,23 @@ namespace Game.Presentation.AI
                 state = MovementState.Failed;
                 return;
             }
+            requestedDestination = hit.position;
+            requestedStoppingDistance = stoppingDistance;
+            hasRequestedDestination = true;
+            if (!UsesNavMeshAgent)
+            {
+                if (!NavMesh.CalculatePath(presenter.transform.position, hit.position, NavMesh.AllAreas, lightweightPath) ||
+                    lightweightPath.status == NavMeshPathStatus.PathInvalid)
+                {
+                    state = MovementState.Failed;
+                    return;
+                }
+                lightweightCornerCount = lightweightPath.GetCornersNonAlloc(lightweightCorners);
+                lightweightCornerIndex = lightweightCornerCount > 1 ? 1 : 0;
+                state = lightweightCornerCount > 0 ? MovementState.Moving : MovementState.Failed;
+                presenter.SetMovementSpeed(state == MovementState.Moving ? lightweightSpeed : 0f);
+                return;
+            }
             agent.stoppingDistance = stoppingDistance;
             agent.isStopped = false;
             state = agent.SetDestination(hit.position) ? MovementState.Moving : MovementState.Failed;
@@ -99,15 +163,22 @@ namespace Game.Presentation.AI
                 agent.isStopped = true;
                 agent.ResetPath();
             }
+            hasRequestedDestination = false;
+            lightweightCornerCount = 0;
+            lightweightCornerIndex = 0;
             state = MovementState.Idle;
             if (presenter != null) presenter.SetMovementSpeed(0f);
         }
 
         public void BeginDirectControl()
         {
+            if (!EnableAgentAtPresenter())
+                throw new InvalidOperationException("Direct control requires an active NavMesh agent.");
             if (!IsAvailable) throw new InvalidOperationException("Direct control requires an active NavMesh agent.");
             Stop();
             authority = Tier1MovementAuthority.DirectPlayer;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.LowQualityObstacleAvoidance;
+            presenter.SetAutomaticAnimationAllowed(true);
             agent.updateRotation = false;
         }
 
@@ -147,6 +218,41 @@ namespace Game.Presentation.AI
             Stop();
             if (agent != null) agent.updateRotation = true;
             authority = Tier1MovementAuthority.Autonomous;
+            SetCrowdDetail(crowdDetailEnabled);
+        }
+
+        public void AdvanceLightweight(float unscaledDeltaTime, bool paused)
+        {
+            if (UsesNavMeshAgent || state != MovementState.Moving || paused || unscaledDeltaTime <= 0f) return;
+            if (lightweightCornerIndex >= lightweightCornerCount)
+            {
+                state = MovementState.Arrived;
+                presenter.SetMovementSpeed(0f);
+                return;
+            }
+            var position = presenter.transform.position;
+            var corner = lightweightCorners[lightweightCornerIndex];
+            var flatOffset = Vector3.ProjectOnPlane(corner - position, Vector3.up);
+            var finalCorner = lightweightCornerIndex == lightweightCornerCount - 1;
+            var reachDistance = finalCorner ? requestedStoppingDistance + 0.05f : 0.12f;
+            if (flatOffset.magnitude <= reachDistance)
+            {
+                if (finalCorner)
+                {
+                    state = MovementState.Arrived;
+                    presenter.SetMovementSpeed(0f);
+                    return;
+                }
+                lightweightCornerIndex++;
+                return;
+            }
+            var direction = flatOffset.normalized;
+            var distance = Math.Min(lightweightSpeed * unscaledDeltaTime,
+                Math.Max(0f, flatOffset.magnitude - (finalCorner ? requestedStoppingDistance : 0f)));
+            presenter.transform.position = position + direction * distance;
+            presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
+                Quaternion.LookRotation(direction, Vector3.up), 540f * unscaledDeltaTime);
+            presenter.SetMovementSpeed(lightweightSpeed);
         }
 
         public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)
@@ -154,7 +260,8 @@ namespace Game.Presentation.AI
             if (!IsAvailable) return;
             if (movementPerThousand < 0 || movementPerThousand > 2000)
                 throw new ArgumentOutOfRangeException(nameof(movementPerThousand));
-            ApplyAgentSpeed(baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f);
+            lightweightSpeed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f;
+            if (UsesNavMeshAgent) ApplyAgentSpeed(lightweightSpeed);
             if (authority == Tier1MovementAuthority.DirectPlayer)
             {
                 if (!agent.isStopped) agent.isStopped = true;
@@ -167,12 +274,17 @@ namespace Game.Presentation.AI
             }
             if (paused)
             {
-                if (!agent.isStopped) agent.isStopped = true;
+                if (UsesNavMeshAgent && !agent.isStopped) agent.isStopped = true;
                 presenter.SetMovementSpeed(0f);
                 presenter.SetSimulationPaused(true);
                 return;
             }
             presenter.SetSimulationPaused(false);
+            if (!UsesNavMeshAgent)
+            {
+                presenter.SetMovementSpeed(state == MovementState.Moving ? lightweightSpeed : 0f);
+                return;
+            }
             if (state == MovementState.Moving && agent.hasPath)
             {
                 if (agent.isStopped) agent.isStopped = false;
@@ -189,6 +301,17 @@ namespace Game.Presentation.AI
             if (!float.IsNaN(appliedAgentSpeed) && Mathf.Abs(appliedAgentSpeed - speed) <= 0.001f) return;
             agent.speed = speed;
             appliedAgentSpeed = speed;
+        }
+
+        private bool UsesNavMeshAgent => crowdDetailEnabled || authority == Tier1MovementAuthority.DirectPlayer;
+
+        private bool EnableAgentAtPresenter()
+        {
+            if (agent == null) return false;
+            if (!agent.enabled) agent.enabled = true;
+            if (agent.isOnNavMesh) return true;
+            if (!NavMesh.SamplePosition(presenter.transform.position, out var hit, 4f, NavMesh.AllAreas)) return false;
+            return agent.Warp(hit.position);
         }
     }
 }

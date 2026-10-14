@@ -60,12 +60,65 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ExactTierMixSurvivesNormalDistancePolicyWarmup()
+        {
+            var root = Root();
+            var scenario = U29BenchmarkScenario.Create(root, SmokeConfig());
+            for (var index = 0; index < 128; index++)
+                root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d));
+            var counts = scenario.CaptureCounts();
+            Assert.That((counts.canonicalCharacters, counts.tier1, counts.tier2, counts.tier3),
+                Is.EqualTo((100, 25, 50, 25)));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator TierOnePresenterCountMatchesTierOnePopulation()
         {
             var scenario = U29BenchmarkScenario.Create(Root(), SmokeConfig());
             var counts = scenario.CaptureCounts();
             Assert.That(counts.tier1Presenters, Is.EqualTo(counts.tier1));
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator LargeTierOneCrowdUsesBoundedNativeNavigationAndAnimationDetail()
+        {
+            var config = SmokeConfig();
+            config.population = 300;
+            config.tier1Count = 75;
+            config.tier2Count = 150;
+            config.tier3Count = 75;
+            var root = Root();
+            U29BenchmarkScenario.Create(root, config);
+            Assert.That(root.AiRuntime.Movements.Count, Is.EqualTo(75));
+            Assert.That(root.AiRuntime.Movements.Count(x => x.CrowdDetailEnabled),
+                Is.EqualTo(Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            Assert.That(root.AiRuntime.Movements.Count(x => x.Agent.enabled),
+                Is.EqualTo(Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            Assert.That(root.AiRuntime.Movements.Count(x => !x.Agent.enabled),
+                Is.EqualTo(75 - Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            Assert.That(root.AiRuntime.Movements.Count(x =>
+                    !x.CrowdDetailEnabled && x.Agent.GetComponent<Game.Presentation.Characters.CharacterPresenter>()
+                        .UsesLightweightVisual),
+                Is.EqualTo(75 - Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            Assert.That(root.AiRuntime.Movements.Count(x =>
+                    !x.CrowdDetailEnabled && !x.Presenter.DetailedVisualActive),
+                Is.EqualTo(75 - Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            yield return null;
+            Assert.That(root.AiRuntime.LastLightweightDrawCount,
+                Is.EqualTo(75 - Game.Presentation.AI.Tier1AiRuntimeDriver.HighDetailCrowdBudget));
+            var lightweightPresenter = root.AiRuntime.Movements
+                .First(x => !x.CrowdDetailEnabled).Presenter;
+            lightweightPresenter.SetAutomaticAnimationAllowed(true);
+            lightweightPresenter.SetMovementSpeed(1f);
+            lightweightPresenter.SetMovementSpeed(0f);
+            lightweightPresenter.SetAutomaticAnimationAllowed(false);
+            yield return new WaitForSecondsRealtime(0.25f);
+            lightweightPresenter.RefreshAnimation(Time.unscaledTime);
+            Assert.That(lightweightPresenter.UsesLightweightVisual, Is.True,
+                "Animation retirement must not override the crowd visual LOD.");
+            Assert.That(lightweightPresenter.DetailedVisualActive, Is.False);
         }
 
         [UnityTest]
@@ -160,6 +213,26 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Characters.GetAll().Select(x => x.Id), Is.EqualTo(ids));
             Assert.That((counts.tier1, counts.tier2, counts.tier3), Is.EqualTo((25, 50, 25)));
             Assert.That(scenario.TierChurnTransitions, Is.GreaterThan(0));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SaveObservationRoundTripsEveryNormalGameplayPayload()
+        {
+            var output = Path.GetFullPath(Path.Combine("Temp", "U29PlayMode", "save-observation"));
+            if (Directory.Exists(output)) Directory.Delete(output, true);
+            try
+            {
+                var scenario = U29BenchmarkScenario.Create(Root(), SmokeConfig());
+                var observation = scenario.ObserveSave(output);
+                Assert.That(observation.exactIdentityTierRoundTrip, Is.True);
+                Assert.That(observation.exactCanonicalStateRoundTrip, Is.True);
+                Assert.That(observation.restoredCharacters, Is.EqualTo(100));
+            }
+            finally
+            {
+                if (Directory.Exists(output)) Directory.Delete(output, true);
+            }
             yield return null;
         }
 
