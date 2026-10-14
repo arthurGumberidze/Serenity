@@ -189,8 +189,11 @@ namespace Game.Infrastructure
         public P91PlayerSmokeController P91PlayerSmoke { get; private set; }
         public P92PlayerSmokeController P92PlayerSmoke { get; private set; }
         public P93PlayerSmokeController P93PlayerSmoke { get; private set; }
+        public P94PlayerSmokeController P94PlayerSmoke { get; private set; }
         public P92RealisticGameplayRegion RealisticGameplayRegion { get; private set; }
         public P93PopulatedBiomeWorld PopulatedBiomeWorld { get; private set; }
+        public P94StoneAgeSettlement StoneAgeSettlement { get; private set; }
+        public P94WorkOrderIndicatorSystem WorkOrderIndicators { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -273,6 +276,8 @@ namespace Game.Infrastructure
             RealisticGameplayRegion?.ValidateConfiguration();
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
+            StoneAgeSettlement = FindAnyObjectByType<P94StoneAgeSettlement>();
+            StoneAgeSettlement?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -385,6 +390,11 @@ namespace Game.Infrastructure
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
             DirectWorkCommands.EnsureRoleGroups();
+            if (StoneAgeSettlement != null)
+            {
+                WorkOrderIndicators = gameObject.AddComponent<P94WorkOrderIndicatorSystem>();
+                WorkOrderIndicators.Initialize(Work, StoneAgeSettlement);
+            }
             TierPolicy = new TierDistancePolicy(Tiers);
             Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
                 worldSeed, Tiers);
@@ -526,6 +536,7 @@ namespace Game.Infrastructure
             P91PlayerSmoke = P91PlayerSmokeController.AttachIfRequested(this);
             P92PlayerSmoke = P92PlayerSmokeController.AttachIfRequested(this);
             P93PlayerSmoke = P93PlayerSmokeController.AttachIfRequested(this);
+            P94PlayerSmoke = P94PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

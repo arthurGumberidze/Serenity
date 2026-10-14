@@ -1,6 +1,6 @@
 # Serenity Asset Registry
 
-Checked on 2026-10-14. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
+Checked on 2026-10-15. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
 
 Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`, `DEFERRED`, and `LICENSE_REVIEW_REQUIRED`. Visual grades are A (near-direct fit), B (fit after normalization), C (Tier 2/placeholder), D (style mismatch), and X (source/license blocked).
 
@@ -244,7 +244,19 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Determinism/provenance: fixed scatter seed 93031 and serialized layout hash; every spawned vendor prefab and Terrain layer resolves under `Assets/TerrainDemoScene_URP`
 - Scale/collider/LOD: official LODGroups retained for trees/rocks; physical colliders retained or supplied for major obstacles; traversable ground cover and formation satellites have no colliders or shadow cost
 - Canonical-state rule: the six existing location IDs and 24 resource roots/indices/`StableEntityId` values are reused; biome objects, zone metadata and satellite decorations own no mutable save-state
-- Visual grade/status: B populated-world pass, `APPROVED_RUNTIME`; settlement/building/resource-work/Character art replacement remains P9.4
+- Visual grade/status: B populated-world pass, `APPROVED_RUNTIME`; settlement/building/resource-work presentation is extended by the following P9.4 entry
+
+### SERENITY-P94-STONE-AGE-SETTLEMENT
+
+- Name: Serenity P9.4 Stone Age Settlement
+- Type/category: project-owned settlement meshes, procedural surface textures, prefabs and work-order presentation
+- Source/license: Serenity-owned derivatives using only registered `UNITY-URP-TERRAIN-SAMPLE` bark textures plus project-authored geometry/texture pixels; no new vendor asset or package
+- Runtime path: `Assets/Game/Art/Meshes/P94`, `Assets/Game/Art/Materials/P94`, `Assets/Game/Art/Textures/P94`, updated shelter/storage prefabs, distinct crop prefab, work-indicator prefab, `P94StoneAgeSettlement.cs` and `P94StoneAgeSettlementBuilder.cs`
+- Runtime use: 43-renderer shelter, 27-renderer raised storage rack, 26-renderer crop plot, six worksite affordances, four detailed canonical supply piles, camp grounding and bounded priority markers
+- Interaction/collider rule: existing building/resource root presenters and colliders remain authoritative; authored child detail is visual, while the central indicator reads existing `WorkManager` state and owns no jobs
+- Character rule: no P9.4 static wear mesh is attached to UMA/fallback wrappers; the attempted unskeletonized overlay was rejected during visual QA and removed
+- Stable-content rule: building/resource/work `StableEntityId`, inventory quantities, construction costs, production recipes, group membership and Save/Load payloads remain in existing Domain/Simulation services
+- Visual grade/status: B settlement-production pass, `APPROVED_RUNTIME`; atmosphere/global-map alignment remains P9.5 and integrated subjective acceptance remains P9.6
 
 ## Staging packages considered but not imported
 

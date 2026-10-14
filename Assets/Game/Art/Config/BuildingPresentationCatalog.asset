@@ -28,6 +28,10 @@ MonoBehaviour:
       quantity: 3
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   - definitionId: storage_basket
     displayName: Storage Basket
     category: 1
@@ -43,6 +47,10 @@ MonoBehaviour:
       quantity: 5
     storageCapacity: 40
     storageCategories: 000000000100000002000000i
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   - definitionId: primitive_crop_plot
     displayName: Primitive Crop Plot
     category: 2
@@ -50,7 +58,7 @@ MonoBehaviour:
     footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
-    prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
+    prefab: {fileID: 1417715211975955541, guid: fddd9261bb9cbda4093f87f1e9f59aae, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 2
@@ -58,5 +66,9 @@ MonoBehaviour:
       quantity: 2
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   defaultDefinitionId: primitive_shelter
   resourceCatalog: {fileID: 11400000, guid: 3eaad5da612fe13489ff4dbb118b2eef, type: 2}
