@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="20" result="Passed" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6,9216015">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="504" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6.921602" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1572" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6.897921" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26996" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1573" name="Game" fullname="Game" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6.886656" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1574" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6.872111" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1575" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="348" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:34Z" duration="6.837053" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1354" name="P3ReferenceCampTests" fullname="Game.Tests.Editor.P3ReferenceCampTests" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:28Z" duration="0.447946" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P3" />
+              </properties>
+              <test-case id="1355" name="LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" fullname="Game.Tests.Editor.P3ReferenceCampTests.LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" methodname="LocalGameplayContainsAuthoredReferenceCampAndKeepsMenuFirst" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="1908269034" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:27Z" duration="0.305450" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1357" name="P3MeshesAndMaterialsAreReusableProjectAssets" fullname="Game.Tests.Editor.P3ReferenceCampTests.P3MeshesAndMaterialsAreReusableProjectAssets" methodname="P3MeshesAndMaterialsAreReusableProjectAssets" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="47730625" result="Passed" start-time="2026-10-13 23:27:27Z" end-time="2026-10-13 23:27:27Z" duration="0.006573" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1356" name="ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" fullname="Game.Tests.Editor.P3ReferenceCampTests.ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" methodname="ReferenceCampUsesOnlyApprovedRuntimeOrProjectOwnedArt" classname="Game.Tests.Editor.P3ReferenceCampTests" runstate="Runnable" seed="580967045" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.102081" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1363" name="P5InhabitableRegionTests" fullname="Game.Tests.Editor.P5InhabitableRegionTests" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.439807" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P5" />
+              </properties>
+              <test-case id="1364" name="LocalSceneContainsOneCoherentAuthoredRegion" fullname="Game.Tests.Editor.P5InhabitableRegionTests.LocalSceneContainsOneCoherentAuthoredRegion" methodname="LocalSceneContainsOneCoherentAuthoredRegion" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="130179063" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.105552" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1366" name="LocalTerritoriesCorrespondToCanonicalStarterMap" fullname="Game.Tests.Editor.P5InhabitableRegionTests.LocalTerritoriesCorrespondToCanonicalStarterMap" methodname="LocalTerritoriesCorrespondToCanonicalStarterMap" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="712415084" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.126238" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1367" name="P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" fullname="Game.Tests.Editor.P5InhabitableRegionTests.P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" methodname="P5UsesOnlyApprovedWrappersAndProjectOwnedAssets" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="786227099" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.084207" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1365" name="VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" fullname="Game.Tests.Editor.P5InhabitableRegionTests.VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" methodname="VisibleNaturalNodesAreAuthoredViewsWithCanonicalRecipes" classname="Game.Tests.Editor.P5InhabitableRegionTests" runstate="Runnable" seed="944502885" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.095271" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1426" name="ProductionAndFarmingTests" fullname="Game.Tests.Editor.ProductionAndFarmingTests" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:34Z" duration="5.856269" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U15" />
+              </properties>
+              <test-case id="1435" name="DeterminismAndCollectionOrderIndependenceProduceSameHash" fullname="Game.Tests.Editor.ProductionAndFarmingTests.DeterminismAndCollectionOrderIndependenceProduceSameHash" methodname="DeterminismAndCollectionOrderIndependenceProduceSameHash" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1857986943" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.089560" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1428" name="FiniteSourceDecreasesAndCannotOverHarvest" fullname="Game.Tests.Editor.ProductionAndFarmingTests.FiniteSourceDecreasesAndCannotOverHarvest" methodname="FiniteSourceDecreasesAndCannotOverHarvest" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1160981175" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:28Z" duration="0.002843" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1438" name="FiveYearSettlementRemainsFoodPositiveWithoutNegativeResources" fullname="Game.Tests.Editor.ProductionAndFarmingTests.FiveYearSettlementRemainsFoodPositiveWithoutNegativeResources" methodname="FiveYearSettlementRemainsFoodPositiveWithoutNegativeResources" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="958404027" result="Passed" start-time="2026-10-13 23:27:28Z" end-time="2026-10-13 23:27:29Z" duration="0.799666" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[U15 five-year hash=2D19219657849A02 produced=2490 consumed=2433
+]]></output>
+              </test-case>
+              <test-case id="1432" name="FoodConsumptionNeverGoesNegativeAndReportsShortage" fullname="Game.Tests.Editor.ProductionAndFarmingTests.FoodConsumptionNeverGoesNegativeAndReportsShortage" methodname="FoodConsumptionNeverGoesNegativeAndReportsShortage" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="503274526" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.000854" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1430" name="OutputHasOneCanonicalOwnerAndFullStorageLeavesItWithWorker" fullname="Game.Tests.Editor.ProductionAndFarmingTests.OutputHasOneCanonicalOwnerAndFullStorageLeavesItWithWorker" methodname="OutputHasOneCanonicalOwnerAndFullStorageLeavesItWithWorker" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1438104837" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.001149" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1429" name="PartialWorkCompletesOneBatchExactlyOnceAndCancellationReleasesSource" fullname="Game.Tests.Editor.ProductionAndFarmingTests.PartialWorkCompletesOneBatchExactlyOnceAndCancellationReleasesSource" methodname="PartialWorkCompletesOneBatchExactlyOnceAndCancellationReleasesSource" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="427587540" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.001150" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1437" name="PrimitiveCropPlotPlantsGrowsAndHarvestsExactlyOneBatch" fullname="Game.Tests.Editor.ProductionAndFarmingTests.PrimitiveCropPlotPlantsGrowsAndHarvestsExactlyOneBatch" methodname="PrimitiveCropPlotPlantsGrowsAndHarvestsExactlyOneBatch" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="782009324" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.001776" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1427" name="ProductionRecipeValidationAndDeclaredOutputAreDataDriven" fullname="Game.Tests.Editor.ProductionAndFarmingTests.ProductionRecipeValidationAndDeclaredOutputAreDataDriven" methodname="ProductionRecipeValidationAndDeclaredOutputAreDataDriven" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="161506980" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.003202" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1431" name="ReservationPreventsTwoWorkersClaimingLastBatch" fullname="Game.Tests.Editor.ProductionAndFarmingTests.ReservationPreventsTwoWorkersClaimingLastBatch" methodname="ReservationPreventsTwoWorkersClaimingLastBatch" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1840673305" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.000652" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1434" name="SaveLoadPreservesSourcesProgressOwnershipPolicyAndDoesNotRepeatBatch" fullname="Game.Tests.Editor.ProductionAndFarmingTests.SaveLoadPreservesSourcesProgressOwnershipPolicyAndDoesNotRepeatBatch" methodname="SaveLoadPreservesSourcesProgressOwnershipPolicyAndDoesNotRepeatBatch" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="292305799" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.080904" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1433" name="TargetPolicyCreatesWorkBelowTargetAndStopsAtTarget" fullname="Game.Tests.Editor.ProductionAndFarmingTests.TargetPolicyCreatesWorkBelowTargetAndStopsAtTarget" methodname="TargetPolicyCreatesWorkBelowTargetAndStopsAtTarget" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1307122999" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:29Z" duration="0.000812" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1439" name="ThousandWorkerThirtyDayProductionGateRecordsMeasurementAndHash" fullname="Game.Tests.Editor.ProductionAndFarmingTests.ThousandWorkerThirtyDayProductionGateRecordsMeasurementAndHash" methodname="ThousandWorkerThirtyDayProductionGateRecordsMeasurementAndHash" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1552230982" result="Passed" start-time="2026-10-13 23:27:29Z" end-time="2026-10-13 23:27:34Z" duration="4.849564" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[U15 performance: workers=1000 population=10000 days=30 elapsedMs=4810,348 allocatedBytes=0 hash=6E074B86B963FC7A
+]]></output>
+              </test-case>
+              <test-case id="1436" name="TierRouteChunkingUsesOneAuthoritativeEconomicResult" fullname="Game.Tests.Editor.ProductionAndFarmingTests.TierRouteChunkingUsesOneAuthoritativeEconomicResult" methodname="TierRouteChunkingUsesOneAuthoritativeEconomicResult" classname="Game.Tests.Editor.ProductionAndFarmingTests" runstate="Runnable" seed="1800040456" result="Passed" start-time="2026-10-13 23:27:34Z" end-time="2026-10-13 23:27:34Z" duration="0.008373" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Tag: UMAKeepChain is not defined.
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

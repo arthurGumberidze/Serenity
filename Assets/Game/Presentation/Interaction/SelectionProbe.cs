@@ -6,6 +6,7 @@ using Game.Presentation.Buildings;
 using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Resources;
+using Game.Presentation.Production;
 using UnityEngine;
 
 namespace Game.Presentation.Interaction
@@ -27,6 +28,7 @@ namespace Game.Presentation.Interaction
             .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
         public WorldResourcePilePresenter SelectedWorldResourcePilePresenter { get; private set; }
         public BuildingPresenter SelectedBuildingPresenter { get; private set; }
+        public ProductionSourcePresenter SelectedProductionSourcePresenter { get; private set; }
         public StableEntityId? SelectedCharacterId =>
             SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
                 ? SelectedCharacterPresenter.CharacterId
@@ -63,8 +65,10 @@ namespace Game.Presentation.Interaction
             var characterPresenter = hit.collider.GetComponentInParent<CharacterPresenter>();
             var pilePresenter = hit.collider.GetComponentInParent<WorldResourcePilePresenter>();
             var buildingPresenter = hit.collider.GetComponentInParent<BuildingPresenter>();
-            SetSelection(marker, characterPresenter, pilePresenter, buildingPresenter, additive);
-            return marker != null || characterPresenter != null || pilePresenter != null || buildingPresenter != null;
+            var productionPresenter = hit.collider.GetComponentInParent<ProductionSourcePresenter>();
+            SetSelection(marker, characterPresenter, pilePresenter, buildingPresenter, productionPresenter, additive);
+            return marker != null || characterPresenter != null || pilePresenter != null ||
+                buildingPresenter != null || productionPresenter != null;
         }
 
         public void SelectCharacters(IEnumerable<CharacterPresenter> presenters)
@@ -109,7 +113,7 @@ namespace Game.Presentation.Interaction
 
         private void SetSelection(SelectableMarker marker, CharacterPresenter characterPresenter = null,
             WorldResourcePilePresenter pilePresenter = null, BuildingPresenter buildingPresenter = null,
-            bool additive = false)
+            ProductionSourcePresenter productionPresenter = null, bool additive = false)
         {
             if (characterPresenter != null)
             {
@@ -130,20 +134,28 @@ namespace Game.Presentation.Interaction
 
             ClearCharacterSelection();
             if (Selected == marker && SelectedWorldResourcePilePresenter == pilePresenter &&
-                SelectedBuildingPresenter == buildingPresenter) return;
+                SelectedBuildingPresenter == buildingPresenter &&
+                SelectedProductionSourcePresenter == productionPresenter) return;
             ClearNonCharacterSelection();
             Selected = marker;
             SelectedWorldResourcePilePresenter = pilePresenter;
             SelectedBuildingPresenter = buildingPresenter;
+            SelectedProductionSourcePresenter = productionPresenter;
             if (Selected != null) Selected.SetSelected(true);
+            if (SelectedProductionSourcePresenter != null) SelectedProductionSourcePresenter.SetSelected(true);
         }
+
+        public void SelectProductionSource(ProductionSourcePresenter presenter) =>
+            SetSelection(null, productionPresenter: presenter);
 
         private void ClearNonCharacterSelection()
         {
             if (Selected != null) Selected.SetSelected(false);
+            if (SelectedProductionSourcePresenter != null) SelectedProductionSourcePresenter.SetSelected(false);
             Selected = null;
             SelectedWorldResourcePilePresenter = null;
             SelectedBuildingPresenter = null;
+            SelectedProductionSourcePresenter = null;
         }
 
         private void ClearCharacterSelection()

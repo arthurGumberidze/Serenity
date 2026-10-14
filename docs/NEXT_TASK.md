@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-The active product task is **P8.2: новая игровая карта**. P8.1 is DONE at its implementation/evidence boundary and defines the reversible visual benchmark; do not redo P8.1 or start P8.3–P8.6 in the same task.
+The active product task is **P8.3: персонажи и группы в игровом масштабе**. P8.1 and P8.2 are DONE at their implementation/evidence boundaries; do not redo them or start P8.4–P8.6 in the same task.
 
-Apply the accepted P8.1 stylized-natural/PBR direction to the complete authored P5 region:
+Apply the accepted P8.1/P8.2 stylized-natural/PBR direction to gameplay-scale people and groups:
 
-1. Rebuild the connected local map as one readable Stone Age region with shore/water, settlement clearings, forest, stone, resources, travel route and rival territory.
-2. Preserve every canonical P5/P7 location, resource, building, NavMesh, construction and Save/Load identity. Art and vendor components remain replaceable Presentation.
-3. Keep the calm palette, visibly brown trunks, natural silhouettes, coherent lighting/atmosphere and metre scale established by P8.1. Do not expand into final group character art or production UI; those are P8.3 and P8.5.
-4. Reuse the approved UMA 3.1f3 and project-owned material pipeline. The official Unity Terrain Sample is still deferred until the user authenticates Unity Asset Store/Package Manager; its size is approved and is not the blocker.
-5. Add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence. Visual approval remains a separate user decision.
+1. Replace the remaining gameplay-scale hero/resident/rival/small-unit character placeholders with the approved modular UMA provider and coherent Stone Age clothing, hair, equipment and proportions.
+2. Preserve `StableEntityId`, canonical `AppearanceState`, dynasty/family/health/combat state, Tier1↔Tier2↔Tier3 transitions and Save/Load. UMA and animation components remain replaceable Presentation.
+3. Define bounded LOD/animation/material budgets suitable for small groups on the P8.2 map; do not create an Update loop per mass NPC or expand into P8.4 building/resource/effect art.
+4. Reuse approved UMA 3.1f3 content and project-owned adapters. Do not add a new Asset Store dependency without explicit approval.
+5. Add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence in RTS/TPS/group contexts. Visual approval remains a separate user decision.
 
-P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not be changed during P8.2.
+P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not be changed during P8.3.
 
-Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.2:`.
+Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.3:`.

@@ -4,9 +4,13 @@ using System.Linq;
 using Game.Domain.Combat;
 using Game.Domain.Military;
 using Game.Domain.World;
+using Game.Domain;
+using Game.Domain.Resources;
+using Game.Domain.Production;
 using Game.Simulation.Combat;
 using Game.Simulation.Military;
 using Game.Simulation.World;
+using Game.Simulation.Production;
 using Game.Presentation.Localization;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,12 +20,37 @@ namespace Game.Presentation.World
     /// <summary>Disposable schematic projection of U25 canonical map state.</summary>
     public sealed class GlobalMapPresentationController : MonoBehaviour
     {
+        public sealed class GlobalResourceMarker : MonoBehaviour
+        {
+            private Renderer cachedRenderer;
+            private Color baseColor;
+            public ResourceId ResourceId { get; private set; }
+            public IReadOnlyList<StableEntityId> SiteIds { get; private set; }
+            public void Configure(ResourceId resourceId, IEnumerable<StableEntityId> siteIds, Color color)
+            {
+                ResourceId = resourceId;
+                SiteIds = (siteIds ?? Enumerable.Empty<StableEntityId>()).OrderBy(x => x).ToArray();
+                baseColor = color;
+                cachedRenderer = GetComponent<Renderer>();
+                SetSelected(false);
+            }
+            public void SetSelected(bool selected)
+            {
+                if (cachedRenderer == null) return;
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", selected ? Color.Lerp(baseColor, Color.white, 0.58f) : baseColor);
+                block.SetColor("_Color", selected ? Color.Lerp(baseColor, Color.white, 0.58f) : baseColor);
+                cachedRenderer.SetPropertyBlock(block);
+                transform.localScale = selected ? Vector3.one * 1.28f : Vector3.one;
+            }
+        }
         [SerializeField] private Camera mapCamera;
         [SerializeField] private Transform markerRoot;
         private GlobalMapService map;
         private MilitaryUnitService units;
         private BattleResolutionService battles;
         private GameModeTransitionService transitions;
+        private ProductionService production;
         private Func<long> currentTick;
         private Action<GameModeTransitionResult> localEntered;
         private readonly Dictionary<WorldLocationId, GameObject> locationMarkers =
@@ -36,9 +65,13 @@ namespace Game.Presentation.World
         private Vector3 cameraTarget;
         private ulong lastDynamicHash;
         private float nextRefreshTime;
+        private readonly List<GlobalResourceMarker> resourceMarkers = new List<GlobalResourceMarker>();
+        private GlobalResourceMarker selectedResource;
 
         public Camera MapCamera => mapCamera;
         public int LocationMarkerCount => locationMarkers.Count;
+        public int ResourceMarkerCount => resourceMarkers.Count;
+        public GlobalResourceMarker SelectedResourceMarker => selectedResource;
         public bool ShowDeveloperUi { get; set; }
 
         public void Configure(Camera camera, Transform root)
@@ -49,12 +82,14 @@ namespace Game.Presentation.World
 
         public void Initialize(GlobalMapService globalMap, MilitaryUnitService militaryUnits,
             BattleResolutionService battleResolution, GameModeTransitionService modeTransitions,
-            Func<long> tickProvider, Action<GameModeTransitionResult> onLocalEntered)
+            ProductionService productionService, Func<long> tickProvider,
+            Action<GameModeTransitionResult> onLocalEntered)
         {
             map = globalMap ?? throw new ArgumentNullException(nameof(globalMap));
             units = militaryUnits ?? throw new ArgumentNullException(nameof(militaryUnits));
             battles = battleResolution ?? throw new ArgumentNullException(nameof(battleResolution));
             transitions = modeTransitions ?? throw new ArgumentNullException(nameof(modeTransitions));
+            production = productionService ?? throw new ArgumentNullException(nameof(productionService));
             currentTick = tickProvider ?? throw new ArgumentNullException(nameof(tickProvider));
             localEntered = onLocalEntered;
             BuildStaticMap();
@@ -81,6 +116,8 @@ namespace Game.Presentation.World
             var zoom = mouse == null ? 0f : mouse.scroll.ReadValue().y;
             var height = Mathf.Clamp(mapCamera.transform.position.y - zoom * 0.02f, 118f, 175f);
             mapCamera.transform.position = new Vector3(cameraTarget.x, height, cameraTarget.z);
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+                TrySelectResourceAt(mouse.position.ReadValue());
             UpdateTravelMarkerPositions();
             if (Time.unscaledTime >= nextRefreshTime)
             {
@@ -98,6 +135,14 @@ namespace Game.Presentation.World
         {
             foreach (Transform child in markerRoot) Destroy(child.gameObject);
             locationMarkers.Clear();
+            var plane = GameObject.Find("Schematic Map Plane")?.GetComponent<Renderer>();
+            if (plane != null)
+            {
+                var mapMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                mapMaterial.color = new Color(0.16f, 0.25f, 0.14f);
+                mapMaterial.SetFloat("_Smoothness", 0.08f);
+                plane.sharedMaterial = mapMaterial;
+            }
             foreach (var route in map.Routes)
             {
                 var from = map.GetLocation(route.From);
@@ -113,16 +158,16 @@ namespace Game.Presentation.World
             }
             foreach (var location in map.Locations)
             {
-                var marker = GameObject.CreatePrimitive(location.Type == WorldLocationType.Settlement
-                    ? PrimitiveType.Cube : PrimitiveType.Sphere);
-                marker.name = "Location " + location.Id;
+                var marker = CreateNaturalMarker("Location " + location.Id,
+                    location.Type == WorldLocationType.Settlement ? MarkerShape.Settlement : MarkerShape.Location,
+                    location.Id == map.ActiveLocationId ? Color.cyan : Color.gray);
                 marker.transform.SetParent(markerRoot, false);
                 marker.transform.position = Position(location, 101f);
                 marker.transform.localScale = location.Type == WorldLocationType.Settlement
                     ? new Vector3(3f, 1f, 3f) : Vector3.one * 1.8f;
-                SetColor(marker, location.Id == map.ActiveLocationId ? Color.cyan : Color.gray);
                 locationMarkers.Add(location.Id, marker);
             }
+            BuildResourceMarkers();
         }
 
         private void RefreshDynamicMarkers()
@@ -135,12 +180,11 @@ namespace Game.Presentation.World
             foreach (var unit in units.Units.Where(x => x.Representation == MilitaryUnitRepresentationMode.Aggregate))
             {
                 if (!TryUnitPosition(unit, out var position)) continue;
-                var marker = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                marker.name = "Unit " + unit.Id;
+                var marker = CreateNaturalMarker("Unit " + unit.Id, MarkerShape.Unit,
+                    unit.OwnerSideId.Value == "player" ? Color.green : Color.red);
                 marker.transform.SetParent(markerRoot, false);
                 marker.transform.position = position + new Vector3((unit.Id.GetHashCode() & 3) * 0.45f, 0f, 0f);
                 marker.transform.localScale = new Vector3(0.75f, 0.75f, 0.75f);
-                SetColor(marker, unit.OwnerSideId.Value == "player" ? Color.green : Color.red);
                 transientMarkers.Add(marker);
                 unitMarkers.Add(unit.Id, marker);
             }
@@ -151,12 +195,11 @@ namespace Game.Presentation.World
                 try
                 {
                     var location = map.GetLocation(new WorldLocationId(unit.AbstractLocationId));
-                    var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                    marker.name = "Battle " + battle.BattleId;
+                    var marker = CreateNaturalMarker("Battle " + battle.BattleId, MarkerShape.Battle,
+                        new Color(1f, 0.35f, 0.05f));
                     marker.transform.SetParent(markerRoot, false);
                     marker.transform.position = Position(location, 104f);
                     marker.transform.localScale = new Vector3(1.2f, 0.3f, 1.2f);
-                    SetColor(marker, new Color(1f, 0.35f, 0.05f));
                     transientMarkers.Add(marker);
                 }
                 catch (ArgumentException) { }
@@ -194,7 +237,18 @@ namespace Game.Presentation.World
 
         private void OnGUI()
         {
-            if (map == null || !ShowDeveloperUi) return;
+            if (map == null) return;
+            if (selectedResource != null)
+            {
+                GUILayout.BeginArea(new Rect(Screen.width - 310, 180, 292, 154), GUI.skin.box);
+                GUILayout.Label(RussianTextCatalog.Content("resource", selectedResource.ResourceId.ToString()));
+                GUILayout.Label($"Источников на местности: {selectedResource.SiteIds.Count}");
+                var remaining = selectedResource.SiteIds.Sum(id => production.TryGetSite(id, out var site) ? site.RemainingAmount : 0L);
+                GUILayout.Label($"Доступно: {remaining}");
+                if (GUILayout.Button("Перейти к источникам поселения")) EnterSelectedResourceLocation();
+                GUILayout.EndArea();
+            }
+            if (!ShowDeveloperUi) return;
             GUILayout.BeginArea(new Rect(12, 12, 390, 860), GUI.skin.box);
             GUILayout.Label(RussianTextCatalog.Format("debug.map.title", TimeSpan.FromTicks(currentTick())));
             GUILayout.Label(RussianTextCatalog.Format("debug.map.mode", RussianTextCatalog.Enum(map.Mode), LocationName(map.ActiveLocationId)));
@@ -236,6 +290,85 @@ namespace Game.Presentation.World
             }
             GUI.enabled = true;
             GUILayout.EndArea();
+        }
+
+        public void SelectResourceMarker(GlobalResourceMarker marker)
+        {
+            if (selectedResource == marker) return;
+            if (selectedResource != null) selectedResource.SetSelected(false);
+            selectedResource = marker;
+            if (selectedResource != null) selectedResource.SetSelected(true);
+        }
+
+        public void EnterSelectedResourceLocation()
+        {
+            if (selectedResource == null) return;
+            var result = transitions.EnterLocation(new WorldLocationId("starter_settlement"), currentTick());
+            if (result.Changed) localEntered?.Invoke(result);
+        }
+
+        private void TrySelectResourceAt(Vector2 screenPoint)
+        {
+            var ray = mapCamera.ScreenPointToRay(screenPoint);
+            if (Physics.Raycast(ray, out var hit, 500f))
+                SelectResourceMarker(hit.collider.GetComponentInParent<GlobalResourceMarker>());
+        }
+
+        private void BuildResourceMarkers()
+        {
+            resourceMarkers.Clear();
+            var colors = new Dictionary<string, Color>(StringComparer.Ordinal)
+            {
+                ["berries"] = new Color(0.62f,0.16f,0.30f), ["plant_fiber"] = new Color(0.35f,0.62f,0.17f),
+                ["wood_log"] = new Color(0.34f,0.19f,0.08f), ["stone"] = new Color(0.42f,0.44f,0.42f),
+                ["iron_ore"] = new Color(0.28f,0.33f,0.36f), ["gold_ore"] = new Color(0.75f,0.48f,0.08f)
+            };
+            var groups = production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource)
+                .GroupBy(x => production.Recipes.Get(x.RecipeId).Outputs[0].ResourceId).OrderBy(x => x.Key).ToArray();
+            var starter = map.GetLocation(new WorldLocationId("starter_settlement"));
+            for (var i = 0; i < groups.Length; i++)
+            {
+                var group = groups[i];
+                var color = colors.TryGetValue(group.Key.ToString(), out var found) ? found : Color.white;
+                var markerObject = CreateNaturalMarker("Resource " + group.Key, MarkerShape.Resource, color);
+                markerObject.transform.SetParent(markerRoot, false);
+                var angle = i * Mathf.PI * 2f / groups.Length;
+                markerObject.transform.position = Position(starter, 102.4f) + new Vector3(Mathf.Cos(angle) * 5.2f, 0f, Mathf.Sin(angle) * 5.2f);
+                var marker = markerObject.AddComponent<GlobalResourceMarker>();
+                marker.Configure(group.Key, group.Select(x => x.Id), color);
+                resourceMarkers.Add(marker);
+            }
+        }
+
+        private enum MarkerShape { Location, Settlement, Unit, Battle, Resource }
+
+        private static GameObject CreateNaturalMarker(string name, MarkerShape shape, Color color)
+        {
+            var value = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+            var mesh = BuildMarkerMesh(shape);
+            value.GetComponent<MeshFilter>().sharedMesh = mesh;
+            value.GetComponent<MeshCollider>().sharedMesh = mesh;
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material.SetFloat("_Smoothness", shape == MarkerShape.Resource ? 0.48f : 0.22f);
+            value.GetComponent<MeshRenderer>().sharedMaterial = material;
+            SetColor(value, color);
+            return value;
+        }
+
+        private static Mesh BuildMarkerMesh(MarkerShape shape)
+        {
+            var height = shape == MarkerShape.Battle ? 4.2f : shape == MarkerShape.Unit ? 3.2f :
+                shape == MarkerShape.Settlement ? 2.5f : 2f;
+            var radius = shape == MarkerShape.Settlement ? 2f : shape == MarkerShape.Resource ? 1.25f : 1f;
+            var vertices = new[]
+            {
+                new Vector3(0,height,0), new Vector3(-radius,0,-radius*.7f), new Vector3(radius,0,-radius*.7f),
+                new Vector3(radius*.8f,0,radius), new Vector3(-radius*.8f,0,radius), new Vector3(0,-.15f,0)
+            };
+            var triangles = new[] { 0,1,2,0,2,3,0,3,4,0,4,1,5,2,1,5,3,2,5,4,3,5,1,4 };
+            var mesh = new Mesh { name = "P82 " + shape + " Marker" };
+            mesh.vertices = vertices; mesh.triangles = triangles; mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static Vector3 Position(WorldLocationState location, float y) =>

@@ -1,0 +1,14 @@
+{
+    "passed": true,
+    "finite_boundary": true,
+    "all_local_resources_clickable": true,
+    "all_global_resources_clickable": true,
+    "stable_domain_links": true,
+    "navmesh_present": true,
+    "local_resource_sites": 24,
+    "global_resource_markers": 6,
+    "local_map_screenshot": "C:\\serenity_game\\docs\\validation\\P82\\player-smoke\\p82-local-map.png",
+    "selected_resource_screenshot": "C:\\serenity_game\\docs\\validation\\P82\\player-smoke\\p82-selected-resource.png",
+    "global_map_screenshot": "C:\\serenity_game\\docs\\validation\\P82\\player-smoke\\p82-global-map.png",
+    "error": ""
+}

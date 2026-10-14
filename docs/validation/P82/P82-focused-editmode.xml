@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0,532463">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="504" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.532463" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1572" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.515645" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="8416" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1573" name="Game" fullname="Game" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.497160" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1574" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="500" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.488893" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1575" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="348" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.478088" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1373" name="P82NaturalRegionTests" fullname="Game.Tests.Editor.P82NaturalRegionTests" classname="Game.Tests.Editor.P82NaturalRegionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.467560" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P82" />
+              </properties>
+              <test-case id="1376" name="CanonicalCatalogAndRecipesIncludeIronAndGold" fullname="Game.Tests.Editor.P82NaturalRegionTests.CanonicalCatalogAndRecipesIncludeIronAndGold" methodname="CanonicalCatalogAndRecipesIncludeIronAndGold" classname="Game.Tests.Editor.P82NaturalRegionTests" runstate="Runnable" seed="259795377" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.237198" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1374" name="NaturalMapUsesFiniteMeshBoundaryAndNoGroundCube" fullname="Game.Tests.Editor.P82NaturalRegionTests.NaturalMapUsesFiniteMeshBoundaryAndNoGroundCube" methodname="NaturalMapUsesFiniteMeshBoundaryAndNoGroundCube" classname="Game.Tests.Editor.P82NaturalRegionTests" runstate="Runnable" seed="1988936119" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.099030" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+]]></output>
+              </test-case>
+              <test-case id="1375" name="SixResourceFamiliesHaveReadablePbrViewsCollidersAndStableIndices" fullname="Game.Tests.Editor.P82NaturalRegionTests.SixResourceFamiliesHaveReadablePbrViewsCollidersAndStableIndices" methodname="SixResourceFamiliesHaveReadablePbrViewsCollidersAndStableIndices" classname="Game.Tests.Editor.P82NaturalRegionTests" runstate="Runnable" seed="1393897637" result="Passed" start-time="2026-10-13 23:56:14Z" end-time="2026-10-13 23:56:14Z" duration="0.111422" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Renderer 0 is null on GameObject P81 UMA Character Prototype
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

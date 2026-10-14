@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Passed" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15,7976515">
+  <test-suite type="TestSuite" id="1177" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15.797652" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1347" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15.781874" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="14464" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1348" name="Game" fullname="Game" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15.778035" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1349" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15.774512" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1350" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:16Z" duration="15.770684" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1231" name="P3ReferenceCampPlayModeTests" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:06Z" duration="5.486062" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P3" />
+              </properties>
+              <test-case id="1234" name="CampIsReadableThroughExistingRtsAndThirdPersonCameras" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.CampIsReadableThroughExistingRtsAndThirdPersonCameras" methodname="CampIsReadableThroughExistingRtsAndThirdPersonCameras" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="1826042597" result="Passed" start-time="2026-10-13 23:28:01Z" end-time="2026-10-13 23:28:05Z" duration="4.545672" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+]]></output>
+              </test-case>
+              <test-case id="1232" name="CanonicalCharactersShelterAndStorageOwnTheirViews" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.CanonicalCharactersShelterAndStorageOwnTheirViews" methodname="CanonicalCharactersShelterAndStorageOwnTheirViews" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="92120305" result="Passed" start-time="2026-10-13 23:28:05Z" end-time="2026-10-13 23:28:06Z" duration="0.458989" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1233" name="WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" methodname="WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="255143232" result="Passed" start-time="2026-10-13 23:28:06Z" end-time="2026-10-13 23:28:06Z" duration="0.460990" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1238" name="P5InhabitableRegionPlayModeTests" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:28:06Z" end-time="2026-10-13 23:28:08Z" duration="1.475895" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P5" />
+              </properties>
+              <test-case id="1239" name="AuthoredNodesBindToCanonicalFiniteProductionSites" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.AuthoredNodesBindToCanonicalFiniteProductionSites" methodname="AuthoredNodesBindToCanonicalFiniteProductionSites" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="169438425" result="Passed" start-time="2026-10-13 23:28:06Z" end-time="2026-10-13 23:28:06Z" duration="0.290134" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1240" name="RegionSupportsNavMeshAndConstructionAfterArtFill" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.RegionSupportsNavMeshAndConstructionAfterArtFill" methodname="RegionSupportsNavMeshAndConstructionAfterArtFill" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="652131079" result="Passed" start-time="2026-10-13 23:28:06Z" end-time="2026-10-13 23:28:07Z" duration="0.485726" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1241" name="SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" methodname="SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="2062631001" result="Passed" start-time="2026-10-13 23:28:07Z" end-time="2026-10-13 23:28:08Z" duration="0.693364" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1245" name="P7StoneAgePlayModeTests" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-13 23:28:08Z" end-time="2026-10-13 23:28:09Z" duration="1.140625" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P7" />
+              </properties>
+              <test-case id="1247" name="EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests.EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" methodname="EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" seed="2003984642" result="Passed" start-time="2026-10-13 23:28:08Z" end-time="2026-10-13 23:28:08Z" duration="0.566118" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1246" name="UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests.UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" methodname="UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" seed="1630863884" result="Passed" start-time="2026-10-13 23:28:08Z" end-time="2026-10-13 23:28:09Z" duration="0.566280" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1254" name="ProductionPlayModeTests" fullname="Game.Tests.PlayMode.ProductionPlayModeTests" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:28:09Z" end-time="2026-10-13 23:28:16Z" duration="7.613816" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U15" />
+              </properties>
+              <test-case id="1257" name="CropPlotPlacementUsesU08OccupancyConstructionAndActivation" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.CropPlotPlacementUsesU08OccupancyConstructionAndActivation" methodname="CropPlotPlacementUsesU08OccupancyConstructionAndActivation" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="764624340" result="Passed" start-time="2026-10-13 23:28:09Z" end-time="2026-10-13 23:28:09Z" duration="0.287022" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1255" name="Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" methodname="Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="1012937979" result="Passed" start-time="2026-10-13 23:28:09Z" end-time="2026-10-13 23:28:16Z" duration="6.821244" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+]]></output>
+              </test-case>
+              <test-case id="1256" name="Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" methodname="Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="1114541858" result="Passed" start-time="2026-10-13 23:28:16Z" end-time="2026-10-13 23:28:16Z" duration="0.499354" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

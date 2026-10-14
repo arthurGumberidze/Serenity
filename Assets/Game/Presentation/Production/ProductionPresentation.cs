@@ -11,33 +11,49 @@ namespace Game.Presentation.Production
     public sealed class ProductionSourcePresenter : MonoBehaviour
     {
         private ProductionSite site;
-        private Renderer cachedRenderer;
+        private Renderer[] cachedRenderers = Array.Empty<Renderer>();
         private MaterialPropertyBlock propertyBlock;
         private Color activeColor;
         private bool? displayedDepleted;
+        private bool isSelected;
 
         public ProductionSite Site => site;
         public bool IsBound => site != null;
+        public bool IsSelected => isSelected;
+        public long RemainingAmount => site?.RemainingAmount ?? 0;
+        public long SourceCapacity => site?.SourceCapacity ?? 0;
 
         public void Bind(ProductionSite productionSite, Color color)
         {
             site = productionSite ?? throw new ArgumentNullException(nameof(productionSite));
             activeColor = color;
-            cachedRenderer = GetComponentInChildren<Renderer>();
+            cachedRenderers = GetComponentsInChildren<Renderer>(true);
             gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
             Refresh();
         }
 
         public void Refresh()
         {
-            if (site == null || cachedRenderer == null) return;
-            if (displayedDepleted == site.IsDepleted) return;
+            if (site == null || cachedRenderers.Length == 0) return;
+            if (displayedDepleted == site.IsDepleted && !isSelected) return;
             displayedDepleted = site.IsDepleted;
             propertyBlock ??= new MaterialPropertyBlock();
-            cachedRenderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetColor("_BaseColor", site.IsDepleted ? Color.gray : activeColor);
-            cachedRenderer.SetPropertyBlock(propertyBlock);
+            var color = site.IsDepleted ? Color.gray : isSelected ? Color.Lerp(activeColor, Color.white, 0.55f) : activeColor;
+            foreach (var renderer in cachedRenderers)
+            {
+                renderer.GetPropertyBlock(propertyBlock);
+                propertyBlock.SetColor("_BaseColor", color);
+                propertyBlock.SetColor("_Color", color);
+                renderer.SetPropertyBlock(propertyBlock);
+            }
             gameObject.SetActive(!site.IsDepleted || site.Kind == ProductionSiteKind.PrimitiveCropPlot);
+        }
+
+        public void SetSelected(bool selected)
+        {
+            isSelected = selected;
+            displayedDepleted = null;
+            Refresh();
         }
     }
 

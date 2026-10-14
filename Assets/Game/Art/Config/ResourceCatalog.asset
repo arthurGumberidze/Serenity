@@ -28,3 +28,9 @@ MonoBehaviour:
   - id: berries
     displayName: Berries
     category: 1
+  - id: iron_ore
+    displayName: Iron Ore
+    category: 0
+  - id: gold_ore
+    displayName: Gold Ore
+    category: 0

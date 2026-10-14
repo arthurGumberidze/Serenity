@@ -77,7 +77,8 @@ namespace Game.Infrastructure.Editor
             var totemMesh = CreateTotemMesh(MeshFolder + "/P5_TerritoryTotem.asset");
 
             var world = new GameObject("P3 Reference World");
-            var ground = GameObject.Find("P3 Buildable Forest Clearing") ?? GameObject.Find("Ground Placeholder");
+            var ground = GameObject.Find("P3 Buildable Forest Clearing") ??
+                GameObject.Find("P8.2 Natural Inhabitable Land") ?? GameObject.Find("Ground Placeholder");
             if (ground == null) throw new InvalidOperationException("Buildable ground is missing.");
             ground.name = "P3 Buildable Forest Clearing";
             ground.transform.position = Vector3.zero;

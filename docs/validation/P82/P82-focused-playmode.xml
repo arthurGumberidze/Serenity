@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5,7487075">
+  <test-suite type="TestSuite" id="1177" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.748708" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1347" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.734806" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="25484" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1348" name="Game" fullname="Game" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.730363" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1349" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.726547" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1350" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="131" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.722928" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1250" name="P82NaturalRegionPlayModeTests" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:50Z" duration="5.716798" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P82" />
+              </properties>
+              <test-case id="1251" name="EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" methodname="EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="2038308096" result="Passed" start-time="2026-10-13 23:56:44Z" end-time="2026-10-13 23:56:48Z" duration="4.465464" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+]]></output>
+              </test-case>
+              <test-case id="1253" name="GlobalMapProjectsAndSelectsAllSixResourceFamilies" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.GlobalMapProjectsAndSelectsAllSixResourceFamilies" methodname="GlobalMapProjectsAndSelectsAllSixResourceFamilies" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="1136088373" result="Passed" start-time="2026-10-13 23:56:48Z" end-time="2026-10-13 23:56:49Z" duration="0.542681" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+There are no audio listeners in the scene. Please ensure there is always one audio listener in the scene
+]]></output>
+              </test-case>
+              <test-case id="1252" name="IronAndGoldStableIdentitySurvivesSaveLoad" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.IronAndGoldStableIdentitySurvivesSaveLoad" methodname="IronAndGoldStableIdentitySurvivesSaveLoad" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="721444630" result="Passed" start-time="2026-10-13 23:56:49Z" end-time="2026-10-13 23:56:50Z" duration="0.687508" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[The referenced script on this Behaviour (Game Object '') is missing!
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -213,6 +213,15 @@ namespace Game.Domain.Research
             };
             TechnologyId T(string id) => new TechnologyId(id);
             TechnologyUnlock C(string id) => TechnologyUnlock.Capability(new CapabilityId(id));
+            var stoneToolUnlocks = new List<TechnologyUnlock>
+            {
+                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_stone")),
+                TechnologyUnlock.Recipe(new ProductionRecipeId("chop_wood"))
+            };
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_iron")))
+                stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_iron")));
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_gold")))
+                stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_gold")));
             var definitions = new[]
             {
                 new TechnologyDefinition(T("basic_survival"), "Basic Survival", null, TimeSpan.FromDays(1),
@@ -225,8 +234,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
                     new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")) }),
                 new TechnologyDefinition(T("stone_tools"), "Stone Tools", new[] { T("gathering") }, TimeSpan.FromDays(3),
-                    new[] { TechnologyUnlock.Recipe(new ProductionRecipeId("gather_stone")),
-                        TechnologyUnlock.Recipe(new ProductionRecipeId("chop_wood")) }),
+                    stoneToolUnlocks),
                 new TechnologyDefinition(T("fiber_working"), "Fiber Working", new[] { T("gathering") }, TimeSpan.FromDays(2),
                     new[] { C("fiber_working") }),
                 new TechnologyDefinition(T("woodworking"), "Woodworking", new[] { T("stone_tools") }, TimeSpan.FromDays(3),

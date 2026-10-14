@@ -1151,7 +1151,8 @@ namespace Game.Presentation.UI
         {
             var hasSelection = context.Selection.SelectedCharacterIds.Count > 0 ||
                                context.Selection.SelectedBuildingPresenter != null ||
-                               context.Selection.SelectedWorldResourcePilePresenter != null;
+                               context.Selection.SelectedWorldResourcePilePresenter != null ||
+                               context.Selection.SelectedProductionSourcePresenter != null;
             if (!hasSelection && emptyInspectorRendered) return;
             emptyInspectorRendered = !hasSelection;
             inspector.Clear();
@@ -1180,6 +1181,17 @@ namespace Game.Presentation.UI
                 AddLine(inspector, T("ui.selection.resource_pile"));
                 AddLine(inspector, Content("resource", pile.ResourceId.ToString()) + ": " +
                     inventory.GetAmount(pile.ResourceId).Units);
+                return;
+            }
+            var source = context.Selection.SelectedProductionSourcePresenter;
+            if (source != null && source.IsBound)
+            {
+                var recipe = context.Production.Recipes.Get(source.Site.RecipeId);
+                AddLine(inspector, T("ui.selection.natural_source"));
+                AddLine(inspector, Content("recipe", recipe.Id.ToString()));
+                AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
+                AddLine(inspector, Content("resource", recipe.Outputs[0].ResourceId.ToString()));
+                inspector.Add(ActionButton(T("ui.selection.open_economy"), () => SetPanel(GameplayPanel.Economy)));
                 return;
             }
             AddLine(inspector, T("ui.selection.nothing"));
@@ -1641,6 +1653,8 @@ namespace Game.Presentation.UI
                        unchecked((ulong)context.Work.JobCount << 32);
             if (context.Selection.SelectedCharacterId.HasValue) hash ^= unchecked((ulong)context.Selection.SelectedCharacterId.Value.GetHashCode());
             if (context.Selection.SelectedBuildingPresenter != null) hash ^= unchecked((ulong)context.Selection.SelectedBuildingPresenter.BuildingId.GetHashCode());
+            if (context.Selection.SelectedProductionSourcePresenter != null)
+                hash ^= unchecked((ulong)context.Selection.SelectedProductionSourcePresenter.Site.Id.GetHashCode());
             return hash;
         }
 

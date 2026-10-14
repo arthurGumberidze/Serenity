@@ -110,7 +110,9 @@ namespace Game.Domain.Production
             var fiber = new ResourceId("plant_fiber");
             var wood = new ResourceId("wood_log");
             var stone = new ResourceId("stone");
-            return new ProductionCatalog(new[]
+            var iron = new ResourceId("iron_ore");
+            var gold = new ResourceId("gold_ore");
+            var recipes = new List<ProductionRecipe>
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
                     new[] { new ResourceAmount(berries, new ResourceQuantity(4)) }, TimeSpan.FromHours(4), ProductionSiteKind.NaturalSource,
@@ -127,7 +129,16 @@ namespace Game.Domain.Production
                 new ProductionRecipe(new ProductionRecipeId("cultivate_berries"), "Cultivate Berries", null,
                     new[] { new ResourceAmount(berries, new ResourceQuantity(6)) }, TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot,
                     weatherExposure: ProductionWeatherExposure.Outdoor)
-            }, resources);
+            };
+            if (resources.Contains(iron))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_iron"), "Gather Iron Ore", null,
+                    new[] { new ResourceAmount(iron, new ResourceQuantity(3)) }, TimeSpan.FromHours(12), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(gold))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_gold"), "Gather Gold Ore", null,
+                    new[] { new ResourceAmount(gold, new ResourceQuantity(2)) }, TimeSpan.FromHours(16), ProductionSiteKind.NaturalSource,
+                    weatherExposure: ProductionWeatherExposure.Outdoor));
+            return new ProductionCatalog(recipes, resources);
         }
     }
 

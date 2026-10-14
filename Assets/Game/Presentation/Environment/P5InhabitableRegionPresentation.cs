@@ -50,6 +50,9 @@ namespace Game.Presentation.Environment
         [SerializeField] private Renderer[] seasonalGround = Array.Empty<Renderer>();
         [SerializeField] private Renderer[] seasonalFoliage = Array.Empty<Renderer>();
         [SerializeField] private Renderer waterRenderer;
+        [SerializeField] private Vector2[] landBoundary = Array.Empty<Vector2>();
+        [SerializeField] private Transform[] authoredPlacementAnchors = Array.Empty<Transform>();
+        [SerializeField] private Renderer[] trunkRenderers = Array.Empty<Renderer>();
         [SerializeField, Min(0)] private int authoredTreeCount;
         [SerializeField, Min(0)] private int authoredRockCount;
         [SerializeField, Min(0)] private int authoredGrassCount;
@@ -66,6 +69,9 @@ namespace Game.Presentation.Environment
         public int TreeCount => authoredTreeCount;
         public int RockCount => authoredRockCount;
         public int GrassCount => authoredGrassCount;
+        public IReadOnlyList<Vector2> LandBoundary => landBoundary;
+        public IReadOnlyList<Transform> AuthoredPlacementAnchors => authoredPlacementAnchors;
+        public IReadOnlyList<Renderer> TrunkRenderers => trunkRenderers;
         public Season DisplayedSeason { get; private set; }
         public bool SnowCoverVisible { get; private set; }
         public bool HasCanonicalMapCorrespondence { get; private set; }
@@ -99,6 +105,42 @@ namespace Game.Presentation.Environment
             HasCanonicalMapCorrespondence = ids.Contains("starter_settlement") &&
                 ids.Contains("enemy_settlement") && ids.Contains("north_forest") &&
                 ids.Contains("river_ford") && ids.Contains("east_hills") && ids.Contains("south_field");
+        }
+
+        public void ConfigureGeography(IEnumerable<Vector2> boundary, IEnumerable<Transform> placements,
+            IEnumerable<Renderer> trunks)
+        {
+            landBoundary = (boundary ?? Enumerable.Empty<Vector2>()).ToArray();
+            authoredPlacementAnchors = (placements ?? Enumerable.Empty<Transform>()).Where(x => x != null).ToArray();
+            trunkRenderers = (trunks ?? Enumerable.Empty<Renderer>()).Where(x => x != null).ToArray();
+            ValidateGeography();
+        }
+
+        public bool ContainsLandPoint(Vector3 worldPoint)
+        {
+            if (landBoundary.Length < 3) return true;
+            var point = new Vector2(worldPoint.x, worldPoint.z);
+            var inside = false;
+            for (int i = 0, j = landBoundary.Length - 1; i < landBoundary.Length; j = i++)
+            {
+                var a = landBoundary[i];
+                var b = landBoundary[j];
+                if ((a.y > point.y) != (b.y > point.y) &&
+                    point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x)
+                    inside = !inside;
+            }
+            return inside;
+        }
+
+        public void ValidateGeography()
+        {
+            if (landBoundary.Length < 8)
+                throw new InvalidOperationException("P8.2 region requires an authored finite land boundary.");
+            if (authoredPlacementAnchors.Any(x => !ContainsLandPoint(x.position)) ||
+                resourceAnchors.Any(x => !ContainsLandPoint(x.VisualRoot.position)))
+                throw new InvalidOperationException("P8.2 authored objects and resource routes must remain on land.");
+            if (trunkRenderers.Length < 8 || trunkRenderers.Any(x => x.sharedMaterial == null))
+                throw new InvalidOperationException("P8.2 region requires readable brown-bark tree projections.");
         }
 
         public Transform GetPileAnchor(int index) => index >= 0 && index < pileAnchors.Length

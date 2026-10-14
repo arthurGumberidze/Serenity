@@ -188,6 +188,22 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Visual grade/status: B prototype, `APPROVED_RUNTIME` for the P8.1 benchmark only; it deliberately does not replace the full map, army/group presentation or production UI
 - Notes: machine acceptance covers URP Lit/PBR material presence, brown trunks, stable appearance, successful UMA generation and a visible Player screenshot. Final taste approval and propagation to the whole game remain later P8 stages.
 
+### SERENITY-P82-NATURAL-REGION
+
+- Name: P8.2 complete natural inhabitable region
+- Type/category: project-owned finite land/shore/water, tree-trunk and ore-cluster meshes; PBR ore materials; authored scene composition
+- Source/author/license: Serenity project-owned code and generated Unity assets; no external source files
+- Date created/checked: 2026-10-14
+- Commercial use: YES; attribution: NO
+- Asset paths: `Assets/Game/Art/Meshes/P82`, `Assets/Game/Art/Materials/P82`, `Assets/Scenes/LocalGameplay.unity`
+- Generator: `Assets/Game/Infrastructure/Editor/P82NaturalRegionBuilder.cs`; repeatable and idempotent over the P3/P5 recipe
+- Runtime dependencies: approved P3/P5 wrappers and the project-owned P8.1 URP/PBR meadow, shore, water and brown-bark materials
+- Contents: irregular 16-point inhabitable land mesh, shoreline ring, calm boundary water, tapered brown trunks, iron/gold ore clusters, PBR iron/gold surfaces and complete region layout
+- Canonical state: geometry and markers are replaceable Presentation; resources bind to `ProductionService` with deterministic `StableEntityId`; map/territory/building/save authorities are unchanged
+- Scale/collider/LOD: 1 Unity unit = 1 metre; land and ore use generated MeshColliders, water is non-walkable, existing wrapper colliders are retained; no new authored LOD
+- Visual grade/status: B authored product pass, `APPROVED_RUNTIME`; final character/building/effect/UI and whole-product visual acceptance remain P8.3–P8.5
+- Notes: no new vendor package was imported, no vendor source was edited, and no license-review-required staging asset is referenced. The deferred official Terrain Sample is not claimed as used.
+
 ## Staging packages considered but not imported
 
 ### UNITY-URP-TERRAIN-SAMPLE
