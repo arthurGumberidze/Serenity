@@ -188,7 +188,9 @@ namespace Game.Infrastructure
         public P83PlayerSmokeController P83PlayerSmoke { get; private set; }
         public P91PlayerSmokeController P91PlayerSmoke { get; private set; }
         public P92PlayerSmokeController P92PlayerSmoke { get; private set; }
+        public P93PlayerSmokeController P93PlayerSmoke { get; private set; }
         public P92RealisticGameplayRegion RealisticGameplayRegion { get; private set; }
+        public P93PopulatedBiomeWorld PopulatedBiomeWorld { get; private set; }
         public NewGameConfiguration ActiveNewGameConfiguration { get; private set; }
         public NewGameBootstrapResult NewGame { get; private set; }
         public CampaignProgressService CampaignProgress { get; private set; }
@@ -269,6 +271,8 @@ namespace Game.Infrastructure
             InhabitableRegion?.ValidateConfiguration();
             RealisticGameplayRegion = FindAnyObjectByType<P92RealisticGameplayRegion>();
             RealisticGameplayRegion?.ValidateConfiguration();
+            PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
+            PopulatedBiomeWorld?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -521,6 +525,7 @@ namespace Game.Infrastructure
             P83PlayerSmoke = P83PlayerSmokeController.AttachIfRequested(this);
             P91PlayerSmoke = P91PlayerSmokeController.AttachIfRequested(this);
             P92PlayerSmoke = P92PlayerSmokeController.AttachIfRequested(this);
+            P93PlayerSmoke = P93PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

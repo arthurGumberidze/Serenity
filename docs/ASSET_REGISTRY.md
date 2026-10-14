@@ -219,9 +219,9 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Runtime/import path: `Assets/TerrainDemoScene_URP`; 769 selected files, approximately 2308.9 MiB source footprint
 - Import scope: Terrain layers/textures, trees, rocks, details/foliage, water, skybox resources, required materials/models/Shader Graphs and third-party notices
 - Excluded scope: demo scenes, sample scripts, UI, bookmarks, shots, lighting rigs, volume profiles, animation, authored demo Terrain data/brushes/palettes and package-proposed dependency downgrades
-- Runtime use: P9.2 canonical 128 m gameplay Terrain with four official layers, 76 trees, 44 rocks, 288 foliage instances and official water/rock/tree presentation; P9.1 benchmark assets remain as reversible source history
+- Runtime use: P9.3 canonical 128 m gameplay Terrain with seven official layers, the P9.2 base population plus 170 trees, 94 rocks, 930 ground-cover instances and 120 resource-formation satellites; P9.1/P9.2 assets remain reversible source history
 - Package impact: existing package versions preserved; built-in `com.unity.modules.terrain` and `com.unity.modules.terrainphysics` 1.0.0 enabled
-- Visual grade/status: A/B source quality, `APPROVED_RUNTIME`; P9.2 gameplay-map replacement accepted through RTS/TPS Player evidence
+- Visual grade/status: A/B source quality, `APPROVED_RUNTIME`; P9.3 populated-biome composition accepted through RTS/TPS Player evidence
 - Notes: vendor assets are not edited. Project-owned P9.2 TerrainData/material/scene recipes compose the selected source; canonical gameplay state remains outside vendor and presentation assets.
 
 ### SERENITY-P92-REALISTIC-GAMEPLAY-REGION
@@ -233,6 +233,18 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Runtime use: canonical six-location/24-resource local region projection, terrain-height projection for disposable building/Character presentation, seasons/weather and physical Terrain collision
 - Stable-content rule: resource indices 0–23 and all established `StableEntityId`/`WorldLocationId` values are preserved; TerrainData, anchors and renderers own no mutable gameplay/save truth
 - Visual grade/status: B terrain-migration baseline, `APPROVED_RUNTIME`; full biome density/zoning is P9.3, while settlement/building/Character finish is P9.4
+
+### SERENITY-P93-POPULATED-BIOME-WORLD
+
+- Name: Serenity P9.3 Populated Biome World
+- Type/category: project-owned deterministic biome authoring and presentation binding
+- Source/license: Serenity-owned composition code/data using only registered `UNITY-URP-TERRAIN-SAMPLE` assets
+- Runtime path: `Assets/Game/Presentation/Environment/P93PopulatedBiomeWorld.cs`, `Assets/Game/Infrastructure/Editor/P93PopulatedBiomeWorldBuilder.cs`, `Assets/Scenes/LocalGameplay.unity`
+- Runtime use: seven official Terrain layers; forest, understory, meadow, rocky upland, soil-clearing and shoreline zones; 170 trees, 94 rocks, 930 ground-cover instances and five satellites around each of 24 canonical resources
+- Determinism/provenance: fixed scatter seed 93031 and serialized layout hash; every spawned vendor prefab and Terrain layer resolves under `Assets/TerrainDemoScene_URP`
+- Scale/collider/LOD: official LODGroups retained for trees/rocks; physical colliders retained or supplied for major obstacles; traversable ground cover and formation satellites have no colliders or shadow cost
+- Canonical-state rule: the six existing location IDs and 24 resource roots/indices/`StableEntityId` values are reused; biome objects, zone metadata and satellite decorations own no mutable save-state
+- Visual grade/status: B populated-world pass, `APPROVED_RUNTIME`; settlement/building/resource-work/Character art replacement remains P9.4
 
 ## Staging packages considered but not imported
 
