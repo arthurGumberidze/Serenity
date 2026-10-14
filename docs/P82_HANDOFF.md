@@ -54,4 +54,4 @@ Unity's first scripted build completed successfully but then lingered on two ext
 
 ## Scope boundary and next task
 
-P8.2 does not implement the P8.3 group-character rollout, P8.4 final building/effect art, P8.5 final UI acceptance or P8.6 qualification. It does not run the complete U29 matrix, a new eight-hour U30 soak or the U31 release gate. U29 remains PARTIAL, U30 remains IN_PROGRESS and U31 remains BLOCKED. The next unblocked product task is P8.3.
+P8.2 does not implement P8.3 working groups/simple jobs, the P8.4 full appearance editor, the P8.5 polished interface or P8.6 integration/qualification. It does not run the complete U29 matrix, a new eight-hour U30 soak or the U31 release gate. U29 remains PARTIAL, U30 remains IN_PROGRESS and U31 remains BLOCKED. The next unblocked product task is P8.3: direct object action/priority control, assignable profession groups, «Прямо сейчас», and canonical scheduler/reservation/Save-Load behavior without per-NPC `Update`.
