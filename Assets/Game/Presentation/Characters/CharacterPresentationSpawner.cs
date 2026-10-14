@@ -33,7 +33,11 @@ namespace Game.Presentation.Characters
             var presenter = instance.GetComponent<CharacterPresenter>();
             try
             {
-                presenter.Bind(character, registry, resolved);
+                // Only editor-confirmed/key-character states carry detailed parameters. Aggregate NPC defaults stay
+                // on the bounded fallback presentation and never start a mass of UMA generation coroutines.
+                if (catalog.UmaAvatarPrefab != null && requested.Parameters.Count > 0)
+                    instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);
+                presenter.Bind(character, registry, requested);
                 return presenter;
             }
             catch

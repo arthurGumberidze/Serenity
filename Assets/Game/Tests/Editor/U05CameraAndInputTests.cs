@@ -58,7 +58,7 @@ namespace Game.Tests
             Assert.That(asset.FindActionMap("Mode").actions.Select(action => action.name),
                 Is.EquivalentTo(new[] { "ToggleControl" }));
             Assert.That(asset.FindActionMap("ThirdPerson").actions.Select(action => action.name),
-                Is.EquivalentTo(new[] { "Move", "Look", "Run", "Exit" }));
+                Is.EquivalentTo(new[] { "Move", "Look", "Run", "Exit", "Attack" }));
             Assert.That(asset.FindAction("Camera/Move").bindings.Any(binding => binding.path == "<Keyboard>/w"), Is.True);
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
@@ -83,7 +83,7 @@ namespace Game.Tests
         {
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).ToArray();
             Assert.That(scenes.Select(scene => scene.path), Is.EqualTo(new[]
-                { "Assets/Scenes/LocalGameplay.unity", "Assets/Scenes/GlobalMap.unity" }));
+                { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/LocalGameplay.unity", "Assets/Scenes/GlobalMap.unity" }));
             var dependencies = AssetDatabase.GetDependencies(scenes[0].path, true);
             Assert.That(dependencies.Any(path => path.StartsWith("Assets/EmaceArt")
                 || path.StartsWith("Assets/EmbersStorm")

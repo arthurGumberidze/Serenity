@@ -25,19 +25,22 @@ namespace Game.Presentation.Characters
         }
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();
+        [SerializeField] private GameObject umaAvatarPrefab;
         private readonly HashSet<string> reportedFallbacks = new HashSet<string>(StringComparer.Ordinal);
 
-        public void Configure(GameObject malePrefab, GameObject femalePrefab)
+        public void Configure(GameObject malePrefab, GameObject femalePrefab, GameObject umaPrefab = null)
         {
+            var definitions = StoneAgeAppearanceProfiles.CreateCatalog();
             entries = new[]
             {
-                EntryFor(StoneAgeAppearanceProfiles.CreateCatalog().Get(StoneAgeAppearanceProfiles.AdultA), malePrefab),
-                EntryFor(StoneAgeAppearanceProfiles.CreateCatalog().Get(StoneAgeAppearanceProfiles.AdultB), femalePrefab)
+                EntryFor(definitions.Get(StoneAgeAppearanceProfiles.UmaMale), malePrefab),
+                EntryFor(definitions.Get(StoneAgeAppearanceProfiles.UmaFemale), femalePrefab)
             };
+            umaAvatarPrefab = umaPrefab;
         }
 
-        public AppearanceDefinitionCatalog CreateDefinitionCatalog() => new AppearanceDefinitionCatalog(
-            (entries ?? Array.Empty<Entry>()).Select(Definition));
+        public AppearanceDefinitionCatalog CreateDefinitionCatalog() => StoneAgeAppearanceProfiles.CreateCatalog();
+        public GameObject UmaAvatarPrefab => umaAvatarPrefab;
 
         public GameObject Resolve(Character character)
         {
@@ -59,7 +62,7 @@ namespace Game.Presentation.Characters
             {
                 var exact = FindEntry(requested.Id);
                 ValidatePrefab(exact.Prefab, exact.ProfileId);
-                resolvedAppearance = requested.CreateState(appearance.CharacterId);
+                resolvedAppearance = appearance;
                 return exact.Prefab;
             }
 

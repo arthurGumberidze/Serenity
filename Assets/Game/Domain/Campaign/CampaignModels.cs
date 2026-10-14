@@ -34,7 +34,8 @@ namespace Game.Domain.Campaign
 
         public NewGameConfiguration(long worldSeed, string configurationId = DefaultConfigurationId,
             bool rivalKnownAtStart = false, string rulerName = "Aren", string dynastyName = "House Serenity",
-            CharacterSex rulerSex = CharacterSex.Male, AppearanceProfileId? rulerAppearanceProfileId = null)
+            CharacterSex rulerSex = CharacterSex.Male, AppearanceProfileId? rulerAppearanceProfileId = null,
+            AppearanceState rulerAppearance = null)
         {
             if (string.IsNullOrWhiteSpace(configurationId) || configurationId != configurationId.Trim() ||
                 configurationId.Length > 64)
@@ -50,8 +51,12 @@ namespace Game.Domain.Campaign
             if (!Enum.IsDefined(typeof(CharacterSex), rulerSex)) throw new ArgumentOutOfRangeException(nameof(rulerSex));
             DynastyName = dynastyName;
             RulerSex = rulerSex;
-            RulerAppearanceProfileId = rulerAppearanceProfileId ??
-                (rulerSex == CharacterSex.Male ? StoneAgeAppearanceProfiles.AdultA : StoneAgeAppearanceProfiles.AdultB);
+            var defaultProfile = rulerSex == CharacterSex.Male
+                ? StoneAgeAppearanceProfiles.UmaMale : StoneAgeAppearanceProfiles.UmaFemale;
+            RulerAppearanceProfileId = rulerAppearanceProfileId ?? rulerAppearance?.ProfileId ?? defaultProfile;
+            if (rulerAppearance != null && rulerAppearance.ProfileId != RulerAppearanceProfileId)
+                throw new ArgumentException("Ruler appearance and profile must agree.", nameof(rulerAppearance));
+            RulerAppearance = rulerAppearance;
         }
 
         public long WorldSeed { get; }
@@ -61,6 +66,7 @@ namespace Game.Domain.Campaign
         public string DynastyName { get; }
         public CharacterSex RulerSex { get; }
         public AppearanceProfileId RulerAppearanceProfileId { get; }
+        public AppearanceState RulerAppearance { get; }
         public StableEntityId SessionId => DeterministicStableId.Create(WorldSeed, ConfigurationId + ":session");
     }
 

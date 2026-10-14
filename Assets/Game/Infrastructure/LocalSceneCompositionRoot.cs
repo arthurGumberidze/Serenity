@@ -235,7 +235,7 @@ namespace Game.Infrastructure
                 : new NewGameConfiguration(resolvedWorldSeed, requestedConfiguration.ConfigurationId,
                     requestedConfiguration.RivalKnownAtStart, requestedConfiguration.RulerName,
                     requestedConfiguration.DynastyName, requestedConfiguration.RulerSex,
-                    requestedConfiguration.RulerAppearanceProfileId);
+                    requestedConfiguration.RulerAppearanceProfileId, requestedConfiguration.RulerAppearance);
             var appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
             NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration, appearanceCatalog);
             var worldSeed = ActiveNewGameConfiguration.WorldSeed;

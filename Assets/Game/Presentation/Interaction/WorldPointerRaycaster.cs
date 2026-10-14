@@ -1,5 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Game.Presentation.Buildings;
+using Game.Presentation.Characters;
+using Game.Presentation.Production;
+using Game.Presentation.Resources;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -51,6 +56,27 @@ namespace Game.Presentation.Interaction
                 return false;
             var ray = worldCamera.ScreenPointToRay(pointerPosition);
             return Physics.Raycast(ray, out hit, maxDistance, worldLayers, QueryTriggerInteraction.Ignore);
+        }
+
+        /// <summary>Selection ignores decorative foliage/terrain occluders but keeps ordinary world-point rays unchanged.</summary>
+        public bool TryGetSelectableHit(Vector2 pointerPosition, out RaycastHit hit)
+        {
+            hit = default;
+            if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
+            var ray = worldCamera.ScreenPointToRay(pointerPosition);
+            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Ignore)
+                         .OrderBy(value => value.distance))
+            {
+                var collider = candidate.collider;
+                if (collider.GetComponentInParent<SelectableMarker>() == null &&
+                    collider.GetComponentInParent<CharacterPresenter>() == null &&
+                    collider.GetComponentInParent<WorldResourcePilePresenter>() == null &&
+                    collider.GetComponentInParent<BuildingPresenter>() == null &&
+                    collider.GetComponentInParent<ProductionSourcePresenter>() == null) continue;
+                hit = candidate;
+                return true;
+            }
+            return false;
         }
 
         public bool TryGetWorldPoint(Vector2 pointerPosition, out Vector3 point)

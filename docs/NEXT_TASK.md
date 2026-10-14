@@ -1,15 +1,15 @@
 # NEXT_TASK.md
 
-The active product task is **P8.4: полноценный редактор внешности**. P8.1–P8.3 are DONE at their implementation/evidence boundaries; do not redo them or start P8.5/P8.6 in the same task.
+The active product task is **P8.5: красивый интерфейс**. P8.1–P8.4 are DONE at their implementation/evidence boundaries; do not redo them or start P8.6 in the same task.
 
-Build the full player-facing appearance editor over the existing canonical `AppearanceState` and approved UMA provider:
+Give the shipped Russian game UI one coherent production visual language while preserving its existing canonical command/state boundaries:
 
-1. Expose every compatible supported appearance parameter honestly; do not fabricate modular options that the admitted content cannot render.
-2. Keep `StableEntityId`, identity, family, dynasty, health and simulation state in their existing authorities. UMA/vendor objects remain replaceable Presentation projections.
-3. Make preview, New Game, normal Tier1 presentation, Tier1↔Tier2↔Tier3 transitions and Save/Load resolve the same canonical appearance.
-4. Preserve v1-v18 save compatibility and add proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player evidence.
-5. Do not expand into the P8.5 interface restyle or P8.6 integration/qualification gates.
+1. Establish a consistent hierarchy, typography, spacing, colours, panels, buttons, selection and disabled/error states across Main Menu, appearance editor, local gameplay, global map and TPS surfaces.
+2. Preserve every P1–P8.4 action, explanation and stable UI test hook; Presentation must not become a gameplay, appearance, save or tier authority.
+3. Validate 1280×720 and 125% UI scale, long Russian strings, keyboard/mouse paths and readable normal/blocked/selected states.
+4. Run proportional EditMode, headless/GPU PlayMode, Windows Development build and visible Player acceptance for the restyled product surfaces.
+5. Keep P3/P5 visual, P6 first-hour and P7 campaign acceptance explicit; do not claim final release qualification from UI automation alone.
 
-P8.6 alone owns the deferred complete U29 matrix, U30 endurance/native-memory/history closure and final U31 gate. Their recorded thresholds and statuses must not change during P8.4.
+Do not run the complete U29 matrix, a replacement U30 eight-hour soak or final U31 closure. P8.6 alone owns those deferred gates; U29 remains PARTIAL, U30 remains IN_PROGRESS and U31 remains BLOCKED.
 
-Completion requires updated project/task/decision/asset documentation and a commit prefixed `P8.4:`.
+Completion requires updated project/task/decision documentation and a commit prefixed `P8.5:`.

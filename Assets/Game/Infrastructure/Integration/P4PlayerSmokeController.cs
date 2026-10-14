@@ -72,7 +72,7 @@ namespace Game.Infrastructure.Integration
                 seedField.value = seed.ToString();
                 rulerField.value = "Эльда";
                 dynastyField.value = "Дом Каменного Берега";
-                profileField.value = "Взрослая B — женщина";
+                profileField.value = "Человек — женщина";
                 menu.RotatePreview(28f);
                 menu.SetPreviewZoom(3.7f);
                 result.editor_opened = menu.CurrentView == MainMenuView.NewGame &&

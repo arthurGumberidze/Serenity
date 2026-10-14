@@ -68,7 +68,7 @@ namespace Game.Tests.Editor
                 Is.EqualTo(research.IsBuildingUnlocked(new BuildingDefinitionId("primitive_shelter"))));
             var crop = initial.Single(option => option.Definition.Id == new BuildingDefinitionId("primitive_crop_plot"));
             Assert.That(crop.IsAvailable, Is.False);
-            Assert.That(crop.LockReason, Does.Contain("primitive_agriculture"));
+            Assert.That(crop.LockReason, Does.Contain("Примитивное земледелие"));
 
             Complete(research, "controlled_fire");
             Complete(research, "fiber_working");

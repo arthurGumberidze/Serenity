@@ -15,9 +15,11 @@ namespace Game.Infrastructure.Editor
                 U05LocalSceneBuilder.CharacterCatalogPath);
             var male = AssetDatabase.LoadAssetAtPath<GameObject>(U07PresentationFoundation.MalePrefabPath);
             var female = AssetDatabase.LoadAssetAtPath<GameObject>(U07PresentationFoundation.FemalePrefabPath);
-            if (catalog == null || male == null || female == null)
-                throw new FileNotFoundException("P4 requires the approved U07 presentation catalog and both wrapper prefabs.");
-            catalog.Configure(male, female);
+            var uma = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Game/Art/ThirdParty/UMA3/Getting Started/UMADynamicCharacterAvatar-NoPhysics_NoLOD.prefab");
+            if (catalog == null || male == null || female == null || uma == null)
+                throw new FileNotFoundException("P8.4 requires the presentation catalog, fallback wrappers, and admitted UMA prefab.");
+            catalog.Configure(male, female, uma);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             P2StartupSceneBuilder.Build();
@@ -32,9 +34,9 @@ namespace Game.Infrastructure.Editor
             if (catalog == null) throw new FileNotFoundException("P4 character catalog is missing.");
             var definitions = catalog.CreateDefinitionCatalog();
             if (definitions.Profiles.Count != 2 ||
-                !definitions.TryGet(StoneAgeAppearanceProfiles.AdultA, out _) ||
-                !definitions.TryGet(StoneAgeAppearanceProfiles.AdultB, out _))
-                throw new InvalidDataException("P4 requires exactly the two approved integrated appearance profiles.");
+                !definitions.TryGet(StoneAgeAppearanceProfiles.UmaMale, out _) ||
+                !definitions.TryGet(StoneAgeAppearanceProfiles.UmaFemale, out _) || catalog.UmaAvatarPrefab == null)
+                throw new InvalidDataException("P8.4 requires two editable UMA profiles and the admitted UMA prefab.");
         }
     }
 }

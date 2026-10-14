@@ -110,11 +110,8 @@ namespace Game.Simulation.Characters
             }
             if (definition.Sex != character.Sex)
                 throw new ArgumentException("Appearance profile is incompatible with Character sex.", nameof(appearance));
-            if (appearance.BodyId != definition.BodyId || appearance.FaceId != definition.FaceId ||
-                appearance.SkinId != definition.SkinId || appearance.HairId != definition.HairId ||
-                appearance.BeardId != definition.BeardId || appearance.HairColorId != definition.HairColorId ||
-                appearance.ClothingId != definition.ClothingId)
-                throw new ArgumentException("Appearance part IDs do not match their immutable profile.", nameof(appearance));
+            if (!definition.Supports(appearance))
+                throw new ArgumentException("Appearance contains a value unsupported by its profile.", nameof(appearance));
         }
     }
 }

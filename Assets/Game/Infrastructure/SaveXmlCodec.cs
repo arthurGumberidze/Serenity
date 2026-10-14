@@ -26,7 +26,7 @@ using Game.Simulation;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V18 adds canonical work groups and orders.</summary>
+    /// <summary>Strict versioned UTF-8 XML checkpoint codec. V19 adds complete canonical appearance parameters.</summary>
     public sealed class SaveXmlCodec
     {
         private static readonly string[] TimeFields =
@@ -72,7 +72,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeCampaign(snapshot.Campaign,
                     snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.AppearanceVersion)
-                root.Add(SerializeAppearance(snapshot.Appearance));
+                root.Add(SerializeAppearance(snapshot.Appearance,
+                    snapshot.FormatVersion >= SaveSnapshot.AppearanceEditorVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.WorkVersion)
                 root.Add(SerializeWork(snapshot.Work));
             using (var stream = new MemoryStream())
@@ -109,7 +110,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.GlobalMapVersion && version != SaveSnapshot.StrategicAiVersion &&
                         version != SaveSnapshot.EventVersion &&
                         version != SaveSnapshot.CampaignVersion && version != SaveSnapshot.AppearanceVersion &&
-                        version != SaveSnapshot.OccupationVersion &&
+                        version != SaveSnapshot.OccupationVersion && version != SaveSnapshot.WorkVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -140,7 +141,8 @@ namespace Game.Infrastructure
                     var campaign = version >= SaveSnapshot.CampaignVersion
                         ? DeserializeCampaign(root.Element("campaign"), version >= SaveSnapshot.OccupationVersion) : null;
                     var appearance = version >= SaveSnapshot.AppearanceVersion
-                        ? DeserializeAppearance(root.Element("appearance")) : null;
+                        ? DeserializeAppearance(root.Element("appearance"),
+                            version >= SaveSnapshot.AppearanceEditorVersion) : null;
                     var work = version >= SaveSnapshot.WorkVersion
                         ? DeserializeWork(root.Element("work")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
@@ -1290,7 +1292,7 @@ namespace Game.Infrastructure
                 includeOccupation ? OptionalStableId(element, "sourceOccupationId") : null);
         }
 
-        private static XElement SerializeAppearance(AppearanceWorldSaveState state)
+        private static XElement SerializeAppearance(AppearanceWorldSaveState state, bool includeEditorFields)
         {
             var element = new XElement("appearance");
             if (state == null) return element;
@@ -1303,11 +1305,16 @@ namespace Game.Infrastructure
                 new XElement("hairId", value.HairId.Value),
                 new XElement("beardId", value.BeardId.Value),
                 new XElement("hairColorId", value.HairColorId.Value),
-                new XElement("clothingId", value.ClothingId.Value))));
+                includeEditorFields ? new XElement("eyeColorId", value.EyeColorId.Value) : null,
+                includeEditorFields ? new XElement("ageId", value.AgeId.Value) : null,
+                new XElement("clothingId", value.ClothingId.Value),
+                includeEditorFields ? new XElement("parameters", value.Parameters.Select(parameter =>
+                    new XElement("parameter", new XElement("id", parameter.Id.Value),
+                        new XElement("value", parameter.Value)))) : null)));
             return element;
         }
 
-        private static AppearanceWorldSaveState DeserializeAppearance(XElement element)
+        private static AppearanceWorldSaveState DeserializeAppearance(XElement element, bool includeEditorFields)
         {
             if (element == null) throw new FormatException("Missing appearance state.");
             if (!element.HasElements)
@@ -1317,14 +1324,33 @@ namespace Game.Infrastructure
             }
             return new AppearanceWorldSaveState(Items(element, "character", value =>
             {
-                RequireFields(value, new[] { "characterId", "profileId", "bodyId", "faceId", "skinId", "hairId",
-                    "beardId", "hairColorId", "clothingId" });
-                return new AppearanceState(StableEntityId.Parse(Value(value, "characterId")),
-                    new AppearanceProfileId(Value(value, "profileId")),
-                    new AppearancePartId(Value(value, "bodyId")), new AppearancePartId(Value(value, "faceId")),
-                    new AppearancePartId(Value(value, "skinId")), new AppearancePartId(Value(value, "hairId")),
-                    new AppearancePartId(Value(value, "beardId")), new AppearancePartId(Value(value, "hairColorId")),
-                    new AppearancePartId(Value(value, "clothingId")));
+                var fields = new List<string> { "characterId", "profileId", "bodyId", "faceId", "skinId", "hairId",
+                    "beardId", "hairColorId" };
+                if (includeEditorFields) fields.AddRange(new[] { "eyeColorId", "ageId" });
+                fields.Add("clothingId");
+                if (includeEditorFields) fields.Add("parameters");
+                RequireFields(value, fields.ToArray());
+                var characterId = StableEntityId.Parse(Value(value, "characterId"));
+                var profileId = new AppearanceProfileId(Value(value, "profileId"));
+                var bodyId = new AppearancePartId(Value(value, "bodyId"));
+                var faceId = new AppearancePartId(Value(value, "faceId"));
+                var skinId = new AppearancePartId(Value(value, "skinId"));
+                var hairId = new AppearancePartId(Value(value, "hairId"));
+                var beardId = new AppearancePartId(Value(value, "beardId"));
+                var hairColorId = new AppearancePartId(Value(value, "hairColorId"));
+                var clothingId = new AppearancePartId(Value(value, "clothingId"));
+                if (!includeEditorFields) return new AppearanceState(characterId, profileId, bodyId, faceId,
+                    skinId, hairId, beardId, hairColorId, clothingId);
+                var parameters = Items(value.Element("parameters"), "parameter", parameter =>
+                {
+                    RequireFields(parameter, new[] { "id", "value" });
+                    return new AppearanceParameterValue(new AppearanceParameterId(Value(parameter, "id")),
+                        Int(parameter, "value"));
+                });
+                return new AppearanceState(characterId, profileId, bodyId, faceId,
+                    skinId, hairId, beardId, hairColorId,
+                    new AppearancePartId(Value(value, "eyeColorId")),
+                    new AppearancePartId(Value(value, "ageId")), clothingId, parameters);
             }));
         }
 

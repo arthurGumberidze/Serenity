@@ -61,7 +61,9 @@ namespace Game.Infrastructure
         private GameObject previewCharacter;
         private Camera previewCamera;
         private float previewYaw = 165f;
-        private float previewZoom = 3.2f;
+        // UMA 3.0 bodies are taller than the legacy fallback wrappers. Start far enough away to keep
+        // head and feet visible; the player can still zoom in with the existing control.
+        private float previewZoom = 4.2f;
 
         public VisualElement RootVisual => root;
         public MainMenuView CurrentView { get; private set; }
@@ -105,6 +107,7 @@ namespace Game.Infrastructure
             P81PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P82PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P83PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P84PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -161,7 +164,8 @@ namespace Game.Infrastructure
             content.Add(rulerSeedField); content.Add(rulerNameField); content.Add(dynastyNameField);
 
             appearanceProfileField = new DropdownField(T("menu.new_game.appearance"),
-                appearanceCatalog.Profiles.Select(ProfileLabel).ToList(), 0) { name = "appearance-profile" };
+                appearanceCatalog.Profiles.Select(ProfileLabel).ToList(), ProfileLabel(rulerDraft.Profile))
+                { name = "appearance-profile" };
             StyleField(appearanceProfileField);
             appearanceProfileField.RegisterValueChangedCallback(change =>
                 ApplyProfile(appearanceCatalog.Profiles.First(x => ProfileLabel(x) == change.newValue)));
@@ -189,7 +193,7 @@ namespace Game.Infrastructure
             content.Add(appearanceParts);
             CreateRulerPreview(previewImage);
             RefreshAppearanceParts();
-            AddMuted(T("menu.new_game.p4_note"));
+            AddMuted("Все доступные совместимые параметры применяются к UMA в предпросмотре. Одежда пока ограничена одним проверенным комплектом.");
             var row = ButtonRow();
             row.Add(ActionButton(T("menu.new_game.randomize"), RandomizeRuler, "randomize-ruler-button"));
             row.Add(ActionButton(T("menu.new_game.reset"), ResetRuler, "reset-ruler-button"));
@@ -222,9 +226,8 @@ namespace Game.Infrastructure
             {
                 if (!long.TryParse(rulerSeedField?.value, out var worldSeed) || worldSeed <= 0)
                     throw new ArgumentOutOfRangeException(nameof(worldSeed));
-                var profile = SelectedProfile();
                 rulerDraft = RulerCreationService.Create(worldSeed, rulerNameField.value, dynastyNameField.value,
-                    profile.Id, appearanceCatalog);
+                    rulerDraft.Appearance, appearanceCatalog);
                 StartNewGame(rulerDraft.ToConfiguration());
                 return true;
             }
@@ -466,6 +469,9 @@ namespace Game.Infrastructure
 
         private void ApplyProfile(AppearanceProfileDefinition profile)
         {
+            var seed = rulerDraft?.WorldSeed ?? suggestedSeed;
+            rulerDraft = new RulerCreationDraft(seed, rulerNameField?.value ?? rulerDraft?.RulerName ?? "Арен",
+                dynastyNameField?.value ?? rulerDraft?.DynastyName ?? "Дом Серенити", profile.Sex, profile);
             RebuildPreviewCharacter(profile);
             RefreshAppearanceParts();
         }
@@ -478,23 +484,120 @@ namespace Game.Infrastructure
         }
 
         private static string ProfileLabel(AppearanceProfileDefinition profile) =>
-            profile.Id == StoneAgeAppearanceProfiles.AdultA
-                ? "Взрослый A — мужчина"
-                : "Взрослая B — женщина";
+            profile.Sex == CharacterSex.Male ? "Человек — мужчина" : "Человек — женщина";
 
         private void RefreshAppearanceParts()
         {
             if (appearanceParts == null) return;
             appearanceParts.Clear();
             var profile = SelectedProfile();
-            AddLine(appearanceParts, T("menu.new_game.integrated_profile"));
-            AddLine(appearanceParts, T("menu.new_game.body") + ": " + profile.BodyId.Value);
-            AddLine(appearanceParts, T("menu.new_game.face") + ": " + profile.FaceId.Value);
-            AddLine(appearanceParts, T("menu.new_game.skin") + ": " + profile.SkinId.Value);
-            AddLine(appearanceParts, T("menu.new_game.hair") + ": " + profile.HairId.Value);
-            AddLine(appearanceParts, T("menu.new_game.beard") + ": " + profile.BeardId.Value);
-            AddLine(appearanceParts, T("menu.new_game.hair_color") + ": " + profile.HairColorId.Value);
-            AddLine(appearanceParts, T("menu.new_game.clothing") + ": " + profile.ClothingId.Value);
+            AddLine(appearanceParts, "Редактор внешности — значения 0–100% применяются без скрытых генетических параметров.");
+            AddAppearanceDropdown("Тон кожи", "appearance-skin", profile.Skins, rulerDraft.Appearance.SkinId,
+                value => SetAppearanceOption("skin", value));
+            AddAppearanceDropdown("Причёска", "appearance-hair", profile.Hairs, rulerDraft.Appearance.HairId,
+                value => SetAppearanceOption("hair", value));
+            var beard = AddAppearanceDropdown("Борода", "appearance-beard", profile.Beards, rulerDraft.Appearance.BeardId,
+                value => SetAppearanceOption("beard", value));
+            beard.SetEnabled(profile.Beards.Count > 1);
+            AddAppearanceDropdown("Цвет волос", "appearance-hair-color", profile.HairColors,
+                rulerDraft.Appearance.HairColorId, value => SetAppearanceOption("hair_color", value));
+            AddAppearanceDropdown("Цвет глаз", "appearance-eye-color", profile.EyeColors,
+                rulerDraft.Appearance.EyeColorId, value => SetAppearanceOption("eye_color", value));
+            AddAppearanceDropdown("Возраст", "appearance-age", profile.Ages, rulerDraft.Appearance.AgeId,
+                value => SetAppearanceOption("age", value));
+            var clothing = new DropdownField("Одежда", new List<string> { "Проверенный совместимый комплект" }, 0)
+                { name = "appearance-clothing" };
+            clothing.SetEnabled(false); StyleField(clothing); appearanceParts.Add(clothing);
+            foreach (var parameter in profile.Parameters)
+            {
+                var slider = new Slider(ParameterLabel(parameter) + " (0–100%)", 0f, 100f)
+                {
+                    name = "appearance-" + parameter.Value,
+                    value = rulerDraft.Appearance.Parameter(parameter) / 10f
+                };
+                slider.RegisterValueChangedCallback(change =>
+                    SetAppearanceParameter(parameter, Mathf.RoundToInt(change.newValue * 10f)));
+                StyleField(slider); appearanceParts.Add(slider);
+            }
+        }
+
+        public bool SetAppearanceOption(string category, string stableId)
+        {
+            if (rulerDraft == null || string.IsNullOrEmpty(category)) return false;
+            AppearancePartId value;
+            try { value = new AppearancePartId(stableId); }
+            catch (ArgumentException) { return false; }
+            var profile = rulerDraft.Profile;
+            var supported = category == "skin" ? profile.Skins : category == "hair" ? profile.Hairs :
+                category == "beard" ? profile.Beards : category == "hair_color" ? profile.HairColors :
+                category == "eye_color" ? profile.EyeColors : category == "age" ? profile.Ages : null;
+            if (supported == null || !supported.Contains(value)) return false;
+            var current = rulerDraft.Appearance;
+            var changed = category == "skin" ? current.With(skinId: value) :
+                category == "hair" ? current.With(hairId: value) :
+                category == "beard" ? current.With(beardId: value) :
+                category == "hair_color" ? current.With(hairColorId: value) :
+                category == "eye_color" ? current.With(eyeColorId: value) : current.With(ageId: value);
+            ReplaceAppearance(changed);
+            return true;
+        }
+
+        public bool SetAppearanceParameter(AppearanceParameterId id, int value)
+        {
+            if (rulerDraft == null || !rulerDraft.Profile.Parameters.Contains(id) ||
+                value < AppearanceParameterValue.Min || value > AppearanceParameterValue.Max) return false;
+            var parameters = rulerDraft.Appearance.Parameters
+                .Select(item => item.Id == id ? new AppearanceParameterValue(id, value) : item).ToArray();
+            ReplaceAppearance(rulerDraft.Appearance.With(parameters: parameters));
+            return true;
+        }
+
+        private void ReplaceAppearance(AppearanceState appearance)
+        {
+            rulerDraft = new RulerCreationDraft(rulerDraft.WorldSeed, rulerNameField?.value ?? rulerDraft.RulerName,
+                dynastyNameField?.value ?? rulerDraft.DynastyName, rulerDraft.Sex, rulerDraft.Profile, appearance);
+            RebuildPreviewCharacter(rulerDraft.Profile);
+        }
+
+        private DropdownField AddAppearanceDropdown(string label, string name,
+            IReadOnlyList<AppearancePartId> options, AppearancePartId selected, Action<string> changed)
+        {
+            var choices = options.Select(option => PartLabel(option.Value)).ToList();
+            var field = new DropdownField(label, choices, Math.Max(0, options.ToList().IndexOf(selected))) { name = name };
+            field.RegisterValueChangedCallback(change => changed(options[choices.IndexOf(change.newValue)].Value));
+            StyleField(field); appearanceParts.Add(field);
+            return field;
+        }
+
+        private static string ParameterLabel(AppearanceParameterId id)
+        {
+            if (id == StoneAgeAppearanceProfiles.Head) return "Пропорции головы";
+            if (id == StoneAgeAppearanceProfiles.Jaw) return "Форма челюсти";
+            if (id == StoneAgeAppearanceProfiles.Chin) return "Форма подбородка";
+            if (id == StoneAgeAppearanceProfiles.Nose) return "Форма носа";
+            if (id == StoneAgeAppearanceProfiles.Eyes) return "Размер глаз";
+            if (id == StoneAgeAppearanceProfiles.Brows) return "Высота бровей";
+            if (id == StoneAgeAppearanceProfiles.Lips) return "Размер губ";
+            if (id == StoneAgeAppearanceProfiles.Height) return "Рост";
+            return "Телосложение";
+        }
+
+        private static string PartLabel(string id)
+        {
+            switch (id)
+            {
+                case "skin_light": return "Светлый"; case "skin_warm": return "Тёплый"; case "skin_deep": return "Тёмный";
+                case "hair_very_short": return "Очень короткая"; case "hair_bun": return "Пучок";
+                case "hair_messy": return "Растрёпанная"; case "hair_none": return "Без волос";
+                case "beard_none": return "Без бороды"; case "beard_trimmed": return "Короткая";
+                case "beard_goatee": return "Эспаньолка"; case "beard_neckbeard": return "Окладистая";
+                case "hair_black": return "Чёрный"; case "hair_brown": return "Каштановый";
+                case "hair_auburn": return "Рыжий"; case "hair_blond": return "Светлый"; case "hair_gray": return "Седой";
+                case "eye_brown": return "Карие"; case "eye_hazel": return "Ореховые"; case "eye_green": return "Зелёные";
+                case "eye_blue": return "Голубые"; case "eye_gray": return "Серые";
+                case "age_adult": return "Взрослый"; case "age_mature": return "Зрелый"; case "age_aged": return "Пожилой";
+                default: return id;
+            }
         }
 
         private void CreateRulerPreview(Image image)
@@ -540,14 +643,17 @@ namespace Game.Infrastructure
         {
             if (previewRoot == null) return;
             if (previewCharacter != null) Destroy(previewCharacter);
-            var appearance = profile.CreateState(rulerDraft.Appearance.CharacterId);
+            var appearance = rulerDraft.Appearance;
             var prefab = characterCatalog.Resolve(profile.Sex, appearance, out _);
             previewCharacter = Instantiate(prefab, new Vector3(1000f, 0f, 0f),
                 Quaternion.Euler(0f, previewYaw, 0f), previewRoot.transform);
-            previewCharacter.name = "P4 Ruler Preview " + profile.Id.Value;
-            SetLayerRecursively(previewCharacter, 31);
+            previewCharacter.name = "P8.4 Ruler Preview " + profile.Id.Value;
             foreach (var behaviour in previewCharacter.GetComponentsInChildren<MonoBehaviour>(true))
                 behaviour.enabled = false;
+            SetLayerRecursively(previewCharacter, 31);
+            if (characterCatalog.UmaAvatarPrefab != null)
+                previewCharacter.AddComponent<UmaAppearanceProjection>()
+                    .Configure(characterCatalog.UmaAvatarPrefab, appearance);
         }
 
         private static void SetLayerRecursively(GameObject value, int layer)

@@ -10,7 +10,7 @@ namespace Game.Simulation.Campaign
     public sealed class RulerCreationDraft
     {
         public RulerCreationDraft(long worldSeed, string rulerName, string dynastyName, CharacterSex sex,
-            AppearanceProfileDefinition profile)
+            AppearanceProfileDefinition profile, AppearanceState appearance = null)
         {
             if (profile == null) throw new ArgumentNullException(nameof(profile));
             if (profile.Sex != sex) throw new ArgumentException("Profile and ruler sex must agree.", nameof(profile));
@@ -22,7 +22,9 @@ namespace Game.Simulation.Campaign
             DynastyName = dynastyName;
             Sex = sex;
             Profile = profile;
-            Appearance = profile.CreateState(DeterministicStableId.Create(worldSeed, "player_character", 0));
+            var characterId = DeterministicStableId.Create(worldSeed, "player_character", 0);
+            Appearance = appearance == null ? profile.CreateDetailedState(characterId) : appearance.With(characterId: characterId);
+            if (!profile.Supports(Appearance)) throw new ArgumentException("Appearance is unsupported by the profile.", nameof(appearance));
         }
 
         public long WorldSeed { get; }
@@ -33,7 +35,7 @@ namespace Game.Simulation.Campaign
         public AppearanceState Appearance { get; }
 
         public NewGameConfiguration ToConfiguration() => new NewGameConfiguration(WorldSeed,
-            NewGameConfiguration.DefaultConfigurationId, false, RulerName, DynastyName, Sex, Profile.Id);
+            NewGameConfiguration.DefaultConfigurationId, false, RulerName, DynastyName, Sex, Profile.Id, Appearance);
     }
 
     public static class RulerCreationService
@@ -60,6 +62,15 @@ namespace Game.Simulation.Campaign
             return new RulerCreationDraft(worldSeed, rulerName, dynastyName, profile.Sex, profile);
         }
 
+        public static RulerCreationDraft Create(long worldSeed, string rulerName, string dynastyName,
+            AppearanceState appearance, AppearanceDefinitionCatalog catalog)
+        {
+            if (appearance == null) throw new ArgumentNullException(nameof(appearance));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            var profile = catalog.Get(appearance.ProfileId);
+            return new RulerCreationDraft(worldSeed, rulerName, dynastyName, profile.Sex, profile, appearance);
+        }
+
         public static RulerCreationDraft Randomize(long worldSeed, int sequence, AppearanceDefinitionCatalog catalog)
         {
             if (sequence < 0) throw new ArgumentOutOfRangeException(nameof(sequence));
@@ -71,8 +82,26 @@ namespace Game.Simulation.Campaign
             var names = profile.Sex == CharacterSex.Male ? MaleNames : FemaleNames;
             var nameSample = DeterministicKeyedRandom.Sample64(worldSeed, identity, (ulong)sequence, NameStream);
             var dynastySample = DeterministicKeyedRandom.Sample64(worldSeed, identity, (ulong)sequence, DynastyStream);
+            var appearance = RandomAppearance(worldSeed, identity, sequence, profile);
             return new RulerCreationDraft(worldSeed, names[(int)(nameSample % (ulong)names.Length)],
-                Dynasties[(int)(dynastySample % (ulong)Dynasties.Length)], profile.Sex, profile);
+                Dynasties[(int)(dynastySample % (ulong)Dynasties.Length)], profile.Sex, profile, appearance);
+        }
+
+        private static AppearanceState RandomAppearance(long seed, StableEntityId identity, int sequence,
+            AppearanceProfileDefinition profile)
+        {
+            var state = profile.CreateDetailedState(identity);
+            AppearancePartId Pick(System.Collections.Generic.IReadOnlyList<AppearancePartId> values, uint stream)
+            {
+                var sample = DeterministicKeyedRandom.Sample64(seed, identity, (ulong)sequence, stream);
+                return values[(int)(sample % (ulong)values.Count)];
+            }
+            var parameters = profile.Parameters.Select((id, index) => new AppearanceParameterValue(id,
+                (int)(DeterministicKeyedRandom.Sample64(seed, identity, (ulong)(sequence + index), 0x50340100u + (uint)index) % 1001UL)));
+            return state.With(skinId: Pick(profile.Skins, 0x50340020u), hairId: Pick(profile.Hairs, 0x50340021u),
+                beardId: Pick(profile.Beards, 0x50340022u), hairColorId: Pick(profile.HairColors, 0x50340023u),
+                eyeColorId: Pick(profile.EyeColors, 0x50340024u), ageId: Pick(profile.Ages, 0x50340025u),
+                parameters: parameters);
         }
     }
 }

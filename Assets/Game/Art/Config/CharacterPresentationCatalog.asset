@@ -13,23 +13,24 @@ MonoBehaviour:
   m_Name: CharacterPresentationCatalog
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Characters.CharacterPresentationCatalog
   entries:
-  - ProfileId: hodaart_adult_a
+  - ProfileId: uma_human_male_30
     Sex: 1
-    BodyId: hodaart_a_body
-    FaceId: hodaart_a_face
-    SkinId: hodaart_a_skin
-    HairId: hodaart_a_hair
-    BeardId: hodaart_a_beard
-    HairColorId: hodaart_a_hair_color
-    ClothingId: hodaart_a_stone_age_clothing
+    BodyId: uma_male_body
+    FaceId: uma_male_face
+    SkinId: skin_warm
+    HairId: hair_very_short
+    BeardId: beard_none
+    HairColorId: hair_brown
+    ClothingId: uma_stone_age_clothing
     Prefab: {fileID: 3781896792343893160, guid: b86154e7fac3f1447a471960cf6eedce, type: 3}
-  - ProfileId: hodaart_adult_b
+  - ProfileId: uma_human_female_30
     Sex: 2
-    BodyId: hodaart_b_body
-    FaceId: hodaart_b_face
-    SkinId: hodaart_b_skin
-    HairId: hodaart_b_hair
-    BeardId: none
-    HairColorId: hodaart_b_hair_color
-    ClothingId: hodaart_b_stone_age_clothing
+    BodyId: uma_female_body
+    FaceId: uma_female_face
+    SkinId: skin_warm
+    HairId: hair_bun
+    BeardId: beard_none
+    HairColorId: hair_brown
+    ClothingId: uma_stone_age_clothing
     Prefab: {fileID: 6667813782548362799, guid: c8c59b0e267550e4a8af27a739d91a01, type: 3}
+  umaAvatarPrefab: {fileID: 615601329001387447, guid: 2e0235d0666bee6478355699ac94d1ed, type: 3}

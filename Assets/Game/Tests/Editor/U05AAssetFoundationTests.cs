@@ -97,7 +97,8 @@ namespace Game.Tests
         {
             Assert.That(AssetDatabase.LoadAssetAtPath<SceneAsset>(ValidationScenePath), Is.Not.Null);
             Assert.That(EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path),
-                Is.EqualTo(new[] { "Assets/Scenes/LocalGameplay.unity", "Assets/Scenes/GlobalMap.unity" }));
+                Is.EqualTo(new[] { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/LocalGameplay.unity",
+                    "Assets/Scenes/GlobalMap.unity" }));
             Assert.That(EditorBuildSettings.scenes.Any(scene => scene.path == ValidationScenePath), Is.False);
         }
 

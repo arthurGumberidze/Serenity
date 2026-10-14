@@ -63,7 +63,7 @@ namespace Game.Tests.PlayMode
                 options.Select(option => option.Definition.Id.ToString()));
             var locked = options.Single(option => option.Definition.Id == cropId);
             Assert.That(locked.IsAvailable, Is.False);
-            Assert.That(locked.LockReason, Does.Contain("primitive_agriculture"));
+            Assert.That(locked.LockReason, Does.Contain("Примитивное земледелие"));
             Assert.That(root.BuildingDebug.Select(cropId), Is.False);
             Assert.That(root.BuildingPlacementController.IsActive, Is.False);
             Assert.That(root.BuildingPlacementController.LastConstructionFailure,

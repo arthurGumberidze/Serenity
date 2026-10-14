@@ -56,7 +56,7 @@ namespace Game.Presentation.Interaction
         {
             if (raycaster == null) return false;
             if (raycaster.IsPointerBlockedByUi(pointerPosition)) return false;
-            if (!raycaster.TryGetWorldHit(pointerPosition, out var hit))
+            if (!raycaster.TryGetSelectableHit(pointerPosition, out var hit))
             {
                 if (!additive) SetSelection(null);
                 return false;

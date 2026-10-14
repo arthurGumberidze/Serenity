@@ -92,7 +92,9 @@ namespace Game.Simulation.Campaign
             for (var i = 0; i < values.Length; i++)
             {
                 var profile = i == 0 ? rulerProfile : appearanceCatalog.DefaultFor(values[i].Sex);
-                appearances.Add(profile.CreateState(ids[i]));
+                appearances.Add(i == 0 && configuration.RulerAppearance != null
+                    ? configuration.RulerAppearance.With(characterId: ids[i])
+                    : profile.CreateState(ids[i]));
             }
             return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3],
                 new AppearanceWorldSaveState(appearances));
