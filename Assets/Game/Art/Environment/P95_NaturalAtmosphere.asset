@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6eaf2562394747459ee7d683e7171d5, type: 3}
+  m_Name: P95_NaturalAtmosphere
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.P95NaturalAtmosphereProfile
+  daylightColor: {r: 1, g: 0.91, b: 0.75, a: 1}
+  dawnColor: {r: 1, g: 0.58, b: 0.34, a: 1}
+  moonlightColor: {r: 0.46, g: 0.58, b: 0.78, a: 1}
+  dayAmbient: {r: 0.55, g: 0.61, b: 0.57, a: 1}
+  nightAmbient: {r: 0.105, g: 0.15, b: 0.21, a: 1}
+  daySky: {r: 0.47, g: 0.66, b: 0.78, a: 1}
+  nightSky: {r: 0.025, g: 0.045, b: 0.085, a: 1}
+  dayLightIntensity: 1.28
+  nightLightIntensity: 0.16
+  clearFog: {r: 0.55, g: 0.64, b: 0.66, a: 1}
+  rainFog: {r: 0.31, g: 0.38, b: 0.43, a: 1}
+  snowFog: {r: 0.72, g: 0.78, b: 0.82, a: 1}
+  dayWater: {r: 0.16, g: 0.42, b: 0.47, a: 0.88}
+  nightWater: {r: 0.035, g: 0.12, b: 0.19, a: 0.94}
+  clearFogDensity: 0.0018
+  severeFogDensity: 0.0085
+  springAccent: {r: 0.67, g: 0.82, b: 0.58, a: 1}
+  summerAccent: {r: 0.72, g: 0.78, b: 0.48, a: 1}
+  autumnAccent: {r: 0.72, g: 0.49, b: 0.27, a: 1}
+  winterAccent: {r: 0.66, g: 0.75, b: 0.78, a: 1}
+  mapWater: {r: 0.055, g: 0.19, b: 0.23, a: 1}
+  mapLand: {r: 0.29, g: 0.38, b: 0.22, a: 1}
+  mapRoute: {r: 0.64, g: 0.55, b: 0.37, a: 1}
+  locations:
+  - locationId: starter_settlement
+    kind: 0
+    groundColor: {r: 0.39, g: 0.36, b: 0.22, a: 1}
+    scale: 1.15
+    relief: 0.75
+  - locationId: enemy_settlement
+    kind: 0
+    groundColor: {r: 0.35, g: 0.29, b: 0.2, a: 1}
+    scale: 1.1
+    relief: 0.95
+  - locationId: north_forest
+    kind: 1
+    groundColor: {r: 0.16, g: 0.34, b: 0.18, a: 1}
+    scale: 1.2
+    relief: 1.35
+  - locationId: river_ford
+    kind: 2
+    groundColor: {r: 0.38, g: 0.46, b: 0.35, a: 1}
+    scale: 0.95
+    relief: 0.35
+  - locationId: east_hills
+    kind: 3
+    groundColor: {r: 0.38, g: 0.4, b: 0.34, a: 1}
+    scale: 1.25
+    relief: 2.35
+  - locationId: south_field
+    kind: 4
+    groundColor: {r: 0.5, g: 0.49, b: 0.27, a: 1}
+    scale: 1.2
+    relief: 0.45

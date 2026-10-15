@@ -258,6 +258,18 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Stable-content rule: building/resource/work `StableEntityId`, inventory quantities, construction costs, production recipes, group membership and Save/Load payloads remain in existing Domain/Simulation services
 - Visual grade/status: B settlement-production pass, `APPROVED_RUNTIME`; atmosphere/global-map alignment remains P9.5 and integrated subjective acceptance remains P9.6
 
+### SERENITY-P95-NATURAL-ATMOSPHERE-GLOBAL-MAP
+
+- Name: Serenity P9.5 Natural Atmosphere and Global Map
+- Type/category: project-owned definition asset plus disposable local/global presentation
+- Source/license: Serenity-owned C#/scene composition; no new vendor asset, texture or package
+- Runtime path: `Assets/Game/Art/Environment/P95_NaturalAtmosphere.asset`, `P95NaturalAtmosphereProfile.cs`, upgraded `WeatherPresentation.cs`, `GlobalMapPresentationController.cs` and `Assets/Scenes/GlobalMap.unity`
+- Runtime use: continuous day/night light rotation and colour, soft shadows, ambient/sky/fog/water response, centralized rain/snow, irregular global island relief, river, routes, six natural location affordances and Russian labels
+- Stable-content rule: profile contains definitions only; `GameClock`, `WeatherService`, `GlobalMapService`, six existing `WorldLocationId` values, resources, travel/campaign state and snapshots remain authoritative
+- Determinism/provenance: six unique location definitions validate against the canonical IDs and produce layout hash `84BE8C806F7B2B61`
+- Performance/collider rule: one local atmosphere controller and one global controller; no per-NPC update. Global relief/markers are scene-lifetime runtime art. P9.2 Terrain/NavMesh and collider boundaries are preserved; water remains non-colliding
+- Visual grade/status: B atmosphere/global-map pass, `APPROVED_RUNTIME`; final cross-mode subjective acceptance remains P9.6
+
 ## Staging packages considered but not imported
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |

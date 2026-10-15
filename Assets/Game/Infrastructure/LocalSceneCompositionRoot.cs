@@ -78,6 +78,7 @@ namespace Game.Infrastructure
         [SerializeField] private CharacterPresentationCatalog characterCatalog;
         [SerializeField] private BuildingPresentationCatalog buildingCatalog;
         [SerializeField] private BuildingPlacementController buildingPlacementController;
+        [SerializeField] private P95NaturalAtmosphereProfile naturalAtmosphereProfile;
         [SerializeField, Min(0.1f)] private float buildingGridSize = 1f;
         [SerializeField] private Vector3 buildingGridOrigin;
         [SerializeField] private long developmentWorldSimulationSeed = 20261006L;
@@ -88,6 +89,7 @@ namespace Game.Infrastructure
         public RtsCameraController CameraController => cameraController;
         public WorldPointerRaycaster PointerRaycaster => pointerRaycaster;
         public SelectionProbe SelectionProbe => selectionProbe;
+        public P95NaturalAtmosphereProfile NaturalAtmosphereProfile => naturalAtmosphereProfile;
         public CharacterRegistry Characters { get; private set; }
         public CharacterPresentationRegistry CharacterPresentations { get; private set; }
         public CharacterPresentationSpawner CharacterSpawner { get; private set; }
@@ -190,6 +192,7 @@ namespace Game.Infrastructure
         public P92PlayerSmokeController P92PlayerSmoke { get; private set; }
         public P93PlayerSmokeController P93PlayerSmoke { get; private set; }
         public P94PlayerSmokeController P94PlayerSmoke { get; private set; }
+        public P95PlayerSmokeController P95PlayerSmoke { get; private set; }
         public P92RealisticGameplayRegion RealisticGameplayRegion { get; private set; }
         public P93PopulatedBiomeWorld PopulatedBiomeWorld { get; private set; }
         public P94StoneAgeSettlement StoneAgeSettlement { get; private set; }
@@ -365,7 +368,7 @@ namespace Game.Infrastructure
             WeatherDebug.Initialize(Weather, Clock, pointerRaycaster);
             WeatherPresentation = gameObject.AddComponent<WeatherPresentationController>();
             WeatherPresentation.Initialize(Weather, ReferenceCamp != null ? ReferenceCamp.RainParticleMaterial : null,
-                InhabitableRegion);
+                InhabitableRegion, naturalAtmosphereProfile);
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
@@ -537,6 +540,7 @@ namespace Game.Infrastructure
             P92PlayerSmoke = P92PlayerSmokeController.AttachIfRequested(this);
             P93PlayerSmoke = P93PlayerSmokeController.AttachIfRequested(this);
             P94PlayerSmoke = P94PlayerSmokeController.AttachIfRequested(this);
+            P95PlayerSmoke = P95PlayerSmokeController.AttachIfRequested(this);
         }
 
         private void OnDestroy()

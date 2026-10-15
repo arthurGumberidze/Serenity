@@ -15,6 +15,8 @@ using Game.Simulation.Work;
 using Game.Domain.Work;
 using Game.Presentation.Localization;
 using Game.Presentation.UI;
+using Game.Presentation.Environment;
+using Game.Domain.Weather;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -58,6 +60,10 @@ namespace Game.Presentation.World
         private WorkPriority resourcePriority = WorkPriority.High;
         private Func<long> currentTick;
         private Action<GameModeTransitionResult> localEntered;
+        private IWeatherModifierProvider weather;
+        private P95NaturalAtmosphereProfile atmosphereProfile;
+        private bool ownsAtmosphereProfile;
+        private long displayedAtmosphereBucket = long.MinValue;
         private readonly Dictionary<WorldLocationId, GameObject> locationMarkers =
             new Dictionary<WorldLocationId, GameObject>();
         private readonly List<GameObject> transientMarkers = new List<GameObject>();
@@ -68,6 +74,7 @@ namespace Game.Presentation.World
         private WorldLocationId? selectedLocation;
         private MilitaryUnitId? selectedUnit;
         private Vector3 cameraTarget;
+        private float cameraOffsetZ;
         private ulong lastDynamicHash;
         private float nextRefreshTime;
         private readonly List<GlobalResourceMarker> resourceMarkers = new List<GlobalResourceMarker>();
@@ -78,6 +85,7 @@ namespace Game.Presentation.World
         private GUIStyle mapButtonStyle;
         private GUIStyle mapSelectedButtonStyle;
         private GUIStyle mapDisabledReasonStyle;
+        private GUIStyle mapLocationStyle;
         private Texture2D mapPanelTexture;
         private Texture2D mapButtonTexture;
         private Texture2D mapSelectedTexture;
@@ -87,6 +95,10 @@ namespace Game.Presentation.World
         public int ResourceMarkerCount => resourceMarkers.Count;
         public GlobalResourceMarker SelectedResourceMarker => selectedResource;
         public bool ShowDeveloperUi { get; set; }
+        public bool NaturalMapReady { get; private set; }
+        public int NaturalLocationCount { get; private set; }
+        public string NaturalLayoutHash => atmosphereProfile == null ? string.Empty : atmosphereProfile.ComputeLayoutHash();
+        public P95AtmosphereVisualState CurrentAtmosphere { get; private set; }
 
         public void Configure(Camera camera, Transform root)
         {
@@ -97,7 +109,8 @@ namespace Game.Presentation.World
         public void Initialize(GlobalMapService globalMap, MilitaryUnitService militaryUnits,
             BattleResolutionService battleResolution, GameModeTransitionService modeTransitions,
             ProductionService productionService, DirectWorkCommandService directWorkCommands, Func<long> tickProvider,
-            Action<GameModeTransitionResult> onLocalEntered)
+            Action<GameModeTransitionResult> onLocalEntered, IWeatherModifierProvider weatherProvider = null,
+            P95NaturalAtmosphereProfile profile = null)
         {
             map = globalMap ?? throw new ArgumentNullException(nameof(globalMap));
             units = militaryUnits ?? throw new ArgumentNullException(nameof(militaryUnits));
@@ -107,7 +120,19 @@ namespace Game.Presentation.World
             directWork = directWorkCommands ?? throw new ArgumentNullException(nameof(directWorkCommands));
             currentTick = tickProvider ?? throw new ArgumentNullException(nameof(tickProvider));
             localEntered = onLocalEntered;
+            cameraTarget = new Vector3(4f, 0f, 0f);
+            cameraOffsetZ = mapCamera.transform.position.z;
+            weather = weatherProvider;
+            atmosphereProfile = profile;
+            if (atmosphereProfile == null)
+            {
+                atmosphereProfile = ScriptableObject.CreateInstance<P95NaturalAtmosphereProfile>();
+                atmosphereProfile.ConfigureDefaults();
+                ownsAtmosphereProfile = true;
+            }
+            atmosphereProfile.ValidateConfiguration();
             BuildStaticMap();
+            RefreshAtmosphere();
             RefreshDynamicMarkers();
             lastDynamicHash = DynamicHash();
         }
@@ -115,6 +140,7 @@ namespace Game.Presentation.World
         private void Update()
         {
             if (map == null || mapCamera == null) return;
+            RefreshAtmosphere();
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
             var pan = Vector3.zero;
@@ -129,8 +155,8 @@ namespace Game.Presentation.World
             cameraTarget.x = Mathf.Clamp(cameraTarget.x, -40f, 40f);
             cameraTarget.z = Mathf.Clamp(cameraTarget.z, -30f, 30f);
             var zoom = mouse == null ? 0f : mouse.scroll.ReadValue().y;
-            var height = Mathf.Clamp(mapCamera.transform.position.y - zoom * 0.02f, 118f, 175f);
-            mapCamera.transform.position = new Vector3(cameraTarget.x, height, cameraTarget.z);
+            var height = Mathf.Clamp(mapCamera.transform.position.y - zoom * 0.02f, 130f, 190f);
+            mapCamera.transform.position = new Vector3(cameraTarget.x, height, cameraTarget.z + cameraOffsetZ);
             if (mouse != null && mouse.leftButton.wasPressedThisFrame)
                 TrySelectResourceAt(mouse.position.ReadValue());
             UpdateTravelMarkerPositions();
@@ -154,10 +180,12 @@ namespace Game.Presentation.World
             if (plane != null)
             {
                 var mapMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                mapMaterial.color = new Color(0.16f, 0.25f, 0.14f);
-                mapMaterial.SetFloat("_Smoothness", 0.08f);
+                mapMaterial.color = atmosphereProfile.MapWater;
+                mapMaterial.SetFloat("_Smoothness", 0.72f);
                 plane.sharedMaterial = mapMaterial;
+                plane.transform.position = new Vector3(0f, 99.45f, 0f);
             }
+            CreateLandRelief();
             foreach (var route in map.Routes)
             {
                 var from = map.GetLocation(route.From);
@@ -166,22 +194,27 @@ namespace Game.Presentation.World
                 lineObject.transform.SetParent(markerRoot, false);
                 var line = lineObject.AddComponent<LineRenderer>();
                 line.positionCount = 2;
-                line.SetPositions(new[] { Position(from, 100.1f), Position(to, 100.1f) });
-                line.startWidth = line.endWidth = 0.25f;
+                line.SetPositions(new[] { Position(from, 103.1f), Position(to, 103.1f) });
+                line.startWidth = line.endWidth = 0.34f;
                 line.material = new Material(Shader.Find("Sprites/Default"));
-                line.startColor = line.endColor = new Color(0.45f, 0.52f, 0.58f);
+                line.startColor = line.endColor = atmosphereProfile.MapRoute;
             }
             foreach (var location in map.Locations)
             {
+                var definition = atmosphereProfile.GetLocation(location.Id.Value);
                 var marker = CreateNaturalMarker("Location " + location.Id,
                     location.Type == WorldLocationType.Settlement ? MarkerShape.Settlement : MarkerShape.Location,
-                    location.Id == map.ActiveLocationId ? Color.cyan : Color.gray);
+                    location.Id == map.ActiveLocationId ? Color.Lerp(definition.GroundColor, Color.cyan, .58f) :
+                    definition.GroundColor);
                 marker.transform.SetParent(markerRoot, false);
-                marker.transform.position = Position(location, 101f);
-                marker.transform.localScale = location.Type == WorldLocationType.Settlement
-                    ? new Vector3(3f, 1f, 3f) : Vector3.one * 1.8f;
+                marker.transform.position = Position(location, 102f + definition.Relief);
+                marker.transform.localScale = (location.Type == WorldLocationType.Settlement
+                    ? new Vector3(1.25f, .72f, 1.25f) : Vector3.one * 1.12f) * definition.Scale;
+                AddLocationAffordance(marker.transform, definition);
                 locationMarkers.Add(location.Id, marker);
             }
+            NaturalLocationCount = locationMarkers.Count;
+            NaturalMapReady = NaturalLocationCount == 6 && markerRoot.Find("P9.5 Natural Land Relief") != null;
             BuildResourceMarkers();
         }
 
@@ -255,6 +288,17 @@ namespace Game.Presentation.World
             if (map == null) return;
             EnsureUiStyles();
             var safe = Screen.safeArea;
+            foreach (var location in map.Locations)
+            {
+                if (!locationMarkers.TryGetValue(location.Id, out var marker) || marker == null) continue;
+                var screen = mapCamera.WorldToScreenPoint(marker.transform.position + Vector3.up * 3f);
+                if (screen.z <= 0f) continue;
+                var point = new Vector2(screen.x, Screen.height - screen.y);
+                if (point.x < safe.xMin + 182f || point.x > safe.xMax - 362f ||
+                    point.y < safe.yMin + 82f || point.y > safe.yMax - 48f) continue;
+                GUI.Label(new Rect(point.x - 68f, point.y - 30f, 136f, 24f), LocationName(location.Id),
+                    mapLocationStyle);
+            }
             if (selectedResource != null)
             {
                 GUILayout.BeginArea(new Rect(safe.xMax - 326, safe.yMin + 176, 306, 252), mapPanelStyle);
@@ -338,6 +382,12 @@ namespace Game.Presentation.World
             {
                 normal = { textColor = SerenityUiDesign.Text }, wordWrap = true, fontSize = 13
             };
+            mapLocationStyle = new GUIStyle(GUI.skin.label)
+            {
+                normal = { background = mapButtonTexture, textColor = SerenityUiDesign.AccentBright },
+                alignment = TextAnchor.MiddleCenter, fontSize = 12, fontStyle = FontStyle.Bold,
+                padding = new RectOffset(5, 5, 2, 2)
+            };
             mapButtonStyle = new GUIStyle(GUI.skin.button)
             {
                 normal = { background = mapButtonTexture, textColor = SerenityUiDesign.Text },
@@ -364,11 +414,142 @@ namespace Game.Presentation.World
             return texture;
         }
 
+        private void RefreshAtmosphere()
+        {
+            if (weather == null || atmosphereProfile == null || currentTick == null) return;
+            var tick = currentTick();
+            var bucket = tick / TimeSpan.TicksPerMinute;
+            if (bucket == displayedAtmosphereBucket) return;
+            displayedAtmosphereBucket = bucket;
+            CurrentAtmosphere = atmosphereProfile.Evaluate(tick, weather.GetWeatherAtCalendarTick(tick));
+            mapCamera.backgroundColor = Color.Lerp(CurrentAtmosphere.SkyColor, CurrentAtmosphere.FogColor, .24f);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = CurrentAtmosphere.FogColor;
+            RenderSettings.fogDensity = CurrentAtmosphere.FogDensity * .56f;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = Color.Lerp(CurrentAtmosphere.AmbientColor,
+                new Color(.22f, .27f, .3f), CurrentAtmosphere.IsNight ? .46f : .08f);
+            RenderSettings.ambientIntensity = Mathf.Max(CurrentAtmosphere.AmbientIntensity,
+                CurrentAtmosphere.IsNight ? .8f : .5f);
+            foreach (var candidate in FindObjectsByType<Light>(FindObjectsInactive.Exclude))
+            {
+                if (candidate.type != LightType.Directional || candidate.gameObject.scene != gameObject.scene) continue;
+                candidate.transform.rotation = CurrentAtmosphere.LightRotation;
+                candidate.color = CurrentAtmosphere.LightColor;
+                candidate.intensity = Mathf.Max(CurrentAtmosphere.LightIntensity,
+                    CurrentAtmosphere.IsNight ? .55f : .5f);
+                candidate.shadows = LightShadows.Soft;
+                candidate.shadowStrength = CurrentAtmosphere.ShadowStrength;
+            }
+        }
+
+        private void CreateLandRelief()
+        {
+            const int columns = 13;
+            const int rows = 11;
+            var vertices = new Vector3[columns * rows];
+            var uv = new Vector2[vertices.Length];
+            for (var z = 0; z < rows; z++)
+            for (var x = 0; x < columns; x++)
+            {
+                var px = Mathf.Lerp(-37f, 37f, x / (columns - 1f));
+                var pz = Mathf.Lerp(-28f, 28f, z / (rows - 1f));
+                var edge = Mathf.Clamp01(1f - Mathf.Pow(px / 39f, 4f) - Mathf.Pow(pz / 30f, 4f));
+                var relief = Mathf.Sin(x * 1.73f + z * .61f) * .22f + Mathf.Cos(z * 1.37f) * .17f;
+                foreach (var location in map.Locations)
+                {
+                    var definition = atmosphereProfile.GetLocation(location.Id.Value);
+                    var distance = Vector2.Distance(new Vector2(px, pz), new Vector2(location.MapX, location.MapY));
+                    relief += Mathf.Max(0f, 1f - distance / 13f) * definition.Relief;
+                }
+                vertices[z * columns + x] = new Vector3(px, Mathf.Lerp(-.85f, Mathf.Max(.12f, relief), edge), pz);
+                uv[z * columns + x] = new Vector2(x / (columns - 1f), z / (rows - 1f));
+            }
+            var triangles = new int[(columns - 1) * (rows - 1) * 6];
+            var index = 0;
+            for (var z = 0; z < rows - 1; z++)
+            for (var x = 0; x < columns - 1; x++)
+            {
+                var a = z * columns + x;
+                triangles[index++] = a; triangles[index++] = a + columns; triangles[index++] = a + 1;
+                triangles[index++] = a + 1; triangles[index++] = a + columns; triangles[index++] = a + columns + 1;
+            }
+            var mesh = new Mesh { name = "P9.5 Natural Global Land Relief" };
+            mesh.vertices = vertices; mesh.uv = uv; mesh.triangles = triangles;
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            var land = new GameObject("P9.5 Natural Land Relief", typeof(MeshFilter), typeof(MeshRenderer));
+            land.transform.SetParent(markerRoot, false);
+            land.transform.position = new Vector3(0f, 100f, 0f);
+            land.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"))
+                { name = "P9.5 Natural Land Material", color = atmosphereProfile.MapLand };
+            material.SetFloat("_Smoothness", .08f);
+            land.GetComponent<MeshRenderer>().sharedMaterial = material;
+
+            var river = new GameObject("P9.5 River", typeof(LineRenderer));
+            river.transform.SetParent(markerRoot, false);
+            var line = river.GetComponent<LineRenderer>();
+            line.positionCount = 5;
+            line.SetPositions(new[] { new Vector3(-34f,100.45f,23f), new Vector3(-17f,100.52f,13f),
+                new Vector3(2f,100.58f,4f), new Vector3(18f,100.5f,-7f), new Vector3(35f,100.42f,-17f) });
+            line.startWidth = 2.4f; line.endWidth = 3.1f;
+            line.material = new Material(Shader.Find("Sprites/Default"));
+            line.startColor = line.endColor = atmosphereProfile.MapWater;
+        }
+
+        private static void AddLocationAffordance(Transform root, P95MapLocationDefinition definition)
+        {
+            switch (definition.Kind)
+            {
+                case P95MapLocationKind.Settlement:
+                    for (var i = 0; i < 3; i++)
+                        CreateProp(root, PrimitiveType.Cylinder, "Roundhouse " + (i + 1),
+                            new Vector3((i - 1) * 1.25f, .5f, i % 2 == 0 ? .8f : -.55f),
+                            new Vector3(.55f, .45f, .55f), new Color(.48f,.31f,.16f));
+                    break;
+                case P95MapLocationKind.Forest:
+                    for (var i = 0; i < 5; i++)
+                        CreateProp(root, PrimitiveType.Capsule, "Pine " + (i + 1),
+                            new Vector3((i % 3 - 1) * .78f, .8f, (i / 3 - .5f) * 1.1f),
+                            new Vector3(.34f,.95f,.34f), new Color(.12f,.29f,.14f));
+                    break;
+                case P95MapLocationKind.Ford:
+                    CreateProp(root, PrimitiveType.Cube, "Ford Stones", new Vector3(0f,.15f,0f),
+                        new Vector3(2.4f,.16f,.42f), new Color(.55f,.58f,.5f));
+                    break;
+                case P95MapLocationKind.Hills:
+                    for (var i = 0; i < 3; i++)
+                        CreateProp(root, PrimitiveType.Sphere, "Hill " + (i + 1),
+                            new Vector3((i - 1) * .85f,.35f,i == 1 ? .45f : -.3f),
+                            new Vector3(1.15f,.65f,1f), new Color(.39f,.4f,.34f));
+                    break;
+                case P95MapLocationKind.Field:
+                    for (var i = 0; i < 4; i++)
+                        CreateProp(root, PrimitiveType.Cube, "Field Strip " + (i + 1),
+                            new Vector3((i - 1.5f) * .48f,.12f,0f), new Vector3(.3f,.12f,2.1f),
+                            i % 2 == 0 ? new Color(.58f,.52f,.25f) : new Color(.42f,.44f,.2f));
+                    break;
+            }
+        }
+
+        private static void CreateProp(Transform root, PrimitiveType primitive, string name, Vector3 position,
+            Vector3 scale, Color color)
+        {
+            var prop = GameObject.CreatePrimitive(primitive);
+            prop.name = name;
+            prop.transform.SetParent(root, false);
+            prop.transform.localPosition = position;
+            prop.transform.localScale = scale;
+            SetColor(prop, color);
+        }
+
         private void OnDestroy()
         {
             if (mapPanelTexture != null) Destroy(mapPanelTexture);
             if (mapButtonTexture != null) Destroy(mapButtonTexture);
             if (mapSelectedTexture != null) Destroy(mapSelectedTexture);
+            if (ownsAtmosphereProfile && atmosphereProfile != null) Destroy(atmosphereProfile);
         }
 
         public void SelectResourceMarker(GlobalResourceMarker marker)

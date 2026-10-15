@@ -105,7 +105,7 @@ namespace Game.Infrastructure
                 {
                     root.ApplyLocalLocationScope(root.GlobalMap.ActiveLocationId);
                     StartCoroutine(ReturnToLocal());
-                });
+                }, root.Weather, root.NaturalAtmosphereProfile);
             controller.ShowDeveloperUi = developerUiVisible;
             busy = false;
         }
@@ -115,6 +115,7 @@ namespace Game.Infrastructure
             if (busy) yield break;
             busy = true;
             if (IsGlobalSceneLoaded) yield return SceneManager.UnloadSceneAsync("GlobalMap");
+            root.WeatherPresentation.ClearPreview(root.Clock.State.CalendarTicks);
             if (localCamera != null) localCamera.enabled = true;
             if (localAudioListener != null) localAudioListener.enabled = true;
             root.CameraController.enabled = true;

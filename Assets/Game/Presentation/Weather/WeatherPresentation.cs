@@ -14,67 +14,94 @@ namespace Game.Presentation.Weather
     public sealed class WeatherPresentationController : MonoBehaviour
     {
         private WeatherService weather;
-        private long displayedDay = -1;
+        private long displayedTimeBucket = -1;
         private Light sun;
         private ParticleSystem rainParticles;
+        private ParticleSystem snowParticles;
         private AudioSource rainAudio;
         private Material rainMaterial;
         private AudioClip rainClip;
         private P5InhabitableRegionPresentation region;
+        private P95NaturalAtmosphereProfile atmosphereProfile;
+        private Material runtimeSkybox;
+        private Material originalSkybox;
         private bool previewActive;
         private bool ownsRainMaterial;
+        private bool ownsAtmosphereProfile;
+
+        public P95AtmosphereVisualState CurrentVisualState { get; private set; }
 
         public bool IsRaining { get; private set; }
         public ParticleSystem RainParticles => rainParticles;
+        public ParticleSystem SnowParticles => snowParticles;
         public AudioSource RainAudio => rainAudio;
+        public bool IsSnowing { get; private set; }
 
         public void Initialize(WeatherService service, Material particleMaterial = null,
-            P5InhabitableRegionPresentation inhabitableRegion = null)
+            P5InhabitableRegionPresentation inhabitableRegion = null,
+            P95NaturalAtmosphereProfile profile = null)
         {
             weather = service ?? throw new ArgumentNullException(nameof(service));
             rainMaterial = particleMaterial;
             region = inhabitableRegion;
+            atmosphereProfile = profile;
+            if (atmosphereProfile == null)
+            {
+                atmosphereProfile = ScriptableObject.CreateInstance<P95NaturalAtmosphereProfile>();
+                atmosphereProfile.ConfigureDefaults();
+                ownsAtmosphereProfile = true;
+            }
+            atmosphereProfile.ValidateConfiguration();
             sun = FindDirectionalLight();
             CreateRainPresentation();
+            CreateSnowPresentation();
         }
 
         public void Refresh(long calendarTick)
         {
             if (weather == null || previewActive) return;
             var state = weather.GetWeatherAtCalendarTick(calendarTick);
-            if (state.AbsoluteDay == displayedDay) return;
-            displayedDay = state.AbsoluteDay;
-            ApplyState(state);
+            var bucket = calendarTick / TimeSpan.TicksPerMinute;
+            if (bucket == displayedTimeBucket) return;
+            displayedTimeBucket = bucket;
+            ApplyState(state, calendarTick);
         }
 
         /// <summary>Presentation-only preview used by visual validation. Canonical weather is never mutated.</summary>
-        public void ShowPreview(WeatherState state)
+        public void ShowPreview(WeatherState state, long? calendarTick = null)
         {
             previewActive = true;
-            displayedDay = -1;
-            ApplyState(state);
+            displayedTimeBucket = -1;
+            var tick = calendarTick ?? checked(state.AbsoluteDay * TimeSpan.TicksPerDay + 12 * TimeSpan.TicksPerHour);
+            ApplyState(state, tick);
         }
 
         public void ClearPreview(long calendarTick)
         {
             previewActive = false;
-            displayedDay = -1;
+            displayedTimeBucket = -1;
             Refresh(calendarTick);
         }
 
-        private void ApplyState(WeatherState state)
+        private void ApplyState(WeatherState state, long calendarTick)
         {
-            var overcast = state.Type == WeatherType.Cloudy || state.Precipitation != PrecipitationType.None;
-            RenderSettings.fog = overcast;
-            RenderSettings.fogColor = state.Snowing ? new Color(0.72f, 0.77f, 0.82f) : new Color(0.36f, 0.42f, 0.48f);
-            RenderSettings.fogDensity = state.Type == WeatherType.HeavyRain ? 0.012f : overcast ? 0.006f : 0.002f;
-            RenderSettings.ambientLight = overcast ? new Color(0.48f, 0.5f, 0.54f) : new Color(0.68f, 0.66f, 0.58f);
+            CurrentVisualState = atmosphereProfile.Evaluate(calendarTick, state);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = CurrentVisualState.FogColor;
+            RenderSettings.fogDensity = CurrentVisualState.FogDensity;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = CurrentVisualState.AmbientColor;
+            RenderSettings.ambientIntensity = CurrentVisualState.AmbientIntensity;
+            RenderSettings.reflectionIntensity = CurrentVisualState.ReflectionIntensity;
+            ApplySkybox(CurrentVisualState.SkyColor);
             if (sun != null)
             {
-                sun.intensity = state.Type == WeatherType.Clear || state.Type == WeatherType.HeatWave ? 1.05f :
-                    state.Type == WeatherType.HeavyRain || state.Type == WeatherType.Snow ? 0.55f : 0.78f;
-                sun.color = state.Type == WeatherType.ColdSnap || state.Type == WeatherType.Snow
-                    ? new Color(0.78f, 0.86f, 1f) : new Color(1f, 0.94f, 0.82f);
+                sun.transform.rotation = CurrentVisualState.LightRotation;
+                sun.intensity = CurrentVisualState.LightIntensity;
+                sun.color = CurrentVisualState.LightColor;
+                sun.shadows = LightShadows.Soft;
+                sun.shadowStrength = CurrentVisualState.ShadowStrength;
             }
             IsRaining = state.Precipitation == PrecipitationType.Rain;
             if (rainParticles != null)
@@ -84,6 +111,14 @@ namespace Game.Presentation.Weather
                 rainParticles.gameObject.SetActive(IsRaining);
                 if (IsRaining && !rainParticles.isPlaying) rainParticles.Play();
             }
+            IsSnowing = state.Precipitation == PrecipitationType.Snow;
+            if (snowParticles != null)
+            {
+                var emission = snowParticles.emission;
+                emission.rateOverTime = state.PrecipitationPermille > 650 ? 520f : 260f;
+                snowParticles.gameObject.SetActive(IsSnowing);
+                if (IsSnowing && !snowParticles.isPlaying) snowParticles.Play();
+            }
             if (rainAudio != null)
             {
                 rainAudio.volume = state.Type == WeatherType.HeavyRain ? 0.24f : 0.14f;
@@ -91,6 +126,34 @@ namespace Game.Presentation.Weather
                 else if (!IsRaining && rainAudio.isPlaying) rainAudio.Stop();
             }
             region?.ApplySeason(state.Season, state.Snowing);
+            ApplyWater(CurrentVisualState);
+        }
+
+        private void ApplySkybox(Color color)
+        {
+            var source = RenderSettings.skybox;
+            if (source == null) return;
+            if (runtimeSkybox == null)
+            {
+                originalSkybox = source;
+                runtimeSkybox = new Material(source) { name = "P9.5 Runtime Skybox" };
+                RenderSettings.skybox = runtimeSkybox;
+            }
+            if (runtimeSkybox.HasProperty("_SkyTint")) runtimeSkybox.SetColor("_SkyTint", color);
+            if (runtimeSkybox.HasProperty("_Tint")) runtimeSkybox.SetColor("_Tint", color);
+            if (runtimeSkybox.HasProperty("_Exposure"))
+                runtimeSkybox.SetFloat("_Exposure", Mathf.Lerp(0.34f, 1.05f, CurrentVisualState.Daylight));
+        }
+
+        private void ApplyWater(P95AtmosphereVisualState visual)
+        {
+            if (region == null || region.WaterRenderer == null) return;
+            var block = new MaterialPropertyBlock();
+            region.WaterRenderer.GetPropertyBlock(block);
+            block.SetColor("_BaseColor", visual.WaterColor);
+            block.SetColor("_Color", visual.WaterColor);
+            block.SetFloat("_Smoothness", visual.WaterSmoothness);
+            region.WaterRenderer.SetPropertyBlock(block);
         }
 
         private void CreateRainPresentation()
@@ -137,6 +200,36 @@ namespace Game.Presentation.Weather
             rainObject.SetActive(false);
         }
 
+        private void CreateSnowPresentation()
+        {
+            if (snowParticles != null) return;
+            var snowObject = new GameObject("P9.5 Snow Presentation");
+            snowObject.transform.SetParent(transform, false);
+            snowParticles = snowObject.AddComponent<ParticleSystem>();
+            var main = snowParticles.main;
+            main.loop = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(4.5f, 7f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.35f, 0.9f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.055f, 0.14f);
+            main.startColor = new Color(0.92f, 0.96f, 1f, 0.82f);
+            main.maxParticles = 1800;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = 0.035f;
+            var emission = snowParticles.emission;
+            emission.rateOverTime = 260f;
+            var shape = snowParticles.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(34f, 1f, 34f);
+            var noise = snowParticles.noise;
+            noise.enabled = true;
+            noise.strength = 0.45f;
+            noise.frequency = 0.32f;
+            var renderer = snowParticles.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = rainMaterial;
+            snowObject.SetActive(false);
+        }
+
         private static AudioClip CreateRainLoop()
         {
             const int sampleRate = 22050;
@@ -157,14 +250,22 @@ namespace Game.Presentation.Weather
 
         private void LateUpdate()
         {
-            if (!IsRaining || rainParticles == null || UnityEngine.Camera.main == null) return;
-            rainParticles.transform.position = UnityEngine.Camera.main.transform.position + Vector3.up * 13f;
+            if (UnityEngine.Camera.main == null) return;
+            var precipitationPosition = UnityEngine.Camera.main.transform.position + Vector3.up * 13f;
+            if (IsRaining && rainParticles != null) rainParticles.transform.position = precipitationPosition;
+            if (IsSnowing && snowParticles != null) snowParticles.transform.position = precipitationPosition;
         }
 
         private void OnDestroy()
         {
             if (ownsRainMaterial && rainMaterial != null) Destroy(rainMaterial);
             if (rainClip != null) Destroy(rainClip);
+            if (runtimeSkybox != null)
+            {
+                if (RenderSettings.skybox == runtimeSkybox) RenderSettings.skybox = originalSkybox;
+                Destroy(runtimeSkybox);
+            }
+            if (ownsAtmosphereProfile && atmosphereProfile != null) Destroy(atmosphereProfile);
         }
 
         private static Light FindDirectionalLight()

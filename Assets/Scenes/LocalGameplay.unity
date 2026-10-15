@@ -71206,6 +71206,7 @@ MonoBehaviour:
   characterCatalog: {fileID: 11400000, guid: 1628a9e34bebc5541a90e45090dd7ade, type: 2}
   buildingCatalog: {fileID: 11400000, guid: c6f4b9906e4411b44ba4e97c2c82d192, type: 2}
   buildingPlacementController: {fileID: 807030140}
+  naturalAtmosphereProfile: {fileID: 11400000, guid: b706a8460a8c26b459e9e24fc2e3d2e4, type: 2}
   buildingGridSize: 1
   buildingGridOrigin: {x: 0, y: 0, z: 0}
   developmentWorldSimulationSeed: 20261006
