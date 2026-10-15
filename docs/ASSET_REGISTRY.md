@@ -270,6 +270,18 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Performance/collider rule: one local atmosphere controller and one global controller; no per-NPC update. Global relief/markers are scene-lifetime runtime art. P9.2 Terrain/NavMesh and collider boundaries are preserved; water remains non-colliding
 - Visual grade/status: B atmosphere/global-map pass, `APPROVED_RUNTIME`; final cross-mode subjective acceptance remains P9.6
 
+### SERENITY-P96-INTEGRATION-EVIDENCE
+
+- Name: Serenity P9.6 Integrated Player Route Evidence
+- Type/category: project-owned validation controller, tests and two-resolution Player evidence; not a new runtime art source
+- Source/license: Serenity-owned C#/PowerShell and generated local screenshots/JSON; no external asset, texture, model or package imported
+- Runtime path: `Assets/Game/Infrastructure/Integration/P96PlayerSmokeController.cs`, `Assets/Game/Tests/PlayMode/P96IntegrationAcceptancePlayModeTests.cs` and `Tools/Verify-P96.ps1`
+- Evidence path: `Logs/P96-player-smoke-20261015-final/1280x720` and `Logs/P96-player-smoke-20261015-final/1600x900`; each contains JSON plus editor, RTS work, TPS settlement, global map, rain, winter-night and after-Load PNGs
+- Technical result: route and stable identity pass at both exact sizes; counts are 170 trees, 94 rocks, 930 ground cover, 24 resource formations and six worksites; global/biome/settlement hashes are `84BE8C806F7B2B61`, `D907AA41DB7EA053` and `681E040B60C66ED2`
+- Inventory gap: the approved UMA 3 content has modern demo clothing only; approved mass/fallback Hodaart Characters are visibly low-poly, and the centralized aggregate crowd diagnostic capsule remains visible. No skeleton-compatible realistic Stone Age wardrobe or coherent mass-NPC/LOD replacement is approved in the current inventory
+- UI finding: transient text clipping is visible at 1600×900 after TPS/Load and remains an open integration/readability defect
+- Visual grade/status: `VALIDATION_ONLY`, P9.6 `PARTIAL`; `technical_passed=true`, `subjective_visual_acceptance=false`
+
 ## Staging packages considered but not imported
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |
