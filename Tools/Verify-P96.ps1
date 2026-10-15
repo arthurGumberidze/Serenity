@@ -89,8 +89,10 @@ function Invoke-P96Player([string]$Name, [int]$Width, [int]$Height) {
     if (-not (Test-Path -LiteralPath $resultPath)) { throw "$Name Player smoke result is missing." }
     $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
     if (-not $result.technical_passed) { throw "$Name technical smoke failed: $($result.error)" }
-    if ($result.subjective_visual_acceptance) {
-        throw "$Name incorrectly claims subjective visual acceptance despite the recorded character-art gap."
+    if (-not $result.subjective_visual_acceptance) { throw "$Name did not pass subjective visual acceptance." }
+    if ($result.character_asset_gap -or $result.aggregate_crowd_caveat -or
+        -not $result.stone_age_wardrobe -or -not $result.clean_uma_prefab) {
+        throw "$Name retained a character visual caveat or failed the UMA wardrobe/prefab assertions."
     }
     if ([int]$result.width -ne $Width -or [int]$result.height -ne $Height) {
         throw "$Name rendered $($result.width)x$($result.height), expected ${Width}x${Height}."
@@ -102,7 +104,7 @@ function Invoke-P96Player([string]$Name, [int]$Width, [int]$Height) {
             throw "$Name screenshot is missing or empty: $screenshot"
         }
     }
-    Write-Output "$Name : technical pass; visual acceptance intentionally remains false. Evidence: $output"
+    Write-Output "$Name : technical and visual acceptance passed. Evidence: $output"
 }
 
 $parseErrors = $null
@@ -127,4 +129,4 @@ if (-not (Select-String -LiteralPath $buildLog -Pattern 'U00_BUILD_RESULT: Succe
 
 Invoke-P96Player '1280x720' 1280 720
 Invoke-P96Player '1600x900' 1600 900
-Write-Output "P9.6 technical verification passed at both resolutions. Evidence: $EvidenceRoot"
+Write-Output "P9.6 technical and visual verification passed at both resolutions. Evidence: $EvidenceRoot"

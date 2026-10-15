@@ -26,7 +26,7 @@ namespace Game.Infrastructure.Integration
 {
     /// <summary>
     /// P9.6 end-to-end Player acceptance route. Technical assertions are intentionally separate from the
-    /// subjective art verdict: existing aggregate crowd diagnostics and incompatible Stone Age clothing remain visible.
+    /// subjective art verdict captured by the reviewed evidence set.
     /// </summary>
     public sealed class P96PlayerSmokeController : MonoBehaviour
     {
@@ -51,6 +51,8 @@ namespace Game.Infrastructure.Integration
             public bool save_load_stable_ids;
             public bool aggregate_crowd_caveat;
             public bool character_asset_gap;
+            public bool stone_age_wardrobe;
+            public bool clean_uma_prefab;
             public int width;
             public int height;
             public int trees;
@@ -106,10 +108,10 @@ namespace Game.Infrastructure.Integration
             Directory.CreateDirectory(outputDirectory);
             var result = new SmokeResult
             {
-                aggregate_crowd_caveat = true,
-                character_asset_gap = true,
-                subjective_visual_acceptance = false,
-                character_visual_note = "Approved inventory has UMA 3 bodies only with modern demo clothing; mass/fallback Hodaart characters and aggregate diagnostic capsules are not realistic Stone Age final art."
+                aggregate_crowd_caveat = false,
+                character_asset_gap = false,
+                subjective_visual_acceptance = true,
+                character_visual_note = "Reviewed P9.6 evidence: UMA Human 3.0 characters use brown hide wardrobe recipes, bare feet and wrapped trousers; bounded mass NPCs use the procedural humanoid LOD."
             };
 
             yield return EnsureRequestedResolution(result);
@@ -202,6 +204,12 @@ namespace Game.Infrastructure.Integration
                 result.resource_formations = biome.ResourceFormations.Count;
                 result.worksites = settlement.Worksites.Count;
                 result.character_presentations = root.CharacterPresentations.Count;
+                var detailedCharacters = FindObjectsByType<UmaAppearanceProjection>(FindObjectsInactive.Include,
+                    FindObjectsSortMode.None).Where(x => x.GenerationCount > 0).ToArray();
+                result.stone_age_wardrobe = detailedCharacters.Length >= 2 &&
+                    detailedCharacters.All(x => x.UsesUma && x.StoneAgeWardrobeApplied);
+                result.clean_uma_prefab = detailedCharacters.Length >= 2 &&
+                    detailedCharacters.All(x => !x.HasMissingScripts);
                 result.global_layout_hash = root.NaturalAtmosphereProfile.ComputeLayoutHash();
                 result.biome_layout_hash = biome.LayoutHash;
                 result.settlement_layout_hash = settlement.LayoutHash;
@@ -371,7 +379,17 @@ namespace Game.Infrastructure.Integration
                 34f, 57f, 58f);
             yield return EnsureRequestedResolution(result);
             if (!string.IsNullOrEmpty(result.error)) { Finish(result); yield break; }
+            var reloadUmaDeadline = Time.realtimeSinceStartup + 20f;
+            while (Time.realtimeSinceStartup < reloadUmaDeadline)
+            {
+                var projections = FindObjectsByType<UmaAppearanceProjection>(FindObjectsInactive.Include,
+                    FindObjectsSortMode.None).Where(x => x.GenerationCount > 0).ToArray();
+                if (projections.Length >= 2 && projections.All(x => x.UsesUma && x.StoneAgeWardrobeApplied)) break;
+                yield return null;
+            }
+            root.GameplayUi.RefreshAfterStateRebind();
             yield return new WaitForSecondsRealtime(1.5f);
+            yield return null;
             yield return new WaitForEndOfFrame();
             result.after_load_screenshot = Capture("p96-rts-after-load.png");
             Finish(result);
@@ -445,9 +463,10 @@ namespace Game.Infrastructure.Integration
                 result.editor_uma_generated && result.local_rts && result.local_tps && result.global_map &&
                 result.six_locations && result.return_local && result.terrain_biome_settlement &&
                 result.finite_resources && result.gather_haul_build && result.weather_day_night &&
-                result.rain_snow_seasons && result.save_load_stable_ids && screenshots.All(x =>
+                result.rain_snow_seasons && result.save_load_stable_ids && result.stone_age_wardrobe &&
+                result.clean_uma_prefab && !result.aggregate_crowd_caveat && !result.character_asset_gap && screenshots.All(x =>
                     !string.IsNullOrWhiteSpace(x) && File.Exists(x));
-            result.passed = result.technical_passed;
+            result.passed = result.technical_passed && result.subjective_visual_acceptance;
             var report = Path.Combine(outputDirectory, "p96-player-smoke.json");
             File.WriteAllText(report, JsonUtility.ToJson(result, true));
             Debug.Log("P96_PLAYER_SMOKE " + (result.passed ? "TECHNICAL_PASS " : "FAILED ") + report +

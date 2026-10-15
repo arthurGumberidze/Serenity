@@ -56,9 +56,14 @@ namespace Game.Presentation.Characters
         private Renderer[] fallbackRenderers = Array.Empty<Renderer>();
         private Coroutine generation;
         private AppearanceState appearance;
+        private string expectedWardrobeRecipe;
 
         public AppearanceState Appearance => appearance;
         public bool UsesUma { get; private set; }
+        public bool StoneAgeWardrobeApplied { get; private set; }
+        public bool HasMissingScripts => umaInstance != null &&
+            umaInstance.GetComponentsInChildren<Transform>(true).Any(item =>
+                item.GetComponents<Component>().Any(component => component == null));
         public int GenerationCount { get; private set; }
         public long LastGenerationMilliseconds { get; private set; }
 
@@ -97,6 +102,7 @@ namespace Game.Presentation.Characters
         private IEnumerator Generate()
         {
             UsesUma = false;
+            StoneAgeWardrobeApplied = false;
             SetFallbackVisible(true);
             if (avatar == null) yield break;
             var watch = Stopwatch.StartNew();
@@ -113,6 +119,9 @@ namespace Game.Presentation.Characters
                     // UMA creates renderer children after the prefab is instantiated. Keep those late-created
                     // objects on the presenter's layer so isolated preview cameras can render the generated body.
                     SetLayerRecursively(umaInstance, gameObject.layer);
+                    StoneAgeWardrobeApplied = string.Equals(
+                        Invoke("GetWardrobeItemName", new[] { typeof(string) }, "Chest") as string,
+                        expectedWardrobeRecipe, StringComparison.Ordinal);
                     UsesUma = true;
                     SetFallbackVisible(false);
                     break;
@@ -142,8 +151,11 @@ namespace Game.Presentation.Characters
             if (appearance.AgeId.Value == "age_mature") SetSlot("Aged_U_Wardrobe");
             else if (appearance.AgeId.Value == "age_aged") SetSlot("Aged_U2_Wardrobe");
             var female = appearance.ProfileId == StoneAgeAppearanceProfiles.UmaFemale;
-            SetSlot(female ? "tanktop_yellow_Recipe" : "male_tanktop_yellow_Recipe");
-            SetSlot(female ? "tights_gray_Recipe" : "male_sweatpants_black_Recipe");
+            // Project-owned recipes reuse the admitted UMA Human 3.0 mesh with its leather-only overlay.
+            // Wrapped trousers plus bare feet avoid modern demo clothes and the metallic medieval greaves.
+            expectedWardrobeRecipe = female ? "F_StoneAgeHideTunic_Recipe" : "M_StoneAgeHideTunic_Recipe";
+            SetSlot(expectedWardrobeRecipe);
+            SetSlot(female ? "F_Wrapped Pants_Recipe" : "M_Wrapped Pants_Recipe");
             SetColor("Skin", SkinColors[appearance.SkinId.Value]);
             SetColor("Hair", HairColors[appearance.HairColorId.Value]);
             SetColor("Eyes", EyeColors[appearance.EyeColorId.Value]);

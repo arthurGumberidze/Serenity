@@ -33,4 +33,4 @@ MonoBehaviour:
     HairColorId: hair_brown
     ClothingId: uma_stone_age_clothing
     Prefab: {fileID: 6667813782548362799, guid: c8c59b0e267550e4a8af27a739d91a01, type: 3}
-  umaAvatarPrefab: {fileID: 615601329001387447, guid: 2e0235d0666bee6478355699ac94d1ed, type: 3}
+  umaAvatarPrefab: {fileID: 1550133802825526218, guid: 0921869440c31fc418d6a0c1cdaad3d4, type: 3}

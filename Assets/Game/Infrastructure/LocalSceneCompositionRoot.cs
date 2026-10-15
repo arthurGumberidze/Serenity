@@ -677,7 +677,7 @@ namespace Game.Infrastructure
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             if (GlobalMap.Mode == GameWorldMode.Local) ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
             GlobalMapBridge.ReconcileAfterLoad();
-            GameplayUi?.RefreshNow();
+            GameplayUi?.RefreshAfterStateRebind();
         }
 
         public void StartNewGame(long worldSeed)

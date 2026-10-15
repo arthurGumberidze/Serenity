@@ -206,6 +206,7 @@ namespace Game.Presentation.AI
         {
             scheduler?.Reset();
             movements.Clear();
+            if (lightweightMesh != null) Destroy(lightweightMesh);
             if (lightweightMaterial != null) Destroy(lightweightMaterial);
             SimulationAdvanced = null;
         }
@@ -283,8 +284,7 @@ namespace Game.Presentation.AI
                 if (lightweightMesh == null || lightweightMaterial == null) continue;
                 var transform = presenter.transform;
                 lightweightMatrices[LastLightweightDrawCount++] = Matrix4x4.TRS(
-                    transform.position + Vector3.up * 0.9f, transform.rotation,
-                    new Vector3(0.38f, 0.9f, 0.38f));
+                    transform.position, transform.rotation, Vector3.one);
             }
             if (LastLightweightDrawCount == 0 || lightweightMesh == null || lightweightMaterial == null) return;
             Graphics.DrawMeshInstanced(lightweightMesh, 0, lightweightMaterial, lightweightMatrices,
@@ -294,19 +294,90 @@ namespace Game.Presentation.AI
         private void EnsureLightweightRenderResources(CharacterPresenter presenter)
         {
             if (lightweightMesh == null)
-            {
-                var template = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                template.SetActive(false);
-                lightweightMesh = template.GetComponent<MeshFilter>().sharedMesh;
-                Destroy(template);
-            }
+                lightweightMesh = BuildLightweightHumanoidMesh();
             if (lightweightMaterial == null && presenter.LightweightMaterial != null)
             {
                 lightweightMaterial = new Material(presenter.LightweightMaterial)
                 {
-                    name = "Tier1 Lightweight Instanced Material"
+                    name = "Tier1 Stone Age Humanoid LOD Material"
                 };
+                if (lightweightMaterial.HasProperty("_BaseMap"))
+                    lightweightMaterial.SetTexture("_BaseMap", Texture2D.whiteTexture);
+                if (lightweightMaterial.HasProperty("_MainTex"))
+                    lightweightMaterial.SetTexture("_MainTex", Texture2D.whiteTexture);
+                var hide = new Color(0.28f, 0.16f, 0.075f, 1f);
+                if (lightweightMaterial.HasProperty("_BaseColor")) lightweightMaterial.SetColor("_BaseColor", hide);
+                if (lightweightMaterial.HasProperty("_Color")) lightweightMaterial.SetColor("_Color", hide);
+                if (lightweightMaterial.HasProperty("_Metallic")) lightweightMaterial.SetFloat("_Metallic", 0f);
+                if (lightweightMaterial.HasProperty("_Smoothness")) lightweightMaterial.SetFloat("_Smoothness", 0.16f);
                 lightweightMaterial.enableInstancing = true;
+            }
+        }
+
+        public static Mesh BuildLightweightHumanoidMesh()
+        {
+            var vertices = new List<Vector3>(192);
+            var normals = new List<Vector3>(192);
+            var uv = new List<Vector2>(192);
+            var triangles = new List<int>(384);
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(0f, 1.18f, 0f),
+                0.23f, 0.29f, 0.58f, 8); // torso
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(0f, 0.78f, 0f),
+                0.28f, 0.35f, 0.34f, 8); // hide tunic
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(-0.13f, 0.34f, 0f),
+                0.085f, 0.075f, 0.62f, 7); // left leg
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(0.13f, 0.34f, 0f),
+                0.085f, 0.075f, 0.62f, 7); // right leg
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(-0.31f, 1.05f, 0f),
+                0.075f, 0.06f, 0.64f, 7); // left arm
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(0.31f, 1.05f, 0f),
+                0.075f, 0.06f, 0.64f, 7); // right arm
+            AddTaperedPart(vertices, normals, uv, triangles, new Vector3(0f, 1.62f, 0f),
+                0.145f, 0.135f, 0.27f, 10); // head
+            var mesh = new Mesh { name = "Tier1 Stone Age Humanoid LOD" };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uv);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(true);
+            return mesh;
+        }
+
+        private static void AddTaperedPart(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uv,
+            List<int> triangles, Vector3 center, float topRadius, float bottomRadius, float height, int sides)
+        {
+            var start = vertices.Count;
+            var bottom = center.y - height * 0.5f;
+            var top = center.y + height * 0.5f;
+            for (var side = 0; side < sides; side++)
+            {
+                var angle = side * Mathf.PI * 2f / sides;
+                var direction = new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+                vertices.Add(new Vector3(center.x, bottom, center.z) + direction * bottomRadius);
+                normals.Add(direction);
+                uv.Add(new Vector2(side / (float)sides, 0f));
+                vertices.Add(new Vector3(center.x, top, center.z) + direction * topRadius);
+                normals.Add(direction);
+                uv.Add(new Vector2(side / (float)sides, 1f));
+            }
+            for (var side = 0; side < sides; side++)
+            {
+                var next = (side + 1) % sides;
+                var a = start + side * 2;
+                var b = start + next * 2;
+                triangles.Add(a); triangles.Add(a + 1); triangles.Add(b + 1);
+                triangles.Add(a); triangles.Add(b + 1); triangles.Add(b);
+            }
+            var bottomCenter = vertices.Count;
+            vertices.Add(new Vector3(center.x, bottom, center.z)); normals.Add(Vector3.down); uv.Add(Vector2.zero);
+            var topCenter = vertices.Count;
+            vertices.Add(new Vector3(center.x, top, center.z)); normals.Add(Vector3.up); uv.Add(Vector2.one);
+            for (var side = 0; side < sides; side++)
+            {
+                var next = (side + 1) % sides;
+                triangles.Add(bottomCenter); triangles.Add(start + next * 2); triangles.Add(start + side * 2);
+                triangles.Add(topCenter); triangles.Add(start + side * 2 + 1); triangles.Add(start + next * 2 + 1);
             }
         }
     }

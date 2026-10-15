@@ -19,10 +19,10 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Attribution: license notice retained
 - Package dependency: `com.umasteeringgroup.uma` pinned to tag `v3.1f3` / commit `c92bf29f6f1c17c8bf05d6465288e76b2dfedd08`
 - Imported path: `Assets/Game/Art/ThirdParty/UMA3`; selected source content plus the non-sample SRP subset from official `UMA31_f3.unitypackage`
-- Runtime use: `UMADynamicCharacterAvatar-NoPhysics_NoLOD.prefab` in the P8.1 benchmark; Serenity `AppearanceState` remains the canonical save-state and UMA remains a replaceable Presentation provider
+- Runtime use: vendor `UMADynamicCharacterAvatar-NoPhysics_NoLOD.prefab` remains the P8.1 source benchmark; P9.6 runtime uses project-owned clean wrapper `Serenity_UMA_Human30.prefab`, brown-hide Human 3.0 recipes and wrapped trousers. Serenity `AppearanceState` remains canonical and UMA remains replaceable Presentation
 - Import scope: races, slots, overlays, textures, wearables, animation, DNA, expressions, poses, getting-started prefab and required URP/SRP materials; demo scenes, tests, vehicles, sample GUI, HDRP and UMA2 compatibility content are excluded
 - Size/performance: about 692 MiB selected runtime source; the P8.1 generated Human Male 3.0 smoke has one renderer, 16,277 vertices and 29,430 triangles before later LOD/budget work
-- Visual grade/status: B prototype source, `APPROVED_RUNTIME`; modular and materially closer to the requested stylized-natural/PBR direction, but final group art and LOD acceptance belong to later P8 stages
+- Visual grade/status: B normalized source, `APPROVED_RUNTIME`; P9.6 accepts the bounded detailed characters and project-owned humanoid mass LOD in the integrated evidence route
 - Notes: the user explicitly accepted a large asset footprint. The complete 1.03 GiB release archive and checkout remain ignored under `Library`; only selected runtime dependencies are committed.
 
 ### HODAART-LPCC3
@@ -275,12 +275,12 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - Name: Serenity P9.6 Integrated Player Route Evidence
 - Type/category: project-owned validation controller, tests and two-resolution Player evidence; not a new runtime art source
 - Source/license: Serenity-owned C#/PowerShell and generated local screenshots/JSON; no external asset, texture, model or package imported
-- Runtime path: `Assets/Game/Infrastructure/Integration/P96PlayerSmokeController.cs`, `Assets/Game/Tests/PlayMode/P96IntegrationAcceptancePlayModeTests.cs` and `Tools/Verify-P96.ps1`
-- Evidence path: `Logs/P96-player-smoke-20261015-final/1280x720` and `Logs/P96-player-smoke-20261015-final/1600x900`; each contains JSON plus editor, RTS work, TPS settlement, global map, rain, winter-night and after-Load PNGs
+- Runtime path: `Assets/Game/Infrastructure/Integration/P96PlayerSmokeController.cs`, `Assets/Game/Art/Config/P96`, `Assets/Game/Art/Prefabs/Characters/Serenity_UMA_Human30.prefab`, `UmaAppearanceProjection.cs`, `Tier1AiRuntimeDriver.cs`, tests and `Tools/Verify-P96.ps1`
+- Evidence path: `Logs/P96-done/1280x720` and `Logs/P96-done/1600x900`; each contains JSON plus editor, RTS work, TPS settlement, global map, rain, winter-night and after-Load PNGs
 - Technical result: route and stable identity pass at both exact sizes; counts are 170 trees, 94 rocks, 930 ground cover, 24 resource formations and six worksites; global/biome/settlement hashes are `84BE8C806F7B2B61`, `D907AA41DB7EA053` and `681E040B60C66ED2`
-- Inventory gap: the approved UMA 3 content has modern demo clothing only; approved mass/fallback Hodaart Characters are visibly low-poly, and the centralized aggregate crowd diagnostic capsule remains visible. No skeleton-compatible realistic Stone Age wardrobe or coherent mass-NPC/LOD replacement is approved in the current inventory
-- UI finding: transient text clipping is visible at 1600×900 after TPS/Load and remains an open integration/readability defect
-- Visual grade/status: `VALIDATION_ONLY`, P9.6 `PARTIAL`; `technical_passed=true`, `subjective_visual_acceptance=false`
+- Character solution: project-owned recipes reuse the admitted UMA leather overlay/slots with brown hide tint, wrapped trousers and bare feet; a clean project prefab removes the excluded sample walker. Detailed UMA is capped at eight and the centralized mass path uses one generated humanoid LOD mesh/material instead of a capsule
+- UI result: explicit post-Load refresh plus scheduled repaint removes the 1600×900 transient clipping in final evidence
+- Visual grade/status: B integrated acceptance, `APPROVED_RUNTIME`; P9.6 `DONE`, `technical_passed=true`, `subjective_visual_acceptance=true`
 
 ## Staging packages considered but not imported
 

@@ -6,6 +6,7 @@ using Game.Domain.Work;
 using Game.Domain.World;
 using Game.Infrastructure;
 using Game.Presentation.Production;
+using Game.Presentation.Characters;
 using Game.Presentation.World;
 using NUnit.Framework;
 using UnityEngine;
@@ -35,6 +36,24 @@ namespace Game.Tests.PlayMode
             Assert.That(root.PopulatedBiomeWorld.ResourceFormations.Count, Is.EqualTo(24));
             Assert.That(root.StoneAgeSettlement.Worksites.Count, Is.GreaterThanOrEqualTo(6));
             Assert.That(root.CharacterPresentations.Count, Is.GreaterThan(0));
+            var umaDeadline = Time.realtimeSinceStartup + 20f;
+            while (Time.realtimeSinceStartup < umaDeadline)
+            {
+                var projections = UnityEngine.Object.FindObjectsByType<UmaAppearanceProjection>(
+                    FindObjectsInactive.Include, FindObjectsSortMode.None);
+                if (projections.Length >= 2 && projections.All(x => x.UsesUma)) break;
+                yield return null;
+            }
+            var detailedCharacters = UnityEngine.Object.FindObjectsByType<UmaAppearanceProjection>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Assert.That(detailedCharacters, Has.Length.GreaterThanOrEqualTo(2));
+            Assert.That(detailedCharacters.All(x => x.UsesUma && x.StoneAgeWardrobeApplied), Is.True);
+            var missingRuntimeScripts = Resources.FindObjectsOfTypeAll<Transform>()
+                .Where(x => x != null && x.gameObject.scene.IsValid() &&
+                    x.GetComponents<Component>().Any(component => component == null))
+                .Select(x => $"{x.gameObject.scene.name}/{x.name}").Distinct().ToArray();
+            Assert.That(missingRuntimeScripts, Is.Empty,
+                "Runtime scene objects must not retain missing scripts: " + string.Join(", ", missingRuntimeScripts));
             var sources = root.InhabitableRegion.ResourceAnchors
                 .Select(x => x.VisualRoot.GetComponent<ProductionSourcePresenter>()).Where(x => x != null).ToArray();
             Assert.That(sources, Has.Length.EqualTo(24));

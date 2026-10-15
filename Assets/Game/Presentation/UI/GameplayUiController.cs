@@ -197,6 +197,21 @@ namespace Game.Presentation.UI
             lastRefreshHash = ComputeRefreshHash();
         }
 
+        public void RefreshAfterStateRebind()
+        {
+            RefreshNow();
+            RepaintTextTree();
+            if (root?.panel == null) return;
+            root.schedule.Execute(() => { RefreshNow(); RepaintTextTree(); }).ExecuteLater(100);
+            root.schedule.Execute(() => { RefreshNow(); RepaintTextTree(); }).ExecuteLater(750);
+        }
+
+        private void RepaintTextTree()
+        {
+            root?.Query<TextElement>().ForEach(element => element.MarkDirtyRepaint());
+            root?.MarkDirtyRepaint();
+        }
+
         public void SaveSlot(int index) => TryCommand(() =>
         {
             context.Saves.Save(index);

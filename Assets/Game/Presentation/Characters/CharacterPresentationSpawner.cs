@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Game.Domain;
 using Game.Domain.Characters;
 using Game.Simulation.Characters;
 using UnityEngine;
@@ -7,11 +9,13 @@ namespace Game.Presentation.Characters
 {
     public sealed class CharacterPresentationSpawner
     {
+        public const int MaximumDetailedUmaProjections = 8;
         private readonly CharacterPresentationCatalog catalog;
         private readonly CharacterPresentationRegistry registry;
         private readonly CharacterAppearanceService appearances;
         private readonly Transform parent;
         private readonly Func<Vector3, Vector3> positionProjector;
+        private readonly HashSet<StableEntityId> detailedUmaCharacters = new HashSet<StableEntityId>();
 
         public CharacterPresentationSpawner(CharacterPresentationCatalog catalog,
             CharacterPresentationRegistry registry, CharacterAppearanceService appearanceService = null,
@@ -36,10 +40,14 @@ namespace Game.Presentation.Characters
             var presenter = instance.GetComponent<CharacterPresenter>();
             try
             {
-                // Only editor-confirmed/key-character states carry detailed parameters. Aggregate NPC defaults stay
-                // on the bounded fallback presentation and never start a mass of UMA generation coroutines.
-                if (catalog.UmaAvatarPrefab != null && requested.Parameters.Count > 0)
+                // UMA generation is bounded to the same eight detailed Tier 1 views used by the crowd renderer.
+                // This gives nearby key/family NPCs coherent Human 3.0 art without starting a coroutine per mass NPC.
+                if (catalog.UmaAvatarPrefab != null && (requested.Parameters.Count > 0 ||
+                    detailedUmaCharacters.Count < MaximumDetailedUmaProjections))
+                {
+                    detailedUmaCharacters.Add(character.Id);
                     instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);
+                }
                 presenter.Bind(character, registry, requested);
                 return presenter;
             }
@@ -53,6 +61,7 @@ namespace Game.Presentation.Characters
         public void Despawn(CharacterPresenter presenter)
         {
             if (presenter == null) return;
+            detailedUmaCharacters.Remove(presenter.CharacterId);
             presenter.Unbind();
             UnityEngine.Object.Destroy(presenter.gameObject);
         }
