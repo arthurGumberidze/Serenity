@@ -88,9 +88,10 @@ namespace Game.Tests.PlayMode
             root.PlayerSaves.Save(3);
             root.Work.Cancel(normal.Id);
             root.Work.Cancel(shifted.Id);
-            root.PlayerSaves.Load(3);
+            root.GameplayUi.ConfirmLoadSlot(3);
             Assert.That(root.Work.GetQueue(selectedId).Select(x => x.Id),
                 Is.EqualTo(new[] { normal.Id, shifted.Id }));
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Does.Contain(selectedId));
 
             root.Tiers.Transition(selectedId, CharacterSimulationTier.Tier2);
             Assert.That(root.SelectionProbe.SelectedCharacterIds, Does.Contain(selectedId));

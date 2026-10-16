@@ -251,7 +251,6 @@ namespace Game.Presentation.UI
         {
             suppressNotificationCaptureOnce = true;
             context.Saves.Load(index);
-            context.Selection.ClearSelection();
             pendingLoadSlot = 0;
             CloseModal();
             AddNotification(F("ui.notification.loaded", index));
