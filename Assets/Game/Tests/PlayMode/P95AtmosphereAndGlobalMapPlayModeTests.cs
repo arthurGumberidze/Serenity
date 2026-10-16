@@ -53,7 +53,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator GlobalMapShowsSixNaturalLocationsAndPreservesCanonicalSession()
+        public IEnumerator StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession()
         {
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.Clock.Pause();
@@ -62,20 +62,20 @@ namespace Game.Tests.PlayMode
             root.GlobalMapBridge.RequestEnterGlobal();
             for (var frame = 0; frame < 180 && !root.GlobalMapBridge.IsGlobalSceneLoaded; frame++) yield return null;
             yield return null;
-            var map = UnityEngine.Object.FindAnyObjectByType<GlobalMapPresentationController>();
+            var map = UnityEngine.Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(map, Is.Not.Null);
-            Assert.That(map.NaturalMapReady, Is.True);
-            Assert.That(map.NaturalLocationCount, Is.EqualTo(6));
-            Assert.That(map.NaturalLayoutHash, Is.EqualTo(root.NaturalAtmosphereProfile.ComputeLayoutHash()));
-            Assert.That(GameObject.Find("P9.5 Natural Land Relief"), Is.Not.Null);
-            Assert.That(GameObject.Find("P9.5 River"), Is.Not.Null);
-            Assert.That(map.LocationMarkerCount, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(map.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
 
             root.PlayerSaves.Load(2);
             Assert.That(root.Characters.Get(character.Id), Is.SameAs(character));
             var path = new NavMeshPath();
-            Assert.That(NavMesh.CalculatePath(root.InhabitableRegion.PlayerTerritoryAnchor.position,
-                root.StoneAgeSettlement.Worksites[0].VisualRoot.transform.position, NavMesh.AllAreas, path), Is.True);
+            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.PlayerTerritoryAnchor.position,
+                out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
+            Assert.That(NavMesh.SamplePosition(root.StoneAgeSettlement.Worksites[0].VisualRoot.transform.position,
+                out var sampledDestination, 4f, NavMesh.AllAreas), Is.True);
+            Assert.That(NavMesh.CalculatePath(sampledStart.position,
+                sampledDestination.position, NavMesh.AllAreas, path), Is.True);
             Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete));
 
             root.GlobalMapBridge.RequestEnterLocation(new Game.Domain.World.WorldLocationId("starter_settlement"));

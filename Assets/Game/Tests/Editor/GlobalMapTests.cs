@@ -31,7 +31,8 @@ namespace Game.Tests.Editor
         public void StarterModelHasStableLocationsSettlementsAndValidRoutes()
         {
             var state = StarterGlobalMap.Create();
-            Assert.That(state.Locations.Count, Is.EqualTo(6));
+            Assert.That(state.Locations.Count, Is.GreaterThanOrEqualTo(6));
+            Assert.That(state.Locations.Select(x => x.Id.Value), Is.SupersetOf(ConnectedWorldContract.PreservedLocationIds));
             Assert.That(state.Settlements.Count, Is.EqualTo(2));
             Assert.That(state.Locations.Select(x => x.Id), Is.Unique);
             Assert.That(state.Routes.All(route => state.Locations.Any(x => x.Id == route.From) &&

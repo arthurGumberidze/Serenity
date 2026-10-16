@@ -119,8 +119,11 @@ namespace Game.Tests.PlayMode
             var destination = root.StoneAgeSettlement.Worksites
                 .First(x => x.Kind == P94StoneAgeSettlement.WorksiteKind.Construction).VisualRoot.transform.position;
             var path = new NavMeshPath();
-            Assert.That(NavMesh.CalculatePath(root.InhabitableRegion.PlayerTerritoryAnchor.position,
-                destination, NavMesh.AllAreas, path), Is.True);
+            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.PlayerTerritoryAnchor.position,
+                out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
+            Assert.That(NavMesh.SamplePosition(destination, out var sampledDestination, 4f, NavMesh.AllAreas), Is.True);
+            Assert.That(NavMesh.CalculatePath(sampledStart.position,
+                sampledDestination.position, NavMesh.AllAreas, path), Is.True);
             Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete));
 
             var before = root.Weather.CaptureState();

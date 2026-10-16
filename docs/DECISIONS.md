@@ -721,3 +721,21 @@ The present Character boundary has two detailed UMA profiles, one Stone Age ward
 P10 runs strictly P10.1 through P10.10. P10.2 owns the connected world; P10.3 control/queues; P10.4 ecology and industry; P10.5 Character/animation production; P10.6 home/family/save fork; P10.7 military/capture; P10.8 diagnostics; P10.9 integration/performance; and P10.10 final product acceptance. Each stage needs its own tests, build, normal Player evidence, handoff and task-prefixed commit before the next starts.
 
 P10 evidence may reveal or reduce old debt but cannot silently relabel P8.6, U29, U30 or U31. They remain PARTIAL, PARTIAL, IN_PROGRESS and BLOCKED unless their original gates are completed or the user makes an explicit status decision. The P10.9 p95 ≤33.33 ms requirement at 1920×1080 is a new feature-complete product gate, not retroactive proof for U29 or U30.
+
+## D-136 P10.2 uses one physical world and changes strategic scale through the camera (2026-10-16)
+
+The authoritative spatial projection is the 512×512 m `LocalGameplay` Terrain/NavMesh. Local RTS/TPS and strategic overview are camera modes over that same loaded scene; the old additive `GlobalMap` scene is no longer entered by the runtime bridge. The strategic overlay may darken unrevealed cells and label known locations, but it must render the real Terrain and existing presenters rather than a second schematic geography. The six established location IDs and 24 resource identities are retained; new locations are append-only graph nodes.
+
+Terrain, authored water/mountain blockers and route geometry are disposable Presentation/navigation inputs. `GlobalMapService`, building/resource/Character authorities and stable IDs remain canonical. Construction accepts ordinary accessible Terrain and rejects only explicit terrain blockers or existing occupancy/funding/rule failures. The connected-world builder may regenerate project-owned Terrain/material/scene composition, but it does not edit vendor source or introduce a new dependency.
+
+## D-137 P10 fog and scouting are canonical v20 state in an isolated P10 save namespace (2026-10-16)
+
+`ConnectedWorldService` is an engine-free Simulation authority over deterministic 16 m fog cells and assigned-scout completion checkpoints. Physical presence and completed scouting both reveal the same canonical cell set; `P102StrategicWorldView` is only its read projection. There is no per-cell or per-scout MonoBehaviour update.
+
+Snapshot v20 appends `worldGenerationId = p10-connected-world-v1`, revealed cells and scouting assignments. The ordinary file facade writes under `Serenity/P10/Saves`; historical P9 files remain untouched. The codec can still validate/read v1–v19 payloads for explicit legacy tooling, but P10 does not infer a connected world into old slots or silently overwrite them.
+
+## D-138 P10.2 records real frame time without claiming the P10.9 gate (2026-10-16)
+
+The P10.2 Player smoke records actual unscaled frame samples around local and strategic views and reports percentiles without thresholding them. The final 1920×1080 evidence measured p50 35.664 ms, p95 128.342 ms, p99 313.966 ms and max 784.861 ms. This does not satisfy the future p95 ≤33.33 ms feature-complete requirement and is retained as explicit P10.9 optimization debt.
+
+P10.2 remains complete because its Definition of Done requires measured evidence and assigns the minimum-performance gate to P10.9. The known baseline `rain_snow_seasons=false` and `fps_displayed=false` flags likewise remain visible rather than being reclassified by the connected-world stage.

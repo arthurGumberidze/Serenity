@@ -30,3 +30,6 @@
 
 # Preserve third-party license evidence byte-for-byte.
 Assets/Game/Art/ThirdParty/**/License.txt -whitespace
+
+# Preserve generated Player evidence logs byte-for-byte.
+docs/validation/**/Player.log -whitespace

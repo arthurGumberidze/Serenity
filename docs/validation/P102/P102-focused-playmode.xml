@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16,7218135">
+  <test-suite type="TestSuite" id="1213" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="157" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16.721814" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1419" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="157" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16.707202" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19776" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1420" name="Game" fullname="Game" runstate="Runnable" testcasecount="157" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16.703972" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1421" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="157" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16.701357" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1422" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="157" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:02:01Z" duration="16.698669" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1262" name="P102ConnectedWorldPlayModeTests" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:01:54Z" duration="10.247061" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P102" />
+              </properties>
+              <test-case id="1264" name="PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests.PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" methodname="PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" seed="940271843" result="Passed" start-time="2026-10-16 13:01:44Z" end-time="2026-10-16 13:01:51Z" duration="7.299301" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+]]></output>
+              </test-case>
+              <test-case id="1263" name="StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests.StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" methodname="StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" seed="1923097342" result="Passed" start-time="2026-10-16 13:01:51Z" end-time="2026-10-16 13:01:54Z" duration="2.925255" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1317" name="P95AtmosphereAndGlobalMapPlayModeTests" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 13:01:54Z" end-time="2026-10-16 13:02:01Z" duration="6.421594" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P95" />
+              </properties>
+              <test-case id="1318" name="LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests.LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" methodname="LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" seed="1181543635" result="Passed" start-time="2026-10-16 13:01:54Z" end-time="2026-10-16 13:01:57Z" duration="2.340335" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1319" name="StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests.StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" methodname="StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" seed="353127947" result="Passed" start-time="2026-10-16 13:01:57Z" end-time="2026-10-16 13:02:01Z" duration="4.072420" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

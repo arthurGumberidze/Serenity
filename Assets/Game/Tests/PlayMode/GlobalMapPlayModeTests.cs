@@ -59,7 +59,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SeparateGlobalSceneShowsLocationsUnitTravelAndSettlementReturn()
+        public IEnumerator SameWorldStrategicViewShowsLocationsUnitTravelAndSettlementReturn()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var unit = root.MilitaryUnits.Create(new MilitaryUnitId(Id(750)), new MilitarySideId("player"),
@@ -69,9 +69,10 @@ namespace Game.Tests.PlayMode
             for (var frame = 0; frame < 120 && !root.GlobalMapBridge.IsGlobalSceneLoaded; frame++) yield return null;
             yield return null;
             Assert.That(root.GlobalMapBridge.IsGlobalSceneLoaded, Is.True);
-            var controller = Object.FindAnyObjectByType<GlobalMapPresentationController>();
+            var controller = Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(controller, Is.Not.Null);
-            Assert.That(controller.LocationMarkerCount, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(controller.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
             Assert.That(root.MilitaryUnits.Get(unit.Id).Representation,
                 Is.EqualTo(MilitaryUnitRepresentationMode.Aggregate));
             var order = root.GlobalMap.IssueTravelOrder(unit.Id, new WorldLocationId("river_ford"),

@@ -39,6 +39,7 @@ namespace Game.Simulation
         private readonly CampaignProgressService campaign;
         private readonly CharacterAppearanceService appearance;
         private readonly WorkManager work;
+        private readonly ConnectedWorldService connectedWorld;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -50,7 +51,8 @@ namespace Game.Simulation
             BuildingDamageService buildingDamageService = null, GlobalMapService globalMapService = null,
             AiStrategicScheduler strategicAiScheduler = null, EventService eventService = null,
             CampaignProgressService campaignProgressService = null,
-            CharacterAppearanceService appearanceService = null, WorkManager workManager = null)
+            CharacterAppearanceService appearanceService = null, WorkManager workManager = null,
+            ConnectedWorldService connectedWorldService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -71,6 +73,7 @@ namespace Game.Simulation
             campaign = campaignProgressService;
             appearance = appearanceService;
             work = workManager;
+            connectedWorld = connectedWorldService;
         }
         public SaveSnapshot Capture()
         {
@@ -79,7 +82,7 @@ namespace Game.Simulation
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
-                appearance?.CaptureState(), work?.CaptureState());
+                appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -147,6 +150,9 @@ namespace Game.Simulation
             if (snapshot.Work != null && work == null)
                 throw new InvalidOperationException("This save contains work state but no work manager is attached.");
             if (snapshot.Work != null) work.RestoreState(snapshot.Work);
+            if (snapshot.ConnectedWorld != null && connectedWorld == null)
+                throw new InvalidOperationException("This save contains connected-world state but no connected-world service is attached.");
+            if (snapshot.ConnectedWorld != null) connectedWorld.RestoreState(snapshot.ConnectedWorld);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

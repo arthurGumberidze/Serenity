@@ -61,25 +61,23 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator GlobalMapProjectsAndSelectsAllSixResourceFamilies()
+        public IEnumerator StrategicViewKeepsAllSixPhysicalResourceFamiliesInCanonicalWorld()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.GlobalMapBridge.RequestEnterGlobal();
             var timeout = Time.realtimeSinceStartup + 15f;
             while (!root.GlobalMapBridge.IsGlobalSceneLoaded && Time.realtimeSinceStartup < timeout) yield return null;
             yield return null;
-            var controller = Object.FindAnyObjectByType<GlobalMapPresentationController>();
+            var controller = Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(controller, Is.Not.Null);
-            var markers = controller.GetComponentsInChildren<GlobalMapPresentationController.GlobalResourceMarker>(true);
+            var markers = root.PopulatedBiomeWorld.ResourceFormations;
             var required = new[] { "berries", "plant_fiber", "wood_log", "stone", "iron_ore", "gold_ore" };
-            Assert.That(markers, Has.Length.EqualTo(6));
-            Assert.That(required.All(id => markers.Any(x => x.ResourceId.ToString() == id)), Is.True);
+            Assert.That(markers.Count, Is.EqualTo(24));
+            Assert.That(required.All(id => root.Production.Sites.Any(x =>
+                root.ProductionRecipes.Get(x.RecipeId).Outputs.Any(output => output.ResourceId.ToString() == id))), Is.True);
             foreach (var marker in markers)
             {
-                controller.SelectResourceMarker(marker);
-                Assert.That(controller.SelectedResourceMarker, Is.SameAs(marker));
-                Assert.That(marker.SiteIds.All(id => root.Production.TryGetSite(id, out _)), Is.True);
-                Assert.That(marker.GetComponent<Collider>(), Is.Not.Null);
+                Assert.That(marker.ClickableRoot.GetComponentInChildren<Collider>(true), Is.Not.Null);
             }
         }
     }

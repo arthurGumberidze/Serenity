@@ -21,7 +21,9 @@
 /Unity Hub/
 /Codex_Unity_Context_Pack.zip
 /Validation/
+/Artifacts/
 /serenity_games_assets/
+/ProjectSettings/UMAPluginDocumentation.asset
 
 # Local superseded automation copy; retained outside versioned night pipeline.
 /automation_delete_after/

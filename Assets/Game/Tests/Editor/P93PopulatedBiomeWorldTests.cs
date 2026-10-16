@@ -70,7 +70,7 @@ namespace Game.Tests.Editor
                 Assert.That(formation.DecorativeSatellites.All(x =>
                     x.GetComponentInChildren<Collider>(true) == null), Is.True);
             }
-            Assert.That(marker.BaseRegion.Locations.Count, Is.EqualTo(6));
+            Assert.That(marker.BaseRegion.Locations.Count, Is.GreaterThanOrEqualTo(6));
             Assert.That(region.ResourceAnchors.Select(x => x.StableIndex).OrderBy(x => x),
                 Is.EqualTo(Enumerable.Range(0, 24)));
         }

@@ -1,146 +1,81 @@
 using System;
-using System.Collections;
 using Game.Domain.World;
-using Game.Presentation.World;
+using Game.Presentation.Environment;
 using Game.Presentation.Localization;
-using Game.Simulation.World;
+using Game.Presentation.World;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Scene-lifetime adapter. The canonical session remains in LocalSceneCompositionRoot.</summary>
+    /// <summary>P10 adapter for a same-scene strategic camera over the one canonical terrain.</summary>
     public sealed class GlobalMapRuntimeBridge : MonoBehaviour
     {
         private LocalSceneCompositionRoot root;
-        private Camera localCamera;
-        private AudioListener localAudioListener;
-        private bool busy;
+        private P102StrategicWorldView strategicView;
         private bool developerUiVisible;
-        public bool IsGlobalSceneLoaded => SceneManager.GetSceneByName("GlobalMap").isLoaded;
+        public bool IsGlobalSceneLoaded => strategicView != null && strategicView.IsActive;
 
         public void Initialize(LocalSceneCompositionRoot compositionRoot)
         {
             root = compositionRoot ?? throw new ArgumentNullException(nameof(compositionRoot));
-            localCamera = root.PointerRaycaster.WorldCamera;
-            localAudioListener = localCamera != null ? localCamera.GetComponent<AudioListener>() : null;
+            var world = FindAnyObjectByType<P102ConnectedWorldPresentation>();
+            if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
+            strategicView = gameObject.AddComponent<P102StrategicWorldView>();
+            strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld);
         }
 
         public void RequestEnterGlobal()
         {
-            if (!busy) StartCoroutine(EnterGlobal());
+            root.SynchronizeStarterSettlement();
+            var result = root.ModeTransitions.EnterGlobal(root.Clock.State.CalendarTicks);
+            if (result.Changed || root.GlobalMap.Mode == GameWorldMode.Global) EnterStrategicView();
         }
 
-        public void SetDeveloperUiVisible(bool visible)
-        {
-            developerUiVisible = visible;
-            var controller = FindGlobalController();
-            if (controller != null) controller.ShowDeveloperUi = visible;
-        }
+        public void SetDeveloperUiVisible(bool visible) => developerUiVisible = visible;
 
         public void RequestEnterLocation(WorldLocationId locationId)
         {
-            if (busy) return;
             var result = root.ModeTransitions.EnterLocation(locationId, root.Clock.State.CalendarTicks);
             if (result.Changed)
             {
-                root.ApplyLocalLocationScope(root.GlobalMap.ActiveLocationId);
-                StartCoroutine(ReturnToLocal());
+                root.ApplyLocalLocationScope(locationId);
+                ExitStrategicView();
             }
         }
 
-        public void RequestEnterBattle(Game.Domain.StableEntityId battleId)
+        public void RequestEnterBattle(Game.Domain.StableEntityId encounterId)
         {
-            if (busy) return;
-            var result = root.ModeTransitions.EnterBattle(battleId, root.Clock.State.CalendarTicks);
-            if (result.Changed) StartCoroutine(ReturnToLocal());
+            var result = root.ModeTransitions.EnterBattle(encounterId, root.Clock.State.CalendarTicks);
+            if (result.Changed) ExitStrategicView();
         }
 
         public void ReconcileAfterLoad()
         {
-            if (busy || root == null || root.GlobalMap == null) return;
-            if (root.GlobalMap.Mode == GameWorldMode.Global && !IsGlobalSceneLoaded)
-                StartCoroutine(LoadGlobalPresentation());
-            else if (root.GlobalMap.Mode == GameWorldMode.Local && IsGlobalSceneLoaded)
-                StartCoroutine(ReturnToLocal());
+            if (root.GlobalMap.Mode == GameWorldMode.Global) EnterStrategicView();
+            else ExitStrategicView();
         }
 
-        private void Update()
+        private void EnterStrategicView()
         {
-            // SaveCoordinator may restore Global mode directly. Rebind the disposable scene lazily.
-            if (root != null && root.GlobalMap != null && root.GlobalMap.Mode == GameWorldMode.Global &&
-                !busy && !IsGlobalSceneLoaded)
-                StartCoroutine(LoadGlobalPresentation());
-        }
-
-        private IEnumerator EnterGlobal()
-        {
-            busy = true;
-            root.SynchronizeStarterSettlement();
-            var result = root.ModeTransitions.EnterGlobal(root.Clock.State.CalendarTicks);
-            if (!result.Changed) { busy = false; yield break; }
-            yield return LoadGlobalPresentation();
-        }
-
-        private IEnumerator LoadGlobalPresentation()
-        {
-            busy = true;
-            // Disable the persistent local listener before the additive scene activates its own.
-            // Waiting until after LoadSceneAsync completes produces one frame with two listeners.
-            if (localAudioListener != null) localAudioListener.enabled = false;
-            if (!IsGlobalSceneLoaded) yield return SceneManager.LoadSceneAsync("GlobalMap", LoadSceneMode.Additive);
-            var scene = SceneManager.GetSceneByName("GlobalMap");
-            GlobalMapPresentationController controller = null;
-            foreach (var sceneRoot in scene.GetRootGameObjects())
-            {
-                controller = sceneRoot.GetComponentInChildren<GlobalMapPresentationController>(true);
-                if (controller != null) break;
-            }
-            if (controller == null) throw new InvalidOperationException("GlobalMap scene has no presentation controller.");
-            if (localCamera != null) localCamera.enabled = false;
             root.CameraController.enabled = false;
             root.Input.enabled = false;
-            controller.Initialize(root.GlobalMap, root.MilitaryUnits, root.Battles, root.ModeTransitions,
-                root.Production, root.DirectWorkCommands, () => root.Clock.State.CalendarTicks, _ =>
-                {
-                    root.ApplyLocalLocationScope(root.GlobalMap.ActiveLocationId);
-                    StartCoroutine(ReturnToLocal());
-                }, root.Weather, root.NaturalAtmosphereProfile);
-            controller.ShowDeveloperUi = developerUiVisible;
-            busy = false;
+            strategicView.Enter();
         }
 
-        private IEnumerator ReturnToLocal()
+        private void ExitStrategicView()
         {
-            if (busy) yield break;
-            busy = true;
-            if (IsGlobalSceneLoaded) yield return SceneManager.UnloadSceneAsync("GlobalMap");
+            strategicView.Exit();
             root.WeatherPresentation.ClearPreview(root.Clock.State.CalendarTicks);
-            if (localCamera != null) localCamera.enabled = true;
-            if (localAudioListener != null) localAudioListener.enabled = true;
             root.CameraController.enabled = true;
             root.Input.enabled = true;
-            busy = false;
         }
 
         private void OnGUI()
         {
             if (!developerUiVisible || root == null || root.GlobalMap == null ||
-                root.GlobalMap.Mode != GameWorldMode.Local || busy) return;
+                root.GlobalMap.Mode != GameWorldMode.Local) return;
             if (GUI.Button(new Rect(Screen.width - 190, 12, 178, 34), RussianTextCatalog.Get("debug.open_global_map")))
                 RequestEnterGlobal();
-        }
-
-        private GlobalMapPresentationController FindGlobalController()
-        {
-            if (!IsGlobalSceneLoaded) return null;
-            var scene = SceneManager.GetSceneByName("GlobalMap");
-            foreach (var sceneRoot in scene.GetRootGameObjects())
-            {
-                var controller = sceneRoot.GetComponentInChildren<GlobalMapPresentationController>(true);
-                if (controller != null) return controller;
-            }
-            return null;
         }
     }
 }

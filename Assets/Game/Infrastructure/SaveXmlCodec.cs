@@ -76,6 +76,8 @@ namespace Game.Infrastructure
                     snapshot.FormatVersion >= SaveSnapshot.AppearanceEditorVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.WorkVersion)
                 root.Add(SerializeWork(snapshot.Work));
+            if (snapshot.FormatVersion >= SaveSnapshot.ConnectedWorldVersion)
+                root.Add(SerializeConnectedWorld(snapshot.ConnectedWorld));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -111,6 +113,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.EventVersion &&
                         version != SaveSnapshot.CampaignVersion && version != SaveSnapshot.AppearanceVersion &&
                         version != SaveSnapshot.OccupationVersion && version != SaveSnapshot.WorkVersion &&
+                        version != SaveSnapshot.AppearanceEditorVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -145,12 +148,14 @@ namespace Game.Infrastructure
                             version >= SaveSnapshot.AppearanceEditorVersion) : null;
                     var work = version >= SaveSnapshot.WorkVersion
                         ? DeserializeWork(root.Element("work")) : null;
+                    var connectedWorld = version >= SaveSnapshot.ConnectedWorldVersion
+                        ? DeserializeConnectedWorld(root.Element("connectedWorld")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance, work);
+                        appearance, work, connectedWorld);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1453,7 +1458,50 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.CampaignVersion) fields = fields.Concat(new[] { "campaign" });
             if (version >= SaveSnapshot.AppearanceVersion) fields = fields.Concat(new[] { "appearance" });
             if (version >= SaveSnapshot.WorkVersion) fields = fields.Concat(new[] { "work" });
+            if (version >= SaveSnapshot.ConnectedWorldVersion) fields = fields.Concat(new[] { "connectedWorld" });
             return fields.ToArray();
+        }
+
+        private static XElement SerializeConnectedWorld(ConnectedWorldSaveState state)
+        {
+            var element = new XElement("connectedWorld");
+            if (state == null) return element;
+            element.Add(new XElement("generationId", state.GenerationId),
+                new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("revealedCells", state.RevealedCells.Select(cell => new XElement("cell",
+                    new XElement("x", cell.X), new XElement("z", cell.Z)))),
+                new XElement("scoutingAssignments", state.ScoutingAssignments.Select(value => new XElement("assignment",
+                    new XElement("scoutId", value.ScoutId.ToString()),
+                    new XElement("destinationId", value.DestinationId.ToString()),
+                    new XElement("assignedTick", value.AssignedTick),
+                    new XElement("completionTick", value.CompletionTick),
+                    new XElement("completed", value.Completed)))));
+            return element;
+        }
+
+        private static ConnectedWorldSaveState DeserializeConnectedWorld(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing connected-world state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty connected-world state.");
+                return null;
+            }
+            RequireFields(element, new[] { "generationId", "lastProcessedTick", "revealedCells", "scoutingAssignments" });
+            var cells = Items(element.Element("revealedCells"), "cell", item =>
+            {
+                RequireFields(item, new[] { "x", "z" });
+                return new WorldDiscoveryCell(Int(item, "x"), Int(item, "z"));
+            });
+            var assignments = Items(element.Element("scoutingAssignments"), "assignment", item =>
+            {
+                RequireFields(item, new[] { "scoutId", "destinationId", "assignedTick", "completionTick", "completed" });
+                return new ScoutingAssignmentState(StableEntityId.Parse(Value(item, "scoutId")),
+                    new WorldLocationId(Value(item, "destinationId")), Long(item, "assignedTick"),
+                    Long(item, "completionTick"), XmlConvert.ToBoolean(Value(item, "completed")));
+            });
+            return new ConnectedWorldSaveState(Value(element, "generationId"), cells, assignments,
+                Long(element, "lastProcessedTick"));
         }
 
         private static XElement OptionalId(string name, StableEntityId? value) =>

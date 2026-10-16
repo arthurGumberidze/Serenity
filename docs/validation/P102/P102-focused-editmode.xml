@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0,8841256">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="546" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.884126" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1627" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="542" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.866879" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="14216" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1628" name="Game" fullname="Game" runstate="Runnable" testcasecount="542" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.851732" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1629" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="542" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.846202" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1630" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="383" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.838517" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1357" name="P102ConnectedWorldTests" fullname="Game.Tests.Editor.P102ConnectedWorldTests" classname="Game.Tests.Editor.P102ConnectedWorldTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.827751" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P102" />
+              </properties>
+              <test-case id="1361" name="AuthoredScenePassesAreaIdentityResourceAndGeographyAudit" fullname="Game.Tests.Editor.P102ConnectedWorldTests.AuthoredScenePassesAreaIdentityResourceAndGeographyAudit" methodname="AuthoredScenePassesAreaIdentityResourceAndGeographyAudit" classname="Game.Tests.Editor.P102ConnectedWorldTests" runstate="Runnable" seed="200998170" result="Passed" start-time="2026-10-16 13:00:44Z" end-time="2026-10-16 13:00:45Z" duration="0.712003" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1358" name="CanonicalGraphUsesPhysicalCoordinatesAndPreservesSixIds" fullname="Game.Tests.Editor.P102ConnectedWorldTests.CanonicalGraphUsesPhysicalCoordinatesAndPreservesSixIds" methodname="CanonicalGraphUsesPhysicalCoordinatesAndPreservesSixIds" classname="Game.Tests.Editor.P102ConnectedWorldTests" runstate="Runnable" seed="10027863" result="Passed" start-time="2026-10-16 13:00:45Z" end-time="2026-10-16 13:00:45Z" duration="0.032300" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1359" name="PresenceAndAssignedScoutingRevealPersistentRealCells" fullname="Game.Tests.Editor.P102ConnectedWorldTests.PresenceAndAssignedScoutingRevealPersistentRealCells" methodname="PresenceAndAssignedScoutingRevealPersistentRealCells" classname="Game.Tests.Editor.P102ConnectedWorldTests" runstate="Runnable" seed="198360164" result="Passed" start-time="2026-10-16 13:00:45Z" end-time="2026-10-16 13:00:45Z" duration="0.017960" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1360" name="Version20XmlRoundTripPreservesFogAndGeneration" fullname="Game.Tests.Editor.P102ConnectedWorldTests.Version20XmlRoundTripPreservesFogAndGeneration" methodname="Version20XmlRoundTripPreservesFogAndGeneration" classname="Game.Tests.Editor.P102ConnectedWorldTests" runstate="Runnable" seed="2139164187" result="Passed" start-time="2026-10-16 13:00:45Z" end-time="2026-10-16 13:00:45Z" duration="0.045627" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

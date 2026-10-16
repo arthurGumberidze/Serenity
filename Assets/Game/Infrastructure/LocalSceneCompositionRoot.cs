@@ -169,6 +169,7 @@ namespace Game.Infrastructure
         public PlayerControlService PlayerControl { get; private set; }
         public ThirdPersonControlController ThirdPersonControl { get; private set; }
         public GlobalMapService GlobalMap { get; private set; }
+        public ConnectedWorldService ConnectedWorld { get; private set; }
         public AiStrategicScheduler StrategicAi { get; private set; }
         public EventService Events { get; private set; }
         public AiFactionRuntime StarterEnemyAi { get; private set; }
@@ -270,7 +271,7 @@ namespace Game.Infrastructure
             Buildings = new BuildingRegistry();
             BuildingOccupancy = new BuildingOccupancyGrid();
             BuildingPlacementService = new BuildingPlacementService(Buildings, BuildingOccupancy,
-                new BuildingGridBounds(-45, -45, 45, 45));
+                new BuildingGridBounds(-246, -246, 246, 246));
             if (buildingCatalog.ResourceCatalog == null) throw new InvalidOperationException("Building catalog has no resource catalog.");
             Resources = buildingCatalog.ResourceCatalog.CreateCatalog();
             InhabitableRegion = GetComponent<P5InhabitableRegionPresentation>();
@@ -416,6 +417,7 @@ namespace Game.Infrastructure
                 MilitaryCombat, PlayerControl);
             GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
                 Battles);
+            ConnectedWorld = new ConnectedWorldService(GlobalMap.Locations, Clock.State.CalendarTicks);
             StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
             InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
@@ -481,12 +483,12 @@ namespace Game.Infrastructure
 
             var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events, CampaignProgress, Appearances, Work);
+                Events, CampaignProgress, Appearances, Work, ConnectedWorld);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -554,6 +556,10 @@ namespace Game.Infrastructure
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
+            ConnectedWorld?.AdvanceTo(Clock.State.CalendarTicks);
+            if (ConnectedWorld != null)
+                foreach (var presenter in demoPresenters.Where(x => x != null && x.gameObject.activeInHierarchy))
+                    ConnectedWorld.ReportPhysicalPresence(presenter.transform.position.x, presenter.transform.position.z);
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
             var targetCalendarTick = Clock.State.CalendarTicks;
@@ -654,12 +660,10 @@ namespace Game.Infrastructure
 
         public void ApplyLocalLocationScope(WorldLocationId locationId)
         {
-            var settlement = GlobalMap.GetSettlementAt(locationId);
-            var visibleBuildings = settlement == null
-                ? new HashSet<StableEntityId>()
-                : new HashSet<StableEntityId>(settlement.BuildingIds);
+            // P10 is one persistent physical world. Entering a named location changes strategic focus only;
+            // it must never hide or teleport canonical physical buildings.
             foreach (var presenter in BuildingPresentations.All)
-                if (presenter != null) presenter.gameObject.SetActive(visibleBuildings.Contains(presenter.BuildingId));
+                if (presenter != null) presenter.gameObject.SetActive(true);
         }
 
         public void RebindAfterLoad(GameClock restoredClock)
@@ -675,7 +679,7 @@ namespace Game.Infrastructure
             DirectWorkCommands.EnsureRoleGroups();
             DirectWorkCommands.ReevaluateQueued();
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
-            if (GlobalMap.Mode == GameWorldMode.Local) ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
+            ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
             GlobalMapBridge.ReconcileAfterLoad();
             GameplayUi?.RefreshAfterStateRebind();
         }
@@ -914,7 +918,7 @@ namespace Game.Infrastructure
             NavigationSurface.collectObjects = CollectObjects.Volume;
             NavigationSurface.center = new Vector3(0f, 3f, 0f);
             NavigationSurface.size = RealisticGameplayRegion == null
-                ? new Vector3(100f, 8f, 100f) : new Vector3(120f, 24f, 120f);
+                ? new Vector3(100f, 8f, 100f) : new Vector3(512f, 80f, 512f);
             NavigationSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             NavigationSurface.BuildNavMesh();
         }

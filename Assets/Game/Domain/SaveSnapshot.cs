@@ -40,7 +40,8 @@ namespace Game.Domain
         public const int OccupationVersion = 17;
         public const int WorkVersion = 18;
         public const int AppearanceEditorVersion = 19;
-        public const int CurrentVersion = AppearanceEditorVersion;
+        public const int ConnectedWorldVersion = 20;
+        public const int CurrentVersion = ConnectedWorldVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -63,6 +64,7 @@ namespace Game.Domain
         public CampaignProgressSaveState Campaign { get; }
         public AppearanceWorldSaveState Appearance { get; }
         public WorkSaveState Work { get; }
+        public ConnectedWorldSaveState ConnectedWorld { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
@@ -72,7 +74,7 @@ namespace Game.Domain
             BuildingWorldSaveState buildingWorld = null, GlobalMapSaveState globalMap = null,
             AiStrategicSaveState strategicAi = null, EventSaveState events = null,
             CampaignProgressSaveState campaign = null, AppearanceWorldSaveState appearance = null,
-            WorkSaveState work = null)
+            WorkSaveState work = null, ConnectedWorldSaveState connectedWorld = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
@@ -82,7 +84,8 @@ namespace Game.Domain
                 formatVersion != GlobalMapVersion && formatVersion != StrategicAiVersion &&
                 formatVersion != EventVersion && formatVersion != CampaignVersion &&
                 formatVersion != AppearanceVersion && formatVersion != OccupationVersion &&
-                formatVersion != WorkVersion && formatVersion != CurrentVersion)
+                formatVersion != WorkVersion && formatVersion != AppearanceEditorVersion &&
+                formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -110,6 +113,7 @@ namespace Game.Domain
             Campaign = campaign;
             Appearance = appearance;
             Work = work;
+            ConnectedWorld = connectedWorld;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

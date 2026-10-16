@@ -7,6 +7,7 @@ using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Presentation.Environment;
 
 namespace Game.Presentation.Buildings
 {
@@ -38,6 +39,7 @@ namespace Game.Presentation.Buildings
         private MaterialPropertyBlock propertyBlock;
         private bool subscribed;
         private bool exitModeAtEndOfFrame;
+        private P102WorldPlacementSurface connectedWorldSurface;
 
         public bool IsActive => activeDefinition != null;
         public bool HasPreview => previewObject != null;
@@ -100,11 +102,15 @@ namespace Game.Presentation.Buildings
         public bool TryMovePreviewToWorldPoint(Vector3 worldPoint)
         {
             if (!IsActive) return false;
+            connectedWorldSurface ??= FindAnyObjectByType<P102WorldPlacementSurface>();
             var footprint = activeDefinition.Footprint.Rotate(orientation);
             previewCoordinate = new GridCoordinate(
                 Mathf.RoundToInt((worldPoint.x - gridOrigin.x) / gridSize - (footprint.Width - 1) * 0.5f),
                 Mathf.RoundToInt((worldPoint.z - gridOrigin.z) / gridSize - (footprint.Depth - 1) * 0.5f), 0);
             previewEvaluation = placementService.Evaluate(activeDefinition, previewCoordinate, orientation);
+            if (previewEvaluation.IsValid && connectedWorldSurface != null && !connectedWorldSurface.IsSuitable(worldPoint))
+                previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
+                    previewEvaluation.Cells);
             constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
                 previewCoordinate, orientation, fundingSources());
             LastConstructionFailure = constructionEvaluation.Failure;

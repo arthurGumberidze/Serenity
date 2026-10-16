@@ -25,12 +25,13 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator DenseBiomeCollidersPreserveNavMeshRoutesToAllSixLocations()
+        public IEnumerator DenseBiomeCollidersPreserveNavMeshRoutesToAllConnectedLocations()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.PopulatedBiomeWorld, Is.Not.Null);
             Assert.DoesNotThrow(root.PopulatedBiomeWorld.ValidateConfiguration);
             var start = root.InhabitableRegion.PlayerTerritoryAnchor.position;
+            Assert.That(NavMesh.SamplePosition(start, out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
             foreach (var location in root.RealisticGameplayRegion.Locations)
             {
                 Assert.That(NavMesh.SamplePosition(location.Anchor.position, out var destination,
@@ -38,7 +39,7 @@ namespace Game.Tests.PlayMode
                 Assert.That(Vector3.Distance(destination.position, location.Anchor.position), Is.LessThanOrEqualTo(3f),
                     location.LocationId);
                 var path = new NavMeshPath();
-                Assert.That(NavMesh.CalculatePath(start, destination.position, NavMesh.AllAreas, path), Is.True,
+                Assert.That(NavMesh.CalculatePath(sampledStart.position, destination.position, NavMesh.AllAreas, path), Is.True,
                     location.LocationId);
                 Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete),
                     $"{location.LocationId}; anchor={location.Anchor.position}; destination={destination.position}; " +

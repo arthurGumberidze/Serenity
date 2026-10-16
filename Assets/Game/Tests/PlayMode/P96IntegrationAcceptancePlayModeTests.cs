@@ -73,7 +73,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SaveLoadAndGlobalRoundTripPreserveStableIdentityAndSixLocationLayout()
+        public IEnumerator SaveLoadAndStrategicRoundTripPreserveStableIdentityAndConnectedLayout()
         {
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.Clock.Pause();
@@ -82,7 +82,6 @@ namespace Game.Tests.PlayMode
                 .OrderBy(x => x.Id).First();
             var amount = source.RemainingAmount;
             var mapHash = root.GlobalMap.ComputeStateHash();
-            var layoutHash = root.NaturalAtmosphereProfile.ComputeLayoutHash();
             root.PlayerSaves.Save(2);
             root.PlayerSaves.Load(2);
             Assert.That(root.Characters.GetAll().Select(x => x.Id), Is.EqualTo(ids));
@@ -92,11 +91,11 @@ namespace Game.Tests.PlayMode
 
             root.GlobalMapBridge.RequestEnterGlobal();
             for (var frame = 0; frame < 240 && !root.GlobalMapBridge.IsGlobalSceneLoaded; frame++) yield return null;
-            var map = UnityEngine.Object.FindAnyObjectByType<GlobalMapPresentationController>();
+            var map = UnityEngine.Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(map, Is.Not.Null);
-            Assert.That(map.NaturalLocationCount, Is.EqualTo(6));
-            Assert.That(map.LocationMarkerCount, Is.EqualTo(6));
-            Assert.That(map.NaturalLayoutHash, Is.EqualTo(layoutHash));
+            Assert.That(map.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(map.AccessibleAreaSquareMeters, Is.GreaterThanOrEqualTo(163840));
+            Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
 
             root.GlobalMapBridge.RequestEnterLocation(new WorldLocationId("starter_settlement"));
             for (var frame = 0; frame < 240 && root.GlobalMapBridge.IsGlobalSceneLoaded; frame++) yield return null;

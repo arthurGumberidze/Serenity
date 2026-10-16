@@ -458,29 +458,40 @@ namespace Game.Simulation.World
             var ford = new WorldLocationId("river_ford");
             var hills = new WorldLocationId("east_hills");
             var field = new WorldLocationId("south_field");
+            var lake = new WorldLocationId("mirror_lake");
+            var west = new WorldLocationId("west_marsh");
+            var ridge = new WorldLocationId("iron_ridge");
+            var coast = new WorldLocationId("southern_coast");
             var locations = new[]
             {
-                new WorldLocationState(player, "Player Settlement", WorldLocationType.Settlement, -20, 0),
-                new WorldLocationState(enemy, "Test Settlement", WorldLocationType.Settlement, 22, 5),
-                new WorldLocationState(forest, "North Forest", WorldLocationType.Wilderness, -8, 18),
-                new WorldLocationState(ford, "River Ford", WorldLocationType.Wilderness, 2, 4),
-                new WorldLocationState(hills, "East Hills", WorldLocationType.Wilderness, 15, 18),
-                new WorldLocationState(field, "South Field", WorldLocationType.Wilderness, -2, -17)
+                new WorldLocationState(player, "Player Settlement", WorldLocationType.Settlement, 0, 3),
+                new WorldLocationState(enemy, "Test Settlement", WorldLocationType.Settlement, 164, 86),
+                new WorldLocationState(forest, "North Forest", WorldLocationType.Wilderness, -82, 164),
+                new WorldLocationState(ford, "River Ford", WorldLocationType.Wilderness, 18, 8),
+                new WorldLocationState(hills, "East Hills", WorldLocationType.Wilderness, 142, 158),
+                new WorldLocationState(field, "South Field", WorldLocationType.Wilderness, -28, -154),
+                new WorldLocationState(lake, "Mirror Lake", WorldLocationType.Wilderness, 78, 132),
+                new WorldLocationState(west, "West Marsh", WorldLocationType.Wilderness, -132, 62),
+                new WorldLocationState(ridge, "Iron Ridge", WorldLocationType.Wilderness, 202, -54),
+                new WorldLocationState(coast, "Southern Coast", WorldLocationType.Wilderness, 72, -218)
             };
             var hour = TimeSpan.TicksPerHour;
             var routes = new[]
             {
                 new WorldRouteState(player, forest, 6 * hour), new WorldRouteState(player, ford, 8 * hour),
-                new WorldRouteState(player, field, 5 * hour), new WorldRouteState(forest, hills, 7 * hour),
+                new WorldRouteState(player, field, 5 * hour), new WorldRouteState(player, west, 7 * hour),
+                new WorldRouteState(forest, lake, 7 * hour), new WorldRouteState(lake, hills, 5 * hour),
                 new WorldRouteState(ford, hills, 5 * hour), new WorldRouteState(ford, enemy, 8 * hour),
-                new WorldRouteState(hills, enemy, 6 * hour), new WorldRouteState(field, enemy, 12 * hour)
+                new WorldRouteState(hills, enemy, 6 * hour), new WorldRouteState(field, enemy, 12 * hour),
+                new WorldRouteState(field, coast, 6 * hour), new WorldRouteState(coast, ridge, 8 * hour),
+                new WorldRouteState(ridge, enemy, 7 * hour)
             };
             var settlements = new[]
             {
                 new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "player_settlement")), player, new CombatSideId("player"), null, null),
                 new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "enemy_settlement")), enemy, new CombatSideId("enemy"), null, null)
             };
-            return new GlobalMapSaveState("starter_graph_v1", GameWorldMode.Local, player, locations, routes,
+            return new GlobalMapSaveState(ConnectedWorldContract.GenerationId, GameWorldMode.Local, player, locations, routes,
                 settlements, null, initialTick);
         }
     }

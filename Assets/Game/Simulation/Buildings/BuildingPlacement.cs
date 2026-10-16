@@ -11,7 +11,8 @@ namespace Game.Simulation.Buildings
         None = 0,
         OutsideBuildableBounds = 1,
         Occupied = 2,
-        UnsupportedPlacementMode = 3
+        UnsupportedPlacementMode = 3,
+        TerrainBlocked = 4
     }
 
     public readonly struct PlacementEvaluation

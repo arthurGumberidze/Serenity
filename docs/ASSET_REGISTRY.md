@@ -282,6 +282,19 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 - UI result: explicit post-Load refresh plus scheduled repaint removes the 1600×900 transient clipping in final evidence
 - Visual grade/status: B integrated acceptance, `APPROVED_RUNTIME`; P9.6 `DONE`, `technical_passed=true`, `subjective_visual_acceptance=true`
 
+### SERENITY-P102-CONNECTED-WORLD
+
+- Name: Serenity P10.2 Connected Physical World
+- Type/category: project-owned Terrain composition, world projection, fog/scouting presentation and acceptance evidence
+- Source/license: Serenity-owned C#/scene/material composition using only the registered `UNITY-URP-TERRAIN-SAMPLE` source; no new external asset or package
+- Runtime path: `Assets/Game/Art/Terrain/P92/P92_GameplayTerrain.asset`, `Assets/Game/Generated/P102`, `Assets/Scenes/LocalGameplay.unity`, `P102ConnectedWorldPresentation.cs`, `P102WorldPlacementSurface.cs`, `P102StrategicWorldView.cs`
+- Runtime use: one 512×512 m physical local/strategic Terrain; sea boundaries, two lakes, river, mountains, forests, routes, settlement/district clearings and empty travel distance; same-scene orthographic strategic camera with fog overlay
+- Geometry audit: 2 m sampling grid, 58,336 accessible dry samples = 233,344 m²; minimum contract 163,840 m²; ten connected location anchors and 24 canonical resource anchors
+- Stable-content rule: the six P9 location IDs and resource indices 0–23/`StableEntityId` values are preserved; `mirror_lake`, `west_marsh`, `iron_ridge` and `southern_coast` are append-only locations; mutable fog/scouting lives in `ConnectedWorldService`/snapshot v20, never in Terrain/material/scene objects
+- Construction/collider rule: ordinary accessible Terrain remains buildable; authored water, sea boundary and steep mountain surfaces are explicit blockers; NavMesh and route audits remain physical projections of the same world
+- Evidence path: `docs/validation/P102`; exact 1920×1080 local, strategic and after-Load PNGs plus telemetry JSON, Player log, NUnit XML and build provenance are versioned there
+- Visual grade/status: B connected-world production baseline, `APPROVED_RUNTIME`; final atmosphere/UI/LOD/performance stabilization remains P10.9
+
 ## Staging packages considered but not imported
 
 | Asset ID | Name and category | Source or URL | License and commercial status | Staging path | Runtime/import path | Readiness and visual grade | Normalization notes |
