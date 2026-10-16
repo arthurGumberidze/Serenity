@@ -109,6 +109,8 @@ namespace Game.Presentation.UI
         private int knownAdultCount;
         private bool suppressNotificationCaptureOnce;
         private ContextCommandTarget? activeContextTarget;
+        private StableEntityId[] activeContextSelectionIds = Array.Empty<StableEntityId>();
+        private int lastUiPointerFrame = -2;
         private readonly Dictionary<ContextActionKind, ContextActionAvailability> contextActionStates =
             new Dictionary<ContextActionKind, ContextActionAvailability>();
         private readonly FirstHourOnboardingProgress onboarding = new FirstHourOnboardingProgress();
@@ -158,6 +160,10 @@ namespace Game.Presentation.UI
         public bool IsGuiPointBlocked(Vector2 point)
         {
             if (!isActiveAndEnabled || root == null) return false;
+            // UI Toolkit may hide a command menu from its click callback before SelectionProbe observes
+            // the same physical release. Keep the pointer consumed through the following frame so that
+            // clicking an action cannot fall through to the world and clear the stable selection.
+            if (lastUiPointerFrame >= Time.frameCount - 1) return true;
             var screenPoint = new Vector2(point.x, Screen.height - point.y);
             var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
@@ -396,6 +402,7 @@ namespace Game.Presentation.UI
         {
             if (contextMenu == null) return;
             activeContextTarget = target;
+            activeContextSelectionIds = context.Selection.SelectedCharacterIds.ToArray();
             contextActionStates.Clear();
             contextMenu.Clear();
             AddTitle(contextMenu, "Контекстные действия");
@@ -423,17 +430,21 @@ namespace Game.Presentation.UI
         {
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
             var target = activeContextTarget.Value;
+            var roster = activeContextSelectionIds.ToArray();
             var destination = action == ContextActionKind.Haul ? FindHaulDestination() : null;
             InventoryOwner? source = null;
             if (action == ContextActionKind.Haul && target.Kind == ContextTargetKind.ResourcePile)
                 source = new InventoryOwner(InventoryOwnerKind.WorldPile, target.EntityId);
-            var result = context.ContextCommands.Issue(context.Selection.SelectedCharacterIds, action, target,
+            var result = context.ContextCommands.Issue(roster, action, target,
                 append, id => BuildContextFacts(id, action, target), source, destination,
                 action == ContextActionKind.Haul ? new ResourceQuantity(1) : default);
             var delayed = result.Entries.Count(x => x.Order != null && x.Availability.Delayed);
             SetStatus(ContextActionName(action) + ": приказов " + result.Orders.Count +
                 (delayed > 0 ? ", с задержкой " + delayed : string.Empty));
             CloseContextMenu();
+            // Restore after UI dispatch as well: this covers the release-frame ordering difference between
+            // UI Toolkit and MonoBehaviour Update in a normal Player without changing the canonical roster.
+            root.schedule.Execute(() => context.Selection.SelectCharacterIds(roster)).ExecuteLater(0);
             RefreshNow();
             return result;
         }
@@ -441,6 +452,7 @@ namespace Game.Presentation.UI
         public void CloseContextMenu()
         {
             activeContextTarget = null;
+            activeContextSelectionIds = Array.Empty<StableEntityId>();
             contextActionStates.Clear();
             if (contextMenu != null) contextMenu.style.display = DisplayStyle.None;
         }
@@ -827,6 +839,12 @@ namespace Game.Presentation.UI
             contextMenu.style.borderLeftColor = AccentColor;
             contextMenu.style.borderLeftWidth = 3;
             root.Add(contextMenu);
+            root.RegisterCallback<PointerDownEvent>(_ => lastUiPointerFrame = Time.frameCount,
+                TrickleDown.TrickleDown);
+            root.RegisterCallback<PointerUpEvent>(_ => lastUiPointerFrame = Time.frameCount,
+                TrickleDown.TrickleDown);
+            root.RegisterCallback<ClickEvent>(_ => lastUiPointerFrame = Time.frameCount,
+                TrickleDown.TrickleDown);
             ApplyResponsiveLayout();
         }
 

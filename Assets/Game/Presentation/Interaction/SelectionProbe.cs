@@ -154,6 +154,16 @@ namespace Game.Presentation.Interaction
             SelectedCharacterPresenter = selectedCharacters.LastOrDefault();
         }
 
+        public void SelectCharacterIds(IEnumerable<StableEntityId> characterIds)
+        {
+            if (characterIds == null) throw new ArgumentNullException(nameof(characterIds));
+            ClearCharacterSelection();
+            ClearNonCharacterSelection();
+            foreach (var id in characterIds.OrderBy(x => x.ToString(), StringComparer.Ordinal))
+                selectedCharacterIds.Add(id);
+            RefreshSelectedPresentations();
+        }
+
         public int SelectWithinScreenRect(Rect screenRect, bool additive = false)
         {
             if (raycaster == null || raycaster.WorldCamera == null) return 0;

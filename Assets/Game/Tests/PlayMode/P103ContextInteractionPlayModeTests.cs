@@ -71,7 +71,12 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True);
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Inspect].Reason,
                 Is.EqualTo(ContextUnavailableReason.WrongTargetType));
+            // A normal Player click can be observed by SelectionProbe in the same frame that UI Toolkit
+            // closes the menu. The menu must execute against its captured stable roster and restore it.
+            root.SelectionProbe.ClearSelection();
             var normal = root.GameplayUi.ExecuteContextAction(ContextActionKind.Move, false).Orders.Single();
+            yield return null;
+            Assert.That(root.SelectionProbe.SelectedCharacterIds, Does.Contain(selectedId));
 
             var secondTarget = new ContextCommandTarget(ContextTargetKind.Ground,
                 new WorldPosition(anchor.x + 2f, anchor.y, anchor.z + 2f));
