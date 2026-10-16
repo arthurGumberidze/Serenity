@@ -16,7 +16,7 @@ Visible real-mouse evidence:
 - `02-move-order-selection-preserved.jpg`: ordinary Move produces one order and preserves the selected resident after the click-through fix.
 - `03-edge-clamped-menu-disabled-reasons.jpg`: eight-action context menu remains reachable at the right edge and keeps disabled reasons visible.
 - `04-selection-preserved-after-ui-load.jpg`: production UI Save/Load preserves the selected stable resident after the Load fix.
-- `player-final3.log`: final D3D11 Player log; no exception/assertion/crash diagnostic matched.
+- `player-final3.log`: final D3D11 Player log; no exception/assertion/crash diagnostic matched. ICU fallback and UMA atlas warnings remain, and Unity reports two persistent allocations during shutdown.
 
 Windows DPI scaling produced 1282×751 logical application-window JPEGs. The Player launch requested exact 1920×1080; the file dimensions are not misreported as physical 1920×1080 captures.
 

@@ -69,7 +69,7 @@ The build itself completed before the long post-build source hash. The elevated 
 
 ## Visible Player evidence
 
-Launch contract: normal windowed Player with `-screen-fullscreen 0 -screen-width 1920 -screen-height 1080 -force-d3d11`, plus `SERENITY_SAVE_DIRECTORY` and `SERENITY_SETTINGS_PATH` pointing to isolated `Artifacts/P103/player-final*` paths. `Player.log` confirms `Forcing GfxDevice: Direct3D 11` and Direct3D 11.0 feature level 11.1. The precise exception/assertion/crash scan returned no match.
+Launch contract: normal windowed Player with `-screen-fullscreen 0 -screen-width 1920 -screen-height 1080 -force-d3d11`, plus `SERENITY_SAVE_DIRECTORY` and `SERENITY_SETTINGS_PATH` pointing to isolated `Artifacts/P103/player-final*` paths. `Player.log` confirms `Forcing GfxDevice: Direct3D 11` and Direct3D 11.0 feature level 11.1. The precise exception/assertion/crash scan returned no match. The log is not otherwise warning-free: it records the existing ICU fallback and UMA missing-atlas-area warnings, and shutdown reports two persistent allocations. Those warnings are preserved in `player-final3.log` and are not classified as P10.3 acceptance passes.
 
 Observed with real mouse input:
 
