@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12,2102171">
+  <test-suite type="TestSuite" id="1216" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="159" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.210217" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1425" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="159" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.192769" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="23380" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1426" name="Game" fullname="Game" runstate="Runnable" testcasecount="159" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.187499" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1427" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="159" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.182672" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1428" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="159" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.178546" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1268" name="P103ContextInteractionPlayModeTests" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:05Z" duration="12.165547" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P103" />
+              </properties>
+              <test-case id="1270" name="BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests.BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" methodname="BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" seed="1656299230" result="Passed" start-time="2026-10-16 17:52:53Z" end-time="2026-10-16 17:53:03Z" duration="9.756562" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+]]></output>
+              </test-case>
+              <test-case id="1269" name="EveryInteractiveWorldObjectHasStableHitProxyAndCollider" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests.EveryInteractiveWorldObjectHasStableHitProxyAndCollider" methodname="EveryInteractiveWorldObjectHasStableHitProxyAndCollider" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" seed="53800005" result="Passed" start-time="2026-10-16 17:53:03Z" end-time="2026-10-16 17:53:05Z" duration="2.378459" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
