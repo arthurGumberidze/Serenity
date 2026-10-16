@@ -8,7 +8,7 @@ namespace Game.Simulation.AI
             int thinkBatchSize, int needBatchSize, int actionBatchSize, int staggerSlots,
             float movementSpeed, long maxHaulUnits, double switchMargin,
             double hungerIncreasePerDay, double energyDecreasePerDay, double restRecoveryPerDay,
-            double restCompletionEnergy = 0.95d)
+            double restCompletionEnergy = 0.95d, double hungerRecoveryPerDay = 360d)
         {
             if (thinkInterval <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(thinkInterval));
             if (needUpdateInterval <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(needUpdateInterval));
@@ -25,6 +25,7 @@ namespace Game.Simulation.AI
             ValidateRate(energyDecreasePerDay, nameof(energyDecreasePerDay));
             ValidateRate(restRecoveryPerDay, nameof(restRecoveryPerDay));
             ValidateUnit(restCompletionEnergy, nameof(restCompletionEnergy));
+            ValidateRate(hungerRecoveryPerDay, nameof(hungerRecoveryPerDay));
 
             ThinkInterval = thinkInterval;
             NeedUpdateInterval = needUpdateInterval;
@@ -40,6 +41,7 @@ namespace Game.Simulation.AI
             EnergyDecreasePerDay = energyDecreasePerDay;
             RestRecoveryPerDay = restRecoveryPerDay;
             RestCompletionEnergy = restCompletionEnergy;
+            HungerRecoveryPerDay = hungerRecoveryPerDay;
         }
 
         public TimeSpan ThinkInterval { get; }
@@ -56,6 +58,7 @@ namespace Game.Simulation.AI
         public double EnergyDecreasePerDay { get; }
         public double RestRecoveryPerDay { get; }
         public double RestCompletionEnergy { get; }
+        public double HungerRecoveryPerDay { get; }
 
         public static Tier1AiSettings Default => new Tier1AiSettings(
             TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(15),

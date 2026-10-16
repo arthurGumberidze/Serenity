@@ -1,6 +1,7 @@
 using System;
 using Game.Domain.Production;
 using Game.Domain.Resources;
+using Game.Domain.Work;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
 using Game.Simulation.Production;
@@ -29,6 +30,8 @@ namespace Game.Presentation.Production
             activeColor = color;
             cachedRenderers = GetComponentsInChildren<Renderer>(true);
             gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
+            var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
+            hitProxy.Bind(site.Id, ContextTargetKind.ResourceSource);
             Refresh();
         }
 
@@ -52,6 +55,8 @@ namespace Game.Presentation.Production
         public void SetSelected(bool selected)
         {
             isSelected = selected;
+            var hitProxy = GetComponent<StableWorldHitProxy>();
+            if (hitProxy != null) hitProxy.SetSelected(selected);
             displayedDepleted = null;
             Refresh();
         }

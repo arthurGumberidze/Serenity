@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="17" result="Passed" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0,2256315">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="563" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.225632" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1646" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="559" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.205448" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="28180" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1647" name="Game" fullname="Game" runstate="Runnable" testcasecount="559" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.184555" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1648" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="559" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.174237" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1022" name="P103ContextCommandTests" fullname="Game.Tests.P103ContextCommandTests" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.163592" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="P103" />
+            </properties>
+            <test-case id="1040" name="BuildOrderCompletesCanonicalBuildingThroughScheduler" fullname="Game.Tests.P103ContextCommandTests.BuildOrderCompletesCanonicalBuildingThroughScheduler" methodname="BuildOrderCompletesCanonicalBuildingThroughScheduler" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="956228100" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.064049" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1036" name="BusyCriticalAndProtectedActionsRemainVisibleButDelayed" fullname="Game.Tests.P103ContextCommandTests.BusyCriticalAndProtectedActionsRemainVisibleButDelayed" methodname="BusyCriticalAndProtectedActionsRemainVisibleButDelayed" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="413828658" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.002076" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1035" name="DisabledActionReturnsSpecificReason" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.009480" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1024" name="DisabledActionReturnsSpecificReason(WrongTargetType)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(WrongTargetType)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1726947382" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000777" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1025" name="DisabledActionReturnsSpecificReason(WrongRole)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(WrongRole)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="678765302" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000351" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1026" name="DisabledActionReturnsSpecificReason(TooYoung)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(TooYoung)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1001725890" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000208" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1027" name="DisabledActionReturnsSpecificReason(InvalidStatus)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(InvalidStatus)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="2006430182" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000192" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1028" name="DisabledActionReturnsSpecificReason(MissingTool)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(MissingTool)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="959708188" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000221" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1029" name="DisabledActionReturnsSpecificReason(MissingTechnology)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(MissingTechnology)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="2055500110" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000197" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1030" name="DisabledActionReturnsSpecificReason(TooFar)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(TooFar)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1608203757" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000184" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1031" name="DisabledActionReturnsSpecificReason(NoPath)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(NoPath)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="2033174968" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000182" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1032" name="DisabledActionReturnsSpecificReason(NoResource)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(NoResource)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="856941038" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000219" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1033" name="DisabledActionReturnsSpecificReason(NoCapacity)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(NoCapacity)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1992441946" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000185" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1034" name="DisabledActionReturnsSpecificReason(Cooldown)" fullname="Game.Tests.P103ContextCommandTests.DisabledActionReturnsSpecificReason(Cooldown)" methodname="DisabledActionReturnsSpecificReason" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1781126822" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.000180" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1023" name="EveryRequiredContextActionHasAValidTargetAndIsVisibleToRules" fullname="Game.Tests.P103ContextCommandTests.EveryRequiredContextActionHasAValidTargetAndIsVisibleToRules" methodname="EveryRequiredContextActionHasAValidTargetAndIsVisibleToRules" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="854596109" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.004607" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1039" name="NeedsOnlyModeStartsIdleAndCriticalNeedsBlockManualPreemption" fullname="Game.Tests.P103ContextCommandTests.NeedsOnlyModeStartsIdleAndCriticalNeedsBlockManualPreemption" methodname="NeedsOnlyModeStartsIdleAndCriticalNeedsBlockManualPreemption" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="1222803091" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.001394" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="NormalCommandGoesToFrontShiftCommandGoesToTailAndQueueRoundTripsV21" fullname="Game.Tests.P103ContextCommandTests.NormalCommandGoesToFrontShiftCommandGoesToTailAndQueueRoundTripsV21" methodname="NormalCommandGoesToFrontShiftCommandGoesToTailAndQueueRoundTripsV21" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="164403751" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.058791" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="V20SaveLoadsWithDeterministicLegacyQueueOrder" fullname="Game.Tests.P103ContextCommandTests.V20SaveLoadsWithDeterministicLegacyQueueOrder" methodname="V20SaveLoadsWithDeterministicLegacyQueueOrder" classname="Game.Tests.P103ContextCommandTests" runstate="Runnable" seed="938807046" result="Passed" start-time="2026-10-16 14:41:42Z" end-time="2026-10-16 14:41:42Z" duration="0.002680" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

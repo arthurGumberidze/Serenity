@@ -27,6 +27,7 @@ namespace Game.Simulation.AI
 
     public sealed class Tier1AiScheduler
     {
+        public enum AutonomousWorkMode { LegacyUtility = 0, NeedsOnly = 1 }
         private sealed class Entry
         {
             public Tier1AiAgentState Agent;
@@ -49,6 +50,7 @@ namespace Game.Simulation.AI
         private int needCursor;
         private int actionCursor;
         private long calendarTicks;
+        private AutonomousWorkMode autonomousWorkMode = AutonomousWorkMode.LegacyUtility;
         private IExternalCharacterActivityOwner externalActivityOwner;
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
@@ -67,7 +69,16 @@ namespace Game.Simulation.AI
         public long CalendarTicks => calendarTicks;
         public Tier1AiSettings Settings => settings;
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
+        public AutonomousWorkMode WorkMode => autonomousWorkMode;
+
+        public void SetAutonomousWorkMode(AutonomousWorkMode mode)
+        {
+            if (!Enum.IsDefined(typeof(AutonomousWorkMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode));
+            autonomousWorkMode = mode;
+        }
         public const double CriticalRestEnergy = 0.10d;
+        public const double CriticalHunger = 0.90d;
+        public const double CriticalHungerCompletion = 0.20d;
 
         public void BindExternalActivityOwner(IExternalCharacterActivityOwner owner)
         {
@@ -103,7 +114,8 @@ namespace Game.Simulation.AI
         {
             if (!byId.TryGetValue(characterId, out var entry)) return false;
             if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId)) return false;
-            if (entry.Agent.Needs.Energy <= CriticalRestEnergy) return false;
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || entry.Agent.Needs.Hunger >= CriticalHunger)
+                return false;
             return entry.Action == null || entry.Action.IsInterruptible;
         }
 
@@ -292,6 +304,17 @@ namespace Game.Simulation.AI
                 return;
             }
 
+            if (entry.Agent.Needs.Hunger >= CriticalHunger)
+            {
+                if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Eat)
+                {
+                    entry.Action?.Cancel();
+                    entry.Action = null;
+                    Start(entry, UtilityActionKind.Eat);
+                }
+                return;
+            }
+
             if (entry.Action != null && IsManual(entry.Action.Kind)) return;
             if (work != null)
             {
@@ -307,6 +330,22 @@ namespace Game.Simulation.AI
                     StartManual(entry, assigned);
                     return;
                 }
+            }
+
+            if (autonomousWorkMode == AutonomousWorkMode.NeedsOnly)
+            {
+                if (entry.Action != null && entry.Action.Kind != UtilityActionKind.Rest &&
+                    entry.Action.Kind != UtilityActionKind.Eat)
+                {
+                    entry.Action.Cancel();
+                    entry.Action = null;
+                }
+                if (entry.Action == null)
+                {
+                    entry.Movement.Stop();
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                }
+                return;
             }
 
             var idle = new UtilityCandidate(UtilityActionKind.Idle, new UtilityScore(0.05d), true, 3);
@@ -355,6 +394,10 @@ namespace Game.Simulation.AI
                 case UtilityActionKind.Rest:
                     entry.Movement.Stop();
                     entry.Action = new RestActionExecution(entry.Agent, settings);
+                    break;
+                case UtilityActionKind.Eat:
+                    entry.Movement.Stop();
+                    entry.Action = new EatActionExecution(entry.Agent, settings);
                     break;
                 case UtilityActionKind.Haul:
                     if (world.HaulJobs.TryClaim(entry.Agent, settings.MaxHaulUnits, out var job, out var claim))
@@ -418,7 +461,9 @@ namespace Game.Simulation.AI
                     entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
                 }
             }
-            else if (job.Type == WorkJobType.Gather || job.Type == WorkJobType.Farm || job.Type == WorkJobType.Craft)
+            else if (job.Type == WorkJobType.Gather || job.Type == WorkJobType.Mine ||
+                     job.Type == WorkJobType.Chop || job.Type == WorkJobType.Farm ||
+                     job.Type == WorkJobType.Craft)
             {
                 if (world.Production != null && entry.Movement.IsAvailable &&
                     world.Production.TryReserveAtSite(entry.Agent.CharacterId, job.Target.EntityId, out var productionJob))
@@ -440,8 +485,12 @@ namespace Game.Simulation.AI
             }
             else
             {
+                Action completion = null;
+                if (job.Type == WorkJobType.Build && world.Buildings != null &&
+                    world.Buildings.TryGet(job.Target.EntityId, out var building))
+                    completion = building.MarkCompleted;
                 entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
-                    settings.MovementTimeout);
+                    settings.MovementTimeout, completion);
             }
             entry.LastActionTicks = calendarTicks;
         }

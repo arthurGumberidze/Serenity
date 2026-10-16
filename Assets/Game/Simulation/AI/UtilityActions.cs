@@ -48,6 +48,34 @@ namespace Game.Simulation.AI
         public void Cancel() => IsFinished = true;
     }
 
+    internal sealed class EatActionExecution : IUtilityActionExecution
+    {
+        private readonly Tier1AiAgentState agent;
+        private readonly Tier1AiSettings settings;
+
+        public EatActionExecution(Tier1AiAgentState agent, Tier1AiSettings settings)
+        {
+            this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
+            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            agent.SetAction(UtilityActionKind.Eat, AiActionPhase.Eating);
+        }
+
+        public UtilityActionKind Kind => UtilityActionKind.Eat;
+        public AiActionPhase Phase => AiActionPhase.Eating;
+        public bool IsFinished { get; private set; }
+        public bool Succeeded => IsFinished;
+        public bool IsInterruptible => true;
+        public bool IsValid => !IsFinished;
+
+        public void Tick(TimeSpan simulationDelta)
+        {
+            agent.Needs.SatisfyHunger(settings.HungerRecoveryPerDay * simulationDelta.TotalDays);
+            if (agent.Needs.Hunger <= Tier1AiScheduler.CriticalHungerCompletion) IsFinished = true;
+        }
+
+        public void Cancel() => IsFinished = true;
+    }
+
     internal sealed class HaulActionExecution : IUtilityActionExecution
     {
         private readonly Tier1AiAgentState agent;

@@ -205,8 +205,10 @@ namespace Game.Domain.Work
     public enum WorkJobType
     {
         Haul = 0, Move = 1, Gather = 2, Build = 3, Craft = 4, Farm = 5,
-        Research = 6, Scout = 7, Military = 8, Care = 9
+        Research = 6, Scout = 7, Military = 8, Care = 9,
+        Inspect = 10, Mine = 11, Chop = 12, Guard = 13
     }
+    public enum WorkQueuePlacement { RejectWhenBusy = 0, Front = 1, Tail = 2 }
     public enum WorkPriority { Low = 0, Normal = 1, High = 2, Urgent = 3, Immediate = 4 }
     public enum WorkJobStatus { Queued = 0, Assigned = 1, Active = 2, Completed = 3, Cancelled = 4, Failed = 5 }
     public enum WorkTargetKind
@@ -254,7 +256,8 @@ namespace Game.Domain.Work
     {
         public WorkOrder(JobId id, WorkJobType type, WorkPriority priority, WorkTarget target,
             WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
-            ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget)
+            ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget,
+            long queueOrder = 0)
         {
             if (!Enum.IsDefined(typeof(WorkJobType), type)) throw new ArgumentOutOfRangeException(nameof(type));
             if (!Enum.IsDefined(typeof(WorkPriority), priority)) throw new ArgumentOutOfRangeException(nameof(priority));
@@ -276,6 +279,7 @@ namespace Game.Domain.Work
             ResourceId = resourceId;
             Quantity = quantity;
             ExclusiveTarget = exclusiveTarget;
+            QueueOrder = queueOrder;
             Status = assigneeId.HasValue ? WorkJobStatus.Assigned : WorkJobStatus.Queued;
         }
 
@@ -289,6 +293,7 @@ namespace Game.Domain.Work
         public ResourceId? ResourceId { get; }
         public ResourceQuantity Quantity { get; }
         public bool ExclusiveTarget { get; }
+        public long QueueOrder { get; private set; }
         public WorkJobStatus Status { get; private set; }
         public WorkClaimState ClaimState { get; private set; }
         public bool IsTerminal => Status == WorkJobStatus.Completed || Status == WorkJobStatus.Cancelled || Status == WorkJobStatus.Failed;
@@ -307,6 +312,8 @@ namespace Game.Domain.Work
             Status = WorkJobStatus.Assigned;
             return true;
         }
+
+        public void SetQueueOrder(long queueOrder) => QueueOrder = queueOrder;
 
         public bool Start()
         {
@@ -363,11 +370,11 @@ namespace Game.Domain.Work
         public WorkOrderState(long id, WorkJobType type, WorkPriority priority, WorkTarget target,
             WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
             ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget,
-            WorkJobStatus status, WorkClaimState claimState)
+            WorkJobStatus status, WorkClaimState claimState, long queueOrder = 0)
         {
             Id = id; Type = type; Priority = priority; Target = target; Destination = destination;
             AssigneeId = assigneeId; GroupId = groupId; ResourceId = resourceId; Quantity = quantity;
-            ExclusiveTarget = exclusiveTarget; Status = status; ClaimState = claimState;
+            ExclusiveTarget = exclusiveTarget; Status = status; ClaimState = claimState; QueueOrder = queueOrder;
         }
         public long Id { get; }
         public WorkJobType Type { get; }
@@ -381,19 +388,25 @@ namespace Game.Domain.Work
         public bool ExclusiveTarget { get; }
         public WorkJobStatus Status { get; }
         public WorkClaimState ClaimState { get; }
+        public long QueueOrder { get; }
     }
 
     public sealed class WorkSaveState
     {
-        public WorkSaveState(long nextJobId, IEnumerable<WorkGroupState> groups, IEnumerable<WorkOrderState> jobs)
+        public WorkSaveState(long nextJobId, IEnumerable<WorkGroupState> groups, IEnumerable<WorkOrderState> jobs,
+            long nextQueueOrder = 1, long nextFrontOrder = -1)
         {
             if (nextJobId <= 0) throw new ArgumentOutOfRangeException(nameof(nextJobId));
             NextJobId = nextJobId;
             Groups = (groups ?? Array.Empty<WorkGroupState>()).ToArray();
             Jobs = (jobs ?? Array.Empty<WorkOrderState>()).ToArray();
+            NextQueueOrder = nextQueueOrder;
+            NextFrontOrder = nextFrontOrder;
         }
         public long NextJobId { get; }
         public IReadOnlyList<WorkGroupState> Groups { get; }
         public IReadOnlyList<WorkOrderState> Jobs { get; }
+        public long NextQueueOrder { get; }
+        public long NextFrontOrder { get; }
     }
 }

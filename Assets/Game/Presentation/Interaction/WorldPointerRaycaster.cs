@@ -68,11 +68,57 @@ namespace Game.Presentation.Interaction
                          .OrderBy(value => value.distance))
             {
                 var collider = candidate.collider;
-                if (collider.GetComponentInParent<SelectableMarker>() == null &&
+                if (collider.GetComponentInParent<StableWorldHitProxy>() == null &&
+                    collider.GetComponentInParent<SelectableMarker>() == null &&
                     collider.GetComponentInParent<CharacterPresenter>() == null &&
                     collider.GetComponentInParent<WorldResourcePilePresenter>() == null &&
                     collider.GetComponentInParent<BuildingPresenter>() == null &&
                     collider.GetComponentInParent<ProductionSourcePresenter>() == null) continue;
+                hit = candidate;
+                return true;
+            }
+            return false;
+        }
+
+        public bool TryGetContextHit(Vector2 pointerPosition, out RaycastHit hit)
+        {
+            hit = default;
+            if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
+            var ray = worldCamera.ScreenPointToRay(pointerPosition);
+            RaycastHit? ground = null;
+            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Ignore)
+                         .OrderBy(value => value.distance))
+            {
+                var collider = candidate.collider;
+                if (collider.GetComponentInParent<StableWorldHitProxy>() != null ||
+                    collider.GetComponentInParent<SelectableMarker>() != null ||
+                    collider.GetComponentInParent<CharacterPresenter>() != null ||
+                    collider.GetComponentInParent<WorldResourcePilePresenter>() != null ||
+                    collider.GetComponentInParent<BuildingPresenter>() != null ||
+                    collider.GetComponentInParent<ProductionSourcePresenter>() != null)
+                {
+                    hit = candidate;
+                    return true;
+                }
+                if (!ground.HasValue && (collider.GetComponentInParent<BuildableGround>() != null ||
+                                         collider is TerrainCollider))
+                    ground = candidate;
+            }
+            if (!ground.HasValue) return false;
+            hit = ground.Value;
+            return true;
+        }
+
+        public bool TryGetGroundHit(Vector2 pointerPosition, out RaycastHit hit)
+        {
+            hit = default;
+            if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
+            var ray = worldCamera.ScreenPointToRay(pointerPosition);
+            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Ignore)
+                         .OrderBy(value => value.distance))
+            {
+                if (candidate.collider.GetComponentInParent<BuildableGround>() == null &&
+                    !(candidate.collider is TerrainCollider)) continue;
                 hit = candidate;
                 return true;
             }

@@ -13,17 +13,19 @@ namespace Game.Simulation.AI
         private readonly WorkManager work;
         private readonly WorkOrder job;
         private readonly TimeSpan timeout;
+        private readonly Action onCompleted;
         private TimeSpan elapsed;
         private TimeSpan workElapsed;
 
         public ManualDirectActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
-            WorkManager work, WorkOrder job, TimeSpan timeout)
+            WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
             this.work = work ?? throw new ArgumentNullException(nameof(work));
             this.job = job ?? throw new ArgumentNullException(nameof(job));
             this.timeout = timeout;
+            this.onCompleted = onCompleted;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
             movement.MoveTo(job.Target.Position, 0.9f);
@@ -58,6 +60,7 @@ namespace Game.Simulation.AI
             }
             workElapsed += simulationDelta;
             if (workElapsed < TimeSpan.FromMinutes(10)) return;
+            onCompleted?.Invoke();
             work.Complete(job.Id);
             IsFinished = true;
             Succeeded = true;

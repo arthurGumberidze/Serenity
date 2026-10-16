@@ -26,6 +26,9 @@ namespace Game.Presentation.Work
 
         public ManualMoveCommandResult LastResult { get; private set; }
         public CombatCommandResult LastCombatResult { get; private set; }
+        public bool ContextMenusEnabled { get; private set; }
+
+        public void EnableContextMenus() => ContextMenusEnabled = true;
 
         public void Initialize(LocalGameplayInputSource inputSource, WorldPointerRaycaster worldRaycaster,
             SelectionProbe selectionProbe, WorkDebugOverlay overlay, BuildingPlacementController placement,
@@ -66,6 +69,8 @@ namespace Game.Presentation.Work
                 buildingPlacement.CancelPlacement();
                 return;
             }
+
+            if (ContextMenusEnabled) return;
 
             if (!raycaster.TryGetWorldHit(input.PointerPosition, out var hit)) return;
 

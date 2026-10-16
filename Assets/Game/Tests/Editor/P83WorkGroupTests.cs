@@ -109,7 +109,7 @@ namespace Game.Tests
 
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
 
-            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.AppearanceEditorVersion));
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(restored.Work.Groups.Count, Is.EqualTo(9));
             var saved = restored.Work.Jobs.Single();
             Assert.That(saved.Id, Is.EqualTo(order.Id.Value));

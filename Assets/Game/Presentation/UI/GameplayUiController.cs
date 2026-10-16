@@ -26,7 +26,9 @@ using Game.Simulation.Military;
 using Game.Simulation.Research;
 using Game.Simulation.Time;
 using Game.Simulation.Events;
+using Game.Simulation.Work;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
@@ -64,6 +66,7 @@ namespace Game.Presentation.UI
         private VisualElement tpsHud;
         private VisualElement modal;
         private VisualElement onboardingCard;
+        private ScrollView contextMenu;
         private Button onboardingToggleButton;
         private Label resourcesLabel;
         private Label dateLabel;
@@ -105,6 +108,9 @@ namespace Game.Presentation.UI
         private ulong knownOccupationEventSequence;
         private int knownAdultCount;
         private bool suppressNotificationCaptureOnce;
+        private ContextCommandTarget? activeContextTarget;
+        private readonly Dictionary<ContextActionKind, ContextActionAvailability> contextActionStates =
+            new Dictionary<ContextActionKind, ContextActionAvailability>();
         private readonly FirstHourOnboardingProgress onboarding = new FirstHourOnboardingProgress();
 
         public bool DeveloperUiVisible { get; private set; }
@@ -117,6 +123,9 @@ namespace Game.Presentation.UI
         public bool OnboardingVisible => onboarding.Visible;
         public FirstHourStage OnboardingStage => onboarding.CurrentStage;
         public int OnboardingCompletedCount => onboarding.CompletedCount;
+        public bool ContextMenuVisible => contextMenu != null && contextMenu.resolvedStyle.display != DisplayStyle.None;
+        public ContextCommandTarget? ActiveContextTarget => activeContextTarget;
+        public IReadOnlyDictionary<ContextActionKind, ContextActionAvailability> ContextActionStates => contextActionStates;
 
         public void SetUiScale(float value)
         {
@@ -153,7 +162,7 @@ namespace Game.Presentation.UI
             var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
                 Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
-                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint)) return true;
+                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint)) return true;
             return Blocks(modal, panelPoint);
         }
 
@@ -199,6 +208,7 @@ namespace Game.Presentation.UI
 
         public void RefreshAfterStateRebind()
         {
+            CloseContextMenu();
             RefreshNow();
             RepaintTextTree();
             if (root?.panel == null) return;
@@ -329,6 +339,7 @@ namespace Game.Presentation.UI
             input.PauseToggled += OnPauseToggle;
             input.TimeSlowerRequested += OnSlower;
             input.TimeFasterRequested += OnFaster;
+            input.SecondaryClicked += OnSecondaryClicked;
             context.BuildingPlacement.BuildMenuRequested += OnBuildMenuRequested;
             subscribed = true;
         }
@@ -339,6 +350,7 @@ namespace Game.Presentation.UI
             input.PauseToggled -= OnPauseToggle;
             input.TimeSlowerRequested -= OnSlower;
             input.TimeFasterRequested -= OnFaster;
+            input.SecondaryClicked -= OnSecondaryClicked;
             context.BuildingPlacement.BuildMenuRequested -= OnBuildMenuRequested;
             subscribed = false;
         }
@@ -361,6 +373,284 @@ namespace Game.Presentation.UI
         private void OnBuildMenuRequested()
         {
             if (!DeveloperUiVisible && !IsTextInputFocused()) SetPanel(GameplayPanel.Build);
+        }
+
+        private void OnSecondaryClicked()
+        {
+            if (DeveloperUiVisible || IsTextInputFocused() || context.BuildingPlacement.IsActive) return;
+            if (context.Selection.SelectedCharacterIds.Count == 0)
+            {
+                CloseContextMenu();
+                return;
+            }
+            if (!raycaster.TryGetContextHit(input.PointerPosition, out var hit) ||
+                !TryResolveContextTarget(hit, out var target))
+            {
+                CloseContextMenu();
+                return;
+            }
+            OpenContextMenu(target, input.PointerPosition);
+        }
+
+        public void OpenContextMenu(ContextCommandTarget target, Vector2 screenPosition)
+        {
+            if (contextMenu == null) return;
+            activeContextTarget = target;
+            contextActionStates.Clear();
+            contextMenu.Clear();
+            AddTitle(contextMenu, "Контекстные действия");
+            AddMuted(contextMenu, ContextTargetName(target) + " · жителей: " +
+                context.Selection.SelectedCharacterIds.Count);
+            foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
+            {
+                var state = EvaluateForSelection(action, target);
+                contextActionStates[action] = state;
+                var captured = action;
+                var button = ActionButton(ContextActionName(action), () => ExecuteContextAction(captured,
+                    Keyboard.current != null && Keyboard.current.shiftKey.isPressed), "context-" + action.ToString().ToLowerInvariant());
+                button.SetEnabled(state.Enabled);
+                if (state.Enabled) button.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+                contextMenu.Add(button);
+                AddMuted(contextMenu, state.Reason == ContextUnavailableReason.None
+                    ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
+            }
+            AddMuted(contextMenu, "Обычный выбор ставит приказ первым. Shift + выбор добавляет его в хвост.");
+            PositionContextMenu(screenPosition);
+            contextMenu.style.display = DisplayStyle.Flex;
+        }
+
+        public ContextCommandResult ExecuteContextAction(ContextActionKind action, bool append)
+        {
+            if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
+            var target = activeContextTarget.Value;
+            var destination = action == ContextActionKind.Haul ? FindHaulDestination() : null;
+            InventoryOwner? source = null;
+            if (action == ContextActionKind.Haul && target.Kind == ContextTargetKind.ResourcePile)
+                source = new InventoryOwner(InventoryOwnerKind.WorldPile, target.EntityId);
+            var result = context.ContextCommands.Issue(context.Selection.SelectedCharacterIds, action, target,
+                append, id => BuildContextFacts(id, action, target), source, destination,
+                action == ContextActionKind.Haul ? new ResourceQuantity(1) : default);
+            var delayed = result.Entries.Count(x => x.Order != null && x.Availability.Delayed);
+            SetStatus(ContextActionName(action) + ": приказов " + result.Orders.Count +
+                (delayed > 0 ? ", с задержкой " + delayed : string.Empty));
+            CloseContextMenu();
+            RefreshNow();
+            return result;
+        }
+
+        public void CloseContextMenu()
+        {
+            activeContextTarget = null;
+            contextActionStates.Clear();
+            if (contextMenu != null) contextMenu.style.display = DisplayStyle.None;
+        }
+
+        private ContextActionAvailability EvaluateForSelection(ContextActionKind action, ContextCommandTarget target)
+        {
+            var states = context.Selection.SelectedCharacterIds
+                .Select(id => ContextActionRules.Evaluate(action, target, BuildContextFacts(id, action, target)))
+                .ToArray();
+            var ready = states.FirstOrDefault(x => x.Enabled && !x.Delayed);
+            if (ready.Enabled) return ready;
+            var delayed = states.FirstOrDefault(x => x.Enabled);
+            if (delayed.Enabled) return delayed;
+            return states.Length == 0
+                ? new ContextActionAvailability(false, ContextUnavailableReason.InvalidStatus)
+                : states[0];
+        }
+
+        private ContextActionFacts BuildContextFacts(StableEntityId id, ContextActionKind action,
+            ContextCommandTarget target)
+        {
+            var exists = context.Characters.TryGet(id, out var character);
+            var capabilities = exists ? context.Health.GetCapabilities(id) : default;
+            var resourceAvailable = true;
+            var technology = true;
+            var capacity = true;
+            var targetStatusValid = true;
+            if (target.Kind == ContextTargetKind.ResourceSource && context.Production.TryGetSite(target.EntityId, out var site))
+            {
+                resourceAvailable = !site.IsDepleted && site.IsWorkAvailable;
+                technology = context.Production.IsRecipeAvailable(site.RecipeId);
+            }
+            else if (target.Kind == ContextTargetKind.ResourcePile && target.ResourceId.HasValue)
+            {
+                var owner = new InventoryOwner(InventoryOwnerKind.WorldPile, target.EntityId);
+                resourceAvailable = context.Inventories.TryGet(owner, out var inventory) &&
+                    inventory.GetAmount(target.ResourceId.Value).Units > 0;
+                if (action == ContextActionKind.Haul) capacity = FindHaulDestination().HasValue;
+            }
+            else if (action == ContextActionKind.Build && target.Kind == ContextTargetKind.Building)
+            {
+                targetStatusValid = context.Buildings.TryGet(target.EntityId, out var building) &&
+                    !building.IsOperational && !building.IsDestroyed;
+            }
+            var busy = context.Work.HasOpenJob(id);
+            var criticalNeed = context.AiAgents.TryGet(id, out var agent) &&
+                (agent.Needs.Energy <= Game.Simulation.AI.Tier1AiScheduler.CriticalRestEnergy ||
+                 agent.Needs.Hunger >= Game.Simulation.AI.Tier1AiScheduler.CriticalHunger);
+            var interruptible = !busy || context.AiScheduler.CanInterruptForDirectWork(id);
+            var withinDistance = !context.AiAgents.TryGet(id, out var distanceAgent) ||
+                DistanceSquared(distanceAgent.Position, target.Position) <= 250f * 250f;
+            var correctRole = HasContextRole(id, action);
+            return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
+                exists && capabilities.IsAdult, correctRole,
+                exists && targetStatusValid && (action == ContextActionKind.Move || action == ContextActionKind.Inspect ||
+                           capabilities.CanPerformOrdinaryWork),
+                true, technology, withinDistance, HasContextPath(id, target.Position), resourceAvailable,
+                capacity, busy, true, criticalNeed, interruptible);
+        }
+
+        private bool HasContextRole(StableEntityId id, ContextActionKind action)
+        {
+            if (!context.Work.Groups.TryGetForMember(id, out var group)) return true;
+            WorkGroupRole required;
+            switch (action)
+            {
+                case ContextActionKind.Gather:
+                case ContextActionKind.Mine:
+                case ContextActionKind.Chop: required = WorkGroupRole.Gatherers; break;
+                case ContextActionKind.Haul: required = WorkGroupRole.Haulers; break;
+                case ContextActionKind.Build: required = WorkGroupRole.Builders; break;
+                case ContextActionKind.Guard: required = WorkGroupRole.Warriors; break;
+                default: return true;
+            }
+            return group.Role == required || group.Role == WorkGroupRole.General;
+        }
+
+        private static float DistanceSquared(WorldPosition left, WorldPosition right)
+        {
+            var x = left.X - right.X;
+            var y = left.Y - right.Y;
+            var z = left.Z - right.Z;
+            return x * x + y * y + z * z;
+        }
+
+        private bool HasContextPath(StableEntityId id, WorldPosition target)
+        {
+            if (!context.AiAgents.TryGet(id, out var agent)) return true;
+            var path = new NavMeshPath();
+            return NavMesh.CalculatePath(new Vector3(agent.Position.X, agent.Position.Y, agent.Position.Z),
+                new Vector3(target.X, target.Y, target.Z), NavMesh.AllAreas, path) &&
+                   path.status == NavMeshPathStatus.PathComplete;
+        }
+
+        private InventoryOwner? FindHaulDestination()
+        {
+            var inventory = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
+                    x.TotalUnits < x.Capacity).OrderBy(x => x.Owner.Id).FirstOrDefault();
+            return inventory?.Owner;
+        }
+
+        private bool TryResolveContextTarget(RaycastHit hit, out ContextCommandTarget target)
+        {
+            var position = new WorldPosition(hit.point.x, hit.point.y, hit.point.z);
+            var source = hit.collider.GetComponentInParent<Game.Presentation.Production.ProductionSourcePresenter>();
+            if (source != null && source.IsBound && source.Site.Kind == ProductionSiteKind.NaturalSource)
+            {
+                var recipe = context.Production.Recipes.Get(source.Site.RecipeId);
+                var resource = recipe.Outputs.Count > 0 ? (ResourceId?)recipe.Outputs[0].ResourceId : null;
+                var resourceClass = ResourceClass(resource);
+                target = new ContextCommandTarget(ContextTargetKind.ResourceSource, source.Site.Position,
+                    source.Site.Id, resource, resourceClass);
+                return true;
+            }
+            var pile = hit.collider.GetComponentInParent<WorldResourcePilePresenter>();
+            if (pile != null)
+            {
+                target = new ContextCommandTarget(ContextTargetKind.ResourcePile, position, pile.PileId,
+                    pile.ResourceId);
+                return true;
+            }
+            var character = hit.collider.GetComponentInParent<Game.Presentation.Characters.CharacterPresenter>();
+            if (character != null && character.IsBound)
+            {
+                target = new ContextCommandTarget(ContextTargetKind.Character, position, character.CharacterId);
+                return true;
+            }
+            var building = hit.collider.GetComponentInParent<Game.Presentation.Buildings.BuildingPresenter>();
+            if (building != null && building.IsBound)
+            {
+                target = new ContextCommandTarget(ContextTargetKind.Building, position, building.BuildingId);
+                return true;
+            }
+            if (hit.collider.GetComponentInParent<BuildableGround>() != null || hit.collider is TerrainCollider)
+            {
+                target = new ContextCommandTarget(ContextTargetKind.Ground, position);
+                return true;
+            }
+            target = default;
+            return false;
+        }
+
+        private static ContextResourceClass ResourceClass(ResourceId? resource)
+        {
+            if (!resource.HasValue) return ContextResourceClass.None;
+            var id = resource.Value.ToString();
+            if (id == "wood_log") return ContextResourceClass.Choppable;
+            if (id == "stone" || id == "iron_ore" || id == "gold_ore") return ContextResourceClass.Mineable;
+            return ContextResourceClass.Gatherable;
+        }
+
+        private void PositionContextMenu(Vector2 screenPosition)
+        {
+            var panelPoint = root.panel == null ? WorldPointerRaycaster.ScreenToGuiPoint(screenPosition) :
+                RuntimePanelUtils.ScreenToPanel(root.panel, screenPosition);
+            var width = float.IsNaN(root.resolvedStyle.width) ? Screen.width : root.resolvedStyle.width;
+            var height = float.IsNaN(root.resolvedStyle.height) ? Screen.height : root.resolvedStyle.height;
+            contextMenu.style.left = Mathf.Clamp(panelPoint.x + 12f, 8f, Mathf.Max(8f, width - 368f));
+            contextMenu.style.top = Mathf.Clamp(panelPoint.y + 12f, 84f, Mathf.Max(84f, height - 568f));
+        }
+
+        private static string ContextActionName(ContextActionKind action)
+        {
+            switch (action)
+            {
+                case ContextActionKind.Inspect: return "Осмотреть";
+                case ContextActionKind.Gather: return "Собрать";
+                case ContextActionKind.Mine: return "Добывать";
+                case ContextActionKind.Chop: return "Рубить";
+                case ContextActionKind.Haul: return "Нести";
+                case ContextActionKind.Build: return "Строить";
+                case ContextActionKind.Guard: return "Охранять";
+                case ContextActionKind.Move: return "Идти";
+                default: return action.ToString();
+            }
+        }
+
+        private static string ContextTargetName(ContextCommandTarget target)
+        {
+            switch (target.Kind)
+            {
+                case ContextTargetKind.Character: return "Персонаж";
+                case ContextTargetKind.ResourcePile: return "Ресурс";
+                case ContextTargetKind.ResourceSource: return "Природный источник";
+                case ContextTargetKind.Building: return "Строение";
+                case ContextTargetKind.Area: return "Область";
+                default: return "Земля";
+            }
+        }
+
+        private static string ContextReason(ContextUnavailableReason reason)
+        {
+            switch (reason)
+            {
+                case ContextUnavailableReason.WrongTargetType: return "неподходящий тип цели";
+                case ContextUnavailableReason.WrongRole: return "неподходящая роль";
+                case ContextUnavailableReason.TooYoung: return "недопустимый возраст";
+                case ContextUnavailableReason.InvalidStatus: return "статус жителя не позволяет выполнить приказ";
+                case ContextUnavailableReason.MissingTool: return "нет подходящего инструмента";
+                case ContextUnavailableReason.MissingTechnology: return "технология не открыта";
+                case ContextUnavailableReason.TooFar: return "слишком далеко";
+                case ContextUnavailableReason.NoPath: return "нет доступного пути";
+                case ContextUnavailableReason.NoResource: return "ресурс исчерпан";
+                case ContextUnavailableReason.NoCapacity: return "нет места на складе";
+                case ContextUnavailableReason.Busy: return "текущая безопасная работа вернётся после приказа";
+                case ContextUnavailableReason.Cooldown: return "действует время восстановления";
+                case ContextUnavailableReason.CriticalNeed: return "сначала критическая потребность";
+                case ContextUnavailableReason.NonInterruptiblePhase: return "сначала завершится непрерываемая фаза";
+                default: return string.Empty;
+            }
         }
 
         private void CreateDocument()
@@ -526,6 +816,17 @@ namespace Game.Presentation.UI
             modal.style.display = DisplayStyle.None;
             modal.pickingMode = PickingMode.Position;
             root.Add(modal);
+
+            contextMenu = new ScrollView(ScrollViewMode.Vertical) { name = "context-action-menu" };
+            StylePanel(contextMenu);
+            contextMenu.style.position = Position.Absolute;
+            contextMenu.style.width = 360;
+            contextMenu.style.maxHeight = 560;
+            contextMenu.style.display = DisplayStyle.None;
+            contextMenu.pickingMode = PickingMode.Position;
+            contextMenu.style.borderLeftColor = AccentColor;
+            contextMenu.style.borderLeftWidth = 3;
+            root.Add(contextMenu);
             ApplyResponsiveLayout();
         }
 

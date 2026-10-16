@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using Game.Domain;
 using Game.Domain.Characters;
+using Game.Domain.Work;
+using Game.Presentation.Interaction;
 using UnityEngine;
 
 namespace Game.Presentation.Characters
@@ -50,6 +52,8 @@ namespace Game.Presentation.Characters
         public void SetSelected(bool selected)
         {
             IsSelected = selected;
+            var hitProxy = GetComponent<StableWorldHitProxy>();
+            if (hitProxy != null) hitProxy.SetSelected(selected);
             ApplyVisualDetail(automaticAnimationAllowed || selected);
             if (animator == null || !Application.isPlaying || displayedMoving != true) return;
             if (selected) EnableAutomaticMovementAnimation();
@@ -87,6 +91,8 @@ namespace Game.Presentation.Characters
             appearance = resolvedAppearance ?? StoneAgeAppearanceProfiles.CreateCatalog()
                 .DefaultFor(domainCharacter.Sex).CreateState(domainCharacter.Id);
             registry = presentationRegistry;
+            var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
+            hitProxy.Bind(domainCharacter.Id, ContextTargetKind.Character);
             CacheDetailedRenderers();
             CacheAnimatorParameters();
             InvalidateAnimatorState();

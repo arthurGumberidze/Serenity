@@ -1,6 +1,8 @@
 using System;
 using Game.Domain;
 using Game.Domain.Resources;
+using Game.Domain.Work;
+using Game.Presentation.Interaction;
 using UnityEngine;
 
 namespace Game.Presentation.Resources
@@ -20,6 +22,8 @@ namespace Game.Presentation.Resources
             inventory = canonicalInventory ?? throw new ArgumentNullException(nameof(canonicalInventory));
             if (inventory.Owner != source.InventoryOwner) throw new ArgumentException("Inventory owner mismatch.", nameof(canonicalInventory));
             name = $"World Pile {ResourceId} [{PileId}]";
+            var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
+            hitProxy.Bind(source.Id, ContextTargetKind.ResourcePile);
         }
 
         private void OnDestroy() { pile = null; inventory = null; }

@@ -25,6 +25,8 @@ using Game.Simulation.Resources;
 using Game.Simulation.Time;
 using Game.Simulation.Weather;
 using Game.Simulation.Work;
+using Game.Simulation.AI;
+using Game.Simulation.Tiers;
 using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
@@ -80,7 +82,8 @@ namespace Game.Presentation.UI
         public GameplayUiContext(Func<GameClock> clock, CharacterRegistry characters,
             SelectionProbe selection, ResourceCatalog resources, ResourceInventoryRegistry inventories,
             SettlementResourceView storedResources, ProductionService production, ResearchService research,
-            Tier1AiAgentRegistry aiAgents, WorkManager work, DirectWorkCommandService directWork,
+            Tier1AiAgentRegistry aiAgents, Tier1AiScheduler aiScheduler, WorkManager work,
+            DirectWorkCommandService directWork, ContextCommandService contextCommands, TierManager tiers,
             CharacterPresentationRegistry presentations,
             ManualMoveCommandService manualMoveCommands, WorldPileService worldPiles, BuildingRegistry buildings, BuildingPresentationCatalog buildingCatalog,
             BuildingPlacementController buildingPlacement, HealthAndFamilyService health,
@@ -105,8 +108,11 @@ namespace Game.Presentation.UI
             Production = production ?? throw new ArgumentNullException(nameof(production));
             Research = research ?? throw new ArgumentNullException(nameof(research));
             AiAgents = aiAgents ?? throw new ArgumentNullException(nameof(aiAgents));
+            AiScheduler = aiScheduler ?? throw new ArgumentNullException(nameof(aiScheduler));
             Work = work ?? throw new ArgumentNullException(nameof(work));
             DirectWork = directWork ?? throw new ArgumentNullException(nameof(directWork));
+            ContextCommands = contextCommands ?? throw new ArgumentNullException(nameof(contextCommands));
+            Tiers = tiers ?? throw new ArgumentNullException(nameof(tiers));
             Presentations = presentations ?? throw new ArgumentNullException(nameof(presentations));
             ManualMoveCommands = manualMoveCommands ?? throw new ArgumentNullException(nameof(manualMoveCommands));
             WorldPiles = worldPiles ?? throw new ArgumentNullException(nameof(worldPiles));
@@ -150,8 +156,11 @@ namespace Game.Presentation.UI
         public ProductionService Production { get; }
         public ResearchService Research { get; }
         public Tier1AiAgentRegistry AiAgents { get; }
+        public Tier1AiScheduler AiScheduler { get; }
         public WorkManager Work { get; }
         public DirectWorkCommandService DirectWork { get; }
+        public ContextCommandService ContextCommands { get; }
+        public TierManager Tiers { get; }
         public CharacterPresentationRegistry Presentations { get; }
         public ManualMoveCommandService ManualMoveCommands { get; }
         public WorldPileService WorldPiles { get; }

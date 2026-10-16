@@ -177,7 +177,7 @@ namespace Game.Presentation.Buildings
         private void Update()
         {
             if (!IsActive || inputSource == null || raycaster == null) return;
-            if (raycaster.TryGetWorldHit(inputSource.PointerPosition, out var hit) && hit.collider.GetComponentInParent<BuildableGround>() != null)
+            if (raycaster.TryGetGroundHit(inputSource.PointerPosition, out var hit))
                 TryMovePreviewToWorldPoint(hit.point);
             else
             {

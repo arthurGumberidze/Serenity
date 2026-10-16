@@ -2,6 +2,8 @@ using System;
 using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
+using Game.Domain.Work;
+using Game.Presentation.Interaction;
 using UnityEngine;
 
 namespace Game.Presentation.Buildings
@@ -30,6 +32,8 @@ namespace Game.Presentation.Buildings
             registry = presentationRegistry;
             storageInventory = inventory;
             gameObject.name = $"Building {source.DefinitionId} [{source.Id}]";
+            var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
+            hitProxy.Bind(source.Id, ContextTargetKind.Building);
             RefreshStructuralPresentation();
         }
 

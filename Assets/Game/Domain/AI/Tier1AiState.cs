@@ -46,7 +46,8 @@ namespace Game.Domain.AI
         ManualHaul = 4,
         Produce = 5,
         Research = 6,
-        ManualTask = 7
+        ManualTask = 7,
+        Eat = 8
     }
 
     public enum AiActionPhase
@@ -63,7 +64,8 @@ namespace Game.Domain.AI
         MoveToTarget = 9,
         Working = 10,
         DeliverProduction = 11,
-        Researching = 12
+        Researching = 12,
+        Eating = 13
     }
 
     public sealed class Tier1Needs
@@ -89,6 +91,12 @@ namespace Game.Domain.AI
         {
             if (!IsFiniteNonNegative(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
             Energy = Clamp01(Energy + amount);
+        }
+
+        public void SatisfyHunger(double amount)
+        {
+            if (!IsFiniteNonNegative(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
+            Hunger = Clamp01(Hunger - amount);
         }
 
         private static double Validate(double value, string parameterName)

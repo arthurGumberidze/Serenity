@@ -129,6 +129,7 @@ namespace Game.Infrastructure
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
         public DirectWorkCommandService DirectWorkCommands { get; private set; }
+        public ContextCommandService ContextCommands { get; private set; }
         public WorkDebugOverlay WorkDebug { get; private set; }
         public ManualMoveCommandService ManualMoveCommands { get; private set; }
         public ManualMoveInputController ManualMoveInput { get; private set; }
@@ -351,9 +352,10 @@ namespace Game.Infrastructure
             Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
-            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research);
+            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings);
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily);
+            AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.NeedsOnly);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler, () =>
                 Weather.GetWeatherAtCalendarTick(Clock.State.CalendarTicks).Modifiers.MovementPerThousand);
@@ -394,6 +396,7 @@ namespace Game.Infrastructure
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
             DirectWorkCommands.EnsureRoleGroups();
+            ContextCommands = new ContextCommandService(Work, AiScheduler);
             if (StoneAgeSettlement != null)
             {
                 WorkOrderIndicators = gameObject.AddComponent<P94WorkOrderIndicatorSystem>();
@@ -495,7 +498,8 @@ namespace Game.Infrastructure
                 .ToArray();
             GameplayUi = gameObject.AddComponent<GameplayUiController>();
             GameplayUi.Initialize(new GameplayUiContext(() => Clock, Characters, selectionProbe, Resources,
-                    Inventories, StoredResources, Production, Research, AiAgents, Work, DirectWorkCommands, CharacterPresentations,
+                    Inventories, StoredResources, Production, Research, AiAgents, AiScheduler, Work, DirectWorkCommands,
+                    ContextCommands, Tiers, CharacterPresentations,
                     ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
                     HealthFamily, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
                     MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
@@ -505,6 +509,7 @@ namespace Game.Infrastructure
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
                     () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray()),
                 pointerRaycaster, input);
+            ManualMoveInput.EnableContextMenus();
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
@@ -673,7 +678,7 @@ namespace Game.Infrastructure
             Tier3Adapter.RebaseAfterLoad(new SimulationTimePoint(Clock.State.CalendarTicks,
                 Clock.State.BiologicalTicks));
             RefreshTier1AppearanceAfterLoad();
-            selectionProbe.ClearSelection();
+            selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
             RebindRegionResourcePresenters();
             DirectWorkCommands.EnsureRoleGroups();

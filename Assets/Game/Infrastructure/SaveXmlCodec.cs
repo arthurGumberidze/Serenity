@@ -75,7 +75,7 @@ namespace Game.Infrastructure
                 root.Add(SerializeAppearance(snapshot.Appearance,
                     snapshot.FormatVersion >= SaveSnapshot.AppearanceEditorVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.WorkVersion)
-                root.Add(SerializeWork(snapshot.Work));
+                root.Add(SerializeWork(snapshot.Work, snapshot.FormatVersion >= SaveSnapshot.ContextOrdersVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.ConnectedWorldVersion)
                 root.Add(SerializeConnectedWorld(snapshot.ConnectedWorld));
             using (var stream = new MemoryStream())
@@ -114,6 +114,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.CampaignVersion && version != SaveSnapshot.AppearanceVersion &&
                         version != SaveSnapshot.OccupationVersion && version != SaveSnapshot.WorkVersion &&
                         version != SaveSnapshot.AppearanceEditorVersion &&
+                        version != SaveSnapshot.ConnectedWorldVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -147,7 +148,7 @@ namespace Game.Infrastructure
                         ? DeserializeAppearance(root.Element("appearance"),
                             version >= SaveSnapshot.AppearanceEditorVersion) : null;
                     var work = version >= SaveSnapshot.WorkVersion
-                        ? DeserializeWork(root.Element("work")) : null;
+                        ? DeserializeWork(root.Element("work"), version >= SaveSnapshot.ContextOrdersVersion) : null;
                     var connectedWorld = version >= SaveSnapshot.ConnectedWorldVersion
                         ? DeserializeConnectedWorld(root.Element("connectedWorld")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
@@ -1359,16 +1360,21 @@ namespace Game.Infrastructure
             }));
         }
 
-        private static XElement SerializeWork(WorkSaveState state)
+        private static XElement SerializeWork(WorkSaveState state, bool includeContextOrders)
         {
             var element = new XElement("work");
             if (state == null) return element;
             element.Add(new XElement("nextJobId", state.NextJobId));
+            if (includeContextOrders)
+                element.Add(new XElement("nextQueueOrder", state.NextQueueOrder),
+                    new XElement("nextFrontOrder", state.NextFrontOrder));
             element.Add(new XElement("groups", state.Groups.Select(group => new XElement("group",
                 new XElement("id", group.Id.ToString()), new XElement("name", group.DisplayName),
                 new XElement("role", (int)group.Role), OptionalId("commanderId", group.CommanderId),
                 new XElement("members", group.MemberIds.Select(id => new XElement("member", id.ToString())))))));
-            element.Add(new XElement("jobs", state.Jobs.Select(job => new XElement("job",
+            element.Add(new XElement("jobs", state.Jobs.Select(job =>
+            {
+                var item = new XElement("job",
                 new XElement("id", job.Id), new XElement("type", (int)job.Type),
                 new XElement("priority", (int)job.Priority), SerializeTarget("target", job.Target),
                 new XElement("hasDestination", job.Destination.HasValue),
@@ -1377,11 +1383,14 @@ namespace Game.Infrastructure
                 new XElement("groupId", job.GroupId.HasValue ? job.GroupId.Value.ToString() : string.Empty),
                 new XElement("resourceId", job.ResourceId.HasValue ? job.ResourceId.Value.ToString() : string.Empty),
                 new XElement("quantity", job.Quantity.Units), new XElement("exclusive", job.ExclusiveTarget),
-                new XElement("status", (int)job.Status), new XElement("claim", (int)job.ClaimState)))));
+                 new XElement("status", (int)job.Status), new XElement("claim", (int)job.ClaimState));
+                if (includeContextOrders) item.Add(new XElement("queueOrder", job.QueueOrder));
+                return item;
+            })));
             return element;
         }
 
-        private static WorkSaveState DeserializeWork(XElement element)
+        private static WorkSaveState DeserializeWork(XElement element, bool hasContextOrders)
         {
             if (element == null) throw new FormatException("Missing work state.");
             if (!element.HasElements)
@@ -1389,7 +1398,9 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty work state.");
                 return null;
             }
-            RequireFields(element, new[] { "nextJobId", "groups", "jobs" });
+            RequireFields(element, hasContextOrders
+                ? new[] { "nextJobId", "nextQueueOrder", "nextFrontOrder", "groups", "jobs" }
+                : new[] { "nextJobId", "groups", "jobs" });
             var groups = Items(element.Element("groups"), "group", value =>
             {
                 RequireFields(value, new[] { "id", "name", "role", "commanderId", "members" });
@@ -1399,8 +1410,11 @@ namespace Game.Infrastructure
             });
             var jobs = Items(element.Element("jobs"), "job", value =>
             {
-                RequireFields(value, new[] { "id", "type", "priority", "target", "hasDestination", "destination",
-                    "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim" });
+                RequireFields(value, hasContextOrders
+                    ? new[] { "id", "type", "priority", "target", "hasDestination", "destination",
+                        "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim", "queueOrder" }
+                    : new[] { "id", "type", "priority", "target", "hasDestination", "destination",
+                        "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim" });
                 var hasDestination = XmlConvert.ToBoolean(Value(value, "hasDestination"));
                 var destinationElement = value.Element("destination");
                 if (!hasDestination && destinationElement.HasElements) throw new FormatException("Unexpected work destination.");
@@ -1413,9 +1427,12 @@ namespace Game.Infrastructure
                         new WorkGroupId(StableEntityId.Parse(groupText)),
                     string.IsNullOrEmpty(resourceText) ? (ResourceId?)null : new ResourceId(resourceText),
                     new ResourceQuantity(Long(value, "quantity")), XmlConvert.ToBoolean(Value(value, "exclusive")),
-                    (WorkJobStatus)Int(value, "status"), (WorkClaimState)Int(value, "claim"));
+                    (WorkJobStatus)Int(value, "status"), (WorkClaimState)Int(value, "claim"),
+                    hasContextOrders ? Long(value, "queueOrder") : Long(value, "id"));
             });
-            return new WorkSaveState(Long(element, "nextJobId"), groups, jobs);
+            return new WorkSaveState(Long(element, "nextJobId"), groups, jobs,
+                hasContextOrders ? Long(element, "nextQueueOrder") : 1,
+                hasContextOrders ? Long(element, "nextFrontOrder") : -1);
         }
 
         private static XElement SerializeTarget(string name, WorkTarget target) => new XElement(name,

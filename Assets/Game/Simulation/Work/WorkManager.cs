@@ -28,6 +28,8 @@ namespace Game.Simulation.Work
         private readonly Dictionary<long, WorkOrder> jobs = new Dictionary<long, WorkOrder>();
         private readonly Dictionary<WorkTarget, JobId> exclusiveTargets = new Dictionary<WorkTarget, JobId>();
         private long nextJobId = 1;
+        private long nextQueueOrder = 1;
+        private long nextFrontOrder = -1;
 
         public WorkManager(CharacterRegistry characterRegistry, IWorkEligibilityPolicy eligibilityPolicy = null)
         {
@@ -83,15 +85,17 @@ namespace Game.Simulation.Work
         }
 
         public WorkOrder CreateMoveJob(StableEntityId? assigneeId, WorldPosition target, WorkPriority priority,
-            WorkGroupId? groupId = null, bool exclusiveTarget = false)
+            WorkGroupId? groupId = null, bool exclusiveTarget = false,
+            WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
             return Create(WorkJobType.Move, priority, WorkTarget.At(target), null, assigneeId, groupId,
-                null, default, exclusiveTarget);
+                null, default, exclusiveTarget, queuePlacement);
         }
 
         public WorkOrder CreateHaulJob(StableEntityId? assigneeId, InventoryOwner source,
             InventoryOwner destination, ResourceId resourceId, ResourceQuantity quantity, WorkPriority priority,
-            WorkGroupId? groupId = null, WorldPosition sourcePosition = default, bool exclusiveTarget = false)
+            WorkGroupId? groupId = null, WorldPosition sourcePosition = default, bool exclusiveTarget = false,
+            WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
             if (source.Kind != InventoryOwnerKind.WorldPile)
                 throw new ArgumentException("Manual haul source must be a world pile.", nameof(source));
@@ -100,15 +104,17 @@ namespace Game.Simulation.Work
             return Create(WorkJobType.Haul, priority,
                 WorkTarget.ForEntity(WorkTargetKind.WorldPile, source.Id, sourcePosition),
                 WorkTarget.ForEntity(WorkTargetKind.BuildingStorage, destination.Id), assigneeId, groupId,
-                resourceId, quantity, exclusiveTarget);
+                resourceId, quantity, exclusiveTarget, queuePlacement);
         }
 
         public WorkOrder CreateDirectJob(WorkJobType type, StableEntityId? assigneeId, WorkTarget target,
-            WorkPriority priority, WorkGroupId groupId, bool exclusiveTarget = true)
+            WorkPriority priority, WorkGroupId? groupId = null, bool exclusiveTarget = true,
+            WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
             if (type == WorkJobType.Move || type == WorkJobType.Haul)
                 throw new ArgumentException("Use the specialized move/haul factory.", nameof(type));
-            return Create(type, priority, target, null, assigneeId, groupId, null, default, exclusiveTarget);
+            return Create(type, priority, target, null, assigneeId, groupId, null, default, exclusiveTarget,
+                queuePlacement);
         }
 
         public IReadOnlyList<WorkOrder> CreateGroupMoveJobs(WorkGroupId groupId, WorldPosition target,
@@ -139,14 +145,17 @@ namespace Game.Simulation.Work
             return result;
         }
 
-        public bool Assign(JobId jobId, StableEntityId characterId)
+        public bool Assign(JobId jobId, StableEntityId characterId,
+            WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
             var job = Get(jobId);
             if (job.Status != WorkJobStatus.Queued) return false;
             RequireEligible(characterId, job.Type);
-            if (HasOpenJob(characterId))
+            if (queuePlacement == WorkQueuePlacement.RejectWhenBusy && HasOpenJob(characterId))
                 throw new InvalidOperationException("A character cannot execute incompatible exclusive jobs simultaneously.");
-            return job.AssignTo(characterId);
+            if (!job.AssignTo(characterId)) return false;
+            job.SetQueueOrder(AllocateQueueOrder(queuePlacement));
+            return true;
         }
 
         public bool TryAssignNext(StableEntityId characterId, out WorkOrder job)
@@ -154,16 +163,22 @@ namespace Game.Simulation.Work
             RequireCharacter(characterId);
             job = jobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type))
                 .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).FirstOrDefault();
-            return job != null && Assign(job.Id, characterId);
+            return job != null && Assign(job.Id, characterId, WorkQueuePlacement.Tail);
         }
 
         public bool TryGetAssigned(StableEntityId characterId, out WorkOrder job)
         {
             job = jobs.Values.Where(x => x.AssigneeId == characterId &&
                     (x.Status == WorkJobStatus.Assigned || x.Status == WorkJobStatus.Active))
-                .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).FirstOrDefault();
+                .OrderByDescending(x => x.Status == WorkJobStatus.Active)
+                .ThenBy(x => x.QueueOrder).ThenBy(x => x.Id).FirstOrDefault();
             return job != null;
         }
+
+        public IReadOnlyList<WorkOrder> GetQueue(StableEntityId characterId) => jobs.Values
+            .Where(x => x.AssigneeId == characterId && !x.IsTerminal)
+            .OrderByDescending(x => x.Status == WorkJobStatus.Active)
+            .ThenBy(x => x.QueueOrder).ThenBy(x => x.Id).ToArray();
 
         public WorkOrder Get(JobId id) => jobs.TryGetValue(id.Value, out var job)
             ? job : throw new KeyNotFoundException("Work order not found.");
@@ -204,7 +219,7 @@ namespace Game.Simulation.Work
         }
 
         public WorkSaveState CaptureState() => new WorkSaveState(nextJobId,
-            Groups.All.Select(x => x.CaptureState()), Jobs.Select(Capture));
+            Groups.All.Select(x => x.CaptureState()), Jobs.Select(Capture), nextQueueOrder, nextFrontOrder);
 
         public void RestoreState(WorkSaveState state)
         {
@@ -234,9 +249,10 @@ namespace Game.Simulation.Work
                     if (saved.GroupId.HasValue && !group.Contains(saved.AssigneeId.Value))
                         throw new InvalidOperationException("Saved assignee is not a member of the job group.");
                 }
+                var restoredQueueOrder = saved.QueueOrder != 0 ? saved.QueueOrder : saved.Id;
                 var order = new WorkOrder(new JobId(saved.Id), saved.Type, saved.Priority, saved.Target,
                     saved.Destination, saved.AssigneeId, saved.GroupId, saved.ResourceId, saved.Quantity,
-                    saved.ExclusiveTarget);
+                    saved.ExclusiveTarget, restoredQueueOrder);
                 order.RestoreRuntime(saved.Status, saved.ClaimState);
                 jobs.Add(saved.Id, order);
                 if (saved.ExclusiveTarget && !order.IsTerminal)
@@ -247,15 +263,20 @@ namespace Game.Simulation.Work
                 }
             }
             nextJobId = Math.Max(state.NextJobId, jobs.Count == 0 ? 1L : jobs.Keys.Max() + 1L);
-            var duplicate = jobs.Values.Where(x => !x.IsTerminal && x.AssigneeId.HasValue)
+            nextQueueOrder = Math.Max(state.NextQueueOrder,
+                jobs.Values.Where(x => x.QueueOrder > 0).Select(x => x.QueueOrder + 1).DefaultIfEmpty(1).Max());
+            nextFrontOrder = Math.Min(state.NextFrontOrder,
+                jobs.Values.Where(x => x.QueueOrder < 0).Select(x => x.QueueOrder - 1).DefaultIfEmpty(-1).Min());
+            var duplicate = jobs.Values.Where(x => x.Status == WorkJobStatus.Active && x.AssigneeId.HasValue)
                 .GroupBy(x => x.AssigneeId.Value).FirstOrDefault(x => x.Count() > 1);
             if (duplicate != null)
-                throw new InvalidOperationException("Work save assigns multiple open jobs to one character.");
+                throw new InvalidOperationException("Work save assigns multiple active jobs to one character.");
         }
 
         private WorkOrder Create(WorkJobType type, WorkPriority priority, WorkTarget target,
             WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
-            ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget)
+            ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget,
+            WorkQueuePlacement queuePlacement)
         {
             WorkGroup group = null;
             if (groupId.HasValue && !Groups.TryGet(groupId.Value, out group))
@@ -265,13 +286,14 @@ namespace Game.Simulation.Work
                 RequireEligible(assigneeId.Value, type);
                 if (groupId.HasValue && !group.Contains(assigneeId.Value))
                     throw new InvalidOperationException("Group work may only be assigned to a member of that group.");
-                if (HasOpenJob(assigneeId.Value))
+                if (queuePlacement == WorkQueuePlacement.RejectWhenBusy && HasOpenJob(assigneeId.Value))
                     throw new InvalidOperationException("A character cannot execute incompatible exclusive jobs simultaneously.");
             }
             if (exclusiveTarget && exclusiveTargets.ContainsKey(target))
                 throw new InvalidOperationException("The exclusive work target is already reserved by another job.");
             var job = new WorkOrder(new JobId(nextJobId++), type, priority, target, destination,
-                assigneeId, groupId, resourceId, quantity, exclusiveTarget);
+                assigneeId, groupId, resourceId, quantity, exclusiveTarget,
+                assigneeId.HasValue ? AllocateQueueOrder(queuePlacement) : 0);
             jobs.Add(job.Id.Value, job);
             if (exclusiveTarget) exclusiveTargets.Add(target, job.Id);
             return job;
@@ -279,7 +301,13 @@ namespace Game.Simulation.Work
 
         private static WorkOrderState Capture(WorkOrder job) => new WorkOrderState(job.Id.Value,
             job.Type, job.Priority, job.Target, job.Destination, job.AssigneeId, job.GroupId,
-            job.ResourceId, job.Quantity, job.ExclusiveTarget, job.Status, job.ClaimState);
+            job.ResourceId, job.Quantity, job.ExclusiveTarget, job.Status, job.ClaimState, job.QueueOrder);
+
+        private long AllocateQueueOrder(WorkQueuePlacement placement)
+        {
+            if (placement == WorkQueuePlacement.Front) return nextFrontOrder--;
+            return nextQueueOrder++;
+        }
 
         private bool Finish(WorkOrder job, WorkJobStatus terminalStatus)
         {

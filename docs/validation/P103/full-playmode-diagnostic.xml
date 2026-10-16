@@ -1,0 +1,1594 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="159" result="Failed(Child)" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429,079915">
+  <test-suite type="TestSuite" id="1216" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="159" result="Failed" site="Child" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429.079915" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1425" name="Game.Tests.PlayMode.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.PlayMode.dll" runstate="Runnable" testcasecount="159" result="Failed" site="Child" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429.067938" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="31476" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1426" name="Game" fullname="Game" runstate="Runnable" testcasecount="159" result="Failed" site="Child" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429.064809" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1427" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="159" result="Failed" site="Child" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429.062147" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1428" name="PlayMode" fullname="Game.Tests.PlayMode" runstate="Runnable" testcasecount="159" result="Failed" site="Child" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:40:11Z" duration="429.057619" total="159" passed="141" failed="18" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1217" name="AbstractBattlePlayModeTests" fullname="Game.Tests.PlayMode.AbstractBattlePlayModeTests" classname="Game.Tests.PlayMode.AbstractBattlePlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:33:14Z" duration="12.573312" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U23" />
+              </properties>
+              <test-case id="1218" name="AbstractDemoAdvancesFromGameClockPauseStopsAndSurvivorsReturnVisibly" fullname="Game.Tests.PlayMode.AbstractBattlePlayModeTests.AbstractDemoAdvancesFromGameClockPauseStopsAndSurvivorsReturnVisibly" methodname="AbstractDemoAdvancesFromGameClockPauseStopsAndSurvivorsReturnVisibly" classname="Game.Tests.PlayMode.AbstractBattlePlayModeTests" runstate="Runnable" seed="524210317" result="Passed" start-time="2026-10-16 14:33:02Z" end-time="2026-10-16 14:33:09Z" duration="7.581517" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[UMAGeneratorBuiltin: Automatic scaling applied. New InitialScaleFactor: 2, New atlasResolution: 512 System Memory: 64840 MB, GPU Memory: 128 MB
+]]></output>
+              </test-case>
+              <test-case id="1219" name="RepeatedPhysicalAbstractTransitionsKeepBattleUnitAndCharacterIdentity" fullname="Game.Tests.PlayMode.AbstractBattlePlayModeTests.RepeatedPhysicalAbstractTransitionsKeepBattleUnitAndCharacterIdentity" methodname="RepeatedPhysicalAbstractTransitionsKeepBattleUnitAndCharacterIdentity" classname="Game.Tests.PlayMode.AbstractBattlePlayModeTests" runstate="Runnable" seed="1947559112" result="Passed" start-time="2026-10-16 14:33:09Z" end-time="2026-10-16 14:33:12Z" duration="2.820396" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1220" name="TpsControlledCombatantBlocksPhysicalToAbstractUntilExit" fullname="Game.Tests.PlayMode.AbstractBattlePlayModeTests.TpsControlledCombatantBlocksPhysicalToAbstractUntilExit" methodname="TpsControlledCombatantBlocksPhysicalToAbstractUntilExit" classname="Game.Tests.PlayMode.AbstractBattlePlayModeTests" runstate="Runnable" seed="1405288570" result="Passed" start-time="2026-10-16 14:33:12Z" end-time="2026-10-16 14:33:14Z" duration="2.151077" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1221" name="BuildingDestructionFireCapturePlayModeTests" fullname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests" classname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:33:14Z" end-time="2026-10-16 14:33:21Z" duration="6.443762" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U24" />
+              </properties>
+              <test-case id="1223" name="DamageAndFireRefreshTheExistingPresenter" fullname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests.DamageAndFireRefreshTheExistingPresenter" methodname="DamageAndFireRefreshTheExistingPresenter" classname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests" runstate="Runnable" seed="822115408" result="Passed" start-time="2026-10-16 14:33:14Z" end-time="2026-10-16 14:33:16Z" duration="2.204787" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1224" name="DestroyedStorageSpillsAndPhysicalAbstractHooksConverge" fullname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests.DestroyedStorageSpillsAndPhysicalAbstractHooksConverge" methodname="DestroyedStorageSpillsAndPhysicalAbstractHooksConverge" classname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests" runstate="Runnable" seed="1144689868" result="Passed" start-time="2026-10-16 14:33:16Z" end-time="2026-10-16 14:33:19Z" duration="2.110404" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1222" name="SceneComposesCentralServiceOverlayAndUiBlocker" fullname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests.SceneComposesCentralServiceOverlayAndUiBlocker" methodname="SceneComposesCentralServiceOverlayAndUiBlocker" classname="Game.Tests.PlayMode.BuildingDestructionFireCapturePlayModeTests" runstate="Runnable" seed="602591559" result="Passed" start-time="2026-10-16 14:33:19Z" end-time="2026-10-16 14:33:21Z" duration="2.118746" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1225" name="BuildingPlacementPlayModeTests" fullname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests" classname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-16 14:33:21Z" end-time="2026-10-16 14:33:27Z" duration="6.255598" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U08" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1227" name="PreviewHasNoIdentityAndCancelCreatesNothing" fullname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests.PreviewHasNoIdentityAndCancelCreatesNothing" methodname="PreviewHasNoIdentityAndCancelCreatesNothing" classname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests" runstate="Runnable" seed="224020480" result="Failed" start-time="2026-10-16 14:33:21Z" end-time="2026-10-16 14:33:23Z" duration="2.116395" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.BuildingPlacementPlayModeTests+<PreviewHasNoIdentityAndCancelCreatesNothing>d__2.MoveNext () [0x000f7] in C:\serenity_game\Assets\Game\Tests\PlayMode\BuildingPlacementPlayModeTests.cs:48
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1228" name="RotateConfirmAndOverlapUseLogicalGrid" fullname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests.RotateConfirmAndOverlapUseLogicalGrid" methodname="RotateConfirmAndOverlapUseLogicalGrid" classname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests" runstate="Runnable" seed="1421636820" result="Passed" start-time="2026-10-16 14:33:23Z" end-time="2026-10-16 14:33:25Z" duration="2.053275" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1226" name="SceneWiresBuildingFoundationWithoutRegressingCharacters" fullname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests.SceneWiresBuildingFoundationWithoutRegressingCharacters" methodname="SceneWiresBuildingFoundationWithoutRegressingCharacters" classname="Game.Tests.PlayMode.BuildingPlacementPlayModeTests" runstate="Runnable" seed="70422507" result="Passed" start-time="2026-10-16 14:33:25Z" end-time="2026-10-16 14:33:27Z" duration="2.078737" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1229" name="CharacterPresentationPlayModeTests" fullname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" classname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-16 14:33:27Z" end-time="2026-10-16 14:33:36Z" duration="8.669351" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U07" />
+              </properties>
+              <test-case id="1231" name="DespawnAndRespawnPreserveDomainCharacterAndStableId" fullname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests.DespawnAndRespawnPreserveDomainCharacterAndStableId" methodname="DespawnAndRespawnPreserveDomainCharacterAndStableId" classname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" runstate="Runnable" seed="1813182410" result="Passed" start-time="2026-10-16 14:33:27Z" end-time="2026-10-16 14:33:29Z" duration="2.197458" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1232" name="DestroyAutomaticallyUnregistersAndAllowsSameIdRespawn" fullname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests.DestroyAutomaticallyUnregistersAndAllowsSameIdRespawn" methodname="DestroyAutomaticallyUnregistersAndAllowsSameIdRespawn" classname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" runstate="Runnable" seed="663764355" result="Passed" start-time="2026-10-16 14:33:29Z" end-time="2026-10-16 14:33:31Z" duration="2.137786" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1230" name="LocalSceneSpawnsMaleAndFemaleBoundTierOneViews" fullname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests.LocalSceneSpawnsMaleAndFemaleBoundTierOneViews" methodname="LocalSceneSpawnsMaleAndFemaleBoundTierOneViews" classname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" runstate="Runnable" seed="1745765281" result="Passed" start-time="2026-10-16 14:33:31Z" end-time="2026-10-16 14:33:33Z" duration="2.160273" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1233" name="PointerSelectionExposesBoundCharacterId" fullname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests.PointerSelectionExposesBoundCharacterId" methodname="PointerSelectionExposesBoundCharacterId" classname="Game.Tests.PlayMode.CharacterPresentationPlayModeTests" runstate="Runnable" seed="154350723" result="Passed" start-time="2026-10-16 14:33:33Z" end-time="2026-10-16 14:33:36Z" duration="2.168316" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1234" name="DynastySuccessionPlayModeTests" fullname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests" classname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:33:36Z" end-time="2026-10-16 14:33:40Z" duration="4.396108" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U17" />
+              </properties>
+              <test-case id="1235" name="LocalGameplayShowsDynastyAndDebugDeathsReachSuccessionThenExtinction" fullname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests.LocalGameplayShowsDynastyAndDebugDeathsReachSuccessionThenExtinction" methodname="LocalGameplayShowsDynastyAndDebugDeathsReachSuccessionThenExtinction" classname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests" runstate="Runnable" seed="1050611865" result="Passed" start-time="2026-10-16 14:33:36Z" end-time="2026-10-16 14:33:38Z" duration="2.244719" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1236" name="TierThreeHeirBecomesRulerWithoutMaterializingGameObject" fullname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests.TierThreeHeirBecomesRulerWithoutMaterializingGameObject" methodname="TierThreeHeirBecomesRulerWithoutMaterializingGameObject" classname="Game.Tests.PlayMode.DynastySuccessionPlayModeTests" runstate="Runnable" seed="520422334" result="Passed" start-time="2026-10-16 14:33:38Z" end-time="2026-10-16 14:33:40Z" duration="2.146368" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1237" name="EventSystemPlayModeTests" fullname="Game.Tests.PlayMode.EventSystemPlayModeTests" classname="Game.Tests.PlayMode.EventSystemPlayModeTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-16 14:33:40Z" end-time="2026-10-16 14:33:49Z" duration="8.926609" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U28" />
+              </properties>
+              <test-case id="1240" name="PendingEventSurvivesSaveLoadInSameUiWithoutSubscriptionGrowth" fullname="Game.Tests.PlayMode.EventSystemPlayModeTests.PendingEventSurvivesSaveLoadInSameUiWithoutSubscriptionGrowth" methodname="PendingEventSurvivesSaveLoadInSameUiWithoutSubscriptionGrowth" classname="Game.Tests.PlayMode.EventSystemPlayModeTests" runstate="Runnable" seed="429592321" result="Passed" start-time="2026-10-16 14:33:40Z" end-time="2026-10-16 14:33:43Z" duration="2.863843" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1239" name="PlayerEventAppearsChoiceAppliesCanonicalOutcomeAndHistoryProjects" fullname="Game.Tests.PlayMode.EventSystemPlayModeTests.PlayerEventAppearsChoiceAppliesCanonicalOutcomeAndHistoryProjects" methodname="PlayerEventAppearsChoiceAppliesCanonicalOutcomeAndHistoryProjects" classname="Game.Tests.PlayMode.EventSystemPlayModeTests" runstate="Runnable" seed="1605040274" result="Passed" start-time="2026-10-16 14:33:43Z" end-time="2026-10-16 14:33:45Z" duration="1.982348" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1241" name="RemoteAiEventsResolveWithoutGameObjectsAndTierOrModeReroll" fullname="Game.Tests.PlayMode.EventSystemPlayModeTests.RemoteAiEventsResolveWithoutGameObjectsAndTierOrModeReroll" methodname="RemoteAiEventsResolveWithoutGameObjectsAndTierOrModeReroll" classname="Game.Tests.PlayMode.EventSystemPlayModeTests" runstate="Runnable" seed="446942982" result="Passed" start-time="2026-10-16 14:33:45Z" end-time="2026-10-16 14:33:47Z" duration="2.036343" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1238" name="RuntimeCreatesOneServiceAndOnePlayerEventSurface" fullname="Game.Tests.PlayMode.EventSystemPlayModeTests.RuntimeCreatesOneServiceAndOnePlayerEventSurface" methodname="RuntimeCreatesOneServiceAndOnePlayerEventSurface" classname="Game.Tests.PlayMode.EventSystemPlayModeTests" runstate="Runnable" seed="1974297770" result="Passed" start-time="2026-10-16 14:33:47Z" end-time="2026-10-16 14:33:49Z" duration="2.037667" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1242" name="GameplayUiPlayModeTests" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-16 14:33:49Z" end-time="2026-10-16 14:34:03Z" duration="13.960837" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U27" />
+              </properties>
+              <test-case id="1244" name="NavigationProjectsCanonicalResearchAndLockedBuildReasons" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.NavigationProjectsCanonicalResearchAndLockedBuildReasons" methodname="NavigationProjectsCanonicalResearchAndLockedBuildReasons" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="1219868399" result="Passed" start-time="2026-10-16 14:33:49Z" end-time="2026-10-16 14:33:51Z" duration="2.228705" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1248" name="PlayerGlobalPanelOpensMapIssuesTravelAndReturnsToLocation" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.PlayerGlobalPanelOpensMapIssuesTravelAndReturnsToLocation" methodname="PlayerGlobalPanelOpensMapIssuesTravelAndReturnsToLocation" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="1515019401" result="Passed" start-time="2026-10-16 14:33:51Z" end-time="2026-10-16 14:33:54Z" duration="2.647274" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Failed to create agent because it is not close enough to the NavMesh
+Failed to create agent because it is not close enough to the NavMesh
+Failed to create agent because it is not close enough to the NavMesh
+]]></output>
+              </test-case>
+              <test-case id="1247" name="PlayerPanelsRouteTimeResearchWorkBuildMilitaryAndTpsCommands" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.PlayerPanelsRouteTimeResearchWorkBuildMilitaryAndTpsCommands" methodname="PlayerPanelsRouteTimeResearchWorkBuildMilitaryAndTpsCommands" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="2129299629" result="Passed" start-time="2026-10-16 14:33:54Z" end-time="2026-10-16 14:33:56Z" duration="2.410239" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1243" name="RuntimeBootsOnePlayerUiWithDeveloperOverlaysHidden" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.RuntimeBootsOnePlayerUiWithDeveloperOverlaysHidden" methodname="RuntimeBootsOnePlayerUiWithDeveloperOverlaysHidden" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="61881390" result="Passed" start-time="2026-10-16 14:33:56Z" end-time="2026-10-16 14:33:58Z" duration="1.943971" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1246" name="SaveLoadRestoresClockAndRebindsExistingUiExactlyOnce" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.SaveLoadRestoresClockAndRebindsExistingUiExactlyOnce" methodname="SaveLoadRestoresClockAndRebindsExistingUiExactlyOnce" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="2109562309" result="Passed" start-time="2026-10-16 14:33:58Z" end-time="2026-10-16 14:34:01Z" duration="2.790895" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1245" name="SelectionInspectorAndDeveloperToggleRemainAdapters" fullname="Game.Tests.PlayMode.GameplayUiPlayModeTests.SelectionInspectorAndDeveloperToggleRemainAdapters" methodname="SelectionInspectorAndDeveloperToggleRemainAdapters" classname="Game.Tests.PlayMode.GameplayUiPlayModeTests" runstate="Runnable" seed="528612705" result="Passed" start-time="2026-10-16 14:34:01Z" end-time="2026-10-16 14:34:03Z" duration="1.933648" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1249" name="GlobalMapPlayModeTests" fullname="Game.Tests.PlayMode.GlobalMapPlayModeTests" classname="Game.Tests.PlayMode.GlobalMapPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:34:03Z" end-time="2026-10-16 14:34:10Z" duration="7.278760" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U25" />
+              </properties>
+              <test-case id="1252" name="GlobalModeAdvancesResearchFireProductionWeatherAndAbstractBattle" fullname="Game.Tests.PlayMode.GlobalMapPlayModeTests.GlobalModeAdvancesResearchFireProductionWeatherAndAbstractBattle" methodname="GlobalModeAdvancesResearchFireProductionWeatherAndAbstractBattle" classname="Game.Tests.PlayMode.GlobalMapPlayModeTests" runstate="Runnable" seed="987500301" result="Passed" start-time="2026-10-16 14:34:03Z" end-time="2026-10-16 14:34:05Z" duration="2.335304" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1250" name="LocalGlobalLocalPreservesCanonicalIdentityResourcesAndBuildings" fullname="Game.Tests.PlayMode.GlobalMapPlayModeTests.LocalGlobalLocalPreservesCanonicalIdentityResourcesAndBuildings" methodname="LocalGlobalLocalPreservesCanonicalIdentityResourcesAndBuildings" classname="Game.Tests.PlayMode.GlobalMapPlayModeTests" runstate="Runnable" seed="2129569526" result="Passed" start-time="2026-10-16 14:34:05Z" end-time="2026-10-16 14:34:08Z" duration="2.511753" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1251" name="SameWorldStrategicViewShowsLocationsUnitTravelAndSettlementReturn" fullname="Game.Tests.PlayMode.GlobalMapPlayModeTests.SameWorldStrategicViewShowsLocationsUnitTravelAndSettlementReturn" methodname="SameWorldStrategicViewShowsLocationsUnitTravelAndSettlementReturn" classname="Game.Tests.PlayMode.GlobalMapPlayModeTests" runstate="Runnable" seed="251760218" result="Passed" start-time="2026-10-16 14:34:08Z" end-time="2026-10-16 14:34:10Z" duration="2.426262" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1253" name="HealthAndFamilyPlayModeTests" fullname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests" classname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:10Z" end-time="2026-10-16 14:34:14Z" duration="4.144642" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U18" />
+              </properties>
+              <test-case id="1254" name="DebugOverlayBlocksWorldInputAndConditionChangesCapabilities" fullname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests.DebugOverlayBlocksWorldInputAndConditionChangesCapabilities" methodname="DebugOverlayBlocksWorldInputAndConditionChangesCapabilities" classname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests" runstate="Runnable" seed="637350528" result="Passed" start-time="2026-10-16 14:34:10Z" end-time="2026-10-16 14:34:12Z" duration="1.976257" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1255" name="OffCameraBirthCreatesTierThreeCanonicalCharacter" fullname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests.OffCameraBirthCreatesTierThreeCanonicalCharacter" methodname="OffCameraBirthCreatesTierThreeCanonicalCharacter" classname="Game.Tests.PlayMode.HealthAndFamilyPlayModeTests" runstate="Runnable" seed="1966587106" result="Passed" start-time="2026-10-16 14:34:12Z" end-time="2026-10-16 14:34:14Z" duration="2.160619" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1256" name="LocalGameplaySceneTests" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:14Z" end-time="2026-10-16 14:34:19Z" duration="4.279634" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1258" name="PointerRaycastAndSelectionProbeHitMarker" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests.PointerRaycastAndSelectionProbeHitMarker" methodname="PointerRaycastAndSelectionProbeHitMarker" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" seed="1206602118" result="Passed" start-time="2026-10-16 14:34:14Z" end-time="2026-10-16 14:34:16Z" duration="2.128115" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1257" name="SceneHasExplicitCompositionAndCinemachineCamera" fullname="Game.Tests.PlayMode.LocalGameplaySceneTests.SceneHasExplicitCompositionAndCinemachineCamera" methodname="SceneHasExplicitCompositionAndCinemachineCamera" classname="Game.Tests.PlayMode.LocalGameplaySceneTests" runstate="Runnable" seed="63791260" result="Passed" start-time="2026-10-16 14:34:16Z" end-time="2026-10-16 14:34:19Z" duration="2.139468" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1259" name="MilitaryUnitPlayModeTests" fullname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests" classname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:19Z" end-time="2026-10-16 14:34:23Z" duration="4.442977" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U21" />
+              </properties>
+              <test-case id="1261" name="ActivePhysicalCombatBlocksUnitAggregationAndCancellationReleasesIt" fullname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests.ActivePhysicalCombatBlocksUnitAggregationAndCancellationReleasesIt" methodname="ActivePhysicalCombatBlocksUnitAggregationAndCancellationReleasesIt" classname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests" runstate="Runnable" seed="1172048128" result="Passed" start-time="2026-10-16 14:34:19Z" end-time="2026-10-16 14:34:21Z" duration="2.306256" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1260" name="SelectionCreatesUnitAndDetailedAggregateRoundTripPreservesIdentity" fullname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests.SelectionCreatesUnitAndDetailedAggregateRoundTripPreservesIdentity" methodname="SelectionCreatesUnitAndDetailedAggregateRoundTripPreservesIdentity" classname="Game.Tests.PlayMode.MilitaryUnitPlayModeTests" runstate="Runnable" seed="1372198437" result="Passed" start-time="2026-10-16 14:34:21Z" end-time="2026-10-16 14:34:23Z" duration="2.132307" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1262" name="OffCameraSimulationPlayModeTests" fullname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests" classname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:23Z" end-time="2026-10-16 14:34:27Z" duration="4.337944" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U14" />
+              </properties>
+              <test-case id="1264" name="ThousandTier3RecordsAddNoGameObjectsEntitiesOrPerCharacterBehaviours" fullname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests.ThousandTier3RecordsAddNoGameObjectsEntitiesOrPerCharacterBehaviours" methodname="ThousandTier3RecordsAddNoGameObjectsEntitiesOrPerCharacterBehaviours" classname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests" runstate="Runnable" seed="615344728" result="Passed" start-time="2026-10-16 14:34:23Z" end-time="2026-10-16 14:34:25Z" duration="2.085270" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1263" name="Tier3CatchUpReturnsLatestStateWithoutChangingCanonicalOwnership" fullname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests.Tier3CatchUpReturnsLatestStateWithoutChangingCanonicalOwnership" methodname="Tier3CatchUpReturnsLatestStateWithoutChangingCanonicalOwnership" classname="Game.Tests.PlayMode.OffCameraSimulationPlayModeTests" runstate="Runnable" seed="605755879" result="Passed" start-time="2026-10-16 14:34:25Z" end-time="2026-10-16 14:34:27Z" duration="2.240421" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1265" name="P102ConnectedWorldPlayModeTests" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:27Z" end-time="2026-10-16 14:34:32Z" duration="4.535218" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P102" />
+              </properties>
+              <test-case id="1267" name="PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests.PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" methodname="PlacementTerrainRejectsWaterAndAcceptsDrySettlementLand" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" seed="2087532392" result="Passed" start-time="2026-10-16 14:34:27Z" end-time="2026-10-16 14:34:29Z" duration="2.036350" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1266" name="StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" fullname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests.StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" methodname="StrategicModeUsesSameTerrainCameraAndFogThenReturnsWithoutTeleport" classname="Game.Tests.PlayMode.P102ConnectedWorldPlayModeTests" runstate="Runnable" seed="1496943090" result="Passed" start-time="2026-10-16 14:34:29Z" end-time="2026-10-16 14:34:32Z" duration="2.489970" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1268" name="P103ContextInteractionPlayModeTests" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:32Z" end-time="2026-10-16 14:34:36Z" duration="4.560257" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P103" />
+              </properties>
+              <test-case id="1270" name="BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests.BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" methodname="BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" seed="149483624" result="Passed" start-time="2026-10-16 14:34:32Z" end-time="2026-10-16 14:34:35Z" duration="2.603016" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1269" name="EveryInteractiveWorldObjectHasStableHitProxyAndCollider" fullname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests.EveryInteractiveWorldObjectHasStableHitProxyAndCollider" methodname="EveryInteractiveWorldObjectHasStableHitProxyAndCollider" classname="Game.Tests.PlayMode.P103ContextInteractionPlayModeTests" runstate="Runnable" seed="1632552668" result="Passed" start-time="2026-10-16 14:34:35Z" end-time="2026-10-16 14:34:36Z" duration="1.951314" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1271" name="P1RussianLocalizationPlayModeTests" fullname="Game.Tests.PlayMode.P1RussianLocalizationPlayModeTests" classname="Game.Tests.PlayMode.P1RussianLocalizationPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-16 14:34:36Z" end-time="2026-10-16 14:34:39Z" duration="2.388918" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P1" />
+              </properties>
+              <test-case id="1272" name="NormalPlayerRouteIsRussianAtMinimumResolutionAndIncreasedScale" fullname="Game.Tests.PlayMode.P1RussianLocalizationPlayModeTests.NormalPlayerRouteIsRussianAtMinimumResolutionAndIncreasedScale" methodname="NormalPlayerRouteIsRussianAtMinimumResolutionAndIncreasedScale" classname="Game.Tests.PlayMode.P1RussianLocalizationPlayModeTests" runstate="Runnable" seed="1005474174" result="Passed" start-time="2026-10-16 14:34:36Z" end-time="2026-10-16 14:34:39Z" duration="2.385204" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1273" name="P2MainMenuPlayModeTests" fullname="Game.Tests.PlayMode.P2MainMenuPlayModeTests" classname="Game.Tests.PlayMode.P2MainMenuPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:39Z" end-time="2026-10-16 14:34:40Z" duration="0.660450" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P2" />
+              </properties>
+              <test-case id="1274" name="CleanLaunchShowsFiveRussianActionsAndBackPaths" fullname="Game.Tests.PlayMode.P2MainMenuPlayModeTests.CleanLaunchShowsFiveRussianActionsAndBackPaths" methodname="CleanLaunchShowsFiveRussianActionsAndBackPaths" classname="Game.Tests.PlayMode.P2MainMenuPlayModeTests" runstate="Runnable" seed="1681600914" result="Passed" start-time="2026-10-16 14:34:39Z" end-time="2026-10-16 14:34:39Z" duration="0.360430" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1275" name="CorruptSaveIsExplainedAndNeverBecomesContinueTarget" fullname="Game.Tests.PlayMode.P2MainMenuPlayModeTests.CorruptSaveIsExplainedAndNeverBecomesContinueTarget" methodname="CorruptSaveIsExplainedAndNeverBecomesContinueTarget" classname="Game.Tests.PlayMode.P2MainMenuPlayModeTests" runstate="Runnable" seed="918703910" result="Passed" start-time="2026-10-16 14:34:39Z" end-time="2026-10-16 14:34:40Z" duration="0.293931" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1276" name="P3ReferenceCampPlayModeTests" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:34:40Z" end-time="2026-10-16 14:34:46Z" duration="6.385070" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P3" />
+              </properties>
+              <test-case id="1279" name="CampIsReadableThroughExistingRtsAndThirdPersonCameras" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.CampIsReadableThroughExistingRtsAndThirdPersonCameras" methodname="CampIsReadableThroughExistingRtsAndThirdPersonCameras" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="303724347" result="Passed" start-time="2026-10-16 14:34:40Z" end-time="2026-10-16 14:34:42Z" duration="2.204806" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1277" name="CanonicalCharactersShelterAndStorageOwnTheirViews" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.CanonicalCharactersShelterAndStorageOwnTheirViews" methodname="CanonicalCharactersShelterAndStorageOwnTheirViews" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="298592633" result="Passed" start-time="2026-10-16 14:34:42Z" end-time="2026-10-16 14:34:44Z" duration="1.897898" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1278" name="WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" fullname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests.WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" methodname="WeatherPresentationSupportsClearAndRainWithoutMutatingCanonicalWeather" classname="Game.Tests.PlayMode.P3ReferenceCampPlayModeTests" runstate="Runnable" seed="1019013345" result="Passed" start-time="2026-10-16 14:34:44Z" end-time="2026-10-16 14:34:46Z" duration="2.234824" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1280" name="P4RulerCreationPlayModeTests" fullname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests" classname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:46Z" end-time="2026-10-16 14:34:49Z" duration="3.043896" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P4" />
+              </properties>
+              <test-case id="1282" name="ConfirmedFemaleRulerSurvivesTierRoundTripAndSaveLoad" fullname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests.ConfirmedFemaleRulerSurvivesTierRoundTripAndSaveLoad" methodname="ConfirmedFemaleRulerSurvivesTierRoundTripAndSaveLoad" classname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests" runstate="Runnable" seed="121788995" result="Passed" start-time="2026-10-16 14:34:46Z" end-time="2026-10-16 14:34:49Z" duration="2.678971" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1281" name="EditorShowsRussianIdentityStablePartsAndControllableLivePreview" fullname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests.EditorShowsRussianIdentityStablePartsAndControllableLivePreview" methodname="EditorShowsRussianIdentityStablePartsAndControllableLivePreview" classname="Game.Tests.PlayMode.P4RulerCreationPlayModeTests" runstate="Runnable" seed="1052337365" result="Passed" start-time="2026-10-16 14:34:49Z" end-time="2026-10-16 14:34:49Z" duration="0.360170" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1283" name="P5InhabitableRegionPlayModeTests" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-16 14:34:49Z" end-time="2026-10-16 14:34:55Z" duration="6.430098" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P5" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1284" name="AuthoredNodesBindToCanonicalFiniteProductionSites" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.AuthoredNodesBindToCanonicalFiniteProductionSites" methodname="AuthoredNodesBindToCanonicalFiniteProductionSites" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="784550146" result="Passed" start-time="2026-10-16 14:34:49Z" end-time="2026-10-16 14:34:51Z" duration="2.052351" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1285" name="RegionSupportsNavMeshAndConstructionAfterArtFill" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.RegionSupportsNavMeshAndConstructionAfterArtFill" methodname="RegionSupportsNavMeshAndConstructionAfterArtFill" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="1997822137" result="Failed" start-time="2026-10-16 14:34:51Z" end-time="2026-10-16 14:34:53Z" duration="2.017137" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: False
+  But was:  True
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests+<RegionSupportsNavMeshAndConstructionAfterArtFill>d__2.MoveNext () [0x00167] in C:\serenity_game\Assets\Game\Tests\PlayMode\P5InhabitableRegionPlayModeTests.cs:63
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1286" name="SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" fullname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests.SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" methodname="SeasonsAndSaveLoadPreserveCanonicalIdentityAndResourceBindings" classname="Game.Tests.PlayMode.P5InhabitableRegionPlayModeTests" runstate="Runnable" seed="1365338879" result="Passed" start-time="2026-10-16 14:34:53Z" end-time="2026-10-16 14:34:55Z" duration="2.319570" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1287" name="P6FirstHourPlayModeTests" fullname="Game.Tests.PlayMode.P6FirstHourPlayModeTests" classname="Game.Tests.PlayMode.P6FirstHourPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:34:55Z" end-time="2026-10-16 14:35:00Z" duration="4.498689" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P6" />
+              </properties>
+              <test-case id="1289" name="CanonicalCommandsAdvanceRouteAndP4P5IdentitySurvivesSaveLoad" fullname="Game.Tests.PlayMode.P6FirstHourPlayModeTests.CanonicalCommandsAdvanceRouteAndP4P5IdentitySurvivesSaveLoad" methodname="CanonicalCommandsAdvanceRouteAndP4P5IdentitySurvivesSaveLoad" classname="Game.Tests.PlayMode.P6FirstHourPlayModeTests" runstate="Runnable" seed="673975521" result="Passed" start-time="2026-10-16 14:34:55Z" end-time="2026-10-16 14:34:58Z" duration="2.499195" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1288" name="FirstHourCardIsVisibleOptionalAndSettlementExplainsTheStartingSituation" fullname="Game.Tests.PlayMode.P6FirstHourPlayModeTests.FirstHourCardIsVisibleOptionalAndSettlementExplainsTheStartingSituation" methodname="FirstHourCardIsVisibleOptionalAndSettlementExplainsTheStartingSituation" classname="Game.Tests.PlayMode.P6FirstHourPlayModeTests" runstate="Runnable" seed="1985766185" result="Passed" start-time="2026-10-16 14:34:58Z" end-time="2026-10-16 14:35:00Z" duration="1.995029" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1290" name="P7StoneAgePlayModeTests" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:35:00Z" end-time="2026-10-16 14:35:04Z" duration="4.549329" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P7" />
+              </properties>
+              <test-case id="1292" name="EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests.EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" methodname="EnemyOccupationDefeatsPlayerAndLoadingPreDefeatSaveRestoresRun" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" seed="924800387" result="Passed" start-time="2026-10-16 14:35:00Z" end-time="2026-10-16 14:35:02Z" duration="2.326828" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1291" name="UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" fullname="Game.Tests.PlayMode.P7StoneAgePlayModeTests.UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" methodname="UndefendedPlayerOccupationPersistsWinsOnceAndCampaignContinues" classname="Game.Tests.PlayMode.P7StoneAgePlayModeTests" runstate="Runnable" seed="589099351" result="Passed" start-time="2026-10-16 14:35:02Z" end-time="2026-10-16 14:35:04Z" duration="2.218128" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1293" name="P81VisualPrototypePlayModeTests" fullname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" classname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-16 14:35:04Z" end-time="2026-10-16 14:35:06Z" duration="1.904107" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P81" />
+              </properties>
+              <test-case id="1294" name="ProductionRegionLoadsWithStableUmaAppearanceAndVisibleCharacter" fullname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests.ProductionRegionLoadsWithStableUmaAppearanceAndVisibleCharacter" methodname="ProductionRegionLoadsWithStableUmaAppearanceAndVisibleCharacter" classname="Game.Tests.PlayMode.P81VisualPrototypePlayModeTests" runstate="Runnable" seed="919583978" result="Passed" start-time="2026-10-16 14:35:04Z" end-time="2026-10-16 14:35:06Z" duration="1.900168" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1295" name="P82NaturalRegionPlayModeTests" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:35:06Z" end-time="2026-10-16 14:35:13Z" duration="6.628496" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P82" />
+              </properties>
+              <test-case id="1296" name="EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" methodname="EveryLocalResourceCanBeSelectedAndMapsToCanonicalDomainState" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="1217465575" result="Passed" start-time="2026-10-16 14:35:06Z" end-time="2026-10-16 14:35:08Z" duration="2.133206" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1297" name="IronAndGoldStableIdentitySurvivesSaveLoad" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.IronAndGoldStableIdentitySurvivesSaveLoad" methodname="IronAndGoldStableIdentitySurvivesSaveLoad" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="1535354410" result="Passed" start-time="2026-10-16 14:35:08Z" end-time="2026-10-16 14:35:11Z" duration="2.372524" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1298" name="StrategicViewKeepsAllSixPhysicalResourceFamiliesInCanonicalWorld" fullname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests.StrategicViewKeepsAllSixPhysicalResourceFamiliesInCanonicalWorld" methodname="StrategicViewKeepsAllSixPhysicalResourceFamiliesInCanonicalWorld" classname="Game.Tests.PlayMode.P82NaturalRegionPlayModeTests" runstate="Runnable" seed="848957013" result="Passed" start-time="2026-10-16 14:35:11Z" end-time="2026-10-16 14:35:13Z" duration="2.108087" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1299" name="P83WorkGroupPlayModeTests" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-16 14:35:13Z" end-time="2026-10-16 14:35:20Z" duration="6.578353" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P83" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1301" name="ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" methodname="ActiveAssignmentsAndReservationsSurviveSaveLoadAndRebind" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="978670628" result="Passed" start-time="2026-10-16 14:35:13Z" end-time="2026-10-16 14:35:15Z" duration="2.320266" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1302" name="GlobalResourceMarkerIssuesSameCanonicalGatherOrder" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.GlobalResourceMarkerIssuesSameCanonicalGatherOrder" methodname="GlobalResourceMarkerIssuesSameCanonicalGatherOrder" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="1438482081" result="Failed" label="Error" start-time="2026-10-16 14:35:15Z" end-time="2026-10-16 14:35:17Z" duration="2.125306" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object]]></message>
+                  <stack-trace><![CDATA[  at Game.Tests.PlayMode.P83WorkGroupPlayModeTests+<GlobalResourceMarkerIssuesSameCanonicalGatherOrder>d__3.MoveNext () [0x000c8] in C:\serenity_game\Assets\Game\Tests\PlayMode\P83WorkGroupPlayModeTests.cs:80 
+  at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52 ]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1300" name="SelectedResourceCreatesCanonicalPrioritizedGroupOrder" fullname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests.SelectedResourceCreatesCanonicalPrioritizedGroupOrder" methodname="SelectedResourceCreatesCanonicalPrioritizedGroupOrder" classname="Game.Tests.PlayMode.P83WorkGroupPlayModeTests" runstate="Runnable" seed="1493730201" result="Passed" start-time="2026-10-16 14:35:17Z" end-time="2026-10-16 14:35:20Z" duration="2.129169" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1303" name="P84AppearanceEditorPlayModeTests" fullname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests" classname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:35:20Z" end-time="2026-10-16 14:35:23Z" duration="3.044320" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P84" />
+              </properties>
+              <test-case id="1305" name="EditedStateSurvivesWorldTierRoundTripAndSaveLoad" fullname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests.EditedStateSurvivesWorldTierRoundTripAndSaveLoad" methodname="EditedStateSurvivesWorldTierRoundTripAndSaveLoad" classname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests" runstate="Runnable" seed="14594561" result="Passed" start-time="2026-10-16 14:35:20Z" end-time="2026-10-16 14:35:22Z" duration="2.767475" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1304" name="EditorShowsEverySupportedControlAndEditsCanonicalState" fullname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests.EditorShowsEverySupportedControlAndEditsCanonicalState" methodname="EditorShowsEverySupportedControlAndEditsCanonicalState" classname="Game.Tests.PlayMode.P84AppearanceEditorPlayModeTests" runstate="Runnable" seed="314698482" result="Passed" start-time="2026-10-16 14:35:22Z" end-time="2026-10-16 14:35:23Z" duration="0.272894" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1306" name="P85BeautifulUiPlayModeTests" fullname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests" classname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:35:23Z" end-time="2026-10-16 14:35:25Z" duration="2.721754" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P85" />
+              </properties>
+              <test-case id="1308" name="GameplayPanelsKeepHooksReasonsAndResponsiveBounds" fullname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests.GameplayPanelsKeepHooksReasonsAndResponsiveBounds" methodname="GameplayPanelsKeepHooksReasonsAndResponsiveBounds" classname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests" runstate="Runnable" seed="1644938998" result="Passed" start-time="2026-10-16 14:35:23Z" end-time="2026-10-16 14:35:25Z" duration="2.415947" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1307" name="MainMenuAndEditorFitAtMinimumResolutionAnd125Percent" fullname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests.MainMenuAndEditorFitAtMinimumResolutionAnd125Percent" methodname="MainMenuAndEditorFitAtMinimumResolutionAnd125Percent" classname="Game.Tests.PlayMode.P85BeautifulUiPlayModeTests" runstate="Runnable" seed="1670199676" result="Passed" start-time="2026-10-16 14:35:25Z" end-time="2026-10-16 14:35:25Z" duration="0.266319" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1309" name="P91RealisticWorldBenchmarkPlayModeTests" fullname="Game.Tests.PlayMode.P91RealisticWorldBenchmarkPlayModeTests" classname="Game.Tests.PlayMode.P91RealisticWorldBenchmarkPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-16 14:35:25Z" end-time="2026-10-16 14:35:27Z" duration="2.157365" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P91" />
+              </properties>
+              <test-case id="1310" name="OfficialTerrainLoadsAsTheNormalGameplayProjectionWithoutOwningSimulationState" fullname="Game.Tests.PlayMode.P91RealisticWorldBenchmarkPlayModeTests.OfficialTerrainLoadsAsTheNormalGameplayProjectionWithoutOwningSimulationState" methodname="OfficialTerrainLoadsAsTheNormalGameplayProjectionWithoutOwningSimulationState" classname="Game.Tests.PlayMode.P91RealisticWorldBenchmarkPlayModeTests" runstate="Runnable" seed="1099519181" result="Passed" start-time="2026-10-16 14:35:25Z" end-time="2026-10-16 14:35:27Z" duration="2.114582" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1311" name="P92RealisticGameplayRegionPlayModeTests" fullname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests" classname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:35:27Z" end-time="2026-10-16 14:35:34Z" duration="6.607200" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P92" />
+              </properties>
+              <test-case id="1314" name="SaveLoadAndLocalGlobalRoundtripRebindTheSameTerrainAnchors" fullname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests.SaveLoadAndLocalGlobalRoundtripRebindTheSameTerrainAnchors" methodname="SaveLoadAndLocalGlobalRoundtripRebindTheSameTerrainAnchors" classname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests" runstate="Runnable" seed="456846621" result="Passed" start-time="2026-10-16 14:35:27Z" end-time="2026-10-16 14:35:30Z" duration="2.487834" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1313" name="TerrainHeightDrivesConstructionAndWeatherWithoutChangingCanonicalAuthority" fullname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests.TerrainHeightDrivesConstructionAndWeatherWithoutChangingCanonicalAuthority" methodname="TerrainHeightDrivesConstructionAndWeatherWithoutChangingCanonicalAuthority" classname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests" runstate="Runnable" seed="511885183" result="Passed" start-time="2026-10-16 14:35:30Z" end-time="2026-10-16 14:35:32Z" duration="2.030662" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1312" name="TerrainNavMeshConnectsSettlementsAndAllResourcesKeepCanonicalStableIds" fullname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests.TerrainNavMeshConnectsSettlementsAndAllResourcesKeepCanonicalStableIds" methodname="TerrainNavMeshConnectsSettlementsAndAllResourcesKeepCanonicalStableIds" classname="Game.Tests.PlayMode.P92RealisticGameplayRegionPlayModeTests" runstate="Runnable" seed="1212454791" result="Passed" start-time="2026-10-16 14:35:32Z" end-time="2026-10-16 14:35:34Z" duration="2.082755" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1315" name="P93PopulatedBiomeWorldPlayModeTests" fullname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests" classname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:35:34Z" end-time="2026-10-16 14:35:41Z" duration="6.758744" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P93" />
+              </properties>
+              <test-case id="1317" name="AllResourceFormationsRemainClickableAndUseCanonicalWorkAndSaveState" fullname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests.AllResourceFormationsRemainClickableAndUseCanonicalWorkAndSaveState" methodname="AllResourceFormationsRemainClickableAndUseCanonicalWorkAndSaveState" classname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests" runstate="Runnable" seed="808419094" result="Passed" start-time="2026-10-16 14:35:34Z" end-time="2026-10-16 14:35:36Z" duration="2.394411" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1316" name="DenseBiomeCollidersPreserveNavMeshRoutesToAllConnectedLocations" fullname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests.DenseBiomeCollidersPreserveNavMeshRoutesToAllConnectedLocations" methodname="DenseBiomeCollidersPreserveNavMeshRoutesToAllConnectedLocations" classname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests" runstate="Runnable" seed="890868703" result="Passed" start-time="2026-10-16 14:35:36Z" end-time="2026-10-16 14:35:39Z" duration="2.196483" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1318" name="SoilClearingsStillBuildAndSeasonProjectionDoesNotMutateWeatherAuthority" fullname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests.SoilClearingsStillBuildAndSeasonProjectionDoesNotMutateWeatherAuthority" methodname="SoilClearingsStillBuildAndSeasonProjectionDoesNotMutateWeatherAuthority" classname="Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests" runstate="Runnable" seed="1129765045" result="Passed" start-time="2026-10-16 14:35:39Z" end-time="2026-10-16 14:35:41Z" duration="2.162489" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1319" name="P94StoneAgeSettlementPlayModeTests" fullname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests" classname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:35:41Z" end-time="2026-10-16 14:35:48Z" duration="6.689452" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P94" />
+              </properties>
+              <test-case id="1320" name="AuthoredSettlementSpawnsDistinctBuildingsAndStoneAgeWear" fullname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests.AuthoredSettlementSpawnsDistinctBuildingsAndStoneAgeWear" methodname="AuthoredSettlementSpawnsDistinctBuildingsAndStoneAgeWear" classname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests" runstate="Runnable" seed="1924388415" result="Passed" start-time="2026-10-16 14:35:41Z" end-time="2026-10-16 14:35:43Z" duration="2.166624" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1321" name="GatherHaulAndBuildOrdersReceiveReadablePriorityIndicators" fullname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests.GatherHaulAndBuildOrdersReceiveReadablePriorityIndicators" methodname="GatherHaulAndBuildOrdersReceiveReadablePriorityIndicators" classname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests" runstate="Runnable" seed="1652649661" result="Passed" start-time="2026-10-16 14:35:43Z" end-time="2026-10-16 14:35:45Z" duration="2.132700" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1322" name="SettlementNavigationWeatherAndSaveLoadKeepCanonicalIdentity" fullname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests.SettlementNavigationWeatherAndSaveLoadKeepCanonicalIdentity" methodname="SettlementNavigationWeatherAndSaveLoadKeepCanonicalIdentity" classname="Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests" runstate="Runnable" seed="1450834467" result="Passed" start-time="2026-10-16 14:35:45Z" end-time="2026-10-16 14:35:48Z" duration="2.384759" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1323" name="P95AtmosphereAndGlobalMapPlayModeTests" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:35:48Z" end-time="2026-10-16 14:35:52Z" duration="4.364748" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P95" />
+              </properties>
+              <test-case id="1324" name="LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests.LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" methodname="LocalAtmosphereProjectsDayNightRainSnowSeasonWaterAndSoftShadows" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" seed="1422405973" result="Passed" start-time="2026-10-16 14:35:48Z" end-time="2026-10-16 14:35:50Z" duration="2.122826" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1325" name="StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" fullname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests.StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" methodname="StrategicViewUsesCanonicalTerrainAndPreservesCanonicalSession" classname="Game.Tests.PlayMode.P95AtmosphereAndGlobalMapPlayModeTests" runstate="Runnable" seed="2042849361" result="Passed" start-time="2026-10-16 14:35:50Z" end-time="2026-10-16 14:35:52Z" duration="2.238167" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1326" name="P96IntegrationAcceptancePlayModeTests" fullname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests" classname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:35:52Z" end-time="2026-10-16 14:35:56Z" duration="4.592953" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="P96" />
+              </properties>
+              <test-case id="1327" name="IntegratedLocalWorldExposesTerrainBiomeSettlementResourcesCharactersAndWeather" fullname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests.IntegratedLocalWorldExposesTerrainBiomeSettlementResourcesCharactersAndWeather" methodname="IntegratedLocalWorldExposesTerrainBiomeSettlementResourcesCharactersAndWeather" classname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests" runstate="Runnable" seed="1423169451" result="Passed" start-time="2026-10-16 14:35:52Z" end-time="2026-10-16 14:35:54Z" duration="2.023055" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1328" name="SaveLoadAndStrategicRoundTripPreserveStableIdentityAndConnectedLayout" fullname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests.SaveLoadAndStrategicRoundTripPreserveStableIdentityAndConnectedLayout" methodname="SaveLoadAndStrategicRoundTripPreserveStableIdentityAndConnectedLayout" classname="Game.Tests.PlayMode.P96IntegrationAcceptancePlayModeTests" runstate="Runnable" seed="427130437" result="Passed" start-time="2026-10-16 14:35:54Z" end-time="2026-10-16 14:35:56Z" duration="2.566035" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1329" name="ProductionPlayModeTests" fullname="Game.Tests.PlayMode.ProductionPlayModeTests" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-16 14:35:56Z" end-time="2026-10-16 14:36:27Z" duration="31.003568" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U15" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1332" name="CropPlotPlacementUsesU08OccupancyConstructionAndActivation" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.CropPlotPlacementUsesU08OccupancyConstructionAndActivation" methodname="CropPlotPlacementUsesU08OccupancyConstructionAndActivation" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="477408751" result="Passed" start-time="2026-10-16 14:35:56Z" end-time="2026-10-16 14:35:58Z" duration="1.972149" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1330" name="Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" methodname="Tier1WalksWorksAndCommitsOneCanonicalProductionOutput" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="1979586345" result="Failed" start-time="2026-10-16 14:35:58Z" end-time="2026-10-16 14:36:26Z" duration="27.045463" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  No Tier 1 worker selected a production task.
+  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.ProductionPlayModeTests+<Tier1WalksWorksAndCommitsOneCanonicalProductionOutput>d__1.MoveNext () [0x00415] in C:\serenity_game\Assets\Game\Tests\PlayMode\ProductionPlayModeTests.cs:65
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1331" name="Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" fullname="Game.Tests.PlayMode.ProductionPlayModeTests.Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" methodname="Tier2AndTier3UseBatchedLogicalProductionWithoutAddingGameObjects" classname="Game.Tests.PlayMode.ProductionPlayModeTests" runstate="Runnable" seed="1469080681" result="Passed" start-time="2026-10-16 14:36:26Z" end-time="2026-10-16 14:36:27Z" duration="1.980778" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1333" name="ResearchPlayModeTests" fullname="Game.Tests.PlayMode.ResearchPlayModeTests" classname="Game.Tests.PlayMode.ResearchPlayModeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-16 14:36:27Z" end-time="2026-10-16 14:36:32Z" duration="4.289102" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U16" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1334" name="LocalGameplayComposesDebugPanelLimitedKnowledgeAndTier1Research" fullname="Game.Tests.PlayMode.ResearchPlayModeTests.LocalGameplayComposesDebugPanelLimitedKnowledgeAndTier1Research" methodname="LocalGameplayComposesDebugPanelLimitedKnowledgeAndTier1Research" classname="Game.Tests.PlayMode.ResearchPlayModeTests" runstate="Runnable" seed="1161222318" result="Failed" start-time="2026-10-16 14:36:28Z" end-time="2026-10-16 14:36:30Z" duration="2.086219" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.ResearchPlayModeTests+<LocalGameplayComposesDebugPanelLimitedKnowledgeAndTier1Research>d__1.MoveNext () [0x00183] in C:\serenity_game\Assets\Game\Tests\PlayMode\ResearchPlayModeTests.cs:38
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1335" name="Tier2AndTier3CommitThroughOneResearchAuthorityWithoutGameObjects" fullname="Game.Tests.PlayMode.ResearchPlayModeTests.Tier2AndTier3CommitThroughOneResearchAuthorityWithoutGameObjects" methodname="Tier2AndTier3CommitThroughOneResearchAuthorityWithoutGameObjects" classname="Game.Tests.PlayMode.ResearchPlayModeTests" runstate="Runnable" seed="153471788" result="Passed" start-time="2026-10-16 14:36:30Z" end-time="2026-10-16 14:36:32Z" duration="2.196804" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1336" name="ResourceGameplayPlayModeTests" fullname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" classname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-16 14:36:32Z" end-time="2026-10-16 14:36:40Z" duration="8.589382" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U09" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1337" name="LocalGameplayCreatesCanonicalPilesAndCharacterInventories" fullname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests.LocalGameplayCreatesCanonicalPilesAndCharacterInventories" methodname="LocalGameplayCreatesCanonicalPilesAndCharacterInventories" classname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" runstate="Runnable" seed="1275368825" result="Passed" start-time="2026-10-16 14:36:32Z" end-time="2026-10-16 14:36:34Z" duration="2.129714" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1338" name="ShelterConfirmConsumesExactRealResources" fullname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests.ShelterConfirmConsumesExactRealResources" methodname="ShelterConfirmConsumesExactRealResources" classname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" runstate="Runnable" seed="462559326" result="Failed" start-time="2026-10-16 14:36:34Z" end-time="2026-10-16 14:36:36Z" duration="2.195217" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.ResourceGameplayPlayModeTests+<ShelterConfirmConsumesExactRealResources>d__2.MoveNext () [0x000ca] in C:\serenity_game\Assets\Game\Tests\PlayMode\ResourceGameplayPlayModeTests.cs:51
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1340" name="StorageBasketKeepsInventoryAcrossViewRespawn" fullname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests.StorageBasketKeepsInventoryAcrossViewRespawn" methodname="StorageBasketKeepsInventoryAcrossViewRespawn" classname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" runstate="Runnable" seed="547447972" result="Passed" start-time="2026-10-16 14:36:36Z" end-time="2026-10-16 14:36:38Z" duration="2.109568" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1339" name="UnfundedConfirmLeavesRegistryOccupancyAndResourcesUnchanged" fullname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests.UnfundedConfirmLeavesRegistryOccupancyAndResourcesUnchanged" methodname="UnfundedConfirmLeavesRegistryOccupancyAndResourcesUnchanged" classname="Game.Tests.PlayMode.ResourceGameplayPlayModeTests" runstate="Runnable" seed="1788935049" result="Passed" start-time="2026-10-16 14:36:38Z" end-time="2026-10-16 14:36:40Z" duration="2.148434" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1341" name="StrategicAiPlayModeTests" fullname="Game.Tests.PlayMode.StrategicAiPlayModeTests" classname="Game.Tests.PlayMode.StrategicAiPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:36:40Z" end-time="2026-10-16 14:36:45Z" duration="4.262994" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U26" />
+              </properties>
+              <test-case id="1342" name="NormalRuntimeBootstrapsIndependentCanonicalStateAndDebugSurface" fullname="Game.Tests.PlayMode.StrategicAiPlayModeTests.NormalRuntimeBootstrapsIndependentCanonicalStateAndDebugSurface" methodname="NormalRuntimeBootstrapsIndependentCanonicalStateAndDebugSurface" classname="Game.Tests.PlayMode.StrategicAiPlayModeTests" runstate="Runnable" seed="413813124" result="Passed" start-time="2026-10-16 14:36:40Z" end-time="2026-10-16 14:36:43Z" duration="2.120182" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1343" name="NormalSimulationAdvanceAutomaticallyTicksStrategicScheduler" fullname="Game.Tests.PlayMode.StrategicAiPlayModeTests.NormalSimulationAdvanceAutomaticallyTicksStrategicScheduler" methodname="NormalSimulationAdvanceAutomaticallyTicksStrategicScheduler" classname="Game.Tests.PlayMode.StrategicAiPlayModeTests" runstate="Runnable" seed="23502343" result="Passed" start-time="2026-10-16 14:36:43Z" end-time="2026-10-16 14:36:45Z" duration="2.138462" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1344" name="TacticalCombatPlayModeTests" fullname="Game.Tests.PlayMode.TacticalCombatPlayModeTests" classname="Game.Tests.PlayMode.TacticalCombatPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-16 14:36:45Z" end-time="2026-10-16 14:37:09Z" duration="24.829555" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U20" />
+              </properties>
+              <test-case id="1347" name="ActiveEncounterPreventsTierDemotionAndFinishedEncounterReleasesPin" fullname="Game.Tests.PlayMode.TacticalCombatPlayModeTests.ActiveEncounterPreventsTierDemotionAndFinishedEncounterReleasesPin" methodname="ActiveEncounterPreventsTierDemotionAndFinishedEncounterReleasesPin" classname="Game.Tests.PlayMode.TacticalCombatPlayModeTests" runstate="Runnable" seed="1633916428" result="Passed" start-time="2026-10-16 14:36:45Z" end-time="2026-10-16 14:36:47Z" duration="2.439752" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1345" name="FourVersusFourPhysicalBattleApproachesAttacksInjuresAndFinishes" fullname="Game.Tests.PlayMode.TacticalCombatPlayModeTests.FourVersusFourPhysicalBattleApproachesAttacksInjuresAndFinishes" methodname="FourVersusFourPhysicalBattleApproachesAttacksInjuresAndFinishes" classname="Game.Tests.PlayMode.TacticalCombatPlayModeTests" runstate="Runnable" seed="401530929" result="Passed" start-time="2026-10-16 14:36:47Z" end-time="2026-10-16 14:37:07Z" duration="20.112643" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1346" name="SelectedGroupAttackCommandTargetsHostileAndCombatPanelBlocksWorldInput" fullname="Game.Tests.PlayMode.TacticalCombatPlayModeTests.SelectedGroupAttackCommandTargetsHostileAndCombatPanelBlocksWorldInput" methodname="SelectedGroupAttackCommandTargetsHostileAndCombatPanelBlocksWorldInput" classname="Game.Tests.PlayMode.TacticalCombatPlayModeTests" runstate="Runnable" seed="1924750466" result="Passed" start-time="2026-10-16 14:37:07Z" end-time="2026-10-16 14:37:09Z" duration="2.272806" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1348" name="ThirdPersonControlPlayModeTests" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-16 14:37:09Z" end-time="2026-10-16 14:37:36Z" duration="26.198657" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U22" />
+              </properties>
+              <test-case id="1357" name="ControlledCharacterIncapacitationReturnsSafelyToRts" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.ControlledCharacterIncapacitationReturnsSafelyToRts" methodname="ControlledCharacterIncapacitationReturnsSafelyToRts" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1544128341" result="Passed" start-time="2026-10-16 14:37:09Z" end-time="2026-10-16 14:37:12Z" duration="2.066568" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1358" name="ControlledCharacterIsTierOnePinnedUntilExit" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.ControlledCharacterIsTierOnePinnedUntilExit" methodname="ControlledCharacterIsTierOnePinnedUntilExit" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="2060717833" result="Passed" start-time="2026-10-16 14:37:12Z" end-time="2026-10-16 14:37:14Z" duration="2.099678" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1360" name="ControlledMonarchDeathKeepsCombatCanonicalAndReturnsSafelyToRts" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.ControlledMonarchDeathKeepsCombatCanonicalAndReturnsSafelyToRts" methodname="ControlledMonarchDeathKeepsCombatCanonicalAndReturnsSafelyToRts" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1239855613" result="Passed" start-time="2026-10-16 14:37:14Z" end-time="2026-10-16 14:37:16Z" duration="2.436322" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1352" name="EligibilityRejectsDeadChildIncapacitatedAndEnemyCharacters" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.EligibilityRejectsDeadChildIncapacitatedAndEnemyCharacters" methodname="EligibilityRejectsDeadChildIncapacitatedAndEnemyCharacters" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="456909515" result="Passed" start-time="2026-10-16 14:37:16Z" end-time="2026-10-16 14:37:18Z" duration="1.985238" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1350" name="EnterAndExitUseSameCharacterPresenterAndExclusiveMovementAuthority" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.EnterAndExitUseSameCharacterPresenterAndExclusiveMovementAuthority" methodname="EnterAndExitUseSameCharacterPresenterAndExclusiveMovementAuthority" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="859209170" result="Passed" start-time="2026-10-16 14:37:18Z" end-time="2026-10-16 14:37:20Z" duration="2.074844" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1351" name="InvalidAndMultipleSelectionsAreRejectedExplicitly" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.InvalidAndMultipleSelectionsAreRejectedExplicitly" methodname="InvalidAndMultipleSelectionsAreRejectedExplicitly" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="2001460476" result="Passed" start-time="2026-10-16 14:37:20Z" end-time="2026-10-16 14:37:22Z" duration="2.125883" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1353" name="MaterializableHeirAndPlayerCaptainUseExistingIdentities" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.MaterializableHeirAndPlayerCaptainUseExistingIdentities" methodname="MaterializableHeirAndPlayerCaptainUseExistingIdentities" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1543647825" result="Passed" start-time="2026-10-16 14:37:22Z" end-time="2026-10-16 14:37:25Z" duration="2.255212" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1354" name="OneHundredSwitchesDoNotDuplicateComponentsCallbacksOrState" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.OneHundredSwitchesDoNotDuplicateComponentsCallbacksOrState" methodname="OneHundredSwitchesDoNotDuplicateComponentsCallbacksOrState" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="158552323" result="Passed" start-time="2026-10-16 14:37:25Z" end-time="2026-10-16 14:37:27Z" duration="2.170673" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1359" name="PauseStopsDirectMovementAndFasterSpeedUsesSameNavMeshAgent" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.PauseStopsDirectMovementAndFasterSpeedUsesSameNavMeshAgent" methodname="PauseStopsDirectMovementAndFasterSpeedUsesSameNavMeshAgent" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1723284183" result="Passed" start-time="2026-10-16 14:37:27Z" end-time="2026-10-16 14:37:29Z" duration="2.191980" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1355" name="RtsTpsRtsPreservesCanonicalStateAssignmentsMembershipAndOrder" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.RtsTpsRtsPreservesCanonicalStateAssignmentsMembershipAndOrder" methodname="RtsTpsRtsPreservesCanonicalStateAssignmentsMembershipAndOrder" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1056021345" result="Passed" start-time="2026-10-16 14:37:29Z" end-time="2026-10-16 14:37:31Z" duration="2.277049" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1356" name="SaveLoadRestoresValidControlAndFallsBackToRtsForInvalidIdentity" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.SaveLoadRestoresValidControlAndFallsBackToRtsForInvalidIdentity" methodname="SaveLoadRestoresValidControlAndFallsBackToRtsForInvalidIdentity" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="1081861706" result="Passed" start-time="2026-10-16 14:37:31Z" end-time="2026-10-16 14:37:33Z" duration="2.227763" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1349" name="SceneStartsRtsWithOneReusableTpsRig" fullname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests.SceneStartsRtsWithOneReusableTpsRig" methodname="SceneStartsRtsWithOneReusableTpsRig" classname="Game.Tests.PlayMode.ThirdPersonControlPlayModeTests" runstate="Runnable" seed="192770527" result="Passed" start-time="2026-10-16 14:37:33Z" end-time="2026-10-16 14:37:36Z" duration="2.264141" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1361" name="Tier1UtilityAiPlayModeTests" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-10-16 14:37:36Z" end-time="2026-10-16 14:38:15Z" duration="39.025944" total="5" passed="3" failed="2" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U10" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1366" name="ActivePauseFreezesSimulationAndMovementWhileCameraRemainsIndependent" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests.ActivePauseFreezesSimulationAndMovementWhileCameraRemainsIndependent" methodname="ActivePauseFreezesSimulationAndMovementWhileCameraRemainsIndependent" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" seed="1589472356" result="Passed" start-time="2026-10-16 14:37:36Z" end-time="2026-10-16 14:37:43Z" duration="7.786248" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1362" name="LocalGameplayBuildsNavMeshAndRegistersTier1Agents" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests.LocalGameplayBuildsNavMeshAndRegistersTier1Agents" methodname="LocalGameplayBuildsNavMeshAndRegistersTier1Agents" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" seed="1098198734" result="Passed" start-time="2026-10-16 14:37:43Z" end-time="2026-10-16 14:37:45Z" duration="2.030289" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1363" name="NavMeshMovementDrivesAnimationAndHaulConservesResources" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests.NavMeshMovementDrivesAnimationAndHaulConservesResources" methodname="NavMeshMovementDrivesAnimationAndHaulConservesResources" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" seed="252883754" result="Failed" start-time="2026-10-16 14:37:45Z" end-time="2026-10-16 14:38:06Z" duration="20.089576" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  The Tier 1 presenter never traversed the NavMesh.
+  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests+<NavMeshMovementDrivesAnimationAndHaulConservesResources>d__2.MoveNext () [0x001cc] in C:\serenity_game\Assets\Game\Tests\PlayMode\Tier1UtilityAiPlayModeTests.cs:67
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1364" name="PointerSelectionShowsCanonicalPileAndStorageValues" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests.PointerSelectionShowsCanonicalPileAndStorageValues" methodname="PointerSelectionShowsCanonicalPileAndStorageValues" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" seed="452244963" result="Passed" start-time="2026-10-16 14:38:06Z" end-time="2026-10-16 14:38:08Z" duration="1.975762" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1365" name="PointerSelectionShowsCharacterActionTargetInventoryAndClaim" fullname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests.PointerSelectionShowsCharacterActionTargetInventoryAndClaim" methodname="PointerSelectionShowsCharacterActionTargetInventoryAndClaim" classname="Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests" runstate="Runnable" seed="625314266" result="Failed" start-time="2026-10-16 14:38:08Z" end-time="2026-10-16 14:38:15Z" duration="7.137650" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  No haul claim became observable for debug selection.
+  Expected: greater than 0
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.Tier1UtilityAiPlayModeTests+<PointerSelectionShowsCharacterActionTargetInventoryAndClaim>d__4.MoveNext () [0x0008a] in C:\serenity_game\Assets\Game\Tests\PlayMode\Tier1UtilityAiPlayModeTests.cs:124
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1367" name="Tier2EcsPlayModeTests" fullname="Game.Tests.PlayMode.Tier2EcsPlayModeTests" classname="Game.Tests.PlayMode.Tier2EcsPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:38:15Z" end-time="2026-10-16 14:38:15Z" duration="0.060903" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U12" />
+              </properties>
+              <test-case id="1369" name="PausedClockStopsTier2InsidePlayMode" fullname="Game.Tests.PlayMode.Tier2EcsPlayModeTests.PausedClockStopsTier2InsidePlayMode" methodname="PausedClockStopsTier2InsidePlayMode" classname="Game.Tests.PlayMode.Tier2EcsPlayModeTests" runstate="Runnable" seed="1804389993" result="Passed" start-time="2026-10-16 14:38:15Z" end-time="2026-10-16 14:38:15Z" duration="0.007376" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1368" name="ThousandEntitySteadyUpdateRecordsMeasuredRuntimeEvidence" fullname="Game.Tests.PlayMode.Tier2EcsPlayModeTests.ThousandEntitySteadyUpdateRecordsMeasuredRuntimeEvidence" methodname="ThousandEntitySteadyUpdateRecordsMeasuredRuntimeEvidence" classname="Game.Tests.PlayMode.Tier2EcsPlayModeTests" runstate="Runnable" seed="825668037" result="Passed" start-time="2026-10-16 14:38:15Z" end-time="2026-10-16 14:38:15Z" duration="0.049197" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[U12_METRICS] entities=1000 measuredSteps=120 elapsedMs=20,513 allocatedBytes=0 tier2GameObjectsAdded=0 burstEnabled=True burstAnnotated=True jobBacked=True
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1370" name="TierManagerPlayModeTests" fullname="Game.Tests.PlayMode.TierManagerPlayModeTests" classname="Game.Tests.PlayMode.TierManagerPlayModeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-16 14:38:15Z" end-time="2026-10-16 14:38:19Z" duration="4.232179" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U13" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1371" name="LocalRuntimeRoundTripPreservesCanonicalStateInventoryGroupJobAndPosition" fullname="Game.Tests.PlayMode.TierManagerPlayModeTests.LocalRuntimeRoundTripPreservesCanonicalStateInventoryGroupJobAndPosition" methodname="LocalRuntimeRoundTripPreservesCanonicalStateInventoryGroupJobAndPosition" classname="Game.Tests.PlayMode.TierManagerPlayModeTests" runstate="Runnable" seed="493860729" result="Failed" start-time="2026-10-16 14:38:15Z" end-time="2026-10-16 14:38:17Z" duration="2.008283" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.TierManagerPlayModeTests+<LocalRuntimeRoundTripPreservesCanonicalStateInventoryGroupJobAndPosition>d__1.MoveNext () [0x002a6] in C:\serenity_game\Assets\Game\Tests\PlayMode\TierManagerPlayModeTests.cs:51
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Failed to create agent because it is not close enough to the NavMesh
+]]></output>
+              </test-case>
+              <test-case id="1372" name="SameTierRequestsDoNotCreateDuplicatePresenterOrEntity" fullname="Game.Tests.PlayMode.TierManagerPlayModeTests.SameTierRequestsDoNotCreateDuplicatePresenterOrEntity" methodname="SameTierRequestsDoNotCreateDuplicatePresenterOrEntity" classname="Game.Tests.PlayMode.TierManagerPlayModeTests" runstate="Runnable" seed="1645210767" result="Passed" start-time="2026-10-16 14:38:17Z" end-time="2026-10-16 14:38:19Z" duration="2.217564" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1373" name="U16ADebugGameplayControlPlayModeTests" fullname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests" classname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-16 14:38:19Z" end-time="2026-10-16 14:38:26Z" duration="7.146106" total="3" passed="0" failed="3" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U16A" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1375" name="BuildingSelectorRejectsLockedCropAndRoutesUnlockedCropThroughExistingPlacement" fullname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests.BuildingSelectorRejectsLockedCropAndRoutesUnlockedCropThroughExistingPlacement" methodname="BuildingSelectorRejectsLockedCropAndRoutesUnlockedCropThroughExistingPlacement" classname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests" runstate="Runnable" seed="1206289937" result="Failed" start-time="2026-10-16 14:38:19Z" end-time="2026-10-16 14:38:21Z" duration="2.400151" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests+<BuildingSelectorRejectsLockedCropAndRoutesUnlockedCropThroughExistingPlacement>d__2.MoveNext () [0x00265] in C:\serenity_game\Assets\Game\Tests\PlayMode\U16ADebugGameplayControlPlayModeTests.cs:80
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1374" name="NoHardcodedDemoAssignmentAndSelectedResearchCommandsReportRealActiveState" fullname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests.NoHardcodedDemoAssignmentAndSelectedResearchCommandsReportRealActiveState" methodname="NoHardcodedDemoAssignmentAndSelectedResearchCommandsReportRealActiveState" classname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests" runstate="Runnable" seed="1440500136" result="Failed" start-time="2026-10-16 14:38:21Z" end-time="2026-10-16 14:38:24Z" duration="2.438504" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: 1
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests+<NoHardcodedDemoAssignmentAndSelectedResearchCommandsReportRealActiveState>d__1.MoveNext () [0x0014f] in C:\serenity_game\Assets\Game\Tests\PlayMode\U16ADebugGameplayControlPlayModeTests.cs:46
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1376" name="PauseStopsClockAiResearchAndProductionThenResumesWithoutUiClickThrough" fullname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests.PauseStopsClockAiResearchAndProductionThenResumesWithoutUiClickThrough" methodname="PauseStopsClockAiResearchAndProductionThenResumesWithoutUiClickThrough" classname="Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests" runstate="Runnable" seed="964323092" result="Failed" start-time="2026-10-16 14:38:24Z" end-time="2026-10-16 14:38:26Z" duration="2.301421" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: 1
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.U16ADebugGameplayControlPlayModeTests+<PauseStopsClockAiResearchAndProductionThenResumesWithoutUiClickThrough>d__3.MoveNext () [0x000a0] in C:\serenity_game\Assets\Game\Tests\PlayMode\U16ADebugGameplayControlPlayModeTests.cs:96
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1377" name="U29PerformanceGatePlayModeTests" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-10-16 14:38:26Z" end-time="2026-10-16 14:39:13Z" duration="47.280611" total="19" passed="19" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U29" />
+              </properties>
+              <test-case id="1378" name="BenchmarkActivationRequiresExplicitFlag" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.BenchmarkActivationRequiresExplicitFlag" methodname="BenchmarkActivationRequiresExplicitFlag" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="1724749849" result="Passed" start-time="2026-10-16 14:38:26Z" end-time="2026-10-16 14:38:28Z" duration="2.216220" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1394" name="CompletedSmokeResultCanBeStrictlyValidated" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.CompletedSmokeResultCanBeStrictlyValidated" methodname="CompletedSmokeResultCanBeStrictlyValidated" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="1621827823" result="Passed" start-time="2026-10-16 14:38:28Z" end-time="2026-10-16 14:38:31Z" duration="2.501627" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1381" name="ExactTierMixSurvivesNormalDistancePolicyWarmup" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.ExactTierMixSurvivesNormalDistancePolicyWarmup" methodname="ExactTierMixSurvivesNormalDistancePolicyWarmup" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="902204262" result="Passed" start-time="2026-10-16 14:38:31Z" end-time="2026-10-16 14:38:34Z" duration="2.742886" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1395" name="InvalidSetupFailsClosedInsteadOfProducingSuccess" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.InvalidSetupFailsClosedInsteadOfProducingSuccess" methodname="InvalidSetupFailsClosedInsteadOfProducingSuccess" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="1627260795" result="Passed" start-time="2026-10-16 14:38:34Z" end-time="2026-10-16 14:38:36Z" duration="1.893381" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1383" name="LargeTierOneCrowdUsesBoundedNativeNavigationAndAnimationDetail" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.LargeTierOneCrowdUsesBoundedNativeNavigationAndAnimationDetail" methodname="LargeTierOneCrowdUsesBoundedNativeNavigationAndAnimationDetail" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="945478466" result="Passed" start-time="2026-10-16 14:38:36Z" end-time="2026-10-16 14:38:38Z" duration="2.714133" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1396" name="LegacyF10DeveloperSurfaceRemainsSeparated" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.LegacyF10DeveloperSurfaceRemainsSeparated" methodname="LegacyF10DeveloperSurfaceRemainsSeparated" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="206082233" result="Passed" start-time="2026-10-16 14:38:38Z" end-time="2026-10-16 14:38:40Z" duration="1.963532" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1392" name="LocalGlobalTransitionPreservesCanonicalPopulationIdentity" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.LocalGlobalTransitionPreservesCanonicalPopulationIdentity" methodname="LocalGlobalTransitionPreservesCanonicalPopulationIdentity" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="858957067" result="Passed" start-time="2026-10-16 14:38:40Z" end-time="2026-10-16 14:38:43Z" duration="2.884942" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Failed to create agent because it is not close enough to the NavMesh
+Failed to create agent because it is not close enough to the NavMesh
+]]></output>
+              </test-case>
+              <test-case id="1384" name="MovingTierOnePresenterUsesContinuousAnimatorThenFreezesIdle" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.MovingTierOnePresenterUsesContinuousAnimatorThenFreezesIdle" methodname="MovingTierOnePresenterUsesContinuousAnimatorThenFreezesIdle" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="316862271" result="Passed" start-time="2026-10-16 14:38:43Z" end-time="2026-10-16 14:38:46Z" duration="2.488577" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1379" name="NormalLocalGameplayDoesNotAttachBenchmarkController" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.NormalLocalGameplayDoesNotAttachBenchmarkController" methodname="NormalLocalGameplayDoesNotAttachBenchmarkController" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="504575456" result="Passed" start-time="2026-10-16 14:38:46Z" end-time="2026-10-16 14:38:48Z" duration="2.017564" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1387" name="NormalU27UiExistsAndIsEnabled" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.NormalU27UiExistsAndIsEnabled" methodname="NormalU27UiExistsAndIsEnabled" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="2113123861" result="Passed" start-time="2026-10-16 14:38:48Z" end-time="2026-10-16 14:38:50Z" duration="2.072680" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1393" name="RepeatedU28AdvanceAtSameTickDoesNotReroll" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.RepeatedU28AdvanceAtSameTickDoesNotReroll" methodname="RepeatedU28AdvanceAtSameTickDoesNotReroll" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="198027656" result="Passed" start-time="2026-10-16 14:38:50Z" end-time="2026-10-16 14:38:55Z" duration="5.212023" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1389" name="RepresentativeSimulationSystemsAdvance" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.RepresentativeSimulationSystemsAdvance" methodname="RepresentativeSimulationSystemsAdvance" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="1505498883" result="Passed" start-time="2026-10-16 14:38:55Z" end-time="2026-10-16 14:38:57Z" duration="2.256876" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1391" name="SaveObservationRoundTripsEveryNormalGameplayPayload" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.SaveObservationRoundTripsEveryNormalGameplayPayload" methodname="SaveObservationRoundTripsEveryNormalGameplayPayload" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="792905417" result="Passed" start-time="2026-10-16 14:38:57Z" end-time="2026-10-16 14:39:00Z" duration="2.702966" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1380" name="SmokeOneHundredBuildsExactTwentyFiveFiftyTwentyFiveRealTiers" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.SmokeOneHundredBuildsExactTwentyFiveFiftyTwentyFiveRealTiers" methodname="SmokeOneHundredBuildsExactTwentyFiveFiftyTwentyFiveRealTiers" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="768571713" result="Passed" start-time="2026-10-16 14:39:00Z" end-time="2026-10-16 14:39:02Z" duration="2.268431" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1390" name="TierChurnPreservesPopulationIdsAndTargetMix" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.TierChurnPreservesPopulationIdsAndTargetMix" methodname="TierChurnPreservesPopulationIdsAndTargetMix" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="218267197" result="Passed" start-time="2026-10-16 14:39:02Z" end-time="2026-10-16 14:39:04Z" duration="2.329456" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Failed to create agent because it is not close enough to the NavMesh
+]]></output>
+              </test-case>
+              <test-case id="1382" name="TierOnePresenterCountMatchesTierOnePopulation" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.TierOnePresenterCountMatchesTierOnePopulation" methodname="TierOnePresenterCountMatchesTierOnePopulation" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="212690480" result="Passed" start-time="2026-10-16 14:39:04Z" end-time="2026-10-16 14:39:07Z" duration="2.286496" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1386" name="TierThreeRecordsHaveNeitherPresenterNorEntity" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.TierThreeRecordsHaveNeitherPresenterNorEntity" methodname="TierThreeRecordsHaveNeitherPresenterNorEntity" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="311164233" result="Passed" start-time="2026-10-16 14:39:07Z" end-time="2026-10-16 14:39:09Z" duration="2.352379" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1385" name="TierTwoEntityCountMatchesTierTwoPopulation" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.TierTwoEntityCountMatchesTierTwoPopulation" methodname="TierTwoEntityCountMatchesTierTwoPopulation" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="680916460" result="Passed" start-time="2026-10-16 14:39:09Z" end-time="2026-10-16 14:39:11Z" duration="2.387481" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1388" name="UiSubscriptionCountDoesNotGrowAcrossRefreshes" fullname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.UiSubscriptionCountDoesNotGrowAcrossRefreshes" methodname="UiSubscriptionCountDoesNotGrowAcrossRefreshes" classname="Game.Tests.PlayMode.U29PerformanceGatePlayModeTests" runstate="Runnable" seed="609705360" result="Passed" start-time="2026-10-16 14:39:11Z" end-time="2026-10-16 14:39:13Z" duration="1.971925" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1397" name="U30ACompliancePlayModeTests" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-16 14:39:13Z" end-time="2026-10-16 14:39:27Z" duration="13.617008" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U30A" />
+                <property name="Category" value="U31" />
+              </properties>
+              <test-case id="1400" name="CanonicalBattleCaptureRecordsVictoryOnceAndSandboxContinues" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests.CanonicalBattleCaptureRecordsVictoryOnceAndSandboxContinues" methodname="CanonicalBattleCaptureRecordsVictoryOnceAndSandboxContinues" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" seed="1314063270" result="Passed" start-time="2026-10-16 14:39:13Z" end-time="2026-10-16 14:39:16Z" duration="2.482130" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1398" name="NormalNewGameHasTenPlayerCharactersIndependentAiAndNoDuplicateAuthorities" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests.NormalNewGameHasTenPlayerCharactersIndependentAiAndNoDuplicateAuthorities" methodname="NormalNewGameHasTenPlayerCharactersIndependentAiAndNoDuplicateAuthorities" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" seed="1657822714" result="Passed" start-time="2026-10-16 14:39:16Z" end-time="2026-10-16 14:39:20Z" duration="4.385647" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1401" name="RivalDiscoveryIsCanonicalExactlyOnceAndPersistsThroughPlayerSaveLoad" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests.RivalDiscoveryIsCanonicalExactlyOnceAndPersistsThroughPlayerSaveLoad" methodname="RivalDiscoveryIsCanonicalExactlyOnceAndPersistsThroughPlayerSaveLoad" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" seed="406684270" result="Passed" start-time="2026-10-16 14:39:20Z" end-time="2026-10-16 14:39:23Z" duration="2.291490" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1399" name="SupplyLoadsConservativelyAndTravelCombatCheckpointsConsumeExactlyOnce" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests.SupplyLoadsConservativelyAndTravelCombatCheckpointsConsumeExactlyOnce" methodname="SupplyLoadsConservativelyAndTravelCombatCheckpointsConsumeExactlyOnce" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" seed="1488226620" result="Passed" start-time="2026-10-16 14:39:23Z" end-time="2026-10-16 14:39:25Z" duration="2.102940" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1402" name="TpsAttackUsesU20EncounterAndOneRequestCannotDoubleHit" fullname="Game.Tests.PlayMode.U30ACompliancePlayModeTests.TpsAttackUsesU20EncounterAndOneRequestCannotDoubleHit" methodname="TpsAttackUsesU20EncounterAndOneRequestCannotDoubleHit" classname="Game.Tests.PlayMode.U30ACompliancePlayModeTests" runstate="Runnable" seed="764254077" result="Passed" start-time="2026-10-16 14:39:25Z" end-time="2026-10-16 14:39:27Z" duration="2.349529" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1403" name="U30SoakPlayModeTests" fullname="Game.Tests.PlayMode.U30SoakPlayModeTests" classname="Game.Tests.PlayMode.U30SoakPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:39:27Z" end-time="2026-10-16 14:39:32Z" duration="4.682366" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U30" />
+              </properties>
+              <test-case id="1404" name="NormalGameplayDoesNotAttachSoakController" fullname="Game.Tests.PlayMode.U30SoakPlayModeTests.NormalGameplayDoesNotAttachSoakController" methodname="NormalGameplayDoesNotAttachSoakController" classname="Game.Tests.PlayMode.U30SoakPlayModeTests" runstate="Runnable" seed="1189325400" result="Passed" start-time="2026-10-16 14:39:27Z" end-time="2026-10-16 14:39:29Z" duration="2.072159" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1405" name="RepresentativePopulationAdvancesWithAllMonitoredInvariantsValid" fullname="Game.Tests.PlayMode.U30SoakPlayModeTests.RepresentativePopulationAdvancesWithAllMonitoredInvariantsValid" methodname="RepresentativePopulationAdvancesWithAllMonitoredInvariantsValid" classname="Game.Tests.PlayMode.U30SoakPlayModeTests" runstate="Runnable" seed="875981818" result="Passed" start-time="2026-10-16 14:39:29Z" end-time="2026-10-16 14:39:32Z" duration="2.606391" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1406" name="U31GpuPlayModeTests" fullname="Game.Tests.PlayMode.U31GpuPlayModeTests" classname="Game.Tests.PlayMode.U31GpuPlayModeTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-16 14:39:32Z" end-time="2026-10-16 14:39:34Z" duration="2.036831" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U31" />
+                <property name="Category" value="GPU" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1407" name="RealInputAttackVictoryBannerAndPostVictoryUiRemainOperational" fullname="Game.Tests.PlayMode.U31GpuPlayModeTests.RealInputAttackVictoryBannerAndPostVictoryUiRemainOperational" methodname="RealInputAttackVictoryBannerAndPostVictoryUiRemainOperational" classname="Game.Tests.PlayMode.U31GpuPlayModeTests" runstate="Runnable" seed="925951999" result="Failed" start-time="2026-10-16 14:39:32Z" end-time="2026-10-16 14:39:34Z" duration="2.030431" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  U31 GPU validation must be launched without Unity's no-graphics switch.
+  Expected: not collection containing "-nographics"
+  But was:  < "C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe", "-batchmode", "-nographics", "-projectPath", "C:\serenity_game", "-runTests", "-testPlatform", "PlayMode", "-testResults", "C:\serenity_game\Artifacts\P103\full-playmode.xml", "-logFile", "C:\serenity_game\Artifacts\P103\full-playmode.log" >
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.U31GpuPlayModeTests+<RealInputAttackVictoryBannerAndPostVictoryUiRemainOperational>d__3.MoveNext () [0x00057] in C:\serenity_game\Assets\Game\Tests\PlayMode\U31GpuPlayModeTests.cs:53
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1408" name="U31IntegrationPlayModeTests" fullname="Game.Tests.PlayMode.U31IntegrationPlayModeTests" classname="Game.Tests.PlayMode.U31IntegrationPlayModeTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-16 14:39:34Z" end-time="2026-10-16 14:39:41Z" duration="6.788653" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U31" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1410" name="ConnectedPlayerJourneyUsesUiCommandsAndCanonicalServices" fullname="Game.Tests.PlayMode.U31IntegrationPlayModeTests.ConnectedPlayerJourneyUsesUiCommandsAndCanonicalServices" methodname="ConnectedPlayerJourneyUsesUiCommandsAndCanonicalServices" classname="Game.Tests.PlayMode.U31IntegrationPlayModeTests" runstate="Runnable" seed="2100792719" result="Failed" label="Error" start-time="2026-10-16 14:39:34Z" end-time="2026-10-16 14:39:36Z" duration="2.082677" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.InvalidOperationException : Sequence contains no matching element]]></message>
+                  <stack-trace><![CDATA[  at System.Linq.Enumerable.First[TSource] (System.Collections.Generic.IEnumerable`1[T] source, System.Func`2[T,TResult] predicate) [0x00011] in <f1b392d8fe224ca2b1f9fab1000b77eb>:0 
+  at Game.Tests.PlayMode.U31IntegrationPlayModeTests.RowButton (Game.Presentation.UI.GameplayUiController ui, System.String label, System.String button) [0x00076] in C:\serenity_game\Assets\Game\Tests\PlayMode\U31IntegrationPlayModeTests.cs:248 
+  at Game.Tests.PlayMode.U31IntegrationPlayModeTests+<ConnectedPlayerJourneyUsesUiCommandsAndCanonicalServices>d__4.MoveNext () [0x000e9] in C:\serenity_game\Assets\Game\Tests\PlayMode\U31IntegrationPlayModeTests.cs:102 
+  at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52 ]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1409" name="PublicUiNewGameAndSaveLoadKeepOneAuthorityGraph" fullname="Game.Tests.PlayMode.U31IntegrationPlayModeTests.PublicUiNewGameAndSaveLoadKeepOneAuthorityGraph" methodname="PublicUiNewGameAndSaveLoadKeepOneAuthorityGraph" classname="Game.Tests.PlayMode.U31IntegrationPlayModeTests" runstate="Runnable" seed="1675169827" result="Passed" start-time="2026-10-16 14:39:36Z" end-time="2026-10-16 14:39:41Z" duration="4.698685" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1411" name="WeatherPlayModeTests" fullname="Game.Tests.PlayMode.WeatherPlayModeTests" classname="Game.Tests.PlayMode.WeatherPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-16 14:39:41Z" end-time="2026-10-16 14:39:41Z" duration="0.022939" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U19" />
+              </properties>
+              <test-case id="1412" name="DebugPanelRegistersAsWorldPointerBlocker" fullname="Game.Tests.PlayMode.WeatherPlayModeTests.DebugPanelRegistersAsWorldPointerBlocker" methodname="DebugPanelRegistersAsWorldPointerBlocker" classname="Game.Tests.PlayMode.WeatherPlayModeTests" runstate="Runnable" seed="256365690" result="Passed" start-time="2026-10-16 14:39:41Z" end-time="2026-10-16 14:39:41Z" duration="0.007880" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1413" name="PresentationRefreshUsesCanonicalWeatherWithoutOwningState" fullname="Game.Tests.PlayMode.WeatherPlayModeTests.PresentationRefreshUsesCanonicalWeatherWithoutOwningState" methodname="PresentationRefreshUsesCanonicalWeatherWithoutOwningState" classname="Game.Tests.PlayMode.WeatherPlayModeTests" runstate="Runnable" seed="975638164" result="Passed" start-time="2026-10-16 14:39:41Z" end-time="2026-10-16 14:39:41Z" duration="0.011098" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1414" name="WorkGroupPlayModeTests" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" testcasecount="10" result="Failed" site="Child" start-time="2026-10-16 14:39:41Z" end-time="2026-10-16 14:40:11Z" duration="30.158707" total="10" passed="6" failed="4" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U11" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1421" name="ActiveWorkGroupRightClickReportsRemoteUnavailableWithoutTierOrOffCameraMutation" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.ActiveWorkGroupRightClickReportsRemoteUnavailableWithoutTierOrOffCameraMutation" methodname="ActiveWorkGroupRightClickReportsRemoteUnavailableWithoutTierOrOffCameraMutation" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1285115988" result="Failed" start-time="2026-10-16 14:39:41Z" end-time="2026-10-16 14:39:43Z" duration="2.109371" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: not null
+  But was:  null
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.WorkGroupPlayModeTests+<ActiveWorkGroupRightClickReportsRemoteUnavailableWithoutTierOrOffCameraMutation>d__7.MoveNext () [0x001b0] in C:\serenity_game\Assets\Game\Tests\PlayMode\WorkGroupPlayModeTests.cs:285
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1417" name="ClickInsideEveryDevelopmentPanelDoesNotClearSelection" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.ClickInsideEveryDevelopmentPanelDoesNotClearSelection" methodname="ClickInsideEveryDevelopmentPanelDoesNotClearSelection" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1174378635" result="Passed" start-time="2026-10-16 14:39:43Z" end-time="2026-10-16 14:39:45Z" duration="2.184283" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1416" name="CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough" methodname="CreateFromSelectionUiClickUsesCurrentSelectionWithoutClickThrough" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1256436525" result="Passed" start-time="2026-10-16 14:39:45Z" end-time="2026-10-16 14:39:47Z" duration="2.041290" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1424" name="GroupHaulUsesCanonicalInventoryThenAgentsReturnToAutonomousAi" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.GroupHaulUsesCanonicalInventoryThenAgentsReturnToAutonomousAi" methodname="GroupHaulUsesCanonicalInventoryThenAgentsReturnToAutonomousAi" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="451163802" result="Failed" start-time="2026-10-16 14:39:47Z" end-time="2026-10-16 14:39:50Z" duration="3.069354" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.WorkGroupPlayModeTests+<GroupHaulUsesCanonicalInventoryThenAgentsReturnToAutonomousAi>d__10.MoveNext () [0x002fb] in C:\serenity_game\Assets\Game\Tests\PlayMode\WorkGroupPlayModeTests.cs:361
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1419" name="GroupMoveCommandDrivesPhysicalNavMeshMovement" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.GroupMoveCommandDrivesPhysicalNavMeshMovement" methodname="GroupMoveCommandDrivesPhysicalNavMeshMovement" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1426645381" result="Passed" start-time="2026-10-16 14:39:50Z" end-time="2026-10-16 14:40:00Z" duration="9.960897" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1418" name="RemainingWorkPanelButtonsUseInputPathWithoutSelectionClickThrough" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.RemainingWorkPanelButtonsUseInputPathWithoutSelectionClickThrough" methodname="RemainingWorkPanelButtonsUseInputPathWithoutSelectionClickThrough" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1490675305" result="Passed" start-time="2026-10-16 14:40:00Z" end-time="2026-10-16 14:40:02Z" duration="2.226443" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1423" name="RightClickDuringBuildingPlacementCancelsWithoutCreatingMove" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.RightClickDuringBuildingPlacementCancelsWithoutCreatingMove" methodname="RightClickDuringBuildingPlacementCancelsWithoutCreatingMove" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="777965309" result="Passed" start-time="2026-10-16 14:40:02Z" end-time="2026-10-16 14:40:04Z" duration="2.097912" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1420" name="RightClickGroundMovesTwoSelectedNpcWithFormationAndReturnsToUtilityAi" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.RightClickGroundMovesTwoSelectedNpcWithFormationAndReturnsToUtilityAi" methodname="RightClickGroundMovesTwoSelectedNpcWithFormationAndReturnsToUtilityAi" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1008695268" result="Failed" start-time="2026-10-16 14:40:04Z" end-time="2026-10-16 14:40:06Z" duration="2.139788" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: not null
+  But was:  null
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.WorkGroupPlayModeTests+<RightClickGroundMovesTwoSelectedNpcWithFormationAndReturnsToUtilityAi>d__6.MoveNext () [0x001bd] in C:\serenity_game\Assets\Game\Tests\PlayMode\WorkGroupPlayModeTests.cs:219
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1422" name="RightClickInsideUiDoesNotCreateMove" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.RightClickInsideUiDoesNotCreateMove" methodname="RightClickInsideUiDoesNotCreateMove" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1723196515" result="Passed" start-time="2026-10-16 14:40:06Z" end-time="2026-10-16 14:40:09Z" duration="2.141695" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1415" name="ShiftMultiSelectionCreatesGroupAndSurvivesPresenterRespawn" fullname="Game.Tests.PlayMode.WorkGroupPlayModeTests.ShiftMultiSelectionCreatesGroupAndSurvivesPresenterRespawn" methodname="ShiftMultiSelectionCreatesGroupAndSurvivesPresenterRespawn" classname="Game.Tests.PlayMode.WorkGroupPlayModeTests" runstate="Runnable" seed="1723300200" result="Failed" start-time="2026-10-16 14:40:09Z" end-time="2026-10-16 14:40:11Z" duration="2.180270" asserts="0">
+                <properties>
+                  <property name="_JOINTYPE" value="UnityCombinatorial" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.PlayMode.WorkGroupPlayModeTests.SelectFromAbove (Game.Infrastructure.LocalSceneCompositionRoot root, UnityEngine.Component target, System.Boolean additive) [0x0004d] in C:\serenity_game\Assets\Game\Tests\PlayMode\WorkGroupPlayModeTests.cs:386
+at Game.Tests.PlayMode.WorkGroupPlayModeTests+<ShiftMultiSelectionCreatesGroupAndSurvivesPresenterRespawn>d__1.MoveNext () [0x00122] in C:\serenity_game\Assets\Game\Tests\PlayMode\WorkGroupPlayModeTests.cs:49
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__8.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@80f691d4262b\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:52
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

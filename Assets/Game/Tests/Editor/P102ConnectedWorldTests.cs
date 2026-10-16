@@ -55,10 +55,10 @@ namespace Game.Tests.Editor
             var graph = StarterGlobalMap.Create();
             var service = new ConnectedWorldService(graph.Locations);
             service.ReportPhysicalPresence(142, 158);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, DeterministicStableId.Create(102, "session"),
+            var snapshot = new SaveSnapshot(SaveSnapshot.ConnectedWorldVersion, DeterministicStableId.Create(102, "session"),
                 new GameTimeState(0, 0, 1, false), 1, connectedWorld: service.CaptureState());
             var roundTrip = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
-            Assert.That(roundTrip.FormatVersion, Is.EqualTo(20));
+            Assert.That(roundTrip.FormatVersion, Is.EqualTo(SaveSnapshot.ConnectedWorldVersion));
             Assert.That(roundTrip.ConnectedWorld.GenerationId, Is.EqualTo(ConnectedWorldContract.GenerationId));
             Assert.That(roundTrip.ConnectedWorld.RevealedCells, Is.EquivalentTo(snapshot.ConnectedWorld.RevealedCells));
         }
