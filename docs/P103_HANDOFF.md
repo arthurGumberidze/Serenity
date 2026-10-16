@@ -1,6 +1,6 @@
 # P10.3 handoff — selection, context actions and queues
 
-Status: **PARTIAL** on 2026-10-16. Implementation, focused automated acceptance, provenance build and a substantial visible Player route are complete. The firewall prompt was dismissed by the user. Physical Shift/multi-frame-drag and state-forcing portions of the visible route remain unobserved, so this is not marked DONE.
+Status: **PARTIAL** on 2026-10-16. Implementation, focused automated acceptance, provenance build and a substantial visible Player route are complete. The firewall prompt was dismissed by the user. Physical Shift/multi-frame-drag and state-forcing portions of the visible route remain unobserved, so this is not marked DONE. By later explicit user decision D-141, P10.4 may proceed while this debt remains tracked for mandatory closure by P10.9/P10.10.
 
 ## Implemented contract
 
@@ -93,6 +93,8 @@ The JPEGs are Windows application-window captures at 1282×751 logical pixels be
 6. With residents selected, complete the natural-source, pile and another-Character target matrix. Exercise suitable Gather/Mine/Chop, Haul, Build and Inspect actions in addition to the already observed Move/Guard, and check all four screen edges rather than only the observed right edge.
 7. Force a critical hunger/rest condition through an accepted gameplay/test control, show that it delays and then resumes a queued manual command, and show that a protected carrying phase is not broken.
 8. Force Tier1→Tier2→Tier1 through an accepted gameplay/test control and prove selected stable identity plus queue order survive. Save/Load selection continuity through the normal UI is already visibly green; include queued-order continuity in the final route.
-9. Add the remaining screenshots/log/telemetry to `docs/validation/P103`, then mark P10.3 DONE and advance `NEXT_TASK` to P10.4.
+9. Add the remaining screenshots/log/telemetry to `docs/validation/P103`, then mark P10.3 DONE. Because D-141 already permits P10.4+ work, closing this debt does not rewind or invalidate later implementation.
 
-Do not start P10.4 until this route is complete. Preserve P10.2 p95 128.342 ms as P10.9 debt. P8.6/U29/U30/U31 remain unchanged.
+User sequencing decision D-141 allows P10.4 and later implementation to start before this route is complete. It does not waive any item above: P10.9/P10.10 cannot complete until the route is captured and P10.3 is honestly closed. Preserve P10.2 p95 128.342 ms as separate P10.9 debt. P8.6/U29/U30/U31 remain unchanged.
+
+This sequencing handoff is documentation-only. No Unity test, build or Player command was run after the previously recorded P10.3 results, and no P10.4 source/content change was made.
