@@ -1,6 +1,6 @@
 # Serenity Asset Registry
 
-Checked on 2026-10-15. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
+Checked on 2026-10-16. `Assets/Game/Art/ThirdParty` contains only explicitly selected source files. `Assets/Game/Art/Prefabs` contains Serenity-owned runtime wrappers. `serenity_games_assets` is an ignored download/staging area and is never a Unity asset root.
 
 Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`, `DEFERRED`, and `LICENSE_REVIEW_REQUIRED`. Visual grades are A (near-direct fit), B (fit after normalization), C (Tier 2/placeholder), D (style mismatch), and X (source/license blocked).
 
@@ -320,3 +320,11 @@ These remain in their original user-imported locations. Except for the deliberat
 - Vendor source assets remain untouched. Serenity gameplay and presentation prefabs live under `Assets/Game/Art/Prefabs` and may reference only selected, registered source content.
 - 1 Unity unit equals 1 meter. Importer scale is preferred; wrapper transforms handle only ground/attachment pivot alignment.
 - Addressables are not used in U05A. Build inclusion remains scene/reference driven.
+
+## P10 provenance freeze and production gap (2026-10-16)
+
+No external asset was imported for P10.1. New P10 production may consume only the previously approved Unity URP Terrain Sample 1.0.3 (Asset Store 213197) and UMA 3.1f3 (MIT, pinned commit `c92bf29f6f1c17c8bf05d6465288e76b2dfedd08`) without another user decision. Serenity-authored meshes, materials, textures, recipes, controllers and animations remain permitted. Any additional Asset Store/package/content source requires explicit approval before acquisition or import.
+
+The registered Hodaart and WizardHat content remains available to preserve existing runtime/regression paths, but it is legacy placeholder material and does not satisfy the P10 original soft-stylized Character target. This policy does not revoke its historical approval or delete any asset; it prevents a historical dependency from being treated as approval for new P10 art production.
+
+Current Character inventory is insufficient for final P10.5 acceptance: two detailed UMA Human 3.0 profiles share one project-owned Stone Age wardrobe direction; detailed projection is capped at eight; the mass path is one procedural humanoid LOD; and the active controller covers only Idle/Walking/Running. Missing accepted categories include broad face/hair/body/clothing variation, profession and military clothing, complete Character LODs, animals/fish, and chopping/mining/gathering/carrying/building/fishing/hunting/combat/sleep animation coverage. P10.5 must prototype these with approved/project-owned sources first and request a separately scoped source approval only if the target cannot be reached.

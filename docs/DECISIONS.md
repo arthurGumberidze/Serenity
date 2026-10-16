@@ -691,3 +691,33 @@ User authorization allowed acquiring needed assets, but no new external package 
 Detailed UMA generation is bounded to the existing eight-Character high-detail budget. The centralized aggregate renderer remains one draw path, but its capsule is replaced by a generated human-scale torso/head/limb/tunic mesh and non-metallic hide material; no per-NPC GameObject, coroutine or `Update` is introduced. Save/Load explicitly schedules UI Toolkit refresh/repaint passes so the 1600×900 text-clipping failure is no longer present in the captured post-Load frame.
 
 After visual inspection at both supported evidence sizes, `subjective_visual_acceptance` may be true independently of the technical flags. P9/P9.6 are DONE only because both fields and the wardrobe/clean-prefab assertions pass. This decision does not relax or resume P8.6/U29/U30/U31 and does not move canonical Character, work, resource, weather, clock, map or save authority into Presentation.
+
+## D-131 The explicit P10 contract supersedes conflicting product details without weakening architecture (2026-10-16)
+
+The user's P10 instruction and the answers in `1.docx` are the product authority where they are more specific than the FRS. P10 therefore requires one connected world at least ten times the current playable land, a same-world strategic view, reliable click/context control, nine resource types and universal accessible-resource affordances, industrial extraction, unified original soft-stylized Characters, constrained family presentation, military-only direct targeting, the explicit capture protocol and persistent diagnostic codes. Unaffected FRS requirements remain active.
+
+This does not move rules into MonoBehaviours or permit per-NPC loops. Canonical state remains keyed by `StableEntityId` in Domain/Simulation, definitions remain data-driven, and Tier 1/Tier 2/Tier 3 continue to be replaceable representations. P10.1 records requirements and evidence only; no P10.2+ gameplay feature is implemented by this decision.
+
+## D-132 P10 uses one world authority and a universal resource-affordance audit (2026-10-16)
+
+The current 128 m Terrain and additive schematic GlobalMap are not the P10 world model. P10.2 will provide a ≥512×512 m Terrain footprint and automatically prove ≥163,840 m² of connected accessible dry land, using 2 m sampling and explicit water/slope/NavMesh criteria. Strategic mode is a camera/LOD/overlay over that same coordinate space and identities, not a second canonical map. The six current `WorldLocationId` values remain append-only anchors within the expanded layout.
+
+Every renderer classified as a resource-like object on accessible land must resolve to a canonical affordance or an explicit unavailable reason. Decorative objects may not visually promise a resource interaction; a scene audit enforces this. Small sources use 20–50 units and deterministic 15-day free-space respawn, while industrial deposits require built extractors. Seven current catalog types are retained, `meat` and `fish` are appended, and animal sources also provide existing `hide`. Seven workers must produce exactly seven times a controlled one-worker operation before travel/haul effects.
+
+## D-133 P10 saves intentionally fork from the v19 P9 world (2026-10-16)
+
+The current `SaveSnapshot.CurrentVersion` is 19. The first P10 task that commits connected-world state increments the schema to v20 or later, persists `worldGenerationId = p10-connected-world-v1` and writes to a distinct P10 slot namespace. Formats v1–v19 are shown only as read-only P9 archive metadata and are excluded from Continue; there is no automatic migration or overwrite. An explicit future import experiment may be designed separately, but failed or lossy inference is never part of ordinary Load.
+
+This incompatibility is user-approved because the P10 world, ecology, housing, capture and cheat state change the game contract. P9 files remain physically untouched until the user explicitly deletes or archives them. The first cheat use permanently persists `cheatsUsed=true` and disables achievements for that P10 save.
+
+## D-134 P10 freezes new external provenance and exposes the Character production gap (2026-10-16)
+
+New P10 work may use only the already approved Unity URP Terrain Sample 1.0.3 and UMA 3.1f3 as external sources, plus Serenity-authored assets. Existing Hodaart/WizardHat content remains registered historical runtime/placeholder material, but it is not a blanket approval for the new P10 target style. Any other Asset Store/package/content source requires separate user approval before import.
+
+The present Character boundary has two detailed UMA profiles, one Stone Age wardrobe family, a clean prefab, an eight-character detail budget, one procedural humanoid mass LOD and only Idle/Walking/Running in the active controller. It lacks accepted mass variety, military/profession clothing, a complete LOD chain, animals/fish and the work/combat/domestic animation set. P10.5 must first prove a small Player benchmark from approved/project-owned sources; if that cannot meet the target, it reports exact missing categories and waits for approval instead of silently adding a dependency.
+
+## D-135 P10 stages are sequential and legacy qualification statuses remain independent (2026-10-16)
+
+P10 runs strictly P10.1 through P10.10. P10.2 owns the connected world; P10.3 control/queues; P10.4 ecology and industry; P10.5 Character/animation production; P10.6 home/family/save fork; P10.7 military/capture; P10.8 diagnostics; P10.9 integration/performance; and P10.10 final product acceptance. Each stage needs its own tests, build, normal Player evidence, handoff and task-prefixed commit before the next starts.
+
+P10 evidence may reveal or reduce old debt but cannot silently relabel P8.6, U29, U30 or U31. They remain PARTIAL, PARTIAL, IN_PROGRESS and BLOCKED unless their original gates are completed or the user makes an explicit status decision. The P10.9 p95 ≤33.33 ms requirement at 1920×1080 is a new feature-complete product gate, not retroactive proof for U29 or U30.
