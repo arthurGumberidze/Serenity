@@ -44,7 +44,8 @@ namespace Game.Infrastructure
                 new XElement("paused", snapshot.IsPaused),
                 new XElement("biologicalMultiplier", snapshot.BiologicalMultiplier));
             if (snapshot.FormatVersion >= SaveSnapshot.ProductionVersion)
-                root.Add(SerializeProduction(snapshot.Production));
+                root.Add(SerializeProduction(snapshot.Production,
+                    snapshot.FormatVersion >= SaveSnapshot.ResourceIndustryVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.ResearchVersion)
                 root.Add(SerializeResearch(snapshot.Research));
             if (snapshot.FormatVersion >= SaveSnapshot.DynastyVersion)
@@ -115,11 +116,13 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.OccupationVersion && version != SaveSnapshot.WorkVersion &&
                         version != SaveSnapshot.AppearanceEditorVersion &&
                         version != SaveSnapshot.ConnectedWorldVersion &&
+                        version != SaveSnapshot.ContextOrdersVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
-                        ? DeserializeProduction(root.Element("production")) : null;
+                        ? DeserializeProduction(root.Element("production"),
+                            version >= SaveSnapshot.ResourceIndustryVersion) : null;
                     var research = version >= SaveSnapshot.ResearchVersion
                         ? DeserializeResearch(root.Element("research")) : null;
                     var dynastyWorld = version >= SaveSnapshot.DynastyVersion
@@ -168,7 +171,7 @@ namespace Game.Infrastructure
             }
         }
 
-        private static XElement SerializeProduction(ProductionSaveState state)
+        private static XElement SerializeProduction(ProductionSaveState state, bool includeNaturalResources)
         {
             var element = new XElement("production");
             if (state == null) return element;
@@ -192,6 +195,26 @@ namespace Game.Infrastructure
                     new XElement("required", task.RequiredWorkTicks), new XElement("status", (int)task.Status)))),
                 new XElement("producedTotals", state.ProducedTotals.Select(SerializeAmount)),
                 new XElement("inventories", state.Inventories.Select(SerializeInventory)));
+            if (includeNaturalResources)
+            {
+                element.Add(new XElement("naturalLifecycles", state.NaturalLifecycles.Select(item =>
+                    new XElement("node", new XElement("siteId", item.SiteId.ToString()),
+                        new XElement("biome", (int)item.Biome),
+                        new XElement("depletedAt", item.DepletedAtTick),
+                        new XElement("respawnAttempt", item.RespawnAttempt)))));
+                element.Add(new XElement("industry", (state.Industry?.Zones ?? Array.Empty<IndustrialZoneState>())
+                    .Select(zone => new XElement("zone", new XElement("id", zone.Id.ToString()),
+                        new XElement("definitionId", zone.DefinitionId),
+                        new XElement("x", XmlConvert.ToString(zone.Position.X)),
+                        new XElement("y", XmlConvert.ToString(zone.Position.Y)),
+                        new XElement("z", XmlConvert.ToString(zone.Position.Z)),
+                        new XElement("remaining", zone.Remaining),
+                        new XElement("facilityBuilt", zone.FacilityBuilt),
+                        new XElement("storageId", zone.StorageId.IsValid ? zone.StorageId.ToString() : string.Empty),
+                        new XElement("restorativeInstalled", zone.RestorativeInstalled),
+                        new XElement("extractionRemainder", zone.ExtractionRemainder),
+                        new XElement("restorationRemainder", zone.RestorationRemainder)))));
+            }
             return element;
         }
 
@@ -204,7 +227,7 @@ namespace Game.Infrastructure
         private static XElement SerializeAmount(ResourceAmount amount) => new XElement("amount",
             new XElement("resourceId", amount.ResourceId.ToString()), new XElement("quantity", amount.Quantity.Units));
 
-        private static ProductionSaveState DeserializeProduction(XElement element)
+        private static ProductionSaveState DeserializeProduction(XElement element, bool includeNaturalResources)
         {
             if (element == null) throw new FormatException("Missing production state.");
             if (!element.HasElements)
@@ -212,8 +235,10 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty production state.");
                 return null;
             }
-            RequireFields(element, new[] { "lastCalendarTick", "foodRemainderTicks", "foodConsumed", "foodShortage",
-                "targets", "sites", "tasks", "producedTotals", "inventories" });
+            var fields = new List<string> { "lastCalendarTick", "foodRemainderTicks", "foodConsumed", "foodShortage",
+                "targets", "sites", "tasks", "producedTotals", "inventories" };
+            if (includeNaturalResources) fields.AddRange(new[] { "naturalLifecycles", "industry" });
+            RequireFields(element, fields.ToArray());
             var targets = Items(element.Element("targets"), "target", item =>
             {
                 RequireFields(item, new[] { "resourceId", "value" });
@@ -249,8 +274,34 @@ namespace Game.Infrastructure
                     StableEntityId.Parse(Value(item, "ownerId"))), Long(item, "capacity"),
                     acceptsAll ? null : categories, amounts);
             });
+            var natural = includeNaturalResources
+                ? Items(element.Element("naturalLifecycles"), "node", item =>
+                {
+                    RequireFields(item, new[] { "siteId", "biome", "depletedAt", "respawnAttempt" });
+                    return new NaturalNodeLifecycleState(StableEntityId.Parse(Value(item, "siteId")),
+                        (NaturalResourceBiome)Int(item, "biome"), Long(item, "depletedAt"),
+                        Int(item, "respawnAttempt"));
+                })
+                : Array.Empty<NaturalNodeLifecycleState>();
+            var industry = includeNaturalResources
+                ? new IndustrialSaveState(Items(element.Element("industry"), "zone", item =>
+                {
+                    RequireFields(item, new[] { "id", "definitionId", "x", "y", "z", "remaining",
+                        "facilityBuilt", "storageId", "restorativeInstalled", "extractionRemainder",
+                        "restorationRemainder" });
+                    var storageText = Value(item, "storageId");
+                    var storageId = string.IsNullOrEmpty(storageText) ? default : StableEntityId.Parse(storageText);
+                    return new IndustrialZoneState(StableEntityId.Parse(Value(item, "id")),
+                        Value(item, "definitionId"), new WorldPosition(XmlConvert.ToSingle(Value(item, "x")),
+                            XmlConvert.ToSingle(Value(item, "y")), XmlConvert.ToSingle(Value(item, "z"))),
+                        Long(item, "remaining"), XmlConvert.ToBoolean(Value(item, "facilityBuilt")), storageId,
+                        XmlConvert.ToBoolean(Value(item, "restorativeInstalled")), Long(item, "extractionRemainder"),
+                        Long(item, "restorationRemainder"));
+                }))
+                : null;
             return new ProductionSaveState(Long(element, "lastCalendarTick"), Long(element, "foodRemainderTicks"),
-                Long(element, "foodConsumed"), Long(element, "foodShortage"), targets, sites, tasks, produced, inventories);
+                Long(element, "foodConsumed"), Long(element, "foodShortage"), targets, sites, tasks, produced,
+                inventories, natural, industry);
         }
 
         private static ResourceAmount DeserializeAmount(XElement item)
@@ -1036,7 +1087,7 @@ namespace Game.Infrastructure
                                 new XElement("locationId", x.TargetLocationId.HasValue ? x.TargetLocationId.Value.ToString() : string.Empty),
                                 new XElement("unitId", x.UnitId.HasValue ? x.UnitId.Value.ToString() : string.Empty))))),
                         SerializeAiDynasty(faction.Dynasty), SerializeResearch(faction.Research),
-                        SerializeProduction(faction.Production),
+                        SerializeProduction(faction.Production, false),
                         new XElement("worldPiles", faction.WorldPiles.Select(value => new XElement("pile",
                             new XElement("id", value.Id.ToString()),
                             new XElement("resourceId", value.ResourceId.ToString()),
@@ -1094,7 +1145,7 @@ namespace Game.Infrastructure
                         new GridCoordinate(Int(pile, "x"), Int(pile, "z"), Int(pile, "level")));
                 });
                 return new AiFactionSaveState(strategic, DeserializeAiDynasty(item.Element("dynasty")),
-                    DeserializeResearch(item.Element("research")), DeserializeProduction(item.Element("production")), piles);
+                    DeserializeResearch(item.Element("research")), DeserializeProduction(item.Element("production"), false), piles);
             });
             return new AiStrategicSaveState(Long(element, "worldSeed"), Long(element, "lastProcessedTick"), factions);
         }

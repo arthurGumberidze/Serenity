@@ -153,14 +153,17 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Production.GetCanonicalTotal(fixture.Stone), Is.EqualTo(4));
         }
 
-        [Test] public void ReservationPreventsTwoWorkersClaimingLastBatch()
+        [Test] public void ConcurrentWorkersMayReserveOneSourceButCannotOverHarvestLastBatch()
         {
             var fixture = new Fixture(targets: new[] { new ResourceStockTarget(new ResourceId("plant_fiber"), 100) });
             var first = fixture.AddWorker(101);
             var second = fixture.AddWorker(102);
             fixture.AddNatural("gather_fiber", 13, 1);
-            Assert.That(fixture.Production.TryReserve(first, default, out _), Is.True);
-            Assert.That(fixture.Production.TryReserve(second, default, out _), Is.False);
+            Assert.That(fixture.Production.TryReserve(first, default, out var firstJob), Is.True);
+            Assert.That(fixture.Production.TryReserve(second, default, out var secondJob), Is.True);
+            Assert.That(fixture.Production.AdvanceTask(firstJob.Task.Id, TimeSpan.FromHours(6)).Completed, Is.True);
+            Assert.That(fixture.Production.AdvanceTask(secondJob.Task.Id, TimeSpan.FromHours(6)).Completed, Is.False);
+            Assert.That(fixture.Production.GetProducedTotal(fixture.Fiber), Is.EqualTo(4));
         }
 
         [Test] public void FoodConsumptionNeverGoesNegativeAndReportsShortage()

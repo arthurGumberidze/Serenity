@@ -17,6 +17,7 @@ namespace Game.Presentation.Production
         private Color activeColor;
         private bool? displayedDepleted;
         private bool isSelected;
+        private bool preserveAuthoredColor;
 
         public ProductionSite Site => site;
         public bool IsBound => site != null;
@@ -24,12 +25,13 @@ namespace Game.Presentation.Production
         public long RemainingAmount => site?.RemainingAmount ?? 0;
         public long SourceCapacity => site?.SourceCapacity ?? 0;
 
-        public void Bind(ProductionSite productionSite, Color color)
+        public void Bind(ProductionSite productionSite, Color color, bool preserveColor = false)
         {
             site = productionSite ?? throw new ArgumentNullException(nameof(productionSite));
             activeColor = color;
+            preserveAuthoredColor = preserveColor;
             cachedRenderers = GetComponentsInChildren<Renderer>(true);
-            gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
+            if (!preserveColor) gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(site.Id, ContextTargetKind.ResourceSource);
             Refresh();
@@ -44,6 +46,11 @@ namespace Game.Presentation.Production
             var color = site.IsDepleted ? Color.gray : isSelected ? Color.Lerp(activeColor, Color.white, 0.55f) : activeColor;
             foreach (var renderer in cachedRenderers)
             {
+                if (preserveAuthoredColor && !site.IsDepleted && !isSelected)
+                {
+                    renderer.SetPropertyBlock(null);
+                    continue;
+                }
                 renderer.GetPropertyBlock(propertyBlock);
                 propertyBlock.SetColor("_BaseColor", color);
                 propertyBlock.SetColor("_Color", color);

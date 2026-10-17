@@ -34,3 +34,9 @@ MonoBehaviour:
   - id: gold_ore
     displayName: Gold Ore
     category: 0
+  - id: meat
+    displayName: Meat
+    category: 1
+  - id: fish
+    displayName: Fish
+    category: 1

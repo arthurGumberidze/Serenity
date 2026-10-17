@@ -21,7 +21,7 @@ namespace Game.Infrastructure
             var world = FindAnyObjectByType<P102ConnectedWorldPresentation>();
             if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
             strategicView = gameObject.AddComponent<P102StrategicWorldView>();
-            strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld);
+            strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld, root.Production);
         }
 
         public void RequestEnterGlobal()

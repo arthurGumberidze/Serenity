@@ -112,6 +112,9 @@ namespace Game.Domain.Production
             var stone = new ResourceId("stone");
             var iron = new ResourceId("iron_ore");
             var gold = new ResourceId("gold_ore");
+            var hide = new ResourceId("hide");
+            var meat = new ResourceId("meat");
+            var fish = new ResourceId("fish");
             var recipes = new List<ProductionRecipe>
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
@@ -138,6 +141,15 @@ namespace Game.Domain.Production
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_gold"), "Gather Gold Ore", null,
                     new[] { new ResourceAmount(gold, new ResourceQuantity(2)) }, TimeSpan.FromHours(16), ProductionSiteKind.NaturalSource,
                     weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(hide) && resources.Contains(meat))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
+                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
+                        new ResourceAmount(meat, new ResourceQuantity(4)) }, TimeSpan.FromHours(12),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(fish))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_water"), "Fish Water", null,
+                    new[] { new ResourceAmount(fish, new ResourceQuantity(4)) }, TimeSpan.FromHours(8),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
             return new ProductionCatalog(recipes, resources);
         }
     }
@@ -195,7 +207,7 @@ namespace Game.Domain.Production
         public StableEntityId Id { get; }
         public ProductionRecipeId RecipeId { get; }
         public ProductionSiteKind Kind { get; }
-        public WorldPosition Position { get; }
+        public WorldPosition Position { get; private set; }
         public long RemainingAmount { get; private set; }
         public long SourceCapacity { get; }
         public CropPlotPhase CropPhase { get; private set; }
@@ -252,6 +264,15 @@ namespace Game.Domain.Production
             if (Kind != ProductionSiteKind.PrimitiveCropPlot || CropPhase != CropPlotPhase.Growing || ticks == 0) return;
             GrowthProgressTicks = Math.Min(GrowthRequiredTicks, checked(GrowthProgressTicks + ticks));
             if (GrowthProgressTicks >= GrowthRequiredTicks) CropPhase = CropPlotPhase.Ready;
+        }
+
+        public void RespawnNatural(WorldPosition position, long amount)
+        {
+            if (Kind != ProductionSiteKind.NaturalSource)
+                throw new InvalidOperationException("Only natural sources can respawn.");
+            if (amount <= 0 || amount > SourceCapacity) throw new ArgumentOutOfRangeException(nameof(amount));
+            Position = position;
+            RemainingAmount = amount;
         }
 
         public ProductionSiteState CaptureState() => new ProductionSiteState(Id, RecipeId, Kind, Position,
@@ -364,7 +385,9 @@ namespace Game.Domain.Production
         public ProductionSaveState(long lastCalendarTick, long foodRemainderTicks, long foodConsumed,
             long foodShortage, IEnumerable<ResourceStockTarget> targets, IEnumerable<ProductionSiteState> sites,
             IEnumerable<ProductionTaskState> tasks, IEnumerable<ResourceAmount> producedTotals,
-            IEnumerable<ResourceInventoryState> inventories)
+            IEnumerable<ResourceInventoryState> inventories,
+            IEnumerable<NaturalNodeLifecycleState> naturalLifecycles = null,
+            IndustrialSaveState industry = null)
         {
             if (lastCalendarTick < 0 || foodRemainderTicks < 0 || foodConsumed < 0 || foodShortage < 0)
                 throw new ArgumentOutOfRangeException(nameof(lastCalendarTick));
@@ -378,6 +401,9 @@ namespace Game.Domain.Production
             ProducedTotals = Array.AsReadOnly((producedTotals ?? Array.Empty<ResourceAmount>()).OrderBy(x => x.ResourceId).ToArray());
             Inventories = Array.AsReadOnly((inventories ?? Array.Empty<ResourceInventoryState>())
                 .OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id).ToArray());
+            NaturalLifecycles = Array.AsReadOnly((naturalLifecycles ?? Array.Empty<NaturalNodeLifecycleState>())
+                .OrderBy(x => x.SiteId).ToArray());
+            Industry = industry;
         }
 
         public long LastCalendarTick { get; }
@@ -389,5 +415,7 @@ namespace Game.Domain.Production
         public IReadOnlyList<ProductionTaskState> Tasks { get; }
         public IReadOnlyList<ResourceAmount> ProducedTotals { get; }
         public IReadOnlyList<ResourceInventoryState> Inventories { get; }
+        public IReadOnlyList<NaturalNodeLifecycleState> NaturalLifecycles { get; }
+        public IndustrialSaveState Industry { get; }
     }
 }

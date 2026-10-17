@@ -104,6 +104,16 @@ namespace Game.Simulation.Resources
             return pile;
         }
 
+        public WorldResourcePile RegisterExistingInventory(ResourceId resourceId, GridCoordinate coordinate,
+            StableEntityId stableId)
+        {
+            catalog.Get(resourceId);
+            var pile = WorldResourcePile.CreateWithId(stableId, resourceId, coordinate);
+            if (!inventories.TryGet(pile.InventoryOwner, out _) || !piles.TryAdd(stableId, pile))
+                throw new InvalidOperationException("Industrial pile requires one existing canonical inventory and unique identity.");
+            return pile;
+        }
+
         public IReadOnlyList<WorldResourcePile> SpillStorage(StableEntityId buildingId, GridCoordinate coordinate)
         {
             if (!buildingId.IsValid) throw new ArgumentException("Building identity required.", nameof(buildingId));

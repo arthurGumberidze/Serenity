@@ -94,7 +94,8 @@ namespace Game.Tests.Editor
             Assert.That(SaveSnapshot.AppearanceEditorVersion, Is.EqualTo(19));
             Assert.That(SaveSnapshot.ConnectedWorldVersion, Is.EqualTo(20));
             Assert.That(SaveSnapshot.ContextOrdersVersion, Is.EqualTo(21));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.ContextOrdersVersion));
+            Assert.That(SaveSnapshot.ResourceIndustryVersion, Is.EqualTo(22));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.ResourceIndustryVersion));
         }
 
         private sealed class Owner : IExternalCharacterActivityOwner

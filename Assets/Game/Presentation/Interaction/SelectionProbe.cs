@@ -38,6 +38,7 @@ namespace Game.Presentation.Interaction
         public WorldResourcePilePresenter SelectedWorldResourcePilePresenter { get; private set; }
         public BuildingPresenter SelectedBuildingPresenter { get; private set; }
         public ProductionSourcePresenter SelectedProductionSourcePresenter { get; private set; }
+        public StableWorldHitProxy HoveredProxy => hoveredProxy;
         public StableEntityId? SelectedCharacterId => SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
             ? SelectedCharacterPresenter.CharacterId
             : selectedCharacterIds.OrderBy(x => x.ToString(), StringComparer.Ordinal).Cast<StableEntityId?>().LastOrDefault();
@@ -244,6 +245,10 @@ namespace Game.Presentation.Interaction
 
         public void SelectProductionSource(ProductionSourcePresenter presenter) =>
             SetSelection(null, productionPresenter: presenter,
+                proxy: presenter != null ? presenter.GetComponent<StableWorldHitProxy>() : null);
+
+        public void SelectWorldResourcePile(WorldResourcePilePresenter presenter) =>
+            SetSelection(null, pilePresenter: presenter,
                 proxy: presenter != null ? presenter.GetComponent<StableWorldHitProxy>() : null);
 
         private void ClearNonCharacterSelection()

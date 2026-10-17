@@ -2,6 +2,8 @@
 
 Active task: **P10.4 — «Природные ресурсы и промышленная добыча»**.
 
+Checkpoint status: **PARTIAL (2026-10-17)**. Implementation and focused tests are present, but P10.4 stays active. Do not start P10.5 until `docs/P104_HANDOFF.md` is completed: write build provenance, make the affected U15 physical-walk regression green, and capture saved normal visible D3D11 evidence for the complete natural-resource and industrial route with a clean exit. The currently observed Player subset (nine-resource HUD, nine fog-gated strategic filters and a revealed quantity marker) is useful evidence but not the full acceptance gate; its Alt+F4 shutdown ended in a native UnityPlayer/UIAutomation crash recorded in `Artifacts/P104/player-retry/Player.log`.
+
 The user explicitly authorized continuing P10.4 and later P10 stages while P10.3 remains PARTIAL. This is a sequencing exception only: the unobserved P10.3 physical Shift-click/Shift-command, slow multi-frame drag, needs/protected-carry resume, Tier1→Tier2→Tier1 and remaining target/action matrix stay mandatory debt. They must be completed no later than P10.9/P10.10 and cannot be treated as passes meanwhile. See D-141 and `docs/P103_HANDOFF.md`.
 
 Source contract: `docs/P101_REQUIREMENTS_AND_TECHNICAL_BASELINE.md`, especially §2.3 and the P10.4 acceptance matrix. Start from the committed P10.3 implementation/provenance baseline while preserving its explicit PARTIAL evidence boundary. Work only on P10.4; do not begin Character production, family, military capture, cheats or final integration work owned by P10.5–P10.10.

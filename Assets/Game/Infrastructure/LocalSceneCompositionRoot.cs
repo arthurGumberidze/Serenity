@@ -140,6 +140,8 @@ namespace Game.Infrastructure
         public OffCameraSimulationService OffCameraSimulation { get; private set; }
         public Tier3CharacterAdapter Tier3Adapter { get; private set; }
         public ProductionService Production { get; private set; }
+        public ResourceEcologyService ResourceEcology { get; private set; }
+        public IndustrialExtractionService Industry { get; private set; }
         public ProductionCatalog ProductionRecipes { get; private set; }
         public TechnologyCatalog Technologies { get; private set; }
         public ResearchService Research { get; private set; }
@@ -215,6 +217,7 @@ namespace Game.Infrastructure
         private long tier3WorkerCacheRevision = -1;
         private long nextWeatherRosterRefreshTick;
         private float nextTierPolicyRefreshTime;
+        private P104ResourceRespawnSurface resourceRespawnSurface;
 
         public void Configure(LocalGameplayInputSource inputSource, RtsCameraController controller,
             WorldPointerRaycaster raycaster, SelectionProbe selection, CharacterPresentationCatalog catalog,
@@ -338,8 +341,16 @@ namespace Game.Infrastructure
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
             Production.Population = Characters.Count;
+            ResourceEcology = new ResourceEcologyService();
+            Industry = new IndustrialExtractionService(Resources, Inventories, CreateIndustrialDefinitions());
+            Production.AttachNaturalResources(ResourceEcology, Industry);
             SpawnRegionProductionSources();
+            SpawnP104NaturalSources();
+            SpawnP104IndustrialZones();
+            BindPopulatedWorldAffordances();
+            resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
+            gameObject.AddComponent<P104ResourceHoverLabel>().Initialize(selectionProbe, Production);
 
             Clock = new GameClock(new GameTimeState(0, Character.BiologicalTicksPerYear * 20L, 1, false));
             Dynasty = DynastyState.Restore(NewGame.Dynasty);
@@ -597,6 +608,7 @@ namespace Game.Infrastructure
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             Production.AdvanceTo(targetCalendarTick, abstractWorkerBuffer);
+            ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             WeatherPresentation.Refresh(targetCalendarTick);
@@ -878,9 +890,115 @@ namespace Game.Infrastructure
                 new Color(0.45f, 0.45f, 0.48f), 3, null, PrimitiveType.Sphere);
         }
 
+        private IndustrialZoneDefinition[] CreateIndustrialDefinitions()
+        {
+            ResourceAmount Cost(string id, long units) =>
+                new ResourceAmount(new ResourceId(id), new ResourceQuantity(units));
+            ResourceAmount Output(string id, long units) =>
+                new ResourceAmount(new ResourceId(id), new ResourceQuantity(units));
+            var industrial = new TechnologyId("industrial_extraction");
+            var restorative = new TechnologyId("restorative_mining");
+            return new[]
+            {
+                new IndustrialZoneDefinition("forest_workshop", IndustrialFacilityKind.Workshop,
+                    NaturalResourceBiome.Forest, new[] { Cost("wood_log", 8), Cost("plant_fiber", 4) },
+                    new[] { Output("wood_log", 4) }, 500, 7, TimeSpan.FromHours(8), industrial),
+                new IndustrialZoneDefinition("stone_quarry", IndustrialFacilityKind.Quarry,
+                    NaturalResourceBiome.Rocky, new[] { Cost("wood_log", 10), Cost("stone", 6) },
+                    new[] { Output("stone", 4) }, 500, 7, TimeSpan.FromHours(10), industrial),
+                new IndustrialZoneDefinition("iron_mine", IndustrialFacilityKind.Mine,
+                    NaturalResourceBiome.Mountain, new[] { Cost("wood_log", 12), Cost("stone", 10) },
+                    new[] { Output("iron_ore", 3) }, 420, 7, TimeSpan.FromHours(12), industrial,
+                    restorative, 2),
+                new IndustrialZoneDefinition("gold_mine", IndustrialFacilityKind.Mine,
+                    NaturalResourceBiome.Mountain, new[] { Cost("wood_log", 14), Cost("stone", 12) },
+                    new[] { Output("gold_ore", 2) }, 300, 7, TimeSpan.FromHours(16), industrial,
+                    restorative, 1),
+                new IndustrialZoneDefinition("lake_fishing", IndustrialFacilityKind.FishingStation,
+                    NaturalResourceBiome.Lake, new[] { Cost("wood_log", 10), Cost("plant_fiber", 6) },
+                    new[] { Output("fish", 4) }, 500, 7, TimeSpan.FromHours(8), industrial),
+                new IndustrialZoneDefinition("animal_hunting", IndustrialFacilityKind.HuntingLodge,
+                    NaturalResourceBiome.AnimalRange, new[] { Cost("wood_log", 10), Cost("hide", 4) },
+                    new[] { Output("meat", 4) }, 400, 7, TimeSpan.FromHours(12), industrial)
+            };
+        }
+
+        private void SpawnP104NaturalSources()
+        {
+            SpawnProductionSource("hunt_animal", 36, new WorldPosition(-78f, 5f, 154f),
+                new Color(0.45f, 0.22f, 0.12f), 24, null, PrimitiveType.Capsule);
+            SpawnProductionSource("fish_water", 42, new WorldPosition(58f, 0.35f, 132f),
+                new Color(0.12f, 0.62f, 0.82f), 25, null, PrimitiveType.Cylinder);
+        }
+
+        private void SpawnP104IndustrialZones()
+        {
+            var definitions = new[] { "forest_workshop", "stone_quarry", "iron_mine", "gold_mine",
+                "lake_fishing", "animal_hunting" };
+            var resources = new[] { "wood_log", "stone", "iron_ore", "gold_ore", "fish", "meat" };
+            var points = new[] { new Vector3(-112f, 0f, 142f), new Vector3(124f, 0f, 146f),
+                new Vector3(192f, 0f, -62f), new Vector3(154f, 0f, -118f),
+                new Vector3(72f, 0f, 132f), new Vector3(-96f, 0f, 104f) };
+            var colors = new[] { new Color(0.25f,0.42f,0.14f), new Color(0.45f,0.47f,0.5f),
+                new Color(0.38f,0.25f,0.18f), new Color(0.85f,0.62f,0.12f),
+                new Color(0.08f,0.48f,0.72f), new Color(0.55f,0.22f,0.12f) };
+            for (var i = 0; i < definitions.Length; i++)
+            {
+                var position = resources[i] == "fish" ? points[i] : ProjectToGameplayGround(points[i]);
+                var id = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "p104_industrial_zone", i);
+                Industry.AddZone(id, definitions[i], new WorldPosition(position.x, position.y, position.z));
+                var pile = WorldPiles.RegisterExistingInventory(new ResourceId(resources[i]),
+                    new GridCoordinate(Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.z)), id);
+                var marker = GameObject.CreatePrimitive(i == 4 ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+                marker.name = "P10.4 Industrial Zone " + definitions[i];
+                marker.transform.position = position + Vector3.up * 0.65f;
+                marker.transform.localScale = i == 4 ? new Vector3(2.8f, 0.3f, 2.8f) : new Vector3(2.4f, 1.2f, 2.4f);
+                var renderer = marker.GetComponent<Renderer>();
+                var block = new MaterialPropertyBlock(); renderer.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", colors[i]); block.SetColor("_Color", colors[i]); renderer.SetPropertyBlock(block);
+                var presenter = marker.AddComponent<WorldResourcePilePresenter>();
+                presenter.Bind(pile, Inventories.Get(pile.InventoryOwner));
+                demoPilePresenters.Add(presenter);
+            }
+        }
+
+        private void BindPopulatedWorldAffordances()
+        {
+            if (PopulatedBiomeWorld == null) return;
+            var woodSites = Production.Sites.Where(x => x.RecipeId == new ProductionRecipeId("chop_wood")).ToArray();
+            var rockSites = Production.Sites.Where(x => x.RecipeId == new ProductionRecipeId("gather_stone") ||
+                x.RecipeId == new ProductionRecipeId("gather_iron") ||
+                x.RecipeId == new ProductionRecipeId("gather_gold")).ToArray();
+            BindAffordances(PopulatedBiomeWorld.CanopyTrees, woodSites, new Color(0.32f, 0.22f, 0.08f));
+            BindAffordances(PopulatedBiomeWorld.MajorRocks, rockSites, new Color(0.5f, 0.5f, 0.52f));
+            foreach (var formation in PopulatedBiomeWorld.ResourceFormations)
+            {
+                var id = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", formation.StableIndex);
+                if (!Production.TryGetSite(id, out var site)) continue;
+                BindAffordances(formation.DecorativeSatellites, new[] { site }, Color.white);
+            }
+        }
+
+        private void BindAffordances(IEnumerable<GameObject> objects, IReadOnlyList<ProductionSite> sites, Color color)
+        {
+            if (sites == null || sites.Count == 0) return;
+            foreach (var value in objects.Where(x => x != null))
+            {
+                var point = value.transform.position;
+                var site = sites.OrderBy(x => (x.Position.X - point.x) * (x.Position.X - point.x) +
+                    (x.Position.Z - point.z) * (x.Position.Z - point.z)).ThenBy(x => x.Id).First();
+                if (value.GetComponentInChildren<Collider>(true) == null)
+                    value.AddComponent<BoxCollider>();
+                var presenter = value.GetComponent<ProductionSourcePresenter>() ?? value.AddComponent<ProductionSourcePresenter>();
+                presenter.Bind(site, color, true);
+                if (!productionPresenters.Contains(presenter)) productionPresenters.Add(presenter);
+            }
+        }
+
         private void SpawnProductionSource(string recipeId, long amount, WorldPosition position, Color color,
             int index, GameObject authoredView, PrimitiveType fallbackPrimitive = PrimitiveType.Sphere)
         {
+            amount = 20 + Math.Abs(index * 17 + 11) % 31;
             var site = ProductionSite.Restore(new ProductionSiteState(
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", index),
                 new ProductionRecipeId(recipeId), ProductionSiteKind.NaturalSource, position, amount, amount,
@@ -896,7 +1014,31 @@ namespace Game.Infrastructure
             var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, color);
             productionPresenters.Add(presenter);
+            var biome = BiomeForRecipe(recipeId);
+            ResourceEcology.Register(new NaturalNodeRegistration(site, biome, RespawnCandidates(position)));
         }
+
+        private static NaturalResourceBiome BiomeForRecipe(string recipeId)
+        {
+            if (recipeId == "chop_wood") return NaturalResourceBiome.Forest;
+            if (recipeId == "gather_stone") return NaturalResourceBiome.Rocky;
+            if (recipeId == "gather_iron" || recipeId == "gather_gold") return NaturalResourceBiome.Mountain;
+            if (recipeId == "fish_water") return NaturalResourceBiome.Lake;
+            if (recipeId == "hunt_animal") return NaturalResourceBiome.AnimalRange;
+            if (recipeId == "gather_fiber") return NaturalResourceBiome.Wetland;
+            return NaturalResourceBiome.Meadow;
+        }
+
+        private static WorldPosition[] RespawnCandidates(WorldPosition origin) => new[]
+        {
+            origin,
+            new WorldPosition(origin.X + 4f, origin.Y, origin.Z),
+            new WorldPosition(origin.X - 4f, origin.Y, origin.Z),
+            new WorldPosition(origin.X, origin.Y, origin.Z + 4f),
+            new WorldPosition(origin.X, origin.Y, origin.Z - 4f),
+            new WorldPosition(origin.X + 3f, origin.Y, origin.Z + 3f),
+            new WorldPosition(origin.X - 3f, origin.Y, origin.Z - 3f)
+        };
 
         private void RebindRegionResourcePresenters()
         {

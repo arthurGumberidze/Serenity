@@ -42,7 +42,8 @@ namespace Game.Domain
         public const int AppearanceEditorVersion = 19;
         public const int ConnectedWorldVersion = 20;
         public const int ContextOrdersVersion = 21;
-        public const int CurrentVersion = ContextOrdersVersion;
+        public const int ResourceIndustryVersion = 22;
+        public const int CurrentVersion = ResourceIndustryVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -86,7 +87,7 @@ namespace Game.Domain
                 formatVersion != EventVersion && formatVersion != CampaignVersion &&
                 formatVersion != AppearanceVersion && formatVersion != OccupationVersion &&
                 formatVersion != WorkVersion && formatVersion != AppearanceEditorVersion &&
-                formatVersion != ConnectedWorldVersion &&
+                formatVersion != ConnectedWorldVersion && formatVersion != ContextOrdersVersion &&
                 formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));

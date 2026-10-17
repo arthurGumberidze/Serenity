@@ -23,6 +23,7 @@ using Game.Presentation.Localization;
 using Game.Presentation.Resources;
 using Game.Simulation.Control;
 using Game.Simulation.Military;
+using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Time;
 using Game.Simulation.Events;
@@ -992,8 +993,6 @@ namespace Game.Presentation.UI
             var clock = context.Clock();
             var alive = PlayerAliveCount();
             resourcesLabel.text = F("ui.hud.population", alive) + "   " + string.Join("   ", context.Resources.All
-                .Where(x => x.Id.ToString() == "berries" || x.Id.ToString() == "wood_log" ||
-                            x.Id.ToString() == "stone" || x.Id.ToString() == "plant_fiber" || x.Id.ToString() == "hide")
                 .Select(x => Content("resource", x.Id.ToString()) + " " + TotalResource(x.Id)));
             var ticks = clock.State.CalendarTicks;
             dateLabel.text = F("ui.hud.date", GameCalendar.Year(ticks), GameCalendar.DayOfYear(ticks),
@@ -1591,6 +1590,11 @@ namespace Game.Presentation.UI
             var pile = context.Selection.SelectedWorldResourcePilePresenter;
             if (pile != null)
             {
+                if (context.Production.Industry != null && context.Production.Industry.TryGetZone(pile.PileId, out var zone))
+                {
+                    DrawIndustrialZone(pile, zone);
+                    return;
+                }
                 var inventory = context.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId));
                 AddLine(inspector, T("ui.selection.resource_pile"));
                 AddLine(inspector, Content("resource", pile.ResourceId.ToString()) + ": " +
@@ -1606,7 +1610,8 @@ namespace Game.Presentation.UI
                 AddLine(inspector, T("ui.selection.natural_source"));
                 AddLine(inspector, Content("recipe", recipe.Id.ToString()));
                 AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
-                AddLine(inspector, Content("resource", recipe.Outputs[0].ResourceId.ToString()));
+                AddLine(inspector, string.Join(" + ", recipe.Outputs.Select(x =>
+                    Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
                 DrawDirectPriority();
                 inspector.Add(ActionButton(source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
                     () => TryCommand(() => IssueDirect(source.Site.Kind == ProductionSiteKind.NaturalSource
@@ -1618,6 +1623,70 @@ namespace Game.Presentation.UI
             AddLine(inspector, T("ui.selection.nothing"));
             AddMuted(inspector, T("ui.selection.help"));
         }
+
+        private void DrawIndustrialZone(WorldResourcePilePresenter pile, IndustrialZoneState zone)
+        {
+            var industry = context.Production.Industry;
+            var definition = industry.GetDefinition(zone.DefinitionId);
+            var output = context.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId));
+            AddLine(inspector, "Промышленная зона");
+            AddSection(inspector, zone.DefinitionId.Replace('_', ' '));
+            AddLine(inspector, $"Запас: {zone.Remaining}/{definition.Capacity}");
+            AddLine(inspector, "Выход: " + string.Join(", ", definition.OutputsPerCycle.Select(x =>
+                Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
+            AddLine(inspector, $"На площадке: {output.TotalUnits}/{output.Capacity}");
+            if (!zone.FacilityBuilt)
+            {
+                AddMuted(inspector, "Нужна технология: " + Content("technology", definition.RequiredTechnology.ToString()));
+                AddMuted(inspector, "Стоимость: " + string.Join(", ", definition.ConstructionCost.Select(x =>
+                    Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
+                inspector.Add(ActionButton("Построить объект добычи", () => TryCommand(() =>
+                {
+                    var storage = context.Inventories.All.FirstOrDefault(x =>
+                        x.Owner.Kind == InventoryOwnerKind.BuildingStorage);
+                    var funding = context.Inventories.All.FirstOrDefault(x =>
+                        definition.ConstructionCost.All(cost => x.CanRemove(cost.ResourceId, cost.Quantity)));
+                    var failure = industry.BuildFacility(zone.Id,
+                        funding != null ? funding.Owner : new InventoryOwner(InventoryOwnerKind.WorldPile, zone.Id),
+                        storage != null ? storage.Owner.Id : default,
+                        context.Research.IsCompleted(definition.RequiredTechnology), true);
+                    if (failure != IndustrialCommandFailure.None)
+                        throw new PlayerFacingException("Строительство недоступно: " + failure);
+                    AddNotification("Промышленный объект построен");
+                    RefreshNow();
+                })));
+                return;
+            }
+
+            AddLine(inspector, zone.Remaining > 0 ? "Объект работает" : "Месторождение истощено");
+            var shifts = Row();
+            shifts.Add(ActionButton("Смена: 1 рабочий", () => RunIndustrialShift(zone.Id, 1)));
+            shifts.Add(ActionButton("Смена: 7 рабочих", () => RunIndustrialShift(zone.Id, 7)));
+            inspector.Add(shifts);
+            if (definition.FacilityKind == IndustrialFacilityKind.Mine && definition.RestorativeUnitsPerDay > 0)
+            {
+                if (zone.RestorativeInstalled) AddMuted(inspector, "Восстановительный блок активен");
+                else inspector.Add(ActionButton("Установить восстановительный блок", () => TryCommand(() =>
+                {
+                    var failure = industry.InstallRestorativeBlock(zone.Id,
+                        context.Research.IsCompleted(definition.RestorativeTechnology));
+                    if (failure != IndustrialCommandFailure.None)
+                        throw new PlayerFacingException("Установка недоступна: " + failure);
+                    AddNotification("Восстановительный блок установлен");
+                    RefreshNow();
+                })));
+            }
+            DrawDirectPriority();
+            inspector.Add(ActionButton("Перенести продукцию", () => TryCommand(() => IssueSelectedPileHaul(pile))));
+        }
+
+        private void RunIndustrialShift(StableEntityId zoneId, int workers) => TryCommand(() =>
+        {
+            var result = context.Production.Industry.Advance(zoneId, workers, TimeSpan.FromDays(1));
+            if (!result.Succeeded) throw new PlayerFacingException("Добыча недоступна: " + result.Failure);
+            AddNotification($"Завершена смена: {workers}; циклов {result.Cycles}; восстановлено {result.Restored}");
+            RefreshNow();
+        });
 
         private void DrawCharacterInspector(StableEntityId id)
         {

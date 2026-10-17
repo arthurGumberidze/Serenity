@@ -22,6 +22,8 @@ namespace Game.Tests.PlayMode
             yield return null;
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.CameraController.enabled = false;
+            root.AiScheduler.SetAutonomousWorkMode(
+                Game.Simulation.AI.Tier1AiScheduler.AutonomousWorkMode.LegacyUtility);
             // New Game supplies ten settlers: production needs an explicit unmet target.
             foreach (var resource in root.Resources.All)
                 root.Production.SetTarget(resource.Id, root.Production.GetCanonicalTotal(resource.Id) + 100);
@@ -33,7 +35,7 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root, Is.Not.Null);
             Assert.That(root.Production, Is.Not.Null);
-            Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(7));
+            Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(9));
             Assert.That(root.Production.Sites.Count, Is.GreaterThanOrEqualTo(4),
                 "The reference camp has at least the original sources; P5 may add authored regional sources.");
             Assert.That(root.DemoCropPlotBuilding, Is.Null);

@@ -209,6 +209,7 @@ namespace Game.Domain.Research
                 new CapabilityId("fiber_working"), new CapabilityId("hunting"),
                 new CapabilityId("food_preservation"), new CapabilityId("organized_labor"),
                 new CapabilityId("weaving"), new CapabilityId("advanced_stonecraft"),
+                new CapabilityId("industrial_extraction"), new CapabilityId("mine_restoration"),
                 new CapabilityId("stone_age_completed")
             };
             TechnologyId T(string id) => new TechnologyId(id);
@@ -222,13 +223,22 @@ namespace Game.Domain.Research
                 stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_iron")));
             if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_gold")))
                 stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_gold")));
+            var gatheringUnlocks = new List<TechnologyUnlock>
+            {
+                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_berries")),
+                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_fiber"))
+            };
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_water")))
+                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
+            var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
+                huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
             var definitions = new[]
             {
                 new TechnologyDefinition(T("basic_survival"), "Basic Survival", null, TimeSpan.FromDays(1),
                     new[] { C("basic_survival") }, description: "Shared survival practices.", startingKnowledge: true),
                 new TechnologyDefinition(T("gathering"), "Gathering", new[] { T("basic_survival") }, TimeSpan.FromDays(1),
-                    new[] { TechnologyUnlock.Recipe(new ProductionRecipeId("gather_berries")),
-                        TechnologyUnlock.Recipe(new ProductionRecipeId("gather_fiber")) }, startingKnowledge: true),
+                    gatheringUnlocks, startingKnowledge: true),
                 new TechnologyDefinition(T("controlled_fire"), "Controlled Fire", new[] { T("basic_survival") }, TimeSpan.FromDays(2),
                     new[] { C("controlled_fire") }),
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
@@ -240,7 +250,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("woodworking"), "Woodworking", new[] { T("stone_tools") }, TimeSpan.FromDays(3),
                     new[] { TechnologyUnlock.Building(new BuildingDefinitionId("storage_basket")) }),
                 new TechnologyDefinition(T("hunting"), "Organized Hunting", new[] { T("stone_tools") }, TimeSpan.FromDays(3),
-                    new[] { C("hunting") }),
+                    huntingUnlocks),
                 new TechnologyDefinition(T("food_preservation"), "Food Preservation", new[] { T("controlled_fire"), T("hunting") }, TimeSpan.FromDays(4),
                     new[] { C("food_preservation") }),
                 new TechnologyDefinition(T("organized_labor"), "Organized Labor", new[] { T("shelter_construction"), T("woodworking") }, TimeSpan.FromDays(4),
@@ -254,8 +264,15 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("advanced_stonecraft"), "Advanced Stonecraft",
                     new[] { T("stone_tools"), T("woodworking"), T("hunting") }, TimeSpan.FromDays(5),
                     new[] { C("advanced_stonecraft") }),
+                new TechnologyDefinition(T("industrial_extraction"), "Industrial Extraction",
+                    new[] { T("advanced_stonecraft"), T("organized_labor") }, TimeSpan.FromDays(5),
+                    new[] { C("industrial_extraction") }),
+                new TechnologyDefinition(T("restorative_mining"), "Restorative Mining",
+                    new[] { T("industrial_extraction") }, TimeSpan.FromDays(5),
+                    new[] { C("mine_restoration") }),
                 new TechnologyDefinition(T("stone_age_mastery"), "Stone Age Mastery",
-                    new[] { T("food_preservation"), T("primitive_agriculture"), T("weaving"), T("advanced_stonecraft") },
+                    new[] { T("food_preservation"), T("primitive_agriculture"), T("weaving"), T("advanced_stonecraft"),
+                        T("restorative_mining") },
                     TimeSpan.FromDays(6), new[] { C("stone_age_completed") })
             };
             return new TechnologyCatalog(definitions, new TechnologyUnlockTargets(buildingIds,

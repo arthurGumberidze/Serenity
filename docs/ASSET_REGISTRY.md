@@ -345,3 +345,7 @@ Current Character inventory is insufficient for final P10.5 acceptance: two deta
 ## P10.3 interaction provenance (2026-10-16)
 
 P10.3 imports no external art, package or Asset Store dependency. Hit proxies, hover/selection rings and contextual UI are project-owned runtime C#/UI Toolkit projections over existing Character, building, source, pile and Terrain objects. The ring uses the existing URP unlit shader; no texture, mesh, font, animation or vendor source was added or modified.
+
+## P10.4 resource and industry provenance (2026-10-17)
+
+P10.4 imports no external art, package or Asset Store dependency. The two added resource definitions, natural lifecycle, industrial definitions/services, hover label, normal inspector controls and strategic filters are Serenity-owned C#/configuration changes. New animal, fish and industrial-zone views use Unity built-in primitives and project-authored colors; existing approved Terrain Sample trees/rocks and project-owned resource formations are rebound as disposable affordances without editing vendor source. Canonical mutable state remains in Domain/Simulation services and snapshot v22, never in a mesh, material or `ScriptableObject` asset.

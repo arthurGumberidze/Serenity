@@ -142,7 +142,6 @@ namespace Game.Simulation.Production
         private readonly Dictionary<StableEntityId, ProductionSite> sites = new Dictionary<StableEntityId, ProductionSite>();
         private readonly List<ProductionSite> orderedSites = new List<ProductionSite>();
         private readonly Dictionary<StableEntityId, ProductionTask> tasks = new Dictionary<StableEntityId, ProductionTask>();
-        private readonly Dictionary<StableEntityId, StableEntityId> siteClaims = new Dictionary<StableEntityId, StableEntityId>();
         private readonly Dictionary<StableEntityId, StableEntityId> workerTasks = new Dictionary<StableEntityId, StableEntityId>();
         private readonly Dictionary<ResourceId, long> targets = new Dictionary<ResourceId, long>();
         private readonly Dictionary<ResourceId, long> producedTotals = new Dictionary<ResourceId, long>();
@@ -181,12 +180,20 @@ namespace Game.Simulation.Production
         public ProductionCatalog Recipes => recipes;
         public ProductionSettings Settings => settings;
         public FoodConsumptionService Food { get; }
+        public ResourceEcologyService Ecology { get; private set; }
+        public IndustrialExtractionService Industry { get; private set; }
         public int Population { get; set; }
         public long LastCalendarTick { get; private set; }
         public IReadOnlyList<ProductionSite> Sites => sites.Values.OrderBy(x => x.Id).ToArray();
         public IReadOnlyList<ProductionTask> ActiveTasks => tasks.Values.Where(x => !x.IsTerminal).OrderBy(x => x.Id).ToArray();
         public IReadOnlyList<ResourceStockTarget> Targets => targets.OrderBy(x => x.Key)
             .Select(x => new ResourceStockTarget(x.Key, x.Value)).ToArray();
+
+        public void AttachNaturalResources(ResourceEcologyService ecology, IndustrialExtractionService industry)
+        {
+            Ecology = ecology ?? throw new ArgumentNullException(nameof(ecology));
+            Industry = industry ?? throw new ArgumentNullException(nameof(industry));
+        }
 
         public void AddSite(ProductionSite site)
         {
@@ -262,7 +269,6 @@ namespace Game.Simulation.Production
             var task = ProductionTask.Create(workerId, selected.Id, selected.RecipeId, selectedKind,
                 selectedRecipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
-            siteClaims.Add(selected.Id, task.Id);
             workerTasks.Add(workerId, task.Id);
             job = new ProductionJob(task, selected.Position);
             return true;
@@ -282,7 +288,7 @@ namespace Game.Simulation.Production
                 return true;
             }
             if (!inventories.TryGet(new InventoryOwner(InventoryOwnerKind.Character, workerId), out _) ||
-                !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable || siteClaims.ContainsKey(siteId) ||
+                !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable ||
                 !IsSiteOperational(siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
@@ -291,7 +297,6 @@ namespace Game.Simulation.Production
             if (!InputsAvailable(recipe)) return false;
             var task = ProductionTask.Create(workerId, site.Id, site.RecipeId, kind, recipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
-            siteClaims.Add(site.Id, task.Id);
             workerTasks.Add(workerId, task.Id);
             job = new ProductionJob(task, site.Position);
             return true;
@@ -422,7 +427,7 @@ namespace Game.Simulation.Production
             Food.RemainderTicks, Food.TotalConsumed, Food.TotalShortage, Targets,
             sites.Values.Select(x => x.CaptureState()), tasks.Values.Where(x => !x.IsTerminal).Select(x => x.CaptureState()),
             producedTotals.Where(x => x.Value > 0).Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))),
-            inventories.CaptureStates());
+            inventories.CaptureStates(), Ecology?.CaptureState(), Industry?.CaptureState());
 
         public void RestoreState(ProductionSaveState state)
         {
@@ -435,7 +440,6 @@ namespace Game.Simulation.Production
                     throw new ArgumentException("Invalid production site snapshot.", nameof(state));
             }
             var restoredTasks = new Dictionary<StableEntityId, ProductionTask>();
-            var restoredSiteClaims = new Dictionary<StableEntityId, StableEntityId>();
             var restoredWorkerTasks = new Dictionary<StableEntityId, StableEntityId>();
             foreach (var taskState in state.Tasks)
             {
@@ -443,7 +447,6 @@ namespace Game.Simulation.Production
                 if (task.IsTerminal || !restoredSites.TryGetValue(task.SiteId, out var taskSite) ||
                     recipes.Get(task.RecipeId).Id != task.RecipeId || taskSite.RecipeId != task.RecipeId ||
                     !restoredTasks.TryAdd(task.Id, task) ||
-                    !restoredSiteClaims.TryAdd(task.SiteId, task.Id) ||
                     !restoredWorkerTasks.TryAdd(task.WorkerId, task.Id))
                     throw new ArgumentException("Invalid or duplicate production task snapshot.", nameof(state));
             }
@@ -451,12 +454,13 @@ namespace Game.Simulation.Production
             sites.Clear(); foreach (var pair in restoredSites) sites.Add(pair.Key, pair.Value);
             orderedSites.Clear(); orderedSites.AddRange(restoredSites.Values.OrderBy(x => x.Id));
             tasks.Clear(); foreach (var pair in restoredTasks) tasks.Add(pair.Key, pair.Value);
-            siteClaims.Clear(); foreach (var pair in restoredSiteClaims) siteClaims.Add(pair.Key, pair.Value);
             workerTasks.Clear(); foreach (var pair in restoredWorkerTasks) workerTasks.Add(pair.Key, pair.Value);
             targets.Clear(); foreach (var target in state.Targets) targets.Add(target.ResourceId, target.Target);
             producedTotals.Clear(); foreach (var amount in state.ProducedTotals) producedTotals.Add(amount.ResourceId, amount.Quantity.Units);
             LastCalendarTick = state.LastCalendarTick;
             Food.Restore(state.FoodRemainderTicks, state.FoodConsumed, state.FoodShortage);
+            Ecology?.RestoreState(state.NaturalLifecycles);
+            Industry?.RestoreState(state.Industry);
         }
 
         public ulong ComputeStateHash()
@@ -554,6 +558,12 @@ namespace Game.Simulation.Production
         private ProductionCompletion Complete(ProductionTask task)
         {
             var site = sites[task.SiteId];
+            if (site.Kind == ProductionSiteKind.NaturalSource && site.IsDepleted)
+            {
+                task.Cancel();
+                Release(task);
+                return default;
+            }
             var recipe = recipes.Get(task.RecipeId);
             var outputOwner = new InventoryOwner(InventoryOwnerKind.Character, task.WorkerId);
             if (task.Kind != ProductionTaskKind.Plant && !TrySelectOutputOwner(task.WorkerId, recipe, out outputOwner))
@@ -589,7 +599,6 @@ namespace Game.Simulation.Production
 
         private void Release(ProductionTask task)
         {
-            siteClaims.Remove(task.SiteId);
             workerTasks.Remove(task.WorkerId);
         }
 
@@ -612,7 +621,7 @@ namespace Game.Simulation.Production
             double bestDistance = 0d;
             foreach (var site in orderedSites)
             {
-                if (!site.IsWorkAvailable || siteClaims.ContainsKey(site.Id) || !IsSiteOperational(site.Id)) continue;
+                if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 var kind = TaskKindFor(site);
