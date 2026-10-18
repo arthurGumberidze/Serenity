@@ -67,9 +67,9 @@ namespace Game.Domain.Characters
                 new CharacterClothingDefinition(StoneAgeAppearanceProfiles.CivilianClothing,
                     CharacterClothingRole.Civilian, profiles, true),
                 new CharacterClothingDefinition(StoneAgeAppearanceProfiles.WorkerClothing,
-                    CharacterClothingRole.Work, profiles, false),
+                    CharacterClothingRole.Work, profiles, true),
                 new CharacterClothingDefinition(StoneAgeAppearanceProfiles.MilitaryClothing,
-                    CharacterClothingRole.Military, profiles, false)
+                    CharacterClothingRole.Military, profiles, true)
             });
         }
     }

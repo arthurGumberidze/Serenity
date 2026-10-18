@@ -42,7 +42,11 @@ namespace Game.Presentation.Characters
             {
                 // UMA generation is bounded to the same eight detailed Tier 1 views used by the crowd renderer.
                 // This gives nearby key/family NPCs coherent Human 3.0 art without starting a coroutine per mass NPC.
-                if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
+                if (catalog.TryResolveRoleVisual(character.Sex, requested.ClothingId, out var roleVisual))
+                {
+                    ProjectRoleVisual(instance, presenter, roleVisual);
+                }
+                else if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
                 {
                     detailedUmaCharacters.Add(character.Id);
                     instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);
@@ -55,6 +59,28 @@ namespace Game.Presentation.Characters
                 UnityEngine.Object.Destroy(instance);
                 throw;
             }
+        }
+
+        private static void ProjectRoleVisual(GameObject instance, CharacterPresenter presenter, GameObject rolePrefab)
+        {
+            foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
+            var visual = UnityEngine.Object.Instantiate(rolePrefab, instance.transform, false);
+            visual.name = "RoleVisual";
+            SetLayerRecursively(visual, instance.layer);
+            var roleAnimator = visual.GetComponentInChildren<Animator>(true);
+            if (roleAnimator == null || !roleAnimator.isHuman)
+                throw new InvalidOperationException("Role visual requires a valid humanoid Animator: " + rolePrefab.name);
+            if (presenter.Animator != null)
+                roleAnimator.runtimeAnimatorController = presenter.Animator.runtimeAnimatorController;
+            roleAnimator.applyRootMotion = false;
+            presenter.SetVisualAnimator(roleAnimator);
+        }
+
+        private static void SetLayerRecursively(GameObject value, int layer)
+        {
+            value.layer = layer;
+            for (var index = 0; index < value.transform.childCount; index++)
+                SetLayerRecursively(value.transform.GetChild(index).gameObject, layer);
         }
 
         public void Despawn(CharacterPresenter presenter)

@@ -34,3 +34,7 @@ MonoBehaviour:
     ClothingId: uma_stone_age_clothing
     Prefab: {fileID: 6667813782548362799, guid: c8c59b0e267550e4a8af27a739d91a01, type: 3}
   umaAvatarPrefab: {fileID: 1550133802825526218, guid: 0921869440c31fc418d6a0c1cdaad3d4, type: 3}
+  maleWorkerVisual: {fileID: 7092937621397830870, guid: 8702fb5391bee6b43877746a405d5fa2, type: 3}
+  femaleWorkerVisual: {fileID: 656971401852858973, guid: fc75dc3cd783f094e9711aaec906243c, type: 3}
+  maleMilitaryVisual: {fileID: 5091268008269631861, guid: fb4babc1304aa3d45acf408a2288a9ee, type: 3}
+  femaleMilitaryVisual: {fileID: 2619011125093111949, guid: 359a152895b663546a54a22d15127f4f, type: 3}

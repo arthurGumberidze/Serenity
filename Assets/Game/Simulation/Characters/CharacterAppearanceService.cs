@@ -117,7 +117,7 @@ namespace Game.Simulation.Characters
                     GenerationStream + stream++) % 641UL))).ToArray();
             return new AppearanceState(character.Id, profile.Id, profile.BodyId, profile.FaceId,
                 Pick(profile.Skins), Pick(profile.Hairs), Pick(profile.Beards), Pick(profile.HairColors),
-                Pick(profile.EyeColors), profile.AgeId, StoneAgeAppearanceProfiles.CivilianClothing, parameters);
+                Pick(profile.EyeColors), Pick(profile.Ages), StoneAgeAppearanceProfiles.CivilianClothing, parameters);
         }
 
         private void Validate(AppearanceState appearance, bool allowUnknownProfile)

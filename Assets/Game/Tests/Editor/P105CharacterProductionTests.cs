@@ -31,6 +31,9 @@ namespace Game.Tests.Editor
             Assert.That(a.Select(x => x.HairId).Distinct().Count(), Is.GreaterThanOrEqualTo(3));
             Assert.That(a.Select(x => x.Parameter(StoneAgeAppearanceProfiles.Build)).Distinct().Count(),
                 Is.GreaterThanOrEqualTo(6));
+            Assert.That(a.Select(x => x.AgeId).Distinct().Count(), Is.EqualTo(3));
+            Assert.That(a.Any(x => x.ClothingId == StoneAgeAppearanceProfiles.WorkerClothing), Is.True);
+            Assert.That(a.Any(x => x.ClothingId == StoneAgeAppearanceProfiles.MilitaryClothing), Is.True);
             Assert.That(a.All(x => x.Parameters.Count == 9), Is.True);
         }
 
@@ -41,8 +44,17 @@ namespace Game.Tests.Editor
             Assert.That(definitions.Get(StoneAgeAppearanceProfiles.CivilianClothing).VisualContentAvailable, Is.True);
             Assert.That(definitions.Get(StoneAgeAppearanceProfiles.MilitaryClothing).Role,
                 Is.EqualTo(CharacterClothingRole.Military));
-            Assert.That(definitions.Get(StoneAgeAppearanceProfiles.MilitaryClothing).VisualContentAvailable, Is.False,
-                "The future P10.7 hook must not pretend that a military outfit asset already exists.");
+            Assert.That(definitions.Get(StoneAgeAppearanceProfiles.WorkerClothing).VisualContentAvailable, Is.True);
+            Assert.That(definitions.Get(StoneAgeAppearanceProfiles.MilitaryClothing).VisualContentAvailable, Is.True);
+
+            var presentations = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(
+                "Assets/Game/Art/Config/CharacterPresentationCatalog.asset");
+            Assert.That(presentations.TryResolveRoleVisual(CharacterSex.Male,
+                StoneAgeAppearanceProfiles.WorkerClothing, out var worker), Is.True);
+            Assert.That(worker.GetComponentInChildren<Animator>(true).isHuman, Is.True);
+            Assert.That(presentations.TryResolveRoleVisual(CharacterSex.Female,
+                StoneAgeAppearanceProfiles.MilitaryClothing, out var military), Is.True);
+            Assert.That(military.GetComponentInChildren<Animator>(true).isHuman, Is.True);
 
             var bootstrap = NewGameBootstrap.Create(new NewGameConfiguration(10502));
             var registry = new CharacterRegistry();
@@ -58,20 +70,36 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void AuthoredControllerCoversWorkCombatAndSleepIntents()
+        {
+            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                "Assets/Game/Art/Animation/CharacterTier1.controller");
+            Assert.That(controller, Is.Not.Null);
+            var names = controller.animationClips.Select(x => x.name).ToArray();
+            foreach (var required in new[] { "Walk_Carry_Loop", "Farm_Harvest", "TreeChopping_Loop",
+                         "Fixing_Kneeling", "Idle_Rail_Loop", "OverhandThrow", "Sword_Regular_Combo", "LayToIdle" })
+                Assert.That(names.Any(x => x.Contains(required)), Is.True, required);
+        }
+
+        [Test]
         public void CharacterLodMeshCarriesIdentityChannelsAndUsesHysteresisThresholds()
         {
             Assert.That(Tier1AiRuntimeDriver.CharacterLodNearDistance,
                 Is.LessThan(Tier1AiRuntimeDriver.CharacterLodFarDistance));
+            Assert.That(Tier1AiRuntimeDriver.CharacterLodFarDistance,
+                Is.LessThan(Tier1AiRuntimeDriver.CharacterLodImpostorDistance));
             Assert.That(Shader.Find("Serenity/CharacterLod"), Is.Not.Null);
             var mesh = Tier1AiRuntimeDriver.BuildLightweightHumanoidMesh();
+            var farMesh = Tier1AiRuntimeDriver.BuildLightweightHumanoidMesh(true);
             try
             {
                 Assert.That(mesh.colors.Any(x => x.r > 0.9f), Is.True, "Skin identity channel missing.");
                 Assert.That(mesh.colors.Any(x => x.g > 0.9f), Is.True, "Hair identity channel missing.");
                 Assert.That(mesh.colors.Any(x => x.b > 0.9f), Is.True, "Clothing identity channel missing.");
                 Assert.That(mesh.bounds.size.y, Is.InRange(1.75f, 1.9f));
+                Assert.That(farMesh.triangles.Length, Is.LessThan(mesh.triangles.Length));
             }
-            finally { Object.DestroyImmediate(mesh); }
+            finally { Object.DestroyImmediate(mesh); Object.DestroyImmediate(farMesh); }
         }
 
         [Test]

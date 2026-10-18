@@ -10,6 +10,7 @@ namespace Game.Presentation.Characters
         Build = 5,
         Fish = 6,
         Hunt = 7,
-        Combat = 8
+        Combat = 8,
+        Sleep = 9
     }
 }

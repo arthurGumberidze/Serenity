@@ -102,6 +102,15 @@ namespace Game.Simulation.Campaign
                     generated = configuration.RulerAppearance.With(characterId: ids[i]);
                 else if (i == 0 && generated.ProfileId != rulerProfile.Id)
                     generated = rulerProfile.CreateState(ids[i]);
+                if (i > 0)
+                {
+                    var profile = appearanceCatalog.Get(generated.ProfileId);
+                    generated = generated.With(
+                        ageId: profile.Ages[i % profile.Ages.Count],
+                        clothingId: i == 8
+                            ? StoneAgeAppearanceProfiles.MilitaryClothing
+                            : i >= 4 ? StoneAgeAppearanceProfiles.WorkerClothing : StoneAgeAppearanceProfiles.CivilianClothing);
+                }
                 appearances.Add(generated);
             }
             return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3],

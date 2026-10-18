@@ -26,6 +26,10 @@ namespace Game.Presentation.Characters
 
         [SerializeField] private Entry[] entries = Array.Empty<Entry>();
         [SerializeField] private GameObject umaAvatarPrefab;
+        [SerializeField] private GameObject maleWorkerVisual;
+        [SerializeField] private GameObject femaleWorkerVisual;
+        [SerializeField] private GameObject maleMilitaryVisual;
+        [SerializeField] private GameObject femaleMilitaryVisual;
         private readonly HashSet<string> reportedFallbacks = new HashSet<string>(StringComparer.Ordinal);
 
         public void Configure(GameObject malePrefab, GameObject femalePrefab, GameObject umaPrefab = null)
@@ -41,6 +45,25 @@ namespace Game.Presentation.Characters
 
         public AppearanceDefinitionCatalog CreateDefinitionCatalog() => StoneAgeAppearanceProfiles.CreateCatalog();
         public GameObject UmaAvatarPrefab => umaAvatarPrefab;
+
+        public void ConfigureRoleVisuals(GameObject maleWorker, GameObject femaleWorker,
+            GameObject maleMilitary, GameObject femaleMilitary)
+        {
+            maleWorkerVisual = maleWorker;
+            femaleWorkerVisual = femaleWorker;
+            maleMilitaryVisual = maleMilitary;
+            femaleMilitaryVisual = femaleMilitary;
+        }
+
+        public bool TryResolveRoleVisual(CharacterSex sex, AppearancePartId clothingId, out GameObject visual)
+        {
+            visual = clothingId == StoneAgeAppearanceProfiles.WorkerClothing
+                ? sex == CharacterSex.Male ? maleWorkerVisual : femaleWorkerVisual
+                : clothingId == StoneAgeAppearanceProfiles.MilitaryClothing
+                    ? sex == CharacterSex.Male ? maleMilitaryVisual : femaleMilitaryVisual
+                    : null;
+            return visual != null;
+        }
 
         public GameObject Resolve(Character character)
         {

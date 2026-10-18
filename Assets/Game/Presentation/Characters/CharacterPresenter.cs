@@ -14,6 +14,7 @@ namespace Game.Presentation.Characters
     {
         private static readonly int SpeedParameter = Animator.StringToHash("Speed");
         private static readonly int MovingParameter = Animator.StringToHash("Moving");
+        private static readonly int ActionIntentParameter = Animator.StringToHash("ActionIntent");
 
         [SerializeField] private Animator animator;
         [SerializeField] private Transform rightHandSocket;
@@ -24,6 +25,7 @@ namespace Game.Presentation.Characters
         private CharacterPresentationRegistry registry;
         private bool hasSpeedParameter;
         private bool hasMovingParameter;
+        private bool hasActionIntentParameter;
         private float displayedMovementSpeed = float.NaN;
         private bool? displayedMoving;
         private bool? displayedPaused;
@@ -173,13 +175,31 @@ namespace Game.Presentation.Characters
             ApplyAnimatorPlaybackRate();
         }
 
-        public void SetAnimationIntent(CharacterAnimationIntent intent) => animationIntent = intent;
+        public void SetAnimationIntent(CharacterAnimationIntent intent)
+        {
+            var previousIntent = animationIntent;
+            animationIntent = intent;
+            if (animator == null || !hasActionIntentParameter) return;
+            if (Application.isPlaying && intent != CharacterAnimationIntent.Idle &&
+                (automaticAnimationAllowed || IsSelected) && DetailedVisualActive)
+            {
+                if (!manualAnimationInitialized) InitializeManualAnimation();
+                animator.cullingMode = AnimatorCullingMode.CullCompletely;
+                animator.enabled = true;
+                disableAutomaticAnimationAfter = float.PositiveInfinity;
+            }
+            animator.SetInteger(ActionIntentParameter, (int)intent);
+            if (Application.isPlaying && intent == CharacterAnimationIntent.Idle &&
+                previousIntent != CharacterAnimationIntent.Idle && animator.enabled && !automaticMovementAnimation)
+                disableAutomaticAnimationAfter = Time.unscaledTime + 0.2f;
+        }
 
         /// <summary>Centralized late-frame additive pose; callers update a bounded presenter set.</summary>
         public void RefreshActionPose(float unscaledTime)
         {
             if (animator == null || !animator.isHuman || !DetailedVisualActive) return;
             RemoveLastPoseOffsets();
+            if (hasActionIntentParameter) return;
             if (animationIntent == CharacterAnimationIntent.Idle) return;
             var wave = Mathf.Sin(unscaledTime * (animationIntent == CharacterAnimationIntent.Combat ? 7.5f : 5.2f));
             var lift = animationIntent == CharacterAnimationIntent.Carry ? 48f :
@@ -212,7 +232,7 @@ namespace Game.Presentation.Characters
                 return;
             }
 
-            if (automaticMovementAnimation || !animator.enabled ||
+            if (automaticMovementAnimation || animationIntent != CharacterAnimationIntent.Idle || !animator.enabled ||
                 unscaledTime < disableAutomaticAnimationAfter) return;
             animator.enabled = false;
             disableAutomaticAnimationAfter = float.PositiveInfinity;
@@ -235,6 +255,7 @@ namespace Game.Presentation.Characters
         {
             hasSpeedParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == SpeedParameter);
             hasMovingParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == MovingParameter);
+            hasActionIntentParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == ActionIntentParameter);
         }
 
         private void CacheHumanoidBones()

@@ -24,6 +24,8 @@ namespace Game.Presentation.AI
         public const int HighDetailCrowdBudget = 8;
         public const float CharacterLodNearDistance = 24f;
         public const float CharacterLodFarDistance = 32f;
+        public const float CharacterLodImpostorDistance = 64f;
+        public const float CharacterLodCullDistance = 120f;
         private const float LodRefreshIntervalSeconds = 0.25f;
         private const float AvailabilitySweepIntervalSeconds = 1f;
         private static readonly ProfilerMarker AdvanceMarker = new ProfilerMarker("Serenity.Tier1.Advance");
@@ -43,6 +45,10 @@ namespace Game.Presentation.AI
         private readonly Vector4[] lightweightSkinColors = new Vector4[1023];
         private readonly Vector4[] lightweightHairColors = new Vector4[1023];
         private readonly Vector4[] lightweightClothingColors = new Vector4[1023];
+        private readonly Matrix4x4[] farMatrices = new Matrix4x4[1023];
+        private readonly Vector4[] farSkinColors = new Vector4[1023];
+        private readonly Vector4[] farHairColors = new Vector4[1023];
+        private readonly Vector4[] farClothingColors = new Vector4[1023];
         private readonly NavMeshMovementDriver[] detailWinners = new NavMeshMovementDriver[HighDetailCrowdBudget];
         private readonly float[] detailWinnerScores = new float[HighDetailCrowdBudget];
         private readonly Dictionary<StableEntityId, Tier1AiAgentState> agentStates =
@@ -56,6 +62,7 @@ namespace Game.Presentation.AI
         private int animationRefreshCursor;
         private float nextAvailabilitySweep;
         private Mesh lightweightMesh;
+        private Mesh farMesh;
         private Material lightweightMaterial;
         private MaterialPropertyBlock lightweightProperties;
         private float nextLodRefresh;
@@ -71,6 +78,8 @@ namespace Game.Presentation.AI
         public long SimulationCallbackAllocatedBytes { get; private set; }
         public long MovementPresentationAllocatedBytes { get; private set; }
         public int LastLightweightDrawCount { get; private set; }
+        public int LastMidLodDrawCount { get; private set; }
+        public int LastFarLodDrawCount { get; private set; }
         public event Action<GameTimeAdvance> SimulationAdvanced;
 
         public void Initialize(GameClock gameClock, Tier1AiScheduler aiScheduler,
@@ -247,6 +256,7 @@ namespace Game.Presentation.AI
             movements.Clear();
             agentStates.Clear();
             if (lightweightMesh != null) Destroy(lightweightMesh);
+            if (farMesh != null) Destroy(farMesh);
             if (lightweightMaterial != null) Destroy(lightweightMaterial);
             SimulationAdvanced = null;
         }
@@ -347,33 +357,61 @@ namespace Game.Presentation.AI
         private void DrawLightweightPresenters()
         {
             LastLightweightDrawCount = 0;
+            LastMidLodDrawCount = 0;
+            LastFarLodDrawCount = 0;
+            var camera = Camera.main;
             for (var index = 0; index < movements.Count; index++)
             {
                 var presenter = movements[index].Presenter;
                 if (presenter == null || !presenter.UsesLightweightVisual) continue;
                 EnsureLightweightRenderResources(presenter);
-                if (lightweightMesh == null || lightweightMaterial == null) continue;
+                if (lightweightMesh == null || farMesh == null || lightweightMaterial == null) continue;
                 var transform = presenter.transform;
                 var style = presenter.LodStyle;
-                lightweightMatrices[LastLightweightDrawCount++] = Matrix4x4.TRS(
-                    transform.position, transform.rotation, style.Scale);
-                lightweightSkinColors[LastLightweightDrawCount - 1] = style.Skin;
-                lightweightHairColors[LastLightweightDrawCount - 1] = style.Hair;
-                lightweightClothingColors[LastLightweightDrawCount - 1] = style.Clothing;
+                var distanceSquared = camera != null
+                    ? (transform.position - camera.transform.position).sqrMagnitude
+                    : 0f;
+                if (distanceSquared > CharacterLodCullDistance * CharacterLodCullDistance) continue;
+                if (distanceSquared > CharacterLodImpostorDistance * CharacterLodImpostorDistance)
+                {
+                    farMatrices[LastFarLodDrawCount] = Matrix4x4.TRS(transform.position, transform.rotation, style.Scale);
+                    farSkinColors[LastFarLodDrawCount] = style.Skin;
+                    farHairColors[LastFarLodDrawCount] = style.Hair;
+                    farClothingColors[LastFarLodDrawCount++] = style.Clothing;
+                }
+                else
+                {
+                    lightweightMatrices[LastMidLodDrawCount] = Matrix4x4.TRS(transform.position, transform.rotation, style.Scale);
+                    lightweightSkinColors[LastMidLodDrawCount] = style.Skin;
+                    lightweightHairColors[LastMidLodDrawCount] = style.Hair;
+                    lightweightClothingColors[LastMidLodDrawCount++] = style.Clothing;
+                }
             }
+            LastLightweightDrawCount = LastMidLodDrawCount + LastFarLodDrawCount;
             if (LastLightweightDrawCount == 0 || lightweightMesh == null || lightweightMaterial == null) return;
             lightweightProperties ??= new MaterialPropertyBlock();
-            lightweightProperties.SetVectorArray("_SkinColor", lightweightSkinColors);
-            lightweightProperties.SetVectorArray("_HairColor", lightweightHairColors);
-            lightweightProperties.SetVectorArray("_ClothingColor", lightweightClothingColors);
-            Graphics.DrawMeshInstanced(lightweightMesh, 0, lightweightMaterial, lightweightMatrices,
-                LastLightweightDrawCount, lightweightProperties, ShadowCastingMode.On, true, gameObject.layer);
+            DrawLodBatch(lightweightMesh, lightweightMatrices, lightweightSkinColors, lightweightHairColors,
+                lightweightClothingColors, LastMidLodDrawCount);
+            DrawLodBatch(farMesh, farMatrices, farSkinColors, farHairColors, farClothingColors, LastFarLodDrawCount);
+        }
+
+        private void DrawLodBatch(Mesh mesh, Matrix4x4[] matrices, Vector4[] skin, Vector4[] hair,
+            Vector4[] clothing, int count)
+        {
+            if (count <= 0) return;
+            lightweightProperties.SetVectorArray("_SkinColor", skin);
+            lightweightProperties.SetVectorArray("_HairColor", hair);
+            lightweightProperties.SetVectorArray("_ClothingColor", clothing);
+            Graphics.DrawMeshInstanced(mesh, 0, lightweightMaterial, matrices, count, lightweightProperties,
+                ShadowCastingMode.On, true, gameObject.layer);
         }
 
         private void EnsureLightweightRenderResources(CharacterPresenter presenter)
         {
             if (lightweightMesh == null)
                 lightweightMesh = BuildLightweightHumanoidMesh();
+            if (farMesh == null)
+                farMesh = BuildLightweightHumanoidMesh(true);
             if (lightweightMaterial == null)
             {
                 var shader = Shader.Find("Serenity/CharacterLod");
@@ -386,7 +424,7 @@ namespace Game.Presentation.AI
             }
         }
 
-        public static Mesh BuildLightweightHumanoidMesh()
+        public static Mesh BuildLightweightHumanoidMesh(bool far = false)
         {
             var vertices = new List<Vector3>(192);
             var normals = new List<Vector3>(192);
@@ -394,22 +432,22 @@ namespace Game.Presentation.AI
             var triangles = new List<int>(384);
             var colors = new List<Color>(192);
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0f, 1.18f, 0f),
-                0.23f, 0.29f, 0.58f, 8, Color.blue); // clothing torso
+                0.23f, 0.29f, 0.58f, far ? 4 : 8, Color.blue); // clothing torso
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0f, 0.78f, 0f),
-                0.28f, 0.35f, 0.34f, 8, Color.blue); // hide tunic
+                0.28f, 0.35f, 0.34f, far ? 4 : 8, Color.blue); // hide tunic
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(-0.13f, 0.34f, 0f),
-                0.085f, 0.075f, 0.62f, 7, Color.blue); // left leg
+                0.085f, 0.075f, 0.62f, far ? 4 : 7, Color.blue); // left leg
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0.13f, 0.34f, 0f),
-                0.085f, 0.075f, 0.62f, 7, Color.blue); // right leg
+                0.085f, 0.075f, 0.62f, far ? 4 : 7, Color.blue); // right leg
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(-0.31f, 1.05f, 0f),
-                0.075f, 0.06f, 0.64f, 7, Color.red); // left arm
+                0.075f, 0.06f, 0.64f, far ? 4 : 7, Color.red); // left arm
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0.31f, 1.05f, 0f),
-                0.075f, 0.06f, 0.64f, 7, Color.red); // right arm
+                0.075f, 0.06f, 0.64f, far ? 4 : 7, Color.red); // right arm
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0f, 1.62f, 0f),
-                0.145f, 0.135f, 0.27f, 10, Color.red); // head
+                0.145f, 0.135f, 0.27f, far ? 5 : 10, Color.red); // head
             AddTaperedPart(vertices, normals, uv, colors, triangles, new Vector3(0f, 1.735f, -0.004f),
-                0.148f, 0.13f, 0.09f, 10, Color.green); // stable hair cap
-            var mesh = new Mesh { name = "Tier1 Stone Age Humanoid LOD" };
+                0.148f, 0.13f, 0.09f, far ? 5 : 10, Color.green); // stable hair cap
+            var mesh = new Mesh { name = far ? "Tier1 Stone Age Humanoid LOD2" : "Tier1 Stone Age Humanoid LOD1" };
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             mesh.SetUVs(0, uv);
