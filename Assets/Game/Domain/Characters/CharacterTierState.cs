@@ -1,8 +1,33 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Game.Domain.AI;
 
 namespace Game.Domain.Characters
 {
+    public sealed class CharacterRuntimeSaveEntry
+    {
+        public CharacterRuntimeSaveEntry(CharacterSimulationTier tier, CharacterRuntimeState state)
+        {
+            if (!Enum.IsDefined(typeof(CharacterSimulationTier), tier)) throw new ArgumentOutOfRangeException(nameof(tier));
+            Tier = tier; State = state;
+        }
+        public CharacterSimulationTier Tier { get; }
+        public CharacterRuntimeState State { get; }
+    }
+
+    public sealed class CharacterRuntimeWorldSaveState
+    {
+        public CharacterRuntimeWorldSaveState(IEnumerable<CharacterRuntimeSaveEntry> entries)
+        {
+            var values = (entries ?? Array.Empty<CharacterRuntimeSaveEntry>()).OrderBy(x => x.State.CharacterId).ToArray();
+            if (values.Any(x => x == null) || values.Select(x => x.State.CharacterId).Distinct().Count() != values.Length)
+                throw new ArgumentException("Character runtime entries must be non-null and unique.", nameof(entries));
+            Entries = Array.AsReadOnly(values);
+        }
+        public IReadOnlyList<CharacterRuntimeSaveEntry> Entries { get; }
+    }
+
     public enum CharacterSimulationTier
     {
         Tier1 = 1,

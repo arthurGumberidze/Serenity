@@ -164,7 +164,7 @@ namespace Game.Infrastructure.Performance
                 new SingleSnapshotStore(restoredSnapshot), root.Production, root.Research, root.Succession,
                 root.HealthFamily, root.Weather, root.Combat, root.MilitaryUnits, root.PlayerControl,
                 root.BuildingDamage, root.GlobalMap, root.StrategicAi, root.Events, root.CampaignProgress,
-                root.Appearances, root.Work, root.ConnectedWorld);
+                root.Appearances, root.Work, root.ConnectedWorld, root.Domestic, root.Tiers);
             stopwatch.Restart();
             restoreCoordinator.Load(StableEntityId.Parse("00000000000000000000000000002900"));
             root.RebindAfterLoad(restoreCoordinator.Clock);

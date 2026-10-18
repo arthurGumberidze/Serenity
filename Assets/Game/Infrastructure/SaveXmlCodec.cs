@@ -22,6 +22,7 @@ using Game.Domain.World;
 using Game.Domain.Events;
 using Game.Domain.Campaign;
 using Game.Domain.Work;
+using Game.Domain.Domestic;
 using Game.Simulation;
 
 namespace Game.Infrastructure
@@ -79,6 +80,11 @@ namespace Game.Infrastructure
                 root.Add(SerializeWork(snapshot.Work, snapshot.FormatVersion >= SaveSnapshot.ContextOrdersVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.ConnectedWorldVersion)
                 root.Add(SerializeConnectedWorld(snapshot.ConnectedWorld));
+            if (snapshot.FormatVersion >= SaveSnapshot.DomesticVersion)
+            {
+                root.Add(SerializeDomestic(snapshot.Domestic));
+                root.Add(SerializeCharacterRuntime(snapshot.CharacterRuntime));
+            }
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -117,6 +123,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.AppearanceEditorVersion &&
                         version != SaveSnapshot.ConnectedWorldVersion &&
                         version != SaveSnapshot.ContextOrdersVersion &&
+                        version != SaveSnapshot.ResourceIndustryVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -154,12 +161,16 @@ namespace Game.Infrastructure
                         ? DeserializeWork(root.Element("work"), version >= SaveSnapshot.ContextOrdersVersion) : null;
                     var connectedWorld = version >= SaveSnapshot.ConnectedWorldVersion
                         ? DeserializeConnectedWorld(root.Element("connectedWorld")) : null;
+                    var domestic = version >= SaveSnapshot.DomesticVersion
+                        ? DeserializeDomestic(root.Element("domestic")) : null;
+                    var characterRuntime = version >= SaveSnapshot.DomesticVersion
+                        ? DeserializeCharacterRuntime(root.Element("characterRuntime")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance, work, connectedWorld);
+                        appearance, work, connectedWorld, domestic, characterRuntime);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1527,7 +1538,133 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.AppearanceVersion) fields = fields.Concat(new[] { "appearance" });
             if (version >= SaveSnapshot.WorkVersion) fields = fields.Concat(new[] { "work" });
             if (version >= SaveSnapshot.ConnectedWorldVersion) fields = fields.Concat(new[] { "connectedWorld" });
+            if (version >= SaveSnapshot.DomesticVersion) fields = fields.Concat(new[] { "domestic", "characterRuntime" });
             return fields.ToArray();
+        }
+
+        private static XElement SerializeDomestic(DomesticWorldSaveState state)
+        {
+            var element = new XElement("domestic");
+            if (state == null) return element;
+            element.Add(
+                new XElement("homes", state.Homes.Select(home => new XElement("home",
+                    new XElement("buildingId", home.BuildingId.ToString()),
+                    new XElement("ownerId", home.OwnerId.ToString()),
+                    new XElement("minX", home.IndoorZone.MinX), new XElement("minZ", home.IndoorZone.MinZ),
+                    new XElement("maxX", home.IndoorZone.MaxX), new XElement("maxZ", home.IndoorZone.MaxZ),
+                    new XElement("closed", home.IndoorZone.IsClosed),
+                    new XElement("habitable", home.IndoorZone.IsHabitable),
+                    new XElement("residents", home.ResidentIds.Select(id => new XElement("resident", id.ToString())))))),
+                new XElement("beds", state.Beds.Select(bed => new XElement("bed",
+                    new XElement("id", bed.Id.ToString()), new XElement("homeId", bed.HomeBuildingId.ToString()),
+                    new XElement("gridX", bed.Coordinate.X), new XElement("gridZ", bed.Coordinate.Z),
+                    new XElement("x", XmlConvert.ToString(bed.SleepPosition.X)),
+                    new XElement("y", XmlConvert.ToString(bed.SleepPosition.Y)),
+                    new XElement("z", XmlConvert.ToString(bed.SleepPosition.Z)),
+                    OptionalId("assignedId", bed.AssignedResidentId), OptionalId("occupiedId", bed.OccupiedResidentId)))),
+                new XElement("consents", state.Consents.Select(consent => new XElement("consent",
+                    new XElement("firstId", consent.FirstId.ToString()), new XElement("secondId", consent.SecondId.ToString()),
+                    new XElement("first", consent.FirstConsents), new XElement("second", consent.SecondConsents)))),
+                new XElement("interactions", state.Interactions.Select(value => new XElement("interaction",
+                    new XElement("id", value.Id.ToString()), new XElement("firstId", value.FirstId.ToString()),
+                    new XElement("secondId", value.SecondId.ToString()), new XElement("calendarTick", value.CalendarTick),
+                    new XElement("pregnancyId", value.PregnancyId.ToString())))));
+            return element;
+        }
+
+        private static DomesticWorldSaveState DeserializeDomestic(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing domestic state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty domestic state.");
+                return null;
+            }
+            RequireFields(element, new[] { "homes", "beds", "consents", "interactions" });
+            var homes = Items(element.Element("homes"), "home", item =>
+            {
+                RequireFields(item, new[] { "buildingId", "ownerId", "minX", "minZ", "maxX", "maxZ", "closed", "habitable", "residents" });
+                return new HomeState(StableEntityId.Parse(Value(item, "buildingId")),
+                    StableEntityId.Parse(Value(item, "ownerId")),
+                    new IndoorZoneState(Int(item, "minX"), Int(item, "minZ"), Int(item, "maxX"), Int(item, "maxZ"),
+                        XmlConvert.ToBoolean(Value(item, "closed")), XmlConvert.ToBoolean(Value(item, "habitable"))),
+                    Items(item.Element("residents"), "resident", value => StableEntityId.Parse(value.Value)));
+            });
+            var beds = Items(element.Element("beds"), "bed", item =>
+            {
+                RequireFields(item, new[] { "id", "homeId", "gridX", "gridZ", "x", "y", "z", "assignedId", "occupiedId" });
+                return new BedState(StableEntityId.Parse(Value(item, "id")), StableEntityId.Parse(Value(item, "homeId")),
+                    new GridCoordinate(Int(item, "gridX"), Int(item, "gridZ")),
+                    new WorldPosition(Float(item, "x"), Float(item, "y"), Float(item, "z")),
+                    OptionalStableId(item, "assignedId"), OptionalStableId(item, "occupiedId"));
+            });
+            var consents = Items(element.Element("consents"), "consent", item =>
+            {
+                RequireFields(item, new[] { "firstId", "secondId", "first", "second" });
+                return new RelationshipConsentState(StableEntityId.Parse(Value(item, "firstId")),
+                    StableEntityId.Parse(Value(item, "secondId")), XmlConvert.ToBoolean(Value(item, "first")),
+                    XmlConvert.ToBoolean(Value(item, "second")));
+            });
+            var interactions = Items(element.Element("interactions"), "interaction", item =>
+            {
+                RequireFields(item, new[] { "id", "firstId", "secondId", "calendarTick", "pregnancyId" });
+                return new FamilyInteractionState(StableEntityId.Parse(Value(item, "id")),
+                    StableEntityId.Parse(Value(item, "firstId")), StableEntityId.Parse(Value(item, "secondId")),
+                    Long(item, "calendarTick"), StableEntityId.Parse(Value(item, "pregnancyId")));
+            });
+            return new DomesticWorldSaveState(homes, beds, consents, interactions);
+        }
+
+        private static XElement SerializeCharacterRuntime(CharacterRuntimeWorldSaveState state)
+        {
+            var element = new XElement("characterRuntime");
+            if (state == null) return element;
+            element.Add(state.Entries.Select(entry => new XElement("character",
+                new XElement("id", entry.State.CharacterId.ToString()), new XElement("tier", (int)entry.Tier),
+                new XElement("x", XmlConvert.ToString(entry.State.Position.X)),
+                new XElement("y", XmlConvert.ToString(entry.State.Position.Y)),
+                new XElement("z", XmlConvert.ToString(entry.State.Position.Z)),
+                new XElement("velocityX", XmlConvert.ToString(entry.State.UnitsPerGameDay.X)),
+                new XElement("velocityY", XmlConvert.ToString(entry.State.UnitsPerGameDay.Y)),
+                new XElement("velocityZ", XmlConvert.ToString(entry.State.UnitsPerGameDay.Z)),
+                new XElement("moving", entry.State.IsMoving), new XElement("location", entry.State.LocationKey),
+                new XElement("processedCalendar", entry.State.ProcessedCalendarTicks),
+                new XElement("processedBiological", entry.State.ProcessedBiologicalTicks),
+                new XElement("stepCount", entry.State.StepCount),
+                new XElement("hunger", XmlConvert.ToString(entry.State.Hunger)),
+                new XElement("energy", XmlConvert.ToString(entry.State.Energy)),
+                new XElement("lastCalendar", entry.State.LastSimulationCalendarTick),
+                new XElement("lastBiological", entry.State.LastSimulationBiologicalTick),
+                new XElement("offCameraSteps", entry.State.OffCameraStepCount),
+                new XElement("deterministicAccumulator", entry.State.DeterministicAccumulator),
+                new XElement("activityProgress", entry.State.AbstractActivityProgress))));
+            return element;
+        }
+
+        private static CharacterRuntimeWorldSaveState DeserializeCharacterRuntime(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing character runtime state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty character runtime state.");
+                return null;
+            }
+            var entries = element.Elements("character").Select(item =>
+            {
+                RequireFields(item, new[] { "id", "tier", "x", "y", "z", "velocityX", "velocityY", "velocityZ", "moving", "location",
+                    "processedCalendar", "processedBiological", "stepCount", "hunger", "energy", "lastCalendar", "lastBiological",
+                    "offCameraSteps", "deterministicAccumulator", "activityProgress" });
+                var state = new CharacterRuntimeState(StableEntityId.Parse(Value(item, "id")),
+                    new WorldPosition(Float(item, "x"), Float(item, "y"), Float(item, "z")),
+                    new WorldPosition(Float(item, "velocityX"), Float(item, "velocityY"), Float(item, "velocityZ")),
+                    XmlConvert.ToBoolean(Value(item, "moving")), Value(item, "location"),
+                    Long(item, "processedCalendar"), Long(item, "processedBiological"),
+                    checked((uint)ULong(item, "stepCount")), Double(item, "hunger"), Double(item, "energy"),
+                    Long(item, "lastCalendar"), Long(item, "lastBiological"), ULong(item, "offCameraSteps"),
+                    ULong(item, "deterministicAccumulator"), Long(item, "activityProgress"));
+                return new CharacterRuntimeSaveEntry((CharacterSimulationTier)Int(item, "tier"), state);
+            }).ToArray();
+            return new CharacterRuntimeWorldSaveState(entries);
         }
 
         private static XElement SerializeConnectedWorld(ConnectedWorldSaveState state)
@@ -1624,5 +1761,7 @@ namespace Game.Infrastructure
         private static long Long(XElement parent, XName name) => XmlConvert.ToInt64(Value(parent, name));
         private static int Int(XElement parent, XName name) => XmlConvert.ToInt32(Value(parent, name));
         private static ulong ULong(XElement parent, XName name) => XmlConvert.ToUInt64(Value(parent, name));
+        private static float Float(XElement parent, XName name) => XmlConvert.ToSingle(Value(parent, name));
+        private static double Double(XElement parent, XName name) => XmlConvert.ToDouble(Value(parent, name));
     }
 }

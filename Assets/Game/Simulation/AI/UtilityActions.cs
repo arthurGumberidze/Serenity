@@ -4,6 +4,8 @@ using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Production;
 using Game.Simulation.Research;
+using Game.Domain.Domestic;
+using Game.Simulation.Domestic;
 
 namespace Game.Simulation.AI
 {
@@ -46,6 +48,74 @@ namespace Game.Simulation.AI
         }
 
         public void Cancel() => IsFinished = true;
+    }
+
+    internal sealed class SleepActionExecution : IUtilityActionExecution
+    {
+        private readonly Tier1AiAgentState agent;
+        private readonly ITier1MovementDriver movement;
+        private readonly Tier1AiSettings settings;
+        private readonly DomesticService domestic;
+        private TimeSpan moveElapsed;
+        private bool occupying;
+
+        public SleepActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
+            Tier1AiSettings settings, DomesticService domestic, BedState bed)
+        {
+            this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
+            this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
+            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            this.domestic = domestic ?? throw new ArgumentNullException(nameof(domestic));
+            if (bed == null) throw new ArgumentNullException(nameof(bed));
+            Phase = AiActionPhase.MoveToTarget;
+            agent.SetAction(UtilityActionKind.Rest, Phase);
+            movement.MoveTo(bed.SleepPosition, 0.35f);
+        }
+
+        public UtilityActionKind Kind => UtilityActionKind.Rest;
+        public AiActionPhase Phase { get; private set; }
+        public bool IsFinished { get; private set; }
+        public bool Succeeded { get; private set; }
+        public bool IsInterruptible => true;
+        public bool IsValid => !IsFinished && domestic.EvaluateSleep(agent.CharacterId).Allowed;
+
+        public void Tick(TimeSpan simulationDelta)
+        {
+            if (IsFinished) return;
+            agent.UpdatePosition(movement.CurrentPosition);
+            if (Phase == AiActionPhase.MoveToTarget)
+            {
+                moveElapsed += simulationDelta;
+                if (movement.State == MovementState.Failed || moveElapsed >= settings.MovementTimeout) { Fail(); return; }
+                if (movement.State != MovementState.Arrived) return;
+                movement.Stop();
+                var start = domestic.BeginSleep(agent.CharacterId);
+                if (!start.Allowed) { Fail(); return; }
+                occupying = true;
+                Phase = AiActionPhase.Resting;
+                agent.SetPhase(Phase);
+            }
+            if (Phase != AiActionPhase.Resting) return;
+            agent.Needs.RecoverEnergy(settings.RestRecoveryPerDay * simulationDelta.TotalDays);
+            if (agent.Needs.Energy < settings.RestCompletionEnergy) return;
+            Finish();
+        }
+
+        public void Cancel() { if (!IsFinished) Fail(); }
+
+        private void Finish()
+        {
+            if (occupying) domestic.EndSleep(agent.CharacterId);
+            occupying = false; movement.Stop(); IsFinished = true; Succeeded = true;
+            Phase = AiActionPhase.Completed; agent.SetPhase(Phase);
+        }
+
+        private void Fail()
+        {
+            if (occupying) domestic.EndSleep(agent.CharacterId);
+            occupying = false; movement.Stop(); IsFinished = true; Succeeded = false;
+            Phase = AiActionPhase.Failed; agent.SetPhase(Phase);
+        }
     }
 
     internal sealed class EatActionExecution : IUtilityActionExecution

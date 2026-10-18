@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Game.Domain;
 using Game.Simulation.Time;
 using Game.Simulation.Production;
@@ -17,6 +18,10 @@ using Game.Simulation.Events;
 using Game.Simulation.Campaign;
 using Game.Simulation.Characters;
 using Game.Simulation.Work;
+using Game.Simulation.Domestic;
+using Game.Simulation.Tiers;
+using Game.Domain.Characters;
+using Game.Domain.World;
 
 namespace Game.Simulation
 {
@@ -40,6 +45,8 @@ namespace Game.Simulation
         private readonly CharacterAppearanceService appearance;
         private readonly WorkManager work;
         private readonly ConnectedWorldService connectedWorld;
+        private readonly DomesticService domestic;
+        private readonly TierManager tiers;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -52,7 +59,8 @@ namespace Game.Simulation
             AiStrategicScheduler strategicAiScheduler = null, EventService eventService = null,
             CampaignProgressService campaignProgressService = null,
             CharacterAppearanceService appearanceService = null, WorkManager workManager = null,
-            ConnectedWorldService connectedWorldService = null)
+            ConnectedWorldService connectedWorldService = null, DomesticService domesticService = null,
+            TierManager tierManager = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -74,6 +82,8 @@ namespace Game.Simulation
             appearance = appearanceService;
             work = workManager;
             connectedWorld = connectedWorldService;
+            domestic = domesticService;
+            tiers = tierManager;
         }
         public SaveSnapshot Capture()
         {
@@ -82,7 +92,8 @@ namespace Game.Simulation
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
-                appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState());
+                appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
+                domestic?.CaptureState(), CaptureCharacterRuntime());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -90,6 +101,14 @@ namespace Game.Simulation
         public void Load(StableEntityId slotId)
         {
             var snapshot = store.Load(slotId);
+            if (connectedWorld != null && (snapshot.FormatVersion < SaveSnapshot.ConnectedWorldVersion ||
+                snapshot.ConnectedWorld == null ||
+                !string.Equals(snapshot.ConnectedWorld.GenerationId, ConnectedWorldContract.GenerationId,
+                    StringComparison.Ordinal)))
+                throw new NotSupportedException("Only compatible P10 connected-world saves can be loaded into gameplay.");
+            if ((domestic != null || tiers != null) && snapshot.FormatVersion >= SaveSnapshot.DomesticVersion &&
+                (snapshot.Domestic == null || snapshot.CharacterRuntime == null))
+                throw new InvalidOperationException("P10.6 save is missing required domestic or runtime state.");
             var restoredClock = CreateClock(snapshot);
             if (snapshot.Production != null && production == null)
                 throw new InvalidOperationException("This save contains production state but no production service is attached.");
@@ -153,9 +172,25 @@ namespace Game.Simulation
             if (snapshot.ConnectedWorld != null && connectedWorld == null)
                 throw new InvalidOperationException("This save contains connected-world state but no connected-world service is attached.");
             if (snapshot.ConnectedWorld != null) connectedWorld.RestoreState(snapshot.ConnectedWorld);
+            if (snapshot.CharacterRuntime != null && tiers == null)
+                throw new InvalidOperationException("This save contains character runtime state but no tier manager is attached.");
+            if (snapshot.CharacterRuntime != null)
+                foreach (var entry in snapshot.CharacterRuntime.Entries)
+                    tiers.RestoreRepresentationState(entry.State.CharacterId, entry.Tier, entry.State);
+            // Tier restoration cancels any pre-load Tier1 action and may release its occupied bed.
+            // Apply the saved domestic snapshot afterwards so saved occupancy wins deterministically.
+            if (snapshot.Domestic != null && domestic == null)
+                throw new InvalidOperationException("This save contains domestic state but no domestic service is attached.");
+            if (snapshot.Domestic != null) domestic.RestoreState(snapshot.Domestic);
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;
+        }
+        private CharacterRuntimeWorldSaveState CaptureCharacterRuntime()
+        {
+            if (tiers == null) return null;
+            return new CharacterRuntimeWorldSaveState(tiers.ManagedIds.Select(id =>
+                new CharacterRuntimeSaveEntry(tiers.GetTier(id), tiers.GetRuntimeState(id))));
         }
         public static GameClock CreateClock(SaveSnapshot snapshot)
         {

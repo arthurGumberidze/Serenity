@@ -17,6 +17,7 @@ using Game.Domain.Time;
 using Game.Domain.Work;
 using Game.Domain.World;
 using Game.Domain.Events;
+using Game.Domain.Domestic;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
@@ -733,6 +734,7 @@ namespace Game.Presentation.UI
             AddNavigation(T("ui.nav.research"), GameplayPanel.Research);
             AddNavigation(T("ui.nav.work"), GameplayPanel.Work);
             AddNavigation(T("ui.nav.dynasty"), GameplayPanel.Dynasty);
+            AddNavigation("Дом и семья", GameplayPanel.Domestic);
             AddNavigation(T("ui.nav.military"), GameplayPanel.Military);
             AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad);
             AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global);
@@ -1026,6 +1028,7 @@ namespace Game.Presentation.UI
                 case GameplayPanel.Global: DrawGlobalPanel(); break;
                 case GameplayPanel.Economy: DrawEconomyPanel(); break;
                 case GameplayPanel.Events: DrawEventsPanel(); break;
+                case GameplayPanel.Domestic: DrawDomesticPanel(); break;
             }
         }
 
@@ -1373,6 +1376,119 @@ namespace Game.Presentation.UI
             foreach (var entry in context.Dynasty.History.Reverse().Take(6))
                 AddLine(mainPanel, F("ui.dynasty.history_line", CharacterName(entry.PreviousMonarchId),
                     CharacterName(entry.NewMonarchId), E(entry.Reason)));
+        }
+
+        private void DrawDomesticPanel()
+        {
+            AddTitle(mainPanel, "Дом, сон и семья");
+            var id = context.Selection.SelectedCharacterId ?? context.Dynasty.CurrentMonarchId;
+            if (!id.HasValue)
+            {
+                AddMuted(mainPanel, "Выберите жителя.");
+                return;
+            }
+            var character = context.Characters.Get(id.Value);
+            AddLine(mainPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
+            if (context.AiAgents.TryGet(id.Value, out var agent))
+                AddLine(mainPanel, $"Голод: {agent.Needs.Hunger:P0} · энергия: {agent.Needs.Energy:P0}");
+            var sleep = context.Domestic.EvaluateSleep(id.Value);
+            AddLine(mainPanel, sleep.Allowed
+                ? "Спальное место назначено в закрытом обитаемом доме."
+                : "Сон недоступен: " + SleepReason(sleep.Reason));
+            if (sleep.Bed != null)
+                AddMuted(mainPanel, "Кровать: " + sleep.Bed.Id + " · дом: " + sleep.Bed.HomeBuildingId);
+            var sleepButton = ActionButton("Лечь спать", () => TrySleep(id.Value), "domestic-sleep");
+            sleepButton.SetEnabled(sleep.Allowed);
+            mainPanel.Add(sleepButton);
+
+            if (!character.SpouseId.HasValue) return;
+            var spouseId = character.SpouseId.Value;
+            AddSection(mainPanel, "Взрослые отношения");
+            AddLine(mainPanel, "Партнёр: " + CharacterName(spouseId));
+            var consent = context.Domestic.Consents.FirstOrDefault(x =>
+                x.FirstId == id.Value && x.SecondId == spouseId || x.FirstId == spouseId && x.SecondId == id.Value);
+            AddLine(mainPanel, "Согласие: " + (consent != null && consent.IsMutual ? "взаимное" : "ожидается от обоих взрослых"));
+            var consentRow = Row();
+            consentRow.Add(ActionButton("Согласие: " + CharacterName(id.Value), () =>
+                TryCommand(() => context.Domestic.SetConsent(id.Value, spouseId, true)), "domestic-consent-first"));
+            consentRow.Add(ActionButton("Согласие: " + CharacterName(spouseId), () =>
+                TryCommand(() => context.Domestic.SetConsent(spouseId, id.Value, true)), "domestic-consent-second"));
+            mainPanel.Add(consentRow);
+            var eligibility = context.Domestic.EvaluateFamilyInteraction(id.Value, spouseId,
+                context.Clock().State.BiologicalTicks);
+            if (!eligibility.Allowed) AddMuted(mainPanel, "Семейное событие недоступно: " + FamilyReason(eligibility.Reason));
+            var family = ActionButton("Провести время вместе", () => RequestFamilyInteraction(id.Value, spouseId),
+                "domestic-family-event");
+            family.SetEnabled(eligibility.Allowed);
+            mainPanel.Add(family);
+            var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.Status == PregnancyStatus.Active &&
+                (x.MotherId == id.Value || x.MotherId == spouseId));
+            if (pregnancy != null)
+                AddLine(mainPanel, "Беременность · до события: " +
+                    FormatDuration(Math.Max(0, pregnancy.DueCalendarTick - context.Clock().State.CalendarTicks)));
+        }
+
+        public bool TrySleep(StableEntityId characterId)
+        {
+            if (context.AiScheduler.TryStartSleepNow(characterId, out var reason))
+            {
+                AddNotification("Житель направился к своей кровати.");
+                RefreshNow();
+                return true;
+            }
+            SetStatus("Сон недоступен: " + SleepReason(reason));
+            return false;
+        }
+
+        public bool RequestFamilyInteraction(StableEntityId firstId, StableEntityId secondId)
+        {
+            var eligibility = context.Domestic.EvaluateFamilyInteraction(firstId, secondId,
+                context.Clock().State.BiologicalTicks);
+            if (!eligibility.Allowed)
+            {
+                SetStatus("Семейное событие недоступно: " + FamilyReason(eligibility.Reason));
+                return false;
+            }
+            context.Domestic.StartFamilyInteraction(firstId, secondId, context.Clock().State.CalendarTicks,
+                context.Clock().State.BiologicalTicks);
+            modal.Clear();
+            modal.style.display = DisplayStyle.Flex;
+            AddTitle(modal, "Время проходит…");
+            AddLine(modal, "Личная сцена остаётся за кадром.");
+            modal.Add(ActionButton("Пропустить", CloseModal, "domestic-fade-skip"));
+            return true;
+        }
+
+        private static string SleepReason(SleepDenialReason reason)
+        {
+            switch (reason)
+            {
+                case SleepDenialReason.HomeIncomplete: return "дом ещё не достроен";
+                case SleepDenialReason.HomeNotClosed: return "помещение не закрыто";
+                case SleepDenialReason.HomeUninhabitable: return "помещение непригодно для жизни";
+                case SleepDenialReason.AccessDenied: return "нет доступа к чужому дому";
+                case SleepDenialReason.BedOutsideHome: return "кровать стоит снаружи";
+                case SleepDenialReason.BedOccupied: return "кровать занята";
+                case SleepDenialReason.BedAssignedToAnotherResident: return "кровать назначена другому жителю";
+                case SleepDenialReason.ProtectedActivity: return "сначала нужно закончить перенос предмета или прямое управление";
+                case SleepDenialReason.CriticalHunger: return "сначала нужно поесть";
+                case SleepDenialReason.NoAssignedBed: return "нет назначенной кровати";
+                default: return reason.ToString();
+            }
+        }
+
+        private static string FamilyReason(FamilyInteractionDenialReason reason)
+        {
+            switch (reason)
+            {
+                case FamilyInteractionDenialReason.NotAdult: return "доступно только взрослым";
+                case FamilyInteractionDenialReason.ConsentMissing: return "нужно независимое согласие обоих";
+                case FamilyInteractionDenialReason.NotMutualSpouses: return "нет взаимной семейной связи";
+                case FamilyInteractionDenialReason.RelationshipTooWeak: return "отношения недостаточно близкие";
+                case FamilyInteractionDenialReason.HealthPreventsPregnancy: return "состояние здоровья не позволяет";
+                case FamilyInteractionDenialReason.PregnancyAlreadyActive: return "беременность уже идёт";
+                default: return reason.ToString();
+            }
         }
 
         private void DrawMilitaryPanel()

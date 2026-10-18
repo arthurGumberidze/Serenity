@@ -56,6 +56,8 @@ using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
 using Game.Simulation.Characters;
+using Game.Domain.Domestic;
+using Game.Simulation.Domestic;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
 using Game.Infrastructure.Reliability;
@@ -154,6 +156,7 @@ namespace Game.Infrastructure
         public SuccessionService Succession { get; private set; }
         public DynastyDebugOverlay DynastyDebug { get; private set; }
         public HealthAndFamilyService HealthFamily { get; private set; }
+        public DomesticService Domestic { get; private set; }
         public HealthFamilyDebugOverlay HealthFamilyDebug { get; private set; }
         public WeatherService Weather { get; private set; }
         public WeatherDebugOverlay WeatherDebug { get; private set; }
@@ -331,6 +334,8 @@ namespace Game.Infrastructure
             FemaleDemoCharacter = Characters.Get(NewGame.SpouseId);
             FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
+            Domestic = new DomesticService(Characters, Buildings, HealthFamily);
+            RegisterStarterDomestic();
             Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id))
                 .TryAdd(new ResourceId("berries"), new ResourceQuantity(60));
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
@@ -367,7 +372,7 @@ namespace Game.Infrastructure
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings);
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
-                capabilityProvider: HealthFamily);
+                capabilityProvider: HealthFamily, domesticService: Domestic);
             AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.NeedsOnly);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler, () =>
@@ -505,7 +510,7 @@ namespace Game.Infrastructure
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events, CampaignProgress, Appearances, Work, ConnectedWorld);
+                Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -515,7 +520,7 @@ namespace Game.Infrastructure
                     Inventories, StoredResources, Production, Research, AiAgents, AiScheduler, Work, DirectWorkCommands,
                     ContextCommands, Tiers, CharacterPresentations,
                     ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
-                    HealthFamily, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
+                    HealthFamily, Domestic, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
                     MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
@@ -834,6 +839,29 @@ namespace Game.Infrastructure
             DemoShelterBuilding.MarkCompleted();
             DemoShelterPresenter = BuildingSpawner.Spawn(DemoShelterBuilding);
         }
+
+        private void RegisterStarterDomestic()
+        {
+            var residents = NewGame.PlayerCharacters.Select(x => x.Id).ToArray();
+            Domestic.RegisterHome(new HomeState(DemoShelterBuilding.Id, MaleDemoCharacter.Id,
+                new IndoorZoneState(-7, 4, -4, 6, true, true), residents));
+            var firstBed = new BedState(
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "starter_bed", 0),
+                DemoShelterBuilding.Id, new GridCoordinate(-6, 5),
+                ToWorldPosition(ProjectToGameplayGround(new Vector3(-6f, 0f, 5f))));
+            var secondBed = new BedState(
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "starter_bed", 1),
+                DemoShelterBuilding.Id, new GridCoordinate(-5, 5),
+                ToWorldPosition(ProjectToGameplayGround(new Vector3(-5f, 0f, 5f))));
+            Domestic.RegisterBed(firstBed);
+            Domestic.RegisterBed(secondBed);
+            Domestic.AssignBed(firstBed.Id, MaleDemoCharacter.Id);
+            Domestic.AssignBed(secondBed.Id, FemaleDemoCharacter.Id);
+            Domestic.SetConsent(MaleDemoCharacter.Id, FemaleDemoCharacter.Id, false);
+            Domestic.SetConsent(FemaleDemoCharacter.Id, MaleDemoCharacter.Id, false);
+        }
+
+        private static WorldPosition ToWorldPosition(Vector3 value) => new WorldPosition(value.x, value.y, value.z);
 
         private void SpawnDemoCropPlot()
         {

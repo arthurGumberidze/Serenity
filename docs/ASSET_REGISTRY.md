@@ -355,3 +355,9 @@ P10.4 imports no external art, package or Asset Store dependency. The two added 
 P10.5 imports no new external package, texture, model, animation or Asset Store dependency. Detailed residents reuse the pinned approved UMA 3.1f3 content and the existing Serenity-owned civilian hide/wrapped-pants recipe. The far-resident humanoid mesh, vertex-channel shader, clothing-role definitions, procedural work/combat poses and LOD policy are Serenity-owned runtime code/assets. Tree LOD stabilization reuses the already approved Unity URP Terrain Sample 1.0.3 meshes and disables billboard stages; vendor source is not edited.
 
 The benchmark is `PARTIAL`, not final production art. No approved visual recipe currently exists for the work or military clothing IDs; no authored multi-mesh Character LOD chain exists; the normal starter ages do not cover age groups; and chop/mine/gather/carry/build/fish/hunt/combat/sleep remain procedural or absent rather than authored clips. Separate approval is required before importing a compatible original soft-stylized modular human/wardrobe source, a rig-compatible animation source, an authored/legal Character LOD source and optional matching fauna/fish content.
+
+The paragraph above records the earlier P10.5 benchmark state; D-145 and `docs/P105_HANDOFF.md` supersede its acceptance status after the approved Quaternius CC0 import.
+
+## P10.6 domestic/save provenance (2026-10-18)
+
+P10.6 imports no external model, texture, animation, font, package or Asset Store dependency. Home/indoor/bed/access/occupancy, consent, family-event, sleep scheduling, snapshot v23, legacy-save metadata and UI/fade behavior are Serenity-owned C#/UI Toolkit changes. The visible shelter and bed affordance reuse the existing project-owned P9.4 settlement presentation; P10.6 adds no vendor-derived art and modifies no vendor source.

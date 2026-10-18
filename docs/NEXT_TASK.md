@@ -1,11 +1,11 @@
 # NEXT_TASK.md
 
-Active task: **P10.6 — «Дом, сон, взрослые отношения и P10 Save/Load» (TODO)**.
+Active task: **P10.7 — «Военные, обучение, цели и захват» (TODO)**.
 
-P10.5 is DONE. Do not reopen its accepted role-content, authored-animation, Character LOD or Player-smoke work unless P10.6 exposes a regression. The exact P10.5 evidence and source provenance are recorded in `docs/P105_HANDOFF.md`, D-145 and `Artifacts/P105/p105-pass`.
+P10.6 is DONE. Do not reopen its canonical home/bed/sleep, adult mutual-consent, fade/pregnancy or snapshot-v23 work unless P10.7 exposes a regression. The exact P10.6 evidence is recorded in `docs/P106_HANDOFF.md`, D-146 and `Artifacts/P106/p106-final-pass`.
 
-Work only on P10.6. Implement the FRS home/family contract: sleep succeeds only on an assigned bed inside an eligible home; ownership/assignment and indoor validation are canonical rules rather than view state; relationships and pregnancy are adult-only and use the required fade presentation; P10 Save/Load round-trips the connected-world, character appearance/role/age, housing, relationship and pregnancy state while retaining the established read-only P9 legacy metadata boundary. Keep core rules in Domain/Simulation, stable references as `StableEntityId`, definitions data-driven and mass scheduling centralized. Add focused and affected EditMode/PlayMode coverage, a provenance-stamped Windows x64 Mono Development build and an ordinary 1920×1080 D3D11 Player route with saved screenshots/log/telemetry before DONE.
+Work only on P10.7. Implement the exact military/training/target/capture contract from the P10 requirements: barracks trains existing people with the repeated-training curve; direct attacks are military-only while civilians may be harmed only indirectly; capture uses the exact two-flag five-minute speed/pause/contest/reset/transfer/no-barracks rules and preserves ownership/soldier outcomes. Keep core authority in Domain/Simulation, stable references as `StableEntityId`, and use the existing P10.5 military clothing hook without creating a parallel Character authority. Add focused/affected tests, build and normal 1920×1080 D3D11 Player evidence before DONE.
 
-Do not implement P10.7 military/capture rules in P10.6. Preserve P10.5's military clothing hook only as appearance content.
+Do not implement P10.8 codes or family diagnostics in P10.7.
 
 Deferred debt remains mandatory for P10.9/P10.10: P10.4's inherited U15 physical-walk failure, missing accepted resource/industry Player route and clean-exit evidence; P10.3's physical Shift-click/Shift-command, slow multi-frame drag, needs/protected-carry resume, Tier1→Tier2→Tier1 and remaining target/action matrix; and P10.2's measured 1920×1080 p95 128.342 ms performance debt plus the broad flat overlapping route `LineRenderer` strips. P8.6/U29/U30/U31 remain PARTIAL/PARTIAL/IN_PROGRESS/BLOCKED.

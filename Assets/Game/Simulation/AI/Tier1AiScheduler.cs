@@ -8,6 +8,8 @@ using Game.Domain.Work;
 using Game.Simulation.Time;
 using Game.Simulation.Work;
 using Game.Domain.Health;
+using Game.Domain.Domestic;
+using Game.Simulation.Domestic;
 
 namespace Game.Simulation.AI
 {
@@ -44,6 +46,7 @@ namespace Game.Simulation.AI
         private readonly Tier1AiSettings settings;
         private readonly WorkManager work;
         private readonly ICharacterCapabilityProvider capabilities;
+        private readonly DomesticService domestic;
         private readonly List<Entry> entries = new List<Entry>();
         private readonly Dictionary<StableEntityId, Entry> byId = new Dictionary<StableEntityId, Entry>();
         private int thinkCursor;
@@ -55,7 +58,7 @@ namespace Game.Simulation.AI
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
             Tier1AiSettings settings = null, WorkManager workManager = null,
-            ICharacterCapabilityProvider capabilityProvider = null)
+            ICharacterCapabilityProvider capabilityProvider = null, DomesticService domesticService = null)
         {
             this.characters = characters ?? throw new ArgumentNullException(nameof(characters));
             this.agents = agents ?? throw new ArgumentNullException(nameof(agents));
@@ -63,6 +66,7 @@ namespace Game.Simulation.AI
             this.settings = settings ?? Tier1AiSettings.Default;
             work = workManager;
             capabilities = capabilityProvider;
+            domestic = domesticService;
         }
 
         public int Count => entries.Count;
@@ -86,6 +90,28 @@ namespace Game.Simulation.AI
         public const double CriticalRestEnergy = 0.10d;
         public const double CriticalHunger = 0.90d;
         public const double CriticalHungerCompletion = 0.20d;
+
+        public bool TryStartSleepNow(StableEntityId characterId, out SleepDenialReason reason)
+        {
+            reason = SleepDenialReason.CharacterUnavailable;
+            if (!byId.TryGetValue(characterId, out var entry)) return false;
+            if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId))
+            { reason = SleepDenialReason.ProtectedActivity; return false; }
+            if (entry.Agent.Needs.Hunger >= CriticalHunger)
+            { reason = SleepDenialReason.CriticalHunger; return false; }
+            if (entry.Action != null && !entry.Action.IsInterruptible)
+            { reason = SleepDenialReason.ProtectedActivity; return false; }
+            if (domestic == null)
+            {
+                entry.Action?.Cancel(); entry.Action = null; Start(entry, UtilityActionKind.Rest);
+                reason = SleepDenialReason.None; return true;
+            }
+            var eligibility = domestic.EvaluateSleep(characterId);
+            reason = eligibility.Reason;
+            if (!eligibility.Allowed) return false;
+            entry.Action?.Cancel(); entry.Action = null; Start(entry, UtilityActionKind.Rest);
+            return entry.Action != null;
+        }
 
         public void BindExternalActivityOwner(IExternalCharacterActivityOwner owner)
         {
@@ -302,13 +328,14 @@ namespace Game.Simulation.AI
             // U11 precedence: a carrying phase is protected above; otherwise critical Energy wins.
             if (entry.Agent.Needs.Energy <= CriticalRestEnergy)
             {
-                if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest)
+                var canSleep = domestic == null || domestic.EvaluateSleep(entry.Agent.CharacterId).Allowed;
+                if (canSleep && (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest))
                 {
                     entry.Action?.Cancel();
                     entry.Action = null;
                     Start(entry, UtilityActionKind.Rest);
                 }
-                return;
+                if (canSleep) return;
             }
 
             if (entry.Agent.Needs.Hunger >= CriticalHunger)
@@ -399,8 +426,23 @@ namespace Game.Simulation.AI
             switch (action)
             {
                 case UtilityActionKind.Rest:
-                    entry.Movement.Stop();
-                    entry.Action = new RestActionExecution(entry.Agent, settings);
+                    if (domestic == null)
+                    {
+                        entry.Movement.Stop();
+                        entry.Action = new RestActionExecution(entry.Agent, settings);
+                    }
+                    else
+                    {
+                        var eligibility = domestic.EvaluateSleep(entry.Agent.CharacterId);
+                        if (eligibility.Allowed)
+                            entry.Action = new SleepActionExecution(entry.Agent, entry.Movement, settings, domestic,
+                                eligibility.Bed);
+                        else
+                        {
+                            entry.Movement.Stop();
+                            entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                        }
+                    }
                     break;
                 case UtilityActionKind.Eat:
                     entry.Movement.Stop();

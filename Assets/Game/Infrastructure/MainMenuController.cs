@@ -87,7 +87,10 @@ namespace Game.Infrastructure
             if (characterCatalog == null) throw new InvalidOperationException("P4 character presentation catalog is required.");
             appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
             var saveDirectory = ResolveSaveDirectory();
-            saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory));
+            var legacyDirectory = ResolveLegacySaveDirectory();
+            saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory),
+                string.Equals(saveDirectory, legacyDirectory, StringComparison.OrdinalIgnoreCase)
+                    ? null : new FileSaveStore(legacyDirectory));
             settingsStore = UserSettingsStore.CreateDefault();
             var loadedSettings = settingsStore.Load();
             settings = loadedSettings.Settings;
@@ -123,6 +126,7 @@ namespace Game.Infrastructure
             P96PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P102PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P105PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P106PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -350,6 +354,19 @@ namespace Game.Infrastructure
                     AddMuted(box, T("menu.load.empty"));
                 }
                 content.Add(box);
+            }
+            var legacy = saveCatalog.ListLegacyMetadata();
+            if (legacy.Count > 0)
+            {
+                AddHeading("Архив P9 · только метаданные", 22);
+                foreach (var item in legacy)
+                {
+                    var detail = "v" + item.FormatVersion + " · " + item.LastWriteUtc.ToLocalTime().ToString("g",
+                        System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale));
+                    if (item.CalendarTicks.HasValue)
+                        detail += " · год " + Game.Domain.Time.GameCalendar.Year(item.CalendarTicks.Value);
+                    AddLine(item.SlotId + " · " + detail);
+                }
             }
             content.Add(ActionButton(T("menu.back"), ShowMain, "back-button"));
         }
@@ -947,6 +964,14 @@ namespace Game.Infrastructure
         private static string ResolveSaveDirectory()
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
+            return string.IsNullOrWhiteSpace(configured)
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
+                : configured;
+        }
+
+        private static string ResolveLegacySaveDirectory()
+        {
+            var configured = Environment.GetEnvironmentVariable("SERENITY_LEGACY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
                 ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "Saves")
                 : configured;

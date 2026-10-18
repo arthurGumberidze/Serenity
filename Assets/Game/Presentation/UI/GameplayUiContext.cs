@@ -30,6 +30,7 @@ using Game.Simulation.Tiers;
 using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
+using Game.Simulation.Domestic;
 using UnityEngine;
 
 namespace Game.Presentation.UI
@@ -45,7 +46,8 @@ namespace Game.Presentation.UI
         SaveLoad = 6,
         Global = 7,
         Economy = 8,
-        Events = 9
+        Events = 9,
+        Domestic = 10
     }
 
     public sealed class GameplaySaveSlotInfo
@@ -86,7 +88,7 @@ namespace Game.Presentation.UI
             DirectWorkCommandService directWork, ContextCommandService contextCommands, TierManager tiers,
             CharacterPresentationRegistry presentations,
             ManualMoveCommandService manualMoveCommands, WorldPileService worldPiles, BuildingRegistry buildings, BuildingPresentationCatalog buildingCatalog,
-            BuildingPlacementController buildingPlacement, HealthAndFamilyService health,
+            BuildingPlacementController buildingPlacement, HealthAndFamilyService health, DomesticService domestic,
             WeatherService weather, DynastyState dynasty, FamilyTreeQuery family, GameRunState gameRun,
             MilitaryUnitService military, MilitaryUnitRepresentationService militaryRepresentations,
             MilitaryUnitCommandService militaryCommands, BattleResolutionService battles, CombatService combat,
@@ -120,6 +122,7 @@ namespace Game.Presentation.UI
             BuildingCatalog = buildingCatalog ?? throw new ArgumentNullException(nameof(buildingCatalog));
             BuildingPlacement = buildingPlacement ?? throw new ArgumentNullException(nameof(buildingPlacement));
             Health = health ?? throw new ArgumentNullException(nameof(health));
+            Domestic = domestic ?? throw new ArgumentNullException(nameof(domestic));
             Weather = weather ?? throw new ArgumentNullException(nameof(weather));
             Dynasty = dynasty ?? throw new ArgumentNullException(nameof(dynasty));
             Family = family ?? throw new ArgumentNullException(nameof(family));
@@ -168,6 +171,7 @@ namespace Game.Presentation.UI
         public BuildingPresentationCatalog BuildingCatalog { get; }
         public BuildingPlacementController BuildingPlacement { get; }
         public HealthAndFamilyService Health { get; }
+        public DomesticService Domestic { get; }
         public WeatherService Weather { get; }
         public DynastyState Dynasty { get; }
         public FamilyTreeQuery Family { get; }

@@ -160,7 +160,7 @@ namespace Game.Tests.Editor
             var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(40),
                 new GameTimeState(10, 20, 1, false), 400, production);
             var restored = codec.Deserialize(codec.Serialize(snapshot));
-            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.ResourceIndustryVersion));
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.DomesticVersion));
             Assert.That(restored.Production.NaturalLifecycles.Single().RespawnAttempt, Is.EqualTo(3));
             Assert.That(restored.Production.Industry.Zones.Single().Remaining, Is.EqualTo(77));
             Assert.That(restored.Production.Industry.Zones.Single().RestorativeInstalled, Is.True);
