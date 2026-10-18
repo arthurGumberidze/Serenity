@@ -61,6 +61,8 @@ namespace Game.Domain.Military
         public MilitaryTrainingLevelDefinition Get(MilitaryRank rank) => definitions.TryGetValue(rank, out var value)
             ? value : throw new KeyNotFoundException("Unknown military rank: " + rank);
 
+        public IReadOnlyList<MilitaryTrainingLevelDefinition> All => definitions.Values.OrderBy(x => x.Rank).ToArray();
+
         public bool TryGetNext(MilitaryRank? current, out MilitaryTrainingLevelDefinition value)
         {
             var next = current.HasValue ? (int)current.Value + 1 : (int)MilitaryRank.Recruit;
@@ -109,7 +111,8 @@ namespace Game.Domain.Military
             if (!characterId.IsValid || !barracksId.IsValid || !sideId.IsValid)
                 throw new ArgumentException("Training references are required.");
             if (!Enum.IsDefined(typeof(MilitaryRank), rank)) throw new ArgumentOutOfRangeException(nameof(rank));
-            if (startTick < 0 || completionTick <= startTick || sequence == 0)
+            // Diagnostic graduates are canonical instantaneous completions; scheduled training remains strictly later.
+            if (startTick < 0 || completionTick < startTick || sequence == 0)
                 throw new ArgumentOutOfRangeException(nameof(completionTick));
             CharacterId = characterId; BarracksId = barracksId; SideId = sideId; Rank = rank;
             StartTick = startTick; CompletionTick = completionTick; Completed = completed; Sequence = sequence;

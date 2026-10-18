@@ -49,6 +49,8 @@ namespace Game.Simulation.Characters
         public bool TryGet(StableEntityId characterId, out AppearanceState appearance) =>
             states.TryGetValue(characterId, out appearance);
 
+        public bool Remove(StableEntityId characterId) => states.Remove(characterId);
+
         public void Set(AppearanceState appearance)
         {
             Validate(appearance, allowUnknownProfile: false);

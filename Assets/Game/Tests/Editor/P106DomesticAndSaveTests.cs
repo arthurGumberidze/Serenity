@@ -102,7 +102,7 @@ namespace Game.Tests.Editor
             var codec = new SaveXmlCodec();
             var bytes = codec.Serialize(snapshot);
             var restored = codec.Deserialize(bytes);
-            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.MilitaryCampaignVersion));
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(restored.ConnectedWorld.GenerationId, Is.EqualTo(ConnectedWorldContract.GenerationId));
             Assert.That(restored.Domestic.Homes.Count, Is.EqualTo(1));
             Assert.That(restored.Domestic.Beds.Single().AssignedResidentId, Is.EqualTo(fixture.Man.Id));

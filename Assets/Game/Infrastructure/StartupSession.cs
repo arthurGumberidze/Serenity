@@ -42,9 +42,10 @@ namespace Game.Infrastructure
                         slot.Mode.HasValue ? RussianTextCatalog.Enum(slot.Mode.Value) : RussianTextCatalog.Get("ui.hud.mode.local"),
                         slot.LastWriteUtc.ToLocalTime().ToString("g",
                             System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
+                if (slot.CheatsUsed) detail += " · коды использованы, достижения отключены";
                 if (!compatible && !slot.IsCorrupt) detail += " · архивный формат v" + (slot.FormatVersion ?? 0) + " (только чтение)";
                 result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index),
-                    true, slot.IsCorrupt, detail, compatible ? slot.WorldSeed : null));
+                    true, slot.IsCorrupt, detail, compatible ? slot.WorldSeed : null, slot.CheatsUsed));
             }
             return result;
         }

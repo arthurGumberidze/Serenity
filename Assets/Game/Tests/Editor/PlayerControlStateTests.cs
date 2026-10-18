@@ -97,7 +97,7 @@ namespace Game.Tests.Editor
             Assert.That(SaveSnapshot.ResourceIndustryVersion, Is.EqualTo(22));
             Assert.That(SaveSnapshot.DomesticVersion, Is.EqualTo(23));
             Assert.That(SaveSnapshot.MilitaryCampaignVersion, Is.EqualTo(24));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.MilitaryCampaignVersion));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.DiagnosticVersion));
         }
 
         private sealed class Owner : IExternalCharacterActivityOwner

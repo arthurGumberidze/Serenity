@@ -51,8 +51,31 @@ namespace Game.Domain.Resources
         }
 
         public InventoryOwner Owner { get; }
-        public long Capacity { get; }
+        public long Capacity { get; private set; }
         public long TotalUnits => totalUnits;
+
+        public bool Accepts(ResourceId id)
+        {
+            var definition = catalog.Get(id);
+            return acceptedCategories == null || acceptedCategories.Contains(definition.Category);
+        }
+
+        public void EnsureCapacity(long minimumCapacity)
+        {
+            if (minimumCapacity < 0) throw new ArgumentOutOfRangeException(nameof(minimumCapacity));
+            if (minimumCapacity > Capacity) Capacity = minimumCapacity;
+        }
+
+        public void RestoreState(ResourceInventoryState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (state.Owner != Owner) throw new ArgumentException("Inventory owner cannot change.", nameof(state));
+            var restored = Restore(state, catalog);
+            Capacity = restored.Capacity;
+            amounts.Clear();
+            foreach (var amount in restored.amounts) amounts.Add(amount.Key, amount.Value);
+            totalUnits = restored.totalUnits;
+        }
         public ResourceQuantity GetAmount(ResourceId id)
         {
             catalog.Get(id);

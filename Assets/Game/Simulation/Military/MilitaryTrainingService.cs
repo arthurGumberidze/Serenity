@@ -62,6 +62,7 @@ namespace Game.Simulation.Military
         public IReadOnlyList<MilitaryTrainingRecordState> Records => records.OrderBy(x => x.Sequence).ToArray();
         public IReadOnlyList<MilitaryTrainingRecordState> Active => records.Where(x => !x.Completed)
             .OrderBy(x => x.CompletionTick).ThenBy(x => x.CharacterId).ToArray();
+        public MilitaryTrainingCatalog Catalog => catalog;
 
         public MilitaryRank? GetRank(StableEntityId characterId)
         {
@@ -117,6 +118,33 @@ namespace Game.Simulation.Military
             }
             LastProcessedTick = calendarTick;
             return completed;
+        }
+
+        /// <summary>
+        /// Registers a diagnostic graduate through the same rank, skill, clothing and roster authorities as
+        /// ordinary course completion. It never advances or substitutes the normal training workflow.
+        /// </summary>
+        public MilitaryTrainingRecordState RegisterDiagnosticGraduate(StableEntityId characterId,
+            StableEntityId barracksId, CombatSideId sideId, MilitaryRank rank, long calendarTick)
+        {
+            if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (!characters.TryGet(characterId, out var character) || character.LifeState != CharacterLifeState.Alive)
+                throw new InvalidOperationException("Diagnostic graduate must be a living canonical Character.");
+            var capability = capabilities.GetCapabilities(characterId);
+            if (!capability.IsAdult || capability.IsIncapacitated)
+                throw new InvalidOperationException("Diagnostic graduate must be an available adult.");
+            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId != BarracksDefinitionId ||
+                !barracks.IsOperational || barracks.OwnerSideId != sideId)
+                throw new InvalidOperationException("Diagnostic graduate requires an operational same-side barracks.");
+            if (records.Any(x => x.CharacterId == characterId) || units.TryGetForMember(characterId, out _))
+                throw new InvalidOperationException("Diagnostic graduate is already trained or rostered.");
+            catalog.Get(rank);
+            var record = new MilitaryTrainingRecordState(characterId, barracksId, sideId, rank,
+                calendarTick, calendarTick, true, ++sequence);
+            records.Add(record);
+            Complete(record);
+            if (calendarTick > LastProcessedTick) LastProcessedTick = calendarTick;
+            return record;
         }
 
         public MilitaryTrainingSaveState CaptureState() =>

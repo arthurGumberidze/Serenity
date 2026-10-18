@@ -175,7 +175,7 @@ namespace Game.Tests.Editor
                 militaryCampaign: campaign);
             var codec = new SaveXmlCodec();
             var restored = codec.Deserialize(codec.Serialize(snapshot));
-            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.MilitaryCampaignVersion));
+            Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(restored.MilitaryCampaign.Captures.Single().Outcome.ResolutionId, Is.EqualTo(resolution));
             Assert.That(restored.MilitaryCampaign.Captures.Single().Seed,
                 Is.EqualTo(firstCapture.Get(first.SettlementId).Seed));

@@ -31,6 +31,7 @@ using Game.Simulation.World;
 using Game.Simulation.Events;
 using Game.Simulation.Campaign;
 using Game.Simulation.Domestic;
+using Game.Simulation.Diagnostics;
 using UnityEngine;
 
 namespace Game.Presentation.UI
@@ -47,13 +48,14 @@ namespace Game.Presentation.UI
         Global = 7,
         Economy = 8,
         Events = 9,
-        Domestic = 10
+        Domestic = 10,
+        Codes = 11
     }
 
     public sealed class GameplaySaveSlotInfo
     {
         public GameplaySaveSlotInfo(int index, string label, bool exists, bool isCorrupt, string detail,
-            long? worldSeed = null)
+            long? worldSeed = null, bool cheatsUsed = false)
         {
             Index = index;
             Label = label ?? string.Empty;
@@ -61,6 +63,7 @@ namespace Game.Presentation.UI
             IsCorrupt = isCorrupt;
             Detail = detail ?? string.Empty;
             WorldSeed = worldSeed;
+            CheatsUsed = cheatsUsed;
         }
 
         public int Index { get; }
@@ -69,6 +72,7 @@ namespace Game.Presentation.UI
         public bool IsCorrupt { get; }
         public string Detail { get; }
         public long? WorldSeed { get; }
+        public bool CheatsUsed { get; }
     }
 
     public interface IGameplaySaveFacade
@@ -94,6 +98,7 @@ namespace Game.Presentation.UI
             MilitaryUnitCommandService militaryCommands, MilitaryTrainingService militaryTraining,
             MilitaryAttackCommandService militaryAttack, SettlementFlagCaptureService settlementCapture,
             BattleResolutionService battles, CombatService combat,
+            DiagnosticService diagnostics,
             PlayerControlService playerControl, ThirdPersonControlController thirdPerson,
             GlobalMapService globalMap, IGameplaySaveFacade saves,
             Action<bool> setPaused, Action<Game.Simulation.Time.GameSpeed> setSpeed,
@@ -137,6 +142,7 @@ namespace Game.Presentation.UI
             SettlementCapture = settlementCapture ?? throw new ArgumentNullException(nameof(settlementCapture));
             Battles = battles ?? throw new ArgumentNullException(nameof(battles));
             Combat = combat ?? throw new ArgumentNullException(nameof(combat));
+            Diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
             PlayerControl = playerControl ?? throw new ArgumentNullException(nameof(playerControl));
             ThirdPerson = thirdPerson ?? throw new ArgumentNullException(nameof(thirdPerson));
             GlobalMap = globalMap ?? throw new ArgumentNullException(nameof(globalMap));
@@ -189,6 +195,7 @@ namespace Game.Presentation.UI
         public SettlementFlagCaptureService SettlementCapture { get; }
         public BattleResolutionService Battles { get; }
         public CombatService Combat { get; }
+        public DiagnosticService Diagnostics { get; }
         public PlayerControlService PlayerControl { get; }
         public ThirdPersonControlController ThirdPerson { get; }
         public GlobalMapService GlobalMap { get; }

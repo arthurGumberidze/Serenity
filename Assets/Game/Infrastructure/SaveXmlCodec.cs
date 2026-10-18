@@ -23,6 +23,7 @@ using Game.Domain.Events;
 using Game.Domain.Campaign;
 using Game.Domain.Work;
 using Game.Domain.Domestic;
+using Game.Domain.Diagnostics;
 using Game.Simulation;
 
 namespace Game.Infrastructure
@@ -87,6 +88,8 @@ namespace Game.Infrastructure
             }
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion)
                 root.Add(SerializeMilitaryCampaign(snapshot.MilitaryCampaign));
+            if (snapshot.FormatVersion >= SaveSnapshot.DiagnosticVersion)
+                root.Add(SerializeDiagnostics(snapshot.Diagnostics));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -127,6 +130,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.ContextOrdersVersion &&
                         version != SaveSnapshot.ResourceIndustryVersion &&
                         version != SaveSnapshot.DomesticVersion &&
+                        version != SaveSnapshot.MilitaryCampaignVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -170,12 +174,14 @@ namespace Game.Infrastructure
                         ? DeserializeCharacterRuntime(root.Element("characterRuntime")) : null;
                     var militaryCampaign = version >= SaveSnapshot.MilitaryCampaignVersion
                         ? DeserializeMilitaryCampaign(root.Element("militaryCampaign")) : null;
+                    var diagnostics = version >= SaveSnapshot.DiagnosticVersion
+                        ? DeserializeDiagnostics(root.Element("diagnostics")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign);
+                        appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign, diagnostics);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1545,7 +1551,30 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.ConnectedWorldVersion) fields = fields.Concat(new[] { "connectedWorld" });
             if (version >= SaveSnapshot.DomesticVersion) fields = fields.Concat(new[] { "domestic", "characterRuntime" });
             if (version >= SaveSnapshot.MilitaryCampaignVersion) fields = fields.Concat(new[] { "militaryCampaign" });
+            if (version >= SaveSnapshot.DiagnosticVersion) fields = fields.Concat(new[] { "diagnostics" });
             return fields.ToArray();
+        }
+
+        private static XElement SerializeDiagnostics(DiagnosticSaveState state)
+        {
+            var element = new XElement("diagnostics");
+            if (state == null) return element;
+            element.Add(new XElement("cheatsUsed", state.CheatsUsed),
+                new XElement("sequence", state.Sequence));
+            return element;
+        }
+
+        private static DiagnosticSaveState DeserializeDiagnostics(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing diagnostic state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty diagnostic state.");
+                return null;
+            }
+            RequireFields(element, new[] { "cheatsUsed", "sequence" });
+            return new DiagnosticSaveState(XmlConvert.ToBoolean(Value(element, "cheatsUsed")),
+                XmlConvert.ToUInt64(Value(element, "sequence")));
         }
 
         private static XElement SerializeDomestic(DomesticWorldSaveState state)

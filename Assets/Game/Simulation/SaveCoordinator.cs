@@ -23,6 +23,8 @@ using Game.Simulation.Tiers;
 using Game.Domain.Characters;
 using Game.Domain.World;
 using Game.Domain.Military;
+using Game.Domain.Diagnostics;
+using Game.Simulation.Diagnostics;
 
 namespace Game.Simulation
 {
@@ -51,6 +53,7 @@ namespace Game.Simulation
         private readonly MilitaryTrainingService militaryTraining;
         private readonly SettlementFlagCaptureService settlementCapture;
         private readonly MilitaryAttackCommandService militaryAttack;
+        private readonly DiagnosticService diagnostics;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -66,7 +69,7 @@ namespace Game.Simulation
             ConnectedWorldService connectedWorldService = null, DomesticService domesticService = null,
             TierManager tierManager = null, MilitaryTrainingService militaryTrainingService = null,
             SettlementFlagCaptureService settlementCaptureService = null,
-            MilitaryAttackCommandService militaryAttackService = null)
+            MilitaryAttackCommandService militaryAttackService = null, DiagnosticService diagnosticService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -93,6 +96,7 @@ namespace Game.Simulation
             militaryTraining = militaryTrainingService;
             settlementCapture = settlementCaptureService;
             militaryAttack = militaryAttackService;
+            diagnostics = diagnosticService;
         }
         public SaveSnapshot Capture()
         {
@@ -102,7 +106,7 @@ namespace Game.Simulation
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
                 appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
-                domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign());
+                domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign(), diagnostics?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -121,6 +125,9 @@ namespace Game.Simulation
             if ((militaryTraining != null || settlementCapture != null || militaryAttack != null) &&
                 snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion && snapshot.MilitaryCampaign == null)
                 throw new InvalidOperationException("P10.7 save is missing required military-campaign state.");
+            if (diagnostics != null && snapshot.FormatVersion >= SaveSnapshot.DiagnosticVersion &&
+                snapshot.Diagnostics == null)
+                throw new InvalidOperationException("P10.8 save is missing required diagnostic state.");
             var restoredClock = CreateClock(snapshot);
             if (snapshot.Production != null && production == null)
                 throw new InvalidOperationException("This save contains production state but no production service is attached.");
@@ -187,8 +194,7 @@ namespace Game.Simulation
             if (snapshot.CharacterRuntime != null && tiers == null)
                 throw new InvalidOperationException("This save contains character runtime state but no tier manager is attached.");
             if (snapshot.CharacterRuntime != null)
-                foreach (var entry in snapshot.CharacterRuntime.Entries)
-                    tiers.RestoreRepresentationState(entry.State.CharacterId, entry.Tier, entry.State);
+                tiers.RestoreWorldState(snapshot.CharacterRuntime.Entries);
             // Tier restoration cancels any pre-load Tier1 action and may release its occupied bed.
             // Apply the saved domestic snapshot afterwards so saved occupancy wins deterministically.
             if (snapshot.Domestic != null && domestic == null)
@@ -203,6 +209,8 @@ namespace Game.Simulation
                 militaryAttack.RestoreState(snapshot.MilitaryCampaign.AttackOrders,
                     snapshot.MilitaryCampaign.AttackSequence);
             }
+            if (diagnostics != null)
+                diagnostics.RestoreState(snapshot.Diagnostics ?? new DiagnosticSaveState(false, 0));
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;

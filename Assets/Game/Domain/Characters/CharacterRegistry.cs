@@ -65,22 +65,20 @@ namespace Game.Domain.Characters
                     throw new ArgumentException("Character state IDs must be unique.", nameof(states));
             }
 
-            if (characters.Count == 0)
-            {
-                foreach (var pair in restored) characters.Add(pair.Key, pair.Value);
-                return;
-            }
-
-            if (characters.Count != restored.Count || characters.Keys.Any(id => !restored.ContainsKey(id)))
-                throw new InvalidOperationException("Restoring an active registry requires the same stable character identities.");
             foreach (var pair in restored)
-            {
-                var existing = characters[pair.Key];
-                if (existing.Sex != pair.Value.Sex || existing.BiologicalBirthTick != pair.Value.BiologicalBirthTick)
+                if (characters.TryGetValue(pair.Key, out var existing) &&
+                    (existing.Sex != pair.Value.Sex || existing.BiologicalBirthTick != pair.Value.BiologicalBirthTick))
                     throw new InvalidOperationException("Restored immutable character biography does not match the active canonical instance.");
-            }
+
+            foreach (var id in characters.Keys.Where(id => !restored.ContainsKey(id)).ToArray())
+                characters.Remove(id);
             foreach (var pair in restored)
-                characters[pair.Key].RestoreMutableState(pair.Value.CaptureState());
+            {
+                if (characters.TryGetValue(pair.Key, out var existing))
+                    existing.RestoreMutableState(pair.Value.CaptureState());
+                else
+                    characters.Add(pair.Key, pair.Value);
+            }
         }
 
         public IReadOnlyList<Character> GetChildren(StableEntityId parentId)

@@ -142,6 +142,18 @@ namespace Game.Simulation.Research
 
         public IReadOnlyList<TechnologyDefinition> AvailableTechnologies => catalog.All.Where(x => IsAvailable(x.Id)).ToArray();
 
+        /// <summary>Diagnostic-only progression mutation. Existing workers/ticks remain canonical.</summary>
+        public int CompleteAllForDiagnostics()
+        {
+            var added = 0;
+            foreach (var definition in catalog.All.OrderBy(x => x.Id))
+                if (completed.Add(definition.Id)) added++;
+            if (ActiveProject != null && completed.Contains(ActiveProject.TechnologyId))
+                ActiveProject = null;
+            RebuildUnlocks();
+            return added;
+        }
+
         public bool Start(TechnologyId id)
         {
             if (ActiveProject != null || !IsAvailable(id)) return false;

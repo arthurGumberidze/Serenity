@@ -16,7 +16,7 @@ namespace Game.Simulation
     {
         public SaveSlotMetadata(StableEntityId slotId, StableEntityId? sessionId, long? calendarTicks,
             GameWorldMode? mode, DateTime lastWriteUtc, bool isCorrupt, string error, long? worldSeed = null,
-            int? formatVersion = null, string worldGenerationId = null)
+            int? formatVersion = null, string worldGenerationId = null, bool cheatsUsed = false)
         {
             if (!slotId.IsValid) throw new ArgumentException("Slot ID is required.", nameof(slotId));
             SlotId = slotId;
@@ -29,6 +29,7 @@ namespace Game.Simulation
             WorldSeed = worldSeed;
             FormatVersion = formatVersion;
             WorldGenerationId = worldGenerationId ?? string.Empty;
+            CheatsUsed = cheatsUsed;
         }
 
         public StableEntityId SlotId { get; }
@@ -41,6 +42,7 @@ namespace Game.Simulation
         public long? WorldSeed { get; }
         public int? FormatVersion { get; }
         public string WorldGenerationId { get; }
+        public bool CheatsUsed { get; }
     }
 
     /// <summary>Optional storage capability used by player-facing slot browsers.</summary>

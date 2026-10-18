@@ -66,7 +66,8 @@ namespace Game.Infrastructure
                     var snapshot = Load(slotId);
                     result.Add(new SaveSlotMetadata(slotId, snapshot.SessionId, snapshot.CalendarTicks,
                         snapshot.GlobalMap?.Mode, modified, false, string.Empty, ResolveWorldSeed(snapshot),
-                        snapshot.FormatVersion, snapshot.ConnectedWorld?.GenerationId));
+                        snapshot.FormatVersion, snapshot.ConnectedWorld?.GenerationId,
+                        snapshot.Diagnostics?.CheatsUsed ?? false));
                 }
                 catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException ||
                                                   exception is InvalidDataException || exception is NotSupportedException ||

@@ -226,7 +226,7 @@ namespace Game.Infrastructure.Integration
                 var modal = root.GameplayUi.RootVisual.Q<VisualElement>("confirmation-modal");
                 Invoke(modal.Query<Button>().ToList().First(x => x.text == "Загрузить"));
                 var snapshot = root.Saves.Capture();
-                result.save_load_v24 = snapshot.FormatVersion == SaveSnapshot.MilitaryCampaignVersion &&
+                result.save_load_v24 = snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion &&
                     root.MilitaryTraining.GetRank(traineeId) == MilitaryRank.Recruit &&
                     root.SettlementCapture.Get(root.StarterSettlementId).ProgressTicks == progressBefore &&
                     snapshot.MilitaryCampaign.Training.Records.Any(x => x.CharacterId == traineeId && x.Completed);

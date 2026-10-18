@@ -45,8 +45,9 @@ namespace Game.Infrastructure
                       GameCalendar.DayOfYear(slot.CalendarTicks.Value),
                       slot.Mode.HasValue ? RussianTextCatalog.Enum(slot.Mode.Value) : RussianTextCatalog.Get("ui.hud.mode.local"),
                       slot.LastWriteUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
+                if (slot.CheatsUsed) detail += " · коды использованы, достижения отключены";
                 result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), true,
-                    slot.IsCorrupt, detail, slot.WorldSeed));
+                    slot.IsCorrupt, detail, slot.WorldSeed, slot.CheatsUsed));
             }
             return result;
         }

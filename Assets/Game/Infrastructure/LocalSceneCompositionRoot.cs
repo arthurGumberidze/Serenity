@@ -58,6 +58,7 @@ using Game.Simulation.Campaign;
 using Game.Simulation.Characters;
 using Game.Domain.Domestic;
 using Game.Simulation.Domestic;
+using Game.Simulation.Diagnostics;
 using Game.ECS.Tier2;
 using Game.Infrastructure.Performance;
 using Game.Infrastructure.Reliability;
@@ -173,6 +174,7 @@ namespace Game.Infrastructure
         public MilitaryTrainingService MilitaryTraining { get; private set; }
         public MilitaryAttackCommandService MilitaryAttack { get; private set; }
         public SettlementFlagCaptureService SettlementCapture { get; private set; }
+        public DiagnosticService Diagnostics { get; private set; }
         public BattleResolutionService Battles { get; private set; }
         public BuildingDamageService BuildingDamage { get; private set; }
         public BuildingDamageDebugOverlay BuildingDamageDebug { get; private set; }
@@ -472,6 +474,9 @@ namespace Game.Infrastructure
                 MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed);
             SettlementCapture = new SettlementFlagCaptureService(worldSeed, GlobalMap, Buildings, BuildingDamage,
                 Characters, MilitaryUnits);
+            Diagnostics = new DiagnosticService(worldSeed, Research, Resources, Inventories, Buildings,
+                Characters, Appearances, HealthFamily, Domestic, MilitaryUnits, MilitaryTraining, Tiers, Combat,
+                () => Clock.State.CalendarTicks, () => Clock.State.BiologicalTicks);
             RegisterSettlementCaptureFlags();
             MilitaryAttack.BindSettlementCapture(SettlementCapture);
             var eventTargets = new CharacterEventTargetSource(Characters,
@@ -525,7 +530,7 @@ namespace Game.Infrastructure
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
                 Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers,
-                MilitaryTraining, SettlementCapture, MilitaryAttack);
+                MilitaryTraining, SettlementCapture, MilitaryAttack, Diagnostics);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -537,7 +542,7 @@ namespace Game.Infrastructure
                     ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
                     HealthFamily, Domestic, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
                     MilitaryRepresentations, MilitaryCommands, MilitaryTraining, MilitaryAttack, SettlementCapture,
-                    Battles, Combat, PlayerControl, ThirdPersonControl,
+                    Battles, Combat, Diagnostics, PlayerControl, ThirdPersonControl,
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,

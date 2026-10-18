@@ -18,6 +18,7 @@ using Game.Domain.Work;
 using Game.Domain.World;
 using Game.Domain.Events;
 using Game.Domain.Domestic;
+using Game.Domain.Diagnostics;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
@@ -28,6 +29,7 @@ using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Time;
 using Game.Simulation.Events;
+using Game.Simulation.Diagnostics;
 using Game.Simulation.Work;
 using UnityEngine;
 using UnityEngine.AI;
@@ -131,6 +133,7 @@ namespace Game.Presentation.UI
         public ContextCommandTarget? ActiveContextTarget => activeContextTarget;
         public IReadOnlyDictionary<ContextActionKind, ContextActionAvailability> ContextActionStates => contextActionStates;
         public MilitaryAttackCommandResult LastMilitaryAttackResult { get; private set; }
+        public DiagnosticExecutionResult LastDiagnosticResult { get; private set; }
 
         public void SetUiScale(float value)
         {
@@ -177,6 +180,11 @@ namespace Game.Presentation.UI
 
         public void SetPanel(GameplayPanel panel)
         {
+            if (panel == GameplayPanel.Codes && !context.Clock().IsPaused)
+            {
+                SetStatus("Раздел кодов доступен только на паузе.");
+                return;
+            }
             activePanel = activePanel == panel ? GameplayPanel.None : panel;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
             RefreshNavigationSelection();
@@ -801,6 +809,7 @@ namespace Game.Presentation.UI
             AddNavigation("Дом и семья", GameplayPanel.Domestic);
             AddNavigation(T("ui.nav.military"), GameplayPanel.Military);
             AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad);
+            AddNavigation("Коды", GameplayPanel.Codes);
             AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global);
             if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events);
             root.Add(navigation);
@@ -1074,6 +1083,13 @@ namespace Game.Presentation.UI
             SerenityUiDesign.SetSelected(pauseButton, clock.IsPaused);
             foreach (var speed in Speeds)
                 SerenityUiDesign.SetSelected(topBar.Q<Button>("speed-" + (int)speed), speed == clock.Speed);
+            var codesButton = navigation.Q<Button>("nav-codes");
+            if (codesButton != null) codesButton.SetEnabled(clock.IsPaused);
+            if (!clock.IsPaused && activePanel == GameplayPanel.Codes)
+            {
+                activePanel = GameplayPanel.None;
+                mainPanel.style.display = DisplayStyle.None;
+            }
             RefreshNavigationSelection();
         }
 
@@ -1093,6 +1109,104 @@ namespace Game.Presentation.UI
                 case GameplayPanel.Economy: DrawEconomyPanel(); break;
                 case GameplayPanel.Events: DrawEventsPanel(); break;
                 case GameplayPanel.Domestic: DrawDomesticPanel(); break;
+                case GameplayPanel.Codes: DrawCodesPanel(); break;
+            }
+        }
+
+        private void DrawCodesPanel()
+        {
+            AddTitle(mainPanel, "Коды и диагностика");
+            AddLine(mainPanel, context.Diagnostics.CheatsUsed
+                ? "Коды использованы · достижения этой партии навсегда отключены."
+                : "Достижения включены. Первый успешно применённый код отключит их для этой партии навсегда.");
+            AddMuted(mainPanel, "Команды применяются атомарно к каноническому состоянию. Ошибка ничего не изменяет.");
+            AddMuted(mainPanel, "Для ресурсов общий склад при необходимости расширяется целиком; скрытых остатков вне склада нет.");
+            var code = new TextField("Код") { name = "codes-input" };
+            StyleTextField(code);
+            mainPanel.Add(code);
+            mainPanel.Add(ActionButton("Применить", () => SubmitDiagnosticCode(code.value), "codes-apply"));
+            AddSection(mainPanel, "Доступные коды");
+            AddLine(mainPanel, "serenity — открыть все текущие технологии и возможности");
+            AddLine(mainPanel, "res_serenity — добавить по 10 000 каждого текущего ресурса");
+            AddLine(mainPanel, "army_serenity — создать по одному бойцу каждого ранга");
+            AddSection(mainPanel, "Семейная диагностика");
+            AddMuted(mainPanel, "Создаёт двух взрослых, отношения, взаимное согласие, кровать в доме и каноническую беременность.");
+            mainPanel.Add(ActionButton("Запустить семейную диагностику", () => RunFamilyDiagnostic(),
+                "family-diagnostic"));
+        }
+
+        public bool SubmitDiagnosticCode(string rawCode)
+        {
+            if (!context.Clock().IsPaused)
+            {
+                SetStatus("Сначала поставьте игру на паузу.");
+                return false;
+            }
+            return ApplyDiagnostic(context.Diagnostics.Execute(rawCode));
+        }
+
+        public bool RunFamilyDiagnostic()
+        {
+            if (!context.Clock().IsPaused)
+            {
+                SetStatus("Сначала поставьте игру на паузу.");
+                return false;
+            }
+            var succeeded = ApplyDiagnostic(context.Diagnostics.Execute(DiagnosticCommandKind.CreateFamily));
+            if (!succeeded) return false;
+            modal.Clear();
+            modal.style.display = DisplayStyle.Flex;
+            AddTitle(modal, "Время проходит…");
+            AddLine(modal, "Личная сцена остаётся за кадром. Семейное событие записано в состоянии партии.");
+            modal.Add(ActionButton("Пропустить", CloseModal, "family-diagnostic-skip"));
+            return true;
+        }
+
+        private bool ApplyDiagnostic(DiagnosticExecutionResult result)
+        {
+            LastDiagnosticResult = result;
+            if (!result.Succeeded)
+            {
+                SetStatus("Код не применён: " + DiagnosticFailureText(result.Failure));
+                RefreshNow();
+                return false;
+            }
+            string message;
+            switch (result.Command)
+            {
+                case DiagnosticCommandKind.UnlockAll:
+                    message = "Открыты все текущие технологии: " + result.AffectedCount + ".";
+                    break;
+                case DiagnosticCommandKind.GrantResources:
+                    message = "Добавлено по 10 000 каждого ресурса (" + result.AffectedCount + " видов).";
+                    break;
+                case DiagnosticCommandKind.CreateArmy:
+                    message = "Созданы бойцы всех рангов: " + result.AffectedCount + ".";
+                    break;
+                case DiagnosticCommandKind.CreateFamily:
+                    message = "Семья создана: дом, кровать, взаимное согласие и беременность подтверждены.";
+                    break;
+                default:
+                    message = "Диагностическая команда выполнена.";
+                    break;
+            }
+            AddNotification(message);
+            SetStatus(message + " Достижения этой партии отключены.");
+            RefreshNow();
+            return true;
+        }
+
+        private static string DiagnosticFailureText(DiagnosticFailure failure)
+        {
+            switch (failure)
+            {
+                case DiagnosticFailure.EmptyCode: return "введите код";
+                case DiagnosticFailure.UnknownCode: return "неизвестный код";
+                case DiagnosticFailure.MissingStorage: return "нет подходящего действующего склада";
+                case DiagnosticFailure.MissingBarracks: return "нет действующих казарм";
+                case DiagnosticFailure.MissingHome: return "нет закрытого обитаемого дома";
+                case DiagnosticFailure.NoIndoorBedPosition: return "в доме нет свободного места для кровати";
+                default: return "транзакция отменена без изменений";
             }
         }
 
@@ -1669,6 +1783,9 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, T("ui.save.title"));
             AddLine(mainPanel, T("ui.save.explanation"));
+            AddLine(mainPanel, context.Diagnostics.CheatsUsed
+                ? "Коды использованы · достижения отключены для этой партии."
+                : "Коды не использованы · достижения включены.");
             if (context.StartNewGame != null)
             {
                 AddSection(mainPanel, T("ui.save.new_game"));
@@ -2031,7 +2148,9 @@ namespace Game.Presentation.UI
             notifications.Clear();
             AddSection(notifications, T("ui.notifications.title"));
             if (notificationFeed.Count == 0) AddMuted(notifications, T("ui.notifications.none"));
-            foreach (var message in notificationFeed.Skip(Math.Max(0, notificationFeed.Count - 5)).Reverse())
+            // The fixed-height player HUD intentionally shows only the two newest messages; older entries remain
+            // in the bounded feed for tests/history without spilling into the selection inspector.
+            foreach (var message in notificationFeed.Skip(Math.Max(0, notificationFeed.Count - 2)).Reverse())
                 AddLine(notifications, message);
         }
 

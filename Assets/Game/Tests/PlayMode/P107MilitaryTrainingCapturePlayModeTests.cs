@@ -68,7 +68,7 @@ namespace Game.Tests.PlayMode
 
             root.PlayerSaves.Save(3);
             var snapshot = root.Saves.Capture();
-            Assert.That(snapshot.FormatVersion, Is.EqualTo(SaveSnapshot.MilitaryCampaignVersion));
+            Assert.That(snapshot.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(snapshot.MilitaryCampaign.Training.Records.Any(x => x.CharacterId == id && x.Completed), Is.True);
             root.PlayerSaves.Load(3);
             yield return null;

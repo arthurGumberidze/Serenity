@@ -102,6 +102,42 @@ namespace Game.Simulation.Tiers
             Revision = checked(Revision + 1);
         }
 
+        public bool RemoveManaged(StableEntityId characterId)
+        {
+            if (!tiers.TryGetValue(characterId, out var tier)) return false;
+            if (transitioning.Contains(characterId))
+                throw new InvalidOperationException("Cannot remove a Character during a tier transition.");
+            if (adapters[tier].IsActive(characterId)) adapters[tier].Dematerialize(characterId);
+            foreach (var adapter in adapters.Values)
+                if (adapter.IsActive(characterId)) adapter.Dematerialize(characterId);
+            tiers.Remove(characterId);
+            orderedIds.Remove(characterId);
+            Revision = checked(Revision + 1);
+            return true;
+        }
+
+        public void RestoreWorldState(IEnumerable<CharacterRuntimeSaveEntry> savedEntries)
+        {
+            if (savedEntries == null) throw new ArgumentNullException(nameof(savedEntries));
+            var entries = savedEntries.OrderBy(x => x.State.CharacterId).ToArray();
+            if (entries.Select(x => x.State.CharacterId).Distinct().Count() != entries.Length)
+                throw new ArgumentException("Character runtime entries must have unique identities.", nameof(savedEntries));
+            foreach (var entry in entries)
+            {
+                ValidateTier(entry.Tier);
+                characters.Get(entry.State.CharacterId);
+                RequireMatchingIdentity(entry.State.CharacterId, entry.State);
+            }
+            var desired = new HashSet<StableEntityId>(entries.Select(x => x.State.CharacterId));
+            foreach (var id in orderedIds.Where(x => !desired.Contains(x)).ToArray()) RemoveManaged(id);
+            foreach (var entry in entries)
+            {
+                var id = entry.State.CharacterId;
+                if (tiers.ContainsKey(id)) RestoreRepresentationState(id, entry.Tier, entry.State);
+                else Materialize(characters.Get(id), entry.Tier, entry.State);
+            }
+        }
+
         public CharacterSimulationTier GetTier(StableEntityId characterId) => tiers.TryGetValue(characterId, out var tier)
             ? tier : throw new KeyNotFoundException("Character is not managed by this TierManager.");
 
