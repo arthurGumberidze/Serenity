@@ -1,6 +1,8 @@
 # P10.4 handoff — natural resources and industrial extraction
 
-Status: **PARTIAL** on 2026-10-17. `NEXT_TASK.md` must remain P10.4; do not start P10.5.
+Status: **PARTIAL** on 2026-10-18. By explicit user authorization recorded in D-143, `NEXT_TASK.md` advances to P10.5 without reclassifying P10.4 as DONE or waiving any blocker below.
+
+This 2026-10-18 handoff is documentation-only. No Unity test, build or Player command was run, no P10.4 code was changed, and no P10.5 implementation was started. The last executed P10.4 commands and results remain exactly as recorded below.
 
 ## Implemented
 
@@ -67,3 +69,5 @@ Observed through the normal UI: Main Menu → New Game → LocalGameplay → wor
 5. Re-scan the final Player log and record all warnings/errors honestly.
 
 P10.3 remains PARTIAL under D-141. Its physical Shift-click/Shift-command, slow multi-frame drag, needs/protected-carry, Tier transition and target/action-matrix debt is unchanged and must not be claimed by P10.4 evidence.
+
+Under D-143, P10.5 may proceed from the committed implementation while every blocker in this section remains mandatory debt for P10.9/P10.10. The same final gates retain P10.3's manual debt above and P10.2's measured 1920×1080 p95 128.342 ms performance debt. Neither P10.5 progress nor later feature work may silently relabel these items as passed.
