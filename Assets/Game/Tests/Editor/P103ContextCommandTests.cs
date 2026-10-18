@@ -36,10 +36,11 @@ namespace Game.Tests
                 new ContextCommandTarget(ContextTargetKind.ResourcePile, position, entity, new ResourceId("wood_log")),
                 new ContextCommandTarget(ContextTargetKind.Building, position, entity),
                 new ContextCommandTarget(ContextTargetKind.Ground, position),
-                new ContextCommandTarget(ContextTargetKind.Ground, position)
+                new ContextCommandTarget(ContextTargetKind.Ground, position),
+                new ContextCommandTarget(ContextTargetKind.Character, position, entity)
             };
             var actions = (ContextActionKind[])Enum.GetValues(typeof(ContextActionKind));
-            Assert.That(actions, Has.Length.EqualTo(8));
+            Assert.That(actions, Has.Length.EqualTo(9));
             for (var i = 0; i < actions.Length; i++)
                 Assert.That(ContextActionRules.Evaluate(actions[i], targets[i], Ready()).Enabled,
                     Is.True, actions[i].ToString());

@@ -59,7 +59,7 @@ namespace Game.Tests.PlayMode
             root.AiRuntime.SetPaused(true);
             var cropId = new BuildingDefinitionId("primitive_crop_plot");
             var options = root.BuildingDebug.Options;
-            CollectionAssert.AreEquivalent(new[] { "primitive_shelter", "storage_basket", "primitive_crop_plot" },
+            CollectionAssert.AreEquivalent(new[] { "primitive_shelter", "storage_basket", "primitive_crop_plot", "military_barracks" },
                 options.Select(option => option.Definition.Id.ToString()));
             var locked = options.Single(option => option.Definition.Id == cropId);
             Assert.That(locked.IsAvailable, Is.False);

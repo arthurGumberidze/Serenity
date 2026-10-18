@@ -70,5 +70,24 @@ MonoBehaviour:
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
+  - definitionId: military_barracks
+    displayName: Military Barracks
+    category: 2
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: stone
+      quantity: 6
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    maxIntegrity: 1400
+    fireDamagePerThousand: 900
+    combatDamagePerThousand: 1000
+    capturable: 1
   defaultDefinitionId: primitive_shelter
   resourceCatalog: {fileID: 11400000, guid: 3eaad5da612fe13489ff4dbb118b2eef, type: 2}

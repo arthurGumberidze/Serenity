@@ -67,7 +67,7 @@ namespace Game.Tests.PlayMode
                 new WorldPosition(anchor.x + 1f, anchor.y, anchor.z + 1f));
             root.GameplayUi.OpenContextMenu(firstTarget, new Vector2(Screen.width - 2f, 2f));
             yield return null;
-            Assert.That(root.GameplayUi.ContextActionStates.Count, Is.EqualTo(8));
+            Assert.That(root.GameplayUi.ContextActionStates.Count, Is.EqualTo(9));
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True);
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Inspect].Reason,
                 Is.EqualTo(ContextUnavailableReason.WrongTargetType));

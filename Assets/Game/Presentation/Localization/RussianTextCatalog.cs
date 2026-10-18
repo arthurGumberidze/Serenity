@@ -487,6 +487,7 @@ namespace Game.Presentation.Localization
             ["content.building.primitive_shelter"] = "Примитивное укрытие",
             ["content.building.storage_basket"] = "Плетёный склад",
             ["content.building.primitive_crop_plot"] = "Примитивный огород",
+            ["content.building.military_barracks"] = "Военные казармы",
             ["content.recipe.gather_berries"] = "Сбор ягод",
             ["content.recipe.gather_fiber"] = "Сбор растительного волокна",
             ["content.recipe.chop_wood"] = "Заготовка брёвен",

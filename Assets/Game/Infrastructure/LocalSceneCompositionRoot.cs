@@ -121,6 +121,8 @@ namespace Game.Infrastructure
         public BuildingPresenter DemoStoragePresenter { get; private set; }
         public Building DemoShelterBuilding { get; private set; }
         public BuildingPresenter DemoShelterPresenter { get; private set; }
+        public Building DemoBarracksBuilding { get; private set; }
+        public BuildingPresenter DemoBarracksPresenter { get; private set; }
         public StoneAgeReferenceCampPresentation ReferenceCamp { get; private set; }
         public P5InhabitableRegionPresentation InhabitableRegion { get; private set; }
         public NavMeshSurface NavigationSurface { get; private set; }
@@ -168,6 +170,9 @@ namespace Game.Infrastructure
         public MilitaryUnitRepresentationService MilitaryRepresentations { get; private set; }
         public MilitaryUnitCommandService MilitaryCommands { get; private set; }
         public MilitaryUnitCombatService MilitaryCombat { get; private set; }
+        public MilitaryTrainingService MilitaryTraining { get; private set; }
+        public MilitaryAttackCommandService MilitaryAttack { get; private set; }
+        public SettlementFlagCaptureService SettlementCapture { get; private set; }
         public BattleResolutionService Battles { get; private set; }
         public BuildingDamageService BuildingDamage { get; private set; }
         public BuildingDamageDebugOverlay BuildingDamageDebug { get; private set; }
@@ -321,6 +326,7 @@ namespace Game.Infrastructure
 
             SpawnDemoStorage();
             SpawnDemoShelter();
+            SpawnDemoBarracks();
             BuildNavigationSurface();
 
             var playerCharacters = NewGame.PlayerCharacters.Select(Character.Restore).ToArray();
@@ -460,6 +466,14 @@ namespace Game.Infrastructure
             StrategicAi = new AiStrategicScheduler(worldSeed, Characters, HealthFamily,
                 MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
             StrategicAi.AddFaction(StarterEnemyAi);
+            MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
+                MilitaryUnits, Appearances, worldSeed);
+            MilitaryAttack = new MilitaryAttackCommandService(Characters, Buildings, MilitaryUnits,
+                MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed);
+            SettlementCapture = new SettlementFlagCaptureService(worldSeed, GlobalMap, Buildings, BuildingDamage,
+                Characters, MilitaryUnits);
+            RegisterSettlementCaptureFlags();
+            MilitaryAttack.BindSettlementCapture(SettlementCapture);
             var eventTargets = new CharacterEventTargetSource(Characters,
                 () => Characters.GetAll().Select(x => x.Id).Except(StarterEnemyAi.Residents),
                 () => StarterEnemyAi.Residents,
@@ -473,7 +487,7 @@ namespace Game.Infrastructure
                 () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
-            AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl));
+            AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining));
             Combat.BindMovementSuppression(PlayerControl);
             Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
@@ -510,7 +524,8 @@ namespace Game.Infrastructure
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
-                Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers);
+                Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers,
+                MilitaryTraining, SettlementCapture, MilitaryAttack);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
@@ -521,7 +536,8 @@ namespace Game.Infrastructure
                     ContextCommands, Tiers, CharacterPresentations,
                     ManualMoveCommands, WorldPiles, Buildings, buildingCatalog, buildingPlacementController,
                     HealthFamily, Domestic, Weather, Dynasty, Succession.Family, GameRun, MilitaryUnits,
-                    MilitaryRepresentations, MilitaryCommands, Battles, Combat, PlayerControl, ThirdPersonControl,
+                    MilitaryRepresentations, MilitaryCommands, MilitaryTraining, MilitaryAttack, SettlementCapture,
+                    Battles, Combat, PlayerControl, ThirdPersonControl,
                     GlobalMap, PlayerSaves, AiRuntime.SetPaused, AiRuntime.SetSpeed,
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
@@ -611,6 +627,16 @@ namespace Game.Infrastructure
             }
             PerformanceBenchmark?.RecordWorkersAndWeatherAllocation();
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            AdvanceMilitaryTrainingTo(targetCalendarTick);
+            MilitaryAttack.AdvanceTo(targetCalendarTick);
+            SettlementCapture.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks,
+                (settlementId, defender) =>
+                {
+                    var settlement = GlobalMap.Settlements.Single(x => x.Id == settlementId);
+                    return MilitaryUnits.Units.Any(x => x.OwnerSideId.Value == defender.Value &&
+                        x.Status != MilitaryUnitStatus.Disbanded &&
+                        string.Equals(x.AbstractLocationId, settlement.LocationId.Value, StringComparison.Ordinal));
+                });
             CampaignProgress.AdvanceTo(targetCalendarTick);
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
@@ -676,9 +702,10 @@ namespace Game.Infrastructure
         public void SynchronizeStarterSettlement()
         {
             if (GlobalMap == null) return;
+            var current = GlobalMap.Settlements.SingleOrDefault(x => x.Id == StarterSettlementId);
             GlobalMap.SynchronizeSettlement(StarterSettlementId,
-                new WorldLocationId("starter_settlement"), new CombatSideId("player"),
-                Buildings.All.Where(x => x.OwnerSideId == new CombatSideId("player")).Select(x => x.Id),
+                new WorldLocationId("starter_settlement"), current?.OwnerSideId ?? new CombatSideId("player"),
+                Buildings.All.Where(x => current == null || x.OwnerSideId == current.OwnerSideId).Select(x => x.Id),
                 Characters.GetAll().Where(x => StarterEnemyAi == null || !StarterEnemyAi.Residents.Contains(x.Id))
                     .Select(x => x.Id));
         }
@@ -689,6 +716,13 @@ namespace Game.Infrastructure
             // it must never hide or teleport canonical physical buildings.
             foreach (var presenter in BuildingPresentations.All)
                 if (presenter != null) presenter.gameObject.SetActive(true);
+        }
+
+        public int AdvanceMilitaryTrainingTo(long calendarTick)
+        {
+            var completed = MilitaryTraining.AdvanceTo(calendarTick);
+            if (completed > 0) RefreshTier1AppearanceAfterLoad();
+            return completed;
         }
 
         public void RebindAfterLoad(GameClock restoredClock)
@@ -838,6 +872,28 @@ namespace Game.Infrastructure
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 2));
             DemoShelterBuilding.MarkCompleted();
             DemoShelterPresenter = BuildingSpawner.Spawn(DemoShelterBuilding);
+        }
+
+        private void SpawnDemoBarracks()
+        {
+            var definition = buildingCatalog.ResolveDefinition(MilitaryTrainingService.BarracksDefinitionId);
+            DemoBarracksBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(-1, 6),
+                BuildingOrientation.South, new CombatSideId("player"),
+                DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_barracks"));
+            DemoBarracksBuilding.MarkCompleted();
+            DemoBarracksPresenter = BuildingSpawner.Spawn(DemoBarracksBuilding);
+        }
+
+        private void RegisterSettlementCaptureFlags()
+        {
+            foreach (var settlement in GlobalMap.Settlements)
+            {
+                var main = settlement.BuildingIds.Select(id => Buildings.TryGet(id, out var value) ? value : null)
+                    .Where(x => x != null && !x.IsDestroyed)
+                    .OrderByDescending(x => x.DefinitionId == new BuildingDefinitionId("primitive_shelter"))
+                    .ThenBy(x => x.Id).FirstOrDefault();
+                if (main != null) SettlementCapture.Register(settlement.Id, main.Id, Clock.State.CalendarTicks);
+            }
         }
 
         private void RegisterStarterDomestic()

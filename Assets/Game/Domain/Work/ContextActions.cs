@@ -13,7 +13,8 @@ namespace Game.Domain.Work
         Haul = 4,
         Build = 5,
         Guard = 6,
-        Move = 7
+        Move = 7,
+        Attack = 8
     }
 
     public enum ContextTargetKind
@@ -184,6 +185,9 @@ namespace Game.Domain.Work
                            target.Kind == ContextTargetKind.Ground || target.Kind == ContextTargetKind.Area;
                 case ContextActionKind.Move:
                     return target.Kind == ContextTargetKind.Ground || target.Kind == ContextTargetKind.Area;
+                case ContextActionKind.Attack:
+                    return target.Kind == ContextTargetKind.Character || target.Kind == ContextTargetKind.Building ||
+                           target.Kind == ContextTargetKind.Ground || target.Kind == ContextTargetKind.Area;
                 default:
                     return false;
             }

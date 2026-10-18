@@ -358,6 +358,17 @@ namespace Game.Simulation.Military
             AddMember(targetId, characterId);
         }
 
+        public void TransferOwnership(MilitaryUnitId id, MilitarySideId newOwnerSideId)
+        {
+            if (!newOwnerSideId.IsValid) throw new ArgumentException("Military side ID required.", nameof(newOwnerSideId));
+            var unit = Require(id);
+            if (unit.EncounterId.HasValue)
+                throw new InvalidOperationException("Cannot transfer a unit during physical combat.");
+            if (unit.Side == newOwnerSideId) return;
+            unit.Side = newOwnerSideId;
+            unit.Revision++;
+        }
+
         public StableEntityId? RefreshCaptain(MilitaryUnitId id) => RefreshCaptain(Require(id));
 
         public MilitaryUnitRosterSummary GetRosterSummary(MilitaryUnitId id)

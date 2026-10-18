@@ -130,6 +130,7 @@ namespace Game.Presentation.UI
         public bool ContextMenuVisible => contextMenu != null && contextMenu.resolvedStyle.display != DisplayStyle.None;
         public ContextCommandTarget? ActiveContextTarget => activeContextTarget;
         public IReadOnlyDictionary<ContextActionKind, ContextActionAvailability> ContextActionStates => contextActionStates;
+        public MilitaryAttackCommandResult LastMilitaryAttackResult { get; private set; }
 
         public void SetUiScale(float value)
         {
@@ -411,16 +412,25 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedCharacterIds.Count);
             foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
             {
-                var state = EvaluateForSelection(action, target);
+                var attackState = action == ContextActionKind.Attack ? EvaluateMilitaryAttack(target) : default;
+                var state = action == ContextActionKind.Attack
+                    ? new ContextActionAvailability(attackState.Enabled, attackState.Enabled
+                        ? ContextUnavailableReason.None : ContextUnavailableReason.WrongRole)
+                    : EvaluateForSelection(action, target);
                 contextActionStates[action] = state;
                 var captured = action;
-                var button = ActionButton(ContextActionName(action), () => ExecuteContextAction(captured,
-                    Keyboard.current != null && Keyboard.current.shiftKey.isPressed), "context-" + action.ToString().ToLowerInvariant());
+                var button = ActionButton(ContextActionName(action), () =>
+                {
+                    if (captured == ContextActionKind.Attack) ExecuteMilitaryAttack();
+                    else ExecuteContextAction(captured, Keyboard.current != null && Keyboard.current.shiftKey.isPressed);
+                }, "context-" + action.ToString().ToLowerInvariant());
                 button.SetEnabled(state.Enabled);
                 if (state.Enabled) button.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
                 contextMenu.Add(button);
-                AddMuted(contextMenu, state.Reason == ContextUnavailableReason.None
-                    ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
+                AddMuted(contextMenu, action == ContextActionKind.Attack
+                    ? (attackState.Enabled ? "Доступно" : "Недоступно: " + MilitaryAttackReason(attackState.Reason))
+                    : state.Reason == ContextUnavailableReason.None
+                        ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
             AddMuted(contextMenu, "Обычный выбор ставит приказ первым. Shift + выбор добавляет его в хвост.");
             PositionContextMenu(screenPosition);
@@ -449,6 +459,42 @@ namespace Game.Presentation.UI
             RefreshNow();
             return result;
         }
+
+        public MilitaryAttackCommandResult ExecuteMilitaryAttack()
+        {
+            if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
+            var target = ToMilitaryTarget(activeContextTarget.Value);
+            var result = context.MilitaryAttack.Issue(activeContextSelectionIds, target,
+                context.Clock().State.CalendarTicks, SelectionHasPath(target.Position));
+            LastMilitaryAttackResult = result;
+            SetStatus(result.Issued ? "Напасть: военные физически идут к цели."
+                : "Напасть недоступно: " + MilitaryAttackReason(result.Availability.Reason));
+            CloseContextMenu(); RefreshNow(); return result;
+        }
+
+        private MilitaryAttackAvailability EvaluateMilitaryAttack(ContextCommandTarget target)
+        {
+            var militaryTarget = ToMilitaryTarget(target);
+            return context.MilitaryAttack.Evaluate(context.Selection.SelectedCharacterIds, militaryTarget,
+                SelectionHasPath(militaryTarget.Position));
+        }
+
+        private MilitaryDirectTarget ToMilitaryTarget(ContextCommandTarget target)
+        {
+            if (target.Kind == ContextTargetKind.Character)
+            {
+                var kind = context.Military.TryGetForMember(target.EntityId, out _)
+                    ? MilitaryDirectTargetKind.EnemyMilitary : MilitaryDirectTargetKind.Civilian;
+                return new MilitaryDirectTarget(kind, target.Position, target.EntityId);
+            }
+            if (target.Kind == ContextTargetKind.Building)
+                return new MilitaryDirectTarget(MilitaryDirectTargetKind.EnemyMilitaryBuilding,
+                    target.Position, target.EntityId);
+            return new MilitaryDirectTarget(MilitaryDirectTargetKind.Area, target.Position);
+        }
+
+        private bool SelectionHasPath(WorldPosition target) => context.Selection.SelectedCharacterIds
+            .Where(id => context.AiAgents.TryGet(id, out _)).All(id => HasContextPath(id, target));
 
         public void CloseContextMenu()
         {
@@ -627,7 +673,25 @@ namespace Game.Presentation.UI
                 case ContextActionKind.Build: return "Строить";
                 case ContextActionKind.Guard: return "Охранять";
                 case ContextActionKind.Move: return "Идти";
+                case ContextActionKind.Attack: return "Напасть";
                 default: return action.ToString();
+            }
+        }
+
+        private static string MilitaryAttackReason(MilitaryAttackDisabledReason reason)
+        {
+            switch (reason)
+            {
+                case MilitaryAttackDisabledReason.NoAttackers: return "не выбраны атакующие";
+                case MilitaryAttackDisabledReason.AttackerIsCivilian: return "прямую атаку могут приказать только обученные военные";
+                case MilitaryAttackDisabledReason.MixedOrWrongSide: return "выбранные военные должны состоять в одном отряде";
+                case MilitaryAttackDisabledReason.FriendlyTarget: return "цель принадлежит своей стороне";
+                case MilitaryAttackDisabledReason.CivilianDirectTargetForbidden: return "мирные жители не могут быть прямой целью";
+                case MilitaryAttackDisabledReason.NonMilitaryBuilding: return "прямой целью может быть только военное строение";
+                case MilitaryAttackDisabledReason.TargetMissing: return "цель недоступна";
+                case MilitaryAttackDisabledReason.NoPhysicalPath: return "нет физического пути к цели";
+                case MilitaryAttackDisabledReason.UnitUnavailable: return "отряд сейчас недоступен";
+                default: return reason.ToString();
             }
         }
 
@@ -1501,6 +1565,41 @@ namespace Game.Presentation.UI
             mainPanel.Add(createUnit);
             if (!hasSelectedCharacters) AddMuted(mainPanel, T("ui.military.need_characters"));
             else if (!hasCaptain) AddMuted(mainPanel, T("ui.military.no_captain"));
+            AddSection(mainPanel, "Обучение в казармах");
+            var traineeId = context.Selection.SelectedCharacterId;
+            var barracks = context.Buildings.All.Where(x => x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId &&
+                    x.IsOperational && x.OwnerSideId.Value == "player").OrderBy(x => x.Id).FirstOrDefault();
+            if (!traineeId.HasValue) AddMuted(mainPanel, "Выберите одного взрослого жителя.");
+            else
+            {
+                var rank = context.MilitaryTraining.GetRank(traineeId.Value);
+                var next = context.MilitaryTraining.GetNextLevel(traineeId.Value);
+                AddLine(mainPanel, CharacterName(traineeId) + " · звание: " +
+                    (rank.HasValue ? rank.Value.ToString() : "нет"));
+                if (context.MilitaryTraining.IsExternallyControlled(traineeId.Value))
+                {
+                    var active = context.MilitaryTraining.Active.Single(x => x.CharacterId == traineeId.Value);
+                    AddLine(mainPanel, "Обучение: " + active.Rank + " · осталось " +
+                        FormatDuration(Math.Max(0, active.CompletionTick - context.Clock().State.CalendarTicks)));
+                }
+                else if (next == null) AddMuted(mainPanel, "Достигнуто высшее утверждённое звание.");
+                else
+                {
+                    AddLine(mainPanel, "Следующий курс: " + next.Rank + " · " + FormatDuration(next.DurationTicks));
+                    AddMuted(mainPanel, "Цена: " + string.Join(", ", next.Cost.Select(x =>
+                        x.Quantity.Units + " " + Content("resource", x.ResourceId.ToString()))));
+                    var train = ActionButton("Начать обучение", () => TryCommand(() =>
+                    {
+                        if (barracks == null) throw new PlayerFacingException("Нет действующих казарм.");
+                        var result = context.MilitaryTraining.TryStart(traineeId.Value, barracks.Id,
+                            new CombatSideId("player"), context.Clock().State.CalendarTicks,
+                            context.Inventories.All.Select(x => x.Owner));
+                        if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " + result.Failure);
+                    }), "military-train");
+                    train.SetEnabled(barracks != null && context.Health.GetCapabilities(traineeId.Value).IsAdult);
+                    mainPanel.Add(train);
+                }
+            }
             var index = 1;
             foreach (var unit in context.Military.Units)
             {
@@ -1554,6 +1653,15 @@ namespace Game.Presentation.UI
                     SideMorale(battle, battle.SideA), SideMorale(battle, battle.SideB)));
                 if (battle.Mode == BattleMode.Abstract)
                     mainPanel.Add(ActionButton(T("ui.military.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
+            }
+            AddSection(mainPanel, "Захват поселений");
+            foreach (var capture in context.SettlementCapture.States)
+            {
+                AddLine(mainPanel, LocationName(context.GlobalMap.Settlements.Single(x => x.Id == capture.SettlementId).LocationId) +
+                    " · " + capture.Status + " · " + RussianTextCatalog.Percent(
+                        (double)capture.ProgressTicks / capture.RequiredTicks));
+                AddMuted(mainPanel, "Главное здание: " + capture.MainBuildingId + " · главные казармы: " +
+                    (capture.ActiveBarracksId?.ToString() ?? "нет — нужен только флаг главного здания"));
             }
         }
 
@@ -1633,8 +1741,7 @@ namespace Game.Presentation.UI
             }
             AddSection(mainPanel, T("ui.map.player_armies"));
             var index = 1;
-            foreach (var unit in context.Military.Units.Where(x => x.OwnerSideId.Value == "player" &&
-                         x.Representation == MilitaryUnitRepresentationMode.Aggregate))
+            foreach (var unit in context.Military.Units.Where(x => x.OwnerSideId.Value == "player"))
             {
                 var captured = unit.Id;
                 var travel = context.GlobalMap.Travels.FirstOrDefault(x => x.UnitId == unit.Id);
@@ -1659,6 +1766,22 @@ namespace Game.Presentation.UI
             }));
             travelButton.SetEnabled(selectedUnit.HasValue && selectedLocation.HasValue);
             actions.Add(travelButton);
+            var attackButton = ActionButton("Напасть", () => TryCommand(() =>
+            {
+                if (!selectedUnit.HasValue || !selectedLocation.HasValue)
+                    throw PlayerError("ui.map.need_unit_destination");
+                var unit = context.Military.Get(selectedUnit.Value);
+                if (unit.Representation != MilitaryUnitRepresentationMode.Detailed)
+                    unit = context.MilitaryRepresentations.Transition(unit.Id, MilitaryUnitRepresentationMode.Detailed);
+                var location = context.GlobalMap.Locations.Single(x => x.Id == selectedLocation.Value);
+                var result = context.MilitaryAttack.Issue(unit.ActiveMemberIds,
+                    new MilitaryDirectTarget(MilitaryDirectTargetKind.Area,
+                        new WorldPosition(location.MapX, 0, location.MapY)), context.Clock().State.CalendarTicks, true);
+                if (!result.Issued) throw new PlayerFacingException(MilitaryAttackReason(result.Availability.Reason));
+                AddNotification("Военные идут к цели через единый физический мир.");
+            }), "strategic-attack");
+            attackButton.SetEnabled(selectedUnit.HasValue && selectedLocation.HasValue);
+            actions.Add(attackButton);
             actions.Add(ActionButton(T("ui.map.enter_location"), () => TryCommand(() =>
             {
                 if (!selectedLocation.HasValue) throw PlayerError("ui.map.need_location");
@@ -2319,6 +2442,7 @@ namespace Game.Presentation.UI
             var hash = unchecked((ulong)clock.State.CalendarTicks) ^ ((ulong)clock.Speed << 4) ^
                        (clock.IsPaused ? 0x8000000000000000UL : 0UL) ^ context.GlobalMap.ComputeStateHash() ^
                        context.Military.ComputeStateHash() ^ context.Combat.ComputeStateHash() ^
+                       context.MilitaryTraining.ComputeStateHash() ^ context.SettlementCapture.ComputeStateHash() ^
                        context.Research.ComputeStateHash() ^ context.Health.ComputeStateHash() ^
                        (context.Events?.ComputeStateHash() ?? 0UL) ^ (context.Campaign?.ComputeStateHash() ?? 0UL) ^
                        unchecked((ulong)context.Selection.SelectedCharacterIds.Count << 20) ^

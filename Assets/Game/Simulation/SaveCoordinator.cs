@@ -22,6 +22,7 @@ using Game.Simulation.Domestic;
 using Game.Simulation.Tiers;
 using Game.Domain.Characters;
 using Game.Domain.World;
+using Game.Domain.Military;
 
 namespace Game.Simulation
 {
@@ -47,6 +48,9 @@ namespace Game.Simulation
         private readonly ConnectedWorldService connectedWorld;
         private readonly DomesticService domestic;
         private readonly TierManager tiers;
+        private readonly MilitaryTrainingService militaryTraining;
+        private readonly SettlementFlagCaptureService settlementCapture;
+        private readonly MilitaryAttackCommandService militaryAttack;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -60,7 +64,9 @@ namespace Game.Simulation
             CampaignProgressService campaignProgressService = null,
             CharacterAppearanceService appearanceService = null, WorkManager workManager = null,
             ConnectedWorldService connectedWorldService = null, DomesticService domesticService = null,
-            TierManager tierManager = null)
+            TierManager tierManager = null, MilitaryTrainingService militaryTrainingService = null,
+            SettlementFlagCaptureService settlementCaptureService = null,
+            MilitaryAttackCommandService militaryAttackService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -84,6 +90,9 @@ namespace Game.Simulation
             connectedWorld = connectedWorldService;
             domestic = domesticService;
             tiers = tierManager;
+            militaryTraining = militaryTrainingService;
+            settlementCapture = settlementCaptureService;
+            militaryAttack = militaryAttackService;
         }
         public SaveSnapshot Capture()
         {
@@ -93,7 +102,7 @@ namespace Game.Simulation
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
                 appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
-                domestic?.CaptureState(), CaptureCharacterRuntime());
+                domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -109,6 +118,9 @@ namespace Game.Simulation
             if ((domestic != null || tiers != null) && snapshot.FormatVersion >= SaveSnapshot.DomesticVersion &&
                 (snapshot.Domestic == null || snapshot.CharacterRuntime == null))
                 throw new InvalidOperationException("P10.6 save is missing required domestic or runtime state.");
+            if ((militaryTraining != null || settlementCapture != null || militaryAttack != null) &&
+                snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion && snapshot.MilitaryCampaign == null)
+                throw new InvalidOperationException("P10.7 save is missing required military-campaign state.");
             var restoredClock = CreateClock(snapshot);
             if (snapshot.Production != null && production == null)
                 throw new InvalidOperationException("This save contains production state but no production service is attached.");
@@ -182,6 +194,15 @@ namespace Game.Simulation
             if (snapshot.Domestic != null && domestic == null)
                 throw new InvalidOperationException("This save contains domestic state but no domestic service is attached.");
             if (snapshot.Domestic != null) domestic.RestoreState(snapshot.Domestic);
+            if (snapshot.MilitaryCampaign != null)
+            {
+                if (militaryTraining == null || settlementCapture == null || militaryAttack == null)
+                    throw new InvalidOperationException("This save contains P10.7 state but its services are unavailable.");
+                militaryTraining.RestoreState(snapshot.MilitaryCampaign.Training);
+                settlementCapture.RestoreStates(snapshot.MilitaryCampaign.Captures);
+                militaryAttack.RestoreState(snapshot.MilitaryCampaign.AttackOrders,
+                    snapshot.MilitaryCampaign.AttackSequence);
+            }
             // Commit only after all reads, parsing and validation succeed. Consumers rebind after Load.
             Clock = restoredClock;
             SessionId = snapshot.SessionId;
@@ -191,6 +212,14 @@ namespace Game.Simulation
             if (tiers == null) return null;
             return new CharacterRuntimeWorldSaveState(tiers.ManagedIds.Select(id =>
                 new CharacterRuntimeSaveEntry(tiers.GetTier(id), tiers.GetRuntimeState(id))));
+        }
+        private MilitaryCampaignSaveState CaptureMilitaryCampaign()
+        {
+            if (militaryTraining == null && settlementCapture == null && militaryAttack == null) return null;
+            if (militaryTraining == null || settlementCapture == null || militaryAttack == null)
+                throw new InvalidOperationException("P10.7 save services must be attached together.");
+            return new MilitaryCampaignSaveState(militaryTraining.CaptureState(), settlementCapture.States,
+                militaryAttack.Orders, militaryAttack.Sequence);
         }
         public static GameClock CreateClock(SaveSnapshot snapshot)
         {

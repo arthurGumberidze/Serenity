@@ -91,7 +91,9 @@ namespace Game.Presentation.UI
             BuildingPlacementController buildingPlacement, HealthAndFamilyService health, DomesticService domestic,
             WeatherService weather, DynastyState dynasty, FamilyTreeQuery family, GameRunState gameRun,
             MilitaryUnitService military, MilitaryUnitRepresentationService militaryRepresentations,
-            MilitaryUnitCommandService militaryCommands, BattleResolutionService battles, CombatService combat,
+            MilitaryUnitCommandService militaryCommands, MilitaryTrainingService militaryTraining,
+            MilitaryAttackCommandService militaryAttack, SettlementFlagCaptureService settlementCapture,
+            BattleResolutionService battles, CombatService combat,
             PlayerControlService playerControl, ThirdPersonControlController thirdPerson,
             GlobalMapService globalMap, IGameplaySaveFacade saves,
             Action<bool> setPaused, Action<Game.Simulation.Time.GameSpeed> setSpeed,
@@ -130,6 +132,9 @@ namespace Game.Presentation.UI
             Military = military ?? throw new ArgumentNullException(nameof(military));
             MilitaryRepresentations = militaryRepresentations ?? throw new ArgumentNullException(nameof(militaryRepresentations));
             MilitaryCommands = militaryCommands ?? throw new ArgumentNullException(nameof(militaryCommands));
+            MilitaryTraining = militaryTraining ?? throw new ArgumentNullException(nameof(militaryTraining));
+            MilitaryAttack = militaryAttack ?? throw new ArgumentNullException(nameof(militaryAttack));
+            SettlementCapture = settlementCapture ?? throw new ArgumentNullException(nameof(settlementCapture));
             Battles = battles ?? throw new ArgumentNullException(nameof(battles));
             Combat = combat ?? throw new ArgumentNullException(nameof(combat));
             PlayerControl = playerControl ?? throw new ArgumentNullException(nameof(playerControl));
@@ -179,6 +184,9 @@ namespace Game.Presentation.UI
         public MilitaryUnitService Military { get; }
         public MilitaryUnitRepresentationService MilitaryRepresentations { get; }
         public MilitaryUnitCommandService MilitaryCommands { get; }
+        public MilitaryTrainingService MilitaryTraining { get; }
+        public MilitaryAttackCommandService MilitaryAttack { get; }
+        public SettlementFlagCaptureService SettlementCapture { get; }
         public BattleResolutionService Battles { get; }
         public CombatService Combat { get; }
         public PlayerControlService PlayerControl { get; }

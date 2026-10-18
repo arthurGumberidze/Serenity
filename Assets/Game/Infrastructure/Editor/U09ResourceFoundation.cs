@@ -64,6 +64,12 @@ namespace Game.Infrastructure.Editor
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 2),
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 2)
                     }); // BALANCE_TBD: U15 placement uses the U08 construction transaction.
+                else if (entry.DefinitionId == "military_barracks")
+                    entry.ConfigureEconomy(new[]
+                    {
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 12),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("stone", 6)
+                    });
             }
         }
 

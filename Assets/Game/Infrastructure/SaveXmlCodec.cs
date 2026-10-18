@@ -85,6 +85,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeDomestic(snapshot.Domestic));
                 root.Add(SerializeCharacterRuntime(snapshot.CharacterRuntime));
             }
+            if (snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion)
+                root.Add(SerializeMilitaryCampaign(snapshot.MilitaryCampaign));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -124,6 +126,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.ConnectedWorldVersion &&
                         version != SaveSnapshot.ContextOrdersVersion &&
                         version != SaveSnapshot.ResourceIndustryVersion &&
+                        version != SaveSnapshot.DomesticVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -165,12 +168,14 @@ namespace Game.Infrastructure
                         ? DeserializeDomestic(root.Element("domestic")) : null;
                     var characterRuntime = version >= SaveSnapshot.DomesticVersion
                         ? DeserializeCharacterRuntime(root.Element("characterRuntime")) : null;
+                    var militaryCampaign = version >= SaveSnapshot.MilitaryCampaignVersion
+                        ? DeserializeMilitaryCampaign(root.Element("militaryCampaign")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance, work, connectedWorld, domestic, characterRuntime);
+                        appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1539,6 +1544,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.WorkVersion) fields = fields.Concat(new[] { "work" });
             if (version >= SaveSnapshot.ConnectedWorldVersion) fields = fields.Concat(new[] { "connectedWorld" });
             if (version >= SaveSnapshot.DomesticVersion) fields = fields.Concat(new[] { "domestic", "characterRuntime" });
+            if (version >= SaveSnapshot.MilitaryCampaignVersion) fields = fields.Concat(new[] { "militaryCampaign" });
             return fields.ToArray();
         }
 
@@ -1707,6 +1713,126 @@ namespace Game.Infrastructure
             });
             return new ConnectedWorldSaveState(Value(element, "generationId"), cells, assignments,
                 Long(element, "lastProcessedTick"));
+        }
+
+        private static XElement SerializeMilitaryCampaign(MilitaryCampaignSaveState state)
+        {
+            var element = new XElement("militaryCampaign");
+            if (state == null) return element;
+            element.Add(new XElement("training",
+                    new XElement("sequence", state.Training.Sequence),
+                    new XElement("lastProcessedTick", state.Training.LastProcessedTick),
+                    new XElement("records", state.Training.Records.Select(value => new XElement("record",
+                        new XElement("characterId", value.CharacterId.ToString()),
+                        new XElement("barracksId", value.BarracksId.ToString()),
+                        new XElement("sideId", value.SideId.Value), new XElement("rank", (int)value.Rank),
+                        new XElement("startTick", value.StartTick), new XElement("completionTick", value.CompletionTick),
+                        new XElement("completed", value.Completed), new XElement("sequence", value.Sequence))))),
+                new XElement("captures", state.Captures.Select(value => new XElement("capture",
+                    new XElement("settlementId", value.SettlementId.ToString()),
+                    new XElement("defenderSideId", value.DefenderSideId.Value),
+                    new XElement("attackerSideId", value.AttackerSideId?.Value ?? string.Empty),
+                    new XElement("mainBuildingId", value.MainBuildingId.ToString()),
+                    new XElement("activeBarracksId", value.ActiveBarracksId?.ToString() ?? string.Empty),
+                    new XElement("progressTicks", value.ProgressTicks), new XElement("requiredTicks", value.RequiredTicks),
+                    new XElement("lastProcessedTick", value.LastProcessedTick), new XElement("status", (int)value.Status),
+                    new XElement("seed", value.Seed), SerializeCaptureOutcome(value.Outcome)))),
+                new XElement("attackSequence", state.AttackSequence),
+                new XElement("attackOrders", state.AttackOrders.Select(value => new XElement("order",
+                    new XElement("sequence", value.Sequence), new XElement("unitId", value.AttackerUnitId.ToString()),
+                    new XElement("kind", (int)value.Target.Kind),
+                    new XElement("x", XmlConvert.ToString(value.Target.Position.X)),
+                    new XElement("y", XmlConvert.ToString(value.Target.Position.Y)),
+                    new XElement("z", XmlConvert.ToString(value.Target.Position.Z)),
+                    new XElement("entityId", value.Target.EntityId.IsValid ? value.Target.EntityId.ToString() : string.Empty),
+                    new XElement("issuedTick", value.IssuedTick), new XElement("completed", value.Completed)))));
+            return element;
+        }
+
+        private static XElement SerializeCaptureOutcome(SettlementCaptureOutcomeState value)
+        {
+            var element = new XElement("outcome");
+            if (value == null) return element;
+            element.Add(new XElement("winnerSideId", value.WinnerSideId.Value), new XElement("seed", value.Seed),
+                new XElement("completionTick", value.CompletionTick),
+                new XElement("resolutionId", value.ResolutionId.ToString()),
+                IdCollection("joined", value.JoinedSoldierIds), IdCollection("executed", value.ExecutedSoldierIds),
+                IdCollection("buildings", value.TransferredBuildingIds),
+                IdCollection("residents", value.TransferredResidentIds));
+            return element;
+        }
+
+        private static XElement IdCollection(string name, IEnumerable<StableEntityId> values) =>
+            new XElement(name, values.Select(id => new XElement("id", id.ToString())));
+
+        private static MilitaryCampaignSaveState DeserializeMilitaryCampaign(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing military-campaign state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty military-campaign state.");
+                return null;
+            }
+            RequireFields(element, new[] { "training", "captures", "attackSequence", "attackOrders" });
+            var training = element.Element("training");
+            RequireFields(training, new[] { "sequence", "lastProcessedTick", "records" });
+            var records = Items(training.Element("records"), "record", item =>
+            {
+                RequireFields(item, new[] { "characterId", "barracksId", "sideId", "rank", "startTick",
+                    "completionTick", "completed", "sequence" });
+                return new MilitaryTrainingRecordState(StableEntityId.Parse(Value(item, "characterId")),
+                    StableEntityId.Parse(Value(item, "barracksId")), new CombatSideId(Value(item, "sideId")),
+                    (MilitaryRank)Int(item, "rank"), Long(item, "startTick"), Long(item, "completionTick"),
+                    XmlConvert.ToBoolean(Value(item, "completed")), ULong(item, "sequence"));
+            });
+            var trainingState = new MilitaryTrainingSaveState(records, ULong(training, "sequence"),
+                Long(training, "lastProcessedTick"));
+            var captures = Items(element.Element("captures"), "capture", item =>
+            {
+                RequireFields(item, new[] { "settlementId", "defenderSideId", "attackerSideId", "mainBuildingId",
+                    "activeBarracksId", "progressTicks", "requiredTicks", "lastProcessedTick", "status", "seed", "outcome" });
+                var attackerText = Value(item, "attackerSideId");
+                CombatSideId? attacker = string.IsNullOrEmpty(attackerText) ? (CombatSideId?)null : new CombatSideId(attackerText);
+                var barracksText = Value(item, "activeBarracksId");
+                StableEntityId? barracks = string.IsNullOrEmpty(barracksText) ? (StableEntityId?)null : StableEntityId.Parse(barracksText);
+                return new SettlementCaptureState(new SettlementId(StableEntityId.Parse(Value(item, "settlementId"))),
+                    new CombatSideId(Value(item, "defenderSideId")), attacker,
+                    StableEntityId.Parse(Value(item, "mainBuildingId")), barracks,
+                    Long(item, "progressTicks"), Long(item, "requiredTicks"), Long(item, "lastProcessedTick"),
+                    (SettlementCaptureClockStatus)Int(item, "status"), Long(item, "seed"),
+                    DeserializeCaptureOutcome(item.Element("outcome")));
+            });
+            var attackSequence = ULong(element, "attackSequence");
+            var attacks = Items(element.Element("attackOrders"), "order", item =>
+            {
+                RequireFields(item, new[] { "sequence", "unitId", "kind", "x", "y", "z", "entityId",
+                    "issuedTick", "completed" });
+                var kind = (MilitaryDirectTargetKind)Int(item, "kind");
+                var entityText = Value(item, "entityId");
+                var entity = string.IsNullOrEmpty(entityText) ? default : StableEntityId.Parse(entityText);
+                var target = new MilitaryDirectTarget(kind,
+                    new WorldPosition(Float(item, "x"), Float(item, "y"), Float(item, "z")), entity);
+                return new MilitaryAttackOrderState(ULong(item, "sequence"),
+                    MilitaryUnitId.Parse(Value(item, "unitId")), target, Long(item, "issuedTick"),
+                    XmlConvert.ToBoolean(Value(item, "completed")));
+            });
+            return new MilitaryCampaignSaveState(trainingState, captures, attacks, attackSequence);
+        }
+
+        private static SettlementCaptureOutcomeState DeserializeCaptureOutcome(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing capture outcome.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty capture outcome.");
+                return null;
+            }
+            RequireFields(element, new[] { "winnerSideId", "seed", "completionTick", "resolutionId",
+                "joined", "executed", "buildings", "residents" });
+            StableEntityId[] Ids(string name) => Items(element.Element(name), "id", x => StableEntityId.Parse(Scalar(x)));
+            return new SettlementCaptureOutcomeState(new CombatSideId(Value(element, "winnerSideId")),
+                Long(element, "seed"), Ids("joined"), Ids("executed"), Ids("buildings"), Ids("residents"),
+                Long(element, "completionTick"), StableEntityId.Parse(Value(element, "resolutionId")));
         }
 
         private static XElement OptionalId(string name, StableEntityId? value) =>

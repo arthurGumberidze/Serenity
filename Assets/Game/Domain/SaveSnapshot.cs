@@ -45,7 +45,8 @@ namespace Game.Domain
         public const int ContextOrdersVersion = 21;
         public const int ResourceIndustryVersion = 22;
         public const int DomesticVersion = 23;
-        public const int CurrentVersion = DomesticVersion;
+        public const int MilitaryCampaignVersion = 24;
+        public const int CurrentVersion = MilitaryCampaignVersion;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -71,6 +72,7 @@ namespace Game.Domain
         public ConnectedWorldSaveState ConnectedWorld { get; }
         public DomesticWorldSaveState Domestic { get; }
         public CharacterRuntimeWorldSaveState CharacterRuntime { get; }
+        public MilitaryCampaignSaveState MilitaryCampaign { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
@@ -81,7 +83,8 @@ namespace Game.Domain
             AiStrategicSaveState strategicAi = null, EventSaveState events = null,
             CampaignProgressSaveState campaign = null, AppearanceWorldSaveState appearance = null,
             WorkSaveState work = null, ConnectedWorldSaveState connectedWorld = null,
-            DomesticWorldSaveState domestic = null, CharacterRuntimeWorldSaveState characterRuntime = null)
+            DomesticWorldSaveState domestic = null, CharacterRuntimeWorldSaveState characterRuntime = null,
+            MilitaryCampaignSaveState militaryCampaign = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
@@ -93,7 +96,8 @@ namespace Game.Domain
                 formatVersion != AppearanceVersion && formatVersion != OccupationVersion &&
                 formatVersion != WorkVersion && formatVersion != AppearanceEditorVersion &&
                 formatVersion != ConnectedWorldVersion && formatVersion != ContextOrdersVersion &&
-                formatVersion != ResourceIndustryVersion && formatVersion != CurrentVersion)
+                formatVersion != ResourceIndustryVersion && formatVersion != DomesticVersion &&
+                formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -124,6 +128,7 @@ namespace Game.Domain
             ConnectedWorld = connectedWorld;
             Domestic = domestic;
             CharacterRuntime = characterRuntime;
+            MilitaryCampaign = militaryCampaign;
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

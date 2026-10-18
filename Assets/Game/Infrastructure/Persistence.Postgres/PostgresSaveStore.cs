@@ -80,6 +80,9 @@ SELECT session_id, save_format_version, payload FROM serenity.save_sessions WHER
                             storedVersion != SaveSnapshot.WorkVersion &&
                             storedVersion != SaveSnapshot.AppearanceEditorVersion &&
                             storedVersion != SaveSnapshot.ConnectedWorldVersion &&
+                            storedVersion != SaveSnapshot.ContextOrdersVersion &&
+                            storedVersion != SaveSnapshot.ResourceIndustryVersion &&
+                            storedVersion != SaveSnapshot.DomesticVersion &&
                             storedVersion != SaveSnapshot.CurrentVersion)
                             throw new NotSupportedException("Unsupported save format version.");
                         var snapshot = codec.Deserialize((byte[])reader.GetValue(2));

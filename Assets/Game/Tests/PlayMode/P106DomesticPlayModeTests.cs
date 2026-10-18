@@ -58,7 +58,7 @@ namespace Game.Tests.PlayMode
                 Is.EqualTo(1));
 
             var snapshot = root.Saves.Capture();
-            Assert.That(snapshot.FormatVersion, Is.EqualTo(23));
+            Assert.That(snapshot.FormatVersion, Is.EqualTo(SaveSnapshot.MilitaryCampaignVersion));
             Assert.That(snapshot.Domestic.Consents.Single().IsMutual, Is.True);
             Assert.That(snapshot.CharacterRuntime.Entries.Any(x => x.State.CharacterId == first), Is.True);
             Assert.That(snapshot.Appearance, Is.Not.Null);

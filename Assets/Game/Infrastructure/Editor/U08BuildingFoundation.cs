@@ -48,7 +48,9 @@ namespace Game.Infrastructure.Editor
                 new BuildingPresentationCatalog.Entry().Configure("storage_basket", "Storage Basket",
                     BuildingCategory.Storage, 2, 1, storage),
                 new BuildingPresentationCatalog.Entry().Configure("primitive_crop_plot", "Primitive Crop Plot",
-                    BuildingCategory.Structure, 3, 3, storage)
+                    BuildingCategory.Structure, 3, 3, storage),
+                new BuildingPresentationCatalog.Entry().Configure("military_barracks", "Military Barracks",
+                    BuildingCategory.Structure, 4, 3, shelter)
             }, "primitive_shelter");
             var resources = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
             if (resources != null)

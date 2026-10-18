@@ -203,6 +203,7 @@ namespace Game.Domain.Research
             IEnumerable<BuildingDefinitionId> buildingIds)
         {
             if (production == null) throw new ArgumentNullException(nameof(production));
+            var availableBuildingIds = (buildingIds ?? throw new ArgumentNullException(nameof(buildingIds))).ToArray();
             var capabilities = new[]
             {
                 new CapabilityId("basic_survival"), new CapabilityId("controlled_fire"),
@@ -233,6 +234,9 @@ namespace Game.Domain.Research
             var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
                 huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
+            var organizedLaborUnlocks = new List<TechnologyUnlock> { C("organized_labor") };
+            if (availableBuildingIds.Contains(new BuildingDefinitionId("military_barracks")))
+                organizedLaborUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("military_barracks")));
             var definitions = new[]
             {
                 new TechnologyDefinition(T("basic_survival"), "Basic Survival", null, TimeSpan.FromDays(1),
@@ -254,7 +258,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("food_preservation"), "Food Preservation", new[] { T("controlled_fire"), T("hunting") }, TimeSpan.FromDays(4),
                     new[] { C("food_preservation") }),
                 new TechnologyDefinition(T("organized_labor"), "Organized Labor", new[] { T("shelter_construction"), T("woodworking") }, TimeSpan.FromDays(4),
-                    new[] { C("organized_labor") }),
+                    organizedLaborUnlocks),
                 new TechnologyDefinition(T("primitive_agriculture"), "Primitive Agriculture",
                     new[] { T("controlled_fire"), T("fiber_working"), T("stone_tools") }, TimeSpan.FromDays(5),
                     new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_crop_plot")),
@@ -275,7 +279,7 @@ namespace Game.Domain.Research
                         T("restorative_mining") },
                     TimeSpan.FromDays(6), new[] { C("stone_age_completed") })
             };
-            return new TechnologyCatalog(definitions, new TechnologyUnlockTargets(buildingIds,
+            return new TechnologyCatalog(definitions, new TechnologyUnlockTargets(availableBuildingIds,
                 production.All.Select(x => x.Id), capabilities));
         }
     }

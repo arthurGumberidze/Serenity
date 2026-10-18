@@ -137,7 +137,7 @@ namespace Game.Infrastructure.Integration
             Try(result, () =>
             {
                 var snapshot = root.Saves.Capture();
-                result.format_v23 = snapshot.FormatVersion == SaveSnapshot.DomesticVersion;
+                result.format_v23 = snapshot.FormatVersion >= SaveSnapshot.DomesticVersion;
                 result.generation_id = snapshot.ConnectedWorld.GenerationId == "p10-connected-world-v1";
                 result.save_load_continuity = snapshot.Domestic.Consents.Single().IsMutual &&
                     snapshot.HealthFamily.Pregnancies.Any(x => x.Status == Game.Domain.Health.PregnancyStatus.Active) &&
