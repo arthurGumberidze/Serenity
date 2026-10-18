@@ -10,6 +10,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace Game.Infrastructure.Editor
@@ -175,12 +176,26 @@ namespace Game.Infrastructure.Editor
                 var go = new GameObject("P10.2 Physical Route " + i.ToString("00"));
                 go.transform.SetParent(parent, false);
                 var line = go.AddComponent<LineRenderer>();
-                line.sharedMaterial = material; line.widthMultiplier = 2.1f; line.positionCount = 9;
-                line.textureMode = LineTextureMode.Stretch;
+                line.sharedMaterial = material;
+                line.widthMultiplier = 0.75f;
+                line.numCornerVertices = 3;
+                line.numCapVertices = 2;
+                line.shadowCastingMode = ShadowCastingMode.Off;
+                line.receiveShadows = false;
+                line.textureMode = LineTextureMode.Tile;
                 var a = districts[pairs[i].Item1].Value.position; var b = districts[pairs[i].Item2].Value.position;
-                for (var p = 0; p < 9; p++)
+                var direction = Vector3.ProjectOnPlane(b - a, Vector3.up).normalized;
+                var distance = Vector3.Distance(a, b);
+                var trim = Mathf.Min(3.5f, distance * 0.08f);
+                a += direction * trim;
+                b -= direction * trim;
+                var samples = Mathf.Max(3, Mathf.CeilToInt(Vector3.Distance(a, b) / 3f) + 1);
+                line.positionCount = samples;
+                for (var p = 0; p < samples; p++)
                 {
-                    var point = Vector3.Lerp(a, b, p / 8f); point = Ground(terrain, point, 0.12f); line.SetPosition(p, point);
+                    var point = Vector3.Lerp(a, b, p / (samples - 1f));
+                    point = Ground(terrain, point, 0.045f);
+                    line.SetPosition(p, point);
                 }
                 result.Add(go.transform);
             }
@@ -250,10 +265,22 @@ namespace Game.Infrastructure.Editor
 
         private static void RedistributeResourceAnchors(P93PopulatedBiomeWorld biome, Terrain terrain)
         {
+            var starterSources = new[]
+            {
+                new Vector2(-12f, 5f), new Vector2(-8f, 7f),
+                new Vector2(-4f, 9f), new Vector2(1f, 9f)
+            };
             var centers = new[] { new Vector2(-145,-72), new Vector2(-98,128), new Vector2(116,134),
                 new Vector2(172,54), new Vector2(-42,-164), new Vector2(128,-126) };
             for (var i = 0; i < biome.ResourceFormations.Count; i++)
             {
+                if (i < starterSources.Length)
+                {
+                    var starter = starterSources[i];
+                    biome.ResourceFormations[i].ClickableRoot.position = Ground(terrain,
+                        new Vector3(starter.x, 0f, starter.y), 0.05f);
+                    continue;
+                }
                 var center = centers[i % centers.Length]; var ring = i / centers.Length;
                 var angle = (i * 137.5f) * Mathf.Deg2Rad;
                 var point = new Vector3(center.x + Mathf.Cos(angle) * (12f + ring * 7f), 0f,

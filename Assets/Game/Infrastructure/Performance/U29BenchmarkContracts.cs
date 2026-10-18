@@ -29,6 +29,9 @@ namespace Game.Infrastructure.Performance
         public string configId;
         public string baseCommit;
         public string outputDirectory;
+        public int width = Width;
+        public int height = Height;
+        public bool p109IntegrationProfile;
         public int population;
         public int tier1Count;
         public int tier2Count;
@@ -54,6 +57,9 @@ namespace Game.Infrastructure.Performance
             GetTierMix(population, out var tier1, out var tier2, out var tier3);
             var config = new U29BenchmarkConfig
             {
+                p109IntegrationProfile = HasArg(args, "-p109Performance"),
+                width = OptionalIntArg(args, "-u29Width", Width),
+                height = OptionalIntArg(args, "-u29Height", Height),
                 population = population,
                 tier1Count = OptionalIntArg(args, "-u29Tier1", tier1),
                 tier2Count = OptionalIntArg(args, "-u29Tier2", tier2),
@@ -72,6 +78,8 @@ namespace Game.Infrastructure.Performance
                 enableTierChurn = !HasArg(args, "-u29DisableTierChurn"),
                 enableSaveObservation = !HasArg(args, "-u29DisableSaveObservation")
             };
+            if (config.p109IntegrationProfile)
+                config.scenarioId = "p10_feature_complete_connected_world";
             config.Validate();
             return config;
         }
@@ -88,6 +96,12 @@ namespace Game.Infrastructure.Performance
                 throw new InvalidOperationException("Invalid repeat index/count.");
             if (!FinitePositive(warmupSeconds) || !FinitePositive(measurementSeconds))
                 throw new InvalidOperationException("Warm-up and measurement durations must be finite and positive.");
+            if (width <= 0 || height <= 0)
+                throw new InvalidOperationException("Benchmark resolution must be positive.");
+            if (p109IntegrationProfile && (width != 1920 || height != 1080))
+                throw new InvalidOperationException("P10.9 integration performance requires exact 1920x1080.");
+            if (!p109IntegrationProfile && mandatoryGate && (width != Width || height != Height))
+                throw new InvalidOperationException("The U29 mandatory gate retains its fixed 1600x900 contract.");
             if (captureProfilerTrace && (mandatoryGate || !detailedDiagnostics))
                 throw new InvalidOperationException("Profiler trace requires diagnostic smoke mode, never the acceptance gate.");
             if (mandatoryGate && (warmupSeconds < MandatoryWarmupSeconds ||

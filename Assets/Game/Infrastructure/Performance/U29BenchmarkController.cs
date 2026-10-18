@@ -129,7 +129,7 @@ namespace Game.Infrastructure.Performance
                 Application.runInBackground = true;
                 QualitySettings.vSyncCount = 0;
                 Application.targetFrameRate = U29BenchmarkConfig.TargetFrameRate;
-                Screen.SetResolution(U29BenchmarkConfig.Width, U29BenchmarkConfig.Height, false);
+                Screen.SetResolution(config.width, config.height, false);
                 scenario = U29BenchmarkScenario.Create(root, config);
                 cameraAnchor = root.CameraController.transform.position;
                 if (config.enableTierChurn) scenario.ExerciseTierChurn();
