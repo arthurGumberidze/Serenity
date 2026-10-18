@@ -68,6 +68,13 @@ namespace Game.Simulation.AI
         public int Count => entries.Count;
         public long CalendarTicks => calendarTicks;
         public Tier1AiSettings Settings => settings;
+        public bool TryGetAssignedWorkType(StableEntityId characterId, out WorkJobType type)
+        {
+            type = default;
+            if (work == null || !work.TryGetAssigned(characterId, out var job)) return false;
+            type = job.Type;
+            return true;
+        }
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
         public AutonomousWorkMode WorkMode => autonomousWorkMode;
 

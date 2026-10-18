@@ -36,6 +36,18 @@ namespace Game.Presentation.Characters
         private GameObject detailedVisualRoot;
         private Material lightweightMaterial;
         private bool lightweightVisual;
+        private CharacterAnimationIntent animationIntent;
+        private Transform spineBone;
+        private Transform rightUpperArmBone;
+        private Transform leftUpperArmBone;
+        private Transform rightLowerArmBone;
+        private Transform leftLowerArmBone;
+        private Quaternion lastSpineOffset = Quaternion.identity;
+        private Quaternion lastRightUpperArmOffset = Quaternion.identity;
+        private Quaternion lastLeftUpperArmOffset = Quaternion.identity;
+        private Quaternion lastRightLowerArmOffset = Quaternion.identity;
+        private Quaternion lastLeftLowerArmOffset = Quaternion.identity;
+        private float locomotionPlaybackRate = 1f;
 
         public bool IsBound => character != null;
         public Character Character => character;
@@ -48,6 +60,8 @@ namespace Game.Presentation.Characters
         public bool UsesLightweightVisual => lightweightVisual;
         public Material LightweightMaterial => lightweightMaterial;
         public bool DetailedVisualActive => detailedVisualRoot == null || detailedVisualRoot.activeSelf;
+        public CharacterAnimationIntent AnimationIntent => animationIntent;
+        public CharacterLodStyle LodStyle => CharacterLodStyle.From(appearance);
 
         public void SetSelected(bool selected)
         {
@@ -79,6 +93,18 @@ namespace Game.Presentation.Characters
             InvalidateAnimatorState();
         }
 
+        public void SetVisualAnimator(Animator targetAnimator)
+        {
+            if (targetAnimator == null) throw new ArgumentNullException(nameof(targetAnimator));
+            animator = targetAnimator;
+            CacheDetailedRenderers();
+            CacheAnimatorParameters();
+            CacheHumanoidBones();
+            InvalidateAnimatorState();
+            SetMovementSpeed(0f);
+            InitializeManualAnimation();
+        }
+
         public void Bind(Character domainCharacter, CharacterPresentationRegistry presentationRegistry,
             AppearanceState resolvedAppearance = null)
         {
@@ -95,6 +121,7 @@ namespace Game.Presentation.Characters
             hitProxy.Bind(domainCharacter.Id, ContextTargetKind.Character);
             CacheDetailedRenderers();
             CacheAnimatorParameters();
+            CacheHumanoidBones();
             InvalidateAnimatorState();
             SetMovementSpeed(0f);
             InitializeManualAnimation();
@@ -121,6 +148,10 @@ namespace Game.Presentation.Characters
                 displayedMovementSpeed = safeSpeed;
             }
             var moving = safeSpeed > 0.05f;
+            locomotionPlaybackRate = !moving ? 1f : safeSpeed <= 1.5f
+                ? Mathf.Clamp(safeSpeed / 1.15f, 0.65f, 1.6f)
+                : Mathf.Clamp(safeSpeed / 3.4f, 0.75f, 3f);
+            ApplyAnimatorPlaybackRate();
             if (hasMovingParameter && displayedMoving != moving)
             {
                 animator.SetBool(MovingParameter, moving);
@@ -138,8 +169,31 @@ namespace Game.Presentation.Characters
         public void SetSimulationPaused(bool paused)
         {
             if (animator == null || displayedPaused == paused) return;
-            animator.speed = paused ? 0f : 1f;
             displayedPaused = paused;
+            ApplyAnimatorPlaybackRate();
+        }
+
+        public void SetAnimationIntent(CharacterAnimationIntent intent) => animationIntent = intent;
+
+        /// <summary>Centralized late-frame additive pose; callers update a bounded presenter set.</summary>
+        public void RefreshActionPose(float unscaledTime)
+        {
+            if (animator == null || !animator.isHuman || !DetailedVisualActive) return;
+            RemoveLastPoseOffsets();
+            if (animationIntent == CharacterAnimationIntent.Idle) return;
+            var wave = Mathf.Sin(unscaledTime * (animationIntent == CharacterAnimationIntent.Combat ? 7.5f : 5.2f));
+            var lift = animationIntent == CharacterAnimationIntent.Carry ? 48f :
+                animationIntent == CharacterAnimationIntent.Fish ? 34f :
+                animationIntent == CharacterAnimationIntent.Combat ? 44f : 58f;
+            var sweep = animationIntent == CharacterAnimationIntent.Carry ? 4f : 22f * wave;
+            var opposite = animationIntent == CharacterAnimationIntent.Carry ? 0f : -sweep * 0.72f;
+            var bend = animationIntent == CharacterAnimationIntent.Mine || animationIntent == CharacterAnimationIntent.Chop
+                ? 8f + 5f * wave : animationIntent == CharacterAnimationIntent.Gather ? 13f : 3f;
+            ApplyOffset(spineBone, Quaternion.Euler(bend, 0f, 0f), ref lastSpineOffset);
+            ApplyOffset(rightUpperArmBone, Quaternion.Euler(lift + sweep, 0f, -12f), ref lastRightUpperArmOffset);
+            ApplyOffset(leftUpperArmBone, Quaternion.Euler(lift + opposite, 0f, 12f), ref lastLeftUpperArmOffset);
+            ApplyOffset(rightLowerArmBone, Quaternion.Euler(-35f + sweep * 0.35f, 0f, 0f), ref lastRightLowerArmOffset);
+            ApplyOffset(leftLowerArmBone, Quaternion.Euler(-35f + opposite * 0.35f, 0f, 0f), ref lastLeftLowerArmOffset);
         }
 
         /// <summary>
@@ -168,6 +222,7 @@ namespace Game.Presentation.Characters
         {
             if (animator == null) animator = GetComponentInChildren<Animator>(true);
             CacheAnimatorParameters();
+            CacheHumanoidBones();
             InvalidateAnimatorState();
         }
 
@@ -182,6 +237,17 @@ namespace Game.Presentation.Characters
             hasMovingParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == MovingParameter);
         }
 
+        private void CacheHumanoidBones()
+        {
+            spineBone = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.Spine) : null;
+            rightUpperArmBone = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightUpperArm) : null;
+            leftUpperArmBone = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftUpperArm) : null;
+            rightLowerArmBone = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightLowerArm) : null;
+            leftLowerArmBone = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftLowerArm) : null;
+            lastSpineOffset = lastRightUpperArmOffset = lastLeftUpperArmOffset =
+                lastRightLowerArmOffset = lastLeftLowerArmOffset = Quaternion.identity;
+        }
+
         private void InvalidateAnimatorState()
         {
             displayedMovementSpeed = float.NaN;
@@ -191,6 +257,35 @@ namespace Game.Presentation.Characters
             automaticMovementAnimation = false;
             automaticAnimationAllowed = true;
             disableAutomaticAnimationAfter = float.PositiveInfinity;
+            animationIntent = CharacterAnimationIntent.Idle;
+            locomotionPlaybackRate = 1f;
+        }
+
+        private void ApplyAnimatorPlaybackRate()
+        {
+            if (animator != null) animator.speed = displayedPaused == true ? 0f : locomotionPlaybackRate;
+        }
+
+        private void RemoveLastPoseOffsets()
+        {
+            RemoveOffset(spineBone, ref lastSpineOffset);
+            RemoveOffset(rightUpperArmBone, ref lastRightUpperArmOffset);
+            RemoveOffset(leftUpperArmBone, ref lastLeftUpperArmOffset);
+            RemoveOffset(rightLowerArmBone, ref lastRightLowerArmOffset);
+            RemoveOffset(leftLowerArmBone, ref lastLeftLowerArmOffset);
+        }
+
+        private static void ApplyOffset(Transform bone, Quaternion offset, ref Quaternion previous)
+        {
+            if (bone == null) return;
+            bone.localRotation *= offset;
+            previous = offset;
+        }
+
+        private static void RemoveOffset(Transform bone, ref Quaternion previous)
+        {
+            if (bone != null && previous != Quaternion.identity) bone.localRotation *= Quaternion.Inverse(previous);
+            previous = Quaternion.identity;
         }
 
         private void InitializeManualAnimation()

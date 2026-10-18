@@ -284,6 +284,8 @@ namespace Game.Infrastructure
             RealisticGameplayRegion?.ValidateConfiguration();
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
+            if (PopulatedBiomeWorld != null)
+                gameObject.AddComponent<StableEnvironmentLodController>().Initialize(PopulatedBiomeWorld.CanopyTrees);
             StoneAgeSettlement = FindAnyObjectByType<P94StoneAgeSettlement>();
             StoneAgeSettlement?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();
@@ -416,6 +418,7 @@ namespace Game.Infrastructure
             TierPolicy = new TierDistancePolicy(Tiers);
             Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
                 worldSeed, Tiers);
+            AiRuntime.SetCombatActivityProvider(characterId => Combat.TryGetCombatant(characterId, out _));
             foreach (var character in playerCharacters) Combat.RegisterSide(character.Id, new CombatSideId("player"));
             CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;

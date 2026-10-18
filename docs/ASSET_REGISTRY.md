@@ -349,3 +349,9 @@ P10.3 imports no external art, package or Asset Store dependency. Hit proxies, h
 ## P10.4 resource and industry provenance (2026-10-17)
 
 P10.4 imports no external art, package or Asset Store dependency. The two added resource definitions, natural lifecycle, industrial definitions/services, hover label, normal inspector controls and strategic filters are Serenity-owned C#/configuration changes. New animal, fish and industrial-zone views use Unity built-in primitives and project-authored colors; existing approved Terrain Sample trees/rocks and project-owned resource formations are rebound as disposable affordances without editing vendor source. Canonical mutable state remains in Domain/Simulation services and snapshot v22, never in a mesh, material or `ScriptableObject` asset.
+
+## P10.5 Character/LOD benchmark provenance (2026-10-18)
+
+P10.5 imports no new external package, texture, model, animation or Asset Store dependency. Detailed residents reuse the pinned approved UMA 3.1f3 content and the existing Serenity-owned civilian hide/wrapped-pants recipe. The far-resident humanoid mesh, vertex-channel shader, clothing-role definitions, procedural work/combat poses and LOD policy are Serenity-owned runtime code/assets. Tree LOD stabilization reuses the already approved Unity URP Terrain Sample 1.0.3 meshes and disables billboard stages; vendor source is not edited.
+
+The benchmark is `PARTIAL`, not final production art. No approved visual recipe currently exists for the work or military clothing IDs; no authored multi-mesh Character LOD chain exists; the normal starter ages do not cover age groups; and chop/mine/gather/carry/build/fish/hunt/combat/sleep remain procedural or absent rather than authored clips. Separate approval is required before importing a compatible original soft-stylized modular human/wardrobe source, a rig-compatible animation source, an authored/legal Character LOD source and optional matching fauna/fish content.

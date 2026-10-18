@@ -6,6 +6,7 @@ using Game.Domain;
 using Game.Domain.Campaign;
 using Game.Domain.Characters;
 using Game.Domain.Dynasties;
+using Game.Simulation.Characters;
 
 namespace Game.Simulation.Campaign
 {
@@ -88,13 +89,20 @@ namespace Game.Simulation.Campaign
             }
             var dynasty = DynastyState.Create(dynastyId, configuration.DynastyName, ids[0], ids[0],
                 new[] { ids[0], ids[2], ids[3] }).CaptureState();
+            var appearanceRegistry = new CharacterRegistry();
+            appearanceRegistry.RestoreStates(values);
+            var appearanceService = new CharacterAppearanceService(appearanceRegistry, appearanceCatalog,
+                configuration.WorldSeed);
+            appearanceService.EnsureDefaults(appearanceRegistry.GetAll());
             var appearances = new List<AppearanceState>(values.Length);
             for (var i = 0; i < values.Length; i++)
             {
-                var profile = i == 0 ? rulerProfile : appearanceCatalog.DefaultFor(values[i].Sex);
-                appearances.Add(i == 0 && configuration.RulerAppearance != null
-                    ? configuration.RulerAppearance.With(characterId: ids[i])
-                    : profile.CreateState(ids[i]));
+                var generated = appearanceService.Get(ids[i]);
+                if (i == 0 && configuration.RulerAppearance != null)
+                    generated = configuration.RulerAppearance.With(characterId: ids[i]);
+                else if (i == 0 && generated.ProfileId != rulerProfile.Id)
+                    generated = rulerProfile.CreateState(ids[i]);
+                appearances.Add(generated);
             }
             return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3],
                 new AppearanceWorldSaveState(appearances));

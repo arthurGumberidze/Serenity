@@ -61,6 +61,7 @@ namespace Game.Presentation.Characters
         public AppearanceState Appearance => appearance;
         public bool UsesUma { get; private set; }
         public bool StoneAgeWardrobeApplied { get; private set; }
+        public bool WardrobeFallbackUsed { get; private set; }
         public bool HasMissingScripts => umaInstance != null &&
             umaInstance.GetComponentsInChildren<Transform>(true).Any(item =>
                 item.GetComponents<Component>().Any(component => component == null));
@@ -103,6 +104,7 @@ namespace Game.Presentation.Characters
         {
             UsesUma = false;
             StoneAgeWardrobeApplied = false;
+            WardrobeFallbackUsed = false;
             SetFallbackVisible(true);
             if (avatar == null) yield break;
             var watch = Stopwatch.StartNew();
@@ -123,7 +125,14 @@ namespace Game.Presentation.Characters
                         Invoke("GetWardrobeItemName", new[] { typeof(string) }, "Chest") as string,
                         expectedWardrobeRecipe, StringComparison.Ordinal);
                     UsesUma = true;
+                    var generatedAnimator = umaInstance.GetComponentInChildren<Animator>(true);
+                    var owner = GetComponent<CharacterPresenter>();
                     SetFallbackVisible(false);
+                    if (generatedAnimator != null && owner != null && owner.Animator != null)
+                    {
+                        generatedAnimator.runtimeAnimatorController = owner.Animator.runtimeAnimatorController;
+                        owner.SetVisualAnimator(generatedAnimator);
+                    }
                     break;
                 }
                 yield return null;
@@ -154,6 +163,13 @@ namespace Game.Presentation.Characters
             // Project-owned recipes reuse the admitted UMA Human 3.0 mesh with its leather-only overlay.
             // Wrapped trousers plus bare feet avoid modern demo clothes and the metallic medieval greaves.
             expectedWardrobeRecipe = female ? "F_StoneAgeHideTunic_Recipe" : "M_StoneAgeHideTunic_Recipe";
+            if (appearance.ClothingId != StoneAgeAppearanceProfiles.CivilianClothing)
+            {
+                WardrobeFallbackUsed = true;
+                Debug.LogWarning("P105_WARDROBE_FALLBACK clothing=" + appearance.ClothingId +
+                                 "; character=" + appearance.CharacterId +
+                                 "; admitted visual content is not available; canonical clothing ID is preserved.");
+            }
             SetSlot(expectedWardrobeRecipe);
             SetSlot(female ? "F_Wrapped Pants_Recipe" : "M_Wrapped Pants_Recipe");
             SetColor("Skin", SkinColors[appearance.SkinId.Value]);

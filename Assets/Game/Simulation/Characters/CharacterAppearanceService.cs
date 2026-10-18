@@ -55,6 +55,18 @@ namespace Game.Simulation.Characters
             states[appearance.CharacterId] = appearance;
         }
 
+        public AppearanceState SetClothing(StableEntityId characterId, AppearancePartId clothingId)
+        {
+            var current = Get(characterId);
+            var definition = StoneAgeClothingDefinitions.CreateCatalog().Get(clothingId);
+            if (!definition.Supports(current.ProfileId))
+                throw new InvalidOperationException("Clothing is incompatible with the Character appearance profile.");
+            var replacement = current.With(clothingId: clothingId);
+            Validate(replacement, allowUnknownProfile: false);
+            states[characterId] = replacement;
+            return replacement;
+        }
+
         public void EnsureDefaults(IEnumerable<Character> values)
         {
             foreach (var character in (values ?? throw new ArgumentNullException(nameof(values)))
@@ -95,7 +107,17 @@ namespace Game.Simulation.Characters
         {
             var compatible = catalog.ForSex(character.Sex);
             var sample = DeterministicKeyedRandom.Sample64(worldSeed, character.Id, 0, GenerationStream);
-            return compatible[(int)(sample % (ulong)compatible.Count)].CreateState(character.Id);
+            var profile = compatible[(int)(sample % (ulong)compatible.Count)];
+            var stream = 1u;
+            AppearancePartId Pick(IReadOnlyList<AppearancePartId> options) => options[(int)
+                (DeterministicKeyedRandom.Sample64(worldSeed, character.Id, 0, GenerationStream + stream++) %
+                 (ulong)options.Count)];
+            var parameters = profile.Parameters.Select(parameter => new AppearanceParameterValue(parameter,
+                180 + (int)(DeterministicKeyedRandom.Sample64(worldSeed, character.Id, 0,
+                    GenerationStream + stream++) % 641UL))).ToArray();
+            return new AppearanceState(character.Id, profile.Id, profile.BodyId, profile.FaceId,
+                Pick(profile.Skins), Pick(profile.Hairs), Pick(profile.Beards), Pick(profile.HairColors),
+                Pick(profile.EyeColors), profile.AgeId, StoneAgeAppearanceProfiles.CivilianClothing, parameters);
         }
 
         private void Validate(AppearanceState appearance, bool allowUnknownProfile)

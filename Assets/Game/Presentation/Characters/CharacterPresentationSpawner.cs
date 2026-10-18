@@ -42,8 +42,7 @@ namespace Game.Presentation.Characters
             {
                 // UMA generation is bounded to the same eight detailed Tier 1 views used by the crowd renderer.
                 // This gives nearby key/family NPCs coherent Human 3.0 art without starting a coroutine per mass NPC.
-                if (catalog.UmaAvatarPrefab != null && (requested.Parameters.Count > 0 ||
-                    detailedUmaCharacters.Count < MaximumDetailedUmaProjections))
+                if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
                 {
                     detailedUmaCharacters.Add(character.Id);
                     instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);

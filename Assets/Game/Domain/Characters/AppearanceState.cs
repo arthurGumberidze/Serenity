@@ -129,10 +129,11 @@ namespace Game.Domain.Characters
         public AppearanceState With(StableEntityId? characterId = null, AppearancePartId? skinId = null,
             AppearancePartId? hairId = null, AppearancePartId? beardId = null,
             AppearancePartId? hairColorId = null, AppearancePartId? eyeColorId = null,
-            AppearancePartId? ageId = null, IEnumerable<AppearanceParameterValue> parameters = null) =>
+            AppearancePartId? ageId = null, AppearancePartId? clothingId = null,
+            IEnumerable<AppearanceParameterValue> parameters = null) =>
             new AppearanceState(characterId ?? CharacterId, ProfileId, BodyId, FaceId, skinId ?? SkinId,
                 hairId ?? HairId, beardId ?? BeardId, hairColorId ?? HairColorId, eyeColorId ?? EyeColorId,
-                ageId ?? AgeId, ClothingId, parameters ?? Parameters);
+                ageId ?? AgeId, clothingId ?? ClothingId, parameters ?? Parameters);
     }
 
     public sealed class AppearanceProfileDefinition
@@ -144,7 +145,8 @@ namespace Game.Domain.Characters
             : this(id, sex, bodyId, faceId, skinId, hairId, beardId, hairColorId,
                 Part("eye_brown"), Part("age_adult"), clothingId,
                 new[] { skinId }, new[] { hairId }, new[] { beardId }, new[] { hairColorId },
-                new[] { Part("eye_brown") }, new[] { Part("age_adult") }, Array.Empty<AppearanceParameterId>()) { }
+                new[] { Part("eye_brown") }, new[] { Part("age_adult") }, new[] { clothingId },
+                Array.Empty<AppearanceParameterId>()) { }
 
         public AppearanceProfileDefinition(AppearanceProfileId id, CharacterSex sex,
             AppearancePartId bodyId, AppearancePartId faceId, AppearancePartId skinId,
@@ -153,6 +155,7 @@ namespace Game.Domain.Characters
             IEnumerable<AppearancePartId> skins, IEnumerable<AppearancePartId> hairs,
             IEnumerable<AppearancePartId> beards, IEnumerable<AppearancePartId> hairColors,
             IEnumerable<AppearancePartId> eyeColors, IEnumerable<AppearancePartId> ages,
+            IEnumerable<AppearancePartId> clothings,
             IEnumerable<AppearanceParameterId> parameters)
         {
             if (!id.IsValid) throw new ArgumentException("Profile ID is required.", nameof(id));
@@ -162,6 +165,7 @@ namespace Game.Domain.Characters
             Skins = CopyOptions(skins, skinId, nameof(skins)); Hairs = CopyOptions(hairs, hairId, nameof(hairs));
             Beards = CopyOptions(beards, beardId, nameof(beards)); HairColors = CopyOptions(hairColors, hairColorId, nameof(hairColors));
             EyeColors = CopyOptions(eyeColors, eyeColorId, nameof(eyeColors)); Ages = CopyOptions(ages, ageId, nameof(ages));
+            Clothings = CopyOptions(clothings, clothingId, nameof(clothings));
             var parameterValues = (parameters ?? throw new ArgumentNullException(nameof(parameters))).OrderBy(x => x).ToArray();
             if (parameterValues.Any(x => !x.IsValid) || parameterValues.Distinct().Count() != parameterValues.Length)
                 throw new ArgumentException("Parameter IDs must be valid and unique.", nameof(parameters));
@@ -185,6 +189,7 @@ namespace Game.Domain.Characters
         public IReadOnlyList<AppearancePartId> HairColors { get; }
         public IReadOnlyList<AppearancePartId> EyeColors { get; }
         public IReadOnlyList<AppearancePartId> Ages { get; }
+        public IReadOnlyList<AppearancePartId> Clothings { get; }
         public IReadOnlyList<AppearanceParameterId> Parameters { get; }
 
         public AppearanceState CreateState(StableEntityId characterId) => new AppearanceState(characterId, Id,
@@ -196,7 +201,7 @@ namespace Game.Domain.Characters
             Parameters.Select(x => new AppearanceParameterValue(x, 500)));
 
         public bool Supports(AppearanceState state) => state != null && state.ProfileId == Id &&
-            state.BodyId == BodyId && state.FaceId == FaceId && state.ClothingId == ClothingId &&
+            state.BodyId == BodyId && state.FaceId == FaceId && Clothings.Contains(state.ClothingId) &&
             Skins.Contains(state.SkinId) && Hairs.Contains(state.HairId) && Beards.Contains(state.BeardId) &&
             HairColors.Contains(state.HairColorId) && EyeColors.Contains(state.EyeColorId) && Ages.Contains(state.AgeId) &&
             (state.Parameters.Count == 0 || state.Parameters.Select(x => x.Id).SequenceEqual(Parameters));
@@ -239,6 +244,9 @@ namespace Game.Domain.Characters
         // Compatibility names retained for older callers; P8.4 replaces the old immutable Hodaart profiles.
         public static readonly AppearanceProfileId AdultA = UmaMale;
         public static readonly AppearanceProfileId AdultB = UmaFemale;
+        public static readonly AppearancePartId CivilianClothing = Part("uma_stone_age_clothing");
+        public static readonly AppearancePartId WorkerClothing = Part("uma_stone_age_worker");
+        public static readonly AppearancePartId MilitaryClothing = Part("uma_stone_age_military");
         public static readonly AppearanceParameterId Head = Parameter("head_proportion");
         public static readonly AppearanceParameterId Jaw = Parameter("jaw_shape");
         public static readonly AppearanceParameterId Chin = Parameter("chin_shape");
@@ -257,14 +265,16 @@ namespace Game.Domain.Characters
             var colors = Parts("hair_black", "hair_brown", "hair_auburn", "hair_blond", "hair_gray");
             var eyes = Parts("eye_brown", "eye_hazel", "eye_green", "eye_blue", "eye_gray");
             var ages = Parts("age_adult", "age_mature", "age_aged");
+            var clothings = new[] { CivilianClothing, WorkerClothing, MilitaryClothing };
             return new AppearanceDefinitionCatalog(new[]
             {
                 new AppearanceProfileDefinition(UmaMale, CharacterSex.Male, Part("uma_male_body"), Part("uma_male_face"),
-                    skins[1], hairs[0], Part("beard_none"), colors[1], eyes[0], ages[0], Part("uma_stone_age_clothing"),
-                    skins, hairs, Parts("beard_none", "beard_trimmed", "beard_goatee", "beard_neckbeard"), colors, eyes, ages, parameters),
+                    skins[1], hairs[0], Part("beard_none"), colors[1], eyes[0], ages[0], CivilianClothing,
+                    skins, hairs, Parts("beard_none", "beard_trimmed", "beard_goatee", "beard_neckbeard"), colors, eyes, ages,
+                    clothings, parameters),
                 new AppearanceProfileDefinition(UmaFemale, CharacterSex.Female, Part("uma_female_body"), Part("uma_female_face"),
-                    skins[1], hairs[1], Part("beard_none"), colors[1], eyes[0], ages[0], Part("uma_stone_age_clothing"),
-                    skins, hairs, Parts("beard_none"), colors, eyes, ages, parameters)
+                    skins[1], hairs[1], Part("beard_none"), colors[1], eyes[0], ages[0], CivilianClothing,
+                    skins, hairs, Parts("beard_none"), colors, eyes, ages, clothings, parameters)
             });
         }
         private static AppearancePartId Part(string value) => new AppearancePartId(value);
