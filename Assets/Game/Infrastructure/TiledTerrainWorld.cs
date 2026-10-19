@@ -137,6 +137,7 @@ namespace Game.Infrastructure
             if (strategicOverview != null) strategicOverview.SetActive(active);
             foreach (var pair in loaded)
                 pair.Value.Terrain.drawHeightmap = !active && visual.Contains(pair.Key);
+            VisualTilesChanged?.Invoke();
             if (!active && cameraFocusProvider != null) RefreshFromProviders();
         }
 

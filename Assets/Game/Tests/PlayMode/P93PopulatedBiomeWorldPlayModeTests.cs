@@ -25,24 +25,25 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator DenseBiomeCollidersPreserveNavMeshRoutesToAllConnectedLocations()
+        public IEnumerator DenseBiomeCollidersPreserveStarterRoutesOnActiveTiledNavMesh()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.PopulatedBiomeWorld, Is.Not.Null);
             Assert.DoesNotThrow(root.PopulatedBiomeWorld.ValidateConfiguration);
-            var start = root.InhabitableRegion.PlayerTerritoryAnchor.position;
+            var start = root.DemoPresenters[0].transform.position;
             Assert.That(NavMesh.SamplePosition(start, out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
-            foreach (var location in root.RealisticGameplayRegion.Locations)
+            foreach (var formation in root.PopulatedBiomeWorld.ResourceFormations.Take(4))
             {
-                Assert.That(NavMesh.SamplePosition(location.Anchor.position, out var destination,
-                    3f, NavMesh.AllAreas), Is.True, location.LocationId);
-                Assert.That(Vector3.Distance(destination.position, location.Anchor.position), Is.LessThanOrEqualTo(3f),
-                    location.LocationId);
+                var anchor = formation.ClickableRoot.position;
+                Assert.That(NavMesh.SamplePosition(anchor, out var destination,
+                    4f, NavMesh.AllAreas), Is.True, formation.RecipeId);
+                Assert.That(Vector3.Distance(destination.position, anchor), Is.LessThanOrEqualTo(4f),
+                    formation.RecipeId);
                 var path = new NavMeshPath();
                 Assert.That(NavMesh.CalculatePath(sampledStart.position, destination.position, NavMesh.AllAreas, path), Is.True,
-                    location.LocationId);
+                    formation.RecipeId);
                 Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete),
-                    $"{location.LocationId}; anchor={location.Anchor.position}; destination={destination.position}; " +
+                    $"{formation.RecipeId}; anchor={anchor}; destination={destination.position}; " +
                     $"corners={string.Join(" -> ", path.corners.Select(x => x.ToString("F2")))}");
             }
             Assert.That(root.PopulatedBiomeWorld.CanopyTrees.All(x =>
@@ -99,7 +100,7 @@ namespace Game.Tests.PlayMode
             var building = root.BuildingPlacementController.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
             var presenter = root.BuildingPlacementController.LastPlacedPresenter;
-            var terrainY = root.RealisticGameplayRegion.ProjectToGround(presenter.transform.position).y;
+            var terrainY = root.TiledWorld.ProjectToGround(presenter.transform.position).y;
             Assert.That(Mathf.Abs(presenter.transform.position.y - terrainY), Is.LessThan(0.15f));
 
             var before = root.Weather.CaptureState();

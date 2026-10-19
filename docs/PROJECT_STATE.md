@@ -1,6 +1,23 @@
 # PROJECT_STATE.md
 
-## Current checkpoint — 2026-10-19 P10.9 tiled-world Stage 2
+## Current checkpoint — 2026-10-19 P10.9 video follow-up
+
+P10.9 remains **PARTIAL**. The two user recordings `20-08-59.mp4` and `20-09-47.mp4` showed unstable scenery/character visibility and a ten-person context Move with three delayed orders. Legacy authored P9.2/P9.3 trees now project onto the active tiled height and hide when their tile is not drawn; P9.3's authored-layout hash still audits original positions. The tactical character draw limit now covers the camera's 160 m zoom, unchanged crowd-detail refreshes no longer restart NavMesh destinations, and context-menu group Move orders use distinct deterministic formation endpoints rather than one crowded point. Existing critical-needs/protected-phase delays are retained. `map_serenity` reveals all 48 × 48 canonical fog cells through the paused Codes panel, participates in save state and permanently marks the party as cheated.
+
+Verification: targeted P10.2/P10.8 EditMode **15/15**, final affected P10.8/P10.9/P9.3 PlayMode **13/13**, and adjacent P10.5 character PlayMode **4/4**. An intermediate combined PlayMode run was **14/17**: its P10.5 tests all passed, but the new group test used the default-zero facts struct and two P9.3 tests still asserted retired 512 m Terrain behavior. Those three test issues were corrected and the affected final rerun passed 13/13. Exact commands/results and the final Windows Player build are recorded below. No performance benchmark or profiling was run, and existing P10 saves were not touched. The inherited P10.3/P10.4 manual acceptance debt remains; P10.10 has not started.
+
+Commands (Unity 6000.6.4f1):
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P102ConnectedWorldTests;Game.Tests.Editor.P108DiagnosticsTests' -testResults 'C:\serenity_game\Artifacts\P109\video-followup-edit2.xml' -logFile 'C:\serenity_game\Artifacts\P109\video-followup-edit2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109VideoRegressionPlayModeTests;Game.Tests.PlayMode.P108DiagnosticsPlayModeTests;Game.Tests.PlayMode.P105CharacterProductionPlayModeTests;Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests' -testResults 'C:\serenity_game\Artifacts\P109\video-followup-play-final.xml' -logFile 'C:\serenity_game\Artifacts\P109\video-followup-play-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109VideoRegressionPlayModeTests;Game.Tests.PlayMode.P108DiagnosticsPlayModeTests;Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests' -testResults 'C:\serenity_game\Artifacts\P109\video-followup-play-rerun.xml' -logFile 'C:\serenity_game\Artifacts\P109\video-followup-play-rerun.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\video-followup-build.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109VideoFollowup/Serenity.exe'
+```
+
+BuildReport: **Succeeded, 0 errors / 52 warnings**. Windows Development Player: `Builds/P109VideoFollowup/Serenity.exe`; build GUID `e6c7567729d94b2bb32e20916ac44230`, source fingerprint `859908541170D661D5BA657D5BB4B6E1F5652933D2F28CD793BA92A50E5AD1D3`, provenance at `Builds/P109VideoFollowup/build-provenance.json`. The normal Player visual retest remains with the user; no benchmark was run.
+
+## Previous checkpoint — 2026-10-19 P10.9 tiled-world Stage 2
 
 P10.9 remains **PARTIAL**, while the delegated Stage 2 population/visual-cleanup slice is implemented. A pure deterministic planner creates canonical finite resource nodes across every one of the 144 tiles (at least five per tile, plus forest/berry/hunting/ore/fishing concentrations) and data-driven industrial zones for every approved extraction region. Stable IDs include the world generation ID. `ProductionService`, `ResourceEcologyService`, `IndustrialExtractionService`, inventories and world piles remain the only mutable authorities; the camera-centred visual ring creates and destroys disposable presenters only. Ecology now rebinds to restored `ProductionSite` instances after load, fixing post-load respawn continuity.
 

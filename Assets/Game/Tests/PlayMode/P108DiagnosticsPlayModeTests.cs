@@ -60,6 +60,14 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.SubmitDiagnosticCode("unknown"), Is.False);
             Assert.That(root.Diagnostics.CheatsUsed, Is.False);
 
+            var totalCells = root.ConnectedWorld.Layout.Columns * root.ConnectedWorld.Layout.Rows;
+            Assert.That(root.ConnectedWorld.RevealedCellCount, Is.LessThan(totalCells));
+            Assert.That(root.GameplayUi.SubmitDiagnosticCode("map_serenity"), Is.True);
+            Assert.That(root.ConnectedWorld.RevealedCellCount, Is.EqualTo(totalCells));
+            Assert.That(root.GameplayUi.LastDiagnosticResult.AffectedCount, Is.GreaterThan(0));
+            Assert.That(root.GameplayUi.SubmitDiagnosticCode("map_serenity"), Is.True);
+            Assert.That(root.GameplayUi.LastDiagnosticResult.AffectedCount, Is.Zero);
+
             Assert.That(root.GameplayUi.SubmitDiagnosticCode("serenity"), Is.True);
             Assert.That(root.Research.CompletedTechnologies.Count, Is.EqualTo(root.Technologies.All.Count));
             Assert.That(root.Diagnostics.CheatsUsed, Is.True);

@@ -87,6 +87,7 @@ namespace Game.Infrastructure
         [SerializeField] private long developmentWorldSimulationSeed = 20261006L;
 
         private readonly List<CharacterPresenter> demoPresenters = new List<CharacterPresenter>();
+        private StableEnvironmentLodController environmentLod;
 
         public LocalGameplayInputSource Input => input;
         public RtsCameraController CameraController => cameraController;
@@ -320,11 +321,18 @@ namespace Game.Infrastructure
             cameraController.Settings.Validate();
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
-            if (PopulatedBiomeWorld != null)
-                gameObject.AddComponent<StableEnvironmentLodController>().Initialize(
-                    PopulatedBiomeWorld.CanopyTrees.Concat(PopulatedBiomeWorld.BaseRegion.Trees));
             StoneAgeSettlement = FindAnyObjectByType<P94StoneAgeSettlement>();
             StoneAgeSettlement?.ValidateConfiguration();
+            if (PopulatedBiomeWorld != null)
+            {
+                PopulatedBiomeWorld.CaptureAuthoredTreePositions();
+                environmentLod = gameObject.AddComponent<StableEnvironmentLodController>();
+                environmentLod.Initialize(
+                    PopulatedBiomeWorld.CanopyTrees.Concat(PopulatedBiomeWorld.BaseRegion.Trees),
+                    position => WorldHeight.SampleHeight(position.x, position.z));
+                TiledWorld.VisualTilesChanged += RefreshAuthoredTreeVisibility;
+                RefreshAuthoredTreeVisibility();
+            }
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -508,7 +516,8 @@ namespace Game.Infrastructure
                 Characters, MilitaryUnits);
             Diagnostics = new DiagnosticService(worldSeed, Research, Resources, Inventories, Buildings,
                 Characters, Appearances, HealthFamily, Domestic, MilitaryUnits, MilitaryTraining, Tiers, Combat,
-                () => Clock.State.CalendarTicks, () => Clock.State.BiologicalTicks);
+                () => Clock.State.CalendarTicks, () => Clock.State.BiologicalTicks,
+                connectedWorld: ConnectedWorld);
             RegisterSettlementCaptureFlags();
             MilitaryAttack.BindSettlementCapture(SettlementCapture);
             var eventTargets = new CharacterEventTargetSource(Characters,
@@ -627,11 +636,20 @@ namespace Game.Infrastructure
 
         private void OnDestroy()
         {
+            if (TiledWorld != null) TiledWorld.VisualTilesChanged -= RefreshAuthoredTreeVisibility;
             if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
             if (HealthFamily != null) HealthFamily.ChildBorn -= OnChildBorn;
             if (buildingPlacementController != null) buildingPlacementController.BuildingPlaced -= OnBuildingPlaced;
             if (BuildingDamage != null) BuildingDamage.BuildingChanged -= OnBuildingChanged;
             Tier2Runtime?.Dispose();
+        }
+
+        private void RefreshAuthoredTreeVisibility()
+        {
+            if (environmentLod == null || TiledWorld == null) return;
+            var visible = new HashSet<WorldTileId>(TiledWorld.VisualTiles);
+            environmentLod.RefreshVisibility(position => !TiledWorld.StrategicOverviewVisible &&
+                WorldDefinition.TryGetTile(position.x, position.z, out var tile) && visible.Contains(tile));
         }
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)

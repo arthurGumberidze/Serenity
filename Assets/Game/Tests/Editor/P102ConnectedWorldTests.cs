@@ -50,6 +50,21 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void RevealAllIsIdempotentAndSurvivesSaveRestore()
+        {
+            var graph = StarterGlobalMap.Create();
+            var service = new ConnectedWorldService(graph.Locations);
+            var total = service.Layout.Columns * service.Layout.Rows;
+            var previouslyRevealed = service.RevealedCellCount;
+            Assert.That(service.RevealAll(), Is.EqualTo(total - previouslyRevealed));
+            Assert.That(service.RevealedCellCount, Is.EqualTo(total));
+            Assert.That(service.RevealAll(), Is.Zero);
+            var restored = new ConnectedWorldService(graph.Locations);
+            restored.RestoreState(service.CaptureState());
+            Assert.That(restored.RevealedCellCount, Is.EqualTo(total));
+        }
+
+        [Test]
         public void Version20XmlRoundTripPreservesFogAndGeneration()
         {
             var graph = StarterGlobalMap.Create();

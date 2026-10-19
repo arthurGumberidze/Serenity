@@ -67,6 +67,15 @@ namespace Game.Simulation.World
             return changed;
         }
 
+        public int RevealAll()
+        {
+            var changed = 0;
+            for (var x = 0; x < layout.Columns; x++)
+            for (var z = 0; z < layout.Rows; z++)
+                if (revealed.Add(new WorldDiscoveryCell(x, z))) changed++;
+            return changed;
+        }
+
         public void ReportPhysicalPresence(float worldX, float worldZ) => RevealAround(worldX, worldZ, 32f);
 
         public ScoutingAssignmentState AssignScout(StableEntityId scoutId, WorldLocationId destinationId,

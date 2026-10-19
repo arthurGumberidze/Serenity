@@ -25,7 +25,8 @@ namespace Game.Presentation.AI
         public const float CharacterLodNearDistance = 24f;
         public const float CharacterLodFarDistance = 32f;
         public const float CharacterLodImpostorDistance = 64f;
-        public const float CharacterLodCullDistance = 120f;
+        // Tactical camera zooms to 160 m; its diagonal view can still contain people beyond 120 m.
+        public const float CharacterLodCullDistance = 384f;
         private const float LodRefreshIntervalSeconds = 0.25f;
         private const float AvailabilitySweepIntervalSeconds = 1f;
         private static readonly ProfilerMarker AdvanceMarker = new ProfilerMarker("Serenity.Tier1.Advance");

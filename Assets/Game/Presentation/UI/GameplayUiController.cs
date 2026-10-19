@@ -1130,6 +1130,7 @@ namespace Game.Presentation.UI
             AddLine(mainPanel, "serenity — открыть все текущие технологии и возможности");
             AddLine(mainPanel, "res_serenity — добавить по 10 000 каждого текущего ресурса");
             AddLine(mainPanel, "army_serenity — создать по одному бойцу каждого ранга");
+            AddLine(mainPanel, "map_serenity — открыть всю карту мира");
             AddSection(mainPanel, "Семейная диагностика");
             AddMuted(mainPanel, "Создаёт двух взрослых, отношения, взаимное согласие, кровать в доме и каноническую беременность.");
             mainPanel.Add(ActionButton("Запустить семейную диагностику", () => RunFamilyDiagnostic(),
@@ -1187,6 +1188,9 @@ namespace Game.Presentation.UI
                 case DiagnosticCommandKind.CreateFamily:
                     message = "Семья создана: дом, кровать, взаимное согласие и беременность подтверждены.";
                     break;
+                case DiagnosticCommandKind.RevealWorld:
+                    message = "Открыта вся карта мира (новых ячеек: " + result.AffectedCount + ").";
+                    break;
                 default:
                     message = "Диагностическая команда выполнена.";
                     break;
@@ -1207,6 +1211,7 @@ namespace Game.Presentation.UI
                 case DiagnosticFailure.MissingBarracks: return "нет действующих казарм";
                 case DiagnosticFailure.MissingHome: return "нет закрытого обитаемого дома";
                 case DiagnosticFailure.NoIndoorBedPosition: return "в доме нет свободного места для кровати";
+                case DiagnosticFailure.MissingWorld: return "карта мира недоступна";
                 default: return "транзакция отменена без изменений";
             }
         }

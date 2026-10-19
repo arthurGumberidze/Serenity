@@ -79,6 +79,8 @@ namespace Game.Presentation.AI
 
         public void SetCrowdDetail(bool enabled)
         {
+            // Reissuing SetDestination on every LOD refresh continually restarts path planning.
+            if (crowdDetailEnabled == enabled) return;
             crowdDetailEnabled = enabled;
             if (authority == Tier1MovementAuthority.DirectPlayer) return;
             presenter.SetAutomaticAnimationAllowed(enabled);

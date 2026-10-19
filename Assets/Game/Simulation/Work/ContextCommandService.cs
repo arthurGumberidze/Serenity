@@ -56,9 +56,14 @@ namespace Game.Simulation.Work
             var placement = append ? WorkQueuePlacement.Tail : WorkQueuePlacement.Front;
             var priority = append ? WorkPriority.High : WorkPriority.Immediate;
             var entries = new List<ContextCommandEntry>();
-            foreach (var id in characterIds.Where(x => x.IsValid).Distinct()
-                         .OrderBy(x => x.ToString(), StringComparer.Ordinal))
+            var ordered = characterIds.Where(x => x.IsValid).Distinct()
+                .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
+            var moveTargets = action == ContextActionKind.Move
+                ? ManualMoveCommandService.BuildFormationTargets(target.Position, ordered.Length)
+                : null;
+            for (var index = 0; index < ordered.Length; index++)
             {
+                var id = ordered[index];
                 var availability = ContextActionRules.Evaluate(action, target, factsProvider(id));
                 if (!availability.Enabled)
                 {
@@ -67,7 +72,9 @@ namespace Game.Simulation.Work
                 }
 
                 if (!append) scheduler.TryInterruptForDirectWork(id);
-                var order = CreateOrder(id, action, target, priority, placement,
+                var orderTarget = action == ContextActionKind.Move
+                    ? new ContextCommandTarget(target.Kind, moveTargets[index]) : target;
+                var order = CreateOrder(id, action, orderTarget, priority, placement,
                     haulSource, haulDestination, haulQuantity);
                 entries.Add(new ContextCommandEntry(id, availability, order));
             }

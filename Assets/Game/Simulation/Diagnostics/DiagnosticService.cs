@@ -19,6 +19,7 @@ using Game.Simulation.Health;
 using Game.Simulation.Military;
 using Game.Simulation.Research;
 using Game.Simulation.Tiers;
+using Game.Simulation.World;
 
 namespace Game.Simulation.Diagnostics
 {
@@ -45,6 +46,7 @@ namespace Game.Simulation.Diagnostics
         private readonly Func<long> calendarTick;
         private readonly Func<long> biologicalTick;
         private readonly Action<string> faultInjection;
+        private readonly ConnectedWorldService connectedWorld;
         private bool cheatsUsed;
         private ulong sequence;
 
@@ -54,7 +56,8 @@ namespace Game.Simulation.Diagnostics
             HealthAndFamilyService healthService, DomesticService domesticService,
             MilitaryUnitService militaryUnits, MilitaryTrainingService militaryTraining,
             TierManager tierManager, CombatService combatService, Func<long> calendarTickProvider,
-            Func<long> biologicalTickProvider, Action<string> transactionFaultInjection = null)
+            Func<long> biologicalTickProvider, Action<string> transactionFaultInjection = null,
+            ConnectedWorldService connectedWorld = null)
         {
             worldSeed = seed;
             research = researchService ?? throw new ArgumentNullException(nameof(researchService));
@@ -72,6 +75,7 @@ namespace Game.Simulation.Diagnostics
             calendarTick = calendarTickProvider ?? throw new ArgumentNullException(nameof(calendarTickProvider));
             biologicalTick = biologicalTickProvider ?? throw new ArgumentNullException(nameof(biologicalTickProvider));
             faultInjection = transactionFaultInjection;
+            this.connectedWorld = connectedWorld;
         }
 
         public bool CheatsUsed => cheatsUsed;
@@ -96,6 +100,7 @@ namespace Game.Simulation.Diagnostics
                 case DiagnosticCommandKind.GrantResources: result = GrantResources(); break;
                 case DiagnosticCommandKind.CreateArmy: result = CreateArmy(); break;
                 case DiagnosticCommandKind.CreateFamily: result = CreateFamily(); break;
+                case DiagnosticCommandKind.RevealWorld: result = RevealWorld(); break;
                 default: return new DiagnosticExecutionResult(command, DiagnosticFailure.UnknownCode);
             }
             if (result.Succeeded) cheatsUsed = true;
@@ -110,6 +115,27 @@ namespace Game.Simulation.Diagnostics
             // Loading can add evidence of cheats, never erase evidence already established in this party.
             cheatsUsed |= state.CheatsUsed;
             if (state.Sequence > sequence) sequence = state.Sequence;
+        }
+
+        private DiagnosticExecutionResult RevealWorld()
+        {
+            if (connectedWorld == null)
+                return new DiagnosticExecutionResult(DiagnosticCommandKind.RevealWorld, DiagnosticFailure.MissingWorld);
+            var before = connectedWorld.CaptureState();
+            try
+            {
+                var count = connectedWorld.RevealAll();
+                Fault("world_revealed");
+                sequence = checked(sequence + 1);
+                return new DiagnosticExecutionResult(DiagnosticCommandKind.RevealWorld,
+                    DiagnosticFailure.None, count);
+            }
+            catch (Exception exception)
+            {
+                LastFailureDetail = exception.GetType().Name + ": " + exception.Message;
+                connectedWorld.RestoreState(before);
+                return Failed(DiagnosticCommandKind.RevealWorld);
+            }
         }
 
         private DiagnosticExecutionResult UnlockAll()

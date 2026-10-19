@@ -93,6 +93,7 @@ namespace Game.Presentation.Environment
         [SerializeField] private string layoutHash;
         [SerializeField] private string sourceAsset =
             "Unity URP Terrain Sample 1.0.3 (Asset Store 213197) + Serenity deterministic composition";
+        private Dictionary<GameObject, Vector3> authoredTreePositions;
 
         public P92RealisticGameplayRegion BaseRegion => baseRegion;
         public int ScatterSeed => scatterSeed;
@@ -107,6 +108,15 @@ namespace Game.Presentation.Environment
             ? 0f : populatedCoverageSamples / (float)accessibleCoverageSamples;
         public string LayoutHash => layoutHash;
         public string SourceAsset => sourceAsset;
+
+        /// <summary>Preserve the authored-layout audit while disposable runtime views follow the tiled terrain.</summary>
+        public void CaptureAuthoredTreePositions()
+        {
+            if (authoredTreePositions != null) return;
+            ValidateConfiguration();
+            authoredTreePositions = canopyTrees.Where(value => value != null)
+                .ToDictionary(value => value, value => value.transform.position);
+        }
 
         public void Configure(P92RealisticGameplayRegion region, int seed, IEnumerable<BiomeZone> biomeZones,
             IEnumerable<GameObject> trees, IEnumerable<GameObject> rocks, IEnumerable<GameObject> cover,
@@ -140,7 +150,9 @@ namespace Game.Presentation.Environment
                          .Where(x => x != null).OrderBy(x => x.name, StringComparer.Ordinal))
             {
                 Mix(ref hash, value.name);
-                Mix(ref hash, value.transform.position);
+                Mix(ref hash, authoredTreePositions != null &&
+                    authoredTreePositions.TryGetValue(value, out var authoredPosition)
+                    ? authoredPosition : value.transform.position);
                 Mix(ref hash, value.transform.localScale);
                 Mix(ref hash, value.transform.eulerAngles.y);
             }

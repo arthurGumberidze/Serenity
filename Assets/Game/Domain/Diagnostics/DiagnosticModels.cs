@@ -20,7 +20,8 @@ namespace Game.Domain.Diagnostics
         UnlockAll = 1,
         GrantResources = 2,
         CreateArmy = 3,
-        CreateFamily = 4
+        CreateFamily = 4,
+        RevealWorld = 5
     }
 
     public enum DiagnosticFailure
@@ -32,7 +33,8 @@ namespace Game.Domain.Diagnostics
         MissingBarracks = 4,
         MissingHome = 5,
         NoIndoorBedPosition = 6,
-        TransactionFailed = 7
+        TransactionFailed = 7,
+        MissingWorld = 8
     }
 
     public readonly struct DiagnosticParseResult
@@ -60,6 +62,7 @@ namespace Game.Domain.Diagnostics
                 case "res_serenity": return new DiagnosticParseResult(DiagnosticCommandKind.GrantResources, DiagnosticFailure.None);
                 case "army_serenity": return new DiagnosticParseResult(DiagnosticCommandKind.CreateArmy, DiagnosticFailure.None);
                 case "family_serenity": return new DiagnosticParseResult(DiagnosticCommandKind.CreateFamily, DiagnosticFailure.None);
+                case "map_serenity": return new DiagnosticParseResult(DiagnosticCommandKind.RevealWorld, DiagnosticFailure.None);
                 default: return new DiagnosticParseResult(default, DiagnosticFailure.UnknownCode);
             }
         }

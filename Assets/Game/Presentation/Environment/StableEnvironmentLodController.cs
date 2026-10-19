@@ -16,13 +16,34 @@ namespace Game.Presentation.Environment
         public int LodGroupCount { get; private set; }
         public int ReplacedBillboardLodCount { get; private set; }
 
-        public void Initialize(IEnumerable<GameObject> values)
+        public void Initialize(IEnumerable<GameObject> values, Func<Vector3, float> groundHeight = null)
         {
             trees = (values ?? throw new ArgumentNullException(nameof(values))).Where(x => x != null).Distinct().ToArray();
             LodGroupCount = 0;
             ReplacedBillboardLodCount = 0;
             foreach (var tree in trees)
+            {
+                // Authored trees belonged to the retired 512 m Terrain. Keep their X/Z and
+                // visual rotation, but anchor the root to the active tiled-world height.
+                if (groundHeight != null)
+                {
+                    var position = tree.transform.position;
+                    position.y = groundHeight(position);
+                    tree.transform.position = position;
+                }
                 foreach (var group in tree.GetComponentsInChildren<LODGroup>(true)) Configure(group);
+            }
+        }
+
+        public void RefreshVisibility(Func<Vector3, bool> isGroundRendered)
+        {
+            if (isGroundRendered == null) throw new ArgumentNullException(nameof(isGroundRendered));
+            foreach (var tree in trees)
+            {
+                if (tree == null) continue;
+                var visible = isGroundRendered(tree.transform.position);
+                if (tree.activeSelf != visible) tree.SetActive(visible);
+            }
         }
 
         private void Configure(LODGroup group)

@@ -1,8 +1,11 @@
 using System.Collections;
 using System.Linq;
 using Game.Infrastructure;
+using Game.Domain.AI;
+using Game.Domain.Work;
 using Game.Presentation.Characters;
 using Game.Presentation.Environment;
+using Game.Presentation.AI;
 using Game.Presentation.World;
 using NUnit.Framework;
 using Unity.Cinemachine;
@@ -62,6 +65,57 @@ namespace Game.Tests.PlayMode
                     Is.EqualTo(StableEnvironmentLodController.MinimumLastLodHeight).Within(0.0001f));
             }
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AuthoredTreesStayGroundedOnTiledTerrain()
+        {
+            var trees = root.PopulatedBiomeWorld.CanopyTrees.Concat(root.PopulatedBiomeWorld.BaseRegion.Trees);
+            foreach (var tree in trees)
+                Assert.That(tree.transform.position.y,
+                    Is.EqualTo(root.WorldHeight.SampleHeight(tree.transform.position.x, tree.transform.position.z))
+                        .Within(0.1f), tree.name);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AuthoredTreesHideWhenTheirTerrainTileIsNotDrawn()
+        {
+            var tree = root.PopulatedBiomeWorld.CanopyTrees.First();
+            var origin = tree.transform.position;
+            root.TiledWorld.RefreshNow(new WorldPosition(root.WorldDefinition.Origin.X + 10f, 0f,
+                root.WorldDefinition.Origin.Z + 10f), System.Array.Empty<WorldPosition>(),
+                System.Array.Empty<System.Tuple<WorldPosition, WorldPosition>>());
+            Assert.That(tree.activeSelf, Is.False);
+            root.TiledWorld.RefreshNow(new WorldPosition(origin.x, origin.y, origin.z),
+                System.Array.Empty<WorldPosition>(),
+                System.Array.Empty<System.Tuple<WorldPosition, WorldPosition>>());
+            Assert.That(tree.activeSelf, Is.True);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator GroupContextMoveUsesDistinctFormationDestinations()
+        {
+            var roster = root.Characters.GetAll()
+                .Where(value => !root.StarterEnemyAi.Residents.Contains(value.Id))
+                .Select(value => value.Id).ToArray();
+            Assert.That(roster.Length, Is.EqualTo(10));
+            var y = root.WorldHeight.SampleHeight(0f, 12f);
+            var target = new ContextCommandTarget(ContextTargetKind.Ground, new WorldPosition(0f, y, 12f));
+            var result = root.ContextCommands.Issue(roster, ContextActionKind.Move, target,
+                false, _ => new ContextActionFacts(alive: true));
+            Assert.That(result.Orders.Count, Is.EqualTo(roster.Length));
+            Assert.That(result.Orders.Select(order => (order.Target.Position.X, order.Target.Position.Z)).Distinct().Count(),
+                Is.EqualTo(roster.Length));
+            yield return null;
+        }
+
+        [Test]
+        public void TacticalCameraZoomNeverCrossesCharacterCullDistance()
+        {
+            Assert.That(Tier1AiRuntimeDriver.CharacterLodCullDistance,
+                Is.GreaterThan(root.CameraController.Settings.MaxZoom * 2f));
         }
 
         [UnityTest]

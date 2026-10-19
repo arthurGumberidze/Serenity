@@ -23,6 +23,7 @@ namespace Game.Tests.Editor
         [TestCase(" RES_SERENITY ", DiagnosticCommandKind.GrantResources)]
         [TestCase("Army_Serenity", DiagnosticCommandKind.CreateArmy)]
         [TestCase("family_serenity", DiagnosticCommandKind.CreateFamily)]
+        [TestCase(" MAP_SERENITY ", DiagnosticCommandKind.RevealWorld)]
         public void ParserAcceptsOnlyExplicitCodes(string raw, DiagnosticCommandKind expected)
         {
             var parsed = DiagnosticCommandParser.Parse(raw);
