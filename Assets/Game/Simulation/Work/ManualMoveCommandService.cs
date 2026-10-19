@@ -58,15 +58,18 @@ namespace Game.Simulation.Work
         private readonly WorkManager work;
         private readonly ICharacterTierLookup tiers;
         private readonly float formationSpacing;
+        private readonly Action<IReadOnlyList<StableEntityId>, WorldPosition> prepareNavigation;
 
         public ManualMoveCommandService(WorkManager workManager, ICharacterTierLookup tierLookup,
-            float spacing = DefaultFormationSpacing)
+            float spacing = DefaultFormationSpacing,
+            Action<IReadOnlyList<StableEntityId>, WorldPosition> navigationPreparation = null)
         {
             work = workManager ?? throw new ArgumentNullException(nameof(workManager));
             tiers = tierLookup ?? throw new ArgumentNullException(nameof(tierLookup));
             if (spacing <= 0f || float.IsNaN(spacing) || float.IsInfinity(spacing))
                 throw new ArgumentOutOfRangeException(nameof(spacing));
             formationSpacing = spacing;
+            prepareNavigation = navigationPreparation;
         }
 
         public ManualMoveCommandResult IssueForGroup(WorkGroupId groupId, WorldPosition target,
@@ -99,6 +102,7 @@ namespace Game.Simulation.Work
                 available.Add(id);
             }
 
+            if (available.Count > 0) prepareNavigation?.Invoke(available, target);
             var formationTargets = BuildFormationTargets(target, available.Count, formationSpacing);
             var jobs = new Dictionary<StableEntityId, WorkOrder>();
             for (var i = 0; i < available.Count; i++)

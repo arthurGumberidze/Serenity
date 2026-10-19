@@ -8,6 +8,7 @@ using Game.Domain.World;
 using Game.Simulation.Combat;
 using Game.Simulation.Military;
 using Game.Domain.Campaign;
+using Game.Domain.AI;
 
 namespace Game.Simulation.World
 {
@@ -450,6 +451,66 @@ namespace Game.Simulation.World
 
     public static class StarterGlobalMap
     {
+        public static GlobalMapSaveState CreateTiled(TiledWorldDefinition definition, long initialTick = 0,
+            long worldSeed = 0)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            WorldZoneDefinition Zone(string id) => definition.Zones.Single(value =>
+                string.Equals(value.Id, id, StringComparison.Ordinal));
+            var player = new WorldLocationId("starter_settlement");
+            var enemy = new WorldLocationId("enemy_settlement");
+            var northwest = new WorldLocationId("northwest_settlement");
+            var forest = new WorldLocationId("north_forest");
+            var ford = new WorldLocationId("river_ford");
+            var hills = new WorldLocationId("east_hills");
+            var field = new WorldLocationId("south_field");
+            var lake = new WorldLocationId("mirror_lake");
+            var west = new WorldLocationId("west_marsh");
+            var ridge = new WorldLocationId("iron_ridge");
+            var coast = new WorldLocationId("southern_coast");
+            WorldLocationState At(WorldLocationId id, string name, WorldLocationType type, WorldPosition position) =>
+                new WorldLocationState(id, name, type, (int)Math.Round(position.X), (int)Math.Round(position.Z));
+            var locations = new[]
+            {
+                At(player, "Player Settlement", WorldLocationType.Settlement, Zone("starter_settlement").Center),
+                At(enemy, "Eastern Settlement", WorldLocationType.Settlement, Zone("enemy_settlement").Center),
+                At(northwest, "Northwestern Settlement", WorldLocationType.Settlement,
+                    Zone("northwest_settlement").Center),
+                At(forest, "North Forest", WorldLocationType.Wilderness, Zone("forest_north").Center),
+                At(ford, "River Ford", WorldLocationType.Wilderness, definition.River[5]),
+                At(hills, "East Hills", WorldLocationType.Wilderness, Zone("ore_east").Center),
+                At(field, "South Field", WorldLocationType.Wilderness, Zone("farmland_southwest").Center),
+                At(lake, "Mirror Lake", WorldLocationType.Wilderness, Zone("lake_southeast").Center),
+                At(west, "West Hunting Grounds", WorldLocationType.Wilderness,
+                    Zone("western_hunting_berries").Center),
+                At(ridge, "Iron Ridge", WorldLocationType.Wilderness, Zone("ore_northwest").Center),
+                At(coast, "Southern River Mouth", WorldLocationType.Wilderness,
+                    new WorldPosition(definition.River.Last().X, 0f, definition.River.Last().Z + 120f))
+            };
+            var hour = TimeSpan.TicksPerHour;
+            var routes = new[]
+            {
+                new WorldRouteState(player, field, 6 * hour), new WorldRouteState(player, lake, 5 * hour),
+                new WorldRouteState(player, coast, 9 * hour), new WorldRouteState(field, west, 8 * hour),
+                new WorldRouteState(west, northwest, 8 * hour), new WorldRouteState(northwest, forest, 6 * hour),
+                new WorldRouteState(northwest, ridge, 5 * hour), new WorldRouteState(forest, ridge, 5 * hour),
+                new WorldRouteState(forest, ford, 8 * hour), new WorldRouteState(ford, hills, 7 * hour),
+                new WorldRouteState(ford, lake, 6 * hour), new WorldRouteState(hills, enemy, 7 * hour),
+                new WorldRouteState(ridge, enemy, 8 * hour), new WorldRouteState(coast, hills, 8 * hour)
+            };
+            var settlements = new[]
+            {
+                new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "player_settlement")),
+                    player, new CombatSideId("player"), null, null),
+                new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "enemy_settlement")),
+                    enemy, new CombatSideId("enemy"), null, null),
+                new SettlementState(new SettlementId(DeterministicStableId.Create(worldSeed, "northwest_settlement")),
+                    northwest, new CombatSideId("neutral"), null, null)
+            };
+            return new GlobalMapSaveState(definition.GenerationId, GameWorldMode.Local, player, locations, routes,
+                settlements, null, initialTick);
+        }
+
         public static GlobalMapSaveState Create(long initialTick = 0, long worldSeed = 0)
         {
             var player = new WorldLocationId("starter_settlement");

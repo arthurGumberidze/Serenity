@@ -91,6 +91,9 @@ namespace Game.Domain.World
         public IReadOnlyList<WorldPosition> River { get; }
 
         public bool IsValid(WorldTileId tile) => tile.X >= 0 && tile.X < Columns && tile.Z >= 0 && tile.Z < Rows;
+        public bool ContainsClosed(float x, float z) => !float.IsNaN(x) && !float.IsInfinity(x) &&
+            !float.IsNaN(z) && !float.IsInfinity(z) && x >= Origin.X && z >= Origin.Z &&
+            x <= Origin.X + WidthMeters && z <= Origin.Z + DepthMeters;
         public bool TryGetTile(float x, float z, out WorldTileId tile)
         {
             tile = default;
@@ -137,7 +140,5 @@ namespace Game.Domain.World
             }
             return required.ToArray();
         }
-        private bool ContainsClosed(float x, float z) => x >= Origin.X && z >= Origin.Z &&
-            x <= Origin.X + WidthMeters && z <= Origin.Z + DepthMeters;
     }
 }

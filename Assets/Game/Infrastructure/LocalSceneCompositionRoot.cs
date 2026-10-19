@@ -208,6 +208,10 @@ namespace Game.Infrastructure
         public P94PlayerSmokeController P94PlayerSmoke { get; private set; }
         public P95PlayerSmokeController P95PlayerSmoke { get; private set; }
         public P92RealisticGameplayRegion RealisticGameplayRegion { get; private set; }
+        public TiledWorldDefinition WorldDefinition { get; private set; }
+        public TiledWorldHeightSampler WorldHeight { get; private set; }
+        public TiledTerrainWorld TiledWorld { get; private set; }
+        public P102WorldPlacementSurface WorldPlacementSurface { get; private set; }
         public P93PopulatedBiomeWorld PopulatedBiomeWorld { get; private set; }
         public P94StoneAgeSettlement StoneAgeSettlement { get; private set; }
         public P94WorkOrderIndicatorSystem WorkOrderIndicators { get; private set; }
@@ -269,6 +273,8 @@ namespace Game.Infrastructure
                     requestedConfiguration.RivalKnownAtStart, requestedConfiguration.RulerName,
                     requestedConfiguration.DynastyName, requestedConfiguration.RulerSex,
                     requestedConfiguration.RulerAppearanceProfileId, requestedConfiguration.RulerAppearance);
+            WorldDefinition = TiledWorldDefinitionLoader.LoadReference();
+            WorldHeight = new TiledWorldHeightSampler(WorldDefinition, ActiveNewGameConfiguration.WorldSeed);
             var appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
             NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration, appearanceCatalog);
             var worldSeed = ActiveNewGameConfiguration.WorldSeed;
@@ -285,13 +291,32 @@ namespace Game.Infrastructure
             Buildings = new BuildingRegistry();
             BuildingOccupancy = new BuildingOccupancyGrid();
             BuildingPlacementService = new BuildingPlacementService(Buildings, BuildingOccupancy,
-                new BuildingGridBounds(-246, -246, 246, 246));
+                new BuildingGridBounds(Mathf.CeilToInt(WorldDefinition.Origin.X),
+                    Mathf.CeilToInt(WorldDefinition.Origin.Z),
+                    Mathf.CeilToInt(WorldDefinition.Origin.X + WorldDefinition.WidthMeters) - 1,
+                    Mathf.CeilToInt(WorldDefinition.Origin.Z + WorldDefinition.DepthMeters) - 1));
             if (buildingCatalog.ResourceCatalog == null) throw new InvalidOperationException("Building catalog has no resource catalog.");
             Resources = buildingCatalog.ResourceCatalog.CreateCatalog();
             InhabitableRegion = GetComponent<P5InhabitableRegionPresentation>();
             InhabitableRegion?.ValidateConfiguration();
             RealisticGameplayRegion = FindAnyObjectByType<P92RealisticGameplayRegion>();
             RealisticGameplayRegion?.ValidateConfiguration();
+            TiledWorld = gameObject.AddComponent<TiledTerrainWorld>();
+            TiledWorld.Initialize(WorldDefinition, WorldHeight, RealisticGameplayRegion?.Terrain);
+            if (RealisticGameplayRegion?.WaterRenderer != null)
+                RealisticGameplayRegion.WaterRenderer.enabled = false;
+            WorldPlacementSurface = FindAnyObjectByType<P102WorldPlacementSurface>() ??
+                gameObject.AddComponent<P102WorldPlacementSurface>();
+            WorldPlacementSurface.Configure(WorldHeight);
+            cameraController.Settings.BoundsMin = new Vector2(WorldDefinition.Origin.X + 10f,
+                WorldDefinition.Origin.Z + 10f);
+            cameraController.Settings.BoundsMax = new Vector2(WorldDefinition.Origin.X + WorldDefinition.WidthMeters - 10f,
+                WorldDefinition.Origin.Z + WorldDefinition.DepthMeters - 10f);
+            cameraController.Settings.MoveSpeed = Mathf.Max(cameraController.Settings.MoveSpeed, 120f);
+            cameraController.Settings.DragPanSpeed = Mathf.Max(cameraController.Settings.DragPanSpeed, 2.4f);
+            cameraController.Settings.MaxZoom = Mathf.Max(cameraController.Settings.MaxZoom, 160f);
+            cameraController.Settings.ZoomSpeed = Mathf.Max(cameraController.Settings.ZoomSpeed, 24f);
+            cameraController.Settings.Validate();
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
             if (PopulatedBiomeWorld != null)
@@ -314,8 +339,7 @@ namespace Game.Infrastructure
             BuildingPresentations = new BuildingPresentationRegistry();
             BuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
                 buildingGridSize, buildingGridOrigin, null, Inventories,
-                RealisticGameplayRegion == null ? null : position =>
-                    RealisticGameplayRegion.ProjectToGround(position).y);
+                position => TiledWorld.ProjectToGround(position).y);
             selectionProbe.Configure(input, pointerRaycaster, InteractionMode);
             buildingPlacementController.Initialize(BuildingPlacementService, BuildingSpawner, InteractionMode,
                 Construction, FundingSources);
@@ -436,7 +460,8 @@ namespace Game.Infrastructure
             foreach (var character in playerCharacters) Combat.RegisterSide(character.Id, new CombatSideId("player"));
             CombatCommands = new CombatCommandService(Combat);
             HealthFamily.ChildBorn += OnChildBorn;
-            ManualMoveCommands = new ManualMoveCommandService(Work, Tiers);
+            ManualMoveCommands = new ManualMoveCommandService(Work, Tiers,
+                ManualMoveCommandService.DefaultFormationSpacing, PrepareNavigationForManualMove);
             MilitaryUnits = new MilitaryUnitService(Characters, HealthFamily);
             MilitaryRepresentations = new MilitaryUnitRepresentationService(MilitaryUnits, Tiers, Combat,
                 Characters, HealthFamily);
@@ -446,9 +471,11 @@ namespace Game.Infrastructure
                 AiScheduler, new MilitarySideId("player"));
             Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
                 MilitaryCombat, PlayerControl);
-            GlobalMap = new GlobalMapService(StarterGlobalMap.Create(Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
+            GlobalMap = new GlobalMapService(StarterGlobalMap.CreateTiled(WorldDefinition,
+                Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
                 Battles);
-            ConnectedWorld = new ConnectedWorldService(GlobalMap.Locations, Clock.State.CalendarTicks);
+            ConnectedWorld = new ConnectedWorldService(GlobalMap.Locations,
+                ConnectedWorldLayout.For(WorldDefinition), Clock.State.CalendarTicks);
             StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
             InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
@@ -525,14 +552,14 @@ namespace Game.Infrastructure
 
             var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "TiledV2", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
                 Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers,
                 MilitaryTraining, SettlementCapture, MilitaryAttack, Diagnostics);
-            PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore);
+            PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore, WorldDefinition.GenerationId);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
                 .ToArray();
@@ -554,6 +581,9 @@ namespace Game.Infrastructure
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
+
+            TiledWorld.ConfigureStreaming(CameraStreamingFocus, StreamingPhysicalPositions,
+                StreamingNavigationRoutes);
 
             if (SessionLaunchState.TryConsumeLoad(out var startupSlot))
             {
@@ -747,6 +777,7 @@ namespace Game.Infrastructure
             ApplyLocalLocationScope(GlobalMap.ActiveLocationId);
             GlobalMapBridge.ReconcileAfterLoad();
             GameplayUi?.RefreshAfterStateRebind();
+            TiledWorld?.RefreshNow(CameraStreamingFocus(), StreamingPhysicalPositions(), StreamingNavigationRoutes());
         }
 
         public void StartNewGame(long worldSeed)
@@ -967,10 +998,13 @@ namespace Game.Infrastructure
             if (InhabitableRegion != null)
             {
                 foreach (var anchor in InhabitableRegion.ResourceAnchors.OrderBy(x => x.StableIndex))
+                {
+                    var projected = ProjectToGameplayGround(anchor.VisualRoot.position, 0.04f);
+                    anchor.VisualRoot.position = projected;
                     SpawnProductionSource(anchor.RecipeId, anchor.Amount,
-                        new WorldPosition(anchor.VisualRoot.position.x, anchor.VisualRoot.position.y,
-                            anchor.VisualRoot.position.z), anchor.ActiveColor, anchor.StableIndex,
+                        new WorldPosition(projected.x, projected.y, projected.z), anchor.ActiveColor, anchor.StableIndex,
                         anchor.VisualRoot.gameObject);
+                }
                 return;
             }
             SpawnProductionSource("gather_berries", 60, new WorldPosition(-12f, 0f, 5f),
@@ -1154,17 +1188,59 @@ namespace Game.Infrastructure
 
         private void BuildNavigationSurface()
         {
-            NavigationSurface = gameObject.AddComponent<NavMeshSurface>();
-            NavigationSurface.collectObjects = CollectObjects.Volume;
-            NavigationSurface.center = new Vector3(0f, 3f, 0f);
-            NavigationSurface.size = RealisticGameplayRegion == null
-                ? new Vector3(100f, 8f, 100f) : new Vector3(512f, 80f, 512f);
-            NavigationSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-            NavigationSurface.BuildNavMesh();
+            TiledWorld.BuildNavigation();
+            NavigationSurface = TiledWorld.PrimaryNavigationSurface;
+            if (NavigationSurface == null)
+                throw new InvalidOperationException("The starter tiled Terrain has no navigation surface.");
         }
 
-        private Vector3 ProjectToGameplayGround(Vector3 position) => RealisticGameplayRegion == null
-            ? position : RealisticGameplayRegion.ProjectToGround(position, 0.04f);
+        private Vector3 ProjectToGameplayGround(Vector3 position) => ProjectToGameplayGround(position, 0.04f);
+
+        private Vector3 ProjectToGameplayGround(Vector3 position, float offset) => TiledWorld == null
+            ? position : TiledWorld.ProjectToGround(position, offset);
+
+        private WorldPosition CameraStreamingFocus()
+        {
+            var focus = cameraController.transform.position;
+            return new WorldPosition(focus.x, focus.y, focus.z);
+        }
+
+        private IEnumerable<WorldPosition> StreamingPhysicalPositions()
+        {
+            if (AiRuntime == null) yield break;
+            foreach (var movement in AiRuntime.Movements)
+                if (movement != null && movement.HasBoundPresenter) yield return movement.CurrentPosition;
+        }
+
+        private IEnumerable<Tuple<WorldPosition, WorldPosition>> StreamingNavigationRoutes()
+        {
+            if (Work == null || Tiers == null) yield break;
+            foreach (var job in Work.Jobs.Where(value => !value.IsTerminal && value.AssigneeId.HasValue))
+            {
+                var target = job.Target.Position;
+                if (!WorldDefinition.TryGetTile(target.X, target.Z, out _)) continue;
+                WorldPosition origin;
+                try { origin = Tiers.GetRuntimeState(job.AssigneeId.Value).Position; }
+                catch (InvalidOperationException) { continue; }
+                catch (KeyNotFoundException) { continue; }
+                yield return Tuple.Create(origin, target);
+            }
+        }
+
+        private void PrepareNavigationForManualMove(IReadOnlyList<StableEntityId> characterIds,
+            WorldPosition target)
+        {
+            if (TiledWorld == null || characterIds == null || characterIds.Count == 0) return;
+            var requested = new List<Tuple<WorldPosition, WorldPosition>>(characterIds.Count);
+            foreach (var id in characterIds)
+            {
+                try { requested.Add(Tuple.Create(Tiers.GetRuntimeState(id).Position, target)); }
+                catch (InvalidOperationException) { }
+                catch (KeyNotFoundException) { }
+            }
+            TiledWorld.RefreshNow(CameraStreamingFocus(), StreamingPhysicalPositions(),
+                StreamingNavigationRoutes().Concat(requested));
+        }
 
         private void SpawnDemoPile(string id, long units, GridCoordinate coordinate, Color color, int index)
         {
@@ -1172,10 +1248,14 @@ namespace Game.Infrastructure
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_pile", index));
             var authoredAnchor = InhabitableRegion?.GetPileAnchor(index);
             var view = authoredAnchor != null ? authoredAnchor.gameObject : GameObject.CreatePrimitive(PrimitiveType.Cube);
-            if (authoredAnchor == null)
+            if (authoredAnchor != null)
             {
-                view.transform.position = buildingGridOrigin + new Vector3(coordinate.X * buildingGridSize, 0.35f,
-                    coordinate.Z * buildingGridSize);
+                authoredAnchor.position = ProjectToGameplayGround(authoredAnchor.position, 0.35f);
+            }
+            else
+            {
+                view.transform.position = ProjectToGameplayGround(buildingGridOrigin +
+                    new Vector3(coordinate.X * buildingGridSize, 0f, coordinate.Z * buildingGridSize), 0.35f);
                 view.transform.localScale = new Vector3(0.75f, 0.7f, 0.75f);
             }
             var renderer = view.GetComponent<Renderer>();

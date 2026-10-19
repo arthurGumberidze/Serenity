@@ -18,6 +18,63 @@ namespace Game.Domain.World
         {
             "starter_settlement", "enemy_settlement", "north_forest", "river_ford", "east_hills", "south_field"
         };
+
+        public static ConnectedWorldLayout LegacyLayout => new ConnectedWorldLayout(GenerationId,
+            OriginMeters, OriginMeters, SizeMeters, SizeMeters, DiscoveryCellMeters, StarterSettlement);
+    }
+
+    public sealed class ConnectedWorldLayout
+    {
+        public ConnectedWorldLayout(string generationId, float originX, float originZ, int widthMeters,
+            int depthMeters, int discoveryCellMeters, WorldLocationId starterSettlement)
+        {
+            if (string.IsNullOrWhiteSpace(generationId)) throw new ArgumentException(nameof(generationId));
+            if (float.IsNaN(originX) || float.IsInfinity(originX) || float.IsNaN(originZ) || float.IsInfinity(originZ))
+                throw new ArgumentOutOfRangeException(nameof(originX));
+            if (widthMeters <= 0 || depthMeters <= 0 || discoveryCellMeters <= 0 ||
+                widthMeters % discoveryCellMeters != 0 || depthMeters % discoveryCellMeters != 0)
+                throw new ArgumentOutOfRangeException(nameof(discoveryCellMeters));
+            if (!starterSettlement.IsValid) throw new ArgumentException(nameof(starterSettlement));
+            GenerationId = generationId;
+            OriginX = originX;
+            OriginZ = originZ;
+            WidthMeters = widthMeters;
+            DepthMeters = depthMeters;
+            DiscoveryCellMeters = discoveryCellMeters;
+            StarterSettlement = starterSettlement;
+        }
+
+        public string GenerationId { get; }
+        public float OriginX { get; }
+        public float OriginZ { get; }
+        public int WidthMeters { get; }
+        public int DepthMeters { get; }
+        public int DiscoveryCellMeters { get; }
+        public int Columns => WidthMeters / DiscoveryCellMeters;
+        public int Rows => DepthMeters / DiscoveryCellMeters;
+        public WorldLocationId StarterSettlement { get; }
+
+        public bool TryGetCell(float worldX, float worldZ, out WorldDiscoveryCell cell)
+        {
+            cell = default;
+            if (float.IsNaN(worldX) || float.IsInfinity(worldX) || float.IsNaN(worldZ) || float.IsInfinity(worldZ) ||
+                worldX < OriginX || worldZ < OriginZ || worldX >= OriginX + WidthMeters ||
+                worldZ >= OriginZ + DepthMeters) return false;
+            cell = new WorldDiscoveryCell((int)Math.Floor((worldX - OriginX) / DiscoveryCellMeters),
+                (int)Math.Floor((worldZ - OriginZ) / DiscoveryCellMeters));
+            return true;
+        }
+
+        public bool IsValid(WorldDiscoveryCell cell) => cell.X >= 0 && cell.X < Columns &&
+            cell.Z >= 0 && cell.Z < Rows;
+
+        public static ConnectedWorldLayout For(TiledWorldDefinition definition, int discoveryCellMeters = 250)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            return new ConnectedWorldLayout(definition.GenerationId, definition.Origin.X, definition.Origin.Z,
+                definition.WidthMeters, definition.DepthMeters, discoveryCellMeters,
+                ConnectedWorldContract.StarterSettlement);
+        }
     }
 
     public readonly struct WorldDiscoveryCell : IEquatable<WorldDiscoveryCell>, IComparable<WorldDiscoveryCell>
@@ -57,7 +114,8 @@ namespace Game.Domain.World
         public ConnectedWorldSaveState(string generationId, IEnumerable<WorldDiscoveryCell> revealedCells,
             IEnumerable<ScoutingAssignmentState> scoutingAssignments, long lastProcessedTick)
         {
-            if (!string.Equals(generationId, ConnectedWorldContract.GenerationId, StringComparison.Ordinal))
+            if (!string.Equals(generationId, ConnectedWorldContract.GenerationId, StringComparison.Ordinal) &&
+                !string.Equals(generationId, TiledWorldDefinition.ReferenceGenerationId, StringComparison.Ordinal))
                 throw new ArgumentException("Unknown connected-world generation.", nameof(generationId));
             if (lastProcessedTick < 0) throw new ArgumentOutOfRangeException(nameof(lastProcessedTick));
             var cells = (revealedCells ?? throw new ArgumentNullException(nameof(revealedCells))).Distinct().OrderBy(x => x).ToArray();

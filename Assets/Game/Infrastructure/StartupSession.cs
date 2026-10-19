@@ -13,11 +13,15 @@ namespace Game.Infrastructure
     {
         private readonly ISaveSlotCatalog catalog;
         private readonly ISaveSlotCatalog legacyCatalog;
+        private readonly string expectedWorldGenerationId;
 
-        public StartupSaveCatalog(ISaveSlotCatalog saveCatalog, ISaveSlotCatalog readOnlyLegacyCatalog = null)
+        public StartupSaveCatalog(ISaveSlotCatalog saveCatalog, ISaveSlotCatalog readOnlyLegacyCatalog = null,
+            string expectedGenerationId = null)
         {
             catalog = saveCatalog ?? throw new ArgumentNullException(nameof(saveCatalog));
             legacyCatalog = readOnlyLegacyCatalog;
+            expectedWorldGenerationId = string.IsNullOrWhiteSpace(expectedGenerationId)
+                ? ConnectedWorldContract.GenerationId : expectedGenerationId;
         }
 
         public IReadOnlyList<GameplaySaveSlotInfo> ListSlots()
@@ -63,14 +67,13 @@ namespace Game.Infrastructure
 
         public IReadOnlyList<SaveSlotMetadata> ListLegacyMetadata() => legacyCatalog == null
             ? Array.Empty<SaveSlotMetadata>()
-            : legacyCatalog.ListSlots().Where(x => x.FormatVersion.HasValue &&
-                x.FormatVersion.Value < SaveSnapshot.ConnectedWorldVersion)
+            : legacyCatalog.ListSlots().Where(x => !IsCompatible(x))
                 .OrderByDescending(x => x.LastWriteUtc).ToArray();
 
-        private static bool IsCompatible(SaveSlotMetadata slot) => !slot.FormatVersion.HasValue
+        private bool IsCompatible(SaveSlotMetadata slot) => !slot.FormatVersion.HasValue
             ? slot.WorldSeed.HasValue // Test/custom catalogs predating metadata v23; FileSaveStore always supplies a version.
             : slot.FormatVersion.Value >= SaveSnapshot.ConnectedWorldVersion &&
-              string.Equals(slot.WorldGenerationId, ConnectedWorldContract.GenerationId, StringComparison.Ordinal);
+              string.Equals(slot.WorldGenerationId, expectedWorldGenerationId, StringComparison.Ordinal);
     }
 
     internal static class SessionLaunchState

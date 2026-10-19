@@ -7,6 +7,7 @@ using Game.Domain.Time;
 using Game.Presentation.UI;
 using Game.Presentation.Localization;
 using Game.Simulation;
+using Game.Domain.World;
 
 namespace Game.Infrastructure
 {
@@ -18,14 +19,17 @@ namespace Game.Infrastructure
         private readonly SaveCoordinator coordinator;
         private readonly ISaveSlotCatalog catalog;
         private readonly SaveXmlCodec codec = new SaveXmlCodec();
+        private readonly string expectedWorldGenerationId;
         private byte[] savedFingerprint;
 
         public LocalGameplaySaveFacade(LocalSceneCompositionRoot compositionRoot, SaveCoordinator saveCoordinator,
-            ISaveSlotCatalog slotCatalog)
+            ISaveSlotCatalog slotCatalog, string expectedGenerationId = null)
         {
             root = compositionRoot ?? throw new ArgumentNullException(nameof(compositionRoot));
             coordinator = saveCoordinator ?? throw new ArgumentNullException(nameof(saveCoordinator));
             catalog = slotCatalog ?? throw new ArgumentNullException(nameof(slotCatalog));
+            expectedWorldGenerationId = string.IsNullOrWhiteSpace(expectedGenerationId)
+                ? ConnectedWorldContract.GenerationId : expectedGenerationId;
         }
 
         public IReadOnlyList<GameplaySaveSlotInfo> ListSlots()
@@ -46,8 +50,11 @@ namespace Game.Infrastructure
                       slot.Mode.HasValue ? RussianTextCatalog.Enum(slot.Mode.Value) : RussianTextCatalog.Get("ui.hud.mode.local"),
                       slot.LastWriteUtc.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
                 if (slot.CheatsUsed) detail += " · коды использованы, достижения отключены";
+                var incompatible = !string.IsNullOrEmpty(slot.WorldGenerationId) &&
+                    !string.Equals(slot.WorldGenerationId, expectedWorldGenerationId, StringComparison.Ordinal);
+                if (incompatible) detail += " · другое поколение мира (только чтение)";
                 result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index), true,
-                    slot.IsCorrupt, detail, slot.WorldSeed, slot.CheatsUsed));
+                    slot.IsCorrupt || incompatible, detail, incompatible ? null : slot.WorldSeed, slot.CheatsUsed));
             }
             return result;
         }
@@ -56,7 +63,12 @@ namespace Game.Infrastructure
 
         public void Save(int slotIndex)
         {
-            coordinator.Save(SlotId(slotIndex));
+            var slotId = SlotId(slotIndex);
+            var existing = catalog.ListSlots().SingleOrDefault(value => value.SlotId == slotId);
+            if (existing != null && !string.IsNullOrEmpty(existing.WorldGenerationId) &&
+                !string.Equals(existing.WorldGenerationId, expectedWorldGenerationId, StringComparison.Ordinal))
+                throw new InvalidOperationException("A save from another world generation is read-only and cannot be overwritten.");
+            coordinator.Save(slotId);
             savedFingerprint = Fingerprint();
         }
 

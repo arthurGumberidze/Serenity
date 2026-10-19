@@ -1,6 +1,18 @@
 # PROJECT_STATE.md
 
-## Current checkpoint — 2026-10-19 video repair and tiled-world foundation
+## Current checkpoint — 2026-10-19 P10.9 tiled-world Stage 1
+
+P10.9 remains **PARTIAL**, but the 12 × 12 km migration is now active for normal new games. Stage 1 creates 144 separate 1000 × 1000 m Terrain tiles from one deterministic world-coordinate height/water/buildability authority. The camera renders a bounded 3 × 3 ring; collision and NavMesh tiles are retained independently for physical actors and complete active move corridors. A far starter-to-northwest move loads 17 collision/navigation tiles while the rendered set remains nine. The legacy 512 m Terrain/collider and water renderer are disabled at runtime, and building/camera/fog/global-map contracts now use the full tiled bounds.
+
+The lower near-central settlement is the start. The strategic view frames the full 12 km world, uses a coarse shared-sampler land mesh plus explicit river/lake geometry, and overlays a 48 × 48 persisted fog grid. The canonical global map contains three settlements and world-scale routes. Stage 1 establishes river/lake/settlement geometry and contracts; final zone population, authored-content relocation and visual cleanup belong to Stage 2.
+
+New saves use generation `p109-tiled-world-v2` under `Serenity/P109/TiledV2/Saves`. Existing `Serenity/P10/Saves` files remain untouched and are exposed only as incompatible legacy metadata. Save generation is validated before any mutable service or clock rebind, and an incompatible slot cannot be overwritten through the current gameplay facade.
+
+Verification is green: focused EditMode **13/13**, affected P10.9 EditMode **16/16**, adjacent save/startup/command EditMode **11/11**, focused Stage 1 PlayMode **2/2**, and affected P10.9 PlayMode **6/6**. The Windows Development build at `Builds/P109Stage1/Serenity.exe` reports **0 errors / 44 warnings**, GUID `64a799409aa34fef83f459aaf8282c18` and source fingerprint `FF2CCD2E4805709AA5C7ED8310A18CE1957B357FA16E5E98A3772788C48B3AA9`. A normal visible 1920 × 1080 D3D11 Player smoke validates new-game launch, 144-tile geometry, exact neighbour seam samples, nine visual tiles, far-route retention, full-world strategic view and v2 save generation; exact evidence is in `P109_STAGE1_HANDOFF.md` and `Artifacts/P109`.
+
+Performance profiling remains deferred by explicit user instruction. P10.9 therefore stays PARTIAL and `NEXT_TASK.md` advances only to P10.9 Stage 2 population/visual cleanup, not P10.10. P10.3/P10.4 and P8.6/U29/U30/U31 statuses are unchanged.
+
+## Previous checkpoint — 2026-10-19 video repair and tiled-world foundation
 
 P10.9 remains **PARTIAL**. After the user's pause/resume, strategic Camera/Brain ownership and world-projected viewport-clipped fog, mesh-only tree LODs including shader billboards/base trees, middle-button-only mouse panning, independent TPS target rotation, and LMB swing/result feedback are implemented. Actual damage is still canonical CombatService logic. Focused PlayMode passed 3/3; the resumed affected run initially passed 19/20 because a legacy test required the defective TPS parenting. Its replacement checks independent ownership and follow-position continuity after Save/Load; final affected PlayMode passes **20/20**. EditMode including the new world-definition tests passes **21/21**. These are automated checks, not final Player visual/physical-input acceptance.
 

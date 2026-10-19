@@ -54,6 +54,7 @@ namespace Game.Simulation
         private readonly SettlementFlagCaptureService settlementCapture;
         private readonly MilitaryAttackCommandService militaryAttack;
         private readonly DiagnosticService diagnostics;
+        private readonly string expectedWorldGenerationId;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -97,6 +98,8 @@ namespace Game.Simulation
             settlementCapture = settlementCaptureService;
             militaryAttack = militaryAttackService;
             diagnostics = diagnosticService;
+            expectedWorldGenerationId = connectedWorldService?.Layout.GenerationId ??
+                ConnectedWorldContract.GenerationId;
         }
         public SaveSnapshot Capture()
         {
@@ -116,9 +119,9 @@ namespace Game.Simulation
             var snapshot = store.Load(slotId);
             if (connectedWorld != null && (snapshot.FormatVersion < SaveSnapshot.ConnectedWorldVersion ||
                 snapshot.ConnectedWorld == null ||
-                !string.Equals(snapshot.ConnectedWorld.GenerationId, ConnectedWorldContract.GenerationId,
+                !string.Equals(snapshot.ConnectedWorld.GenerationId, expectedWorldGenerationId,
                     StringComparison.Ordinal)))
-                throw new NotSupportedException("Only compatible P10 connected-world saves can be loaded into gameplay.");
+                throw new NotSupportedException("The save world generation is incompatible with the active gameplay world.");
             if ((domestic != null || tiers != null) && snapshot.FormatVersion >= SaveSnapshot.DomesticVersion &&
                 (snapshot.Domestic == null || snapshot.CharacterRuntime == null))
                 throw new InvalidOperationException("P10.6 save is missing required domestic or runtime state.");

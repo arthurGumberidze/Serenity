@@ -19,9 +19,15 @@ namespace Game.Infrastructure
         {
             root = compositionRoot ?? throw new ArgumentNullException(nameof(compositionRoot));
             var world = FindAnyObjectByType<P102ConnectedWorldPresentation>();
-            if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
             strategicView = gameObject.AddComponent<P102StrategicWorldView>();
-            strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld, root.Production);
+            if (root.TiledWorld != null)
+                strategicView.Initialize(root.PointerRaycaster.WorldCamera, root.WorldDefinition,
+                    root.ConnectedWorld, root.GlobalMap, root.Production, root.TiledWorld.SetStrategicMode);
+            else
+            {
+                if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
+                strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld, root.Production);
+            }
         }
 
         public void RequestEnterGlobal()

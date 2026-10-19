@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Game.Domain.Campaign;
 using Game.Domain.Characters;
+using Game.Domain.World;
 using Game.Infrastructure.Integration;
 using Game.Presentation.Characters;
 using Game.Presentation.Input;
@@ -90,7 +91,7 @@ namespace Game.Infrastructure
             var legacyDirectory = ResolveLegacySaveDirectory();
             saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory),
                 string.Equals(saveDirectory, legacyDirectory, StringComparison.OrdinalIgnoreCase)
-                    ? null : new FileSaveStore(legacyDirectory));
+                    ? null : new FileSaveStore(legacyDirectory), TiledWorldDefinition.ReferenceGenerationId);
             settingsStore = UserSettingsStore.CreateDefault();
             var loadedSettings = settingsStore.Load();
             settings = loadedSettings.Settings;
@@ -129,6 +130,7 @@ namespace Game.Infrastructure
             P106PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P107PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P108PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            P109Stage1PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -967,7 +969,7 @@ namespace Game.Infrastructure
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "TiledV2", "Saves")
                 : configured;
         }
 
@@ -975,7 +977,7 @@ namespace Game.Infrastructure
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_LEGACY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
                 : configured;
         }
 
