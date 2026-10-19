@@ -25,6 +25,7 @@ namespace Game.Domain.World
         }
 
         public TiledWorldDefinition Definition => definition;
+        public long WorldSeed => seed;
 
         public float SampleHeight(float worldX, float worldZ)
         {
@@ -35,6 +36,16 @@ namespace Game.Domain.World
             var medium = ValueNoise(worldX / 620f, worldZ / 620f, 1) * 4f;
             var detail = ValueNoise(worldX / 190f, worldZ / 190f, 2) * 1.4f;
             var height = 18f + macro + medium + detail;
+
+            // Cultivated regions remain naturally rolling, but are deliberately gentle enough for plots and roads.
+            foreach (var zone in definition.Zones.Where(value => value.Uses.HasFlag(WorldZoneUse.Agriculture)))
+            {
+                var normalized = NormalizedDistance(zone, worldX, worldZ);
+                if (normalized >= 1.12f) continue;
+                var blend = Smooth01((1.12f - normalized) / 0.3f) * 0.72f;
+                var agriculturalHeight = 18f + ValueNoise(worldX / 950f, worldZ / 950f, 7) * 1.4f;
+                height = Lerp(height, agriculturalHeight, blend);
+            }
 
             foreach (var zone in definition.Zones.Where(value => value.Uses.HasFlag(WorldZoneUse.Settlement)))
             {

@@ -86,6 +86,11 @@ namespace Game.Presentation.World
         public void Exit()
         {
             if (!IsActive) return;
+            if (worldCamera == null)
+            {
+                IsActive = false;
+                return;
+            }
             worldCamera.transform.SetPositionAndRotation(savedPosition, savedRotation);
             worldCamera.orthographic = savedOrthographic;
             worldCamera.orthographicSize = savedSize;
@@ -104,6 +109,7 @@ namespace Game.Presentation.World
             var viewport = worldCamera.pixelRect;
             var guiViewport = new Rect(viewport.x, Screen.height - viewport.yMax, viewport.width, viewport.height);
             GUI.BeginGroup(guiViewport);
+            DrawZoneOverlays();
             var fogColor = new Color(0.015f, 0.025f, 0.04f, 0.62f);
             var previous = GUI.color;
             GUI.color = fogColor;
@@ -145,6 +151,33 @@ namespace Game.Presentation.World
             GUI.Box(new Rect(12f, 12f, 330f, 48f), "Стратегический обзор — 12 × 12 км\nТуман раскрывается присутствием и разведкой", labelStyle);
             DrawResourceFilters();
             GUI.EndGroup();
+        }
+
+        private void DrawZoneOverlays()
+        {
+            if (tiledWorld == null) return;
+            var previous = GUI.color;
+            foreach (var zone in tiledWorld.Zones)
+            {
+                if (zone.Uses.HasFlag(WorldZoneUse.Fishing) ||
+                    !discovery.IsRevealed(zone.Center.X, zone.Center.Z)) continue;
+                var center = ToMapPoint(new Vector3(zone.Center.X, 0f, zone.Center.Z));
+                var horizontal = ToMapPoint(new Vector3(zone.Center.X + zone.RadiusX, 0f, zone.Center.Z));
+                var vertical = ToMapPoint(new Vector3(zone.Center.X, 0f, zone.Center.Z + zone.RadiusZ));
+                if (center.z <= 0f) continue;
+                var color = zone.Uses.HasFlag(WorldZoneUse.Settlement) ? new Color(0.72f, 0.62f, 0.42f, 0.34f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Ore) ? new Color(0.58f, 0.55f, 0.5f, 0.34f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Forest) ? new Color(0.18f, 0.55f, 0.2f, 0.34f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Agriculture) ? new Color(0.78f, 0.66f, 0.2f, 0.34f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Berries) ? new Color(0.65f, 0.25f, 0.48f, 0.34f) :
+                    new Color(0.55f, 0.43f, 0.24f, 0.3f);
+                GUI.color = color;
+                var halfWidth = Mathf.Abs(horizontal.x - center.x);
+                var halfHeight = Mathf.Abs(vertical.y - center.y);
+                GUI.DrawTexture(new Rect(center.x - halfWidth, center.y - halfHeight,
+                    halfWidth * 2f, halfHeight * 2f), Texture2D.whiteTexture);
+            }
+            GUI.color = previous;
         }
 
         private Vector3 ToMapPoint(Vector3 position)

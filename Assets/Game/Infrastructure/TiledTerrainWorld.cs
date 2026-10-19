@@ -32,6 +32,7 @@ namespace Game.Infrastructure
         private GameObject strategicOverview;
         private Material overviewGroundMaterial;
         private Material overviewWaterMaterial;
+        private Material localWaterMaterial;
         private bool strategicMode;
 
         private sealed class LoadedTile
@@ -42,7 +43,10 @@ namespace Game.Infrastructure
             public TerrainData Data;
             public TerrainCollider Collider;
             public NavMeshSurface Navigation;
+            public GameObject WaterRoot;
         }
+
+        public event Action VisualTilesChanged;
 
         public TiledWorldDefinition Definition { get; private set; }
         public TiledWorldHeightSampler HeightSampler { get; private set; }
@@ -176,10 +180,12 @@ namespace Game.Infrastructure
                 var visible = !strategicMode && visual.Contains(pair.Key);
                 pair.Value.Terrain.drawHeightmap = visible;
                 pair.Value.Terrain.drawTreesAndFoliage = visible;
+                if (pair.Value.WaterRoot != null) pair.Value.WaterRoot.SetActive(visible);
                 pair.Value.Collider.enabled = true;
             }
             ConnectTerrainNeighbours();
             if (navigationEnabled && added) RebuildLinks();
+            VisualTilesChanged?.Invoke();
         }
 
         private LoadedTile CreateTile(WorldTileId id)
@@ -195,13 +201,7 @@ namespace Game.Infrastructure
                 terrainLayers = sourceLayers
             };
             data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, HeightmapResolution));
-            if (sourceLayers.Length > 0)
-            {
-                var map = new float[data.alphamapHeight, data.alphamapWidth, sourceLayers.Length];
-                for (var z = 0; z < data.alphamapHeight; z++)
-                for (var x = 0; x < data.alphamapWidth; x++) map[z, x, 0] = 1f;
-                data.SetAlphamaps(0, 0, map);
-            }
+            if (sourceLayers.Length > 0) data.SetAlphamaps(0, 0, CreateTerrainPaint(id, data));
             var root = Terrain.CreateTerrainGameObject(data);
             root.name = "P10.9 Terrain " + id;
             root.transform.SetParent(transform, true);
@@ -217,7 +217,64 @@ namespace Game.Infrastructure
             var collider = root.GetComponent<TerrainCollider>();
             if (collider == null) collider = root.AddComponent<TerrainCollider>();
             collider.terrainData = data;
-            return new LoadedTile { Id = id, Root = root, Terrain = terrain, Data = data, Collider = collider };
+            var water = CreateLocalWater(id, root.transform);
+            return new LoadedTile { Id = id, Root = root, Terrain = terrain, Data = data, Collider = collider,
+                WaterRoot = water };
+        }
+
+        private float[,,] CreateTerrainPaint(WorldTileId id, TerrainData data)
+        {
+            var map = new float[data.alphamapHeight, data.alphamapWidth, sourceLayers.Length];
+            var origin = Definition.TileOrigin(id);
+            for (var z = 0; z < data.alphamapHeight; z++)
+            for (var x = 0; x < data.alphamapWidth; x++)
+            {
+                var wx = origin.X + (x + 0.5f) * Definition.TileSizeMeters / data.alphamapWidth;
+                var wz = origin.Z + (z + 0.5f) * Definition.TileSizeMeters / data.alphamapHeight;
+                var uses = Definition.UsesAt(wx, wz);
+                var primary = 0;
+                if (sourceLayers.Length > 1 && uses.HasFlag(WorldZoneUse.Forest)) primary = 1;
+                if (sourceLayers.Length > 2 && uses.HasFlag(WorldZoneUse.Ore)) primary = 2;
+                if (sourceLayers.Length > 3 && (uses.HasFlag(WorldZoneUse.Agriculture) ||
+                    uses.HasFlag(WorldZoneUse.Settlement) || HeightSampler.DistanceToRiver(wx, wz) < 95f)) primary = 3;
+                map[z, x, primary] = 0.78f;
+                map[z, x, 0] += 0.22f;
+            }
+            return map;
+        }
+
+        private GameObject CreateLocalWater(WorldTileId id, Transform parent)
+        {
+            const int resolution = 25;
+            var origin = Definition.TileOrigin(id);
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var step = Definition.TileSizeMeters / (float)resolution;
+            for (var z = 0; z < resolution; z++)
+            for (var x = 0; x < resolution; x++)
+            {
+                var wx = origin.X + (x + 0.5f) * step;
+                var wz = origin.Z + (z + 0.5f) * step;
+                if (!HeightSampler.IsWater(wx, wz)) continue;
+                var start = vertices.Count;
+                var x0 = x * step; var x1 = (x + 1) * step;
+                var z0 = z * step; var z1 = (z + 1) * step;
+                vertices.Add(new Vector3(x0, TiledWorldHeightSampler.WaterLevelMeters, z0));
+                vertices.Add(new Vector3(x1, TiledWorldHeightSampler.WaterLevelMeters, z0));
+                vertices.Add(new Vector3(x0, TiledWorldHeightSampler.WaterLevelMeters, z1));
+                vertices.Add(new Vector3(x1, TiledWorldHeightSampler.WaterLevelMeters, z1));
+                triangles.Add(start); triangles.Add(start + 2); triangles.Add(start + 1);
+                triangles.Add(start + 1); triangles.Add(start + 2); triangles.Add(start + 3);
+            }
+            if (vertices.Count == 0) return null;
+            var water = new GameObject("P10.9 Local Water " + id);
+            water.transform.SetParent(parent, false);
+            var mesh = new Mesh { name = "P10.9 Local Water Mesh " + id };
+            mesh.SetVertices(vertices); mesh.SetTriangles(triangles, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            water.AddComponent<MeshFilter>().sharedMesh = mesh;
+            localWaterMaterial ??= CreateMaterial(new Color(0.08f, 0.48f, 0.72f, 0.86f), "P10.9 Local Water");
+            water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
+            return water;
         }
 
         private void EnsureNavigation(LoadedTile tile)
@@ -298,7 +355,29 @@ namespace Game.Infrastructure
             water.AddComponent<MeshFilter>().sharedMesh = BuildOverviewWaterMesh();
             overviewWaterMaterial = CreateMaterial(new Color(0.08f, 0.48f, 0.74f, 1f), "P10.9 Overview Water");
             water.AddComponent<MeshRenderer>().sharedMaterial = overviewWaterMaterial;
+            BuildStrategicZoneOverlays();
             strategicOverview.SetActive(false);
+        }
+
+        private void BuildStrategicZoneOverlays()
+        {
+            foreach (var zone in Definition.Zones.Where(value => !value.Uses.HasFlag(WorldZoneUse.Fishing)))
+            {
+                var color = zone.Uses.HasFlag(WorldZoneUse.Settlement) ? new Color(0.55f, 0.51f, 0.43f, 1f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Ore) ? new Color(0.36f, 0.34f, 0.31f, 1f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Forest) ? new Color(0.18f, 0.32f, 0.16f, 1f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Agriculture) ? new Color(0.58f, 0.52f, 0.28f, 1f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Berries) ? new Color(0.37f, 0.29f, 0.34f, 1f) :
+                    new Color(0.43f, 0.38f, 0.25f, 1f);
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                marker.name = "Zone " + zone.Id;
+                marker.transform.SetParent(strategicOverview.transform, false);
+                marker.transform.position = new Vector3(zone.Center.X,
+                    HeightSampler.SampleHeight(zone.Center.X, zone.Center.Z) + 0.45f, zone.Center.Z);
+                marker.transform.localScale = new Vector3(zone.RadiusX * 2f, 0.18f, zone.RadiusZ * 2f);
+                var collider = marker.GetComponent<Collider>(); if (collider != null) Destroy(collider);
+                marker.GetComponent<Renderer>().sharedMaterial = CreateMaterial(color, "P10.9 Zone " + zone.Id);
+            }
         }
 
         private Mesh BuildOverviewGroundMesh()
@@ -387,6 +466,8 @@ namespace Game.Infrastructure
             var material = new Material(shader) { name = name, color = color };
             if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
             if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.1f);
+            if (material.HasProperty("_Cull")) material.SetFloat("_Cull", 0f);
+            material.doubleSidedGI = true;
             return material;
         }
 
@@ -402,6 +483,7 @@ namespace Game.Infrastructure
             loaded.Clear();
             if (overviewGroundMaterial != null) Destroy(overviewGroundMaterial);
             if (overviewWaterMaterial != null) Destroy(overviewWaterMaterial);
+            if (localWaterMaterial != null) Destroy(localWaterMaterial);
         }
     }
 }

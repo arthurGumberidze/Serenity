@@ -33,28 +33,24 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource)
                 .All(x => x.SourceCapacity >= 20 && x.SourceCapacity <= 50), Is.True);
 
-            var resourceObjects = root.PopulatedBiomeWorld.CanopyTrees
-                .Concat(root.PopulatedBiomeWorld.MajorRocks)
-                .Concat(root.PopulatedBiomeWorld.ResourceFormations.SelectMany(x => x.DecorativeSatellites))
-                .ToArray();
+            var resourceObjects = Object.FindObjectsByType<ProductionSourcePresenter>(FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None).Where(x => x.name.StartsWith("P10.9 ")).ToArray();
             Assert.That(resourceObjects, Is.Not.Empty);
-            foreach (var resourceObject in resourceObjects)
+            Assert.That(resourceObjects.Select(x => x.Site.Id).Distinct().Count(), Is.EqualTo(resourceObjects.Length));
+            foreach (var presenter in resourceObjects)
             {
-                var presenter = resourceObject.GetComponent<ProductionSourcePresenter>();
-                Assert.That(presenter, Is.Not.Null, resourceObject.name);
-                Assert.That(presenter.IsBound, Is.True, resourceObject.name);
-                Assert.That(resourceObject.GetComponentInChildren<Collider>(true), Is.Not.Null, resourceObject.name);
-                var proxy = resourceObject.GetComponent<StableWorldHitProxy>();
-                Assert.That(proxy, Is.Not.Null, resourceObject.name);
-                Assert.That(proxy.EntityId, Is.EqualTo(presenter.Site.Id), resourceObject.name);
+                Assert.That(presenter.IsBound, Is.True, presenter.name);
+                Assert.That(presenter.GetComponentInChildren<Collider>(true), Is.Not.Null, presenter.name);
+                var proxy = presenter.GetComponent<StableWorldHitProxy>();
+                Assert.That(proxy, Is.Not.Null, presenter.name);
+                Assert.That(proxy.EntityId, Is.EqualTo(presenter.Site.Id), presenter.name);
             }
 
-            foreach (var zone in root.Industry.Zones)
+            foreach (var pile in Object.FindObjectsByType<WorldResourcePilePresenter>(FindObjectsInactive.Exclude,
+                         FindObjectsSortMode.None).Where(x => x.name.Contains("p109_world_industry")))
             {
-                var pile = Object.FindObjectsByType<WorldResourcePilePresenter>(FindObjectsInactive.Include)
-                    .Single(x => x.PileId == zone.Id);
-                Assert.That(pile.GetComponent<Collider>(), Is.Not.Null, zone.DefinitionId);
-                Assert.That(pile.GetComponent<StableWorldHitProxy>()?.IsBound, Is.True, zone.DefinitionId);
+                Assert.That(pile.GetComponent<Collider>(), Is.Not.Null, pile.name);
+                Assert.That(pile.GetComponent<StableWorldHitProxy>()?.IsBound, Is.True, pile.name);
                 root.SelectionProbe.SelectWorldResourcePile(pile);
                 Assert.That(root.SelectionProbe.SelectedWorldResourcePilePresenter, Is.SameAs(pile));
             }
@@ -67,18 +63,18 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.Production.Sites.Count(x => x.RecipeId == new ProductionRecipeId("hunt_animal")),
-                Is.EqualTo(1));
+                Is.GreaterThan(1));
             Assert.That(root.Production.Sites.Count(x => x.RecipeId == new ProductionRecipeId("fish_water")),
-                Is.EqualTo(1));
-            Assert.That(root.Industry.Zones.Count, Is.EqualTo(6));
-            Assert.That(root.Industry.Zones.Select(x => x.Id).Distinct().Count(), Is.EqualTo(6));
+                Is.GreaterThan(1));
+            Assert.That(root.Industry.Zones.Count, Is.EqualTo(6 + root.WorldPopulation.Plan.Industry.Count));
+            Assert.That(root.Industry.Zones.Select(x => x.Id).Distinct().Count(), Is.EqualTo(root.Industry.Zones.Count));
             Assert.That(root.Production.CaptureState().NaturalLifecycles.Count,
                 Is.EqualTo(root.Production.Sites.Count(x => x.Kind == ProductionSiteKind.NaturalSource)));
-            Assert.That(root.Production.CaptureState().Industry.Zones.Count, Is.EqualTo(6));
+            Assert.That(root.Production.CaptureState().Industry.Zones.Count, Is.EqualTo(root.Industry.Zones.Count));
 
             root.PlayerSaves.Save(3);
             root.PlayerSaves.Load(3);
-            Assert.That(root.Production.CaptureState().Industry.Zones.Count, Is.EqualTo(6));
+            Assert.That(root.Production.CaptureState().Industry.Zones.Count, Is.EqualTo(root.Industry.Zones.Count));
             Assert.That(root.Production.CaptureState().NaturalLifecycles.Count,
                 Is.EqualTo(root.Production.Sites.Count(x => x.Kind == ProductionSiteKind.NaturalSource)));
             yield return null;

@@ -81,6 +81,21 @@ namespace Game.Simulation.Production
 
         public NaturalNodeLifecycleState[] CaptureState() => states.Values.OrderBy(x => x.SiteId).ToArray();
 
+        public void RebindSites(IEnumerable<ProductionSite> restoredSites)
+        {
+            var byId = (restoredSites ?? throw new ArgumentNullException(nameof(restoredSites)))
+                .ToDictionary(site => site.Id);
+            foreach (var id in registrations.Keys.ToArray())
+            {
+                if (!byId.TryGetValue(id, out var restored))
+                    throw new ArgumentException("Restored production sites do not contain every natural node.",
+                        nameof(restoredSites));
+                var current = registrations[id];
+                registrations[id] = new NaturalNodeRegistration(restored, current.Biome,
+                    current.RespawnCandidates);
+            }
+        }
+
         public void RestoreState(IEnumerable<NaturalNodeLifecycleState> restored)
         {
             var values = (restored ?? Array.Empty<NaturalNodeLifecycleState>()).ToArray();

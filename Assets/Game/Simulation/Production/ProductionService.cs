@@ -459,6 +459,7 @@ namespace Game.Simulation.Production
             producedTotals.Clear(); foreach (var amount in state.ProducedTotals) producedTotals.Add(amount.ResourceId, amount.Quantity.Units);
             LastCalendarTick = state.LastCalendarTick;
             Food.Restore(state.FoodRemainderTicks, state.FoodConsumed, state.FoodShortage);
+            Ecology?.RebindSites(orderedSites.Where(site => site.Kind == ProductionSiteKind.NaturalSource));
             Ecology?.RestoreState(state.NaturalLifecycles);
             Industry?.RestoreState(state.Industry);
         }

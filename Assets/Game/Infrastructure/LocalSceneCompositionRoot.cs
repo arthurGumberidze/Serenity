@@ -211,6 +211,7 @@ namespace Game.Infrastructure
         public TiledWorldDefinition WorldDefinition { get; private set; }
         public TiledWorldHeightSampler WorldHeight { get; private set; }
         public TiledTerrainWorld TiledWorld { get; private set; }
+        public P109TiledWorldPopulationPresenter WorldPopulation { get; private set; }
         public P102WorldPlacementSurface WorldPlacementSurface { get; private set; }
         public P93PopulatedBiomeWorld PopulatedBiomeWorld { get; private set; }
         public P94StoneAgeSettlement StoneAgeSettlement { get; private set; }
@@ -387,7 +388,10 @@ namespace Game.Infrastructure
             SpawnRegionProductionSources();
             SpawnP104NaturalSources();
             SpawnP104IndustrialZones();
-            BindPopulatedWorldAffordances();
+            WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
+            WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
+                Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
+            DisableSupersededRouteStrips();
             resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
             gameObject.AddComponent<P104ResourceHoverLabel>().Initialize(selectionProbe, Production);
@@ -681,6 +685,7 @@ namespace Game.Infrastructure
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
+            WorldPopulation?.RefreshViews();
             WeatherPresentation.Refresh(targetCalendarTick);
             if (Time.unscaledTime >= nextTierPolicyRefreshTime)
             {
@@ -771,6 +776,7 @@ namespace Game.Infrastructure
             selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
             RebindRegionResourcePresenters();
+            WorldPopulation?.RebindAfterLoad();
             DirectWorkCommands.EnsureRoleGroups();
             DirectWorkCommands.ReevaluateQueued();
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
@@ -1104,6 +1110,14 @@ namespace Game.Infrastructure
                 if (!Production.TryGetSite(id, out var site)) continue;
                 BindAffordances(formation.DecorativeSatellites, new[] { site }, Color.white);
             }
+        }
+
+        private static void DisableSupersededRouteStrips()
+        {
+            foreach (var renderer in FindObjectsByType<LineRenderer>(FindObjectsInactive.Include,
+                         FindObjectsSortMode.None))
+                if (renderer != null && renderer.name.StartsWith("P10.2 Physical Route ",
+                        StringComparison.Ordinal)) renderer.gameObject.SetActive(false);
         }
 
         private void BindAffordances(IEnumerable<GameObject> objects, IReadOnlyList<ProductionSite> sites, Color color)

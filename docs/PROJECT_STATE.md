@@ -1,6 +1,16 @@
 # PROJECT_STATE.md
 
-## Current checkpoint — 2026-10-19 P10.9 tiled-world Stage 1
+## Current checkpoint — 2026-10-19 P10.9 tiled-world Stage 2
+
+P10.9 remains **PARTIAL**, while the delegated Stage 2 population/visual-cleanup slice is implemented. A pure deterministic planner creates canonical finite resource nodes across every one of the 144 tiles (at least five per tile, plus forest/berry/hunting/ore/fishing concentrations) and data-driven industrial zones for every approved extraction region. Stable IDs include the world generation ID. `ProductionService`, `ResourceEcologyService`, `IndustrialExtractionService`, inventories and world piles remain the only mutable authorities; the camera-centred visual ring creates and destroys disposable presenters only. Ecology now rebinds to restored `ProductionSite` instances after load, fixing post-load respawn continuity.
+
+Local Terrain uses zone-aware grass/moss/cliff/soil painting, gently flattened agricultural ground, generated per-tile river/lake surfaces, compact field/settlement dressing and canonical clickable source/industry views. The broad brown `P10.2 Physical Route` strips are disabled rather than repurposed as gameplay state. The full-world strategic projection adds muted geography-shaped overlays for agriculture, hunting/berries, settlements, forest and ore while retaining explicit shared-authority water. Legacy P9.3 authored resource roots are reused as visual templates where available; decorative trees/rocks are no longer rebound to an arbitrary nearest canonical source.
+
+Focused/affected verification is green: P10.9 EditMode **18/18**, affected P10.9/P10.4 PlayMode **10/10**, the smoke-controller compile check **2/2**, and the final presentation PlayMode rerun **2/2**. The final Windows Development build passed with **0 errors / 52 warnings**, GUID `8bb8a27c62e949cc91dc5a3e73f7293c` and source fingerprint `8BAC049BD018E5B0149D2F61BC7A021775D7E72B2B6F6B24510643F941891A1E`. Its normal visible 1920×1080 D3D11 route passed with 930 canonical resource nodes, 31 industrial zones, bounded views, remote ore, strategic overlays and Save/Load continuity; all three accepted captures were visually inspected. Exact evidence is in `P109_STAGE2_HANDOFF.md` and `Artifacts/P109/stage2-player-final`. Existing `Serenity/P10/Saves` files remain untouched; the active world still uses `p109-tiled-world-v2` under its isolated directory.
+
+This does **not** complete P10.9 or start P10.10. The historical P10.3/P10.4 manual acceptance debt and deferred performance decision remain unchanged; no benchmark or profiling run was performed.
+
+## Previous checkpoint — 2026-10-19 P10.9 tiled-world Stage 1
 
 P10.9 remains **PARTIAL**, but the 12 × 12 km migration is now active for normal new games. Stage 1 creates 144 separate 1000 × 1000 m Terrain tiles from one deterministic world-coordinate height/water/buildability authority. The camera renders a bounded 3 × 3 ring; collision and NavMesh tiles are retained independently for physical actors and complete active move corridors. A far starter-to-northwest move loads 17 collision/navigation tiles while the rendered set remains nine. The legacy 512 m Terrain/collider and water renderer are disabled at runtime, and building/camera/fog/global-map contracts now use the full tiled bounds.
 
