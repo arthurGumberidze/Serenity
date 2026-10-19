@@ -22,6 +22,7 @@ namespace Game.Presentation.Control
 {
     /// <summary>One scene-level adapter from input/camera presentation to PlayerControlService.</summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-100)]
     public sealed class ThirdPersonControlController : MonoBehaviour, IWorldPointerUiBlocker
     {
         private readonly Rect overlayRect = new Rect(8f, 742f, 390f, 150f);
@@ -57,6 +58,8 @@ namespace Game.Presentation.Control
         public ManualCombatAttackStatus LastAttackStatus { get; private set; } = ManualCombatAttackStatus.Invalid;
         public Tier1MovementAuthority MovementAuthority => directMovement?.Authority ?? Tier1MovementAuthority.Autonomous;
         public bool ShowLegacyOverlay { get; set; }
+        public string LastAttackMessage { get; private set; } = string.Empty;
+        private float nextSwingTime;
 
         public void Initialize(LocalGameplayInputSource inputSource, SelectionProbe selectionProbe,
             CharacterPresentationRegistry presentationRegistry, Tier1AiRuntimeDriver aiRuntime,
@@ -129,6 +132,9 @@ namespace Game.Presentation.Control
             var capability = capabilities.GetCapabilities(activeCharacterId.Value);
             directMovement.MoveDirect(desired, unscaledDeltaTime, input.ThirdPersonRun,
                 runtime.Clock.IsPaused, (int)runtime.Clock.Speed, capability.MovementPerThousand);
+            if (presentations.TryGet(activeCharacterId.Value, out var presenter))
+                cameraTarget.SetPositionAndRotation(presenter.transform.position + Vector3.up * 1.45f,
+                    Quaternion.Euler(pitch, yaw, 0f));
         }
 
         public bool TryGetUiBlockingRect(out Rect guiRect)
@@ -141,6 +147,13 @@ namespace Game.Presentation.Control
         public void SynchronizePresentation() => ApplyControlState();
 
         private void Update() => Tick(Time.unscaledDeltaTime);
+
+        private void LateUpdate()
+        {
+            if (activeCharacterId.HasValue && presentations.TryGet(activeCharacterId.Value, out var presenter))
+                cameraTarget.SetPositionAndRotation(presenter.transform.position + Vector3.up * 1.45f,
+                    Quaternion.Euler(pitch, yaw, 0f));
+        }
 
         private void OnToggleRequested()
         {
@@ -162,17 +175,34 @@ namespace Game.Presentation.Control
                 runtime.Clock.State.CalendarTicks, runtime.Clock.State.BiologicalTicks);
         }
 
-        private void OnAttackRequested()
+        private void OnAttackRequested() => RequestAttack();
+
+        public void RequestAttack()
         {
             if (control.State.Mode != PlayerControlMode.ThirdPerson || !activeCharacterId.HasValue ||
                 runtime.Clock.IsPaused || raycaster.WorldCamera == null)
-            { LastAttackStatus = ManualCombatAttackStatus.Invalid; return; }
+            { LastAttackStatus = ManualCombatAttackStatus.Invalid; LastAttackMessage = "Удар недоступен на паузе."; return; }
+            if (Time.unscaledTime < nextSwingTime) return;
+            nextSwingTime = Time.unscaledTime + 0.45f;
+            if (presentations.TryGet(activeCharacterId.Value, out var attacker)) attacker.PlayManualAttackPresentation();
             var ray = new Ray(raycaster.WorldCamera.transform.position, raycaster.WorldCamera.transform.forward);
-            if (!Physics.Raycast(ray, out var hit, 1000f, ~0, QueryTriggerInteraction.Ignore))
-            { LastAttackStatus = ManualCombatAttackStatus.Invalid; return; }
-            var presenter = hit.collider.GetComponentInParent<CharacterPresenter>();
-            LastAttackStatus = presenter != null && presenter.IsBound
-                ? TryAttack(presenter.CharacterId) : ManualCombatAttackStatus.Invalid;
+            var hits = Physics.RaycastAll(ray, 1000f, ~0, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            LastAttackStatus = ManualCombatAttackStatus.Invalid;
+            LastAttackMessage = "Взмах — под прицелом нет противника.";
+            foreach (var hit in hits)
+            {
+                var presenter = hit.collider.GetComponentInParent<CharacterPresenter>();
+                if (presenter != null && presenter.IsBound && presenter.CharacterId == activeCharacterId.Value) continue;
+                // The controlled character is transparent to aiming, but walls and terrain are not.
+                if (presenter == null || !presenter.IsBound) break;
+                TryAttack(presenter.CharacterId);
+                LastAttackMessage = LastAttackStatus == ManualCombatAttackStatus.Hit ? "Удар нанесён." :
+                    LastAttackStatus == ManualCombatAttackStatus.OutOfRange ? "Противник слишком далеко." :
+                    LastAttackStatus == ManualCombatAttackStatus.Cooldown ? "Оружие ещё не готово к следующему удару." :
+                    "Цель не является противником в текущем бою.";
+                break;
+            }
         }
 
         private void ApplyControlState()
@@ -187,11 +217,14 @@ namespace Game.Presentation.Control
                     return;
                 }
                 activeCharacterId = id;
+                LastAttackMessage = string.Empty;
+                nextSwingTime = 0f;
                 directMovement.BeginDirectControl();
                 cameraTarget.position = presenter.transform.position + Vector3.up * 1.45f;
                 yaw = presenter.transform.eulerAngles.y;
                 cameraTarget.rotation = Quaternion.Euler(pitch, yaw, 0f);
-                cameraTarget.SetParent(presenter.transform, true);
+                // The character turns toward movement; the camera must not inherit that rotation.
+                cameraTarget.SetParent(transform, true);
                 thirdPersonCamera.Follow = cameraTarget;
                 thirdPersonCamera.LookAt = cameraTarget;
                 thirdPersonCamera.Priority = 20;

@@ -1,5 +1,17 @@
 # Architecture — U01
 
+## P10.9 tiled-world revision foundation (2026-10-19)
+
+`Game.Domain.World.TiledWorldDefinition` describes immutable tile geometry and overlapping activity zones without Unity references. Tile identity is an integer X/Z pair scoped by the world-generation ID; sample positions derive from one global lattice so adjacent tiles use exactly the same border coordinates. Required-tile selection is deterministic and includes physical actors independently of camera focus. `Game.Infrastructure.TiledWorldDefinitionLoader` validates the versioned reference JSON under `Assets/Game/Resources/World`; the approved footprint is 12×12 tiles of 1000 m, with the player in the lower central settlement.
+
+This is a **foundation, not activated world streaming**. The existing single-Terrain runtime and save generation remain unchanged until generation, loading/unloading, ground queries, collision/NavMesh, population and save-generation isolation are integrated and tested. Old save files must be preserved; new geography is for new games only. Activity zones are not ownership/settlement boundaries: agricultural, hunting and berry uses may overlap. Actual production, actors and simulation continue to belong to Domain/Simulation, never to loaded Terrain objects. See D-150 and `P109_WORLD_REVISION.md`.
+
+## P10.9 tiled-world revision foundation (2026-10-19)
+
+`Game.Domain.World.TiledWorldDefinition` describes immutable tile geometry and overlapping activity zones without Unity references. Tile identity is an integer X/Z pair scoped by the world-generation ID; sample positions derive from one global lattice so adjacent tiles use exactly the same border coordinates. Required-tile selection is deterministic and includes physical actors independently of camera focus. `Game.Infrastructure.TiledWorldDefinitionLoader` validates the versioned reference JSON under `Assets/Game/Resources/World`; the approved footprint is 12×12 tiles of 1000 m, with the player in the lower central settlement.
+
+This is a **foundation, not activated world streaming**. The existing single-Terrain runtime and save generation remain unchanged until generation, loading/unloading, ground queries, collision/NavMesh, population and save-generation isolation are integrated and tested. Old save files must be preserved; new geography is for new games only. Activity zones are not ownership/settlement boundaries: agricultural, hunting and berry uses may overlap. Actual production, actors and simulation continue to belong to Domain/Simulation, never to loaded Terrain objects. See D-150 and `P109_WORLD_REVISION.md`.
+
 ## U30 remediation boundaries
 
 U26 retains AwaitBattle orders at already-reached targets and resolves later battle capture against the persisted order target. No new capture authority is introduced. Health's active-condition index is derived from canonical retained history and rebuilt on load. U30 schema 2 belongs to evidence files only; gameplay snapshot v15 is unchanged. Its exact XML+tier-runtime hash, bit-preserving numeric payload and build/run provenance must not be confused with the XML-only outcome fingerprint or with continuous-process memory proof. Heartbeats carry a labelled last-checkpoint hash rather than serializing a whole world each second.

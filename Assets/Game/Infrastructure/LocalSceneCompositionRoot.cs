@@ -295,7 +295,8 @@ namespace Game.Infrastructure
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
             if (PopulatedBiomeWorld != null)
-                gameObject.AddComponent<StableEnvironmentLodController>().Initialize(PopulatedBiomeWorld.CanopyTrees);
+                gameObject.AddComponent<StableEnvironmentLodController>().Initialize(
+                    PopulatedBiomeWorld.CanopyTrees.Concat(PopulatedBiomeWorld.BaseRegion.Trees));
             StoneAgeSettlement = FindAnyObjectByType<P94StoneAgeSettlement>();
             StoneAgeSettlement?.ValidateConfiguration();
             Inventories = new ResourceInventoryRegistry();

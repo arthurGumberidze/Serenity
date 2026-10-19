@@ -56,14 +56,8 @@ namespace Game.Presentation.CameraControl
 
             var translation = RtsCameraMath.HorizontalMotion(input.Move, yaw)
                 * settings.MoveSpeed * unscaledDeltaTime;
-            if (settings.EdgeScrollEnabled && pointerFocused)
-            {
-                var edgeDirection = RtsCameraMath.GetEdgeDirection(input.PointerPosition, screenSize,
-                    settings.EdgeWidthNormalized);
-                translation += RtsCameraMath.HorizontalMotion(edgeDirection, yaw)
-                    * settings.EdgeScrollSpeed * unscaledDeltaTime;
-            }
-            if (input.IsPanPressed && screenSize.y > 0f)
+            // Pointer motion is opt-in: hovering a screen edge must not move the world.
+            if (input.IsPanPressed && pointerFocused && screenSize.y > 0f)
             {
                 var drag = input.PanDelta * (settings.DragPanSpeed * currentZoom / screenSize.y);
                 translation += RtsCameraMath.HorizontalVector(new Vector2(-drag.x, -drag.y), yaw);

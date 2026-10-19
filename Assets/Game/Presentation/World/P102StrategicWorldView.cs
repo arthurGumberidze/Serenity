@@ -6,6 +6,7 @@ using Game.Simulation.World;
 using Game.Simulation.Production;
 using Game.Domain.Resources;
 using UnityEngine;
+using Unity.Cinemachine;
 
 namespace Game.Presentation.World
 {
@@ -19,6 +20,10 @@ namespace Game.Presentation.World
         private Quaternion savedRotation;
         private bool savedOrthographic;
         private float savedSize;
+        private Rect savedViewport;
+        private CinemachineBrain brain;
+        private bool savedBrainEnabled;
+        public static Rect MapViewport => new Rect(0.32f, 0.075f, 0.675f, 0.80f);
         private GUIStyle labelStyle;
         private ProductionService production;
         private int resourceFilter = -1;
@@ -44,8 +49,13 @@ namespace Game.Presentation.World
             savedRotation = worldCamera.transform.rotation;
             savedOrthographic = worldCamera.orthographic;
             savedSize = worldCamera.orthographicSize;
+            savedViewport = worldCamera.rect;
+            brain = worldCamera.GetComponent<CinemachineBrain>();
+            savedBrainEnabled = brain != null && brain.enabled;
+            if (brain != null) brain.enabled = false;
+            worldCamera.rect = MapViewport;
             worldCamera.orthographic = true;
-            worldCamera.orthographicSize = 272f;
+            worldCamera.orthographicSize = Mathf.Max(272f, 272f / worldCamera.aspect);
             worldCamera.transform.SetPositionAndRotation(new Vector3(0f, 420f, 0f), Quaternion.Euler(90f, 0f, 0f));
             IsActive = true;
         }
@@ -56,6 +66,8 @@ namespace Game.Presentation.World
             worldCamera.transform.SetPositionAndRotation(savedPosition, savedRotation);
             worldCamera.orthographic = savedOrthographic;
             worldCamera.orthographicSize = savedSize;
+            worldCamera.rect = savedViewport;
+            if (brain != null) brain.enabled = savedBrainEnabled;
             IsActive = false;
         }
 
@@ -64,8 +76,9 @@ namespace Game.Presentation.World
             if (!IsActive || worldCamera == null || world == null) return;
             labelStyle ??= new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleCenter, fontSize = 13,
                 normal = { textColor = Color.white } };
-            var cellPixelsX = Screen.width / 32f;
-            var cellPixelsY = Screen.height / 32f;
+            var viewport = worldCamera.pixelRect;
+            var guiViewport = new Rect(viewport.x, Screen.height - viewport.yMax, viewport.width, viewport.height);
+            GUI.BeginGroup(guiViewport);
             var fogColor = new Color(0.015f, 0.025f, 0.04f, 0.84f);
             var previous = GUI.color;
             GUI.color = fogColor;
@@ -73,21 +86,36 @@ namespace Game.Presentation.World
             {
                 var wx = ConnectedWorldContract.OriginMeters + (x + 0.5f) * ConnectedWorldContract.DiscoveryCellMeters;
                 var wz = ConnectedWorldContract.OriginMeters + (z + 0.5f) * ConnectedWorldContract.DiscoveryCellMeters;
-                if (!discovery.IsRevealed(wx, wz)) GUI.DrawTexture(new Rect(x * cellPixelsX,
-                    Screen.height - (z + 1) * cellPixelsY, cellPixelsX + 1f, cellPixelsY + 1f), Texture2D.whiteTexture);
+                if (!discovery.IsRevealed(wx, wz))
+                {
+                    var half = ConnectedWorldContract.DiscoveryCellMeters * 0.5f;
+                    var a = ToMapPoint(new Vector3(wx - half, 0f, wz + half));
+                    var b = ToMapPoint(new Vector3(wx + half, 0f, wz - half));
+                    GUI.DrawTexture(Rect.MinMaxRect(a.x, a.y, b.x + 1f, b.y + 1f), Texture2D.whiteTexture);
+                }
             }
             GUI.color = previous;
             foreach (var district in world.Districts)
             {
                 if (!discovery.IsRevealed(district.Anchor.position.x, district.Anchor.position.z)) continue;
-                var point = worldCamera.WorldToScreenPoint(district.Anchor.position);
+                var point = ToMapPoint(district.Anchor.position);
                 if (point.z <= 0f) continue;
-                GUI.Box(new Rect(point.x - 75f, Screen.height - point.y - 18f, 150f, 36f),
+                GUI.Box(new Rect(point.x - 75f, point.y - 18f, 150f, 36f),
                     district.DisplayName + "\n" + district.Description, labelStyle);
             }
             GUI.Box(new Rect(12f, 12f, 330f, 48f), "Стратегический обзор — та же физическая местность\nТуман раскрывается присутствием и разведкой", labelStyle);
             DrawResourceFilters();
+            GUI.EndGroup();
         }
+
+        private Vector3 ToMapPoint(Vector3 position)
+        {
+            var point = worldCamera.WorldToViewportPoint(position);
+            return new Vector3(point.x * worldCamera.pixelWidth,
+                (1f - point.y) * worldCamera.pixelHeight, point.z);
+        }
+
+        private void OnDisable() => Exit();
 
         private void DrawResourceFilters()
         {
@@ -110,10 +138,10 @@ namespace Game.Presentation.World
                 var recipe = production.Recipes.Get(site.RecipeId);
                 if (recipe.Outputs.All(x => x.ResourceId != selected) ||
                     !discovery.IsRevealed(site.Position.X, site.Position.Z)) continue;
-                var point = worldCamera.WorldToScreenPoint(new Vector3(site.Position.X, site.Position.Y, site.Position.Z));
+                var point = ToMapPoint(new Vector3(site.Position.X, site.Position.Y, site.Position.Z));
                 if (point.z <= 0f) continue;
                 var text = site.IsDepleted ? "×" : site.RemainingAmount.ToString();
-                GUI.Box(new Rect(point.x - 18f, Screen.height - point.y - 18f, 36f, 30f), text, labelStyle);
+                GUI.Box(new Rect(point.x - 18f, point.y - 18f, 36f, 30f), text, labelStyle);
             }
             if (production.Industry == null) return;
             foreach (var zone in production.Industry.Zones)
@@ -121,10 +149,10 @@ namespace Game.Presentation.World
                 var definition = production.Industry.GetDefinition(zone.DefinitionId);
                 if (definition.OutputsPerCycle.All(x => x.ResourceId != selected) ||
                     !discovery.IsRevealed(zone.Position.X, zone.Position.Z)) continue;
-                var point = worldCamera.WorldToScreenPoint(new Vector3(zone.Position.X, zone.Position.Y, zone.Position.Z));
+                var point = ToMapPoint(new Vector3(zone.Position.X, zone.Position.Y, zone.Position.Z));
                 if (point.z <= 0f) continue;
                 var text = zone.FacilityBuilt ? zone.Remaining.ToString() : "⌂";
-                GUI.Box(new Rect(point.x - 22f, Screen.height - point.y - 18f, 44f, 30f), text, labelStyle);
+                GUI.Box(new Rect(point.x - 22f, point.y - 18f, 44f, 30f), text, labelStyle);
             }
         }
     }

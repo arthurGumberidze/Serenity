@@ -1,4 +1,7 @@
 using System.Linq;
+using System;
+using System.Reflection;
+using Game.Presentation.Input;
 using Game.Presentation.CameraControl;
 using NUnit.Framework;
 using UnityEditor;
@@ -9,6 +12,48 @@ namespace Game.Tests
 {
     public class U05CameraAndInputTests
     {
+        [Test]
+        public void PointerMotionRequiresHeldMiddleButtonEvenWithLegacyEdgeScrollSetting()
+        {
+            var go = new GameObject("RTS input regression");
+            try
+            {
+                var mount = new GameObject("Mount").transform;
+                mount.SetParent(go.transform, false);
+                var controller = go.AddComponent<RtsCameraController>();
+                controller.Configure(null, mount, new RtsCameraSettings { EdgeScrollEnabled = true }, 25f);
+                var input = new CameraInput { PanDelta = new Vector2(100, 50) };
+                typeof(RtsCameraController).GetField("input", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(controller, input);
+                controller.Tick(0.1f, true, new Vector2(1920, 1080));
+                Assert.That(go.transform.position, Is.EqualTo(Vector3.zero));
+                input.IsPanPressed = true;
+                controller.Tick(0.1f, true, new Vector2(1920, 1080));
+                Assert.That(go.transform.position.sqrMagnitude, Is.GreaterThan(0.1f));
+                var position = go.transform.position;
+                controller.Tick(0.1f, false, new Vector2(1920, 1080));
+                Assert.That(go.transform.position, Is.EqualTo(position));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        private sealed class CameraInput : ILocalGameplayInput
+        {
+            public Vector2 Move => Vector2.zero;
+            public float Zoom => 0f;
+            public float Rotate => 0f;
+            public Vector2 PanDelta { get; set; }
+            public bool IsPanPressed { get; set; }
+            public bool IsAdditiveSelectionPressed => false;
+            public Vector2 PointerPosition => Vector2.zero;
+            public event Action PrimaryClicked { add { } remove { } }
+            public event Action SecondaryClicked { add { } remove { } }
+            public event Action BuildModeRequested { add { } remove { } }
+            public event Action BuildConfirmed { add { } remove { } }
+            public event Action BuildCancelled { add { } remove { } }
+            public event Action BuildRotated { add { } remove { } }
+        }
+
         [Test]
         public void EdgeDirectionUsesNormalizedResolutionIndependentThresholds()
         {

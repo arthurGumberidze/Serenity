@@ -8,7 +8,7 @@ namespace Game.Presentation.CameraControl
     {
         [Min(0f)] public float MoveSpeed = 18f;
         [Min(0f)] public float EdgeScrollSpeed = 18f;
-        public bool EdgeScrollEnabled = true;
+        public bool EdgeScrollEnabled = false;
         [Range(0.001f, 0.25f)] public float EdgeWidthNormalized = 0.02f;
         [Min(0f)] public float DragPanSpeed = 0.8f;
         [Min(0f)] public float RotationSpeed = 90f;

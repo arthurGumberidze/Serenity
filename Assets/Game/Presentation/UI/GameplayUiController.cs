@@ -220,6 +220,7 @@ namespace Game.Presentation.UI
             RefreshPanel();
             RefreshTps();
             RefreshGameOver();
+            ApplyResponsiveLayout();
             lastRefreshHash = ComputeRefreshHash();
         }
 
@@ -2254,6 +2255,8 @@ namespace Game.Presentation.UI
             tpsLabel.text = F("ui.tps.hud", RussianTextCatalog.PersonName(character.Name.DisplayName),
                 capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("ui.tps.health_active"),
                 combat ? T("ui.tps.combat_engaged") : T("ui.tps.combat_clear"));
+            if (!string.IsNullOrEmpty(context.ThirdPerson.LastAttackMessage))
+                tpsLabel.text += "\n" + context.ThirdPerson.LastAttackMessage;
         }
 
         private void RefreshGameOver()
@@ -2571,6 +2574,7 @@ namespace Game.Presentation.UI
             if (context.Selection.SelectedBuildingPresenter != null) hash ^= unchecked((ulong)context.Selection.SelectedBuildingPresenter.BuildingId.GetHashCode());
             if (context.Selection.SelectedProductionSourcePresenter != null)
                 hash ^= unchecked((ulong)context.Selection.SelectedProductionSourcePresenter.Site.Id.GetHashCode());
+            hash ^= unchecked((ulong)(context.ThirdPerson.LastAttackMessage?.GetHashCode() ?? 0));
             return hash;
         }
 
@@ -2612,6 +2616,17 @@ namespace Game.Presentation.UI
             notifications.style.width = compact ? 322 : 354;
             onboardingCard.style.width = compact ? 322 : 354;
             inspector.style.top = onboarding.Visible ? 482 : 226;
+            var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
+            if (strategic)
+            {
+                // Leave the same right-hand viewport free as P102StrategicWorldView.
+                navigation.style.width = 126;
+                mainPanel.style.left = 146;
+                mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 156f);
+            }
+            inspector.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            notifications.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            onboardingCard.style.display = !strategic && onboarding.Visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private static bool Blocks(VisualElement element, Vector2 point) => element != null &&

@@ -31,28 +31,36 @@ namespace Game.Presentation.Environment
             group.fadeMode = LODFadeMode.CrossFade;
             group.animateCrossFading = true;
             var lods = group.GetLODs();
-            Renderer[] previousMeshRenderers = Array.Empty<Renderer>();
+            var meshLods = new List<LOD>();
             for (var index = 0; index < lods.Length; index++)
             {
                 lods[index].fadeTransitionWidth = 0.35f;
                 var meshRenderers = lods[index].renderers.Where(renderer => renderer != null &&
-                    !(renderer is BillboardRenderer)).ToArray();
-                if (meshRenderers.Length == 0 && previousMeshRenderers.Length > 0)
-                {
-                    lods[index].renderers = previousMeshRenderers;
-                    ReplacedBillboardLodCount++;
-                }
-                else if (meshRenderers.Length > 0)
+                    !IsBillboard(renderer)).ToArray();
+                foreach (var renderer in lods[index].renderers)
+                    if (renderer != null && IsBillboard(renderer)) renderer.enabled = false;
+                if (meshRenderers.Length == 0) ReplacedBillboardLodCount++;
+                else
                 {
                     lods[index].renderers = meshRenderers;
-                    previousMeshRenderers = meshRenderers;
+                    meshLods.Add(lods[index]);
                 }
             }
-            if (lods.Length > 0 && lods[lods.Length - 1].screenRelativeTransitionHeight < MinimumLastLodHeight)
-                lods[lods.Length - 1].screenRelativeTransitionHeight = MinimumLastLodHeight;
-            group.SetLODs(lods);
+            // Extend the last real mesh, without sharing it between two cross-fading LODs.
+            if (meshLods.Count > 0)
+            {
+                var last = meshLods[meshLods.Count - 1];
+                last.screenRelativeTransitionHeight = MinimumLastLodHeight;
+                meshLods[meshLods.Count - 1] = last;
+            }
+            group.SetLODs(meshLods.ToArray());
             group.RecalculateBounds();
             foreach (var billboard in group.GetComponentsInChildren<BillboardRenderer>(true)) billboard.enabled = false;
         }
+
+        public static bool IsBillboard(Renderer renderer) => renderer is BillboardRenderer ||
+            renderer.sharedMaterials.Any(material => material != null &&
+                (material.IsKeywordEnabled("EFFECT_BILLBOARD") ||
+                 (material.HasProperty("EFFECT_BILLBOARD") && material.GetFloat("EFFECT_BILLBOARD") > 0.5f)));
     }
 }

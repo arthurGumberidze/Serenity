@@ -177,6 +177,7 @@ namespace Game.Presentation.Characters
 
         public void SetAnimationIntent(CharacterAnimationIntent intent)
         {
+            if (Time.unscaledTime < manualAttackUntil) intent = CharacterAnimationIntent.Combat;
             var previousIntent = animationIntent;
             animationIntent = intent;
             if (animator == null || !hasActionIntentParameter) return;
@@ -192,6 +193,15 @@ namespace Game.Presentation.Characters
             if (Application.isPlaying && intent == CharacterAnimationIntent.Idle &&
                 previousIntent != CharacterAnimationIntent.Idle && animator.enabled && !automaticMovementAnimation)
                 disableAutomaticAnimationAfter = Time.unscaledTime + 0.2f;
+        }
+
+        private float manualAttackUntil;
+
+        /// <summary>Short local feedback only. Damage is exclusively resolved by CombatService.</summary>
+        public void PlayManualAttackPresentation()
+        {
+            manualAttackUntil = Time.unscaledTime + 0.45f;
+            SetAnimationIntent(CharacterAnimationIntent.Combat);
         }
 
         /// <summary>Centralized late-frame additive pose; callers update a bounded presenter set.</summary>
@@ -279,6 +289,7 @@ namespace Game.Presentation.Characters
             automaticAnimationAllowed = true;
             disableAutomaticAnimationAfter = float.PositiveInfinity;
             animationIntent = CharacterAnimationIntent.Idle;
+            manualAttackUntil = 0f;
             locomotionPlaybackRate = 1f;
         }
 

@@ -1,5 +1,37 @@
 # P10.9 integration/stabilization handoff
 
+## 2026-10-19 video repairs and new-world definition checkpoint
+
+Status remains **PARTIAL**. The user supplied three videos (`08-38-32.mp4`, `08-46-26.mp4`, `08-49-25.mp4`) under `C:/Users/Lenovo/Videos/ScreenRecorderFiles/20261019/` and two clipboard images. One-second contact-sheet samples were inspected under `Artifacts/P109/video-review-20261019`; they are not a continuous input recording. Video 1 (0–6 s) shows RTS camp/trees and brown bands; video 2 (0–21 s) shows selection/context-menu activity near 3–4 s and local movement; video 3 (0–13 s) shows TPS turns/running, sparse distant terrain and bands. No key/button overlay establishes exact LMB/Shift event times or build provenance. Screenshot 1 demonstrates fog obscuring UI; screenshot 2 is a reference layout, not an instruction source. The user's later legend and new-game-only save policy are authoritative in `P109_WORLD_REVISION.md`.
+
+Implemented repair: strategic camera Brain/viewport ownership and world-projected clipped fog; shader-aware mesh-only tree LOD across base/canopy trees; no mouse-edge RTS pan; independent TPS target with late-frame position synchronization; LMB presentation-only swing and result message, self-collider exclusion without bypassing obstacles or canonical damage eligibility. No Terrain size, canonical old-generation constant, resource location, save file or vendor source was intentionally changed by this repair.
+
+The new engine-free `TiledWorldDefinition`, loader and JSON define the approved 12×12 kilometre grid, 3 settlements, corrected activity zones and full-map river polyline. Player start is the lower central settlement. Eight tests verify the coordinate/grid/zone foundation. **There are not yet 144 playable Terrain chunks in LocalGameplay**; runtime generation/loading, navigation, actual population, new-generation save isolation and visual acceptance remain next work. Do not call the current 512 m runtime the requested new world.
+
+Validation directory: `Artifacts/P109/video-fixes-20261019`.
+
+- First restricted Unity launch could not reach its licensing client and crashed (`playmode.log`); no test pass is attributed to that launch. Retrying with access to the existing local licensing client worked.
+- `playmode.xml`: focused video-regression PlayMode **3/3**, 17.212 s.
+- User-requested pause interrupted the expanded run; `affected-playmode.log` has no accepted completion XML.
+- `affected-playmode-resumed.xml`: **19/20**, with one legacy test requiring the camera to remain parented under the character. The assertion was updated to independent target ownership plus follow-position continuity after Save/Load, not removed or ignored.
+- `affected-playmode-final.xml`: **20/20**, 43.810 s; includes the inherited physical starter-resource test, TPS suite and character/tree suite.
+- `affected-editmode.xml`: **13/13**, 1.945 s.
+- `grid-editmode.xml`: **21/21**, 4.071 s; includes 8 new grid-definition cases.
+- Windows Development build **SUCCEEDED**, process exit 0, **0 errors / 44 warnings**. Executable: `Builds/P109VideoFixes/Serenity.exe`. Final immutable-source comparison passed and `build-provenance.json` was written at 2026-10-19 14:08:41 Europe/Moscow. Build GUID `66dd05d03a11483abba09b5f1073c91e`, source baseline commit `21e5d4dad3406746753979875ded08d141777c79`, actual working-source SHA-256 `A33C566C3000F26EDDBBB7A8728B02AC661F8F38183E1BD44B67EBE35305C332`. The manifest includes inherited working edits and test-runner/import side effects; this is not falsely described as a clean-HEAD build. Before/after manifests and provenance are copied beside the logs. After validation, the importer-only Cypress render-queue change was restored and the interrupted test scene was archived under Artifacts, not committed as game content.
+
+Exact successful test invocations (Unity 6000.6.4f1). Each was started through PowerShell `Start-Process -WindowStyle Hidden -PassThru`, followed by `WaitForExit()` and `ExitCode`; the restricted launcher was retried with local-license access.
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.P109VideoRegressionPlayModeTests -testResults C:\serenity_game\Artifacts\P109\video-fixes-20261019\playmode.xml -logFile C:\serenity_game\Artifacts\P109\video-fixes-20261019\playmode-licensed.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109VideoRegressionPlayModeTests;Game.Tests.PlayMode.P109FunctionalIntegrationPlayModeTests;Game.Tests.PlayMode.ThirdPersonControlPlayModeTests;Game.Tests.PlayMode.P105CharacterProductionPlayModeTests' -testResults C:\serenity_game\Artifacts\P109\video-fixes-20261019\affected-playmode-final.xml -logFile C:\serenity_game\Artifacts\P109\video-fixes-20261019\affected-playmode-final.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.U05CameraAndInputTests;Game.Tests.Editor.P109IntegrationStabilizationTests;Game.Tests.Editor.P102ConnectedWorldTests;Game.Tests.Editor.P109TiledWorldDefinitionTests' -testResults C:\serenity_game\Artifacts\P109\video-fixes-20261019\grid-editmode.xml -logFile C:\serenity_game\Artifacts\P109\video-fixes-20261019\grid-editmode.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -executeMethod U00Build.WindowsDevelopment -serenityBuildPath C:\serenity_game\Builds\P109VideoFixes\Serenity.exe -logFile C:\serenity_game\Artifacts\P109\video-fixes-20261019\build.log -quit
+```
+
+No performance benchmark or final normal-Player visual/physical-input acceptance was run for this checkpoint. Selection/queue Shift modifiers, protected carry/needs resume, tier transitions, the full 9-resource/15-day/7-worker industry route, household/family, military/capture, diagnostics irreversibility and complete Save/Load/exit acceptance are not proven by these short user clips. Earlier independent debt remains unchanged. The requested brown-band/world-population overhaul is not yet claimed fixed by the camera patch.
+
+Inherited worktree changes (`GameplayUiController.HasContextPath` and `P109FunctionalIntegrationPlayModeTests`) were preserved and used in testing, but belong to the earlier checkpoint. They must remain distinct from this repair's new changes.
+
 Status: **PARTIAL** on 2026-10-18. P10.10 has not started.
 
 ## Retained implementation

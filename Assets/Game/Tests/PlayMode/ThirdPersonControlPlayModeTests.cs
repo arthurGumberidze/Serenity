@@ -222,7 +222,12 @@ namespace Game.Tests.PlayMode
             Assert.That(root.PlayerControl.RestoreState(restored.PlayerControl), Is.True);
             Assert.That(root.PlayerControl.State.ControlledCharacterId, Is.EqualTo(id));
             Assert.That(root.CharacterPresentations.TryGet(id, out var presenter), Is.True);
-            Assert.That(root.ThirdPersonControl.ThirdPersonCamera.Follow.IsChildOf(presenter.transform), Is.True);
+            var cameraTarget = root.ThirdPersonControl.ThirdPersonCamera.Follow;
+            Assert.That(cameraTarget.IsChildOf(presenter.transform), Is.False,
+                "Restoring control must not restore the rotation-inheriting camera parenting defect.");
+            root.ThirdPersonControl.Tick(0f);
+            Assert.That(Vector3.Distance(cameraTarget.position, presenter.transform.position + Vector3.up * 1.45f),
+                Is.LessThan(0.01f));
             Assert.That(root.ThirdPersonControl.CameraRigCount, Is.EqualTo(1));
             Assert.That(root.ThirdPersonControl.SubscriptionCount, Is.EqualTo(4));
 
