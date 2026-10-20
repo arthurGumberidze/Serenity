@@ -91,14 +91,15 @@ namespace Game.Presentation.Weather
             RenderSettings.fogColor = CurrentVisualState.FogColor;
             RenderSettings.fogDensity = CurrentVisualState.FogDensity;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = CurrentVisualState.AmbientColor;
-            RenderSettings.ambientIntensity = CurrentVisualState.AmbientIntensity;
+            // Preserve weather/night colour, but keep units and interaction targets readable.
+            RenderSettings.ambientLight = Color.Lerp(CurrentVisualState.AmbientColor, Color.white, 0.18f);
+            RenderSettings.ambientIntensity = Mathf.Max(0.7f, CurrentVisualState.AmbientIntensity);
             RenderSettings.reflectionIntensity = CurrentVisualState.ReflectionIntensity;
             ApplySkybox(CurrentVisualState.SkyColor);
             if (sun != null)
             {
                 sun.transform.rotation = CurrentVisualState.LightRotation;
-                sun.intensity = CurrentVisualState.LightIntensity;
+                sun.intensity = Mathf.Max(0.45f, CurrentVisualState.LightIntensity);
                 sun.color = CurrentVisualState.LightColor;
                 sun.shadows = LightShadows.Soft;
                 sun.shadowStrength = CurrentVisualState.ShadowStrength;

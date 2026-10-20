@@ -141,6 +141,8 @@ namespace Game.Infrastructure
                     ? new Vector3(2.4f, 0.22f, 1.2f) : new Vector3(1.2f, 1.8f, 1.2f);
             }
             view.SetActive(true);
+            if (node.RecipeId == "chop_wood")
+                terrainWorld.GetComponent<StableEnvironmentLodController>()?.ConfigureTree(view);
             view.transform.position = new Vector3(site.Position.X,
                 site.Position.Y + (node.RecipeId == "fish_water" ? 0.08f : 0.1f), site.Position.Z);
             var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
@@ -170,7 +172,8 @@ namespace Game.Infrastructure
                     Mathf.Sin(angle) * radius);
                 satellite.transform.localRotation = Quaternion.Euler(0f, stableIndex * 31f + i * 97f, 0f);
                 satellite.transform.localScale = baseScale * (0.72f + i * 0.08f);
-                foreach (var collider in satellite.GetComponentsInChildren<Collider>(true)) Destroy(collider);
+                // Each visible satellite is part of this same resource formation and must be hittable.
+                if (satellite.GetComponentInChildren<Collider>(true) == null) satellite.AddComponent<BoxCollider>();
             }
         }
 

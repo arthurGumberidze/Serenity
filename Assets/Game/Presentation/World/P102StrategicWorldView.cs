@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Game.Domain.World;
 using Game.Presentation.Environment;
+using Game.Presentation.Localization;
 using Game.Simulation.World;
 using Game.Simulation.Production;
 using Game.Domain.Resources;
@@ -30,7 +31,9 @@ namespace Game.Presentation.World
         private TiledWorldDefinition tiledWorld;
         private GlobalMapService globalMap;
         private Action<bool> setStrategicOverview;
+        private Texture2D strategicTerrainTexture;
         private int resourceFilter = -1;
+        private Texture2D zoneOverlayTexture;
         private static readonly string[] ResourceIds =
         { "wood_log", "stone", "plant_fiber", "hide", "berries", "iron_ore", "gold_ore", "meat", "fish" };
         private static readonly string[] ResourceNames =
@@ -47,7 +50,8 @@ namespace Game.Presentation.World
         }
 
         public void Initialize(Camera camera, TiledWorldDefinition definition, ConnectedWorldService service,
-            GlobalMapService mapService, ProductionService productionService, Action<bool> overviewVisibility)
+            GlobalMapService mapService, ProductionService productionService, Action<bool> overviewVisibility,
+            Texture2D terrainTexture)
         {
             worldCamera = camera ?? throw new ArgumentNullException(nameof(camera));
             tiledWorld = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -55,6 +59,7 @@ namespace Game.Presentation.World
             globalMap = mapService ?? throw new ArgumentNullException(nameof(mapService));
             production = productionService;
             setStrategicOverview = overviewVisibility ?? throw new ArgumentNullException(nameof(overviewVisibility));
+            strategicTerrainTexture = terrainTexture ?? throw new ArgumentNullException(nameof(terrainTexture));
         }
 
         public void Enter()
@@ -109,6 +114,9 @@ namespace Game.Presentation.World
             var viewport = worldCamera.pixelRect;
             var guiViewport = new Rect(viewport.x, Screen.height - viewport.yMax, viewport.width, viewport.height);
             GUI.BeginGroup(guiViewport);
+            if (strategicTerrainTexture != null)
+                GUI.DrawTextureWithTexCoords(new Rect(0f, 0f, guiViewport.width, guiViewport.height),
+                    strategicTerrainTexture, new Rect(0f, 1f, 1f, -1f), true);
             DrawZoneOverlays();
             var fogColor = new Color(0.015f, 0.025f, 0.04f, 0.62f);
             var previous = GUI.color;
@@ -134,7 +142,7 @@ namespace Game.Presentation.World
                     if (!discovery.IsRevealed(location.MapX, location.MapY)) continue;
                     var point = ToMapPoint(new Vector3(location.MapX, 0f, location.MapY));
                     if (point.z <= 0f) continue;
-                    GUI.Box(new Rect(point.x - 75f, point.y - 18f, 150f, 36f), location.Name, labelStyle);
+                    GUI.Box(new Rect(point.x - 75f, point.y - 18f, 150f, 36f), LocationName(location), labelStyle);
                 }
             }
             else
@@ -165,19 +173,48 @@ namespace Game.Presentation.World
                 var horizontal = ToMapPoint(new Vector3(zone.Center.X + zone.RadiusX, 0f, zone.Center.Z));
                 var vertical = ToMapPoint(new Vector3(zone.Center.X, 0f, zone.Center.Z + zone.RadiusZ));
                 if (center.z <= 0f) continue;
-                var color = zone.Uses.HasFlag(WorldZoneUse.Settlement) ? new Color(0.72f, 0.62f, 0.42f, 0.34f) :
-                    zone.Uses.HasFlag(WorldZoneUse.Ore) ? new Color(0.58f, 0.55f, 0.5f, 0.34f) :
-                    zone.Uses.HasFlag(WorldZoneUse.Forest) ? new Color(0.18f, 0.55f, 0.2f, 0.34f) :
-                    zone.Uses.HasFlag(WorldZoneUse.Agriculture) ? new Color(0.78f, 0.66f, 0.2f, 0.34f) :
-                    zone.Uses.HasFlag(WorldZoneUse.Berries) ? new Color(0.65f, 0.25f, 0.48f, 0.34f) :
-                    new Color(0.55f, 0.43f, 0.24f, 0.3f);
+                var color = zone.Uses.HasFlag(WorldZoneUse.Settlement) ? new Color(0.72f, 0.62f, 0.42f, 0.22f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Ore) ? new Color(0.58f, 0.55f, 0.5f, 0.2f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Forest) ? new Color(0.18f, 0.55f, 0.2f, 0.2f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Agriculture) ? new Color(0.78f, 0.66f, 0.2f, 0.18f) :
+                    zone.Uses.HasFlag(WorldZoneUse.Berries) ? new Color(0.65f, 0.25f, 0.48f, 0.2f) :
+                    new Color(0.55f, 0.43f, 0.24f, 0.18f);
                 GUI.color = color;
                 var halfWidth = Mathf.Abs(horizontal.x - center.x);
                 var halfHeight = Mathf.Abs(vertical.y - center.y);
                 GUI.DrawTexture(new Rect(center.x - halfWidth, center.y - halfHeight,
-                    halfWidth * 2f, halfHeight * 2f), Texture2D.whiteTexture);
+                    halfWidth * 2f, halfHeight * 2f), ZoneOverlayTexture(), ScaleMode.StretchToFill, true);
             }
             GUI.color = previous;
+        }
+
+        private Texture2D ZoneOverlayTexture()
+        {
+            if (zoneOverlayTexture != null) return zoneOverlayTexture;
+            const int size = 64;
+            zoneOverlayTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = "P10.9 Organic Strategic Zone Overlay",
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            var pixels = new Color[size * size];
+            for (var y = 0; y < size; y++)
+            for (var x = 0; x < size; x++)
+            {
+                var nx = (x + 0.5f) / size * 2f - 1f;
+                var ny = (y + 0.5f) / size * 2f - 1f;
+                var angle = Mathf.Atan2(ny, nx);
+                var irregularEdge = 1f + Mathf.Sin(angle * 5f) * 0.035f + Mathf.Cos(angle * 9f) * 0.018f;
+                var radius = Mathf.Sqrt(nx * nx + ny * ny) / irregularEdge;
+                var body = 1f - Mathf.SmoothStep(0.68f, 1f, radius);
+                var contour = 1f - Mathf.Clamp01(Mathf.Abs(radius - 0.86f) / 0.075f);
+                pixels[y * size + x] = new Color(1f, 1f, 1f, Mathf.Max(body * 0.34f, contour * 0.9f));
+            }
+            zoneOverlayTexture.SetPixels(pixels);
+            zoneOverlayTexture.Apply(false, true);
+            return zoneOverlayTexture;
         }
 
         private Vector3 ToMapPoint(Vector3 position)
@@ -187,7 +224,16 @@ namespace Game.Presentation.World
                 (1f - point.y) * worldCamera.pixelHeight, point.z);
         }
 
+        private static string LocationName(WorldLocationState location) =>
+            RussianTextCatalog.TryGet("content.location." + location.Id.Value, out var localized)
+                ? localized : location.Name;
+
         private void OnDisable() => Exit();
+
+        private void OnDestroy()
+        {
+            if (zoneOverlayTexture != null) Destroy(zoneOverlayTexture);
+        }
 
         private void DrawResourceFilters()
         {

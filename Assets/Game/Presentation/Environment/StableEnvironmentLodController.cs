@@ -11,17 +11,21 @@ namespace Game.Presentation.Environment
     {
         public const float MinimumLastLodHeight = 0.003f;
         private GameObject[] trees = Array.Empty<GameObject>();
+        private GameObject[] scenery = Array.Empty<GameObject>();
+        private readonly Dictionary<Material, Material> stableMaterials = new Dictionary<Material, Material>();
 
         public int TreeCount => trees.Length;
         public int LodGroupCount { get; private set; }
         public int ReplacedBillboardLodCount { get; private set; }
 
-        public void Initialize(IEnumerable<GameObject> values, Func<Vector3, float> groundHeight = null)
+        public void Initialize(IEnumerable<GameObject> values, Func<Vector3, float> groundHeight = null,
+            IEnumerable<GameObject> groundScenery = null)
         {
             trees = (values ?? throw new ArgumentNullException(nameof(values))).Where(x => x != null).Distinct().ToArray();
+            scenery = (groundScenery ?? Array.Empty<GameObject>()).Where(x => x != null).Except(trees).Distinct().ToArray();
             LodGroupCount = 0;
             ReplacedBillboardLodCount = 0;
-            foreach (var tree in trees)
+            foreach (var tree in trees.Concat(scenery))
             {
                 // Authored trees belonged to the retired 512 m Terrain. Keep their X/Z and
                 // visual rotation, but anchor the root to the active tiled-world height.
@@ -31,19 +35,58 @@ namespace Game.Presentation.Environment
                     position.y = groundHeight(position);
                     tree.transform.position = position;
                 }
-                foreach (var group in tree.GetComponentsInChildren<LODGroup>(true)) Configure(group);
+                if (Array.IndexOf(trees, tree) >= 0) ConfigureTree(tree);
             }
         }
 
         public void RefreshVisibility(Func<Vector3, bool> isGroundRendered)
         {
             if (isGroundRendered == null) throw new ArgumentNullException(nameof(isGroundRendered));
-            foreach (var tree in trees)
+            foreach (var tree in trees.Concat(scenery))
             {
                 if (tree == null) continue;
-                var visible = isGroundRendered(tree.transform.position);
+                var source = tree.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                var visible = isGroundRendered(tree.transform.position) &&
+                    (source == null || !source.IsBound || !source.Site.IsDepleted);
                 if (tree.activeSelf != visible) tree.SetActive(visible);
             }
+        }
+
+        public void ConfigureTree(GameObject tree)
+        {
+            foreach (var group in tree.GetComponentsInChildren<LODGroup>(true)) Configure(group);
+            // Imported SpeedTree vertex animation depends on wind/geometry metadata. A static
+            // Lit projection keeps the approved meshes/textures without camera-facing or wind deformation.
+            foreach (var renderer in tree.GetComponentsInChildren<Renderer>(true))
+            {
+                var materials = renderer.sharedMaterials;
+                for (var i = 0; i < materials.Length; i++)
+                {
+                    var source = materials[i];
+                    if (source == null || !source.shader.name.Contains("SpeedTree")) continue;
+                    if (!stableMaterials.TryGetValue(source, out var stable))
+                    {
+                        stable = new Material(Shader.Find("Universal Render Pipeline/Lit"))
+                            { name = "Stable tree " + source.name, enableInstancing = true, renderQueue = 2450 };
+                        var texture = source.HasProperty("_MainTex") ? source.GetTexture("_MainTex") : source.mainTexture;
+                        stable.SetTexture("_BaseMap", texture);
+                        stable.SetColor("_BaseColor", source.HasProperty("_Color") ? source.GetColor("_Color") : Color.white);
+                        stable.SetFloat("_AlphaClip", 1f);
+                        stable.SetFloat("_Cutoff", source.HasProperty("_Cutoff") ? source.GetFloat("_Cutoff") : 0.4f);
+                        stable.SetFloat("_Cull", 0f);
+                        stable.SetFloat("_Smoothness", 0.15f);
+                        stable.EnableKeyword("_ALPHATEST_ON");
+                        stableMaterials.Add(source, stable);
+                    }
+                    materials[i] = stable;
+                }
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var material in stableMaterials.Values) if (material != null) Destroy(material);
         }
 
         private void Configure(LODGroup group)

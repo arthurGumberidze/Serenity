@@ -1,5 +1,5 @@
 {
-  "generationId": "p109-tiled-world-v2",
+  "generationId": "p109-playable-patch-v1",
   "columns": 12,
   "rows": 12,
   "tileSizeMeters": 1000,
@@ -28,6 +28,7 @@
     { "id": "ore_west", "uses": "Ore", "x": -6000, "z": 6360, "radiusX": 600, "radiusZ": 900, "ellipse": true },
     { "id": "ore_southwest", "uses": "Ore", "x": -5820, "z": 120, "radiusX": 850, "radiusZ": 1050, "ellipse": true },
     { "id": "ore_east", "uses": "Ore", "x": 4440, "z": 4080, "radiusX": 600, "radiusZ": 1500, "ellipse": true },
+    { "id": "starter_pond", "uses": "Fishing", "x": 105, "z": 95, "radiusX": 48, "radiusZ": 38, "ellipse": true },
     { "id": "lake_north", "uses": "Fishing", "x": 360, "z": 8880, "radiusX": 320, "radiusZ": 400, "ellipse": true },
     { "id": "lake_northwest", "uses": "Fishing", "x": -1200, "z": 8760, "radiusX": 180, "radiusZ": 230, "ellipse": true },
     { "id": "lake_west", "uses": "Fishing", "x": -5280, "z": 6600, "radiusX": 150, "radiusZ": 190, "ellipse": true },

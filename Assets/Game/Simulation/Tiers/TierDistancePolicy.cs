@@ -46,11 +46,14 @@ namespace Game.Simulation.Tiers
         private readonly TierDistancePolicySettings settings;
         private readonly Dictionary<StableEntityId, int> residency = new Dictionary<StableEntityId, int>();
         private int cursor;
+        private readonly Func<StableEntityId, bool> retainPhysical;
 
-        public TierDistancePolicy(TierManager tierManager, TierDistancePolicySettings policySettings = null)
+        public TierDistancePolicy(TierManager tierManager, TierDistancePolicySettings policySettings = null,
+            Func<StableEntityId, bool> retainPhysical = null)
         {
             manager = tierManager ?? throw new ArgumentNullException(nameof(tierManager));
             settings = policySettings ?? TierDistancePolicySettings.Default;
+            this.retainPhysical = retainPhysical;
         }
 
         public int LastEvaluated { get; private set; }
@@ -79,7 +82,8 @@ namespace Game.Simulation.Tiers
                 {
                     var current = manager.GetTier(id);
                     var position = manager.GetRuntimeState(id).Position;
-                    var target = Choose(current, Math.Sqrt(position.DistanceSquared(focus)));
+                    var target = retainPhysical?.Invoke(id) == true ? CharacterSimulationTier.Tier1 :
+                        Choose(current, Math.Sqrt(position.DistanceSquared(focus)));
                     if (target == current) continue;
                     manager.Transition(id, target);
                     residency[id] = 0;

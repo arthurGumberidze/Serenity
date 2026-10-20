@@ -130,18 +130,19 @@ namespace Game.Presentation.AI
         {
             if (authority == Tier1MovementAuthority.DirectPlayer) return;
             if (!IsAvailable || stoppingDistance < 0f ||
-                !NavMesh.SamplePosition(new Vector3(target.X, target.Y, target.Z), out var hit, 3f, NavMesh.AllAreas))
+                !ReachableNavMeshPoint.TryFind(presenter.transform.position,
+                    new Vector3(target.X, target.Y, target.Z), out var destination))
             {
                 state = MovementState.Failed;
                 return;
             }
-            requestedDestination = hit.position;
+            requestedDestination = destination;
             requestedStoppingDistance = stoppingDistance;
             hasRequestedDestination = true;
             if (!UsesNavMeshAgent)
             {
-                if (!NavMesh.CalculatePath(presenter.transform.position, hit.position, NavMesh.AllAreas, lightweightPath) ||
-                    lightweightPath.status == NavMeshPathStatus.PathInvalid)
+                if (!NavMesh.CalculatePath(presenter.transform.position, destination, NavMesh.AllAreas, lightweightPath) ||
+                    lightweightPath.status != NavMeshPathStatus.PathComplete)
                 {
                     state = MovementState.Failed;
                     return;
@@ -154,7 +155,7 @@ namespace Game.Presentation.AI
             }
             agent.stoppingDistance = stoppingDistance;
             agent.isStopped = false;
-            state = agent.SetDestination(hit.position) ? MovementState.Moving : MovementState.Failed;
+            state = agent.SetDestination(destination) ? MovementState.Moving : MovementState.Failed;
             presenter.SetMovementSpeed(state == MovementState.Moving ? agent.speed : 0f);
         }
 
@@ -302,6 +303,11 @@ namespace Game.Presentation.AI
         {
             if (!float.IsNaN(appliedAgentSpeed) && Mathf.Abs(appliedAgentSpeed - speed) <= 0.001f) return;
             agent.speed = speed;
+            // Time compression must scale braking and turning as well as top speed.
+            // Otherwise x10 units overshoot a tree and time out while trying to return to it.
+            var timeScale = Mathf.Max(0.1f, speed / baseSpeed);
+            agent.acceleration = 12f * timeScale * timeScale;
+            agent.angularSpeed = 540f * timeScale;
             appliedAgentSpeed = speed;
         }
 

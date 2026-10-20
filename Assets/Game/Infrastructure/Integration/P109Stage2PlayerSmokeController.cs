@@ -138,9 +138,7 @@ namespace Game.Infrastructure.Integration
             root.ConnectedWorld.RevealAround(centerX, centerZ, root.WorldDefinition.WidthMeters);
             root.GlobalMapBridge.RequestEnterGlobal(); yield return null;
             result.strategic_zones_visible = root.TiledWorld.StrategicOverviewVisible &&
-                FindObjectsByType<MeshRenderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
-                    .Count(value => value.name.StartsWith("Zone ")) >= root.WorldDefinition.Zones.Count -
-                    root.WorldDefinition.Zones.Count(value => value.Uses.HasFlag(WorldZoneUse.Fishing));
+                root.TiledWorld.StrategicGroundTextureReady;
             yield return Capture("p109-stage2-strategic.png", value => result.strategic_screenshot = value);
             root.GlobalMapBridge.RequestEnterLocation(root.GlobalMap.ActiveLocationId);
             yield return null;

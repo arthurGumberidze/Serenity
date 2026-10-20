@@ -22,6 +22,8 @@ namespace Game.Presentation.AI
         private const float AnimationRefreshIntervalSeconds = 0.1f;
         private const int MaximumAnimationRefreshesPerFrame = 8;
         public const int HighDetailCrowdBudget = 8;
+        public const int FullyDetailedCrowdThreshold = 16;
+        public const float SmallCrowdDetailedDistance = 192f;
         public const float CharacterLodNearDistance = 24f;
         public const float CharacterLodFarDistance = 32f;
         public const float CharacterLodImpostorDistance = 64f;
@@ -320,9 +322,28 @@ namespace Game.Presentation.AI
 
         private void RefreshCrowdDetailLevels()
         {
+            var camera = Camera.main;
+            // A starter settlement is too small to benefit from visual crowd substitution. Keeping every
+            // resident on the authored view also prevents the nearest-eight set from changing as the camera
+            // moves, which otherwise looks like individual people disappearing and reappearing. Very distant
+            // small crowds still use the lightweight projection.
+            if (movements.Count <= FullyDetailedCrowdThreshold)
+            {
+                for (var index = 0; index < movements.Count; index++)
+                {
+                    var movement = movements[index];
+                    var presenter = movement.Presenter;
+                    var distanceSquared = camera != null && presenter != null
+                        ? (presenter.transform.position - camera.transform.position).sqrMagnitude
+                        : 0f;
+                    movement.SetCrowdDetail(movement.Authority == Tier1MovementAuthority.DirectPlayer ||
+                        presenter != null && presenter.IsSelected ||
+                        distanceSquared <= SmallCrowdDetailedDistance * SmallCrowdDetailedDistance);
+                }
+                return;
+            }
             Array.Clear(detailWinners, 0, detailWinners.Length);
             for (var index = 0; index < detailWinnerScores.Length; index++) detailWinnerScores[index] = float.PositiveInfinity;
-            var camera = Camera.main;
             for (var index = 0; index < movements.Count; index++)
             {
                 var movement = movements[index];

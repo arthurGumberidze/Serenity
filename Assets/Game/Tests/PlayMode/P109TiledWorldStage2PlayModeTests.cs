@@ -33,12 +33,14 @@ namespace Game.Tests.PlayMode
                 root.TiledWorld.VisualTiles.Contains(node.Tile));
             Assert.That(root.WorldPopulation.ActiveResourceViewCount, Is.EqualTo(expected));
             Assert.That(Object.FindObjectsByType<ProductionSourcePresenter>(FindObjectsInactive.Exclude,
-                    FindObjectsSortMode.None).Where(value => value.name.StartsWith("P10.9 "))
+                    FindObjectsSortMode.None).Where(value => value.transform.parent != null &&
+                        value.transform.parent.name.StartsWith("P10.9 Population "))
                 .Select(value => value.Site.Id).Distinct().Count(), Is.EqualTo(expected));
             Assert.That(Object.FindObjectsByType<LineRenderer>(FindObjectsInactive.Include,
                     FindObjectsSortMode.None).Where(value => value.name.StartsWith("P10.2 Physical Route "))
                 .All(value => !value.gameObject.activeSelf), Is.True);
             var waterNode = root.WorldPopulation.Plan.Resources.First(value => value.RecipeId == "fish_water");
+            root.CameraController.transform.position = new Vector3(waterNode.Position.X, waterNode.Position.Y, waterNode.Position.Z);
             root.TiledWorld.RefreshNow(waterNode.Position, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
             yield return null;
@@ -51,6 +53,7 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var node = root.WorldPopulation.Plan.Resources.First(value => value.Tile.X == 0 && value.Tile.Z == 0);
+            root.CameraController.transform.position = new Vector3(node.Position.X, node.Position.Y, node.Position.Z);
             var id = root.WorldPopulation.ResourceId(node);
             Assert.That(root.Production.TryGetSite(id, out var site), Is.True);
             site.CompleteWork(ProductionTaskKind.Gather);

@@ -47,7 +47,8 @@ namespace Game.Tests.PlayMode
             var surface = UnityEngine.Object.FindAnyObjectByType<P102WorldPlacementSurface>();
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(surface.IsSuitable(root.InhabitableRegion.PlayerTerritoryAnchor.position), Is.True);
-            Assert.That(surface.IsSuitable(new Vector3(12f, 0f, 122f)), Is.False);
+            var lake = root.WorldDefinition.Zones.First(value => value.Uses.HasFlag(WorldZoneUse.Fishing));
+            Assert.That(surface.IsSuitable(new Vector3(lake.Center.X, 0f, lake.Center.Z)), Is.False);
             Assert.That(root.PopulatedBiomeWorld.ResourceFormations.Select(x => x.StableIndex),
                 Is.EqualTo(Enumerable.Range(0, 24)));
             yield return null;

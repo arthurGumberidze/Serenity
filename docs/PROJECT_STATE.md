@@ -1,5 +1,55 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-20 P10.9 playable starter patch
+
+User resumed implementation and requested a new executable plus personal normal-window verification of controls, commands, clickable trees, water and scenery stability. The current working changes are not yet visually accepted. No external environment asset was imported or purchased. New games use `p109-playable-patch-v1` and a separate `Serenity/P109/PlayablePatch/Saves` directory; automated/manual verification uses an explicit Artifacts-only override.
+
+Implemented for this patch: ground-following moderate-speed RTS camera with Home reset; starter roster retained in physical simulation; immediate RMB actions with Ctrl full menu; crown-inclusive tree selection; individual stable sources for starter trees; static-batching/occlusion exclusions for runtime-projected scenery; static Lit tree materials without SpeedTree vertex deformation; projected ground cover/rocks; depth-coloured clipped water; daylight start; whole-source chop/mining with progress and disposable fall/break visuals. Navigation acceleration/braking and turn rate scale with accelerated time, and a reachable approach query avoids choosing isolated resource-top polygons.
+
+Intermediate verification is recorded, not hidden: `playmode-harvest.xml` was 5/8; `chop2.xml` failed physical approach at x10; after movement fixes `playmode-final.xml` was 7/8 (the remaining count assertion filtered presenter names rather than population ownership). `playmode-grounded.xml` was 7/8 and exposed a newly obstructed starter-resource approach after rocks were put back on the surface. `playmode-approach.xml` was 10/11: all eight P10.9 tests passed, while the old P9.3 test still selected the nearest isolated polygon instead of the new reachable approach. The corrected P9.3 tests plus the expanded playable-patch tests passed **7/7** in `playmode-accepted.xml`, including physical chop and mining completion, exact output, depletion/fall-effect creation, and isolated Save/Load. EditMode passed **49/49** in `editmode.xml`. A subsequent source-identity guard preserves existing `player_source` roots rather than rebinding them as decorative starter trees; its extra regression assertion still needs a final targeted rerun. These are automated checks, not manual Player acceptance.
+
+Old-file protection: eight existing XML saves across P10, TiledV2 and legacy directories were hashed read-only before testing. The post-test comparison matched **8/8**. No test uses those directories. Final post-manual hash comparison, build provenance and actual Player findings must be recorded before handing off this patch. P10.9 remains PARTIAL; P10.10 and historical P10.3/P10.4 acceptance debt remain unchanged. No performance benchmark was run.
+
+Commands dispatched for the final candidate (the shell waits for each process and aborts the chain on a nonzero exit; results are not implied by dispatch):
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\P109\playable-patch\test-saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109PlayablePatchTests;Game.Tests.PlayMode.P109TiledWorldStage1PlayModeTests;Game.Tests.PlayMode.P109TiledWorldStage2PlayModeTests;Game.Tests.PlayMode.P109FunctionalIntegrationPlayModeTests;Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests' -testResults C:\serenity_game\Artifacts\P109\playable-patch\playmode-approach.xml -logFile C:\serenity_game\Artifacts\P109\playable-patch\playmode-approach.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109PlayablePatchTests;Game.Tests.PlayMode.P93PopulatedBiomeWorldPlayModeTests' -testResults C:\serenity_game\Artifacts\P109\playable-patch\playmode-accepted.xml -logFile C:\serenity_game\Artifacts\P109\playable-patch\playmode-accepted.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109;Game.Tests.Editor.ResearchFrameworkTests;Game.Tests.Editor.ProductionAndFarmingTests;Game.Tests.Editor.P104NaturalResourcesTests' -testResults C:\serenity_game\Artifacts\P109\playable-patch\editmode.xml -logFile C:\serenity_game\Artifacts\P109\playable-patch\editmode.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Artifacts\P109\playable-patch\build.log -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109PlayablePatch/Serenity.exe
+```
+
+Actual native Player review of the first draft (not an automated smoke): the new executable launched
+with D3D11 and an Artifacts-only save override. The user dismissed its Windows Firewall request;
+the agent did not operate that security dialog. Main Menu -> New Game -> Start -> LocalGameplay
+was exercised through `@oai/sky`. Daylight, all ten residents and populated starter scenery were visible.
+Two clicks on visible residents instead selected the same wood source: broad foliage AABBs stole input.
+Wheel zoom was almost imperceptible because the input binding multiplied the already-normalized
+Input System wheel delta by 0.01. These are **failed manual checks**, despite the green production tests.
+The draft was exited via Main Menu / Exit without saving. Its log contains the existing two-persistent-
+allocation leak diagnostic on shutdown; no native crash was observed in that exit.
+
+The first BuildReport was Succeeded, 0 errors / 50 warnings, but finalization was stopped after that
+draft failed review and required source changes. It has no accepted provenance stamp. Corrections
+use a narrow trunk-to-crown selection column, character-priority selection, unscaled normalized
+wheel input, and non-focusable gameplay action buttons so Space is not also a button submit.
+A new raycast regression checks selection of a resident and a genuine ground context target in
+the empty clearing. The corrected chain logs are `playmode-input`, `editmode-input`, `build-final`;
+manual re-acceptance and final source-identity tests remain pending until those results are recorded.
+
+Corrected candidate results: `playmode-input.xml` **5/5**, including canonical source identity and
+screen-ray selection/clear-ground regression; `editmode-input.xml` **49/49**. The U05 class lives in
+`Game.Tests`, not `Game.Tests.Editor`, so the extra U05 filter below did not execute its tests.
+A separate correctly named U05 rerun is required after build finalization. Current command chain:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\P109\playable-patch\test-saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.P109PlayablePatchTests -testResults C:\serenity_game\Artifacts\P109\playable-patch\playmode-input.xml -logFile C:\serenity_game\Artifacts\P109\playable-patch\playmode-input.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109;Game.Tests.Editor.U05CameraAndInputTests;Game.Tests.Editor.ResearchFrameworkTests;Game.Tests.Editor.ProductionAndFarmingTests;Game.Tests.Editor.P104NaturalResourcesTests' -testResults C:\serenity_game\Artifacts\P109\playable-patch\editmode-input.xml -logFile C:\serenity_game\Artifacts\P109\playable-patch\editmode-input.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Artifacts\P109\playable-patch\build-final.log -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109PlayablePatch/Serenity.exe
+```
+
 ## Current checkpoint — 2026-10-19 P10.9 video follow-up
 
 P10.9 remains **PARTIAL**. The two user recordings `20-08-59.mp4` and `20-09-47.mp4` showed unstable scenery/character visibility and a ten-person context Move with three delayed orders. Legacy authored P9.2/P9.3 trees now project onto the active tiled height and hide when their tile is not drawn; P9.3's authored-layout hash still audits original positions. The tactical character draw limit now covers the camera's 160 m zoom, unchanged crowd-detail refreshes no longer restart NavMesh destinations, and context-menu group Move orders use distinct deterministic formation endpoints rather than one crowded point. Existing critical-needs/protected-phase delays are retained. `map_serenity` reveals all 48 × 48 canonical fog cells through the paused Codes panel, participates in save state and permanently marks the party as cheated.

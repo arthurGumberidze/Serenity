@@ -47,7 +47,7 @@ namespace Game.Domain.Production
         public ProductionRecipe(ProductionRecipeId id, string displayName, IEnumerable<ResourceAmount> inputs,
             IEnumerable<ResourceAmount> outputs, TimeSpan workRequired, ProductionSiteKind siteKind,
             bool enabled = true, ProductionWeatherExposure weatherExposure = ProductionWeatherExposure.Sheltered,
-            bool seasonalWildSource = false)
+            bool seasonalWildSource = false, bool harvestEntireSource = false)
         {
             if (!id.IsValid) throw new ArgumentException("Recipe identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Recipe name required.", nameof(displayName));
@@ -68,6 +68,7 @@ namespace Game.Domain.Production
             Enabled = enabled;
             WeatherExposure = weatherExposure;
             SeasonalWildSource = seasonalWildSource;
+            HarvestEntireSource = harvestEntireSource;
         }
 
         public ProductionRecipeId Id { get; }
@@ -79,6 +80,12 @@ namespace Game.Domain.Production
         public bool Enabled { get; }
         public ProductionWeatherExposure WeatherExposure { get; }
         public bool SeasonalWildSource { get; }
+        public bool HarvestEntireSource { get; }
+
+        public IReadOnlyList<ResourceAmount> OutputsFor(ProductionSite site) => HarvestEntireSource
+            ? outputs.Select(x => new ResourceAmount(x.ResourceId,
+                new ResourceQuantity(checked(x.Quantity.Units * site.RemainingAmount)))).ToArray()
+            : Outputs;
     }
 
     public sealed class ProductionCatalog
@@ -103,6 +110,24 @@ namespace Game.Domain.Production
         public IReadOnlyList<ProductionRecipe> All => Array.AsReadOnly(ordered);
         public ProductionRecipe Get(ProductionRecipeId id) => recipes.TryGetValue(id, out var recipe)
             ? recipe : throw new KeyNotFoundException("Unknown production recipe: " + id);
+
+        /// <summary>New-world manual harvesting: one command fells one tree/breaks one rock.</summary>
+        public static ProductionCatalog CreatePlayablePatch(ResourceCatalog resources)
+        {
+            var durations = new Dictionary<string, int>
+            {
+                ["chop_wood"] = 30, ["gather_stone"] = 40,
+                ["gather_iron"] = 50, ["gather_gold"] = 60
+            };
+            return new ProductionCatalog(CreateStoneAge(resources).All.Select(recipe =>
+            {
+                if (!durations.TryGetValue(recipe.Id.ToString(), out var minutes)) return recipe;
+                return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs,
+                    recipe.Outputs.Select(x => new ResourceAmount(x.ResourceId, new ResourceQuantity(1))),
+                    TimeSpan.FromMinutes(minutes), recipe.SiteKind, recipe.Enabled, recipe.WeatherExposure,
+                    recipe.SeasonalWildSource, harvestEntireSource: true);
+            }), resources);
+        }
 
         public static ProductionCatalog CreateStoneAge(ResourceCatalog resources)
         {
@@ -234,13 +259,13 @@ namespace Game.Domain.Production
 
         public static ProductionSite Restore(ProductionSiteState state) => new ProductionSite(state);
 
-        public void CompleteWork(ProductionTaskKind taskKind)
+        public void CompleteWork(ProductionTaskKind taskKind, bool harvestEntireSource = false)
         {
             if (Kind == ProductionSiteKind.NaturalSource)
             {
                 if (taskKind != ProductionTaskKind.Gather || RemainingAmount <= 0)
                     throw new InvalidOperationException("Natural production source cannot complete this task.");
-                RemainingAmount--;
+                RemainingAmount = harvestEntireSource ? 0 : RemainingAmount - 1;
                 return;
             }
             if (taskKind == ProductionTaskKind.Plant && CropPhase == CropPlotPhase.Unplanted)

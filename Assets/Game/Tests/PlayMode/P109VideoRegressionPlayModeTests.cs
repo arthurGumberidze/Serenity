@@ -1,7 +1,10 @@
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 using Game.Infrastructure;
 using Game.Domain.AI;
+using Game.Domain.Characters;
+using Game.Domain.World;
 using Game.Domain.Work;
 using Game.Presentation.Characters;
 using Game.Presentation.Environment;
@@ -116,6 +119,62 @@ namespace Game.Tests.PlayMode
         {
             Assert.That(Tier1AiRuntimeDriver.CharacterLodCullDistance,
                 Is.GreaterThan(root.CameraController.Settings.MaxZoom * 2f));
+        }
+
+        [UnityTest]
+        public IEnumerator StarterSettlementDoesNotSwapCharacterVisualsWhenCameraMoves()
+        {
+            foreach (var character in root.NewGame.PlayerCharacters)
+                root.Tiers.Transition(character.Id, CharacterSimulationTier.Tier1);
+            var movements = root.AiRuntime.Movements.Where(value => value.Presenter != null).ToArray();
+            Assert.That(movements.Length, Is.EqualTo(10));
+            Assert.That(movements.Length, Is.LessThanOrEqualTo(Tier1AiRuntimeDriver.FullyDetailedCrowdThreshold));
+            var refresh = typeof(Tier1AiRuntimeDriver).GetMethod("RefreshCrowdDetailLevels",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(refresh, Is.Not.Null);
+            var camera = root.PointerRaycaster.WorldCamera;
+            var originalPosition = camera.transform.position;
+            try
+            {
+                var center = movements.Aggregate(Vector3.zero,
+                    (sum, value) => sum + value.Presenter.transform.position) / movements.Length;
+                refresh.Invoke(root.AiRuntime, null);
+                Assert.That(movements.All(value => value.CrowdDetailEnabled &&
+                    !value.Presenter.UsesLightweightVisual), Is.True);
+
+                camera.transform.position = center + Vector3.up * 160f;
+                refresh.Invoke(root.AiRuntime, null);
+                Assert.That(movements.All(value => value.CrowdDetailEnabled &&
+                    !value.Presenter.UsesLightweightVisual), Is.True);
+            }
+            finally
+            {
+                camera.transform.position = originalPosition;
+                refresh.Invoke(root.AiRuntime, null);
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RevealedWorldLocationCanBeEnteredAndCentersThePhysicalCamera()
+        {
+            var targetId = new WorldLocationId("north_forest");
+            var target = root.GlobalMap.GetLocation(targetId);
+            root.GlobalMapBridge.RequestEnterGlobal();
+            yield return null;
+            Assert.That(root.GlobalMapBridge.IsGlobalSceneLoaded, Is.True);
+            Assert.That(root.TiledWorld.StrategicGroundTextureReady, Is.True);
+
+            root.GlobalMapBridge.RequestEnterLocation(targetId);
+            yield return null;
+
+            Assert.That(root.GlobalMap.Mode, Is.EqualTo(GameWorldMode.Local));
+            Assert.That(root.GlobalMap.ActiveLocationId, Is.EqualTo(targetId));
+            Assert.That(root.GlobalMapBridge.IsGlobalSceneLoaded, Is.False);
+            Assert.That(root.CameraController.transform.position.x, Is.EqualTo(target.MapX).Within(0.1f));
+            Assert.That(root.CameraController.transform.position.z, Is.EqualTo(target.MapY).Within(0.1f));
+            Assert.That(root.WorldDefinition.TryGetTile(target.MapX, target.MapY, out var targetTile), Is.True);
+            Assert.That(root.TiledWorld.VisualTiles, Does.Contain(targetTile));
         }
 
         [UnityTest]

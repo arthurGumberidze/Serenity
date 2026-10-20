@@ -40,10 +40,9 @@ namespace Game.Infrastructure
                 throw new ArgumentNullException("AI bootstrap dependencies are required.");
             var settlement = map.Settlements.Single(x => x.LocationId == new WorldLocationId("enemy_settlement"));
             var settlementLocation = map.GetLocation(settlement.LocationId);
-            // Global settlements do not share the active local scene's coordinate space. Keep their
-            // residents outside the camera-distance bands until U25 explicitly enters that location.
-            var offCameraPosition = new WorldPosition(1000f + settlementLocation.MapX, 0f,
-                1000f + settlementLocation.MapY);
+            // P10.9 uses one physical tiled world, so abstract residents materialize at the canonical
+            // settlement coordinates when the player enters that location.
+            var offCameraPosition = new WorldPosition(settlementLocation.MapX, 0f, settlementLocation.MapY);
             var side = settlement.OwnerSideId;
             var dynastyId = DeterministicStableId.Create(worldSeed, "enemy_dynasty");
             var residentIds = Enumerable.Range(0, 6).Select(i => DeterministicStableId.Create(worldSeed, "enemy_character", i)).ToArray();

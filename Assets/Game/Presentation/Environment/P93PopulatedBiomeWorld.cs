@@ -114,7 +114,9 @@ namespace Game.Presentation.Environment
         {
             if (authoredTreePositions != null) return;
             ValidateConfiguration();
-            authoredTreePositions = canopyTrees.Where(value => value != null)
+            authoredTreePositions = canopyTrees.Concat(majorRocks).Concat(groundCover)
+                .Concat(resourceFormations.SelectMany(x => x.DecorativeSatellites))
+                .Where(value => value != null).Distinct()
                 .ToDictionary(value => value, value => value.transform.position);
         }
 
@@ -164,7 +166,9 @@ namespace Game.Presentation.Environment
                              .OrderBy(x => x.name, StringComparer.Ordinal))
                 {
                     Mix(ref hash, satellite.name);
-                    Mix(ref hash, satellite.transform.position);
+                    Mix(ref hash, authoredTreePositions != null &&
+                        authoredTreePositions.TryGetValue(satellite, out var authoredSatellite)
+                        ? authoredSatellite : satellite.transform.position);
                 }
             }
             return hash.ToString("X16", CultureInfo.InvariantCulture);

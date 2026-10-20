@@ -54,7 +54,7 @@ namespace Game.Domain.World
     /// <summary>Immutable geography configuration. No loaded Terrain, entity or mutable save-state.</summary>
     public sealed class TiledWorldDefinition
     {
-        public const string ReferenceGenerationId = "p109-tiled-world-v2";
+        public const string ReferenceGenerationId = "p109-playable-patch-v1";
         public TiledWorldDefinition(string generationId, int columns, int rows, int tileSizeMeters,
             float originX, float originZ, IEnumerable<WorldZoneDefinition> zones,
             IEnumerable<WorldPosition> river, WorldPosition playerStart)

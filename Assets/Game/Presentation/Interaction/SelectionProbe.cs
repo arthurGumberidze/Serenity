@@ -132,8 +132,6 @@ namespace Game.Presentation.Interaction
             var pilePresenter = hit.collider.GetComponentInParent<WorldResourcePilePresenter>();
             var buildingPresenter = hit.collider.GetComponentInParent<BuildingPresenter>();
             var productionPresenter = hit.collider.GetComponentInParent<ProductionSourcePresenter>();
-            if (characterPresenter == null && selectedCharacterIds.Count > 0)
-                return false;
             SetSelection(marker, characterPresenter, pilePresenter, buildingPresenter, productionPresenter, additive, proxy);
             return marker != null || characterPresenter != null || pilePresenter != null ||
                 buildingPresenter != null || productionPresenter != null;

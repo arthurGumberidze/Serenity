@@ -106,6 +106,9 @@ namespace Game.Tests
                 Is.EquivalentTo(new[] { "Move", "Look", "Run", "Exit", "Attack" }));
             Assert.That(asset.FindAction("Camera/Move").bindings.Any(binding => binding.path == "<Keyboard>/w"), Is.True);
             Assert.That(asset.FindAction("Camera/Zoom").bindings.Any(binding => binding.path == "<Mouse>/scroll/y"), Is.True);
+            Assert.That(asset.FindAction("Camera/Zoom").bindings.Single(binding =>
+                    binding.path == "<Mouse>/scroll/y").processors, Is.Null.Or.Empty,
+                "Input System already normalizes wheel notches; legacy 0.01 scaling makes zoom unresponsive.");
             Assert.That(asset.FindAction("Camera/Rotate").bindings.Any(binding => binding.path == "<Keyboard>/q"), Is.True);
             Assert.That(asset.FindAction("Pointer/SelectionModifier").bindings.Any(binding => binding.path == "<Keyboard>/shift"), Is.True);
             Assert.That(asset.FindAction("Pointer/SecondaryClick").bindings.Count(binding =>

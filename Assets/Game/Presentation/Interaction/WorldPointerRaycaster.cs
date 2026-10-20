@@ -64,8 +64,9 @@ namespace Game.Presentation.Interaction
             hit = default;
             if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
             var ray = worldCamera.ScreenPointToRay(pointerPosition);
-            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Ignore)
-                         .OrderBy(value => value.distance))
+            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Collide)
+                         .OrderBy(value => value.collider.GetComponentInParent<CharacterPresenter>() != null ? 0 : 1)
+                         .ThenBy(value => value.distance))
             {
                 var collider = candidate.collider;
                 if (collider.GetComponentInParent<StableWorldHitProxy>() == null &&
@@ -86,7 +87,7 @@ namespace Game.Presentation.Interaction
             if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
             var ray = worldCamera.ScreenPointToRay(pointerPosition);
             RaycastHit? ground = null;
-            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Ignore)
+            foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Collide)
                          .OrderBy(value => value.distance))
             {
                 var collider = candidate.collider;

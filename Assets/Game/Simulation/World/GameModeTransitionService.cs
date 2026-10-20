@@ -151,8 +151,6 @@ namespace Game.Simulation.World
             {
                 return new GameModeTransitionResult(GameModeTransitionStatus.UnknownLocation, map.Mode);
             }
-            if (location.Type != WorldLocationType.Settlement || map.GetSettlementAt(locationId) == null)
-                return new GameModeTransitionResult(GameModeTransitionStatus.LocationIsNotSettlement, map.Mode);
             if (map.Mode == GameWorldMode.Local && map.ActiveLocationId == locationId)
                 return new GameModeTransitionResult(GameModeTransitionStatus.AlreadyInMode, map.Mode);
 
@@ -161,15 +159,17 @@ namespace Game.Simulation.World
             var detailedUnits = new List<MilitaryUnitId>();
             try
             {
-                foreach (var id in settlement.ResidentCharacterIds.OrderBy(x => x))
-                {
-                    if (!tiers.TryGetTier(id, out var before) || before == CharacterSimulationTier.Tier1) continue;
-                    tiers.Transition(id, CharacterSimulationTier.Tier1);
-                    changed.Add(Tuple.Create(id, before));
-                }
+                if (settlement != null)
+                    foreach (var id in settlement.ResidentCharacterIds.OrderBy(x => x))
+                    {
+                        if (!tiers.TryGetTier(id, out var before) || before == CharacterSimulationTier.Tier1) continue;
+                        tiers.Transition(id, CharacterSimulationTier.Tier1);
+                        changed.Add(Tuple.Create(id, before));
+                    }
                 foreach (var unit in map.GetMilitaryPresence(locationId).Where(x =>
                              x.Representation == MilitaryUnitRepresentationMode.Aggregate &&
-                             !x.ActiveEncounterId.HasValue && x.OwnerSideId.Value == settlement.OwnerSideId.Value))
+                             !x.ActiveEncounterId.HasValue && (settlement == null ||
+                             x.OwnerSideId.Value == settlement.OwnerSideId.Value)))
                 {
                     representations.Transition(unit.Id, MilitaryUnitRepresentationMode.Detailed);
                     detailedUnits.Add(unit.Id);

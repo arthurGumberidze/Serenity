@@ -14,6 +14,24 @@ namespace Game.Presentation.CameraControl
         private ILocalGameplayInput input;
         private float targetZoom;
         private float currentZoom;
+        private Func<Vector3, float> groundHeight;
+        private Vector3 home;
+
+        public void ConfigureGround(Func<Vector3, float> sample, Vector3 start)
+        {
+            groundHeight = sample ?? throw new ArgumentNullException(nameof(sample));
+            home = start;
+            FocusHome();
+        }
+
+        public void FocusHome()
+        {
+            var position = home;
+            if (groundHeight != null) position.y = groundHeight(position);
+            transform.position = position;
+            targetZoom = currentZoom = Mathf.Clamp(45f, settings.MinZoom, settings.MaxZoom);
+            ApplyCameraMount();
+        }
 
         public RtsCameraSettings Settings => settings;
         public Transform CameraMount => cameraMount;
@@ -41,6 +59,8 @@ namespace Game.Presentation.CameraControl
 
         private void Update()
         {
+            if (inputSource != null && inputSource.RtsActionsEnabled &&
+                UnityEngine.InputSystem.Keyboard.current?.homeKey.wasPressedThisFrame == true) FocusHome();
             Tick(Time.unscaledDeltaTime, Application.isFocused, new Vector2(Screen.width, Screen.height));
         }
 
@@ -64,6 +84,7 @@ namespace Game.Presentation.CameraControl
             }
             var position = RtsCameraMath.ClampToBounds(transform.position + translation,
                 settings.BoundsMin, settings.BoundsMax);
+            if (groundHeight != null) position.y = groundHeight(position);
             if ((position - transform.position).sqrMagnitude > 0.00000001f) transform.position = position;
 
             targetZoom = Mathf.Clamp(targetZoom - input.Zoom * settings.ZoomSpeed,
@@ -83,6 +104,11 @@ namespace Game.Presentation.CameraControl
             input = inputSource;
             targetZoom = Mathf.Clamp(initialZoom, settings.MinZoom, settings.MaxZoom);
             currentZoom = targetZoom;
+            if (groundHeight != null)
+            {
+                FocusHome();
+                return;
+            }
             ApplyCameraMount();
         }
 

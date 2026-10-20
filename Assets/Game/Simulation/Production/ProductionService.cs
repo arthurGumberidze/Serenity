@@ -292,8 +292,9 @@ namespace Game.Simulation.Production
                 !IsSiteOperational(siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
+            if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
             var kind = TaskKindFor(site);
-            if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe)) return false;
+            if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe, site)) return false;
             if (!InputsAvailable(recipe)) return false;
             var task = ProductionTask.Create(workerId, site.Id, site.RecipeId, kind, recipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
@@ -566,18 +567,19 @@ namespace Game.Simulation.Production
                 return default;
             }
             var recipe = recipes.Get(task.RecipeId);
+            var outputs = recipe.OutputsFor(site);
             var outputOwner = new InventoryOwner(InventoryOwnerKind.Character, task.WorkerId);
-            if (task.Kind != ProductionTaskKind.Plant && !TrySelectOutputOwner(task.WorkerId, recipe, out outputOwner))
+            if (task.Kind != ProductionTaskKind.Plant && !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
                 return default;
             if (!TryConsumeInputs(recipe)) return default;
-            site.CompleteWork(task.Kind);
+            site.CompleteWork(task.Kind, recipe.HarvestEntireSource);
             var produced = false;
             var outputId = default(ResourceId);
             long outputUnits = 0;
             if (task.Kind != ProductionTaskKind.Plant)
             {
                 var destination = inventories.Get(outputOwner);
-                foreach (var output in recipe.Outputs)
+                foreach (var output in outputs)
                 {
                     if (!destination.TryAdd(output.ResourceId, output.Quantity))
                         throw new InvalidOperationException("Production output owner changed during a committed batch.");
@@ -625,9 +627,10 @@ namespace Game.Simulation.Production
                 if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
+                if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
                 var kind = TaskKindFor(site);
                 if (!RecipeNeeded(recipe)) continue;
-                if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe)) continue;
+                if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe, site)) continue;
                 if (!InputsAvailable(recipe)) continue;
                 var distance = workerPosition.DistanceSquared(site.Position);
                 if (selected == null || distance < bestDistance ||
@@ -641,16 +644,16 @@ namespace Game.Simulation.Production
             return selected != null;
         }
 
-        private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe) =>
-            TrySelectOutputOwner(workerId, recipe, out _);
+        private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site) =>
+            TrySelectOutputOwner(workerId, recipe.OutputsFor(site), out _);
 
-        private bool TrySelectOutputOwner(StableEntityId workerId, ProductionRecipe recipe, out InventoryOwner owner)
+        private bool TrySelectOutputOwner(StableEntityId workerId, IReadOnlyList<ResourceAmount> outputs, out InventoryOwner owner)
         {
             owner = new InventoryOwner(InventoryOwnerKind.Character, workerId);
-            if (inventories.TryGet(owner, out var character) && CanAddAll(character, recipe.Outputs)) return true;
+            if (inventories.TryGet(owner, out var character) && CanAddAll(character, outputs)) return true;
             foreach (var inventory in inventories.All.OrderBy(x => x.Owner.Id))
             {
-                if (inventory.Owner.Kind != InventoryOwnerKind.BuildingStorage || !CanAddAll(inventory, recipe.Outputs)) continue;
+                if (inventory.Owner.Kind != InventoryOwnerKind.BuildingStorage || !CanAddAll(inventory, outputs)) continue;
                 if (!buildings.TryGet(inventory.Owner.Id, out var building) || !building.IsOperational) continue;
                 owner = inventory.Owner;
                 return true;
@@ -692,7 +695,7 @@ namespace Game.Simulation.Production
             foreach (var task in tasks.Values)
             {
                 if (task.IsTerminal || task.Kind == ProductionTaskKind.Plant) continue;
-                foreach (var output in recipes.Get(task.RecipeId).Outputs)
+                foreach (var output in recipes.Get(task.RecipeId).OutputsFor(sites[task.SiteId]))
                     if (output.ResourceId == id) reserved = checked(reserved + output.Quantity.Units);
             }
             return reserved;

@@ -406,7 +406,20 @@ namespace Game.Presentation.UI
                 CloseContextMenu();
                 return;
             }
-            OpenContextMenu(target, input.PointerPosition);
+            // A normal RMB is a command, not a nine-row menu. Ctrl+RMB keeps all explicit actions.
+            var primary = target.Kind == ContextTargetKind.Ground ? ContextActionKind.Move :
+                target.Kind == ContextTargetKind.ResourceSource ?
+                    target.ResourceClass == ContextResourceClass.Choppable ? ContextActionKind.Chop :
+                    target.ResourceClass == ContextResourceClass.Mineable ? ContextActionKind.Mine : ContextActionKind.Gather :
+                (ContextActionKind?)null;
+            if (primary.HasValue && Keyboard.current?.ctrlKey.isPressed != true &&
+                EvaluateForSelection(primary.Value, target).Enabled)
+            {
+                activeContextTarget = target;
+                activeContextSelectionIds = context.Selection.SelectedCharacterIds.ToArray();
+                ExecuteContextAction(primary.Value, input.IsAdditiveSelectionPressed);
+            }
+            else OpenContextMenu(target, input.PointerPosition);
         }
 
         public void OpenContextMenu(ContextCommandTarget target, Vector2 screenPosition)
@@ -597,10 +610,9 @@ namespace Game.Presentation.UI
         private bool HasContextPath(StableEntityId id, WorldPosition target)
         {
             if (!context.AiAgents.TryGet(id, out var agent)) return true;
-            var path = new NavMeshPath();
-            return NavMesh.CalculatePath(new Vector3(agent.Position.X, agent.Position.Y, agent.Position.Z),
-                new Vector3(target.X, target.Y, target.Z), NavMesh.AllAreas, path) &&
-                   path.status == NavMeshPathStatus.PathComplete;
+            return Game.Presentation.AI.ReachableNavMeshPoint.TryFind(
+                new Vector3(agent.Position.X, agent.Position.Y, agent.Position.Z),
+                new Vector3(target.X, target.Y, target.Z), out _);
         }
 
         private InventoryOwner? FindHaulDestination()
@@ -1972,8 +1984,14 @@ namespace Game.Presentation.UI
                 AddLine(inspector, T("ui.selection.natural_source"));
                 AddLine(inspector, Content("recipe", recipe.Id.ToString()));
                 AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
-                AddLine(inspector, string.Join(" + ", recipe.Outputs.Select(x =>
+                AddLine(inspector, string.Join(" + ", recipe.OutputsFor(source.Site).Select(x =>
                     Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
+                var harvest = context.Production.ActiveTasks.FirstOrDefault(x => x.SiteId == source.Site.Id);
+                if (harvest != null)
+                    AddLine(inspector, "Прогресс: " + RussianTextCatalog.Percent(
+                        (double)harvest.AccumulatedWorkTicks / harvest.RequiredWorkTicks));
+                if (recipe.HarvestEntireSource)
+                    AddMuted(inspector, "Один приказ — весь источник. Добытое попадает в инвентарь работника или свободный склад.");
                 DrawDirectPriority();
                 inspector.Add(ActionButton(source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
                     () => TryCommand(() => IssueDirect(source.Site.Kind == ProductionSiteKind.NaturalSource
@@ -2719,7 +2737,8 @@ namespace Game.Presentation.UI
 
         private static Button ActionButton(string label, Action action, string name = null)
         {
-            var button = new Button(action) { text = label, name = name ?? string.Empty };
+            // Space belongs to pause in gameplay; a focused button must not also submit on it.
+            var button = new Button(action) { text = label, name = name ?? string.Empty, focusable = false };
             button.style.marginTop = 3; button.style.marginBottom = 3;
             button.style.marginLeft = 2; button.style.marginRight = 2;
             SerenityUiDesign.StyleButton(button);

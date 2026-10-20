@@ -37,7 +37,7 @@ namespace Game.Tests.PlayMode
                 Assert.That(root.TiledWorld.TryGetTerrain(id, out var terrain), Is.True);
                 Assert.That(terrain.terrainData.size, Is.EqualTo(new Vector3(1000f,
                     Game.Domain.World.TiledWorldHeightSampler.TerrainHeightMeters, 1000f)));
-                Assert.That(terrain.terrainData.heightmapResolution, Is.EqualTo(65));
+                Assert.That(terrain.terrainData.heightmapResolution, Is.EqualTo(129));
             }
             Assert.That(root.CameraController.Settings.BoundsMin.x,
                 Is.EqualTo(root.WorldDefinition.Origin.X + 10f));

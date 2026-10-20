@@ -61,7 +61,7 @@ namespace Game.Simulation.AI
         public double HungerRecoveryPerDay { get; }
 
         public static Tier1AiSettings Default => new Tier1AiSettings(
-            TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(15),
+            TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2), TimeSpan.FromHours(2),
             5, 20, 25, 100, 2.5f, 4, 0.15d,
             0.35d, 0.45d, 360d);
 

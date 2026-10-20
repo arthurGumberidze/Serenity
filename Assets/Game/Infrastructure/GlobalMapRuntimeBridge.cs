@@ -22,7 +22,8 @@ namespace Game.Infrastructure
             strategicView = gameObject.AddComponent<P102StrategicWorldView>();
             if (root.TiledWorld != null)
                 strategicView.Initialize(root.PointerRaycaster.WorldCamera, root.WorldDefinition,
-                    root.ConnectedWorld, root.GlobalMap, root.Production, root.TiledWorld.SetStrategicMode);
+                    root.ConnectedWorld, root.GlobalMap, root.Production, root.TiledWorld.SetStrategicMode,
+                    root.TiledWorld.StrategicGroundTexture);
             else
             {
                 if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
@@ -44,8 +45,8 @@ namespace Game.Infrastructure
             var result = root.ModeTransitions.EnterLocation(locationId, root.Clock.State.CalendarTicks);
             if (result.Changed)
             {
-                root.ApplyLocalLocationScope(locationId);
                 ExitStrategicView();
+                root.ApplyLocalLocationScope(locationId);
             }
         }
 

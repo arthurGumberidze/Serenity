@@ -35,15 +35,15 @@ namespace Game.Tests.PlayMode
             foreach (var formation in root.PopulatedBiomeWorld.ResourceFormations.Take(4))
             {
                 var anchor = formation.ClickableRoot.position;
-                Assert.That(NavMesh.SamplePosition(anchor, out var destination,
-                    4f, NavMesh.AllAreas), Is.True, formation.RecipeId);
-                Assert.That(Vector3.Distance(destination.position, anchor), Is.LessThanOrEqualTo(4f),
+                Assert.That(Game.Presentation.AI.ReachableNavMeshPoint.TryFind(sampledStart.position,
+                    anchor, out var destination), Is.True, formation.RecipeId);
+                Assert.That(Vector3.Distance(destination, anchor), Is.LessThanOrEqualTo(3.1f),
                     formation.RecipeId);
                 var path = new NavMeshPath();
-                Assert.That(NavMesh.CalculatePath(sampledStart.position, destination.position, NavMesh.AllAreas, path), Is.True,
+                Assert.That(NavMesh.CalculatePath(sampledStart.position, destination, NavMesh.AllAreas, path), Is.True,
                     formation.RecipeId);
                 Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete),
-                    $"{formation.RecipeId}; anchor={anchor}; destination={destination.position}; " +
+                    $"{formation.RecipeId}; anchor={anchor}; destination={destination}; " +
                     $"corners={string.Join(" -> ", path.corners.Select(x => x.ToString("F2")))}");
             }
             Assert.That(root.PopulatedBiomeWorld.CanopyTrees.All(x =>

@@ -1,6 +1,34 @@
 # NEXT_TASK.md
 
-Active task: **P10.9 acceptance follow-up (PARTIAL; wait for user direction)**.
+Active task: **P10.9 playable starter patch (IN PROGRESS; resumed by user 2026-10-20)**.
+
+Current direction supersedes the wait below: finish one usable starter area, build a new Windows Player,
+and personally exercise camera/selection/orders/trees/water with real UI input. In particular investigate
+trees crossing the camera, not only the automated LOD tests. User also requested a comparison of five
+environment/terrain assets and understandable chopping/mining progress with tree-fall feedback.
+No external asset has been imported or purchased. New-world saves are isolated under
+`Serenity/P109/PlayablePatch/Saves`; old P10, TiledV2 and legacy files must remain unchanged.
+Current changes are uncommitted and not yet accepted visually. Do not call this patch DONE from tests alone.
+
+Latest completed run: `playmode-accepted.xml` 7/7 and `editmode.xml` 49/49. The first Windows
+BuildReport for `Builds/P109PlayablePatch/Serenity.exe` reported Succeeded, 0 errors / 50 warnings,
+but that binary was rejected during actual manual UI review. Do not hand it off as accepted.
+Its post-build finalization was stopped after the review found a correction requiring a rebuild;
+no provenance is claimed for the draft. The corrected test/build chain is now running with
+`playmode-input.xml`, `editmode-input.xml` and `build-final.log`.
+The new Player was launched with `SERENITY_SAVE_DIRECTORY` set to
+`Artifacts/P109/playable-patch/manual-saves` and D3D11 1920 x 1080 arguments.
+The user manually dismissed the Windows Firewall prompt. Main Menu -> New Game -> LocalGameplay
+was exercised through native input. Broad foliage selection boxes stole clicks on visible residents;
+wheel zoom was almost imperceptible. The draft was exited through its own menu without saving.
+Corrections narrow the selection column, prioritize character hits, remove legacy 0.01 wheel scaling
+(the installed Input System already normalizes notches), and prevent gameplay buttons from consuming
+Space as a second submit/pause action. Repeat the normal selection / move / chop / zoom / water route
+on the corrected binary; these pending checks must not be presented as already passed.
+Corrected `playmode-input.xml` now passes **5/5**, including the source-identity guard and
+screen-ray regression; `editmode-input.xml` passes **49/49**. The U05 filter in that latter command
+had an extra `.Editor` namespace and matched no U05 tests: run `Game.Tests.U05CameraAndInputTests`
+separately after the current build releases the project lock. No source change is needed for that rerun.
 
 The user-directed video follow-up is implemented: old authored trees are anchored to tiled ground and hidden with their terrain tile; tactical character visibility covers maximum RTS zoom; repeated LOD refresh does not restart NavMesh paths; context-menu group Move uses separated formation endpoints; `map_serenity` reveals the canonical full-world fog grid. Focused tests and a Windows BuildReport passed. The user's local visual retest in the new Player is still needed; do not mark the full P10.9 acceptance gate DONE from automated evidence alone. If a resident is reported delayed, inspect critical needs/protected work phase rather than silently bypassing that canonical rule.
 
