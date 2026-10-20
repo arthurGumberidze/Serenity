@@ -1,5 +1,32 @@
 # DECISIONS.md
 
+## D-155 User-approved reversible Synty Meadow Forest import (2026-10-20)
+
+The user explicitly approved importing their downloaded package into the main project rather
+than a separate sandbox project. This overrides the earlier no-import scope for this package
+only. Preserve the pre-import playable-patch commit `c732c96` and unrelated dirty materials;
+do not use a destructive reset as rollback. A later rollback should remove/revert only the
+import-specific commit after checking subsequent edits.
+
+The archive is inspected without executing its contents. Only Meadow Forest and shared Core
+content plus their bundled URP replacements are admitted under `Assets/PolygonNatureBiomes`.
+The unrelated biome overlays are excluded. Keep Unity 6000.6.4f1, package dependencies,
+startup/build scenes and save directories unchanged. Vendor demo geometry is art, not a new
+resource, world-generation or persistence authority. Connecting it to the playable area needs
+the existing stable-ID presentation binding and separate gameplay/visual verification.
+Third-party availability does not establish publication rights; no licence entitlement is
+asserted. Import success does not close the interrupted manual Player check or P10.9.
+
+Compatibility adaptations are limited to this imported folder: use the included URP variants,
+remove five duplicate depth-texture declarations now supplied by URP 17, and convert the 31
+remaining built-in materials with scoped standard/particle conversion. Preserve GUIDs and
+prefab references. The diagnostic build appends the vendor demo to its in-memory scene list
+to exercise imported shader/mesh build paths; it does not save that list to EditorBuildSettings
+or replace the previously built playable candidate. Six vendor floating-point `pow` warnings
+remain distinct from shader compilation errors and are not claimed as visual acceptance.
+The final admission gates passed: 9/9 EditMode, 5/5 PlayMode and the diagnostic Windows
+build (0 errors / 34 warnings). Protected files and all original scenes remain hash-identical.
+
 ## D-001 Engine
 Unity 6.3 LTS (6000.3), C#, Windows PC. URP for MVP.
 

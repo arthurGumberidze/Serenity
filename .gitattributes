@@ -31,5 +31,8 @@
 # Preserve third-party license evidence byte-for-byte.
 Assets/Game/Art/ThirdParty/**/License.txt -whitespace
 
+# Preserve imported vendor formatting; local compatibility patches are documented in D-155.
+Assets/PolygonNatureBiomes/** -whitespace
+
 # Preserve generated Player evidence logs byte-for-byte.
 docs/validation/**/Player.log -whitespace

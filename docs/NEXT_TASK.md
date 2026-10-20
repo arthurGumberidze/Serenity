@@ -1,12 +1,29 @@
 # NEXT_TASK.md
 
+Immediate user-approved P10.9 slice (2026-10-20): import the downloaded Synty Meadow Forest
+directly into this project, retaining rollback checkpoint `c732c96` and the five unstaged
+material backups in `Artifacts/P109/synty-import/pre-import-dirty-files.zip`.
+The scoped Meadow/Core URP import is complete; EditMode passed 9/9 and playable-patch
+PlayMode passed 5/5. Diagnostic Windows build passed (0 errors / 34 warnings), GUID
+`e364cf885e63461e9bbe498e380e0b74`. Final protected-file hashes match 44/44, including
+8/8 old saves; all four original scenes are unchanged. This import slice is complete.
+Do not replace gameplay startup with the vendor demo or claim resource
+integration from an asset import. Old saves remain untouched. The previous repeat native
+Player review was stopped with Escape and is still pending. P10.9 remains PARTIAL.
+
+Next unblocked P10.9 work: use the admitted art on one small playable area through existing
+stable-ID resource presenters, then resume actual Player camera/selection/order/harvest/water
+verification. Imported decorative trees are not yet production sources. Inspect mesh LODs,
+material texture mappings and wind before binding them; do not assume an asset import fixes
+the earlier camera/scenery defects. Do not expand to whole-world art replacement automatically.
+
 Active task: **P10.9 playable starter patch (IN PROGRESS; resumed by user 2026-10-20)**.
 
 Current direction supersedes the wait below: finish one usable starter area, build a new Windows Player,
 and personally exercise camera/selection/orders/trees/water with real UI input. In particular investigate
 trees crossing the camera, not only the automated LOD tests. User also requested a comparison of five
 environment/terrain assets and understandable chopping/mining progress with tree-fall feedback.
-No external asset has been imported or purchased. New-world saves are isolated under
+Synty Meadow Forest is now imported (D-155), but not bound to gameplay. New-world saves are isolated under
 `Serenity/P109/PlayablePatch/Saves`; old P10, TiledV2 and legacy files must remain unchanged.
 Current changes are uncommitted and not yet accepted visually. Do not call this patch DONE from tests alone.
 
@@ -27,8 +44,9 @@ Space as a second submit/pause action. Repeat the normal selection / move / chop
 on the corrected binary; these pending checks must not be presented as already passed.
 Corrected `playmode-input.xml` now passes **5/5**, including the source-identity guard and
 screen-ray regression; `editmode-input.xml` passes **49/49**. The U05 filter in that latter command
-had an extra `.Editor` namespace and matched no U05 tests: run `Game.Tests.U05CameraAndInputTests`
-separately after the current build releases the project lock. No source change is needed for that rerun.
+had an extra `.Editor` namespace and matched no U05 tests. This debt is now resolved: the
+correctly named `Game.Tests.U05CameraAndInputTests` passed all six cases in the import's
+9/9 EditMode run. The prior playable build also finalized; its provenance is in PROJECT_STATE.
 
 The user-directed video follow-up is implemented: old authored trees are anchored to tiled ground and hidden with their terrain tile; tactical character visibility covers maximum RTS zoom; repeated LOD refresh does not restart NavMesh paths; context-menu group Move uses separated formation endpoints; `map_serenity` reveals the canonical full-world fog grid. Focused tests and a Windows BuildReport passed. The user's local visual retest in the new Player is still needed; do not mark the full P10.9 acceptance gate DONE from automated evidence alone. If a resident is reported delayed, inspect critical needs/protected work phase rather than silently bypassing that canonical rule.
 

@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 import slice (2026-10-20): user explicitly approved direct Synty Meadow Forest import
+with rollback. Pre-import playable changes checkpointed at `c732c96` (not visually accepted).
+Scoped Meadow/Core URP assets are imported without replacing gameplay scenes or saves;
+EditMode passed 9/9 and playable-patch PlayMode passed 5/5. The diagnostic Windows build
+passed with 0 errors / 34 warnings; protected hashes match 44/44 (including 8/8 old saves).
+The import slice is complete, but gameplay art binding and manual acceptance are not claimed.
+P10.9 stays PARTIAL and P10.10 is not started.
+
 P10 is user-authorized on 2026-10-16 and normally executes P10.1→P10.10. Explicit user decisions D-141 and D-143 permit P10.4 and then P10.5 implementation to proceed while P10.3 and P10.4 remain PARTIAL. These sequencing exceptions waive no acceptance gate: all deferred P10.3/P10.4 debt is mandatory for P10.9/P10.10. P10.9 is PARTIAL and remains the sole active task; P10.10 has not started. P8.6/U29/U30/U31 retain PARTIAL/PARTIAL/IN_PROGRESS/BLOCKED and are not silently resumed or closed by P10 evidence.
 
 U30 remediation (user-authorized after run4): implementation and short verification are tracked in `U30_HANDOFF.md`. No replacement eight-hour run is authorized; U30 remains IN_PROGRESS, U29 PARTIAL, U31 BLOCKED. The requested product plan is `PRODUCT_ROADMAP_RU.md`: Russian UI, main menu, hero appearance and a finished Stone Age world need visible product acceptance in addition to these technical stages. P10 supersedes the product sequencing after P9 but does not automatically activate or close this legacy post-MVP backlog.

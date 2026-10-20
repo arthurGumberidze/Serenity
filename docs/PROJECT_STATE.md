@@ -1,5 +1,62 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-20 approved Synty Meadow Forest import
+
+The user explicitly authorized importing their downloaded Synty Meadow Forest package directly
+into this project, with a rollback checkpoint. The earlier playable-patch changes are committed
+as `c732c9619a6f5482722ec0c2aea596a2bd6c4e7a`; this is a WIP checkpoint, not manual acceptance.
+The corrected pre-import Player did finish its build provenance (GUID
+`8a114b6bfdec4669b1c3ed912fbe559a`, fingerprint
+`64801051BC73C21927E268D8B045606DA4E1940A2C68587D35FA0A54AD804899`), but the user stopped
+the repeat native review with Escape. Do not claim that repeat manual review passed.
+
+`Tools/Prepare-P109-SyntyImport.py` audits paths, payload types and GUID collisions, preserves
+the original archive, backs up the five pre-existing unstaged material edits, and prepares a
+single reviewed package: 793 entries from the 794-entry base archive, overlaid with 90 approved
+Meadow/Core URP entries. The nested archive and its unrelated Tropical/Jungle/Swamp content
+are excluded. No executable code, settings overwrite or existing asset/GUID collision was found.
+Source SHA256: `fe67d04619aa2d81e5681bf0b0939dcae6e7c498318a791096dd824bfdb284c9`.
+Evidence/backups are under `Artifacts/P109/synty-import`; vendor content stays under
+`Assets/PolygonNatureBiomes`. The source came from a third-party download; publication rights
+have not been established by this technical import.
+
+This scope imports art into the actual game project; it does not replace LocalGameplay with
+the vendor demo, migrate the world, connect decorative prefabs to production, or alter saves.
+Import and URP adaptation are complete: 226 FBX models, 190 prefabs and 99 materials.
+The initial queued-import invocations exited before Unity's asynchronous import completed;
+the final importer waits for `importPackageCompleted` without `-quit`. That completed import
+exposed five duplicate `_CameraDepthTexture_TexelSize` declarations in the legacy water shader.
+They were removed in favour of URP's declaration. Twenty-seven Standard materials use Unity's
+scoped material upgrader; three legacy additive particle materials and one transparent material
+were converted in place to URP Particles/Unlit, preserving their textures and tint. No global
+project-material conversion was run. The final audit has no missing materials or shader errors;
+six existing vendor `pow` warnings remain. The first import test run was 8/9 because an EditMode
+test inspected the inactive pipeline's fallback tag; checking declared subshader tags fixes the
+assertion without weakening URP validation. Final EditMode is **9/9**, including all six U05 tests
+that the previous candidate's incorrect namespace filter had omitted.
+The final post-build preservation audit matched **44/44** protected file hashes, including all
+eight old XML saves and the five pre-existing dirty materials. All four pre-existing scene
+SHA256 values also match the pre-import values; no gameplay scene, package manifest or
+ProjectSettings file was changed.
+PlayMode regression passed **5/5** in `playmode.xml`, including physical chop/mining,
+source identity, selection and isolated Save/Load. The diagnostic Windows Development build
+passed with **0 errors / 34 warnings**, GUID `e364cf885e63461e9bbe498e380e0b74`, at
+`Builds/P109SyntyImportVerification/Serenity.exe`. It compiles the normal enabled scenes plus
+the vendor demo in its in-memory build list, without changing EditorBuildSettings or overwriting
+the prior playable executable. This is build/import evidence, not a new manual gameplay pass.
+P10.9 remains PARTIAL; performance and previous manual acceptance debts remain open.
+
+Completed import/adaptation and verification commands:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\P109\synty-import\test-saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -force-d3d11 -projectPath C:\serenity_game -executeMethod P109SyntyImport.ImportAndAudit -logFile C:\serenity_game\Artifacts\P109\synty-import\import-completed.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -force-d3d11 -projectPath C:\serenity_game -executeMethod P109SyntyImport.UpgradeImportedMaterialsAndAudit -quit -logFile C:\serenity_game\Artifacts\P109\synty-import\urp-upgrade.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -force-d3d11 -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109SyntyImportTests;Game.Tests.U05CameraAndInputTests' -testResults C:\serenity_game\Artifacts\P109\synty-import\editmode-final.xml -logFile C:\serenity_game\Artifacts\P109\synty-import\editmode-final.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -force-d3d11 -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.P109PlayablePatchTests -testResults C:\serenity_game\Artifacts\P109\synty-import\playmode.xml -logFile C:\serenity_game\Artifacts\P109\synty-import\playmode.log
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -force-d3d11 -projectPath C:\serenity_game -executeMethod P109SyntyImport.BuildVerification -quit -logFile C:\serenity_game\Artifacts\P109\synty-import\build.log
+```
+
 ## Working checkpoint — 2026-10-20 P10.9 playable starter patch
 
 User resumed implementation and requested a new executable plus personal normal-window verification of controls, commands, clickable trees, water and scenery stability. The current working changes are not yet visually accepted. No external environment asset was imported or purchased. New games use `p109-playable-patch-v1` and a separate `Serenity/P109/PlayablePatch/Saves` directory; automated/manual verification uses an explicit Artifacts-only override.
