@@ -26,10 +26,15 @@ namespace Game.Presentation.CameraControl
 
         public void FocusHome()
         {
-            var position = home;
+            FocusPosition(home, 45f);
+        }
+
+        public void FocusPosition(Vector3 position, float zoom)
+        {
+            position = RtsCameraMath.ClampToBounds(position, settings.BoundsMin, settings.BoundsMax);
             if (groundHeight != null) position.y = groundHeight(position);
             transform.position = position;
-            targetZoom = currentZoom = Mathf.Clamp(45f, settings.MinZoom, settings.MaxZoom);
+            targetZoom = currentZoom = Mathf.Clamp(zoom, settings.MinZoom, settings.MaxZoom);
             ApplyCameraMount();
         }
 

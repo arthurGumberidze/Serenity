@@ -1,5 +1,28 @@
 # DECISIONS.md
 
+## D-156 Synty starter art remains a disposable resource projection (2026-10-20)
+
+The user explicitly requested one playable starter area using the admitted Synty assets,
+not a vendor demo or a new terrain generator. Project-owned derived prefabs retain LOD0
+meshes and the vendor's leaf/trunk material mapping, with wind/jitter/dithering disabled.
+This bounded slice favors stable silhouettes over unverified billboard transitions.
+The approved vendor assets are not edited by gameplay integration. Canonical resource roots,
+StableEntityIds, quantities and save generation remain unchanged. Separate physical trunks
+and selection triggers preserve walking and clicking. Streamed copies must not expand the
+retired tree formation or overwrite normalized world scale. The lake uses imported ripple
+texture on the existing authority-clipped water mesh, not an unconstrained vendor plane.
+An editor authoring method regenerates the derived assets; the scoped build uses only enabled
+gameplay scenes and reports its GUID/errors/warnings, without claiming U00's source fingerprint.
+Native Player verification is required; automated tests alone do not close P10.9. Old saves
+remain hash-verified and read-only; tests/manual play use separate Artifacts directories.
+
+Close native water review rejected the first pale/angular pond. Increase presentation terrain
+sampling uniformly to 257 (129 -> 257), paint/basemap to 128, preserving pure heights and tile
+seams. Add a fifth shore layer and bounded bank dressing from the same approved package.
+The twelve extra pond trees are canonical sources, not unclickable decoration; small ground
+stones/grass are explicitly decorative. Opt-in development camera bookmarks enable visual
+inspection when the native tool cannot hold MMB; they do not count as native input acceptance.
+
 ## D-155 User-approved reversible Synty Meadow Forest import (2026-10-20)
 
 The user explicitly approved importing their downloaded package into the main project rather

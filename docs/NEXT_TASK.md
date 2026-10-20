@@ -1,5 +1,16 @@
 # NEXT_TASK.md
 
+Active immediate scope (2026-10-20, supersedes historical status below): close the limited
+native input acceptance gap for the integrated Synty starter area. Build
+`Builds/P109SyntyPlayable/Serenity.exe` is complete (GUID 7d986af66c3b4dc9aca0af6341ebd670,
+0 errors / 54 warnings); final tests passed 10/10 EditMode and 8/8 PlayMode. Native selection,
+move, chop/fall and zoom were exercised on the earlier candidate; final water/shore inspected
+in the final Player. Home/Space and held-MMB movement still need confirmation; user was asked
+and the final Player is open at the pond with Artifacts-only saves. Repeat the ordinary native
+route on the final binary when closing full acceptance. Do not redo the completed import.
+See `docs/P109_SYNTY_PLAYABLE_HANDOFF.md` for exact evidence and limitations.
+Do not modify old saves, resume performance profiling or start P10.10.
+
 Immediate user-approved P10.9 slice (2026-10-20): import the downloaded Synty Meadow Forest
 directly into this project, retaining rollback checkpoint `c732c96` and the five unstaged
 material backups in `Artifacts/P109/synty-import/pre-import-dirty-files.zip`.

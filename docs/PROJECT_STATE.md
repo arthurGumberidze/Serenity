@@ -1,5 +1,21 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-20 Synty playable starter area
+
+User authorized gameplay integration, a separate Windows build and native Player review.
+Implementation is in `docs/P109_SYNTY_PLAYABLE_HANDOFF.md`: four static Synty tree variants
+replace legacy visual/physics parts while preserving canonical roots and IDs; terrain uses
+Meadow layers; clipped water uses the imported ripple texture; selection preserves the fall
+transition and streamed copies preserve tree scale. Final EditMode 10/10 and PlayMode 8/8
+passed. Windows build `Builds/P109SyntyPlayable/Serenity.exe` succeeded (0 errors / 54 warnings),
+GUID `7d986af66c3b4dc9aca0af6341ebd670`. Native normal-game selection, move, chop/fall and
+wheel zoom passed on the earlier Synty candidate; final shoreline/water was inspected closely
+in the final Player using opt-in camera bookmarks. Water is stylized, without complex reflections.
+Home/Space and held-MMB acceptance remain unresolved; user check requested, Player left open
+at the pond with Artifacts-only saves. P10.9 remains PARTIAL, not fully accepted from tests.
+Final protected hashes matched 44/44, including 8/8 old saves; all test writes are isolated.
+Five inherited dirty materials and the unrelated `New Unity Project/` remain outside this work.
+
 ## Working checkpoint — 2026-10-20 approved Synty Meadow Forest import
 
 The user explicitly authorized importing their downloaded Synty Meadow Forest package directly

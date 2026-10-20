@@ -88,6 +88,7 @@ namespace Game.Infrastructure
 
         private readonly List<CharacterPresenter> demoPresenters = new List<CharacterPresenter>();
         private StableEnvironmentLodController environmentLod;
+        private GameObject[] pondTrees = Array.Empty<GameObject>();
 
         public LocalGameplayInputSource Input => input;
         public RtsCameraController CameraController => cameraController;
@@ -328,12 +329,21 @@ namespace Game.Infrastructure
             if (PopulatedBiomeWorld != null)
             {
                 PopulatedBiomeWorld.CaptureAuthoredTreePositions();
+                var nature = UnityEngine.Resources.Load<StarterNatureCatalog>("World/StarterNature");
+                var pond = WorldDefinition.Zones.Single(x => x.Id == "starter_pond");
+                var shoreProps = Array.Empty<GameObject>();
+                if (nature != null)
+                    pondTrees = StarterNatureProjection.CreatePondGrove(transform,
+                        new Vector3(pond.Center.X, 0, pond.Center.Z), new Vector2(pond.RadiusX, pond.RadiusZ), nature, out shoreProps);
+                StarterNatureProjection.Apply(StarterTreeViews().Concat(PopulatedBiomeWorld.ResourceFormations
+                    .Where(x => x.RecipeId == "chop_wood").Select(x => x.ClickableRoot.gameObject)),
+                    nature);
                 environmentLod = gameObject.AddComponent<StableEnvironmentLodController>();
                 environmentLod.Initialize(
                     StarterTreeViews(),
                     position => WorldHeight.SampleHeight(position.x, position.z),
                     PopulatedBiomeWorld.MajorRocks.Concat(PopulatedBiomeWorld.GroundCover)
-                        .Concat(PopulatedBiomeWorld.BaseRegion.Rocks).Concat(PopulatedBiomeWorld.BaseRegion.Foliage));
+                        .Concat(PopulatedBiomeWorld.BaseRegion.Rocks).Concat(PopulatedBiomeWorld.BaseRegion.Foliage).Concat(shoreProps));
                 TiledWorld.VisualTilesChanged += RefreshAuthoredTreeVisibility;
                 RefreshAuthoredTreeVisibility();
             }
@@ -1181,6 +1191,7 @@ namespace Game.Infrastructure
             PopulatedBiomeWorld.CanopyTrees.Concat(PopulatedBiomeWorld.BaseRegion.Trees)
                 .Concat(PopulatedBiomeWorld.ResourceFormations.Where(x => x.RecipeId == "chop_wood")
                     .SelectMany(x => x.DecorativeSatellites))
+                .Concat(pondTrees)
                 .Where(x => x != null).Distinct();
 
         private void BindPopulatedWorldAffordances()

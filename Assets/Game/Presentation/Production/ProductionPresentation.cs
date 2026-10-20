@@ -42,6 +42,7 @@ namespace Game.Presentation.Production
                 var initialized = false;
                 foreach (var mesh in GetComponentsInChildren<MeshRenderer>(true))
                 {
+                    if (!mesh.enabled || mesh.sharedMaterials.Length == 0) continue;
                     var worldBounds = mesh.bounds;
                     for (var corner = 0; corner < 8; corner++)
                     {
@@ -72,10 +73,10 @@ namespace Game.Presentation.Production
             Refresh();
         }
 
-        public void Refresh()
+        public void Refresh(bool force = false)
         {
             if (site == null || cachedRenderers.Length == 0) return;
-            if (displayedDepleted == site.IsDepleted && !isSelected) return;
+            if (displayedDepleted == site.IsDepleted && !isSelected && !force) return;
             if (displayedDepleted == false && site.IsDepleted)
             {
                 var recipe = site.RecipeId.ToString();
@@ -105,8 +106,7 @@ namespace Game.Presentation.Production
             isSelected = selected;
             var hitProxy = GetComponent<StableWorldHitProxy>();
             if (hitProxy != null) hitProxy.SetSelected(selected);
-            displayedDepleted = null;
-            Refresh();
+            Refresh(true);
         }
     }
 

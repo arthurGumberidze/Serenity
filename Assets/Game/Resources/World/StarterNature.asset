@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06de80ecca501ca4ba81d4f6c276cfb6, type: 3}
+  m_Name: StarterNature
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.StarterNatureCatalog
+  Trees:
+  - {fileID: 5491516537952333528, guid: c0aa38abbab16d540979817025dc69e5, type: 3}
+  - {fileID: 1331486167963240184, guid: 4552db5ee22ced440a05abba050c2563, type: 3}
+  - {fileID: 552355267990887046, guid: b03bb8292f77718419e9adf5cca86175, type: 3}
+  - {fileID: 6779177309392015150, guid: 2e04b864497bb5544981f67b23205894, type: 3}
+  ShoreProps:
+  - {fileID: 5565110772960493486, guid: 346443b2c4b5ea24abcea89af46e9a8a, type: 3}
+  - {fileID: 5443869685615687182, guid: 61954502f53b4cd4c8abed6d09e8fafe, type: 3}
+  GroundLayers:
+  - {fileID: 8574412962073106934, guid: e8a19b753c680d24c98f0aee4c3f6f1a, type: 2}
+  - {fileID: 8574412962073106934, guid: 9f5c36e3546010746940a515bbf0494b, type: 2}
+  - {fileID: 8574412962073106934, guid: 87aae03485560b9449f4ff3cfae78f5f, type: 2}
+  - {fileID: 8574412962073106934, guid: 293e4d77527fe5f41a5ec2cb08e3a8d6, type: 2}
+  - {fileID: 8574412962073106934, guid: 7a793ad88696ced4ab9639847d1bdf16, type: 2}
+  WaterRipples: {fileID: 2800000, guid: a4b970a3609f4f94ea150a6f10e8e540, type: 3}
+  MinimumTreeHeight: 9
+  MaximumTreeHeight: 13

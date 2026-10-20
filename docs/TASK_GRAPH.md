@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 Synty playable starter slice (2026-10-20): PARTIAL. New tree presentation, shoreline,
+ripple water and harvest transition implemented; final EditMode 10/10 and PlayMode 8/8 passed.
+Windows build succeeded (0 errors / 54 warnings), GUID 7d986af66c3b4dc9aca0af6341ebd670.
+Native selection/move/chop/fall/zoom passed on the earlier candidate; final water inspected
+in the final Player. Home/Space and held-MMB acceptance remain open, user check requested.
+Protected hashes match 44/44 including 8/8 old saves. See `docs/P109_SYNTY_PLAYABLE_HANDOFF.md`.
+Overall P10.9 remains PARTIAL; P10.10 and deferred performance work are not started.
+
 P10.9 import slice (2026-10-20): user explicitly approved direct Synty Meadow Forest import
 with rollback. Pre-import playable changes checkpointed at `c732c96` (not visually accepted).
 Scoped Meadow/Core URP assets are imported without replacing gameplay scenes or saves;

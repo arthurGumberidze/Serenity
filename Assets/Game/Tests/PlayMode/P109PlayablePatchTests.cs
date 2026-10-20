@@ -17,6 +17,52 @@ namespace Game.Tests.PlayMode
     public sealed class P109PlayablePatchTests
     {
         [UnityTest]
+        public IEnumerator SyntyMeshesStayAnchoredAndWaterUsesImportedRipples()
+        {
+            yield return SceneManager.LoadSceneAsync("LocalGameplay");
+            yield return null;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var tree = root.PopulatedBiomeWorld.ResourceFormations.First(x => x.RecipeId == "chop_wood").ClickableRoot;
+            var visual = tree.transform.Find("Synty playable tree");
+            Assert.That(visual, Is.Not.Null);
+            var renderers = visual.GetComponentsInChildren<MeshRenderer>();
+            Assert.That(renderers.Length, Is.GreaterThan(0));
+            Assert.That(visual.GetComponentsInChildren<LODGroup>(), Is.Empty);
+            var matrices = renderers.Select(x => x.localToWorldMatrix).ToArray();
+            foreach (var material in renderers.SelectMany(x => x.sharedMaterials))
+            {
+                Assert.That(material.IsKeywordEnabled("LOD_FADE_CROSSFADE"), Is.False);
+                if (material.HasProperty("_TotalWindAmount")) Assert.That(material.GetFloat("_TotalWindAmount"), Is.Zero);
+            }
+            for (var i = 0; i < 5; i++)
+            {
+                root.CameraController.transform.position += new Vector3(30f, 0f, 20f);
+                yield return null;
+                Assert.That(visual.gameObject.activeInHierarchy, Is.True);
+                for (var j = 0; j < renderers.Length; j++) Assert.That(renderers[j].localToWorldMatrix, Is.EqualTo(matrices[j]));
+            }
+            root.CameraController.FocusHome();
+            var water = Object.FindObjectsByType<MeshRenderer>().First(x => x.name.StartsWith("P10.9 Local Water"));
+            Assert.That(water.sharedMaterial.GetTexture("_Ripples"), Is.Not.Null);
+            Assert.That(water.GetComponent<MeshFilter>().sharedMesh.colors.Any(x => x.r < 0.1f), Is.True);
+            var pondTrees = Object.FindObjectsByType<ProductionSourcePresenter>(FindObjectsInactive.Include)
+                .Where(x => x.name.StartsWith("Starter pond resource tree ")).ToArray();
+            Assert.That(pondTrees.Length, Is.EqualTo(12));
+            Assert.That(pondTrees.All(x => x.IsBound && x.Site.RecipeId.ToString() == "chop_wood" &&
+                x.GetComponentsInChildren<Collider>(true).Any(c => c.enabled)), Is.True);
+            foreach (var source in root.WorldPopulation.GetComponentsInChildren<ProductionSourcePresenter>(true))
+            {
+                var treeVisual = source.transform.Find("Synty playable tree");
+                if (treeVisual == null) continue;
+                var meshes = treeVisual.GetComponentsInChildren<MeshRenderer>(true);
+                var bounds = meshes[0].bounds;
+                foreach (var mesh in meshes) bounds.Encapsulate(mesh.bounds);
+                Assert.That(bounds.size.y, Is.InRange(8.9f, 13.1f), "Streamed trees must retain normalized world scale");
+                Assert.That(source.transform.Find("Formation visual 2"), Is.Null);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator CameraAndOrdersSurviveMovingFocusAway()
         {
             yield return SceneManager.LoadSceneAsync("LocalGameplay");

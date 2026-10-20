@@ -16,7 +16,7 @@ namespace Game.Infrastructure
     [DisallowMultipleComponent]
     public sealed class TiledTerrainWorld : MonoBehaviour
     {
-        public const int HeightmapResolution = 129;
+        public const int HeightmapResolution = 257;
         private const float RefreshIntervalSeconds = 0.5f;
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
@@ -87,6 +87,9 @@ namespace Game.Infrastructure
                 var legacyCollider = legacyTerrain.GetComponent<TerrainCollider>();
                 if (legacyCollider != null) legacyCollider.enabled = false;
             }
+            var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
+            if (nature != null && nature.GroundLayers != null && nature.GroundLayers.Length > 0)
+                sourceLayers = nature.GroundLayers;
             BuildStrategicOverview();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
@@ -200,8 +203,8 @@ namespace Game.Infrastructure
                 heightmapResolution = HeightmapResolution,
                 size = new Vector3(Definition.TileSizeMeters, TiledWorldHeightSampler.TerrainHeightMeters,
                     Definition.TileSizeMeters),
-                alphamapResolution = 64,
-                baseMapResolution = 64,
+                alphamapResolution = 128,
+                baseMapResolution = 128,
                 terrainLayers = sourceLayers
             };
             data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, HeightmapResolution));
@@ -243,6 +246,13 @@ namespace Game.Infrastructure
                     uses.HasFlag(WorldZoneUse.Settlement) || HeightSampler.DistanceToRiver(wx, wz) < 95f)) primary = 3;
                 map[z, x, primary] = 0.78f;
                 map[z, x, 0] += 0.22f;
+                if (sourceLayers.Length > 4)
+                {
+                    var shore = Mathf.Clamp01((TiledWorldHeightSampler.WaterLevelMeters + 7f -
+                        HeightSampler.SampleHeight(wx, wz)) / 5f);
+                    for (var layer = 0; layer < 4; layer++) map[z, x, layer] *= 1f - shore;
+                    map[z, x, 4] = shore;
+                }
             }
             return map;
         }
@@ -275,6 +285,9 @@ namespace Game.Infrastructure
             water.AddComponent<MeshFilter>().sharedMesh = mesh;
             localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
                 { name = "Starter shoreline water" };
+            var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
+            if (nature != null && nature.WaterRipples != null)
+                localWaterMaterial.SetTexture("_Ripples", nature.WaterRipples);
             water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
             return water;
         }

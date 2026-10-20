@@ -127,8 +127,17 @@ namespace Game.Infrastructure
             {
                 view = Instantiate(template, parent);
                 view.name = "P10.9 " + node.RecipeId + " " + node.StableIndex;
-                ExpandAuthoredFormation(view, node.StableIndex);
-                view.transform.localScale = Vector3.one * AuthoredFormationScale(node.RecipeId);
+                if (view.transform.Find("Synty playable tree") != null)
+                {
+                    // This is already a normalized single-tree projection. Expanding/rescaling
+                    // the retired formation would reintroduce invisible colliders and giant crowns.
+                    view.transform.localScale = template.transform.lossyScale;
+                }
+                else
+                {
+                    ExpandAuthoredFormation(view, node.StableIndex);
+                    view.transform.localScale = Vector3.one * AuthoredFormationScale(node.RecipeId);
+                }
             }
             else
             {

@@ -40,7 +40,7 @@ namespace Game.Presentation.Production
             var rotation = root.transform.rotation;
             var origin = root.transform.position;
             var elapsed = 0f;
-            const float duration = 1.8f;
+            const float duration = 2.8f;
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
@@ -55,7 +55,7 @@ namespace Game.Presentation.Production
                 yield return null;
             }
             // Hold the fallen silhouette briefly so completion is readable, then clear the disposable view.
-            yield return new WaitForSeconds(0.8f);
+            yield return new WaitForSeconds(4f);
             Destroy(root);
         }
     }
