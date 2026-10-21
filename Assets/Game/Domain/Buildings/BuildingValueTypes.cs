@@ -35,7 +35,13 @@ namespace Game.Domain.Buildings
         Shelter = 0,
         Storage = 1,
         Structure = 2,
-        Furniture = 3
+        Furniture = 3,
+        Production = 4,
+        Food = 5,
+        Community = 6,
+        Medical = 7,
+        Military = 8,
+        Infrastructure = 9
     }
 
     public enum BuildingPlacementMode
@@ -43,6 +49,34 @@ namespace Game.Domain.Buildings
         Grid = 0,
         Free = 1,
         Edge = 2
+    }
+
+    public enum BuildingEra
+    {
+        StoneAge = 0,
+        BronzeAge = 1,
+        IronAge = 2,
+        Medieval = 3,
+        Industrial = 4,
+        Modern = 5,
+        Future = 6
+    }
+
+    public enum BuildingSpatialForm
+    {
+        Structure = 0,
+        Zone = 1,
+        Segment = 2
+    }
+
+    [Flags]
+    public enum BuildingPlacementConstraint
+    {
+        None = 0,
+        OwnedTerritory = 1 << 0,
+        ReachableApproach = 1 << 1,
+        Shoreline = 1 << 2,
+        Groundwater = 1 << 3
     }
 
     public enum BuildingOrientation

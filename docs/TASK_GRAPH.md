@@ -2,6 +2,11 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 Stone Age buildings plan (authorized 2026-10-21): B1 DONE; B2 IN_PROGRESS; B3,
+C1-C5, D1-D2, E1-E4 and F1 are TODO and remain inside P10.9. Each slice requires
+its own automated tests, separate Windows build, documentation update and local commit.
+The implementation order and gates are defined in `P109_STONE_AGE_BUILDINGS_PLAN.md`.
+
 P10.9 screenshot-feedback slice (2026-10-21): PARTIAL pending
 user-owned visual acceptance. Six visual/interaction defects and normal-RMB priority
 addressed; final EditMode 76/76. Expanded PlayMode 15/16 followed by construction fixture

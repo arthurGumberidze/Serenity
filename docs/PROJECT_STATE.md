@@ -1,5 +1,29 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-21 Stone Age buildings B1
+
+The user approved stages B-F of `P109_STONE_AGE_BUILDINGS_PLAN.md` for sequential work in
+this chat. B1 is complete. Existing `BuildingDefinition` now exposes immutable, engine-free
+construction, placement, housing, workplace, storage, production, maintenance and upgrade
+specifications plus era, description, icon key and required technologies. Existing constructor
+callers retain their contract. `BuildingDefinitionCatalog` validates unique definitions,
+resource/recipe/technology references, upgrade targets and upgrade cycles; the Unity presentation
+catalog authors construction work/stages and placement metadata and invokes domain validation.
+No new manager, inventory, dependency, asset import, mutable ScriptableObject state or save schema
+was introduced.
+
+Focused/affected EditMode passed 26/26 in
+`Artifacts/P109/buildings-b1/editmode-second.xml`. The first restricted-sandbox attempt crashed
+inside Unity's internal `BuildReportRestService` socket startup before tests; the identical run
+outside that restriction passed. Windows Development build
+`Builds/P109BuildingsB1/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
+`38c83a9598994209ad352522fdaeee64`; provenance fingerprint
+`1567CC2B62F48B998C90478F35AE380FC89BE2382265CC90F399369A0B56FAEC`.
+The build startup was slow because existing editor plugins made 300-second network attempts and
+the established builder hashed the large source manifest before and after the build; neither
+changed project content. Protected baseline matches 44/44 including eight old saves and the five
+user-owned materials. B2 is next; P10.9 remains PARTIAL and P10.10/performance work remains out of scope.
+
 ## Working checkpoint — 2026-10-21 screenshot fixes and building audit
 
 Only the latest desktop text file and six distinct screenshots are authoritative.

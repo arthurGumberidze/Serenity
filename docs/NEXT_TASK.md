@@ -1,6 +1,35 @@
 # NEXT_TASK.md
 
-## Current scope — screenshot feedback, 2026-10-21
+## Current scope — P10.9 Stone Age buildings B2, 2026-10-21
+
+The user approved the audited architecture and the staged B-F implementation in
+`P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
+small tested builds and commits. B1 is complete: immutable capability specifications and
+cross-catalog validation are integrated and verified. The current active slice is
+**B2: construction/material-buffer state and an isolated new save generation**. B3 may
+start only after B2 tests, separate Windows build, documentation and commit are complete. No additional chat,
+P10.10 work, deferred performance benchmark, push, dependency download or old-save
+migration is authorized.
+
+The implementation must extend the existing `BuildingDefinition`, `Building`, placement,
+resource, production, work and save authorities. It must not introduce parallel managers,
+inventories or NPC systems. The five inherited dirty materials and `New Unity Project/`
+remain user-owned and excluded from commits. Automated tests use an Artifacts-only save
+directory; the protected 44-file baseline must still match after every slice. Manual Player
+acceptance belongs to the user and receives one exact build path plus a short route.
+
+### Completed prerequisites
+
+The screenshot-feedback fixes and architecture audit are committed at `3abb9217`.
+Their earlier test/build evidence applies only to that commit and is not evidence for B1.
+B1 adds `ConstructionSpec`, `PlacementSpec`, `HousingSpec`, `WorkplaceSpec`, `StorageSpec`,
+`ProductionSpec`, `MaintenanceSpec`, `UpgradeSpec` and `BuildingDefinitionCatalog` while
+preserving legacy constructor callers. Focused/affected EditMode passed 26/26; Windows build
+`Builds/P109BuildingsB1/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
+`38c83a9598994209ad352522fdaeee64`; protected files match 44/44. See
+`P109_BUILDINGS_IMPLEMENTATION.md`. The B1 commit is the immediate parent of B2 work.
+
+## Superseded screenshot-feedback handoff
 
 The latest user correction selects ONLY `C:/Users/Lenovo/Desktop/Задачи и промт.txt`
 and the six distinct screenshots; ignore duplicate pasted prompts. Fix the screenshot

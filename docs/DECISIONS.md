@@ -1003,3 +1003,19 @@ hauling, domestic and save systems; Campfire/cooking belong to the first agreed 
 No new asset dependency, download or import occurs. The user takes over manual Player QA;
 we provide automated evidence, a separate build and a reproducible checklist. Old saves
 remain untouched; no push or P10.10/performance work is authorized by this request.
+
+## D-160 Building capabilities remain immutable definition data and validate as one graph (2026-10-21)
+
+The user approved the B-F sequence in `P109_STONE_AGE_BUILDINGS_PLAN.md`. B1 extends the existing
+`BuildingDefinition`; it does not introduce a parallel building instance or manager. Optional
+engine-free specifications describe construction, placement/form, housing, workplace slots,
+storage, production recipes, maintenance/demolition and upgrade options. Era, descriptive UI keys
+and technology prerequisites are definition data. The historical constructor maps to the new
+specifications so earlier tests and systems remain source-compatible while authored catalog entries
+store construction work/stage and placement tolerances as serialized values.
+
+`BuildingDefinitionCatalog` is the validation boundary for the complete set. It rejects duplicate
+building IDs, missing resource/recipe/technology references, missing or self upgrade targets and
+cycles in the upgrade graph. ScriptableObjects remain static authoring inputs; no mutable building
+or save state is stored in them. B1 changes no save format or gameplay inventory. B2 owns persistent
+construction buffers/stages and the new-generation boundary.
