@@ -1019,3 +1019,20 @@ building IDs, missing resource/recipe/technology references, missing or self upg
 cycles in the upgrade graph. ScriptableObjects remain static authoring inputs; no mutable building
 or save state is stored in them. B1 changes no save format or gameplay inventory. B2 owns persistent
 construction buffers/stages and the new-generation boundary.
+
+## D-161 Construction sites use the shared inventory registry and snapshot v26 (2026-10-21)
+
+A building under construction owns one `ConstructionBuffer` inventory keyed by its existing stable
+building ID. Delivery is an ordinary exact transfer between existing inventory owners. Materials
+remain in that buffer until a stage transaction removes the complete deterministic stage slice; only
+then does immutable save progress record them as installed. Installed accounting is not spendable
+stock, so no second inventory or duplicated resource authority exists. Construction work is blocked
+until every material stage is installed. Restore validates the buffer and derives readiness from its
+actual contents rather than persisting transient claims.
+
+Snapshot v26 persists settlement identity, phase, stage cursor, material contract/progress and the
+existing work cursor. Construction-buffer contents already round-trip in `ProductionSaveState` with
+all other registry owners. Historical v1-v25 files remain codec-readable for metadata/diagnostics,
+but the live B2 rules require save generation `p109-stone-age-buildings-v1` in the new
+`Serenity/P109/StoneAgeBuildingsV1/Saves` directory. `CompactWorldV1` is legacy read-only input;
+there is no in-place migration, resource-ID rewrite or terrain-generation-ID change.

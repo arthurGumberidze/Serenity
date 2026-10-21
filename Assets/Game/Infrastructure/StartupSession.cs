@@ -21,7 +21,7 @@ namespace Game.Infrastructure
             catalog = saveCatalog ?? throw new ArgumentNullException(nameof(saveCatalog));
             legacyCatalog = readOnlyLegacyCatalog;
             expectedWorldGenerationId = string.IsNullOrWhiteSpace(expectedGenerationId)
-                ? ConnectedWorldContract.GenerationId : expectedGenerationId;
+                ? SaveSnapshot.StoneAgeBuildingSaveGenerationId : expectedGenerationId;
         }
 
         public IReadOnlyList<GameplaySaveSlotInfo> ListSlots()
@@ -72,7 +72,7 @@ namespace Game.Infrastructure
 
         private bool IsCompatible(SaveSlotMetadata slot) => !slot.FormatVersion.HasValue
             ? slot.WorldSeed.HasValue // Test/custom catalogs predating metadata v23; FileSaveStore always supplies a version.
-            : slot.FormatVersion.Value >= SaveSnapshot.ConnectedWorldVersion &&
+            : slot.FormatVersion.Value >= SaveSnapshot.BuildingConstructionVersion &&
               string.Equals(slot.WorldGenerationId, expectedWorldGenerationId, StringComparison.Ordinal);
     }
 

@@ -48,7 +48,9 @@ namespace Game.Domain
         public const int DomesticVersion = 23;
         public const int MilitaryCampaignVersion = 24;
         public const int DiagnosticVersion = 25;
-        public const int CurrentVersion = DiagnosticVersion;
+        public const int BuildingConstructionVersion = 26;
+        public const int CurrentVersion = BuildingConstructionVersion;
+        public const string StoneAgeBuildingSaveGenerationId = "p109-stone-age-buildings-v1";
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -76,6 +78,7 @@ namespace Game.Domain
         public CharacterRuntimeWorldSaveState CharacterRuntime { get; }
         public MilitaryCampaignSaveState MilitaryCampaign { get; }
         public DiagnosticSaveState Diagnostics { get; }
+        public string SaveGenerationId { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
@@ -87,7 +90,8 @@ namespace Game.Domain
             CampaignProgressSaveState campaign = null, AppearanceWorldSaveState appearance = null,
             WorkSaveState work = null, ConnectedWorldSaveState connectedWorld = null,
             DomesticWorldSaveState domestic = null, CharacterRuntimeWorldSaveState characterRuntime = null,
-            MilitaryCampaignSaveState militaryCampaign = null, DiagnosticSaveState diagnostics = null)
+            MilitaryCampaignSaveState militaryCampaign = null, DiagnosticSaveState diagnostics = null,
+            string saveGenerationId = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
@@ -100,7 +104,8 @@ namespace Game.Domain
                 formatVersion != WorkVersion && formatVersion != AppearanceEditorVersion &&
                 formatVersion != ConnectedWorldVersion && formatVersion != ContextOrdersVersion &&
                 formatVersion != ResourceIndustryVersion && formatVersion != DomesticVersion &&
-                formatVersion != MilitaryCampaignVersion && formatVersion != CurrentVersion)
+                formatVersion != MilitaryCampaignVersion && formatVersion != DiagnosticVersion &&
+                formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -133,6 +138,11 @@ namespace Game.Domain
             CharacterRuntime = characterRuntime;
             MilitaryCampaign = militaryCampaign;
             Diagnostics = diagnostics;
+            SaveGenerationId = formatVersion >= BuildingConstructionVersion
+                ? (string.IsNullOrWhiteSpace(saveGenerationId) ? StoneAgeBuildingSaveGenerationId : saveGenerationId)
+                : saveGenerationId;
+            if (SaveGenerationId != null && SaveGenerationId.Length > 128)
+                throw new ArgumentOutOfRangeException(nameof(saveGenerationId));
         }
         public GameTimeState CreateTimeState() => new GameTimeState(CalendarTicks, BiologicalTicks, SpeedMultiplier, IsPaused);
     }

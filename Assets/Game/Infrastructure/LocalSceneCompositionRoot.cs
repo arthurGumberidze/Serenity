@@ -609,14 +609,16 @@ namespace Game.Infrastructure
 
             var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "CompactWorldV1", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "StoneAgeBuildingsV1", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
                 Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers,
-                MilitaryTraining, SettlementCapture, MilitaryAttack, Diagnostics);
-            PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore, WorldDefinition.GenerationId);
+                MilitaryTraining, SettlementCapture, MilitaryAttack, Diagnostics,
+                SaveSnapshot.StoneAgeBuildingSaveGenerationId);
+            PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore,
+                SaveSnapshot.StoneAgeBuildingSaveGenerationId);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
                 component != null && component.GetType().Name.IndexOf("Debug", StringComparison.Ordinal) >= 0)
                 .ToArray();

@@ -62,7 +62,14 @@ namespace Game.Domain.Resources
 
     // Character is retained only for historical simulations/snapshots. CarryLoad is a bounded
     // transport payload, never a resident's personal stockpile or a production output owner.
-    public enum InventoryOwnerKind { WorldPile = 0, Character = 1, BuildingStorage = 2, CarryLoad = 3 }
+    public enum InventoryOwnerKind
+    {
+        WorldPile = 0,
+        Character = 1,
+        BuildingStorage = 2,
+        CarryLoad = 3,
+        ConstructionBuffer = 4
+    }
 
     public readonly struct InventoryOwner : IEquatable<InventoryOwner>
     {

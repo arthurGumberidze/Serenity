@@ -29,7 +29,7 @@ namespace Game.Infrastructure
             coordinator = saveCoordinator ?? throw new ArgumentNullException(nameof(saveCoordinator));
             catalog = slotCatalog ?? throw new ArgumentNullException(nameof(slotCatalog));
             expectedWorldGenerationId = string.IsNullOrWhiteSpace(expectedGenerationId)
-                ? ConnectedWorldContract.GenerationId : expectedGenerationId;
+                ? SaveSnapshot.StoneAgeBuildingSaveGenerationId : expectedGenerationId;
         }
 
         public IReadOnlyList<GameplaySaveSlotInfo> ListSlots()

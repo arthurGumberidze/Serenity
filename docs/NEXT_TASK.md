@@ -1,13 +1,12 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings B2, 2026-10-21
+## Current scope — P10.9 Stone Age buildings B3, 2026-10-21
 
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1 is complete: immutable capability specifications and
-cross-catalog validation are integrated and verified. The current active slice is
-**B2: construction/material-buffer state and an isolated new save generation**. B3 may
-start only after B2 tests, separate Windows build, documentation and commit are complete. No additional chat,
+small tested builds and commits. B1 and B2 are complete. The current active slice is
+**B3: settlement territories, reachable approaches, zone footprints and segment placement**.
+C1 may start only after B3 tests, separate Windows build, documentation and commit are complete. No additional chat,
 P10.10 work, deferred performance benchmark, push, dependency download or old-save
 migration is authorized.
 
@@ -28,6 +27,14 @@ preserving legacy constructor callers. Focused/affected EditMode passed 26/26; W
 `Builds/P109BuildingsB1/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
 `38c83a9598994209ad352522fdaeee64`; protected files match 44/44. See
 `P109_BUILDINGS_IMPLEMENTATION.md`. The B1 commit is the immediate parent of B2 work.
+
+B2 adds settlement/stage/material progress to the existing `Building`, construction buffers as
+owners in the shared inventory registry, deterministic stage consumption, snapshot v26 and the
+isolated `p109-stone-age-buildings-v1` generation. Expanded save/building regressions passed
+149/149 and the final focused rerun passed 30/30. `Builds/P109BuildingsB2/Serenity.exe`
+succeeded with 0 errors / 27 warnings, GUID `525f7a3748aa4356914f184b450b84f1`;
+protected files match 44/44. B3 must extend the existing
+placement authority rather than adding a second grid or territory system.
 
 ## Superseded screenshot-feedback handoff
 

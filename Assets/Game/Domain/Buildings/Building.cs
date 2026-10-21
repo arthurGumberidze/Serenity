@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.Combat;
+using Game.Domain.Resources;
+using Game.Domain.World;
 
 namespace Game.Domain.Buildings
 {
@@ -21,7 +23,10 @@ namespace Game.Domain.Buildings
             BuildingFireStatus fireStatus, int fireIntensity, long fireStartTick, long lastFireProcessedTick,
             long accumulatedFireDamage, bool destructionProcessed, bool storageSpilled,
             IEnumerable<StableEntityId> processedDamageEvents, IEnumerable<BuildingEventState> history,
-            long constructionWorkTicks = 0, long constructionRequiredTicks = 0)
+            long constructionWorkTicks = 0, long constructionRequiredTicks = 0,
+            SettlementId? settlementId = null, ConstructionPhase? constructionPhase = null,
+            int constructionStageIndex = 0, int constructionStageCount = 0,
+            IEnumerable<ConstructionMaterialProgress> constructionMaterials = null)
         {
             if (!id.IsValid) throw new ArgumentException("Building identity is required.", nameof(id));
             if (!definitionId.IsValid) throw new ArgumentException("Definition identity is required.", nameof(definitionId));
@@ -60,6 +65,30 @@ namespace Game.Domain.Buildings
                 throw new ArgumentOutOfRangeException(nameof(constructionWorkTicks));
             ConstructionWorkTicks = constructionWorkTicks;
             ConstructionRequiredTicks = constructionRequiredTicks;
+            if (settlementId.HasValue && !settlementId.Value.IsValid)
+                throw new ArgumentException("Settlement identity must be valid.", nameof(settlementId));
+            var phase = constructionPhase ?? (constructionState == ConstructionState.Completed
+                ? ConstructionPhase.Completed : ConstructionPhase.LegacyPlanned);
+            if (!Enum.IsDefined(typeof(ConstructionPhase), phase)) throw new ArgumentOutOfRangeException(nameof(constructionPhase));
+            if (constructionStageCount < 0 || constructionStageIndex < 0 || constructionStageIndex > constructionStageCount)
+                throw new ArgumentOutOfRangeException(nameof(constructionStageIndex));
+            if (constructionPhase.HasValue && phase != ConstructionPhase.LegacyPlanned &&
+                phase != ConstructionPhase.Completed && constructionStageCount <= 0)
+                throw new ArgumentException("A staged construction phase requires at least one stage.", nameof(constructionStageCount));
+            var materials = (constructionMaterials ?? Array.Empty<ConstructionMaterialProgress>())
+                .OrderBy(x => x.ResourceId).ToArray();
+            if (materials.Select(x => x.ResourceId).Distinct().Count() != materials.Length)
+                throw new ArgumentException("Construction materials must have unique resource IDs.", nameof(constructionMaterials));
+            if (phase == ConstructionPhase.Completed && (constructionState != ConstructionState.Completed ||
+                constructionStageIndex != constructionStageCount || materials.Any(x => x.RemainingUnits != 0)))
+                throw new ArgumentException("Completed construction must have every stage and material installed.", nameof(constructionPhase));
+            if (constructionState == ConstructionState.Completed && phase != ConstructionPhase.Completed)
+                throw new ArgumentException("Legacy and detailed construction state disagree.", nameof(constructionPhase));
+            SettlementId = settlementId;
+            ConstructionPhase = phase;
+            ConstructionStageIndex = constructionStageIndex;
+            ConstructionStageCount = constructionStageCount;
+            ConstructionMaterials = Array.AsReadOnly(materials);
             MaxIntegrity = maxIntegrity;
             CurrentIntegrity = currentIntegrity;
             StructuralStatus = structuralStatus;
@@ -82,6 +111,11 @@ namespace Game.Domain.Buildings
         public ConstructionState ConstructionState { get; }
         public long ConstructionWorkTicks { get; }
         public long ConstructionRequiredTicks { get; }
+        public SettlementId? SettlementId { get; }
+        public ConstructionPhase ConstructionPhase { get; }
+        public int ConstructionStageIndex { get; }
+        public int ConstructionStageCount { get; }
+        public IReadOnlyList<ConstructionMaterialProgress> ConstructionMaterials { get; }
         public int MaxIntegrity { get; }
         public int CurrentIntegrity { get; }
         public BuildingStructuralStatus StructuralStatus { get; }
@@ -114,6 +148,11 @@ namespace Game.Domain.Buildings
             ConstructionState = state.ConstructionState;
             ConstructionWorkTicks = state.ConstructionWorkTicks;
             ConstructionRequiredTicks = state.ConstructionRequiredTicks;
+            SettlementId = state.SettlementId;
+            ConstructionPhase = state.ConstructionPhase;
+            ConstructionStageIndex = state.ConstructionStageIndex;
+            ConstructionStageCount = state.ConstructionStageCount;
+            constructionMaterials = state.ConstructionMaterials.ToList();
             MaxIntegrity = state.MaxIntegrity;
             CurrentIntegrity = state.CurrentIntegrity;
             StructuralStatus = state.StructuralStatus;
@@ -132,6 +171,7 @@ namespace Game.Domain.Buildings
 
         private readonly HashSet<StableEntityId> processedDamageEvents;
         private readonly List<BuildingEventState> history;
+        private readonly List<ConstructionMaterialProgress> constructionMaterials;
         private ulong nextEventSequence;
 
         public StableEntityId Id { get; }
@@ -141,6 +181,12 @@ namespace Game.Domain.Buildings
         public ConstructionState ConstructionState { get; private set; }
         public long ConstructionWorkTicks { get; private set; }
         public long ConstructionRequiredTicks { get; private set; }
+        public SettlementId? SettlementId { get; private set; }
+        public ConstructionPhase ConstructionPhase { get; private set; }
+        public int ConstructionStageIndex { get; private set; }
+        public int ConstructionStageCount { get; private set; }
+        public IReadOnlyList<ConstructionMaterialProgress> ConstructionMaterials => constructionMaterials.AsReadOnly();
+        public InventoryOwner ConstructionBufferOwner => new InventoryOwner(InventoryOwnerKind.ConstructionBuffer, Id);
         public double ConstructionProgress => ConstructionState == ConstructionState.Completed ? 1d :
             ConstructionRequiredTicks <= 0 ? 0d : (double)ConstructionWorkTicks / ConstructionRequiredTicks;
 
@@ -155,8 +201,74 @@ namespace Game.Domain.Buildings
         {
             if (work.Ticks < 0) throw new ArgumentOutOfRangeException(nameof(work));
             if (IsDestroyed || IsOperational || ConstructionRequiredTicks == 0) return;
+            if (ConstructionPhase != ConstructionPhase.LegacyPlanned && ConstructionPhase != ConstructionPhase.Building)
+                return;
             ConstructionWorkTicks += Math.Min(work.Ticks, ConstructionRequiredTicks - ConstructionWorkTicks);
             if (ConstructionWorkTicks == ConstructionRequiredTicks) MarkCompleted();
+        }
+
+        public void InitializeConstruction(BuildingDefinition definition, SettlementId settlementId)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (definition.Id != DefinitionId) throw new ArgumentException("Definition does not match building.", nameof(definition));
+            if (!settlementId.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlementId));
+            if (ConstructionState == ConstructionState.Completed || ConstructionPhase != ConstructionPhase.LegacyPlanned)
+                throw new InvalidOperationException("Construction is already initialized or complete.");
+            SettlementId = settlementId;
+            ConstructionRequiredTicks = definition.Construction.WorkRequiredTicks;
+            ConstructionStageCount = definition.Construction.StageCount;
+            ConstructionStageIndex = 0;
+            constructionMaterials.Clear();
+            constructionMaterials.AddRange(definition.Construction.Cost.Select(amount =>
+                new ConstructionMaterialProgress(amount.ResourceId, amount.Quantity.Units, 0)));
+            if (constructionMaterials.Count == 0)
+            {
+                ConstructionStageIndex = ConstructionStageCount;
+                ConstructionPhase = ConstructionPhase.Building;
+            }
+            else ConstructionPhase = ConstructionPhase.AwaitingMaterials;
+        }
+
+        public IReadOnlyList<ResourceAmount> NextStageMaterialCost()
+        {
+            if (ConstructionStageIndex >= ConstructionStageCount || ConstructionStageCount <= 0)
+                return Array.Empty<ResourceAmount>();
+            var nextStage = ConstructionStageIndex + 1;
+            return constructionMaterials.Select(item =>
+            {
+                var installedTarget = item.RequiredUnits / ConstructionStageCount * nextStage +
+                    item.RequiredUnits % ConstructionStageCount * nextStage / ConstructionStageCount;
+                var delta = installedTarget - item.InstalledUnits;
+                return delta > 0 ? new ResourceAmount(item.ResourceId, new ResourceQuantity(delta)) : (ResourceAmount?)null;
+            }).Where(x => x.HasValue).Select(x => x.Value).ToArray();
+        }
+
+        public void SetNextStageReady(bool ready)
+        {
+            if (ConstructionPhase == ConstructionPhase.Completed || ConstructionPhase == ConstructionPhase.Cancelled ||
+                ConstructionPhase == ConstructionPhase.LegacyPlanned) return;
+            ConstructionPhase = ready ? ConstructionPhase.ReadyForWork : ConstructionPhase.AwaitingMaterials;
+        }
+
+        public void InstallNextStageMaterials(IReadOnlyList<ResourceAmount> installed)
+        {
+            if (ConstructionPhase != ConstructionPhase.ReadyForWork)
+                throw new InvalidOperationException("The next construction stage is not ready.");
+            var expected = NextStageMaterialCost();
+            if (installed == null || installed.Count != expected.Count ||
+                expected.Where((value, index) => value.ResourceId != installed[index].ResourceId ||
+                    value.Quantity != installed[index].Quantity).Any())
+                throw new ArgumentException("Installed materials do not match the next stage.", nameof(installed));
+            foreach (var amount in installed)
+            {
+                var index = constructionMaterials.FindIndex(x => x.ResourceId == amount.ResourceId);
+                var old = constructionMaterials[index];
+                constructionMaterials[index] = new ConstructionMaterialProgress(old.ResourceId, old.RequiredUnits,
+                    checked(old.InstalledUnits + amount.Quantity.Units));
+            }
+            ConstructionStageIndex++;
+            ConstructionPhase = ConstructionStageIndex == ConstructionStageCount
+                ? ConstructionPhase.Building : ConstructionPhase.AwaitingMaterials;
         }
         public int MaxIntegrity { get; }
         public int CurrentIntegrity { get; private set; }
@@ -199,7 +311,11 @@ namespace Game.Domain.Buildings
         public void MarkCompleted()
         {
             if (ConstructionState == ConstructionState.Completed) return;
+            if (ConstructionPhase != ConstructionPhase.LegacyPlanned &&
+                (ConstructionStageIndex != ConstructionStageCount || constructionMaterials.Any(x => x.RemainingUnits != 0)))
+                throw new InvalidOperationException("Construction cannot complete before every material stage is installed.");
             ConstructionState = ConstructionState.Completed;
+            ConstructionPhase = ConstructionPhase.Completed;
         }
 
         public bool HasProcessedDamage(StableEntityId eventId) => processedDamageEvents.Contains(eventId);
@@ -286,7 +402,10 @@ namespace Game.Domain.Buildings
             ConstructionState, MaxIntegrity, CurrentIntegrity, StructuralStatus, OwnerSideId, FireStatus,
             FireIntensity, FireStartTick, LastFireProcessedTick, AccumulatedFireDamage, DestructionProcessed,
             StorageSpilled, processedDamageEvents.OrderBy(x => x), history,
-            ConstructionWorkTicks, ConstructionRequiredTicks);
+            ConstructionWorkTicks, ConstructionRequiredTicks, SettlementId,
+            ConstructionPhase == ConstructionPhase.LegacyPlanned || ConstructionStageCount > 0
+                ? (ConstructionPhase?)ConstructionPhase : null,
+            ConstructionStageIndex, ConstructionStageCount, constructionMaterials);
 
         private static BuildingStructuralStatus StatusFor(int integrity, int maximum) => integrity == 0
             ? BuildingStructuralStatus.Destroyed

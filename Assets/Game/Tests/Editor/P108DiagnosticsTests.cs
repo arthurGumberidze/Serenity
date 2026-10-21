@@ -84,7 +84,7 @@ namespace Game.Tests.Editor
         [Test]
         public void V25CodecPersistsCheatEvidenceAndRejectsMalformedDiagnostics()
         {
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, StableEntityId.NewId(),
+            var snapshot = new SaveSnapshot(SaveSnapshot.DiagnosticVersion, StableEntityId.NewId(),
                 new GameTimeState(123, 456, 1, true), 400,
                 diagnostics: new DiagnosticSaveState(true, 9));
             var codec = new SaveXmlCodec();

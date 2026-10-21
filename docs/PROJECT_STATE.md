@@ -1,5 +1,30 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-21 Stone Age buildings B2
+
+B2 is complete. Existing `Building` state now persists settlement identity, detailed construction
+phase, stage cursor, required/installed materials and work progress. A construction buffer is an
+`InventoryOwnerKind.ConstructionBuffer` entry in the existing registry, keyed by the building's
+stable ID. `ConstructionSiteService` transfers real stock through `ResourceTransferService`, removes
+the exact next-stage cost before recording it as installed, gates work until all stages are installed,
+and validates restored buffers. It is orchestration over existing authorities, not a second inventory
+or building manager.
+
+Snapshot v26 serializes the new canonical fields. Delivered stock remains in the already-persisted
+production inventory payload. v1-v25 stay codec-readable, but the live runtime requires
+`p109-stone-age-buildings-v1` and uses `Serenity/P109/StoneAgeBuildingsV1/Saves`; prior
+`CompactWorldV1` slots are exposed only as read-only legacy metadata and are not rewritten.
+
+Focused construction coverage passed 30/30. Expanded save/building/production compatibility
+coverage passed 149/149 at `Artifacts/P109/buildings-b2/editmode-save-regression.xml`. A full
+diagnostic run discovered 641 tests: 611 passed, 25 skipped and five initially failed; two stale
+save-version assertions were corrected, while the three remaining failures are inherited Synty
+asset-count/shader and P8.2 terrain-scene diagnostics unrelated to B2. Windows Development build
+`Builds/P109BuildingsB2/Serenity.exe` succeeded with 0 errors / 27 warnings, GUID
+`525f7a3748aa4356914f184b450b84f1`, fingerprint
+`EB936BC5B7CB43109DBB1EC469D51F92C7C1BEEE3C1E0CD187D2597C3F90CEAD`. Protected files match
+44/44. B3 is active; P10.9 remains PARTIAL and P10.10/performance work remains out of scope.
+
 ## Working checkpoint — 2026-10-21 Stone Age buildings B1
 
 The user approved stages B-F of `P109_STONE_AGE_BUILDINGS_PLAN.md` for sequential work in

@@ -45,6 +45,8 @@ namespace Game.Infrastructure
                 new XElement("speed", snapshot.SpeedMultiplier),
                 new XElement("paused", snapshot.IsPaused),
                 new XElement("biologicalMultiplier", snapshot.BiologicalMultiplier));
+            if (snapshot.FormatVersion >= SaveSnapshot.BuildingConstructionVersion)
+                root.Add(new XElement("saveGenerationId", snapshot.SaveGenerationId));
             if (snapshot.FormatVersion >= SaveSnapshot.ProductionVersion)
                 root.Add(SerializeProduction(snapshot.Production,
                     snapshot.FormatVersion >= SaveSnapshot.ResourceIndustryVersion));
@@ -63,7 +65,8 @@ namespace Game.Infrastructure
             if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
                 root.Add(SerializePlayerControl(snapshot.PlayerControl));
             if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
-                root.Add(SerializeBuildingWorld(snapshot.BuildingWorld));
+                root.Add(SerializeBuildingWorld(snapshot.BuildingWorld,
+                    snapshot.FormatVersion >= SaveSnapshot.BuildingConstructionVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
                 root.Add(SerializeGlobalMap(snapshot.GlobalMap,
                     snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
@@ -131,6 +134,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.ResourceIndustryVersion &&
                         version != SaveSnapshot.DomesticVersion &&
                         version != SaveSnapshot.MilitaryCampaignVersion &&
+                        version != SaveSnapshot.DiagnosticVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -152,7 +156,8 @@ namespace Game.Infrastructure
                     var playerControl = version >= SaveSnapshot.PlayerControlVersion
                         ? DeserializePlayerControl(root.Element("playerControl")) : null;
                     var buildingWorld = version >= SaveSnapshot.BuildingVersion
-                        ? DeserializeBuildingWorld(root.Element("buildingWorld")) : null;
+                        ? DeserializeBuildingWorld(root.Element("buildingWorld"),
+                            version >= SaveSnapshot.BuildingConstructionVersion) : null;
                     var globalMap = version >= SaveSnapshot.GlobalMapVersion
                         ? DeserializeGlobalMap(root.Element("globalMap"), version >= SaveSnapshot.OccupationVersion) : null;
                     var strategicAi = version >= SaveSnapshot.StrategicAiVersion
@@ -181,7 +186,8 @@ namespace Game.Infrastructure
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
-                        appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign, diagnostics);
+                        appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign, diagnostics,
+                        version >= SaveSnapshot.BuildingConstructionVersion ? Value(root, "saveGenerationId") : null);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -871,12 +877,21 @@ namespace Game.Infrastructure
                 OptionalStableId(element, "controlledCharacterId"));
         }
 
-        private static XElement SerializeBuildingWorld(BuildingWorldSaveState state)
+        private static XElement SerializeBuildingWorld(BuildingWorldSaveState state, bool includeConstruction)
         {
             var element = new XElement("buildingWorld");
             if (state == null) return element;
             element.Add(new XElement("lastFireTick", state.LastFireTick),
-                new XElement("buildings", state.Buildings.Select(value => new XElement("building",
+                new XElement("buildings", state.Buildings.Select(value =>
+                {
+                    var eventHistory = value.History.Select(history => new XElement("event",
+                        new XElement("sequence", history.Sequence), new XElement("calendarTick", history.CalendarTick),
+                        new XElement("kind", (int)history.Kind), OptionalId("damageEventId", history.DamageEventId),
+                        new XElement("damageType", history.DamageType.HasValue ? (int)history.DamageType.Value : 0),
+                        new XElement("amount", history.Amount),
+                        new XElement("ownerSideId", history.OwnerSideId.HasValue
+                            ? history.OwnerSideId.Value.ToString() : string.Empty))).ToArray();
+                    var building = new XElement("building",
                     new XElement("id", value.Id.ToString()), new XElement("definitionId", value.DefinitionId.ToString()),
                     new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
                     new XElement("level", value.Coordinate.Level), new XElement("orientation", (int)value.Orientation),
@@ -894,12 +909,19 @@ namespace Game.Infrastructure
                     new XElement("storageSpilled", value.StorageSpilled),
                     new XElement("processedDamageEvents", value.ProcessedDamageEvents.Select(id =>
                         new XElement("eventId", id.ToString()))),
-                    new XElement("history", value.History.Select(history => new XElement("event",
-                        new XElement("sequence", history.Sequence), new XElement("calendarTick", history.CalendarTick),
-                        new XElement("kind", (int)history.Kind), OptionalId("damageEventId", history.DamageEventId),
-                        new XElement("damageType", history.DamageType.HasValue ? (int)history.DamageType.Value : 0),
-                        new XElement("amount", history.Amount),
-                        new XElement("ownerSideId", history.OwnerSideId.HasValue ? history.OwnerSideId.Value.ToString() : string.Empty))))))),
+                    new XElement("history", eventHistory));
+                    if (includeConstruction)
+                        building.Add(new XElement("settlementId", value.SettlementId.HasValue
+                                ? value.SettlementId.Value.ToString() : string.Empty),
+                            new XElement("constructionPhase", (int)value.ConstructionPhase),
+                            new XElement("constructionStageIndex", value.ConstructionStageIndex),
+                            new XElement("constructionStageCount", value.ConstructionStageCount),
+                            new XElement("constructionMaterials", value.ConstructionMaterials.Select(material =>
+                                new XElement("material", new XElement("resourceId", material.ResourceId.ToString()),
+                                    new XElement("requiredUnits", material.RequiredUnits),
+                                    new XElement("installedUnits", material.InstalledUnits)))));
+                    return building;
+                })),
                 new XElement("worldPiles", state.WorldPiles.Select(value => new XElement("pile",
                     new XElement("id", value.Id.ToString()), new XElement("resourceId", value.ResourceId.ToString()),
                     new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
@@ -907,7 +929,7 @@ namespace Game.Infrastructure
             return element;
         }
 
-        private static BuildingWorldSaveState DeserializeBuildingWorld(XElement element)
+        private static BuildingWorldSaveState DeserializeBuildingWorld(XElement element, bool includeConstruction)
         {
             if (element == null) throw new FormatException("Missing building-world state.");
             if (!element.HasElements)
@@ -918,12 +940,17 @@ namespace Game.Infrastructure
             RequireFields(element, new[] { "lastFireTick", "buildings", "worldPiles" });
             var buildings = Items(element.Element("buildings"), "building", item =>
             {
-                RequireFields(item, new[] { "id", "definitionId", "x", "z", "level", "orientation",
+                var fields = new[] { "id", "definitionId", "x", "z", "level", "orientation",
                     "constructionState", "maxIntegrity", "currentIntegrity", "structuralStatus", "ownerSideId",
                     "fireStatus", "fireIntensity", "fireStartTick", "lastFireProcessedTick",
                     "accumulatedFireDamage", "destructionProcessed", "storageSpilled",
-                    "processedDamageEvents", "history" }.Concat(item.Element("constructionWorkTicks") != null
-                        ? new[] { "constructionWorkTicks", "constructionRequiredTicks" } : Array.Empty<string>()).ToArray());
+                    "processedDamageEvents", "history" }.AsEnumerable();
+                if (item.Element("constructionWorkTicks") != null)
+                    fields = fields.Concat(new[] { "constructionWorkTicks", "constructionRequiredTicks" });
+                if (includeConstruction)
+                    fields = fields.Concat(new[] { "settlementId", "constructionPhase", "constructionStageIndex",
+                        "constructionStageCount", "constructionMaterials" });
+                RequireFields(item, fields.ToArray());
                 var processed = Items(item.Element("processedDamageEvents"), "eventId", value =>
                     StableEntityId.Parse(Scalar(value)));
                 var history = Items(item.Element("history"), "event", value =>
@@ -937,6 +964,14 @@ namespace Game.Infrastructure
                         damageType == 0 ? (BuildingDamageType?)null : (BuildingDamageType)damageType,
                         Int(value, "amount"), string.IsNullOrEmpty(owner) ? (CombatSideId?)null : new CombatSideId(owner));
                 });
+                var materials = includeConstruction
+                    ? Items(item.Element("constructionMaterials"), "material", material =>
+                    {
+                        RequireFields(material, new[] { "resourceId", "requiredUnits", "installedUnits" });
+                        return new ConstructionMaterialProgress(new ResourceId(Value(material, "resourceId")),
+                            Long(material, "requiredUnits"), Long(material, "installedUnits"));
+                    })
+                    : Array.Empty<ConstructionMaterialProgress>();
                 return new BuildingState(StableEntityId.Parse(Value(item, "id")),
                     new BuildingDefinitionId(Value(item, "definitionId")),
                     new GridCoordinate(Int(item, "x"), Int(item, "z"), Int(item, "level")),
@@ -948,7 +983,12 @@ namespace Game.Infrastructure
                     Long(item, "accumulatedFireDamage"), XmlConvert.ToBoolean(Value(item, "destructionProcessed")),
                     XmlConvert.ToBoolean(Value(item, "storageSpilled")), processed, history,
                     item.Element("constructionWorkTicks") == null ? 0 : Long(item, "constructionWorkTicks"),
-                    item.Element("constructionRequiredTicks") == null ? 0 : Long(item, "constructionRequiredTicks"));
+                    item.Element("constructionRequiredTicks") == null ? 0 : Long(item, "constructionRequiredTicks"),
+                    includeConstruction ? OptionalSettlement(item, "settlementId") : null,
+                    includeConstruction ? (ConstructionPhase?)Int(item, "constructionPhase") : null,
+                    includeConstruction ? Int(item, "constructionStageIndex") : 0,
+                    includeConstruction ? Int(item, "constructionStageCount") : 0,
+                    materials);
             });
             var piles = Items(element.Element("worldPiles"), "pile", item =>
             {
@@ -1557,6 +1597,7 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.DomesticVersion) fields = fields.Concat(new[] { "domestic", "characterRuntime" });
             if (version >= SaveSnapshot.MilitaryCampaignVersion) fields = fields.Concat(new[] { "militaryCampaign" });
             if (version >= SaveSnapshot.DiagnosticVersion) fields = fields.Concat(new[] { "diagnostics" });
+            if (version >= SaveSnapshot.BuildingConstructionVersion) fields = fields.Concat(new[] { "saveGenerationId" });
             return fields.ToArray();
         }
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Game.Domain;
 using Game.Domain.Campaign;
 using Game.Domain.Characters;
 using Game.Domain.World;
@@ -91,7 +92,7 @@ namespace Game.Infrastructure
             var legacyDirectory = ResolveLegacySaveDirectory();
             saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory),
                 string.Equals(saveDirectory, legacyDirectory, StringComparison.OrdinalIgnoreCase)
-                    ? null : new FileSaveStore(legacyDirectory), TiledWorldDefinition.ReferenceGenerationId);
+                    ? null : new FileSaveStore(legacyDirectory), SaveSnapshot.StoneAgeBuildingSaveGenerationId);
             settingsStore = UserSettingsStore.CreateDefault();
             var loadedSettings = settingsStore.Load();
             settings = loadedSettings.Settings;
@@ -970,7 +971,7 @@ namespace Game.Infrastructure
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "CompactWorldV1", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "StoneAgeBuildingsV1", "Saves")
                 : configured;
         }
 
@@ -978,7 +979,7 @@ namespace Game.Infrastructure
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_LEGACY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P10", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "CompactWorldV1", "Saves")
                 : configured;
         }
 

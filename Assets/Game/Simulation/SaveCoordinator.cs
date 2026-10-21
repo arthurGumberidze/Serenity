@@ -55,6 +55,7 @@ namespace Game.Simulation
         private readonly MilitaryAttackCommandService militaryAttack;
         private readonly DiagnosticService diagnostics;
         private readonly string expectedWorldGenerationId;
+        private readonly string expectedSaveGenerationId;
         public StableEntityId SessionId { get; private set; }
         public GameClock Clock { get; private set; }
 
@@ -70,7 +71,8 @@ namespace Game.Simulation
             ConnectedWorldService connectedWorldService = null, DomesticService domesticService = null,
             TierManager tierManager = null, MilitaryTrainingService militaryTrainingService = null,
             SettlementFlagCaptureService settlementCaptureService = null,
-            MilitaryAttackCommandService militaryAttackService = null, DiagnosticService diagnosticService = null)
+            MilitaryAttackCommandService militaryAttackService = null, DiagnosticService diagnosticService = null,
+            string requiredSaveGenerationId = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -100,6 +102,7 @@ namespace Game.Simulation
             diagnostics = diagnosticService;
             expectedWorldGenerationId = connectedWorldService?.Layout.GenerationId ??
                 ConnectedWorldContract.GenerationId;
+            expectedSaveGenerationId = requiredSaveGenerationId;
         }
         public SaveSnapshot Capture()
         {
@@ -109,7 +112,8 @@ namespace Game.Simulation
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
                 appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
-                domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign(), diagnostics?.CaptureState());
+                domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign(), diagnostics?.CaptureState(),
+                expectedSaveGenerationId);
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -117,6 +121,10 @@ namespace Game.Simulation
         public void Load(StableEntityId slotId)
         {
             var snapshot = store.Load(slotId);
+            if (!string.IsNullOrEmpty(expectedSaveGenerationId) &&
+                (snapshot.FormatVersion < SaveSnapshot.BuildingConstructionVersion ||
+                 !string.Equals(snapshot.SaveGenerationId, expectedSaveGenerationId, StringComparison.Ordinal)))
+                throw new NotSupportedException("The save generation is incompatible with the active gameplay rules.");
             if (connectedWorld != null && (snapshot.FormatVersion < SaveSnapshot.ConnectedWorldVersion ||
                 snapshot.ConnectedWorld == null ||
                 !string.Equals(snapshot.ConnectedWorld.GenerationId, expectedWorldGenerationId,

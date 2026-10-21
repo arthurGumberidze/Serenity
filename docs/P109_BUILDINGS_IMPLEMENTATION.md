@@ -55,3 +55,52 @@ manual acceptance of the five new functional buildings.
 
 B2 adds canonical construction delivery/buffer/stage state and an isolated new save generation.
 Old save files remain read-only and are not migrated.
+
+## Stage B2 complete
+
+Date: 21 October 2026. Commit scope: canonical construction-site state, shared-registry material
+buffers and snapshot v26.
+
+Implemented:
+
+- `ConstructionPhase` and per-resource required/installed progress on the existing `Building`;
+- stable settlement ownership, stage index/count, work gating and deterministic per-stage cost slices;
+- `InventoryOwnerKind.ConstructionBuffer`, keyed by the building's stable ID, using the existing
+  `ResourceInventoryRegistry` and `ResourceTransferService`;
+- `ConstructionSiteService` transactions for delivery, readiness, stage consumption and restored
+  buffer validation; no resource exists in both installed progress and an inventory;
+- snapshot v26 fields for settlement, phase, stages and material progress, while delivered stock
+  round-trips through the existing production inventory payload;
+- explicit save generation `p109-stone-age-buildings-v1` and normal slot directory
+  `Serenity/P109/StoneAgeBuildingsV1/Saves`; the prior `CompactWorldV1` directory is read-only
+  legacy metadata and is never migrated or overwritten;
+- source-compatible v1-v25 codec handling and legacy building constructors.
+
+Not implemented in B2: physical hauler work orders, cancellation spills, territory/approach
+validation, new building definitions, cooking or production UI. Those belong to B3/C stages.
+
+## B2 verification
+
+Focused/expanded regression command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.Editor.P109BuildingDefinitionTests;Game.Tests.Editor.BuildingFoundationTests;Game.Tests.Editor.ResourceInventoryTests;Game.Tests.Editor.PersistenceTests;Game.Tests.Editor.P108DiagnosticsTests;Game.Tests.Editor.PlayerControlStateTests;Game.Tests.Editor.P102ConnectedWorldTests;Game.Tests.Editor.P103ContextCommandTests;Game.Tests.Editor.P104NaturalResourcesTests;Game.Tests.Editor.P105CharacterProductionTests;Game.Tests.Editor.P106DomesticAndSaveTests;Game.Tests.Editor.P107MilitaryTrainingCaptureTests;Game.Tests.Editor.ProductionAndFarmingTests;Game.Tests.Editor.DynastyAndSuccessionTests;Game.Tests.Editor.HealthAndFamilyTests' -testResults C:\serenity_game\Artifacts\P109\buildings-b2\editmode-save-regression.xml -logFile C:\serenity_game\Artifacts\P109\buildings-b2\editmode-save-regression.log
+```
+
+Result: 149/149 passed. The full EditMode diagnostic discovered 641 tests: 611 passed, 25 skipped
+and five initially failed. Two failures were stale v25 assertions corrected for the new v26 boundary;
+the remaining three are inherited Synty asset-count/shader and P8.2 terrain-scene diagnostics,
+outside B2. The focused 30-test construction suite also passed 30/30.
+
+Windows build command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath C:\serenity_game -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109BuildingsB2/Serenity.exe -logFile C:\serenity_game\Artifacts\P109\buildings-b2\build-final.log
+```
+
+Final exact-source focused rerun: 30/30 passed at
+`Artifacts/P109/buildings-b2/editmode-final.xml`.
+
+Result: succeeded, 0 errors / 27 warnings, GUID `525f7a3748aa4356914f184b450b84f1`,
+source fingerprint `EB936BC5B7CB43109DBB1EC469D51F92C7C1BEEE3C1E0CD187D2597C3F90CEAD`.
+Protected baseline: 44/44 unchanged. B3 is next.
