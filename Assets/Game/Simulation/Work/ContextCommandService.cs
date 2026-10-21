@@ -64,14 +64,21 @@ namespace Game.Simulation.Work
             for (var index = 0; index < ordered.Length; index++)
             {
                 var id = ordered[index];
-                var availability = ContextActionRules.Evaluate(action, target, factsProvider(id));
+                var availability = ContextActionRules.Evaluate(action, target, factsProvider(id), !append);
                 if (!availability.Enabled)
                 {
                     entries.Add(new ContextCommandEntry(id, availability));
                     continue;
                 }
 
-                if (!append) scheduler.TryInterruptForDirectWork(id);
+                if (!append)
+                {
+                    if (action == ContextActionKind.Haul && (!haulSource.HasValue || !haulDestination.HasValue ||
+                        !target.ResourceId.HasValue || !haulQuantity.IsPositive))
+                        throw new InvalidOperationException("Haul context requires canonical source, destination and quantity.");
+                    scheduler.ReplaceWithPlayerCommand(id);
+                    foreach (var previous in work.GetQueue(id)) work.Cancel(previous.Id);
+                }
                 var orderTarget = action == ContextActionKind.Move
                     ? new ContextCommandTarget(target.Kind, moveTargets[index]) : target;
                 var order = CreateOrder(id, action, orderTarget, priority, placement,

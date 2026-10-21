@@ -104,6 +104,7 @@ namespace Game.Presentation.Characters
         public void Configure(Animator targetAnimator, Transform rightHand, Transform leftHand)
         {
             animator = targetAnimator;
+            if (animator != null) animator.applyRootMotion = false;
             rightHandSocket = rightHand;
             leftHandSocket = leftHand;
             CacheAnimatorParameters();
@@ -114,6 +115,9 @@ namespace Game.Presentation.Characters
         {
             if (targetAnimator == null) throw new ArgumentNullException(nameof(targetAnimator));
             animator = targetAnimator;
+            // Navigation owns the root for UMA as well as role prefabs. Imported clips
+            // must never move a visual away from its collider/selection identity.
+            animator.applyRootMotion = false;
             CacheDetailedRenderers();
             CacheAnimatorParameters();
             CacheHumanoidBones();
@@ -277,6 +281,7 @@ namespace Game.Presentation.Characters
         private void Awake()
         {
             if (animator == null) animator = GetComponentInChildren<Animator>(true);
+            if (animator != null) animator.applyRootMotion = false;
             CacheAnimatorParameters();
             CacheHumanoidBones();
             InvalidateAnimatorState();

@@ -61,6 +61,26 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void EnvironmentalValidationReceivesWholeRotatedFootprintAndIsRecheckedOnCommit()
+        {
+            var service = NewService(out var registry, out var occupancy, new BuildingGridBounds(-10, -10, 10, 10));
+            var blocked = false;
+            service.ConfigureEnvironment(cells =>
+            {
+                Assert.That(cells.Count, Is.EqualTo(6));
+                Assert.That(cells, Does.Contain(new GridCoordinate(2, 1)));
+                return !blocked;
+            });
+            Assert.That(service.Evaluate(Shelter, new GridCoordinate(0, 0), BuildingOrientation.East).IsValid, Is.True);
+            blocked = true;
+            Assert.That(service.Evaluate(Shelter, new GridCoordinate(0, 0), BuildingOrientation.East).FailureReason,
+                Is.EqualTo(PlacementFailureReason.TerrainBlocked));
+            Assert.Throws<InvalidOperationException>(() => service.Confirm(Shelter, new GridCoordinate(0, 0), BuildingOrientation.East));
+            Assert.That(registry.Count, Is.Zero);
+            Assert.That(occupancy.OccupiedCellCount, Is.Zero);
+        }
+
+        [Test]
         public void PlannedBuildingCompletesAndRestoresWithSameIdentity()
         {
             var original = Building.CreateNew(Shelter.Id, new GridCoordinate(3, -2, 1), BuildingOrientation.West);

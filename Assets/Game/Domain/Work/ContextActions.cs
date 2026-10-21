@@ -135,7 +135,7 @@ namespace Game.Domain.Work
     public static class ContextActionRules
     {
         public static ContextActionAvailability Evaluate(ContextActionKind action, ContextCommandTarget target,
-            ContextActionFacts facts)
+            ContextActionFacts facts, bool replaceExisting = false)
         {
             if (!SupportsTarget(action, target))
                 return Disabled(ContextUnavailableReason.WrongTargetType);
@@ -151,6 +151,7 @@ namespace Game.Domain.Work
             if (!facts.ResourceAvailable) return Disabled(ContextUnavailableReason.NoResource);
             if (!facts.CapacityAvailable) return Disabled(ContextUnavailableReason.NoCapacity);
             if (!facts.CooldownReady) return Disabled(ContextUnavailableReason.Cooldown);
+            if (replaceExisting) return new ContextActionAvailability(true, ContextUnavailableReason.None);
             if (facts.CriticalNeed)
                 return new ContextActionAvailability(true, ContextUnavailableReason.CriticalNeed, true);
             if (facts.Busy && !facts.Interruptible)

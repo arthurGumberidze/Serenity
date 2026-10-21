@@ -12,6 +12,7 @@ public static class P109StarterNatureAuthoring
     public static void BuildPlayable() => Build("Builds/P109SyntyPlayable/Serenity.exe");
     public static void BuildWorksite() => Build("Builds/P109Worksite/Serenity.exe");
     public static void BuildCompactWorld() => Build("Builds/P109CompactWorld/Serenity.exe");
+    public static void BuildScreenshotFeedback() => Build("Builds/P109ScreenshotFeedback/Serenity.exe");
     private static void Build(string outputPath)
     {
         if (Application.unityVersion != "6000.6.4f1") throw new InvalidOperationException("Pinned Editor required");

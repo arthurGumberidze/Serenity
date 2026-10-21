@@ -133,7 +133,10 @@ namespace Game.Presentation.Buildings
 
         public Building ConfirmPlacement()
         {
-            if (!IsActive || !IsPreviewValid) return null;
+            if (!IsActive) return null;
+            // Recheck blockers and the complete footprint at commit time too.
+            TryMovePreviewToWorldPoint(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation));
+            if (!IsPreviewValid) return null;
             Building building;
             if (construction != null)
             {

@@ -93,6 +93,13 @@ namespace Game.Infrastructure.Editor
             Debug.Log("P109_WORK_ANIMATIONS_REPAIRED");
         }
 
+        public static void RepairWorkRootTransforms()
+        {
+            foreach (var path in AnimationPaths) ConfigureHumanoidImporter(path, true);
+            AssetDatabase.SaveAssets();
+            Debug.Log("P109_WORK_ROOT_TRANSFORMS_REPAIRED");
+        }
+
         public static void InspectImportedAssets()
         {
             foreach (var path in ModelPaths.Concat(BaseModelPaths))
@@ -179,9 +186,22 @@ namespace Game.Infrastructure.Editor
                     clip.loopTime = LoopingClips.Contains(clip.name.Substring(clip.name.LastIndexOf('|') + 1)) ||
                         clip.name.EndsWith("Sword_Heavy_Combo", StringComparison.Ordinal);
                     clip.loopPose = clip.loopTime;
-                    clip.keepOriginalPositionXZ = true;
-                    clip.keepOriginalPositionY = true;
-                    clip.keepOriginalOrientation = true;
+                    var name = clip.name.Substring(clip.name.LastIndexOf('|') + 1);
+                    if (LoopingClips.Contains(name) || name == "Sword_Heavy_Combo" ||
+                        name == "OverhandThrow" || name == "LayToIdle")
+                    {
+                        // Quaternius' authored root faces the opposite axis to Hoda/UMA.
+                        // Align by humanoid body, and bake locomotion onto the stationary
+                        // root owned by navigation. Feet are the vertical reference.
+                        clip.keepOriginalOrientation = false;
+                        clip.rotationOffset = 0f;
+                        clip.lockRootRotation = true;
+                        clip.keepOriginalPositionXZ = false;
+                        clip.lockRootPositionXZ = true;
+                        clip.keepOriginalPositionY = false;
+                        clip.heightFromFeet = true;
+                        clip.lockRootHeightY = true;
+                    }
                 }
                 importer.clipAnimations = clips;
             }

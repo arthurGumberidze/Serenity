@@ -166,6 +166,23 @@ namespace Game.Simulation.AI
             return true;
         }
 
+        public bool ReplaceWithPlayerCommand(StableEntityId characterId)
+        {
+            if (!byId.TryGetValue(characterId, out var entry) ||
+                externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId)) return false;
+            // Cancellation releases claims and drops an in-flight load before orders
+            // are retired. No resource or unfinished construction work is fabricated.
+            entry.Action?.Cancel();
+            entry.Action = null;
+            entry.Movement.Stop();
+            entry.Agent.UpdatePosition(entry.Movement.CurrentPosition);
+            world.HaulJobs.DropTransportLoad(characterId, entry.Agent.Position);
+            if (work != null) foreach (var job in work.GetQueue(characterId)) work.Cancel(job.Id);
+            entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+            entry.NextThinkTicks = calendarTicks;
+            return true;
+        }
+
         public void Register(Character character, Tier1AiAgentState agent, ITier1MovementDriver movement)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));
@@ -330,6 +347,15 @@ namespace Game.Simulation.AI
             // A restored or interrupted transport is not a personal inventory. Without an
             // active haul claim its contents return to the resident's current ground position.
             if (entry.Action == null) world.HaulJobs.DropTransportLoad(entry.Agent.CharacterId, entry.Agent.Position);
+
+            if (work != null && work.TryGetAssigned(entry.Agent.CharacterId, out var direct) &&
+                direct.Priority == WorkPriority.Immediate)
+            {
+                if (entry.Action != null && IsManual(entry.Action.Kind)) return;
+                entry.Action?.Cancel(); entry.Action = null;
+                StartManual(entry, direct);
+                return;
+            }
 
             // U11 precedence: a carrying phase is protected above; otherwise critical Energy wins.
             if (entry.Agent.Needs.Energy <= CriticalRestEnergy)

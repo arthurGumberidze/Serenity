@@ -90,8 +90,18 @@ namespace Game.Tests.PlayMode
             CompleteTechnology(root, "shelter_construction");
             var controller = root.BuildingPlacementController;
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
-            Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(15f,
-                root.WorldHeight.SampleHeight(15f, 15f), 15f)), Is.True);
+            var found = false;
+            // A positive construction test must use an actually clear footprint. The
+            // original hard-coded point is no longer a valid placement on this map.
+            for (var z = 12; z <= 48 && !found; z += 3)
+            for (var x = 12; x <= 48 && !found; x += 3)
+            {
+                var point = new Vector3(x, root.WorldHeight.SampleHeight(x, z), z);
+                if (!Game.Presentation.AI.ReachableNavMeshPoint.TryFind(root.DemoPresenters[0].transform.position,
+                        point, out var reachable) || Vector3.Distance(point, reachable) > 1f) continue;
+                found = controller.TryMovePreviewToWorldPoint(point);
+            }
+            Assert.That(found, Is.True, "No clear, reachable construction footprint found near the camp.");
             var building = controller.ConfirmPlacement();
             Assert.That(building.IsOperational, Is.False);
             Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.True);

@@ -20,7 +20,8 @@ namespace Game.Infrastructure
         private Material otherMaterial;
         private Material fishMaterial;
         private Material rippleMaterial;
-        private Material fishPatternMaterial;
+        private Mesh fishBodyMesh;
+        private Mesh fishTailMesh;
         private float nextRefresh;
         private readonly List<FishSchool> schools = new();
         private float fishTime;
@@ -28,6 +29,7 @@ namespace Game.Infrastructure
         {
             public Transform Parent;
             public Transform[] Fish;
+            public Transform[] Tails;
             public Vector3 Center;
             public float Radius;
         }
@@ -40,16 +42,15 @@ namespace Game.Infrastructure
             otherMaterial = NewMaterial(new Color(0.5f, 0.47f, 0.35f));
             fishMaterial = NewMaterial(new Color(0.52f, 0.73f, 0.69f));
             rippleMaterial = NewMaterial(new Color(0.48f, 0.72f, 0.74f));
-            var art = Resources.Load<Game.Presentation.Environment.CompactWorldArtCatalog>("World/CompactWorldArt");
-            if (art?.FishPattern != null)
-            {
-                fishPatternMaterial = NewMaterial(new Color(0.36f, 0.62f, 0.6f));
-                fishPatternMaterial.SetTexture("_BaseMap", art.FishPattern);
-                fishPatternMaterial.SetFloat("_AlphaClip", 1);
-                fishPatternMaterial.SetFloat("_Cutoff", 0.35f);
-                fishPatternMaterial.SetFloat("_Cull", 0);
-                fishPatternMaterial.EnableKeyword("_ALPHATEST_ON");
-            }
+            // The imported FX texture is a particle mask, not a finished fish sprite.
+            // Use shared, small 3D meshes rather than overlapping horizontal mask quads.
+            fishBodyMesh = CreateFishBody();
+            fishTailMesh = new Mesh { name = "Fish tail" };
+            fishTailMesh.vertices = new[] { Vector3.zero, new Vector3(-0.17f, 0, -0.22f),
+                new Vector3(0.17f, 0, -0.22f), new Vector3(0, 0.055f, -0.17f) };
+            fishTailMesh.triangles = new[] { 0, 1, 3, 0, 3, 2, 0, 2, 1, 1, 2, 3 };
+            fishTailMesh.RecalculateNormals();
+            fishTailMesh.RecalculateBounds();
             foreach (var view in FindObjectsByType<WorldResourcePilePresenter>(FindObjectsInactive.Include,
                          FindObjectsSortMode.None))
                 if (root.WorldPiles.All.Any(x => x.Id == view.PileId)) views[view.PileId] = view;
@@ -58,12 +59,13 @@ namespace Game.Infrastructure
         public void CreateFish(Transform parent, Vector3 center, float radius = 2.8f)
         {
             var fish = new Transform[10];
+            var tails = new Transform[fish.Length];
             for (var i = 0; i < fish.Length; i++)
             {
                 var body = MakeFish(parent);
                 body.name = "Swimming fish " + i;
-                body.localPosition = new Vector3(Mathf.Sin(i) * radius, 0.02f, Mathf.Cos(i) * radius);
                 fish[i] = body;
+                tails[i] = body.Find("Tail");
             }
             var ripple = new GameObject("Fishing circle").AddComponent<LineRenderer>();
             ripple.transform.SetParent(parent, false);
@@ -79,23 +81,68 @@ namespace Game.Infrastructure
                 ripple.SetPosition(i, new Vector3(Mathf.Sin(angle) * radius * 1.15f, 0.02f,
                     Mathf.Cos(angle) * radius * 1.15f));
             }
-            schools.Add(new FishSchool { Parent = parent, Fish = fish, Center = center, Radius = radius });
+            var school = new FishSchool { Parent = parent, Fish = fish, Tails = tails, Center = center, Radius = radius };
+            schools.Add(school);
+            RefreshFish(school);
         }
 
         private Transform MakeFish(Transform parent)
         {
-            if (fishPatternMaterial != null)
+            var holder = new GameObject("Fish").transform;
+            holder.SetParent(parent, false);
+            MeshPart(holder, "Body", fishBodyMesh);
+            MeshPart(holder, "Tail", fishTailMesh).localPosition = new Vector3(0, 0, -0.28f);
+            return holder;
+        }
+
+        private Transform MeshPart(Transform parent, string name, Mesh mesh)
+        {
+            var part = new GameObject(name);
+            part.transform.SetParent(parent, false);
+            part.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = part.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = fishMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return part.transform;
+        }
+
+        private static Mesh CreateFishBody()
+        {
+            const int sides = 8;
+            var vertices = new Vector3[sides * 3];
+            var triangles = new List<int>();
+            for (var ring = 0; ring < 3; ring++)
+            for (var side = 0; side < sides; side++)
             {
-                var holder = new GameObject("Synty fish").transform;
-                holder.SetParent(parent, false);
-                var pattern = Shape(holder, PrimitiveType.Quad, new Vector3(1.1f, 0.8f, 1), fishPatternMaterial);
-                pattern.localRotation = Quaternion.Euler(90, -90, 0);
-                return holder;
+                var angle = side * Mathf.PI * 2 / sides;
+                var width = ring == 1 ? 0.15f : 0.025f;
+                vertices[ring * sides + side] = new Vector3(Mathf.Cos(angle) * width,
+                    Mathf.Sin(angle) * width * 0.65f, ring == 0 ? 0.32f : ring == 1 ? 0.06f : -0.28f);
+                if (ring == 2) continue;
+                var a = ring * sides + side; var b = ring * sides + (side + 1) % sides;
+                triangles.AddRange(new[] { a, a + sides, b, b, a + sides, b + sides });
             }
-            var body = Shape(parent, PrimitiveType.Sphere, new Vector3(0.22f, 0.15f, 0.65f), fishMaterial);
-            var tail = Shape(body, PrimitiveType.Cube, new Vector3(1.7f, 0.5f, 0.2f), fishMaterial);
-            tail.localPosition = new Vector3(0f, 0f, -0.52f);
-            return body;
+            for (var side = 1; side < sides - 1; side++)
+                triangles.AddRange(new[] { 0, side, side + 1, sides * 2, sides * 2 + side + 1, sides * 2 + side });
+            var mesh = new Mesh { name = "Shared low-poly fish body", vertices = vertices, triangles = triangles.ToArray() };
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private void RefreshFish(FishSchool school)
+        {
+            for (var i = 0; i < school.Fish.Length; i++)
+            {
+                // Fixed phase separation prevents different speeds bunching all fish together.
+                var phase = fishTime * 0.3f + i * Mathf.PI * 2 / school.Fish.Length;
+                var jumpPhase = Mathf.Repeat(fishTime + i * 3.1f, 32f);
+                var jump = jumpPhase < 0.8f ? Mathf.Sin(jumpPhase / 0.8f * Mathf.PI) * 0.35f : 0f;
+                var radius = school.Radius * (i % 2 == 0 ? 0.64f : 0.9f);
+                school.Fish[i].position = school.Center + new Vector3(Mathf.Sin(phase) * radius,
+                    0.04f + jump, Mathf.Cos(phase) * radius);
+                school.Fish[i].rotation = Quaternion.Euler(-jump * 30f, phase * Mathf.Rad2Deg + 90f, 0f);
+                school.Tails[i].localRotation = Quaternion.Euler(0, Mathf.Sin(fishTime * 8f + i) * 20f, 0);
+            }
         }
 
         private void Update()
@@ -106,21 +153,31 @@ namespace Game.Infrastructure
             foreach (var school in schools)
             {
                 if (!school.Parent.gameObject.activeInHierarchy) continue;
-                for (var i = 0; i < school.Fish.Length; i++)
-                {
-                    var phase = fishTime * (0.3f + i * 0.015f) + i * 1.7f;
-                    var jumpPhase = Mathf.Repeat(fishTime + i * 3.1f, 16f);
-                    var jump = jumpPhase < 0.8f ? Mathf.Sin(jumpPhase / 0.8f * Mathf.PI) * 0.5f : 0f;
-                    var radius = school.Radius * (0.45f + i * 0.05f);
-                    school.Fish[i].position = school.Center + new Vector3(Mathf.Sin(phase) * radius,
-                        0.02f + jump, Mathf.Cos(phase) * radius);
-                    school.Fish[i].rotation = Quaternion.Euler(-jump * 30f, phase * Mathf.Rad2Deg + 90f, 0f);
-                }
+                RefreshFish(school);
             }
             if (Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + 0.25f;
             RefreshPiles();
             RefreshCarriedLoads();
+        }
+
+        private void LateUpdate()
+        {
+            if (root?.AiRuntime == null) return;
+            foreach (var movement in root.AiRuntime.Movements)
+            {
+                if (!carriedViews.TryGetValue(movement.CharacterId, out var view) || view == null || !view.activeSelf) continue;
+                var presenter = movement.Presenter;
+                var animator = presenter.Animator;
+                if (animator == null || !animator.isHuman) continue;
+                var left = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+                var right = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                if (left == null || right == null) continue;
+                view.transform.position = (left.position + right.position) * 0.5f + Vector3.up * 0.07f;
+                var across = right.position - left.position;
+                if (across.sqrMagnitude > 0.001f)
+                    view.transform.rotation = Quaternion.FromToRotation(Vector3.up, across.normalized);
+            }
         }
 
         private void RefreshCarriedLoads()
@@ -181,7 +238,7 @@ namespace Game.Infrastructure
                             wood ? new Vector3(0.28f, 0.85f, 0.28f) : Vector3.one * 0.35f, material);
                         part.localPosition = new Vector3((i % 3 - 1) * 0.32f, i / 3 * 0.25f, 0f);
                         if (wood) part.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                        if (isFish) part.localRotation = Quaternion.Euler(0f, i * 37f, fishPatternMaterial == null ? 90f : 0f);
+                        if (isFish) part.localRotation = Quaternion.Euler(0f, i * 37f, 90f);
                     }
                     var box = holder.AddComponent<BoxCollider>();
                     box.isTrigger = true;
@@ -222,6 +279,11 @@ namespace Game.Infrastructure
             return value.transform;
         }
 
-        private void OnDestroy() { foreach (var material in materials) if (material != null) Destroy(material); }
+        private void OnDestroy()
+        {
+            foreach (var material in materials) if (material != null) Destroy(material);
+            if (fishBodyMesh != null) Destroy(fishBodyMesh);
+            if (fishTailMesh != null) Destroy(fishTailMesh);
+        }
     }
 }

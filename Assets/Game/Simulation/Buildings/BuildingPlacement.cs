@@ -61,6 +61,10 @@ namespace Game.Simulation.Buildings
         private readonly BuildingRegistry registry;
         private readonly BuildingOccupancyGrid occupancy;
         private readonly BuildingGridBounds bounds;
+        private Func<IReadOnlyList<GridCoordinate>, bool> environmentAllows;
+
+        public void ConfigureEnvironment(Func<IReadOnlyList<GridCoordinate>, bool> allows) =>
+            environmentAllows = allows ?? throw new ArgumentNullException(nameof(allows));
 
         public BuildingPlacementService(BuildingRegistry registry, BuildingOccupancyGrid occupancy, BuildingGridBounds bounds)
         {
@@ -81,6 +85,8 @@ namespace Game.Simulation.Buildings
             if (!definition.AllowsOverlap)
                 foreach (var cell in cells)
                     if (occupancy.IsOccupied(cell)) return new PlacementEvaluation(false, PlacementFailureReason.Occupied, cells);
+            if (environmentAllows != null && !environmentAllows(cells))
+                return new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked, cells);
             return new PlacementEvaluation(true, PlacementFailureReason.None, cells);
         }
 

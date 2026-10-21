@@ -20,6 +20,23 @@ namespace Game.Tests
     public sealed class P103ContextCommandTests
     {
         [Test]
+        public void CharacterPickingAddsFeetWithoutLosingBodyOrDuplicatingOnRebind()
+        {
+            var actor = new UnityEngine.GameObject("Picking test actor");
+            try
+            {
+                var proxy = actor.AddComponent<Game.Presentation.Interaction.StableWorldHitProxy>();
+                var id = StableEntityId.NewId();
+                proxy.Bind(id, ContextTargetKind.Character);
+                proxy.Bind(id, ContextTargetKind.Character);
+                Assert.That(actor.GetComponent<UnityEngine.BoxCollider>(), Is.Not.Null);
+                Assert.That(actor.GetComponentsInChildren<UnityEngine.Collider>().Length, Is.EqualTo(2));
+                Assert.That(actor.transform.Find("Feet selection volume").GetComponent<UnityEngine.BoxCollider>().isTrigger, Is.True);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(actor); }
+        }
+
+        [Test]
         public void EveryRequiredContextActionHasAValidTargetAndIsVisibleToRules()
         {
             var entity = StableEntityId.NewId();
@@ -144,6 +161,32 @@ namespace Game.Tests
             hungry.Scheduler.Advance(new GameTimeAdvance(TimeSpan.FromSeconds(2), TimeSpan.Zero));
             Assert.That(hungry.Agent.CurrentAction, Is.EqualTo(UtilityActionKind.Eat));
             Assert.That(hungry.Scheduler.CanInterruptForDirectWork(hungry.Character.Id), Is.False);
+        }
+
+        [Test]
+        public void ReplacementCancelsOldQueueAndOverridesCriticalNeedWhileShiftPreservesOrders()
+        {
+            var fixture = CreateAiFixture(new Tier1Needs(0.95d, 1d));
+            fixture.Scheduler.Advance(new GameTimeAdvance(TimeSpan.FromSeconds(2), TimeSpan.Zero));
+            var commands = new ContextCommandService(fixture.Work, fixture.Scheduler);
+            var old = fixture.Work.CreateMoveJob(fixture.Character.Id, new WorldPosition(1, 0, 1), WorkPriority.High,
+                queuePlacement: WorkQueuePlacement.Tail);
+            var ids = new[] { fixture.Character.Id };
+            var target = new ContextCommandTarget(ContextTargetKind.Ground, new WorldPosition(12, 0, 12));
+            var replacement = commands.Issue(ids, ContextActionKind.Move, target, false,
+                _ => new ContextActionFacts(busy: true, criticalNeed: true, interruptible: false));
+            Assert.That(old.Status, Is.EqualTo(WorkJobStatus.Cancelled));
+            Assert.That(replacement.Entries.Single().Availability.Delayed, Is.False);
+            Assert.That(fixture.Work.GetQueue(fixture.Character.Id).Count, Is.EqualTo(1));
+            fixture.Scheduler.Advance(new GameTimeAdvance(TimeSpan.FromSeconds(2), TimeSpan.Zero));
+            Assert.That(fixture.Movement.State, Is.EqualTo(MovementState.Moving));
+            Assert.That(replacement.Orders.Single().Status, Is.EqualTo(WorkJobStatus.Active));
+            commands.Issue(ids, ContextActionKind.Move,
+                new ContextCommandTarget(ContextTargetKind.Ground, new WorldPosition(24, 0, 24)), true, _ => Ready());
+            Assert.That(fixture.Work.GetQueue(fixture.Character.Id).Count, Is.EqualTo(2));
+            Assert.That(replacement.Orders.Single().Status, Is.EqualTo(WorkJobStatus.Active));
+            commands.Issue(ids, ContextActionKind.Move, target, false, _ => new ContextActionFacts(pathAvailable: false));
+            Assert.That(fixture.Work.GetQueue(fixture.Character.Id).Count, Is.EqualTo(2), "Invalid commands must not cancel work.");
         }
 
         [Test]

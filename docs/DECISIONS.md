@@ -971,3 +971,35 @@ The five proposed external assets were researched, not acquired. Environment art
 P9.2/P9.3 trees retain their authored X/Z, rotation and stable references, but their runtime Y is projected once onto the active tiled height sampler. P9.3 snapshots authored tree positions before projection so its deterministic scene-layout hash still audits the source composition rather than the disposable runtime view. The tree LOD controller hides legacy trees whenever their tiled ground is not rendered, including strategic mode; on return, the same tree objects reappear. No camera-dependent repositioning or per-tree Update loop is introduced.
 
 The tactical character cull radius must exceed the 160 m RTS zoom and its diagonal view; it is 384 m. Reapplying an unchanged crowd-detail tier no longer restarts an active NavMesh path. Context-menu group Move uses deterministic separated formation destinations while retaining each member's canonical WorkOrder and existing critical-need/protected-phase delay rules. The new `map_serenity` code reveals every canonical discovery cell through `ConnectedWorldService`, is idempotent, participates in diagnostic rollback/cheat evidence, and does not change save generation or migrate old P10 files. P10.9 remains PARTIAL; performance profiling remains deferred.
+
+## D-159 Screenshot feedback command authority and presentation fixes (2026-10-21)
+
+The user explicitly overrides the earlier critical-need/protected-haul delay for an ordinary
+RMB work command: replace the current action and assigned queue, release claims and drop
+physical cargo without loss. Immediate work is evaluated before needs; Shift appends and
+keeps ordinary scheduling. Disabled commands do not cancel work. Health eligibility and
+external control ownership remain guards; this is not a second simulation or inventory.
+Queued/active work still persists through the existing WorkManager and snapshot schema.
+
+Navigation owns every character root, including UMA. Used Quaternius action clips are
+imported with body-based orientation, feet-based vertical reference and baked root transforms;
+the source FBX root had caused Carry to face backwards. A shared presentation loop positions
+cargo between the animated hands. Foot picking is a nonblocking trigger; lightweight
+navigation updates elevation instead of keeping a stale Y on slopes.
+
+P10.2 primitive water/mountains and their navigation volumes do not coexist with the compact
+tiled-world authority. Their original scene assets remain unchanged. BuildingPlacementService
+accepts an injected full-footprint environmental validator, which is also applied at commit;
+Unity terrain/physics queries remain in Presentation rather than pure simulation code.
+The foundation height tolerance is serialized configuration. No Terrain flattening is added.
+
+Fish are shared project-owned 3D meshes with phase-separated movement and tail animation,
+not the imported particle mask on horizontal quads. The 44 sources, stock quantities,
+shore work positions and ground catch outputs retain existing stable IDs and ownership.
+
+The 25-building prompt is an audit/architecture approval gate, not permission to implement
+all buildings at once. The proposal extends existing definitions, construction, production,
+hauling, domestic and save systems; Campfire/cooking belong to the first agreed slice.
+No new asset dependency, download or import occurs. The user takes over manual Player QA;
+we provide automated evidence, a separate build and a reproducible checklist. Old saves
+remain untouched; no push or P10.10/performance work is authorized by this request.

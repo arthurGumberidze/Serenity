@@ -304,6 +304,16 @@ namespace Game.Infrastructure
             InhabitableRegion?.ValidateConfiguration();
             RealisticGameplayRegion = FindAnyObjectByType<P92RealisticGameplayRegion>();
             RealisticGameplayRegion?.ValidateConfiguration();
+            // P10.2 authored a different map: its water cylinders, mountain capsules and
+            // navigation exclusions must not survive alongside the new Terrain authority.
+            var legacyWorld = FindAnyObjectByType<P102ConnectedWorldPresentation>();
+            if (legacyWorld != null)
+            {
+                foreach (var water in legacyWorld.InlandWater) if (water != null) water.gameObject.SetActive(false);
+                foreach (var mountain in legacyWorld.MountainLandmarks) if (mountain != null) mountain.gameObject.SetActive(false);
+                foreach (var volume in legacyWorld.GetComponentsInChildren<NavMeshModifierVolume>(true))
+                    volume.enabled = false;
+            }
             TiledWorld = gameObject.AddComponent<TiledTerrainWorld>();
             TiledWorld.Initialize(WorldDefinition, WorldHeight, RealisticGameplayRegion?.Terrain);
             if (RealisticGameplayRegion?.WaterRenderer != null)
@@ -631,6 +641,8 @@ namespace Game.Infrastructure
 
             TiledWorld.ConfigureStreaming(CameraStreamingFocus, StreamingPhysicalPositions,
                 StreamingNavigationRoutes);
+            BuildingPlacementService.ConfigureEnvironment(cells =>
+                WorldPlacementSurface.AllowsFootprint(cells, buildingGridSize, buildingGridOrigin));
 
             if (SessionLaunchState.TryConsumeLoad(out var startupSlot))
             {

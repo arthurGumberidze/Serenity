@@ -472,7 +472,7 @@ namespace Game.Presentation.UI
                     : state.Reason == ContextUnavailableReason.None
                         ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
-            AddMuted(contextMenu, "Обычный выбор ставит приказ первым. Shift + выбор добавляет его в хвост.");
+            AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
             PositionContextMenu(screenPosition);
             contextMenu.style.display = DisplayStyle.Flex;
         }
@@ -547,7 +547,7 @@ namespace Game.Presentation.UI
         private ContextActionAvailability EvaluateForSelection(ContextActionKind action, ContextCommandTarget target)
         {
             var states = context.Selection.SelectedCharacterIds
-                .Select(id => ContextActionRules.Evaluate(action, target, BuildContextFacts(id, action, target)))
+                .Select(id => ContextActionRules.Evaluate(action, target, BuildContextFacts(id, action, target), true))
                 .ToArray();
             var ready = states.FirstOrDefault(x => x.Enabled && !x.Delayed);
             if (ready.Enabled) return ready;

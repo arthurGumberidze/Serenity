@@ -125,6 +125,29 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ExplicitPlayerReplacementDropsProtectedTransportAndReleasesItsClaimExactlyOnce()
+        {
+            var fixture = CreateFixture(1, 8, 40, thinkBatchSize: 1);
+            var legacy = fixture.CharacterInventory(0);
+            fixture.Inventories.Remove(legacy.Owner, legacy);
+            var id = fixture.Characters[0].Id;
+            var cargo = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, id), fixture.Resources, 4);
+            fixture.Inventories.Add(cargo);
+            StartAndPickup(fixture, 0);
+            Assert.That(cargo.TotalUnits, Is.EqualTo(4));
+            Assert.That(fixture.Claims.Count, Is.EqualTo(1));
+            Assert.That(fixture.Scheduler.CanInterruptForDirectWork(id), Is.False);
+            Assert.That(fixture.Scheduler.ReplaceWithPlayerCommand(id), Is.True);
+            Assert.That(cargo.TotalUnits, Is.Zero);
+            Assert.That(fixture.Claims.Count, Is.Zero);
+            Assert.That(fixture.TotalWood(), Is.EqualTo(8));
+            Assert.That(fixture.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.WorldPile)
+                .Sum(x => x.TotalUnits), Is.EqualTo(8));
+            Assert.That(fixture.Scheduler.ReplaceWithPlayerCommand(id), Is.True);
+            Assert.That(fixture.TotalWood(), Is.EqualTo(8), "Repeated cancellation cannot duplicate a dropped load.");
+        }
+
+        [Test]
         public void CancelBeforePickupLeavesSourceAndReleasesClaim()
         {
             var fixture = CreateFixture(1, 8, 40, thinkBatchSize: 1);

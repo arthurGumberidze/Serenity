@@ -46,6 +46,23 @@ namespace Game.Presentation.Interaction
 
         private void EnsureCollider()
         {
+            EnsureBodyCollider();
+            if (TargetKind == ContextTargetKind.Character && transform.Find("Feet selection volume") == null)
+            {
+                // The narrow body capsule misses an extended foot during a stride.
+                // This trigger is for picking only; it does not affect pathfinding.
+                var feet = new GameObject("Feet selection volume");
+                feet.layer = gameObject.layer;
+                feet.transform.SetParent(transform, false);
+                var footCollider = feet.AddComponent<BoxCollider>();
+                footCollider.isTrigger = true;
+                footCollider.center = new Vector3(0, 0.2f, 0);
+                footCollider.size = new Vector3(0.95f, 0.4f, 1.25f);
+            }
+        }
+
+        private void EnsureBodyCollider()
+        {
             if (GetComponentInChildren<Collider>(true) != null) return;
             var renderers = GetComponentsInChildren<Renderer>(true);
             var bounds = new Bounds(transform.position + Vector3.up, new Vector3(1.2f, 2f, 1.2f));

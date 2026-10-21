@@ -252,7 +252,11 @@ namespace Game.Presentation.AI
             var direction = flatOffset.normalized;
             var distance = Math.Min(lightweightSpeed * unscaledDeltaTime,
                 Math.Max(0f, flatOffset.magnitude - (finalCorner ? requestedStoppingDistance : 0f)));
-            presenter.transform.position = position + direction * distance;
+            var next = position + direction * distance;
+            // Flat-only integration retained the previous tile's elevation and buried
+            // lightweight residents on slopes. Follow the actual navigation surface.
+            if (NavMesh.SamplePosition(next, out var surface, 2f, NavMesh.AllAreas)) next.y = surface.position.y;
+            presenter.transform.position = next;
             presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
                 Quaternion.LookRotation(direction, Vector3.up), 540f * unscaledDeltaTime);
             presenter.SetMovementSpeed(lightweightSpeed);

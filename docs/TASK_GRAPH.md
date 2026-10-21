@@ -2,6 +2,17 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 screenshot-feedback slice (2026-10-21): PARTIAL pending
+user-owned visual acceptance. Six visual/interaction defects and normal-RMB priority
+addressed; final EditMode 76/76. Expanded PlayMode 15/16 followed by construction fixture
+correction and focused 1/1 pass. Separate Windows build succeeded: 0 errors / 53 warnings,
+GUID ac1af2b6526f4451ae7dd2d1b1822398. Audit A and proposed architecture/task graph
+for the 25-building request are delivered in `P109_STONE_AGE_BUILDINGS_PLAN.md`.
+Stages B–F remain proposed, not executed: user approval is the explicit gate in the
+attached prompt. Cooking/campfire belong to that first approved functional slice.
+Manual QA is now performed by the user; the historical firewall wait below is obsolete.
+No new asset import, additional chats, remote push or P10.10 work in this slice.
+
 P10.9 compact-world/content slice (2026-10-21): PARTIAL pending final acceptance.
 User-approved 1 km square, original geographic scheme, multiple fish schools per lake,
 shore output piles and reviewed local art integration are implemented. No vendor game

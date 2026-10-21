@@ -1,5 +1,29 @@
 # NEXT_TASK.md
 
+## Current scope — screenshot feedback, 2026-10-21
+
+The latest user correction selects ONLY `C:/Users/Lenovo/Desktop/Задачи и промт.txt`
+and the six distinct screenshots; ignore duplicate pasted prompts. Fix the screenshot
+defects and make normal RMB replace previous work. The document's 25-building system
+explicitly requires audit/architecture/task-plan approval before large implementation.
+That audit is in `P109_STONE_AGE_BUILDINGS_PLAN.md`; do not implement all 25 or kitchen
+production without the requested agreement. No new asset import is needed for this slice.
+
+The user now performs manual Player checks themselves. Do not resume computer-use QA
+or ask them to dismiss the old firewall prompt. Provide the separate executable and
+the checklist in `P109_SCREENSHOT_FEEDBACK_HANDOFF.md` instead. Automated tests/builds
+remain mandatory. Old saves and the five pre-existing dirty material files are protected.
+P10.9 remains the only active task; no P10.10, benchmark, new chats or push.
+
+Implemented: legacy primitive suppression, full-footprint obstacle/terrain placement,
+Humanoid work-root normalization, hand-attached cargo, lightweight ground height,
+foot picking, separated 3D fish, and replacing RMB with safe cargo drop/queue cancellation.
+Current evidence: final EditMode 76/76; expanded PlayMode 15/16, then corrected placement
+fixture and construction rerun 1/1. Build `Builds/P109ScreenshotFeedback/Serenity.exe`
+succeeded (0 errors / 53 warnings; GUID ac1af2b6526f4451ae7dd2d1b1822398).
+Next unblocked handoff: user's visual acceptance and agreement on building stages B/C.
+Historical records below are superseded where they conflict with this section.
+
 Active user override (2026-10-21, compact world): import and integrate the locally supplied
 asset packages after conflict/code review; first implement multiple fish schools in EVERY lake,
 shore-side fish output piles using existing priority/capacity-aware hauling, and change the
@@ -8,9 +32,9 @@ Preserve old saves without migration. Audit source archives and shared Synty GUI
 Prepare a follow-up integration plan distinguishing imported art from working game mechanics.
 This supersedes the analysis-only/new-import restriction and 12 km footprint below.
 P10.9 remains the sole active task; no P10.10 or deferred performance benchmark.
-Implementation/import and separate Windows build are complete; next unblocked work is
-native acceptance in `Builds/P109CompactWorld/Serenity.exe` after the user dismisses the
-Windows firewall request. Use only `Artifacts/P109/compact-world/native-saves` for QA.
+Implementation/import and separate Windows build are complete. The user dismissed the
+Windows firewall request and subsequently chose to perform all manual acceptance themselves.
+The newer screenshot-feedback build/checklist above supersedes this older acceptance route.
 Final checks: EditMode 50/50; expanded PlayMode 13/14, then final bank correction and
 focused all-banks/physical-fishing PlayMode 2/2. Do not repeat imports or overwrite old saves.
 Read `P109_COMPACT_WORLD_HANDOFF.md` for the remaining native checks and staged art roadmap.

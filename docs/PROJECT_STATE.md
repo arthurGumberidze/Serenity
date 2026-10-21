@@ -1,5 +1,31 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-21 screenshot fixes and building audit
+
+Only the latest desktop text file and six distinct screenshots are authoritative.
+Normal RMB now cancels the previous assigned queue and current work, safely dropping
+in-flight cargo; Shift retains append semantics. Direct immediate orders precede needs.
+The Quaternius Carry clip faced backwards (measured forward dot −0.997); used work clips
+now align by humanoid body, bake root transforms and use feet as vertical reference.
+UMA/role animators cannot own navigation root motion. Cargo follows the animated hands.
+Lightweight movement samples navigation elevation; foot triggers cover selection near feet.
+The legacy P10.2 water cylinders/mountain capsules/navigation exclusions are disabled before
+tiled terrain initializes. Placement validates all footprint cells/corners, height variation
+and obstacle colliders, and revalidates on confirmation. Fish use shared 3D body/tail meshes
+and phase-separated orbits instead of flat FX masks. No canonical resource schema changed.
+
+Audit and proposed 25-building architecture/stages: `P109_STONE_AGE_BUILDINGS_PLAN.md`.
+Campfire definitions, cooking and new building types are not implemented in this bug-fix
+slice: the supplied prompt requires agreement before that larger implementation.
+Final EditMode: 76/76. Expanded PlayMode: 15/16; construction fixture now searches an
+actually free reachable footprint, and its rerun passes 1/1. Separate Windows build
+`Builds/P109ScreenshotFeedback/Serenity.exe` succeeded, 0 errors / 53 warnings,
+GUID ac1af2b6526f4451ae7dd2d1b1822398. Body/feet fallback picking also passes final EditMode.
+See `P109_SCREENSHOT_FEEDBACK_HANDOFF.md` for final commands, result updates and manual route.
+The user owns all manual Player QA now; no native automation performed this turn.
+Old saves and pre-existing user changes remain untouched; 44/44 protected hashes match.
+P10.9 PARTIAL; no P10.10, performance benchmark or push.
+
 ## Working checkpoint — 2026-10-21 compact world and reviewed content
 
 Latest user scope supersedes the old 12 km map and analysis-only import restriction.
