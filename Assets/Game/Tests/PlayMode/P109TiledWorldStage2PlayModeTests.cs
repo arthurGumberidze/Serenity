@@ -28,7 +28,7 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.WorldPopulation, Is.Not.Null);
-            Assert.That(root.WorldPopulation.Plan.Resources.Count, Is.GreaterThanOrEqualTo(720));
+            Assert.That(root.WorldPopulation.Plan.Resources.Count, Is.GreaterThanOrEqualTo(500));
             var expected = root.WorldPopulation.Plan.Resources.Count(node =>
                 root.TiledWorld.VisualTiles.Contains(node.Tile));
             Assert.That(root.WorldPopulation.ActiveResourceViewCount, Is.EqualTo(expected));

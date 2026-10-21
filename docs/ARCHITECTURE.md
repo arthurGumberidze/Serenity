@@ -1,5 +1,15 @@
 # Architecture — U01
 
+## Active compact-world override (2026-10-21)
+
+The new-game reference is now 4 x 4 Terrain tiles of 250 m, exactly 1 km square (D-158).
+The older 12 km foundation below is historical. `TiledWorldResourceNode.Position` is the
+physical work/output location; `VisualPosition` can differ for a fish school in water.
+Production and hauling continue to use only the dry canonical work point. All sixteen small
+terrain tiles are retained; activity zones retain their original normalized geographic layout.
+`CompactWorldArtCatalog` references reviewed, presentation-only art. Vendor game frameworks,
+scripts and demo scenes do not participate in the simulation or save pipeline.
+
 ## P10.9 tiled-world revision foundation (2026-10-19)
 
 `Game.Domain.World.TiledWorldDefinition` describes immutable tile geometry and overlapping activity zones without Unity references. Tile identity is an integer X/Z pair scoped by the world-generation ID; sample positions derive from one global lattice so adjacent tiles use exactly the same border coordinates. Required-tile selection is deterministic and includes physical actors independently of camera focus. `Game.Infrastructure.TiledWorldDefinitionLoader` validates the versioned reference JSON under `Assets/Game/Resources/World`; the approved footprint is 12×12 tiles of 1000 m, with the player in the lower central settlement.

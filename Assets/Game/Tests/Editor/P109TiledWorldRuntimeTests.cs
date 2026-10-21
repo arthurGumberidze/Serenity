@@ -29,17 +29,17 @@ namespace Game.Tests.Editor
         [Test]
         public void HeightGenerationIsDeterministicAndNeighbourBordersAreIdentical()
         {
-            var first = heights.CreateNormalizedHeights(new WorldTileId(5, 4), 65);
-            var neighbour = heights.CreateNormalizedHeights(new WorldTileId(6, 4), 65);
+            var first = heights.CreateNormalizedHeights(new WorldTileId(1, 1), 65);
+            var neighbour = heights.CreateNormalizedHeights(new WorldTileId(2, 1), 65);
             var replay = new TiledWorldHeightSampler(world, 1092026)
-                .CreateNormalizedHeights(new WorldTileId(5, 4), 65);
+                .CreateNormalizedHeights(new WorldTileId(1, 1), 65);
             for (var z = 0; z < 65; z++)
             {
                 Assert.That(first[z, 64], Is.EqualTo(neighbour[z, 0]));
                 for (var x = 0; x < 65; x++) Assert.That(replay[z, x], Is.EqualTo(first[z, x]));
             }
             var otherSeed = new TiledWorldHeightSampler(world, 1092027)
-                .CreateNormalizedHeights(new WorldTileId(5, 4), 65);
+                .CreateNormalizedHeights(new WorldTileId(1, 1), 65);
             Assert.That(otherSeed.Cast<float>().SequenceEqual(first.Cast<float>()), Is.False);
         }
 
@@ -66,32 +66,32 @@ namespace Game.Tests.Editor
         public void StreamingKeepsVisualsBoundedWhileRetainingActorsAndCrossMapRoutes()
         {
             var planner = new TiledWorldStreamingPlanner(world);
-            var camera = Center(6, 1);
-            var actor = Center(0, 11);
-            var destination = Center(11, 11);
+            var camera = Center(1, 1);
+            var actor = Center(0, 3);
+            var destination = Center(3, 3);
             var plan = planner.CreatePlan(camera, new[] { actor },
                 new[] { Tuple.Create(Center(0, 0), destination) });
             Assert.That(plan.VisualTiles.Count, Is.EqualTo(9));
-            Assert.That(plan.CollisionTiles, Does.Contain(new WorldTileId(0, 11)));
-            Assert.That(plan.CollisionTiles, Does.Contain(new WorldTileId(11, 11)));
+            Assert.That(plan.CollisionTiles, Does.Contain(new WorldTileId(0, 3)));
+            Assert.That(plan.CollisionTiles, Does.Contain(new WorldTileId(3, 3)));
             Assert.That(plan.CollisionTiles.Count, Is.GreaterThan(plan.VisualTiles.Count));
             var corridor = planner.NavigationCorridor(Center(0, 0), destination);
-            Assert.That(corridor.Count, Is.EqualTo(12));
+            Assert.That(corridor.Count, Is.EqualTo(4));
             Assert.That(corridor.All(tile => tile.X == tile.Z), Is.True);
         }
 
         [Test]
-        public void DiscoveryAndGlobalMapUseFullTwelveKilometreLayout()
+        public void DiscoveryAndGlobalMapUseFullOneKilometreLayout()
         {
             var map = StarterGlobalMap.CreateTiled(world, worldSeed: 1092026);
             var layout = ConnectedWorldLayout.For(world);
             var connected = new ConnectedWorldService(map.Locations, layout);
-            Assert.That(layout.Columns, Is.EqualTo(48));
-            Assert.That(layout.Rows, Is.EqualTo(48));
+            Assert.That(layout.Columns, Is.EqualTo(40));
+            Assert.That(layout.Rows, Is.EqualTo(40));
             Assert.That(map.GraphId, Is.EqualTo(world.GenerationId));
             Assert.That(map.Settlements.Count, Is.EqualTo(3));
             Assert.That(map.Locations.Max(value => value.MapX) - map.Locations.Min(value => value.MapX),
-                Is.GreaterThan(9000));
+                Is.GreaterThan(700));
             connected.ReportPhysicalPresence(world.Origin.X + world.WidthMeters - 1,
                 world.Origin.Z + world.DepthMeters - 1);
             Assert.That(connected.IsRevealed(world.Origin.X + world.WidthMeters - 1,
@@ -122,7 +122,7 @@ namespace Game.Tests.Editor
         private WorldPosition Center(int x, int z)
         {
             var origin = world.TileOrigin(new WorldTileId(x, z));
-            return new WorldPosition(origin.X + 500f, 0f, origin.Z + 500f);
+            return new WorldPosition(origin.X + world.TileSizeMeters / 2f, 0f, origin.Z + world.TileSizeMeters / 2f);
         }
 
         private sealed class MemoryStore : ISaveStore

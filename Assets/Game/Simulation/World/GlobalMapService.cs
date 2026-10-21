@@ -487,7 +487,7 @@ namespace Game.Simulation.World
                     Zone("western_hunting_berries").Center),
                 At(ridge, "Iron Ridge", WorldLocationType.Wilderness, Zone("ore_northwest").Center),
                 At(coast, "Southern River Mouth", WorldLocationType.Wilderness,
-                    new WorldPosition(definition.River.Last().X, 0f, definition.River.Last().Z + 120f))
+                    new WorldPosition(definition.River.Last().X, 0f, definition.River.Last().Z + definition.DepthMeters * 0.01f))
             };
             var hour = TimeSpan.TicksPerHour;
             var routes = new[]

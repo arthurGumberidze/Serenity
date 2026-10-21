@@ -30,6 +30,7 @@ namespace Game.Infrastructure
         private ResourceInventoryRegistry inventories;
         private TiledTerrainWorld terrainWorld;
         private long seed;
+        private CompactWorldArtCatalog art;
 
         public TiledWorldPopulationPlan Plan { get; private set; }
         public int ActiveTileViewCount => tileViews.Count;
@@ -50,6 +51,7 @@ namespace Game.Infrastructure
             worldPiles = pileService ?? throw new ArgumentNullException(nameof(pileService));
             inventories = inventoryRegistry ?? throw new ArgumentNullException(nameof(inventoryRegistry));
             seed = worldSeed;
+            art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
             RegisterCanonicalPopulation();
@@ -97,7 +99,8 @@ namespace Game.Infrastructure
                         CropPlotPhase.Unplanted, 0, 0));
                     production.AddSite(site);
                 }
-                ecology.Register(new NaturalNodeRegistration(site, node.Biome, RespawnCandidates(node.Position)));
+                ecology.Register(new NaturalNodeRegistration(site, node.Biome,
+                    node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position)));
             }
             foreach (var node in Plan.Industry)
             {
@@ -122,8 +125,32 @@ namespace Game.Infrastructure
         private void CreateResourceView(TiledWorldResourceNode node, Transform parent)
         {
             if (!production.TryGetSite(ResourceId(node), out var site)) return;
+            if (node.RecipeId == "fish_water")
+            {
+                var school = new GameObject("Fishing school " + node.SourceZoneId + " " + node.StableIndex);
+                school.transform.SetParent(parent, false);
+                school.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y, node.VisualPosition.Z);
+                var lake = terrainWorld.Definition.Zones.Single(x => x.Id == node.SourceZoneId);
+                var radius = Mathf.Min(2.8f, Mathf.Min(lake.RadiusX, lake.RadiusZ) * 0.17f);
+                GetComponent<WorksitePresentation>().CreateFish(school.transform, school.transform.position, radius);
+                var hit = school.AddComponent<BoxCollider>();
+                hit.isTrigger = true;
+                hit.size = new Vector3(radius * 2.6f, 1.6f, radius * 2.6f);
+                school.AddComponent<ProductionSourcePresenter>().Bind(site, Color.white, true);
+                return;
+            }
             GameObject view;
-            if (templates.TryGetValue(node.RecipeId, out var template) && template != null)
+            var reviewed = node.RecipeId == "hunt_animal" ? art?.HuntingDeer :
+                node.RecipeId == "gather_stone" ? art?.StoneOutcrop : null;
+            if (reviewed != null)
+            {
+                view = Instantiate(reviewed, parent);
+                var collider = view.AddComponent<BoxCollider>();
+                collider.isTrigger = true;
+                collider.center = Vector3.up * 0.8f;
+                collider.size = new Vector3(2.2f, 1.8f, 2.2f);
+            }
+            else if (templates.TryGetValue(node.RecipeId, out var template) && template != null)
             {
                 view = Instantiate(template, parent);
                 view.name = "P10.9 " + node.RecipeId + " " + node.StableIndex;
@@ -155,7 +182,7 @@ namespace Game.Infrastructure
             view.transform.position = new Vector3(site.Position.X,
                 site.Position.Y + (node.RecipeId == "fish_water" ? 0.08f : 0.1f), site.Position.Z);
             var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
-            presenter.Bind(site, ResourceColor(node.RecipeId), templates.ContainsKey(node.RecipeId));
+            presenter.Bind(site, ResourceColor(node.RecipeId), reviewed != null || templates.ContainsKey(node.RecipeId));
         }
 
         private static void ExpandAuthoredFormation(GameObject root, int stableIndex)
@@ -216,6 +243,7 @@ namespace Game.Infrastructure
                     !centerTile.Equals(tile)) continue;
                 if (zone.Uses.HasFlag(WorldZoneUse.Settlement))
                 {
+                    if (zone.Id == "starter_settlement") continue; // The real camp already occupies this zone.
                     for (var i = 0; i < 7; i++)
                     {
                         var hut = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -229,19 +257,18 @@ namespace Game.Infrastructure
                         ApplyColor(hut, new Color(0.42f, 0.29f, 0.16f));
                     }
                 }
-                if (zone.Uses.HasFlag(WorldZoneUse.Agriculture))
+                if (zone.Uses.HasFlag(WorldZoneUse.Agriculture) && art?.FieldFence != null)
                 {
-                    for (var i = 0; i < 5; i++)
+                    // Small boundary markers indicate allowed farmland; no giant brown slab
+                    // pretends that unplanted ground is already a functioning cultivated field.
+                    for (var i = 0; i < 4; i++)
                     {
-                        var field = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        field.name = "P10.9 Field " + zone.Id + " " + i;
-                        field.transform.SetParent(parent, false);
-                        var x = zone.Center.X - zone.RadiusX * 0.6f + i * zone.RadiusX * 0.3f;
-                        var z = zone.Center.Z;
-                        field.transform.position = new Vector3(x, terrainWorld.HeightSampler.SampleHeight(x, z) + 0.08f, z);
-                        field.transform.localScale = new Vector3(zone.RadiusX * 0.2f, 0.12f, zone.RadiusZ * 0.9f);
-                        ApplyColor(field, new Color(0.48f, 0.39f, 0.17f));
-                        var collider = field.GetComponent<Collider>(); if (collider != null) Destroy(collider);
+                        var x = zone.Center.X + (i % 2 == 0 ? -1 : 1) * zone.RadiusX * 0.65f;
+                        var z = zone.Center.Z + (i / 2 == 0 ? -1 : 1) * zone.RadiusZ * 0.65f;
+                        if (!terrainWorld.HeightSampler.IsBuildable(x, z)) continue;
+                        var field = Instantiate(art.FieldFence, parent);
+                        field.name = "Farmland boundary " + zone.Id;
+                        field.transform.position = new Vector3(x, terrainWorld.HeightSampler.SampleHeight(x, z), z);
                     }
                 }
             }

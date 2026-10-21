@@ -16,12 +16,12 @@ namespace Game.Tests.Editor
             var first = new TiledWorldPopulationPlanner(world, heights, 20261019L).Create();
             var second = new TiledWorldPopulationPlanner(world, heights, 20261019L).Create();
 
-            Assert.That(first.Resources.Count, Is.GreaterThanOrEqualTo(720));
+            Assert.That(first.Resources.Count, Is.GreaterThanOrEqualTo(world.Tiles.Count * 5));
             Assert.That(first.Resources.Select(value => value.StableIndex),
                 Is.EqualTo(second.Resources.Select(value => value.StableIndex)));
             Assert.That(first.Resources.Select(value => value.Position),
                 Is.EqualTo(second.Resources.Select(value => value.Position)));
-            Assert.That(first.Resources.GroupBy(value => value.Tile).Count(), Is.EqualTo(144));
+            Assert.That(first.Resources.GroupBy(value => value.Tile).Count(), Is.EqualTo(16));
             Assert.That(first.Resources.GroupBy(value => value.Tile).All(group => group.Count() >= 5), Is.True);
             Assert.That(first.Resources.Select(value => value.RecipeId), Is.SupersetOf(new[]
             {

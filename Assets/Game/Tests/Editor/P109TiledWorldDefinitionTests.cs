@@ -14,15 +14,15 @@ namespace Game.Tests.Editor
         [SetUp] public void LoadDefinition() => world = TiledWorldDefinitionLoader.LoadReference();
 
         [Test]
-        public void ReferenceHas144UniqueKilometreTilesAnd144SquareKilometres()
+        public void ReferenceHasSixteen250MetreTilesAndExactlyOneSquareKilometre()
         {
-            Assert.That(world.GenerationId, Is.EqualTo("p109-worksite-v2"));
-            Assert.That(world.Tiles.Count, Is.EqualTo(144));
-            Assert.That(world.Tiles.Distinct().Count(), Is.EqualTo(144));
-            Assert.That(world.TileSizeMeters, Is.EqualTo(1000));
-            Assert.That(world.WidthMeters, Is.EqualTo(12000));
-            Assert.That(world.DepthMeters, Is.EqualTo(12000));
-            Assert.That(world.AreaSquareMeters, Is.EqualTo(144000000L));
+            Assert.That(world.GenerationId, Is.EqualTo("p109-compact-world-v1"));
+            Assert.That(world.Tiles.Count, Is.EqualTo(16));
+            Assert.That(world.Tiles.Distinct().Count(), Is.EqualTo(16));
+            Assert.That(world.TileSizeMeters, Is.EqualTo(250));
+            Assert.That(world.WidthMeters, Is.EqualTo(1000));
+            Assert.That(world.DepthMeters, Is.EqualTo(1000));
+            Assert.That(world.AreaSquareMeters, Is.EqualTo(1000000L));
         }
 
         [TestCase(129)]
@@ -45,9 +45,9 @@ namespace Game.Tests.Editor
         [Test]
         public void InternalBordersHaveOneOwnerAndOutsideCoordinatesAreNotClampedToLand()
         {
-            var origin = world.TileOrigin(new WorldTileId(5, 7));
+            var origin = world.TileOrigin(new WorldTileId(1, 2));
             Assert.That(world.TryGetTile(origin.X, origin.Z, out var tile), Is.True);
-            Assert.That(tile, Is.EqualTo(new WorldTileId(5, 7)));
+            Assert.That(tile, Is.EqualTo(new WorldTileId(1, 2)));
             Assert.That(world.TryGetTile(world.Origin.X - 1, world.Origin.Z, out _), Is.False);
             Assert.That(world.TryGetTile(world.Origin.X + world.WidthMeters, world.Origin.Z, out _), Is.False);
             Assert.That(world.TryGetTile(float.NaN, 0, out _), Is.False);
@@ -59,10 +59,10 @@ namespace Game.Tests.Editor
         public void StreamingSelectionRetainsDistantPhysicalActorsAndIsIndependentOfEnumerationOrder()
         {
             var camera = world.SamplePosition(new WorldTileId(1, 1), 64, 64, 129);
-            var actor = world.SamplePosition(new WorldTileId(10, 10), 64, 64, 129);
+            var actor = world.SamplePosition(new WorldTileId(3, 3), 64, 64, 129);
             var tiles = world.RequiredTiles(new[] { actor, camera, actor }, camera);
-            Assert.That(tiles.Count, Is.EqualTo(18));
-            Assert.That(tiles, Does.Contain(new WorldTileId(10, 10)));
+            Assert.That(tiles.Count, Is.EqualTo(12));
+            Assert.That(tiles, Does.Contain(new WorldTileId(3, 3)));
             Assert.That(tiles, Is.EqualTo(world.RequiredTiles(new[] { camera, actor }, camera)));
             Assert.That(world.RequiredTiles(Array.Empty<WorldPosition>(), world.Origin).Count, Is.EqualTo(4));
         }

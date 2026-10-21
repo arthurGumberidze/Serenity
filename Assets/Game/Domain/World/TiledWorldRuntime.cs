@@ -13,8 +13,8 @@ namespace Game.Domain.World
     {
         public const float TerrainHeightMeters = 96f;
         public const float WaterLevelMeters = 8f;
-        public const float RiverHalfWidthMeters = 52f;
-        private const float SettlementHeightMeters = 18f;
+        public const float RiverHalfWidthMeters = 52f / 12f;
+        private const float SettlementHeightMeters = 12f;
         private readonly TiledWorldDefinition definition;
         private readonly long seed;
 
@@ -32,10 +32,10 @@ namespace Game.Domain.World
             if (!definition.ContainsClosed(worldX, worldZ))
                 throw new ArgumentOutOfRangeException(nameof(worldX), "World height samples must remain inside the tiled world.");
 
-            var macro = ValueNoise(worldX / 1800f, worldZ / 1800f, 0) * 9f;
-            var medium = ValueNoise(worldX / 620f, worldZ / 620f, 1) * 4f;
-            var detail = ValueNoise(worldX / 190f, worldZ / 190f, 2) * 1.4f;
-            var height = 18f + macro + medium + detail;
+            var macro = ValueNoise(worldX / 150f, worldZ / 150f, 0) * 3f;
+            var medium = ValueNoise(worldX / 52f, worldZ / 52f, 1) * 1.2f;
+            var detail = ValueNoise(worldX / 16f, worldZ / 16f, 2) * 0.3f;
+            var height = SettlementHeightMeters + macro + medium + detail;
 
             // Cultivated regions remain naturally rolling, but are deliberately gentle enough for plots and roads.
             foreach (var zone in definition.Zones.Where(value => value.Uses.HasFlag(WorldZoneUse.Agriculture)))
@@ -43,7 +43,7 @@ namespace Game.Domain.World
                 var normalized = NormalizedDistance(zone, worldX, worldZ);
                 if (normalized >= 1.12f) continue;
                 var blend = Smooth01((1.12f - normalized) / 0.3f) * 0.72f;
-                var agriculturalHeight = 18f + ValueNoise(worldX / 950f, worldZ / 950f, 7) * 1.4f;
+                var agriculturalHeight = SettlementHeightMeters + ValueNoise(worldX / 80f, worldZ / 80f, 7) * 0.5f;
                 height = Lerp(height, agriculturalHeight, blend);
             }
 
@@ -55,18 +55,22 @@ namespace Game.Domain.World
                 height = Lerp(height, SettlementHeightMeters, blend);
             }
 
+            // Dry lowlands must not turn into unintended water patches outside the plan.
+            height = Math.Max(WaterLevelMeters + 2.5f, height);
             var riverDistance = DistanceToRiver(worldX, worldZ);
-            if (riverDistance < RiverHalfWidthMeters + 38f)
+            if (riverDistance < RiverHalfWidthMeters + 10f)
             {
-                var blend = Smooth01((RiverHalfWidthMeters + 38f - riverDistance) / 38f);
+                var blend = Smooth01((RiverHalfWidthMeters + 10f - riverDistance) / 10f);
                 height = Lerp(height, WaterLevelMeters - 2.4f, blend);
             }
 
             foreach (var lake in definition.Zones.Where(value => value.Uses.HasFlag(WorldZoneUse.Fishing)))
             {
                 var normalized = NormalizedDistance(lake, worldX, worldZ);
-                if (normalized >= 1.18f) continue;
-                var blend = Smooth01((1.18f - normalized) / 0.28f);
+                // Keep banks walkable at human scale, rather than scaling a cliff to 1/12.
+                var bank = 10f / Math.Min(lake.RadiusX, lake.RadiusZ);
+                if (normalized >= 1f + bank) continue;
+                var blend = Smooth01((1f + bank - normalized) / (bank + 0.1f));
                 height = Lerp(height, WaterLevelMeters - 2.1f, blend);
             }
 

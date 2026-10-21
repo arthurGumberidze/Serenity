@@ -341,7 +341,7 @@ namespace Game.Infrastructure
                 environmentLod = gameObject.AddComponent<StableEnvironmentLodController>();
                 environmentLod.Initialize(
                     StarterTreeViews(),
-                    position => WorldHeight.SampleHeight(position.x, position.z),
+                    position => TiledWorld.ProjectToGround(position).y,
                     PopulatedBiomeWorld.MajorRocks.Concat(PopulatedBiomeWorld.GroundCover)
                         .Concat(PopulatedBiomeWorld.BaseRegion.Rocks).Concat(PopulatedBiomeWorld.BaseRegion.Foliage).Concat(shoreProps));
                 TiledWorld.VisualTilesChanged += RefreshAuthoredTreeVisibility;
@@ -414,19 +414,13 @@ namespace Game.Infrastructure
             SpawnRegionProductionSources();
             SpawnP104NaturalSources();
             SpawnP104IndustrialZones();
+            var worksite = gameObject.AddComponent<WorksitePresentation>();
+            worksite.Initialize(this);
             WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
                 Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
             RegisterStarterTrees();
             RegisterStarterRocks();
-            var worksite = gameObject.AddComponent<WorksitePresentation>();
-            worksite.Initialize(this);
-            var fishingPond = WorldDefinition.Zones.First(x => x.Id == "starter_pond");
-            var fishView = productionPresenters.First(x => x.Site.RecipeId == new ProductionRecipeId("fish_water") &&
-                x.Site.Id == DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", 25));
-            worksite.CreateFish(fishView.transform, new Vector3(fishingPond.Center.X,
-                TiledWorldHeightSampler.WaterLevelMeters, fishingPond.Center.Z));
-            fishView.Bind(fishView.Site, Color.white, true);
             DisableSupersededRouteStrips();
             resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
@@ -605,7 +599,7 @@ namespace Game.Infrastructure
 
             var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "WorksiteV2", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "CompactWorldV1", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
@@ -1142,16 +1136,7 @@ namespace Game.Infrastructure
         {
             SpawnProductionSource("hunt_animal", 36, new WorldPosition(-78f, 5f, 154f),
                 new Color(0.45f, 0.22f, 0.12f), 24, null, PrimitiveType.Capsule);
-            var pond = WorldDefinition.Zones.First(x => x.Id == "starter_pond");
-            var shore = ProjectToGameplayGround(new Vector3(pond.Center.X - pond.RadiusX * 0.82f,
-                0f, pond.Center.Z - pond.RadiusZ * 0.82f));
-            var waterTarget = new GameObject("Fish in starter pond");
-            waterTarget.transform.position = new Vector3(pond.Center.X, TiledWorldHeightSampler.WaterLevelMeters, pond.Center.Z);
-            var selection = waterTarget.AddComponent<BoxCollider>();
-            selection.isTrigger = true;
-            selection.size = new Vector3(pond.RadiusX * 1.5f, 1.5f, pond.RadiusZ * 1.5f);
-            SpawnProductionSource("fish_water", 42, new WorldPosition(shore.x, shore.y, shore.z),
-                new Color(0.12f, 0.62f, 0.82f), 25, waterTarget);
+            // All lakes, including the local pond, use the same canonical school planner.
         }
 
         private void SpawnP104IndustrialZones()
@@ -1194,6 +1179,8 @@ namespace Game.Infrastructure
             for (var index = 0; index < trees.Length; index++)
             {
                 var tree = trees[index];
+                if (!WorldDefinition.TryGetTile(tree.transform.position.x, tree.transform.position.z, out _) ||
+                    WorldHeight.IsWater(tree.transform.position.x, tree.transform.position.z)) continue;
                 // BaseRegion.Trees also contains canonical resource roots. Keep their existing
                 // player_source identity instead of leaving an invisible duplicate source behind.
                 if (authoredSources.Contains(tree)) continue;
@@ -1242,6 +1229,8 @@ namespace Game.Infrastructure
             for (var index = 0; index < rocks.Length; index++)
             {
                 var rock = rocks[index];
+                if (!WorldDefinition.TryGetTile(rock.transform.position.x, rock.transform.position.z, out _) ||
+                    WorldHeight.IsWater(rock.transform.position.x, rock.transform.position.z)) continue;
                 if (rock.GetComponent<ProductionSourcePresenter>() != null) continue;
                 var formation = PopulatedBiomeWorld.ResourceFormations.FirstOrDefault(x => x.DecorativeSatellites.Contains(rock));
                 var recipe = formation?.RecipeId ?? "gather_stone";
@@ -1306,6 +1295,11 @@ namespace Game.Infrastructure
         private void SpawnProductionSource(string recipeId, long amount, WorldPosition position, Color color,
             int index, GameObject authoredView, PrimitiveType fallbackPrimitive = PrimitiveType.Sphere)
         {
+            if (!WorldDefinition.TryGetTile(position.X, position.Z, out _) || WorldHeight.IsWater(position.X, position.Z))
+            {
+                if (authoredView != null) authoredView.SetActive(false);
+                return;
+            }
             amount = 20 + Math.Abs(index * 17 + 11) % 31;
             var site = ProductionSite.Restore(new ProductionSiteState(
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", index),

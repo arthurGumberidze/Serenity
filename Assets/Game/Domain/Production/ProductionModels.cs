@@ -121,6 +121,9 @@ namespace Game.Domain.Production
             };
             return new ProductionCatalog(CreateStoneAge(resources).All.Select(recipe =>
             {
+                if (recipe.Id.ToString() == "fish_water")
+                    return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs, recipe.Outputs,
+                        TimeSpan.FromMinutes(20), recipe.SiteKind, recipe.Enabled, recipe.WeatherExposure);
                 if (!durations.TryGetValue(recipe.Id.ToString(), out var minutes)) return recipe;
                 return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs,
                     recipe.Outputs.Select(x => new ResourceAmount(x.ResourceId, new ResourceQuantity(1))),

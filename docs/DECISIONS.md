@@ -1,5 +1,31 @@
 # DECISIONS.md
 
+## D-158 Compact world and reviewed art libraries (2026-10-21)
+
+The user supersedes the 12 km footprint with an exact 1000 x 1000 m new-game world.
+Four by four 250 m Terrain projections retain the approved relative geography at 1/12
+horizontal scale; models keep human scale and banks retain walkable metre-scale transitions.
+The extra tutorial pond is adapted locally, not shrunk into the camp. All sixteen terrain
+tiles remain loaded/render-eligible, avoiding exposed streaming borders at tactical zoom.
+Runtime Terrain collider transforms are synchronized before NavMesh volume collection;
+otherwise distant tiles can be collected at their creation origin during bootstrap.
+All 44 fishing banks are checked against the real runtime NavMesh, not only height queries.
+Generation `p109-compact-world-v1` and `Serenity/P109/CompactWorldV1/Saves` isolate new saves.
+Previous generations are not migrated, modified or deleted. Fog cells become 25 m.
+
+Each lake has four stable canonical fishing sources with dry work/output positions and
+separate water-side visual positions. One scene scheduler animates the disposable schools.
+Every catch creates a WorldPile; existing priority and capacity-aware hauling owns transport.
+The compact-world fishing recipe takes 20 game minutes before modifiers and outputs four fish.
+
+The user authorizes imports of the local archives. Only audited art is admitted: no vendor
+gameplay/editor scripts, DLLs, settings, scenes or package changes. Existing GUID/path assets
+win over duplicate vendor content. Imported prefabs are stripped of vendor MonoBehaviours;
+source archives remain intact. Reviewed gameplay projections reference selected art through
+CompactWorldArtCatalog, while production identity and save-state remain in Domain/Simulation.
+Classic City Builder is not adopted as a replacement engine. Unused art stays a library,
+not a claim of implemented mechanics; the follow-up plan is P109_COMPACT_WORLD_HANDOFF.md.
+
 ## D-157 Worksite V2 uses physical outputs and worker-built structures (2026-10-21)
 
 The user's latest instruction authorizes implementation now, not merely a diagnostic plan.

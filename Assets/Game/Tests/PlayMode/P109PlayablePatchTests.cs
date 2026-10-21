@@ -24,7 +24,8 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.Clock.Pause();
             Assert.That(root.Inventories.All.Any(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.False);
-            foreach (var rock in root.PopulatedBiomeWorld.MajorRocks.Concat(root.PopulatedBiomeWorld.BaseRegion.Rocks).Distinct())
+            foreach (var rock in root.PopulatedBiomeWorld.MajorRocks.Concat(root.PopulatedBiomeWorld.BaseRegion.Rocks)
+                         .Distinct().Where(x => x.activeInHierarchy))
             {
                 Assert.That(rock.GetComponent<ProductionSourcePresenter>(), Is.Not.Null, rock.name);
                 Assert.That(rock.GetComponentsInChildren<Collider>(true).Any(x => x.enabled), Is.True, rock.name);
@@ -108,8 +109,9 @@ namespace Game.Tests.PlayMode
             yield return SceneManager.LoadSceneAsync("LocalGameplay");
             yield return null;
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            var source = Object.FindObjectsByType<ProductionSourcePresenter>().First(x =>
-                x.GetComponentsInChildren<Transform>().Any(t => t.name == "Swimming fish 0"));
+            var source = Object.FindObjectsByType<ProductionSourcePresenter>()
+                .Where(x => x.IsBound && x.Site.RecipeId.ToString() == "fish_water")
+                .OrderBy(x => (x.transform.position - root.DemoPresenters[0].transform.position).sqrMagnitude).First();
             Assert.That(root.WorldHeight.IsWater(source.Site.Position.X, source.Site.Position.Z), Is.False);
             var resident = root.DemoPresenters[0];
             root.SelectionProbe.SelectCharacters(new[] { resident });
@@ -192,13 +194,19 @@ namespace Game.Tests.PlayMode
             yield return SceneManager.LoadSceneAsync("LocalGameplay");
             yield return null;
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            var trees = root.PopulatedBiomeWorld.CanopyTrees.Concat(root.PopulatedBiomeWorld.BaseRegion.Trees).Distinct().ToArray();
+            var allTrees = root.PopulatedBiomeWorld.CanopyTrees.Concat(root.PopulatedBiomeWorld.BaseRegion.Trees).Distinct().ToArray();
+            bool InsideDryWorld(GameObject tree) => root.WorldDefinition.TryGetTile(tree.transform.position.x,
+                tree.transform.position.z, out _) && !root.WorldHeight.IsWater(tree.transform.position.x, tree.transform.position.z);
+            var trees = allTrees.Where(InsideDryWorld).ToArray();
+            Assert.That(allTrees.Where(x => !InsideDryWorld(x)).All(x => !x.activeInHierarchy), Is.True,
+                "Retired scenery beyond the compact world or in its lakes must remain hidden.");
             var ids = trees.Select(value => value.GetComponent<ProductionSourcePresenter>()).ToArray();
             Assert.That(ids.All(value => value != null && value.IsBound), Is.True);
             Assert.That(ids.Select(value => value.Site.Id).Distinct().Count(), Is.EqualTo(trees.Length));
             Assert.That(trees.All(value => value.GetComponentInChildren<Collider>(true) != null), Is.True);
             Assert.That(root.Production.IsRecipeAvailable(new ProductionRecipeId("chop_wood")), Is.True);
-            foreach (var formation in root.PopulatedBiomeWorld.ResourceFormations.Where(x => x.RecipeId == "chop_wood"))
+            foreach (var formation in root.PopulatedBiomeWorld.ResourceFormations.Where(x => x.RecipeId == "chop_wood" &&
+                         InsideDryWorld(x.ClickableRoot.gameObject)))
                 Assert.That(formation.ClickableRoot.GetComponent<ProductionSourcePresenter>().Site.Id,
                     Is.EqualTo(Game.Domain.Campaign.DeterministicStableId.Create(root.ActiveNewGameConfiguration.WorldSeed,
                         "player_source", formation.StableIndex)),

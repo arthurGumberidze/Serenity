@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-21 compact world and reviewed content
+
+Latest user scope supersedes the old 12 km map and analysis-only import restriction.
+The new generation is exactly 1000 x 1000 m, 4 x 4 Terrain tiles of 250 m. Original
+landmarks retain their relative positions; the extra tutorial pond is adapted beside camp.
+All 11 lakes have four independent fishing schools (44 sources, 440 visual fish).
+Catch output is a shore-side WorldPile using existing priority/capacity-aware transport.
+New saves use `Serenity/P109/CompactWorldV1/Saves`; old generations are not migrated.
+Reviewed import admitted 6926 art files, excluding vendor scripts, settings and demo scenes.
+Deer, rock outcrops, field fences and fish graphics are integrated; other art remains a library.
+The import manifest and integration roadmap are in `P109_COMPACT_WORLD_HANDOFF.md`.
+Runtime NavMesh collection now synchronizes Terrain physics transforms before building;
+the all-lakes test exposed the previously missing distant banks. Final EditMode passes 50/50.
+Expanded PlayMode passed 13/14; its remaining bank-placement failure is fixed and covered
+by final focused PlayMode 2/2 (all banks/click targets plus physical catch/pile).
+Build `Builds/P109CompactWorld/Serenity.exe` succeeds, 0 errors / 53 warnings,
+GUID c09db63a70084c12927995abacd7965c. Native QA reached Main Menu but is waiting for
+the user to dismiss the Windows firewall prompt; no manual fishing acceptance claimed yet.
+Protected files match 44/44 including eight old saves; archive hashes match 18/18.
+Overall P10.9 remains PARTIAL. No P10.10 or performance benchmark started.
+
 ## Working checkpoint — 2026-10-21 Worksite V2 video corrections
 
 The latest user instruction authorizes immediate bug fixes, superseding the earlier analysis-only

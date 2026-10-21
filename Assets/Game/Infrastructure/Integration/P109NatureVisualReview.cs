@@ -26,8 +26,11 @@ namespace Game.Infrastructure.Integration
             GUILayout.Label("QA camera bookmarks — not an input acceptance test");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Camp")) root.CameraController.FocusHome();
-            if (GUILayout.Button("Lake")) root.CameraController.FocusPosition(new Vector3(105f, 0f, 95f), 100f);
-            if (GUILayout.Button("Lake close")) root.CameraController.FocusPosition(new Vector3(105f, 0f, 95f), 45f);
+            var pond = root.WorldDefinition.Zones.Single(x => x.Id == "starter_pond");
+            var lake = root.WorldDefinition.Zones.Single(x => x.Id == "lake_north");
+            if (GUILayout.Button("Lake")) root.CameraController.FocusPosition(new Vector3(pond.Center.X, 0f, pond.Center.Z), 75f);
+            if (GUILayout.Button("Lake close")) root.CameraController.FocusPosition(new Vector3(pond.Center.X, 0f, pond.Center.Z), 35f);
+            if (GUILayout.Button("North")) root.CameraController.FocusPosition(new Vector3(lake.Center.X, 0f, lake.Center.Z), 85f);
             GUILayout.EndHorizontal();
             GUILayout.EndArea();
         }

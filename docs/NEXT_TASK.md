@@ -1,5 +1,20 @@
 # NEXT_TASK.md
 
+Active user override (2026-10-21, compact world): import and integrate the locally supplied
+asset packages after conflict/code review; first implement multiple fish schools in EVERY lake,
+shore-side fish output piles using existing priority/capacity-aware hauling, and change the
+new-game world to exactly 1000 x 1000 metres while retaining the approved geographic layout.
+Preserve old saves without migration. Audit source archives and shared Synty GUIDs before import.
+Prepare a follow-up integration plan distinguishing imported art from working game mechanics.
+This supersedes the analysis-only/new-import restriction and 12 km footprint below.
+P10.9 remains the sole active task; no P10.10 or deferred performance benchmark.
+Implementation/import and separate Windows build are complete; next unblocked work is
+native acceptance in `Builds/P109CompactWorld/Serenity.exe` after the user dismisses the
+Windows firewall request. Use only `Artifacts/P109/compact-world/native-saves` for QA.
+Final checks: EditMode 50/50; expanded PlayMode 13/14, then final bank correction and
+focused all-banks/physical-fishing PlayMode 2/2. Do not repeat imports or overwrite old saves.
+Read `P109_COMPACT_WORLD_HANDOFF.md` for the remaining native checks and staged art roadmap.
+
 Active user override (2026-10-21): fix the two newly supplied gameplay videos now; the eight
 proposed asset packs are analysis-only, with no download/import. Worksite V2 is implemented:
 visible idle/work cycles, hand-held tool, ground harvest piles and capacity-reserved hauling,

@@ -2,6 +2,15 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 compact-world/content slice (2026-10-21): PARTIAL pending final acceptance.
+User-approved 1 km square, original geographic scheme, multiple fish schools per lake,
+shore output piles and reviewed local art integration are implemented. No vendor game
+framework adopted; remaining library integration has a staged plan in
+`P109_COMPACT_WORLD_HANDOFF.md`. Old saves remain isolated and unchanged.
+Final EditMode 50/50; expanded PlayMode 13/14 followed by bank fix and focused 2/2.
+Windows build succeeded (0 errors / 53 warnings, c09db63a70084c12927995abacd7965c).
+Native acceptance awaits dismissal of the firewall dialog by the user; no benchmark started.
+
 P10.9 Worksite V2 feedback slice (2026-10-21): PARTIAL. User requested immediate correction
 of animation/ground-output/hauling/building/resource-selection/fishing defects. New assets are
 analysis-only. Implemented; EditMode 54/54, focused PlayMode 3/3 and physical partial-haul 1/1.

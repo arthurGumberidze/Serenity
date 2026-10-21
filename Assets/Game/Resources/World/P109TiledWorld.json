@@ -1,51 +1,337 @@
 {
-  "generationId": "p109-worksite-v2",
-  "columns": 12,
-  "rows": 12,
-  "tileSizeMeters": 1000,
-  "originX": -6840,
-  "originZ": -1440,
+  "generationId": "p109-compact-world-v1",
+  "columns": 4,
+  "rows": 4,
+  "tileSizeMeters": 250,
+  "originX": -570,
+  "originZ": -120,
   "playerStartX": 0,
-  "playerStartZ": 3,
+  "playerStartZ": 0.25,
   "zones": [
-    { "id": "starter_settlement", "uses": "Settlement", "x": 0, "z": 3, "radiusX": 350, "radiusZ": 460, "ellipse": false },
-    { "id": "northwest_settlement", "uses": "Settlement", "x": -4680, "z": 9360, "radiusX": 420, "radiusZ": 520, "ellipse": false },
-    { "id": "enemy_settlement", "uses": "Settlement", "x": 3960, "z": 9240, "radiusX": 420, "radiusZ": 520, "ellipse": false },
-    { "id": "farmland_northwest", "uses": "Agriculture", "x": -4620, "z": 7860, "radiusX": 2040, "radiusZ": 2400, "ellipse": false },
-    { "id": "farmland_northeast", "uses": "Agriculture", "x": 3600, "z": 8160, "radiusX": 1260, "radiusZ": 2040, "ellipse": false },
-    { "id": "farmland_southwest", "uses": "Agriculture", "x": -3780, "z": 180, "radiusX": 2760, "radiusZ": 1320, "ellipse": false },
-    { "id": "farmland_southeast", "uses": "Agriculture", "x": 1860, "z": 0, "radiusX": 720, "radiusZ": 900, "ellipse": false },
-    { "id": "northern_hunting_berries", "uses": "Hunting, Berries", "x": 0, "z": 8340, "radiusX": 2280, "radiusZ": 1860, "ellipse": false },
-    { "id": "western_hunting_berries", "uses": "Hunting, Berries", "x": -5160, "z": 3540, "radiusX": 1440, "radiusZ": 1320, "ellipse": false },
-    { "id": "southeastern_hunting", "uses": "Hunting", "x": 1860, "z": 0, "radiusX": 840, "radiusZ": 1020, "ellipse": false },
-    { "id": "forest_north", "uses": "Forest", "x": -720, "z": 8520, "radiusX": 2200, "radiusZ": 1650, "ellipse": true },
-    { "id": "forest_west", "uses": "Forest", "x": -5220, "z": 3600, "radiusX": 1450, "radiusZ": 1300, "ellipse": true },
-    { "id": "forest_south", "uses": "Forest", "x": -3000, "z": 300, "radiusX": 1100, "radiusZ": 1200, "ellipse": true },
-    { "id": "forest_east", "uses": "Forest", "x": 3000, "z": 3720, "radiusX": 1250, "radiusZ": 1500, "ellipse": true },
-    { "id": "forest_river", "uses": "Forest", "x": -1200, "z": 4800, "radiusX": 1600, "radiusZ": 650, "ellipse": true },
-    { "id": "forest_southeast", "uses": "Forest", "x": 3000, "z": 120, "radiusX": 800, "radiusZ": 1000, "ellipse": true },
-    { "id": "ore_northwest", "uses": "Ore", "x": -3240, "z": 9240, "radiusX": 800, "radiusZ": 1000, "ellipse": true },
-    { "id": "ore_west", "uses": "Ore", "x": -6000, "z": 6360, "radiusX": 600, "radiusZ": 900, "ellipse": true },
-    { "id": "ore_southwest", "uses": "Ore", "x": -5820, "z": 120, "radiusX": 850, "radiusZ": 1050, "ellipse": true },
-    { "id": "ore_east", "uses": "Ore", "x": 4440, "z": 4080, "radiusX": 600, "radiusZ": 1500, "ellipse": true },
-    { "id": "starter_pond", "uses": "Fishing", "x": 105, "z": 95, "radiusX": 48, "radiusZ": 38, "ellipse": true },
-    { "id": "lake_north", "uses": "Fishing", "x": 360, "z": 8880, "radiusX": 320, "radiusZ": 400, "ellipse": true },
-    { "id": "lake_northwest", "uses": "Fishing", "x": -1200, "z": 8760, "radiusX": 180, "radiusZ": 230, "ellipse": true },
-    { "id": "lake_west", "uses": "Fishing", "x": -5280, "z": 6600, "radiusX": 150, "radiusZ": 190, "ellipse": true },
-    { "id": "lake_farmland", "uses": "Fishing", "x": -4320, "z": 5520, "radiusX": 160, "radiusZ": 190, "ellipse": true },
-    { "id": "lake_west_hunt", "uses": "Fishing", "x": -4320, "z": 2760, "radiusX": 220, "radiusZ": 250, "ellipse": true },
-    { "id": "lake_southwest", "uses": "Fishing", "x": -3000, "z": 3000, "radiusX": 180, "radiusZ": 200, "ellipse": true },
-    { "id": "lake_south", "uses": "Fishing", "x": -1560, "z": 2280, "radiusX": 180, "radiusZ": 240, "ellipse": true },
-    { "id": "lake_southeast", "uses": "Fishing", "x": 480, "z": 1920, "radiusX": 180, "radiusZ": 220, "ellipse": true },
-    { "id": "lake_east", "uses": "Fishing", "x": 2760, "z": 3240, "radiusX": 150, "radiusZ": 230, "ellipse": true },
-    { "id": "lake_northeast", "uses": "Fishing", "x": 3600, "z": 7320, "radiusX": 190, "radiusZ": 230, "ellipse": true }
+    {
+      "id": "starter_settlement",
+      "uses": "Settlement",
+      "x": 0,
+      "z": 0.25,
+      "radiusX": 29.1667,
+      "radiusZ": 38.3333,
+      "ellipse": false
+    },
+    {
+      "id": "northwest_settlement",
+      "uses": "Settlement",
+      "x": -390,
+      "z": 780,
+      "radiusX": 35,
+      "radiusZ": 43.3333,
+      "ellipse": false
+    },
+    {
+      "id": "enemy_settlement",
+      "uses": "Settlement",
+      "x": 330,
+      "z": 770,
+      "radiusX": 35,
+      "radiusZ": 43.3333,
+      "ellipse": false
+    },
+    {
+      "id": "farmland_northwest",
+      "uses": "Agriculture",
+      "x": -385,
+      "z": 655,
+      "radiusX": 170,
+      "radiusZ": 200,
+      "ellipse": false
+    },
+    {
+      "id": "farmland_northeast",
+      "uses": "Agriculture",
+      "x": 300,
+      "z": 680,
+      "radiusX": 105,
+      "radiusZ": 170,
+      "ellipse": false
+    },
+    {
+      "id": "farmland_southwest",
+      "uses": "Agriculture",
+      "x": -315,
+      "z": 15,
+      "radiusX": 230,
+      "radiusZ": 110,
+      "ellipse": false
+    },
+    {
+      "id": "farmland_southeast",
+      "uses": "Agriculture",
+      "x": 155,
+      "z": 0,
+      "radiusX": 60,
+      "radiusZ": 75,
+      "ellipse": false
+    },
+    {
+      "id": "northern_hunting_berries",
+      "uses": "Hunting, Berries",
+      "x": 0,
+      "z": 695,
+      "radiusX": 190,
+      "radiusZ": 155,
+      "ellipse": false
+    },
+    {
+      "id": "western_hunting_berries",
+      "uses": "Hunting, Berries",
+      "x": -430,
+      "z": 295,
+      "radiusX": 120,
+      "radiusZ": 110,
+      "ellipse": false
+    },
+    {
+      "id": "southeastern_hunting",
+      "uses": "Hunting",
+      "x": 155,
+      "z": 0,
+      "radiusX": 70,
+      "radiusZ": 85,
+      "ellipse": false
+    },
+    {
+      "id": "forest_north",
+      "uses": "Forest",
+      "x": -60,
+      "z": 710,
+      "radiusX": 183.3333,
+      "radiusZ": 137.5,
+      "ellipse": true
+    },
+    {
+      "id": "forest_west",
+      "uses": "Forest",
+      "x": -435,
+      "z": 300,
+      "radiusX": 120.8333,
+      "radiusZ": 108.3333,
+      "ellipse": true
+    },
+    {
+      "id": "forest_south",
+      "uses": "Forest",
+      "x": -250,
+      "z": 25,
+      "radiusX": 91.6667,
+      "radiusZ": 100,
+      "ellipse": true
+    },
+    {
+      "id": "forest_east",
+      "uses": "Forest",
+      "x": 250,
+      "z": 310,
+      "radiusX": 104.1667,
+      "radiusZ": 125,
+      "ellipse": true
+    },
+    {
+      "id": "forest_river",
+      "uses": "Forest",
+      "x": -100,
+      "z": 400,
+      "radiusX": 133.3333,
+      "radiusZ": 54.1667,
+      "ellipse": true
+    },
+    {
+      "id": "forest_southeast",
+      "uses": "Forest",
+      "x": 250,
+      "z": 10,
+      "radiusX": 66.6667,
+      "radiusZ": 83.3333,
+      "ellipse": true
+    },
+    {
+      "id": "ore_northwest",
+      "uses": "Ore",
+      "x": -270,
+      "z": 770,
+      "radiusX": 66.6667,
+      "radiusZ": 83.3333,
+      "ellipse": true
+    },
+    {
+      "id": "ore_west",
+      "uses": "Ore",
+      "x": -500,
+      "z": 530,
+      "radiusX": 50,
+      "radiusZ": 75,
+      "ellipse": true
+    },
+    {
+      "id": "ore_southwest",
+      "uses": "Ore",
+      "x": -485,
+      "z": 10,
+      "radiusX": 70.8333,
+      "radiusZ": 87.5,
+      "ellipse": true
+    },
+    {
+      "id": "ore_east",
+      "uses": "Ore",
+      "x": 370,
+      "z": 340,
+      "radiusX": 50,
+      "radiusZ": 125,
+      "ellipse": true
+    },
+    {
+      "id": "starter_pond",
+      "uses": "Fishing",
+      "x": 88,
+      "z": 72,
+      "radiusX": 18,
+      "radiusZ": 15,
+      "ellipse": true
+    },
+    {
+      "id": "lake_north",
+      "uses": "Fishing",
+      "x": 30,
+      "z": 740,
+      "radiusX": 26.6667,
+      "radiusZ": 33.3333,
+      "ellipse": true
+    },
+    {
+      "id": "lake_northwest",
+      "uses": "Fishing",
+      "x": -100,
+      "z": 730,
+      "radiusX": 15,
+      "radiusZ": 19.1667,
+      "ellipse": true
+    },
+    {
+      "id": "lake_west",
+      "uses": "Fishing",
+      "x": -440,
+      "z": 550,
+      "radiusX": 12.5,
+      "radiusZ": 15.8333,
+      "ellipse": true
+    },
+    {
+      "id": "lake_farmland",
+      "uses": "Fishing",
+      "x": -360,
+      "z": 460,
+      "radiusX": 13.3333,
+      "radiusZ": 15.8333,
+      "ellipse": true
+    },
+    {
+      "id": "lake_west_hunt",
+      "uses": "Fishing",
+      "x": -360,
+      "z": 230,
+      "radiusX": 18.3333,
+      "radiusZ": 20.8333,
+      "ellipse": true
+    },
+    {
+      "id": "lake_southwest",
+      "uses": "Fishing",
+      "x": -250,
+      "z": 250,
+      "radiusX": 15,
+      "radiusZ": 16.6667,
+      "ellipse": true
+    },
+    {
+      "id": "lake_south",
+      "uses": "Fishing",
+      "x": -130,
+      "z": 190,
+      "radiusX": 15,
+      "radiusZ": 20,
+      "ellipse": true
+    },
+    {
+      "id": "lake_southeast",
+      "uses": "Fishing",
+      "x": 40,
+      "z": 160,
+      "radiusX": 15,
+      "radiusZ": 18.3333,
+      "ellipse": true
+    },
+    {
+      "id": "lake_east",
+      "uses": "Fishing",
+      "x": 230,
+      "z": 270,
+      "radiusX": 12.5,
+      "radiusZ": 19.1667,
+      "ellipse": true
+    },
+    {
+      "id": "lake_northeast",
+      "uses": "Fishing",
+      "x": 300,
+      "z": 610,
+      "radiusX": 15.8333,
+      "radiusZ": 19.1667,
+      "ellipse": true
+    }
   ],
   "river": [
-    { "x": -6600, "z": 10560 }, { "x": -6000, "z": 8400 },
-    { "x": -4320, "z": 8040 }, { "x": -3480, "z": 6840 },
-    { "x": -3360, "z": 4800 }, { "x": -1440, "z": 4200 },
-    { "x": 360, "z": 4080 }, { "x": 2280, "z": 2760 },
-    { "x": 3360, "z": 1800 }, { "x": 3720, "z": 120 },
-    { "x": 4920, "z": -1440 }
+    {
+      "x": -550,
+      "z": 880
+    },
+    {
+      "x": -500,
+      "z": 700
+    },
+    {
+      "x": -360,
+      "z": 670
+    },
+    {
+      "x": -290,
+      "z": 570
+    },
+    {
+      "x": -280,
+      "z": 400
+    },
+    {
+      "x": -120,
+      "z": 350
+    },
+    {
+      "x": 30,
+      "z": 340
+    },
+    {
+      "x": 190,
+      "z": 230
+    },
+    {
+      "x": 280,
+      "z": 150
+    },
+    {
+      "x": 310,
+      "z": 10
+    },
+    {
+      "x": 410,
+      "z": -120
+    }
   ]
 }

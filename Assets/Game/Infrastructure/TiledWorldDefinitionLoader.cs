@@ -35,8 +35,8 @@ namespace Game.Infrastructure
         {
             var data = JsonUtility.FromJson<LayoutData>(json);
             if (data == null || data.generationId != TiledWorldDefinition.ReferenceGenerationId ||
-                data.columns != 12 || data.rows != 12 || data.tileSizeMeters != 1000 || data.zones == null || data.river == null)
-                throw new InvalidOperationException("P10.9 requires the versioned 12 × 12 grid of 1000 m tiles.");
+                data.columns != 4 || data.rows != 4 || data.tileSizeMeters != 250 || data.zones == null || data.river == null)
+                throw new InvalidOperationException("P10.9 requires the versioned 1000 × 1000 m world (4 × 4 tiles).");
             return new TiledWorldDefinition(data.generationId, data.columns, data.rows, data.tileSizeMeters,
                 data.originX, data.originZ, data.zones.Select(zone => new WorldZoneDefinition(zone.id,
                     (WorldZoneUse)Enum.Parse(typeof(WorldZoneUse), zone.uses, false), zone.x, zone.z,

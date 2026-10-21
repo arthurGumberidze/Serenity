@@ -109,8 +109,12 @@ namespace Game.Infrastructure
             IEnumerable<Tuple<WorldPosition, WorldPosition>> navigationRoutes)
         {
             if (Definition == null) throw new InvalidOperationException("The tiled world is not initialized.");
-            var plan = planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
-                navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
+            // Sixteen small tiles fit the compact world. Retain its entire terrain so a
+            // maximum-zoom view cannot expose a streaming edge or lose command collision.
+            var plan = Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000
+                ? new TiledWorldStreamingPlan(Definition.Tiles, Definition.Tiles)
+                : planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
+                    navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
             ApplyPlan(plan);
         }
 
@@ -132,6 +136,9 @@ namespace Game.Infrastructure
 
         public void BuildNavigation()
         {
+            // Runtime terrains are positioned during the same bootstrap frame. Volume
+            // collection must see their final collider bounds, not the creation origin.
+            Physics.SyncTransforms();
             navigationEnabled = true;
             foreach (var tile in loaded.Values.OrderBy(value => value.Id)) EnsureNavigation(tile);
             RebuildLinks();
@@ -243,13 +250,13 @@ namespace Game.Infrastructure
                 if (sourceLayers.Length > 1 && uses.HasFlag(WorldZoneUse.Forest)) primary = 1;
                 if (sourceLayers.Length > 2 && uses.HasFlag(WorldZoneUse.Ore)) primary = 2;
                 if (sourceLayers.Length > 3 && (uses.HasFlag(WorldZoneUse.Agriculture) ||
-                    uses.HasFlag(WorldZoneUse.Settlement) || HeightSampler.DistanceToRiver(wx, wz) < 95f)) primary = 3;
+                    uses.HasFlag(WorldZoneUse.Settlement) || HeightSampler.DistanceToRiver(wx, wz) < 95f / 12f)) primary = 3;
                 map[z, x, primary] = 0.78f;
                 map[z, x, 0] += 0.22f;
                 if (sourceLayers.Length > 4)
                 {
-                    var shore = Mathf.Clamp01((TiledWorldHeightSampler.WaterLevelMeters + 7f -
-                        HeightSampler.SampleHeight(wx, wz)) / 5f);
+                    var shore = Mathf.Clamp01((TiledWorldHeightSampler.WaterLevelMeters + 2.5f -
+                        HeightSampler.SampleHeight(wx, wz)) / 3.5f);
                     for (var layer = 0; layer < 4; layer++) map[z, x, layer] *= 1f - shore;
                     map[z, x, 4] = shore;
                 }
@@ -319,6 +326,7 @@ namespace Game.Infrastructure
         private void EnsureNavigation(LoadedTile tile)
         {
             if (tile.Navigation != null) return;
+            Physics.SyncTransforms();
             var surface = tile.Root.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Volume;
             surface.center = new Vector3(Definition.TileSizeMeters * 0.5f,
@@ -347,7 +355,7 @@ namespace Game.Infrastructure
             var origin = Definition.TileOrigin(from.Id);
             for (var index = 0; index < 10; index++)
             {
-                var along = 50f + index * 100f;
+                var along = (index + 0.5f) * Definition.TileSizeMeters / 10f;
                 var worldX = eastWest ? origin.X + Definition.TileSizeMeters : origin.X + along;
                 var worldZ = eastWest ? origin.Z + along : origin.Z + Definition.TileSizeMeters;
                 var ax = worldX + (eastWest ? -2f : 0f);
@@ -362,7 +370,7 @@ namespace Game.Infrastructure
                     az - origin.Z);
                 link.endPoint = new Vector3(bx - origin.X, HeightSampler.SampleHeight(bx, bz) + 0.1f,
                     bz - origin.Z);
-                link.width = 70f;
+                link.width = Definition.TileSizeMeters * 0.07f;
                 link.bidirectional = true;
                 linkObjects.Add(linkObject);
             }

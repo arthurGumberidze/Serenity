@@ -68,7 +68,7 @@ namespace Game.Domain.World
         public bool IsValid(WorldDiscoveryCell cell) => cell.X >= 0 && cell.X < Columns &&
             cell.Z >= 0 && cell.Z < Rows;
 
-        public static ConnectedWorldLayout For(TiledWorldDefinition definition, int discoveryCellMeters = 250)
+        public static ConnectedWorldLayout For(TiledWorldDefinition definition, int discoveryCellMeters = 25)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             return new ConnectedWorldLayout(definition.GenerationId, definition.Origin.X, definition.Origin.Z,

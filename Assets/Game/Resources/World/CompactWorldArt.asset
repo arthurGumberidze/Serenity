@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7a9218baba51e04db3d108218e90e96, type: 3}
+  m_Name: CompactWorldArt
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.CompactWorldArtCatalog
+  HuntingDeer: {fileID: 5161562144378933552, guid: 5a886efd813d9bb488b6dd699aee4f1c, type: 3}
+  StoneOutcrop: {fileID: 5355182246183666131, guid: 69190533c4b57dd42a0450f2bd12ca99, type: 3}
+  FieldFence: {fileID: 2633324344948984984, guid: e379df0bbaa8d1b49bff339d7cab3a80, type: 3}
+  FishPattern: {fileID: 2800000, guid: 83560de9c6e282a4ea0d81b02cc59feb, type: 3}

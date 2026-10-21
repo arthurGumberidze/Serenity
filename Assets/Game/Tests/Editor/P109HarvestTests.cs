@@ -15,6 +15,47 @@ namespace Game.Tests.Editor
     public sealed class P109HarvestTests
     {
         [Test]
+        public void EveryCatchCreatesASeparateBankPileAndHaulTakesOnlyAvailableStorageSpace()
+        {
+            var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries", "fish" }
+                .Select(x => new ResourceDefinition(new ResourceId(x), x, ResourceCategory.Construction)));
+            var inventories = new ResourceInventoryRegistry();
+            var worker = StableEntityId.NewId();
+            var carrier = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, worker), resources, 12);
+            inventories.Add(carrier);
+            var buildings = new BuildingRegistry();
+            var storage = Building.CreateNew(new BuildingDefinitionId("storage_basket"), new GridCoordinate(0, 0), BuildingOrientation.North);
+            storage.MarkCompleted();
+            buildings.Add(storage);
+            inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, storage.Id), resources, 2));
+            var piles = new WorldPileService(resources, inventories);
+            var production = new ProductionService(ProductionCatalog.CreatePlayablePatch(resources), resources,
+                inventories, buildings, new ResourceTransferService(inventories));
+            var bank = new GridCoordinate(10, 12);
+            production.UseGroundOutputs(piles, point => new GridCoordinate((int)point.X, (int)point.Z));
+            var source = ProductionSite.CreateNatural(new ProductionRecipeId("fish_water"), new WorldPosition(10, 12, 12), 48);
+            production.AddSite(source);
+            for (var catchIndex = 0; catchIndex < 2; catchIndex++)
+            {
+                Assert.That(production.TryReserveAtSite(worker, source.Id, out var work), Is.True);
+                var result = production.AdvanceTask(work.Task.Id, TimeSpan.FromMinutes(20));
+                Assert.That(result.Completed, Is.True);
+                Assert.That(result.OutputOwner.Kind, Is.EqualTo(InventoryOwnerKind.WorldPile));
+                Assert.That(carrier.TotalUnits, Is.Zero);
+            }
+            Assert.That(piles.All.Count, Is.EqualTo(2));
+            Assert.That(piles.All.All(x => x.Coordinate.Equals(bank)), Is.True);
+            var fish = new ResourceId("fish");
+            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(8));
+            var query = new HaulWorldQuery(inventories, piles, buildings, new HaulClaimRegistry());
+            Assert.That(query.TryClaim(new Tier1AiAgentState(worker, source.Position), 12, out var claim, out _), Is.True);
+            Assert.That(claim.Quantity.Units, Is.EqualTo(2));
+            Assert.That(new ResourceTransferService(inventories).TransferExact(claim.Source, carrier.Owner,
+                fish, claim.Quantity), Is.EqualTo(TransferFailureReason.None));
+            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(6));
+        }
+
+        [Test]
         public void HarvestLeavesGroundPileAndHaulReservesOnlyStorageSpace()
         {
             var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries" }

@@ -9,7 +9,8 @@ namespace Game.Domain.World
     public sealed class TiledWorldResourceNode
     {
         public TiledWorldResourceNode(int stableIndex, WorldTileId tile, string recipeId,
-            NaturalResourceBiome biome, WorldPosition position, long capacity, string sourceZoneId)
+            NaturalResourceBiome biome, WorldPosition position, long capacity, string sourceZoneId,
+            WorldPosition? visualPosition = null)
         {
             if (stableIndex < 0) throw new ArgumentOutOfRangeException(nameof(stableIndex));
             if (string.IsNullOrWhiteSpace(recipeId)) throw new ArgumentException(nameof(recipeId));
@@ -19,6 +20,7 @@ namespace Game.Domain.World
             RecipeId = recipeId;
             Biome = biome;
             Position = position;
+            VisualPosition = visualPosition ?? position;
             Capacity = capacity;
             SourceZoneId = sourceZoneId ?? string.Empty;
         }
@@ -28,6 +30,7 @@ namespace Game.Domain.World
         public string RecipeId { get; }
         public NaturalResourceBiome Biome { get; }
         public WorldPosition Position { get; }
+        public WorldPosition VisualPosition { get; }
         public long Capacity { get; }
         public string SourceZoneId { get; }
     }
@@ -111,7 +114,7 @@ namespace Game.Domain.World
             foreach (var zone in definition.Zones.OrderBy(value => value.Id, StringComparer.Ordinal))
             {
                 if (zone.Uses.HasFlag(WorldZoneUse.Forest))
-                    AddZoneResources(resources, ref nextResource, zone, "chop_wood", NaturalResourceBiome.Forest, 14);
+                    AddZoneResources(resources, ref nextResource, zone, "chop_wood", NaturalResourceBiome.Forest, 70);
                 if (zone.Uses.HasFlag(WorldZoneUse.Berries))
                     AddZoneResources(resources, ref nextResource, zone, "gather_berries", NaturalResourceBiome.Meadow, 10);
                 if (zone.Uses.HasFlag(WorldZoneUse.Hunting))
@@ -123,7 +126,7 @@ namespace Game.Domain.World
                     AddZoneResources(resources, ref nextResource, zone, "gather_gold", NaturalResourceBiome.Mountain, 2);
                 }
                 if (zone.Uses.HasFlag(WorldZoneUse.Fishing))
-                    AddZoneResources(resources, ref nextResource, zone, "fish_water", NaturalResourceBiome.Lake, 4);
+                    AddFishingSchools(resources, ref nextResource, zone);
             }
 
             var industry = new List<TiledWorldIndustrialNode>();
@@ -155,6 +158,39 @@ namespace Game.Domain.World
             occupied.Add(position);
         }
 
+        private void AddFishingSchools(ICollection<TiledWorldResourceNode> target, ref int stableIndex,
+            WorldZoneDefinition lake)
+        {
+            for (var school = 0; school < 4; school++)
+            {
+                // The source's work/output point is a dry bank, while its selectable fish
+                // projection remains in the water. Neither requires an actor to swim.
+                WorldPosition bank = default;
+                double angle = 0;
+                var found = false;
+                for (var attempt = 0; attempt < 48 && !found; attempt++)
+                {
+                    angle = (225 + school * 90 + (attempt % 9 - 4) * 4) * Math.PI / 180d;
+                    // Work beyond the ten-metre bank transition; its inner crest can
+                    // be too steep for the runtime NavMesh despite a dry height sample.
+                    var distance = 12f + attempt / 9 * 2f;
+                    var x = lake.Center.X + (float)Math.Cos(angle) * (lake.RadiusX + distance);
+                    var z = lake.Center.Z + (float)Math.Sin(angle) * (lake.RadiusZ + distance);
+                    if (!heights.IsBuildable(x, z, 30f)) continue;
+                    bank = new WorldPosition(x, heights.SampleHeight(x, z), z);
+                    found = true;
+                }
+                if (!found) throw new InvalidOperationException("No dry fishing bank for " + lake.Id + "/" + school);
+                var water = new WorldPosition(lake.Center.X + (float)Math.Cos(angle) * lake.RadiusX * 0.55f,
+                    TiledWorldHeightSampler.WaterLevelMeters + 0.12f,
+                    lake.Center.Z + (float)Math.Sin(angle) * lake.RadiusZ * 0.55f);
+                definition.TryGetTile(bank.X, bank.Z, out var tile);
+                target.Add(new TiledWorldResourceNode(stableIndex++, tile, "fish_water",
+                    NaturalResourceBiome.Lake, bank, 48, lake.Id, water));
+                occupied.Add(bank);
+            }
+        }
+
         private void AddZoneResources(ICollection<TiledWorldResourceNode> target, ref int stableIndex,
             WorldZoneDefinition zone, string recipe, NaturalResourceBiome biome, int count)
         {
@@ -183,14 +219,12 @@ namespace Game.Domain.World
             var origin = definition.TileOrigin(tile);
             for (var attempt = 0; attempt < 160; attempt++)
             {
-                var x = origin.X + 42f + Unit(salt, attempt, 1) * (definition.TileSizeMeters - 84f);
-                var z = origin.Z + 42f + Unit(salt, attempt, 2) * (definition.TileSizeMeters - 84f);
-                if (!AcceptLand(recipe, x, z, attempt >= 96) || TooClose(x, z, 26f)) continue;
+                var x = origin.X + 8f + Unit(salt, attempt, 1) * (definition.TileSizeMeters - 16f);
+                var z = origin.Z + 8f + Unit(salt, attempt, 2) * (definition.TileSizeMeters - 16f);
+                if (!AcceptLand(recipe, x, z, attempt >= 96) || TooClose(x, z, 8f)) continue;
                 return new WorldPosition(x, heights.SampleHeight(x, z), z);
             }
-            var fallbackX = origin.X + 100f + (salt % 7) * 110f;
-            var fallbackZ = origin.Z + 100f + (salt % 5) * 150f;
-            return new WorldPosition(fallbackX, heights.SampleHeight(fallbackX, fallbackZ), fallbackZ);
+            throw new InvalidOperationException("No dry resource placement in tile " + tile);
         }
 
         private bool TryFindZonePoint(WorldZoneDefinition zone, string recipe, int salt, out WorldPosition position)
@@ -201,7 +235,7 @@ namespace Game.Domain.World
                 var dz = (Unit(salt, attempt, 4) * 2f - 1f) * zone.RadiusZ * 0.88f;
                 var x = zone.Center.X + dx;
                 var z = zone.Center.Z + dz;
-                if (!zone.Contains(x, z) || !definition.TryGetTile(x, z, out _) || TooClose(x, z, 24f)) continue;
+                if (!zone.Contains(x, z) || !definition.TryGetTile(x, z, out _) || TooClose(x, z, 7f)) continue;
                 if (recipe == "fish_water")
                 {
                     if (!heights.IsWater(x, z)) continue;
@@ -221,11 +255,12 @@ namespace Game.Domain.World
             for (var attempt = 0; attempt < 256; attempt++)
             {
                 var angle = Unit(salt, attempt, 5) * Math.PI * 2d;
-                var radius = shore ? 1.08f + Unit(salt, attempt, 6) * 0.18f : Unit(salt, attempt, 6) * 0.72f;
+                var radius = shore ? 1f + (10f + Unit(salt, attempt, 6) * 8f) /
+                    Math.Min(zone.RadiusX, zone.RadiusZ) : Unit(salt, attempt, 6) * 0.72f;
                 var x = zone.Center.X + (float)Math.Cos(angle) * zone.RadiusX * radius;
                 var z = zone.Center.Z + (float)Math.Sin(angle) * zone.RadiusZ * radius;
                 if (!definition.TryGetTile(x, z, out _) || heights.IsWater(x, z) ||
-                    !heights.IsBuildable(x, z, 34f) || TooClose(x, z, 38f)) continue;
+                    !heights.IsBuildable(x, z, 34f) || TooClose(x, z, 9f)) continue;
                 position = new WorldPosition(x, heights.SampleHeight(x, z), z);
                 return true;
             }
