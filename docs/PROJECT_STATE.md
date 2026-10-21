@@ -11,8 +11,9 @@ passed. Windows build `Builds/P109SyntyPlayable/Serenity.exe` succeeded (0 error
 GUID `7d986af66c3b4dc9aca0af6341ebd670`. Native normal-game selection, move, chop/fall and
 wheel zoom passed on the earlier Synty candidate; final shoreline/water was inspected closely
 in the final Player using opt-in camera bookmarks. Water is stylized, without complex reflections.
-Home/Space and held-MMB acceptance remain unresolved; user check requested, Player left open
-at the pond with Artifacts-only saves. P10.9 remains PARTIAL, not fully accepted from tests.
+User confirmed Home returning to camp, Space pausing, and smooth held-MMB movement;
+confirmation recorded 2026-10-21. These are user-reported manual passes, not agent automation.
+The final binary's full native chop-route repetition remains pending. P10.9 remains PARTIAL.
 Final protected hashes matched 44/44, including 8/8 old saves; all test writes are isolated.
 Five inherited dirty materials and the unrelated `New Unity Project/` remain outside this work.
 

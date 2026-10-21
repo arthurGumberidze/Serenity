@@ -1,13 +1,14 @@
 # NEXT_TASK.md
 
-Active immediate scope (2026-10-20, supersedes historical status below): close the limited
-native input acceptance gap for the integrated Synty starter area. Build
+Active immediate scope (updated 2026-10-21, supersedes historical status below): finish
+final-binary native route acceptance for the integrated Synty starter area. Build
 `Builds/P109SyntyPlayable/Serenity.exe` is complete (GUID 7d986af66c3b4dc9aca0af6341ebd670,
 0 errors / 54 warnings); final tests passed 10/10 EditMode and 8/8 PlayMode. Native selection,
 move, chop/fall and zoom were exercised on the earlier candidate; final water/shore inspected
-in the final Player. Home/Space and held-MMB movement still need confirmation; user was asked
-and the final Player is open at the pond with Artifacts-only saves. Repeat the ordinary native
-route on the final binary when closing full acceptance. Do not redo the completed import.
+in the final Player. User confirmed Home/Space and smooth held-MMB movement (recorded
+2026-10-21); do not ask for the same confirmation again. Repeat the ordinary native selection,
+move, chop/fall and zoom route on the final binary when closing full acceptance, using
+Artifacts-only saves. Do not redo the completed import.
 See `docs/P109_SYNTY_PLAYABLE_HANDOFF.md` for exact evidence and limitations.
 Do not modify old saves, resume performance profiling or start P10.10.
 

@@ -2,7 +2,9 @@
 
 Status: PARTIAL. Implementation, tests and Windows build complete. Native tree/order/zoom
 route passed on the first Synty candidate; close water review passed on the final candidate.
-Keyboard Home/Space and held-middle-button camera acceptance remain open.
+Keyboard Home/Space and held-middle-button camera were confirmed working by the user;
+this confirmation was recorded on 2026-10-21. Full native chop-route repetition on the final
+shoreline binary remains separate from that limited input confirmation.
 
 The approved imported Meadow Forest supplies four mesh tree variants, five terrain layers and
 the lake ripple texture. Project-owned prefabs/materials under `Assets/Game/Art/StarterNature`
@@ -98,10 +100,13 @@ ripples, not planar reflections/refraction. No gameplay exception was observed.
 
 The full native chop route above was on the earlier Synty candidate, not repeated on the final
 shoreline candidate; final automated harvest/selection tests passed. Do not conflate these runs.
-The Player is left open at the pond with isolated saves. The user was asked to check Home,
+The Player was left open at the pond with isolated saves. The user was asked to check Home,
 Space and held-MMB movement because keyboard injection had no visible result and the native
-tool does not support held-MMB dragging. No human confirmation has yet been received.
-P10.9 stays PARTIAL; do not infer complete camera/input acceptance from camera bookmarks.
+tool does not support held-MMB dragging. The user answered "да" to the explicit question
+whether Home returns to camp, Space pauses, and held-MMB camera movement is smooth.
+Recorded 2026-10-21: these three checks pass by user report, not agent input automation.
+P10.9 stays PARTIAL; this confirmation does not close unrelated acceptance debt.
+This follow-up changes documentation only; no new build/test run or save write was needed.
 
 Final SHA256: exe `437691663C5FB21231524F4886E60A10B1841F13E42FBBC93EE39FBD827930CD`;
 Game.Infrastructure.dll `4A5241D1A657E4560D39AEED4D279FAF47C4E6A9E17F2DA7326057BD3B38CB52`;

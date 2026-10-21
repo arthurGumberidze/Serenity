@@ -23,6 +23,11 @@ The twelve extra pond trees are canonical sources, not unclickable decoration; s
 stones/grass are explicitly decorative. Opt-in development camera bookmarks enable visual
 inspection when the native tool cannot hold MMB; they do not count as native input acceptance.
 
+Acceptance note (2026-10-21): the user explicitly confirmed Home returning to camp, Space
+pausing and smooth held-MMB camera movement. Record this as human acceptance of those three
+checks only, separate from agent-exercised routes and automated tests. No architecture,
+gameplay code, save files or build artifacts changed in this documentation-only follow-up.
+
 ## D-155 User-approved reversible Synty Meadow Forest import (2026-10-20)
 
 The user explicitly approved importing their downloaded package into the main project rather
