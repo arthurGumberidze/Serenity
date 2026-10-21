@@ -881,6 +881,8 @@ namespace Game.Infrastructure
                     new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
                     new XElement("level", value.Coordinate.Level), new XElement("orientation", (int)value.Orientation),
                     new XElement("constructionState", (int)value.ConstructionState),
+                    new XElement("constructionWorkTicks", value.ConstructionWorkTicks),
+                    new XElement("constructionRequiredTicks", value.ConstructionRequiredTicks),
                     new XElement("maxIntegrity", value.MaxIntegrity), new XElement("currentIntegrity", value.CurrentIntegrity),
                     new XElement("structuralStatus", (int)value.StructuralStatus),
                     new XElement("ownerSideId", value.OwnerSideId.ToString()),
@@ -920,7 +922,8 @@ namespace Game.Infrastructure
                     "constructionState", "maxIntegrity", "currentIntegrity", "structuralStatus", "ownerSideId",
                     "fireStatus", "fireIntensity", "fireStartTick", "lastFireProcessedTick",
                     "accumulatedFireDamage", "destructionProcessed", "storageSpilled",
-                    "processedDamageEvents", "history" });
+                    "processedDamageEvents", "history" }.Concat(item.Element("constructionWorkTicks") != null
+                        ? new[] { "constructionWorkTicks", "constructionRequiredTicks" } : Array.Empty<string>()).ToArray());
                 var processed = Items(item.Element("processedDamageEvents"), "eventId", value =>
                     StableEntityId.Parse(Scalar(value)));
                 var history = Items(item.Element("history"), "event", value =>
@@ -943,7 +946,9 @@ namespace Game.Infrastructure
                     new CombatSideId(Value(item, "ownerSideId")), (BuildingFireStatus)Int(item, "fireStatus"),
                     Int(item, "fireIntensity"), Long(item, "fireStartTick"), Long(item, "lastFireProcessedTick"),
                     Long(item, "accumulatedFireDamage"), XmlConvert.ToBoolean(Value(item, "destructionProcessed")),
-                    XmlConvert.ToBoolean(Value(item, "storageSpilled")), processed, history);
+                    XmlConvert.ToBoolean(Value(item, "storageSpilled")), processed, history,
+                    item.Element("constructionWorkTicks") == null ? 0 : Long(item, "constructionWorkTicks"),
+                    item.Element("constructionRequiredTicks") == null ? 0 : Long(item, "constructionRequiredTicks"));
             });
             var piles = Items(element.Element("worldPiles"), "pile", item =>
             {

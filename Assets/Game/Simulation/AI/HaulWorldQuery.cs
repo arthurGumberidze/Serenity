@@ -38,9 +38,11 @@ namespace Game.Simulation.AI
         private readonly HaulClaimRegistry claims;
         private readonly float gridSize;
         private readonly WorldPosition gridOrigin;
+        private readonly Func<WorldPosition, WorldPosition> groundPosition;
 
         public HaulWorldQuery(ResourceInventoryRegistry inventories, WorldPileService piles, BuildingRegistry buildings,
-            HaulClaimRegistry claims, float gridSize = 1f, WorldPosition gridOrigin = default)
+            HaulClaimRegistry claims, float gridSize = 1f, WorldPosition gridOrigin = default,
+            Func<WorldPosition, WorldPosition> groundPosition = null)
         {
             this.inventories = inventories ?? throw new ArgumentNullException(nameof(inventories));
             this.piles = piles ?? throw new ArgumentNullException(nameof(piles));
@@ -50,6 +52,7 @@ namespace Game.Simulation.AI
                 throw new ArgumentOutOfRangeException(nameof(gridSize));
             this.gridSize = gridSize;
             this.gridOrigin = gridOrigin;
+            this.groundPosition = groundPosition;
         }
 
         public bool TryFindJob(Tier1AiAgentState agent, long maxUnits, out HaulJobCandidate candidate)
@@ -57,7 +60,7 @@ namespace Game.Simulation.AI
             if (agent == null) throw new ArgumentNullException(nameof(agent));
             candidate = default;
             if (maxUnits <= 0) return false;
-            var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+            var characterOwner = inventories.WorkerOwner(agent.CharacterId);
             if (!inventories.TryGet(characterOwner, out var characterInventory)) return false;
             var characterCapacity = characterInventory.Capacity - characterInventory.TotalUnits;
             if (characterCapacity <= 0) return false;
@@ -77,7 +80,7 @@ namespace Game.Simulation.AI
                 {
                     if (destinationInventory.Owner.Kind != InventoryOwnerKind.BuildingStorage) continue;
                     if (!buildings.TryGet(destinationInventory.Owner.Id, out var building) ||
-                        building.ConstructionState != ConstructionState.Completed) continue;
+                        !building.IsOperational) continue;
                     var rawDestinationCapacity = destinationInventory.Capacity - destinationInventory.TotalUnits;
                     var destinationCapacity = rawDestinationCapacity - claims.ReservedAtDestination(destinationInventory.Owner);
                     if (destinationCapacity <= 0 || !destinationInventory.CanAdd(pile.ResourceId, new ResourceQuantity(1))) continue;
@@ -127,7 +130,7 @@ namespace Game.Simulation.AI
                 building.ConstructionState != ConstructionState.Completed ||
                 !inventories.TryGet(sourceOwner, out var source) ||
                 !inventories.TryGet(destinationOwner, out var destination)) return false;
-            var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+            var characterOwner = inventories.WorkerOwner(agent.CharacterId);
             if (!inventories.TryGet(characterOwner, out var characterInventory) ||
                 characterInventory.Capacity - characterInventory.TotalUnits < quantity.Units ||
                 !source.CanRemove(resourceId, quantity) || !destination.CanAdd(resourceId, quantity)) return false;
@@ -170,14 +173,32 @@ namespace Game.Simulation.AI
         }
 
         public bool InventoryExists(InventoryOwner owner, out ResourceInventory inventory) => inventories.TryGet(owner, out inventory);
+        public InventoryOwner WorkerOwner(StableEntityId id) => inventories.WorkerOwner(id);
+
+        public void DropTransportLoad(StableEntityId worker, WorldPosition position)
+        {
+            var owner = WorkerOwner(worker);
+            if (owner.Kind != InventoryOwnerKind.CarryLoad || !inventories.TryGet(owner, out var load)) return;
+            var coordinate = new GridCoordinate((int)Math.Round((position.X - gridOrigin.X) / gridSize),
+                (int)Math.Round((position.Z - gridOrigin.Z) / gridSize));
+            foreach (var amount in load.CaptureState().Amounts)
+            {
+                if (!amount.Quantity.IsPositive) continue;
+                piles.Create(amount.ResourceId, amount.Quantity, coordinate);
+                if (!load.TryRemove(amount.ResourceId, amount.Quantity))
+                    throw new InvalidOperationException("Transport load changed during drop transaction.");
+            }
+        }
         public bool BuildingStorageExists(InventoryOwner owner) => owner.Kind == InventoryOwnerKind.BuildingStorage &&
             inventories.TryGet(owner, out _) && buildings.TryGet(owner.Id, out var building) &&
             building.IsOperational;
 
-        private WorldPosition ToWorld(GridCoordinate coordinate) => new WorldPosition(
-            gridOrigin.X + coordinate.X * gridSize,
-            gridOrigin.Y + coordinate.Level * gridSize,
-            gridOrigin.Z + coordinate.Z * gridSize);
+        private WorldPosition ToWorld(GridCoordinate coordinate)
+        {
+            var point = new WorldPosition(gridOrigin.X + coordinate.X * gridSize,
+                gridOrigin.Y + coordinate.Level * gridSize, gridOrigin.Z + coordinate.Z * gridSize);
+            return groundPosition?.Invoke(point) ?? point;
+        }
 
         private static bool IsBetter(double sourceDistance, double destinationDistance, InventoryOwner source,
             InventoryOwner destination, double bestSourceDistance, double bestDestinationDistance,

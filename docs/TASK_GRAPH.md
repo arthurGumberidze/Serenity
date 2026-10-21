@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 Worksite V2 feedback slice (2026-10-21): PARTIAL. User requested immediate correction
+of animation/ground-output/hauling/building/resource-selection/fishing defects. New assets are
+analysis-only. Implemented; EditMode 54/54, focused PlayMode 3/3 and physical partial-haul 1/1.
+Windows build GUID 017e3d80ef804d86af8678a2abc68c6b succeeded, 0 errors / 56 warnings.
+Native move/idle, two tree outputs, mining, fishing, zoom and LMB/MMB dismissal exercised.
+Native construction/close-up work-tool/fall review remain open; consolidated PlayMode **13/13 passed**.
+Old saves preserved; new generation/path isolates changed mechanics. Overall P10.9 remains PARTIAL.
+
 P10.9 Synty playable starter slice (2026-10-20): PARTIAL. New tree presentation, shoreline,
 ripple water and harvest transition implemented; final EditMode 10/10 and PlayMode 8/8 passed.
 Windows build succeeded (0 errors / 54 warnings), GUID 7d986af66c3b4dc9aca0af6341ebd670.

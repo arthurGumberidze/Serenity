@@ -1,5 +1,30 @@
 # DECISIONS.md
 
+## D-157 Worksite V2 uses physical outputs and worker-built structures (2026-10-21)
+
+The user's latest instruction authorizes implementation now, not merely a diagnostic plan.
+Player residents have no personal stock: `CarryLoad` is a bounded, temporary transport owner,
+not a backpack or funding source. Production commits outputs once to canonical world piles at
+the source. Explicit queued work and critical needs precede idle cleanup; source/destination
+reservations limit pickup to the minimum of available goods, carrier capacity and free storage.
+Cancellation/failure/restored orphan loads return cargo to ground without destroying quantity.
+The legacy domain catalog and default construction contract remain available for historical tests;
+normal Worksite V2 composition explicitly enables ground outputs and construction requiring labor.
+
+Construction pays its declared cost at placement, creates a planned structure and queues a Build
+order. Canonical required/accumulated labor ticks survive save/load; a scaffold and progressive
+mesh visibility project that state. Existing completed structures remain completed. Optional XML
+labor fields read older snapshots with zero defaults; the new generation and normal save directory
+prevent silent migration of old worlds. No old save file is written or deleted.
+
+Visible detailed residents retain animation evaluation through idle transitions. Work clips are
+looped by their suffix without rebuilding a valid humanoid mapping. Tools attach to the active
+visual skeleton. Decorative starter outcrops receive their own deterministic source identity;
+fish remain a canonical source approached from dry shore, with a small centralized cosmetic school.
+Normal player army creation does not preload supplies; accepted map departure prepares expedition
+supplies. New external packs are researched only. Art packages do not implement command routing,
+storage reservations, construction work or save-state ownership.
+
 ## D-156 Synty starter art remains a disposable resource projection (2026-10-20)
 
 The user explicitly requested one playable starter area using the admitted Synty assets,

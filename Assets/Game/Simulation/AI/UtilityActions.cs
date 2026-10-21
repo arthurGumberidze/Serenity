@@ -184,7 +184,7 @@ namespace Game.Simulation.AI
             get
             {
                 if (IsFinished || !movement.IsAvailable || !world.Claims.IsActive(claim)) return false;
-                var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+                var characterOwner = world.HaulJobs.WorkerOwner(agent.CharacterId);
                 if (claim.Phase == HaulClaimPhase.Carrying)
                     return world.HaulJobs.InventoryExists(characterOwner, out var carried) &&
                         carried.CanRemove(job.ResourceId, job.Quantity);
@@ -230,6 +230,7 @@ namespace Game.Simulation.AI
         {
             if (IsFinished) return;
             movement.Stop();
+            world.HaulJobs.DropTransportLoad(agent.CharacterId, movement.CurrentPosition);
             world.Claims.Release(claim);
             IsFinished = true;
             Succeeded = false;
@@ -238,7 +239,7 @@ namespace Game.Simulation.AI
 
         private void Pickup()
         {
-            var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+            var characterOwner = world.HaulJobs.WorkerOwner(agent.CharacterId);
             var failure = world.Transfers.TransferExact(job.Source, characterOwner, job.ResourceId, job.Quantity);
             if (failure != TransferFailureReason.None)
             {
@@ -252,7 +253,7 @@ namespace Game.Simulation.AI
 
         private void Dropoff()
         {
-            var characterOwner = new InventoryOwner(InventoryOwnerKind.Character, agent.CharacterId);
+            var characterOwner = world.HaulJobs.WorkerOwner(agent.CharacterId);
             var failure = world.Transfers.TransferExact(characterOwner, job.Destination, job.ResourceId, job.Quantity);
             if (failure == TransferFailureReason.None)
             {
@@ -283,6 +284,7 @@ namespace Game.Simulation.AI
         private void Fail()
         {
             movement.Stop();
+            world.HaulJobs.DropTransportLoad(agent.CharacterId, movement.CurrentPosition);
             world.Claims.Release(claim);
             IsFinished = true;
             Succeeded = false;
@@ -353,7 +355,8 @@ namespace Game.Simulation.AI
                 case AiActionPhase.Working:
                     completion = production.AdvanceTask(job.Task.Id, simulationDelta);
                     if (!completion.Completed) break;
-                    if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage)
+                    if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage ||
+                        completion.OutputOwner.Kind == InventoryOwnerKind.WorldPile)
                     {
                         Finish();
                         break;

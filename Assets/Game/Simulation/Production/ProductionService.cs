@@ -75,7 +75,8 @@ namespace Game.Simulation.Production
             RemainderTicks = accumulated % ticksPerPersonUnit;
             if (due == 0) return;
             var remaining = due;
-            foreach (var inventory in inventories.All.OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
+            foreach (var inventory in inventories.All.Where(x => x.Owner.Kind != InventoryOwnerKind.CarryLoad)
+                         .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
                          .ThenBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
             {
                 var available = inventory.GetAmount(foodResource).Units;
@@ -151,6 +152,15 @@ namespace Game.Simulation.Production
         private readonly ICharacterCapabilityProvider capabilities;
         private readonly IWeatherModifierProvider weather;
         private Dictionary<ResourceId, long> stepTotals;
+        private WorldPileService outputPiles;
+        private Func<WorldPosition, GridCoordinate> outputCoordinate;
+        public bool UsesGroundOutputs => outputPiles != null;
+
+        public void UseGroundOutputs(WorldPileService piles, Func<WorldPosition, GridCoordinate> coordinate)
+        {
+            outputPiles = piles ?? throw new ArgumentNullException(nameof(piles));
+            outputCoordinate = coordinate ?? throw new ArgumentNullException(nameof(coordinate));
+        }
 
         public ProductionService(ProductionCatalog recipeCatalog, ResourceCatalog resourceCatalog,
             ResourceInventoryRegistry inventoryRegistry, BuildingRegistry buildingRegistry,
@@ -262,7 +272,7 @@ namespace Game.Simulation.Production
                 job = new ProductionJob(existing, sites[existing.SiteId].Position);
                 return true;
             }
-            if (!inventories.TryGet(new InventoryOwner(InventoryOwnerKind.Character, workerId), out _)) return false;
+            if (!inventories.TryGet(inventories.WorkerOwner(workerId), out _)) return false;
 
             if (!TrySelectSite(workerId, workerPosition, out var selected, out var selectedKind)) return false;
             var selectedRecipe = recipes.Get(selected.RecipeId);
@@ -287,7 +297,7 @@ namespace Game.Simulation.Production
                 job = new ProductionJob(existing, sites[siteId].Position);
                 return true;
             }
-            if (!inventories.TryGet(new InventoryOwner(InventoryOwnerKind.Character, workerId), out _) ||
+            if (!inventories.TryGet(inventories.WorkerOwner(workerId), out _) ||
                 !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable ||
                 !IsSiteOperational(siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
@@ -311,7 +321,7 @@ namespace Game.Simulation.Production
             // Tier 1 keeps one physical producer at a time in this MVP slice so logistics/rest work remains observable.
             // Aggregate Tier 2/Tier 3 workers use TryReserve directly and are not subject to this presentation policy.
             if (tasks.Values.Any(candidate => !candidate.IsTerminal)) return false;
-            return inventories.TryGet(new InventoryOwner(InventoryOwnerKind.Character, workerId), out _) &&
+            return inventories.TryGet(inventories.WorkerOwner(workerId), out _) &&
                 TrySelectSite(workerId, workerPosition, out _, out _);
         }
 
@@ -377,7 +387,7 @@ namespace Game.Simulation.Production
         {
             if (destination.Kind == InventoryOwnerKind.BuildingStorage &&
                 (!buildings.TryGet(destination.Id, out var building) || !building.IsOperational)) return false;
-            var source = new InventoryOwner(InventoryOwnerKind.Character, workerId);
+            var source = inventories.WorkerOwner(workerId);
             return transfers.TransferExact(source, destination, id, new ResourceQuantity(units)) == TransferFailureReason.None;
         }
 
@@ -510,7 +520,7 @@ namespace Game.Simulation.Production
                 var completion = AdvanceTaskAt(task.Id, TimeSpan.FromTicks(rawTicksUsed), calendarTick);
                 if (!completion.Completed) return;
                 budgetTicks -= rawTicksUsed;
-                if (completion.ProducedOutput && TryFindStorage(completion.ResourceId, completion.Units, default,
+                if (completion.ProducedOutput && !UsesGroundOutputs && TryFindStorage(completion.ResourceId, completion.Units, default,
                         out var destination, out _))
                     TryDeposit(workerId, destination, completion.ResourceId, completion.Units);
             }
@@ -568,8 +578,9 @@ namespace Game.Simulation.Production
             }
             var recipe = recipes.Get(task.RecipeId);
             var outputs = recipe.OutputsFor(site);
-            var outputOwner = new InventoryOwner(InventoryOwnerKind.Character, task.WorkerId);
-            if (task.Kind != ProductionTaskKind.Plant && !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
+            var outputOwner = inventories.WorkerOwner(task.WorkerId);
+            if (task.Kind != ProductionTaskKind.Plant && !UsesGroundOutputs &&
+                !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
                 return default;
             if (!TryConsumeInputs(recipe)) return default;
             site.CompleteWork(task.Kind, recipe.HarvestEntireSource);
@@ -578,10 +589,15 @@ namespace Game.Simulation.Production
             long outputUnits = 0;
             if (task.Kind != ProductionTaskKind.Plant)
             {
-                var destination = inventories.Get(outputOwner);
                 foreach (var output in outputs)
                 {
-                    if (!destination.TryAdd(output.ResourceId, output.Quantity))
+                    if (UsesGroundOutputs)
+                    {
+                        var pile = outputPiles.Create(output.ResourceId, output.Quantity,
+                            outputCoordinate(site.Position));
+                        if (!produced) outputOwner = pile.InventoryOwner;
+                    }
+                    else if (!inventories.Get(outputOwner).TryAdd(output.ResourceId, output.Quantity))
                         throw new InvalidOperationException("Production output owner changed during a committed batch.");
                     producedTotals.TryGetValue(output.ResourceId, out var old);
                     producedTotals[output.ResourceId] = checked(old + output.Quantity.Units);
@@ -645,11 +661,11 @@ namespace Game.Simulation.Production
         }
 
         private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site) =>
-            TrySelectOutputOwner(workerId, recipe.OutputsFor(site), out _);
+            UsesGroundOutputs || TrySelectOutputOwner(workerId, recipe.OutputsFor(site), out _);
 
         private bool TrySelectOutputOwner(StableEntityId workerId, IReadOnlyList<ResourceAmount> outputs, out InventoryOwner owner)
         {
-            owner = new InventoryOwner(InventoryOwnerKind.Character, workerId);
+            owner = inventories.WorkerOwner(workerId);
             if (inventories.TryGet(owner, out var character) && CanAddAll(character, outputs)) return true;
             foreach (var inventory in inventories.All.OrderBy(x => x.Owner.Id))
             {

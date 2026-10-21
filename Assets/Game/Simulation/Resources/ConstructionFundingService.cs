@@ -35,6 +35,9 @@ namespace Game.Simulation.Resources
         private readonly ResourceCatalog resources;
         private readonly StorageService storage;
         private readonly IResearchUnlockView unlocks;
+        public bool RequiresWorker { get; set; }
+        public TimeSpan MinimumBuildTime { get; set; } = TimeSpan.FromMinutes(30);
+        public TimeSpan BuildTimePerResource { get; set; } = TimeSpan.FromMinutes(2);
 
         private readonly struct Deduction
         {
@@ -87,6 +90,9 @@ namespace Game.Simulation.Resources
             try
             {
                 candidate = placement.Confirm(definition, coordinate, orientation, ownerSideId, stableId);
+                if (RequiresWorker) candidate.RequireConstructionWork(TimeSpan.FromTicks(Math.Max(
+                    MinimumBuildTime.Ticks, checked(definition.ConstructionCost.Sum(x => x.Quantity.Units) *
+                        BuildTimePerResource.Ticks))));
                 attachedStorage = storage.Attach(candidate, definition);
                 foreach (var deduction in deductions)
                 {
@@ -95,7 +101,7 @@ namespace Game.Simulation.Resources
                     charged.Add(deduction);
                 }
                 afterPlacement?.Invoke(candidate); // deterministic post-charge failure injection and presentation boundary
-                candidate.MarkCompleted(); // U09 temporary instant-completion slice; worker delivery is future work.
+                if (!RequiresWorker) candidate.MarkCompleted(); // Historical simulations retain their old contract.
                 building = candidate;
                 return result;
             }

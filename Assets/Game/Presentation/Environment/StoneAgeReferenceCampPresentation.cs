@@ -129,6 +129,10 @@ namespace Game.Presentation.Environment
             instance.name = "P3 Equipped " + prefab.name;
             instance.transform.localPosition = localPosition;
             instance.transform.localRotation = localRotation;
+            // Legacy showcase sockets belong to the retired skeleton. Current work tools are
+            // attached by CharacterPresenter to the active humanoid hand only while working.
+            if (socket.GetComponentInParent<CharacterPresenter>()?.transform.Find("RoleVisual") != null)
+                instance.SetActive(false);
             equippedTools.Add(instance);
         }
 

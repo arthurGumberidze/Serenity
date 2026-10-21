@@ -530,6 +530,7 @@ namespace Game.Presentation.AI
                 state.Phase == AiActionPhase.MoveToDestination) return CharacterAnimationIntent.Carry;
             if (state.Phase != AiActionPhase.Working && state.Phase != AiActionPhase.Researching)
                 return CharacterAnimationIntent.Idle;
+            if (scheduler.IsFishing(characterId)) return CharacterAnimationIntent.Fish;
             if (!scheduler.TryGetAssignedWorkType(characterId, out var workType))
                 return CharacterAnimationIntent.Gather;
             return workType switch

@@ -38,3 +38,4 @@ MonoBehaviour:
   femaleWorkerVisual: {fileID: 656971401852858973, guid: fc75dc3cd783f094e9711aaec906243c, type: 3}
   maleMilitaryVisual: {fileID: 5091268008269631861, guid: fb4babc1304aa3d45acf408a2288a9ee, type: 3}
   femaleMilitaryVisual: {fileID: 2619011125093111949, guid: 359a152895b663546a54a22d15127f4f, type: 3}
+  WorkAxe: {fileID: 4987476390252150468, guid: 48d415786bcab4247b4388b373793326, type: 3}

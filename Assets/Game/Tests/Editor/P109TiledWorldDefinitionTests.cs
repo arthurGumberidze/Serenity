@@ -16,7 +16,7 @@ namespace Game.Tests.Editor
         [Test]
         public void ReferenceHas144UniqueKilometreTilesAnd144SquareKilometres()
         {
-            Assert.That(world.GenerationId, Is.EqualTo("p109-playable-patch-v1"));
+            Assert.That(world.GenerationId, Is.EqualTo("p109-worksite-v2"));
             Assert.That(world.Tiles.Count, Is.EqualTo(144));
             Assert.That(world.Tiles.Distinct().Count(), Is.EqualTo(144));
             Assert.That(world.TileSizeMeters, Is.EqualTo(1000));

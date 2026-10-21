@@ -16,9 +16,11 @@ namespace Game.Simulation.AI
         private readonly Action onCompleted;
         private TimeSpan elapsed;
         private TimeSpan workElapsed;
+        private readonly Game.Domain.Buildings.Building construction;
 
         public ManualDirectActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
-            WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null)
+            WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null,
+            Game.Domain.Buildings.Building construction = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
@@ -26,6 +28,7 @@ namespace Game.Simulation.AI
             this.job = job ?? throw new ArgumentNullException(nameof(job));
             this.timeout = timeout;
             this.onCompleted = onCompleted;
+            this.construction = construction;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
             movement.MoveTo(job.Target.Position, 0.9f);
@@ -44,7 +47,8 @@ namespace Game.Simulation.AI
             agent.UpdatePosition(movement.CurrentPosition);
             elapsed += simulationDelta;
             if (job.Status == WorkJobStatus.Cancelled) { Cancel(); return; }
-            if (!movement.IsAvailable || movement.State == MovementState.Failed || elapsed >= timeout)
+            if (!movement.IsAvailable || movement.State == MovementState.Failed ||
+                (agent.Phase == AiActionPhase.MoveToTarget && elapsed >= timeout) || construction?.IsDestroyed == true)
             {
                 movement.Stop();
                 work.Fail(job.Id);
@@ -59,7 +63,12 @@ namespace Game.Simulation.AI
                 agent.SetAction(Kind, AiActionPhase.Working);
             }
             workElapsed += simulationDelta;
-            if (workElapsed < TimeSpan.FromMinutes(10)) return;
+            if (construction != null && construction.ConstructionRequiredTicks > 0)
+            {
+                construction.AdvanceConstruction(simulationDelta);
+                if (!construction.IsOperational) return;
+            }
+            else if (workElapsed < TimeSpan.FromMinutes(10)) return;
             onCompleted?.Invoke();
             work.Complete(job.Id);
             IsFinished = true;

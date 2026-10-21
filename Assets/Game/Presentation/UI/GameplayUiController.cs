@@ -319,6 +319,7 @@ namespace Game.Presentation.UI
         private void Update()
         {
             if (!initialized) return;
+            if (ContextMenuVisible && Mouse.current?.middleButton.wasPressedThisFrame == true) CloseContextMenu();
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.f10Key.wasPressedThisFrame)
                 SetDeveloperUiVisible(!DeveloperUiVisible);
@@ -357,6 +358,7 @@ namespace Game.Presentation.UI
             input.TimeSlowerRequested += OnSlower;
             input.TimeFasterRequested += OnFaster;
             input.SecondaryClicked += OnSecondaryClicked;
+            input.PrimaryClicked += OnPrimaryDismissContext;
             context.BuildingPlacement.BuildMenuRequested += OnBuildMenuRequested;
             subscribed = true;
         }
@@ -368,6 +370,7 @@ namespace Game.Presentation.UI
             input.TimeSlowerRequested -= OnSlower;
             input.TimeFasterRequested -= OnFaster;
             input.SecondaryClicked -= OnSecondaryClicked;
+            input.PrimaryClicked -= OnPrimaryDismissContext;
             context.BuildingPlacement.BuildMenuRequested -= OnBuildMenuRequested;
             subscribed = false;
         }
@@ -420,6 +423,21 @@ namespace Game.Presentation.UI
                 ExecuteContextAction(primary.Value, input.IsAdditiveSelectionPressed);
             }
             else OpenContextMenu(target, input.PointerPosition);
+        }
+
+        private void OnPrimaryDismissContext()
+        {
+            // Menu buttons consume their click first; outside clicks close the menu without
+            // preventing the normal world selection. MMB dismissal is checked in Update.
+            if (ContextMenuVisible && !IsPointerInsideContextMenu()) CloseContextMenu();
+        }
+
+        private bool IsPointerInsideContextMenu()
+        {
+            if (contextMenu == null || input == null) return false;
+            var point = RuntimePanelUtils.ScreenToPanel(root.panel,
+                new Vector2(input.PointerPosition.x, Screen.height - input.PointerPosition.y));
+            return contextMenu.worldBound.Contains(point);
         }
 
         public void OpenContextMenu(ContextCommandTarget target, Vector2 screenPosition)
@@ -675,7 +693,7 @@ namespace Game.Presentation.UI
         private void PositionContextMenu(Vector2 screenPosition)
         {
             var panelPoint = root.panel == null ? WorldPointerRaycaster.ScreenToGuiPoint(screenPosition) :
-                RuntimePanelUtils.ScreenToPanel(root.panel, screenPosition);
+                RuntimePanelUtils.ScreenToPanel(root.panel, WorldPointerRaycaster.ScreenToGuiPoint(screenPosition));
             var width = float.IsNaN(root.resolvedStyle.width) ? Screen.width : root.resolvedStyle.width;
             var height = float.IsNaN(root.resolvedStyle.height) ? Screen.height : root.resolvedStyle.height;
             contextMenu.style.left = Mathf.Clamp(panelPoint.x + 12f, 8f, Mathf.Max(8f, width - 368f));
@@ -1745,13 +1763,10 @@ namespace Game.Presentation.UI
             }
             if (!selectedUnit.HasValue || !context.Military.TryGet(selectedUnit.Value, out var selected)) return;
             AddSection(mainPanel, T("ui.military.actions"));
-            AddLine(mainPanel, F("ui.military.supply", selected.Supply.Initialized
+            if (selected.Supply.Initialized) AddLine(mainPanel, F("ui.military.supply", selected.Supply.Initialized
                 ? selected.Supply.Get(context.Military.SupplySettings.FoodResourceId) + " " +
                   Content("resource", context.Military.SupplySettings.FoodResourceId.ToString())
                 : T("ui.military.not_supplied")));
-            mainPanel.Add(ActionButton(T("ui.military.resupply"), () => TryCommand(() =>
-                context.Military.LoadInitialSupply(selected.Id, context.Inventories,
-                    context.Inventories.All.Select(x => x.Owner)))));
             var roster = Row();
             roster.Add(ActionButton(T("ui.military.add_selected"), () => TryCommand(() =>
             {
@@ -2088,9 +2103,9 @@ namespace Game.Presentation.UI
                 Content("condition", x.DefinitionId.ToString()) + " · " + E(x.Severity)))));
             var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.MotherId == id && x.Status == PregnancyStatus.Active);
             if (pregnancy != null) AddLine(inspector, T("ui.character.pregnancy"));
-            var inventoryOwner = new InventoryOwner(InventoryOwnerKind.Character, id);
-            AddLine(inspector, F("ui.character.inventory", context.Inventories.TryGet(inventoryOwner, out var inventory)
-                ? InventoryText(inventory) : T("common.none")));
+            var inventoryOwner = context.Inventories.WorkerOwner(id);
+            if (context.Inventories.TryGet(inventoryOwner, out var inventory) && inventory.TotalUnits > 0)
+                AddLine(inspector, "Несёт на склад: " + InventoryText(inventory));
             var research = context.Research.AssignedWorkers.Contains(id) ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned");
             AddLine(inspector, F("ui.character.research", research));
             AddLine(inspector, F("ui.character.work_group", context.Work.Groups.TryGetForMember(id, out var group) ? group.DisplayName : T("common.none")));
@@ -2144,6 +2159,8 @@ namespace Game.Presentation.UI
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
             AddSection(inspector, Content("building", definition.Id.ToString()));
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
+            if (!building.IsOperational && building.ConstructionRequiredTicks > 0)
+                AddLine(inspector, $"Строительство: {building.ConstructionProgress:P0} · требуется работа строителя");
             AddLine(inspector, F("ui.building.integrity", building.CurrentIntegrity, building.MaxIntegrity, E(building.StructuralStatus)));
             AddLine(inspector, F("ui.building.fire", E(building.FireStatus)) + (building.FireStatus == BuildingFireStatus.Burning
                 ? F("ui.building.fire_intensity", building.FireIntensity) : string.Empty));
@@ -2409,8 +2426,6 @@ namespace Game.Presentation.UI
             if (!captain.IsValid) throw PlayerError("ui.military.no_captain");
             var unit = context.Military.Create(new MilitarySideId("player"), roster, captain);
             context.Military.SetAbstractLocation(unit.Id, context.GlobalMap.ActiveLocationId.Value);
-            context.Military.LoadInitialSupply(unit.Id, context.Inventories,
-                context.Inventories.All.Select(x => x.Owner));
             selectedUnit = unit.Id;
         }
 

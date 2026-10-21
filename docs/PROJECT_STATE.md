@@ -1,5 +1,30 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-21 Worksite V2 video corrections
+
+The latest user instruction authorizes immediate bug fixes, superseding the earlier analysis-only
+answer for gameplay defects. The eight new asset proposals remain analysis-only. No new pack imported.
+Confirmed causes: idle Animator retirement could freeze a transition; FBX work clip names have an
+`Armature|` prefix and the importer skipped already-configured avatars; harvest used Character stock;
+construction completed during funding; decorative rocks lacked canonical clickable sources; the old
+fish marker was not tied to the starter pond. Implemented corrections are in the new Worksite build.
+`editmode-final.xml` passes 54/54. Two draft PlayMode runs exposed test setup issues (offscreen Animator
+culling and an unspecified fish context resource class); neither is final acceptance. Physical move,
+chop/fall, mining, construction and isolated save/load passed in those runs. Current focused rerun:
+`Artifacts/P109/feedback-20261021/playmode-workcycles.{xml,log}` passed 3/3; physical partial-haul
+rerun passed 1/1 (five slots filled, nineteen logs left). Consolidated `playmode-complete.xml`
+passes **13/13** (392.10 seconds, exit 0), including actual-worker construction and physical hauling.
+Windows build succeeded: GUID `017e3d80ef804d86af8678a2abc68c6b`, 0 errors / 56 warnings,
+`Builds/P109Worksite/Serenity.exe`. Native New Game seed 166496655: selected Rowan, issued Move,
+observed natural idle, mined 32 gold, chopped two trees (+26/+35 logs and ground piles), fished
+four fish from the dry bank; observed swimming fish, zoom and LMB/MMB context-menu dismissal.
+Native construction remains unverified because the fresh game's technology gate is locked;
+actual-worker construction is covered by PlayMode. Native close-up tool/fall timing and held-MMB
+are not claimed as fully verified. Water/fish and scaffold art remain simplified, not final polish.
+Normal saves are isolated at `Serenity/P109/WorksiteV2/Saves`, generation `p109-worksite-v2`.
+Protected baseline hashes rechecked after native QA 44/44, including 8 old saves. Five inherited materials and
+`New Unity Project/` remain excluded. P10.9 remains PARTIAL.
+
 ## Working checkpoint — 2026-10-20 Synty playable starter area
 
 User authorized gameplay integration, a separate Windows build and native Player review.

@@ -82,6 +82,17 @@ namespace Game.Infrastructure.Editor
             Debug.Log("P105_QUATERNIUS_BUILD_OK rolePrefabs=4; authoredActions=9; license=CC0");
         }
 
+        public static void RepairWorkAnimations()
+        {
+            foreach (var path in AnimationPaths) ConfigureHumanoidImporter(path, true);
+            CreateController();
+            var catalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(CatalogPath);
+            catalog.WorkAxe = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Game/Art/Prefabs/Weapons/Serenity_StoneAxe.prefab");
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+            Debug.Log("P109_WORK_ANIMATIONS_REPAIRED");
+        }
+
         public static void InspectImportedAssets()
         {
             foreach (var path in ModelPaths.Concat(BaseModelPaths))
@@ -149,20 +160,24 @@ namespace Game.Infrastructure.Editor
                               importedAnimator.avatar.isValid && importedAnimator.avatar.isHuman;
             if (importer.animationType == ModelImporterAnimationType.Human &&
                 importer.avatarSetup == ModelImporterAvatarSetup.CreateFromThisModel &&
-                validAvatar && (!animationsOnly || importer.clipAnimations.Length > 0))
+                validAvatar && !animationsOnly)
                 return;
             importer.animationType = ModelImporterAnimationType.Human;
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             importer.importAnimation = true;
-            var description = importer.humanDescription;
-            description.human = CreateHumanBoneMap();
-            importer.humanDescription = description;
+            if (!validAvatar)
+            {
+                var description = importer.humanDescription;
+                description.human = CreateHumanBoneMap();
+                importer.humanDescription = description;
+            }
             if (animationsOnly)
             {
-                var clips = importer.defaultClipAnimations;
+                var clips = importer.clipAnimations.Length > 0 ? importer.clipAnimations : importer.defaultClipAnimations;
                 foreach (var clip in clips)
                 {
-                    clip.loopTime = LoopingClips.Contains(clip.name);
+                    clip.loopTime = LoopingClips.Contains(clip.name.Substring(clip.name.LastIndexOf('|') + 1)) ||
+                        clip.name.EndsWith("Sword_Heavy_Combo", StringComparison.Ordinal);
                     clip.loopPose = clip.loopTime;
                     clip.keepOriginalPositionXZ = true;
                     clip.keepOriginalPositionY = true;
@@ -365,6 +380,7 @@ namespace Game.Infrastructure.Editor
             AddFloatTransition(walk, idle, AnimatorConditionMode.Less, 0.05f);
             AddFloatTransition(walk, run, AnimatorConditionMode.Greater, 1.5f);
             AddFloatTransition(run, walk, AnimatorConditionMode.Less, 1.5f);
+            AddFloatTransition(run, idle, AnimatorConditionMode.Less, 0.05f);
 
             var actions = new[]
             {

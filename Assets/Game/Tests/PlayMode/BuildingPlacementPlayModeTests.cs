@@ -68,7 +68,9 @@ namespace Game.Tests.PlayMode
             Assert.That(controller.Orientation, Is.EqualTo(BuildingOrientation.East));
             var building = controller.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
-            Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Completed));
+            Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Planned));
+            Assert.That(root.Work.Jobs.Any(x => x.Type == Game.Domain.Work.WorkJobType.Build &&
+                x.Target.EntityId == building.Id), Is.True);
             Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             Assert.That(controller.LastPlacedPresenter.BuildingId, Is.EqualTo(building.Id));
 
@@ -79,6 +81,33 @@ namespace Game.Tests.PlayMode
             controller.CancelPlacement();
             yield return null;
             Assert.That(root.InteractionMode.IsBuildingPlacement, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator ResidentApproachesAndBuildsInsteadOfInstantCompletion()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "shelter_construction");
+            var controller = root.BuildingPlacementController;
+            controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
+            Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(15f,
+                root.WorldHeight.SampleHeight(15f, 15f), 15f)), Is.True);
+            var building = controller.ConfirmPlacement();
+            Assert.That(building.IsOperational, Is.False);
+            Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.True);
+            root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Maximum);
+            var sawBuild = false;
+            var deadline = Time.realtimeSinceStartup + 60f;
+            while (!building.IsOperational && Time.realtimeSinceStartup < deadline)
+            {
+                sawBuild |= root.AiRuntime.Movements.Any(x => x.Presenter.AnimationIntent ==
+                    Game.Presentation.Characters.CharacterAnimationIntent.Build);
+                yield return null;
+            }
+            Assert.That(sawBuild, Is.True, string.Join(",", root.Work.Jobs.Select(x => x.Type + ":" + x.Status)));
+            Assert.That(building.IsOperational, Is.True);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.False);
         }
 
         private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)

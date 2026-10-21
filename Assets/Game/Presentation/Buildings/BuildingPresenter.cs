@@ -15,6 +15,10 @@ namespace Game.Presentation.Buildings
         private ResourceInventory storageInventory;
         private ParticleSystem fireParticles;
         private MaterialPropertyBlock propertyBlock;
+        private Renderer[] originalRenderers;
+        private bool[] originalVisibility;
+        private GameObject scaffold;
+        private Material scaffoldMaterial;
 
         public bool IsBound => building != null;
         public Building Building => building;
@@ -31,6 +35,8 @@ namespace Game.Presentation.Buildings
             building = source;
             registry = presentationRegistry;
             storageInventory = inventory;
+            originalRenderers = GetComponentsInChildren<Renderer>(true);
+            originalVisibility = Array.ConvertAll(originalRenderers, x => x.enabled);
             gameObject.name = $"Building {source.DefinitionId} [{source.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(source.Id, ContextTargetKind.Building);
@@ -49,6 +55,7 @@ namespace Game.Presentation.Buildings
         public void RefreshStructuralPresentation()
         {
             if (building == null) return;
+            RefreshConstruction();
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
             var color = building.IsDestroyed ? new Color(0.18f, 0.16f, 0.15f) :
                 building.StructuralStatus == BuildingStructuralStatus.Critical ? new Color(0.48f, 0.22f, 0.12f) :
@@ -57,6 +64,7 @@ namespace Game.Presentation.Buildings
             foreach (var renderer in GetComponentsInChildren<Renderer>(true))
             {
                 if (fireParticles != null && renderer.transform.IsChildOf(fireParticles.transform)) continue;
+                if (scaffold != null && renderer.transform.IsChildOf(scaffold.transform)) continue;
                 renderer.GetPropertyBlock(propertyBlock);
                 propertyBlock.SetColor("_BaseColor", color);
                 renderer.SetPropertyBlock(propertyBlock);
@@ -96,6 +104,57 @@ namespace Game.Presentation.Buildings
             return particles;
         }
 
-        private void OnDestroy() => Unbind();
+        private void RefreshConstruction()
+        {
+            if (originalRenderers == null) return;
+            var finished = building.ConstructionState == ConstructionState.Completed;
+            if (!finished && scaffold == null)
+            {
+                scaffold = new GameObject("Construction frame");
+                scaffold.transform.SetParent(transform, false);
+                scaffoldMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                scaffoldMaterial.color = new Color(0.48f, 0.3f, 0.13f);
+                var bounds = new Bounds(transform.position, Vector3.one * 2f);
+                foreach (var renderer in originalRenderers) bounds.Encapsulate(renderer.bounds);
+                var width = Mathf.Max(2f, bounds.size.x);
+                var depth = Mathf.Max(2f, bounds.size.z);
+                var height = Mathf.Clamp(bounds.size.y, 1.5f, 5f);
+                for (var i = 0; i < 4; i++)
+                {
+                    var x = (i % 2 == 0 ? -1f : 1f) * width * 0.5f;
+                    var z = (i < 2 ? -1f : 1f) * depth * 0.5f;
+                    CreateBeam(new Vector3(x, height * 0.5f, z), new Vector3(0.12f, height, 0.12f));
+                }
+                foreach (var z in new[] { -depth * 0.5f, depth * 0.5f })
+                    CreateBeam(new Vector3(0f, height * 0.75f, z), new Vector3(width, 0.12f, 0.12f));
+            }
+            if (scaffold != null) scaffold.SetActive(!finished && !building.IsDestroyed);
+            for (var i = 0; i < originalRenderers.Length; i++)
+                if (originalRenderers[i] != null)
+                    originalRenderers[i].enabled = originalVisibility[i] &&
+                        (finished || building.ConstructionProgress >= (i + 1f) / (originalRenderers.Length + 1f));
+        }
+
+        private void CreateBeam(Vector3 position, Vector3 scale)
+        {
+            var beam = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            beam.transform.SetParent(scaffold.transform, false);
+            beam.transform.localPosition = position;
+            beam.transform.localScale = scale;
+            beam.GetComponent<Collider>().enabled = false;
+            if (Application.isPlaying) Destroy(beam.GetComponent<Collider>());
+            else DestroyImmediate(beam.GetComponent<Collider>());
+            beam.GetComponent<Renderer>().sharedMaterial = scaffoldMaterial;
+        }
+
+        private void OnDestroy()
+        {
+            Unbind();
+            if (scaffoldMaterial != null)
+            {
+                if (Application.isPlaying) Destroy(scaffoldMaterial);
+                else DestroyImmediate(scaffoldMaterial);
+            }
+        }
     }
 }

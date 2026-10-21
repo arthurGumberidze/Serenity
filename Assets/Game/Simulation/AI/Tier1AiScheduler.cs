@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Characters;
@@ -80,6 +81,8 @@ namespace Game.Simulation.AI
             return true;
         }
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
+        public bool IsFishing(StableEntityId characterId) => world.Production != null &&
+            world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "fish_water");
         public AutonomousWorkMode WorkMode => autonomousWorkMode;
 
         public void SetAutonomousWorkMode(AutonomousWorkMode mode)
@@ -324,6 +327,9 @@ namespace Game.Simulation.AI
                 entry.Action = null;
             }
             if (entry.Action != null && !entry.Action.IsInterruptible) return;
+            // A restored or interrupted transport is not a personal inventory. Without an
+            // active haul claim its contents return to the resident's current ground position.
+            if (entry.Action == null) world.HaulJobs.DropTransportLoad(entry.Agent.CharacterId, entry.Agent.Position);
 
             // U11 precedence: a carrying phase is protected above; otherwise critical Energy wins.
             if (entry.Agent.Needs.Energy <= CriticalRestEnergy)
@@ -368,6 +374,17 @@ namespace Game.Simulation.AI
 
             if (autonomousWorkMode == AutonomousWorkMode.NeedsOnly)
             {
+                // Explicit queued orders were resolved above. Only idle residents may clean up
+                // world piles; source/destination reservations limit pickup to actual free space.
+                if (world.Production?.UsesGroundOutputs == true && entry.Movement.IsAvailable)
+                {
+                    if (entry.Action?.Kind == UtilityActionKind.Haul && entry.Action.IsValid) return;
+                    if (entry.Action == null && world.HaulJobs.TryFindJob(entry.Agent, settings.MaxHaulUnits, out _))
+                    {
+                        Start(entry, UtilityActionKind.Haul);
+                        return;
+                    }
+                }
                 if (entry.Action != null && entry.Action.Kind != UtilityActionKind.Rest &&
                     entry.Action.Kind != UtilityActionKind.Eat)
                 {
@@ -535,11 +552,15 @@ namespace Game.Simulation.AI
             else
             {
                 Action completion = null;
+                Game.Domain.Buildings.Building construction = null;
                 if (job.Type == WorkJobType.Build && world.Buildings != null &&
                     world.Buildings.TryGet(job.Target.EntityId, out var building))
+                {
                     completion = building.MarkCompleted;
+                    construction = building;
+                }
                 entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
-                    settings.MovementTimeout, completion);
+                    settings.MovementTimeout, completion, construction);
             }
             entry.LastActionTicks = calendarTicks;
         }

@@ -359,6 +359,7 @@ namespace Game.Infrastructure
             Research = new ResearchService(Technologies, new CharacterResearchRateProvider(Characters, HealthFamily));
             Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage,
                 Research);
+            Construction.RequiresWorker = true;
             gameObject.AddComponent<ResourceDebugOverlay>().Initialize(Inventories, Resources, pointerRaycaster);
             BuildingPresentations = new BuildingPresentationRegistry();
             BuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
@@ -384,7 +385,7 @@ namespace Game.Infrastructure
             foreach (var character in playerCharacters)
             {
                 Characters.Add(character);
-                Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, character.Id), Resources, 128));
+                Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, character.Id), Resources, 12));
             }
             Appearances.RestoreState(NewGame.Appearances);
             MaleDemoCharacter = Characters.Get(NewGame.MonarchId);
@@ -393,8 +394,7 @@ namespace Game.Infrastructure
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
             Domestic = new DomesticService(Characters, Buildings, HealthFamily);
             RegisterStarterDomestic();
-            Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, MaleDemoCharacter.Id))
-                .TryAdd(new ResourceId("berries"), new ResourceQuantity(60));
+            SpawnDemoPile("berries", 60, new GridCoordinate(-8, -4), new Color(0.6f, 0.12f, 0.18f), 4);
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
                 ProjectToGameplayGround(new Vector3(-3f, 0f, 0f)), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter,
@@ -404,6 +404,9 @@ namespace Game.Infrastructure
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
+            Production.UseGroundOutputs(WorldPiles, position => new GridCoordinate(
+                Mathf.RoundToInt((position.X - buildingGridOrigin.x) / buildingGridSize),
+                Mathf.RoundToInt((position.Z - buildingGridOrigin.z) / buildingGridSize)));
             Production.Population = Characters.Count;
             ResourceEcology = new ResourceEcologyService();
             Industry = new IndustrialExtractionService(Resources, Inventories, CreateIndustrialDefinitions());
@@ -415,6 +418,15 @@ namespace Game.Infrastructure
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
                 Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
             RegisterStarterTrees();
+            RegisterStarterRocks();
+            var worksite = gameObject.AddComponent<WorksitePresentation>();
+            worksite.Initialize(this);
+            var fishingPond = WorldDefinition.Zones.First(x => x.Id == "starter_pond");
+            var fishView = productionPresenters.First(x => x.Site.RecipeId == new ProductionRecipeId("fish_water") &&
+                x.Site.Id == DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_source", 25));
+            worksite.CreateFish(fishView.transform, new Vector3(fishingPond.Center.X,
+                TiledWorldHeightSampler.WaterLevelMeters, fishingPond.Center.Z));
+            fishView.Bind(fishView.Site, Color.white, true);
             DisableSupersededRouteStrips();
             resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
@@ -432,7 +444,8 @@ namespace Game.Infrastructure
             HaulClaims = new HaulClaimRegistry();
             Work = new WorkManager(Characters);
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
-                new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
+                new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z),
+                point => new WorldPosition(point.X, WorldHeight.SampleHeight(point.X, point.Z) + 0.04f, point.Z));
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings);
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily, domesticService: Domestic);
@@ -508,6 +521,11 @@ namespace Game.Infrastructure
             GlobalMap = new GlobalMapService(StarterGlobalMap.CreateTiled(WorldDefinition,
                 Clock.State.CalendarTicks, worldSeed), MilitaryUnits,
                 Battles);
+            GlobalMap.BeforeDeparture = id =>
+            {
+                if (MilitaryUnits.TryGet(id, out var unit) && unit.OwnerSideId == new MilitarySideId("player"))
+                    MilitaryUnits.LoadInitialSupply(id, Inventories, FundingSources());
+            };
             ConnectedWorld = new ConnectedWorldService(GlobalMap.Locations,
                 ConnectedWorldLayout.For(WorldDefinition), Clock.State.CalendarTicks);
             StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
@@ -587,7 +605,7 @@ namespace Game.Infrastructure
 
             var configuredSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             var saveDirectory = string.IsNullOrWhiteSpace(configuredSaveDirectory)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "PlayablePatch", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "WorksiteV2", "Saves")
                 : configuredSaveDirectory;
             var saveStore = new FileSaveStore(saveDirectory);
             Saves = new SaveCoordinator(ActiveNewGameConfiguration.SessionId, Clock, saveStore, Production, Research, Succession,
@@ -726,6 +744,7 @@ namespace Game.Infrastructure
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
+            foreach (var buildingView in BuildingPresentations.All) buildingView.RefreshStructuralPresentation();
             WorldPopulation?.RefreshViews();
             WeatherPresentation.Refresh(targetCalendarTick);
             if (Time.unscaledTime >= nextTierPolicyRefreshTime)
@@ -827,6 +846,9 @@ namespace Game.Infrastructure
             Production.Population = Characters.Count;
             RebindRegionResourcePresenters();
             RegisterStarterTrees();
+            foreach (var view in productionPresenters)
+                if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
+                    view.Bind(canonical, Color.white, true);
             WorldPopulation?.RebindAfterLoad();
             DirectWorkCommands.EnsureRoleGroups();
             DirectWorkCommands.ReevaluateQueued();
@@ -1026,6 +1048,15 @@ namespace Game.Infrastructure
 
         private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
         {
+            if (building != null && !building.IsOperational && Work != null)
+            {
+                var bounds = new Bounds(presenter.transform.position, Vector3.one);
+                foreach (var collider in presenter.GetComponentsInChildren<Collider>()) bounds.Encapsulate(collider.bounds);
+                var target = ProjectToGameplayGround(new Vector3(bounds.center.x, 0f, bounds.min.z - 1.2f));
+                Work.CreateDirectJob(WorkJobType.Build, null,
+                    WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
+                        new WorldPosition(target.x, target.y, target.z)), WorkPriority.Normal);
+            }
             if (building != null && building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot"))
                 RegisterCropPlot(building, presenter);
         }
@@ -1111,8 +1142,16 @@ namespace Game.Infrastructure
         {
             SpawnProductionSource("hunt_animal", 36, new WorldPosition(-78f, 5f, 154f),
                 new Color(0.45f, 0.22f, 0.12f), 24, null, PrimitiveType.Capsule);
-            SpawnProductionSource("fish_water", 42, new WorldPosition(58f, 0.35f, 132f),
-                new Color(0.12f, 0.62f, 0.82f), 25, null, PrimitiveType.Cylinder);
+            var pond = WorldDefinition.Zones.First(x => x.Id == "starter_pond");
+            var shore = ProjectToGameplayGround(new Vector3(pond.Center.X - pond.RadiusX * 0.82f,
+                0f, pond.Center.Z - pond.RadiusZ * 0.82f));
+            var waterTarget = new GameObject("Fish in starter pond");
+            waterTarget.transform.position = new Vector3(pond.Center.X, TiledWorldHeightSampler.WaterLevelMeters, pond.Center.Z);
+            var selection = waterTarget.AddComponent<BoxCollider>();
+            selection.isTrigger = true;
+            selection.size = new Vector3(pond.RadiusX * 1.5f, 1.5f, pond.RadiusZ * 1.5f);
+            SpawnProductionSource("fish_water", 42, new WorldPosition(shore.x, shore.y, shore.z),
+                new Color(0.12f, 0.62f, 0.82f), 25, waterTarget);
         }
 
         private void SpawnP104IndustrialZones()
@@ -1193,6 +1232,35 @@ namespace Game.Infrastructure
                     .SelectMany(x => x.DecorativeSatellites))
                 .Concat(pondTrees)
                 .Where(x => x != null).Distinct();
+
+        private void RegisterStarterRocks()
+        {
+            if (PopulatedBiomeWorld == null) return;
+            var rocks = PopulatedBiomeWorld.MajorRocks.Concat(PopulatedBiomeWorld.BaseRegion.Rocks)
+                .Concat(PopulatedBiomeWorld.ResourceFormations.Where(x => x.RecipeId != "chop_wood")
+                    .SelectMany(x => x.DecorativeSatellites)).Where(x => x != null).Distinct().ToArray();
+            for (var index = 0; index < rocks.Length; index++)
+            {
+                var rock = rocks[index];
+                if (rock.GetComponent<ProductionSourcePresenter>() != null) continue;
+                var formation = PopulatedBiomeWorld.ResourceFormations.FirstOrDefault(x => x.DecorativeSatellites.Contains(rock));
+                var recipe = formation?.RecipeId ?? "gather_stone";
+                var id = DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "p109_starter_outcrop", index);
+                if (!Production.TryGetSite(id, out var site))
+                {
+                    var bounds = new Bounds(rock.transform.position, Vector3.one);
+                    foreach (var renderer in rock.GetComponentsInChildren<Renderer>()) bounds.Encapsulate(renderer.bounds);
+                    var point = ProjectToGameplayGround(new Vector3(bounds.center.x, 0f, bounds.min.z - 1.2f));
+                    site = ProductionSite.Restore(new ProductionSiteState(id, new ProductionRecipeId(recipe),
+                        ProductionSiteKind.NaturalSource, new WorldPosition(point.x, point.y, point.z),
+                        32, 32, CropPlotPhase.Unplanted, 0, 0));
+                    Production.AddSite(site);
+                }
+                var presenter = rock.AddComponent<ProductionSourcePresenter>();
+                presenter.Bind(site, Color.white, true);
+                productionPresenters.Add(presenter);
+            }
+        }
 
         private void BindPopulatedWorldAffordances()
         {
@@ -1363,7 +1431,8 @@ namespace Game.Infrastructure
             var view = authoredAnchor != null ? authoredAnchor.gameObject : GameObject.CreatePrimitive(PrimitiveType.Cube);
             if (authoredAnchor != null)
             {
-                authoredAnchor.position = ProjectToGameplayGround(authoredAnchor.position, 0.35f);
+                authoredAnchor.position = ProjectToGameplayGround(buildingGridOrigin +
+                    new Vector3(coordinate.X * buildingGridSize, 0f, coordinate.Z * buildingGridSize), 0.35f);
             }
             else
             {

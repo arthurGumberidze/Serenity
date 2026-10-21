@@ -1,5 +1,21 @@
 # NEXT_TASK.md
 
+Active user override (2026-10-21): fix the two newly supplied gameplay videos now; the eight
+proposed asset packs are analysis-only, with no download/import. Worksite V2 is implemented:
+visible idle/work cycles, hand-held tool, ground harvest piles and capacity-reserved hauling,
+worker-built construction, RMB menu dismissal, clickable outcrops and shore fishing.
+Do not treat the older Synty executable or its test results below as acceptance of this slice.
+New games use `p109-worksite-v2` / `Serenity/P109/WorksiteV2/Saves`; old saves are not migrated.
+Tests and native QA must use `Artifacts/P109/feedback-20261021` save directories.
+`Builds/P109Worksite/Serenity.exe` succeeded (GUID 017e3d80ef804d86af8678a2abc68c6b).
+Final checks: EditMode 54/54 and consolidated PlayMode 13/13 passed.
+Native move/idle, two harvest outputs, gold mining, four-fish catch, zoom and LMB/MMB dismissal
+were exercised in this binary. Next unblocked P10.9 acceptance: close-up work-tool/fall review
+and native worker construction after unlocking the required research in an isolated test game.
+Do not repeat imports or claim the whole 12 x 12 km world accepted. Read the Worksite V2
+section of the handoff for the exact automated and native evidence and visual limitations.
+P10.9 stays PARTIAL; no performance benchmark or P10.10 work is authorized.
+
 Active immediate scope (updated 2026-10-21, supersedes historical status below): finish
 final-binary native route acceptance for the integrated Synty starter area. Build
 `Builds/P109SyntyPlayable/Serenity.exe` is complete (GUID 7d986af66c3b4dc9aca0af6341ebd670,

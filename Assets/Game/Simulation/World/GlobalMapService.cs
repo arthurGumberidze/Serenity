@@ -98,6 +98,7 @@ namespace Game.Simulation.World
         }
 
         public string GraphId { get; private set; }
+        public Action<MilitaryUnitId> BeforeDeparture { get; set; }
         public GameWorldMode Mode { get; private set; }
         public WorldLocationId ActiveLocationId { get; private set; }
         public long LastProcessedTick { get; private set; }
@@ -148,6 +149,7 @@ namespace Game.Simulation.World
             var weatherModifier = travelDurationModifier?.Invoke(origin, destination, departureTick) ?? 1000;
             if (weatherModifier <= 0 || weatherModifier > 10000)
                 throw new InvalidOperationException("Global travel duration modifier must be in 1..10000 per-thousand.");
+            BeforeDeparture?.Invoke(unitId);
             var supply = units.ConsumeSupplyCheckpoint(unitId, MilitarySupplyCheckpointKind.Travel, departureTick,
                 "travel:" + unitId + ":" + departureTick + ":" + destination.Value);
             var modifier = checked((int)Math.Min(10000L,

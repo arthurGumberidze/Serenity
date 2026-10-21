@@ -17,6 +17,46 @@ namespace Game.Tests.PlayMode
     public sealed class P109PlayablePatchTests
     {
         [UnityTest]
+        public IEnumerator WorkCyclesHaveToolsAndAllStarterOutcropsAndPondAreSelectable()
+        {
+            yield return SceneManager.LoadSceneAsync("LocalGameplay");
+            yield return null;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.Clock.Pause();
+            Assert.That(root.Inventories.All.Any(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.False);
+            foreach (var rock in root.PopulatedBiomeWorld.MajorRocks.Concat(root.PopulatedBiomeWorld.BaseRegion.Rocks).Distinct())
+            {
+                Assert.That(rock.GetComponent<ProductionSourcePresenter>(), Is.Not.Null, rock.name);
+                Assert.That(rock.GetComponentsInChildren<Collider>(true).Any(x => x.enabled), Is.True, rock.name);
+            }
+            var pond = Object.FindObjectsByType<ProductionSourcePresenter>().First(x =>
+                x.GetComponentsInChildren<Transform>().Any(t => t.name == "Swimming fish 0"));
+            Assert.That(pond.Site.RecipeId.ToString(), Is.EqualTo("fish_water"));
+            Assert.That(root.Production.IsRecipeAvailable(pond.Site.RecipeId), Is.True);
+            var presenter = root.DemoPresenters[0];
+            var animator = presenter.Animator;
+            presenter.SetSelected(true);
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            presenter.SetSimulationPaused(false);
+            presenter.SetMovementSpeed(0f);
+            presenter.SetAnimationIntent(Game.Presentation.Characters.CharacterAnimationIntent.Chop);
+            Assert.That(animator.GetInteger("ActionIntent"), Is.EqualTo(3));
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            animator.Update(0f); // First evaluation starts the transition; the next advances it.
+            animator.Update(0.5f);
+            var clip = animator.GetCurrentAnimatorClipInfo(0).First().clip;
+            Assert.That(clip.name, Does.Contain("TreeChopping"));
+            Assert.That(clip.isLooping, Is.True);
+            Assert.That(presenter.GetComponentsInChildren<Transform>(true).Single(x => x.name == "Work stone axe").gameObject.activeSelf, Is.True);
+            animator.Update(clip.length * 2.2f);
+            Assert.That(animator.GetCurrentAnimatorStateInfo(0).normalizedTime, Is.GreaterThan(2f));
+            presenter.SetAnimationIntent(Game.Presentation.Characters.CharacterAnimationIntent.Idle);
+            animator.Update(0f);
+            animator.Update(0.5f);
+            Assert.That(animator.GetCurrentAnimatorClipInfo(0).First().clip.name, Does.Contain("Idle"));
+        }
+
+        [UnityTest]
         public IEnumerator SyntyMeshesStayAnchoredAndWaterUsesImportedRipples()
         {
             yield return SceneManager.LoadSceneAsync("LocalGameplay");
@@ -60,6 +100,64 @@ namespace Game.Tests.PlayMode
                 Assert.That(bounds.size.y, Is.InRange(8.9f, 13.1f), "Streamed trees must retain normalized world scale");
                 Assert.That(source.transform.Find("Formation visual 2"), Is.Null);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator FishingUsesReachableShoreAndLeavesFishOnGround()
+        {
+            yield return SceneManager.LoadSceneAsync("LocalGameplay");
+            yield return null;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var source = Object.FindObjectsByType<ProductionSourcePresenter>().First(x =>
+                x.GetComponentsInChildren<Transform>().Any(t => t.name == "Swimming fish 0"));
+            Assert.That(root.WorldHeight.IsWater(source.Site.Position.X, source.Site.Position.Z), Is.False);
+            var resident = root.DemoPresenters[0];
+            root.SelectionProbe.SelectCharacters(new[] { resident });
+            var fish = new ResourceId("fish");
+            root.GameplayUi.OpenContextMenu(new ContextCommandTarget(ContextTargetKind.ResourceSource,
+                source.Site.Position, source.Site.Id, fish, ContextResourceClass.Gatherable), Vector2.zero);
+            var command = root.GameplayUi.ExecuteContextAction(ContextActionKind.Gather, false);
+            Assert.That(command.Orders.Count, Is.EqualTo(1));
+            var before = root.Production.GetProducedTotal(fish);
+            root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Maximum);
+            var deadline = Time.realtimeSinceStartup + 60f;
+            var sawFishing = false;
+            while (root.Production.GetProducedTotal(fish) == before && Time.realtimeSinceStartup < deadline)
+            {
+                sawFishing |= resident.AnimationIntent == Game.Presentation.Characters.CharacterAnimationIntent.Fish;
+                yield return null;
+            }
+            Assert.That(sawFishing, Is.True);
+            Assert.That(root.Production.GetProducedTotal(fish), Is.GreaterThan(before));
+            Assert.That(root.WorldPiles.All.Any(x => x.ResourceId == fish &&
+                root.Inventories.Get(x.InventoryOwner).GetAmount(fish).IsPositive), Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator IdleHaulFillsOnlyFiveFreeSlotsAndLeavesNineteenLogs()
+        {
+            yield return SceneManager.LoadSceneAsync("LocalGameplay");
+            yield return null;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.Clock.Pause();
+            foreach (var inventory in root.Inventories.All)
+                foreach (var amount in inventory.CaptureState().Amounts)
+                    inventory.TryRemove(amount.ResourceId, amount.Quantity);
+            var wood = new ResourceId("wood_log");
+            var storage = root.DemoStoragePresenter.StorageInventory;
+            Assert.That(storage.TryAdd(wood, new ResourceQuantity(storage.Capacity - 5)), Is.True);
+            var point = root.DemoPresenters[0].transform.position + Vector3.right * 6f;
+            var pile = root.WorldPiles.Create(wood, new ResourceQuantity(24),
+                new Game.Domain.Buildings.GridCoordinate(Mathf.RoundToInt(point.x), Mathf.RoundToInt(point.z)));
+            root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Maximum);
+            root.Clock.Resume();
+            var deadline = Time.realtimeSinceStartup + 30f;
+            while (storage.TotalUnits < storage.Capacity && Time.realtimeSinceStartup < deadline) yield return null;
+            root.Clock.Pause();
+            Assert.That(storage.TotalUnits, Is.EqualTo(storage.Capacity));
+            Assert.That(root.Inventories.Get(pile.InventoryOwner).GetAmount(wood).Units, Is.EqualTo(19));
+            Assert.That(root.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.CarryLoad)
+                .Sum(x => x.TotalUnits), Is.Zero);
         }
 
         [UnityTest]

@@ -111,3 +111,117 @@ This follow-up changes documentation only; no new build/test run or save write w
 Final SHA256: exe `437691663C5FB21231524F4886E60A10B1841F13E42FBBC93EE39FBD827930CD`;
 Game.Infrastructure.dll `4A5241D1A657E4560D39AEED4D279FAF47C4E6A9E17F2DA7326057BD3B38CB52`;
 Game.Presentation.dll `F24071D918BFDF8F32A11DC1DBAD07C9C9EE3A885DDBDC681C2A8489F5F1EFB9`.
+
+## Worksite V2 follow-up — 2026-10-21
+
+This section supersedes the older binary for the new feedback, not the historical evidence above.
+The user's two videos were inspected as contact sheets in
+`Artifacts/P109/feedback-20261021/video1.jpg` and `video2.jpg`.
+Current changes: active-skeleton tool, looped chopping/building clips, visible idle transitions,
+ground outputs with capacity-reserved physical hauling, planned construction with persistent labor,
+resource collider/source bindings, dry-shore fishing and cosmetic fish, LMB/MMB menu dismissal.
+New normal save path: `Serenity/P109/WorksiteV2/Saves`; generation `p109-worksite-v2`.
+Old saves are neither loaded into this world nor migrated/deleted. The original five dirty material
+files and unrelated `New Unity Project/` are not part of the commit.
+
+### Exact checks
+
+All Unity commands use `C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe`
+with `-batchmode -projectPath C:\serenity_game -force-d3d11`. Each log/result below has absolute
+prefix `C:\serenity_game\Artifacts\P109\feedback-20261021\`.
+Tests inherit `SERENITY_SAVE_DIRECTORY=C:\serenity_game\Artifacts\P109\feedback-20261021\test-saves`.
+
+- `-executeMethod Game.Infrastructure.Editor.P105QuaterniusFoundation.RepairWorkAnimations -quit
+  -logFile ...\repair-import-3.log`: exit 0, `P109_WORK_ANIMATIONS_REPAIRED`. Preserved the original
+  valid humanoid mapping; only loop flags are intentionally changed in the two FBX importers.
+- `-runTests -testPlatform EditMode -testFilter
+  Game.Tests.Editor.P109HarvestTests;Game.Tests.Editor.ResourceInventoryTests;Game.Tests.Editor.P109TiledWorldDefinitionTests;Game.Tests.Tier1UtilityAiTests;Game.Tests.Editor.BuildingDestructionFireCaptureTests;Game.Tests.Editor.P109SyntyImportTests
+  -testResults ...\editmode-final.xml -logFile ...\editmode-final.log`: **54/54 passed**.
+- `-runTests -testPlatform PlayMode -testFilter
+  Game.Tests.PlayMode.P109PlayablePatchTests;Game.Tests.PlayMode.BuildingPlacementPlayModeTests
+  -testResults ...\playmode-final.xml -logFile ...\playmode-final.log`: draft **10/12 passed**;
+  the fish test omitted Gatherable and the manually evaluated Animator test was still culled.
+  These two failed drafts are not described as a clean final run.
+- `-runTests -testPlatform PlayMode -testFilter
+  Game.Tests.PlayMode.P109PlayablePatchTests.WorkCyclesHaveToolsAndAllStarterOutcropsAndPondAreSelectable;Game.Tests.PlayMode.P109PlayablePatchTests.FishingUsesReachableShoreAndLeavesFishOnGround;Game.Tests.PlayMode.P109PlayablePatchTests.ChopCommandFellsWholeTreeCommitsExactLogsAndSurvivesIsolatedSave
+  -testResults ...\playmode-workcycles.xml -logFile ...\playmode-workcycles.log`: **3/3 passed**
+  after correcting those test setups and preserving the original animation skeleton mapping.
+- `-runTests -testPlatform PlayMode -testFilter
+  Game.Tests.PlayMode.P109PlayablePatchTests.IdleHaulFillsOnlyFiveFreeSlotsAndLeavesNineteenLogs
+  -testResults ...\playmode-haul.xml -logFile ...\playmode-haul.log`: **1/1 passed**; actual
+  approach/pickup/dropoff fills five free slots, leaves nineteen logs and no residual carry load.
+- `-executeMethod P109StarterNatureAuthoring.BuildWorksite -quit -logFile ...\build.log`:
+  exit 0, Succeeded, 0 errors / 56 warnings, GUID `017e3d80ef804d86af8678a2abc68c6b`.
+
+- Final consolidated rerun: `-runTests -testPlatform PlayMode -testFilter
+  Game.Tests.PlayMode.P109PlayablePatchTests;Game.Tests.PlayMode.BuildingPlacementPlayModeTests
+  -testResults ...\playmode-complete.xml -logFile ...\playmode-complete.log`: **13/13 passed**,
+  392.10 seconds, exit 0. This clean full run supersedes the draft failures above.
+
+The final consolidated XML covers all 13 PlayMode cases; focused results are retained for diagnosis.
+No deferred performance benchmark was run. Protected baseline read-only audit matched 44/44 files,
+including eight old saves. The normal manual Player must use a separate Artifacts-only save folder.
+
+### Native Worksite Player review
+
+Launched `Builds/P109Worksite/Serenity.exe` with `-force-d3d11 -screen-fullscreen 0
+-screen-width 1920 -screen-height 1080 -p109NatureReview -logFile
+C:\serenity_game\Artifacts\P109\feedback-20261021\player.log` and
+`SERENITY_SAVE_DIRECTORY=C:\serenity_game\Artifacts\P109\feedback-20261021\manual-saves`.
+Used computer-use native mouse input, not a scripted command-injection acceptance harness.
+Started an ordinary new game, seed 166496655. Selected Rowan, issued RMB Move and saw arrival
+followed by natural standing idle. Observed initial physical log carrying. RMB mining exhausted
+a 32-unit gold source and increased the canonical total by 32. Two RMB chop orders produced
+26 and 35 logs (total 30 -> 56 -> 91), with separate visible ground log piles and work progress
+19% -> 70% -> completion. Screenshots did not capture the entire fall animation or resolve the
+hand tool closely enough to claim full close-up animation acceptance; loop/tool checks passed
+in PlayMode. Both MMB and LMB outside the context menu dismissed it in this binary.
+
+Used the explicitly labelled Lake/Lake-close camera bookmarks to inspect water, not to claim
+ordinary camera-input acceptance. Fish visibly changed positions around the lake. RMB on water
+issued Gather, the resident walked to the dry west/southwest bank, progressed through Fishing,
+and produced four fish (0 -> 4). Zoom in/out and returning to camp retained residents/scenery;
+no spontaneous tree displacement was seen in this sampled route. Held-MMB dragging is not
+supported by this native tool and was not repeated; the earlier user confirmation remains distinct.
+Water is still opaque stylized ripples; fish are simplified procedural silhouettes. White legacy
+camp pieces and rough weather/ground presentation remain visible: this is not art-final acceptance.
+Construction in a fresh game was research-locked, so native placement/build completion was not
+claimed. Its actual-worker approach/progress/completion passed PlayMode. P10.9 stays PARTIAL.
+Player log contains pre-existing stripped post-processing shader warnings, no matched gameplay
+exception. Rechecked protected hashes after this route: 44/44, including 8/8 old saves.
+
+Binary SHA256: exe `437691663C5FB21231524F4886E60A10B1841F13E42FBBC93EE39FBD827930CD`;
+Game.Infrastructure.dll `041B1795F9288F7BECBEAF02432075BBE59D597DC9A4B2AECCA91668D7AF5E7E`;
+Game.Presentation.dll `29C74FE311AB546B21D3438DBBA769D8098B6AE6F15530460AC27DE2F9828D7F`.
+
+### Asset analysis scope
+
+No proposed pack was downloaded/imported. Of the eight candidates, Toon Farm is the most immediately
+useful for crop/animal/rural dressing; it does not supply human work animations. RTS Pack is a later
+settlement/ship option, and Synty Tropical Jungle is for a distinct tropical biome, not a replacement
+for the temperate starter. Tower Defense is thematically narrower; Cartoon Army and Low Poly Insurgent
+are modern military art; the large JustCreate bundle includes much irrelevant modern content.
+The officially free Wild Boar sample is suitable for an isolated animation/style trial, not a promise
+that realistic furry wildlife will match the Synty forest. Compare actual URP imports, licenses,
+silhouettes and LOD behavior before approving any future package integration.
+
+Official product references (the supplied mirror pages could not be verified; do not assume their
+archives match these versions/licenses):
+
+| Candidate | Recommendation for this project |
+| --- | --- |
+| [Toon Farm Pack / SICS Games](https://marketplace.unity.com/packages/3d/environments/industrial/toon-farm-pack-235041) | First useful candidate: crops, animated farm animals, fences and rural props. Select era-appropriate pieces, omit modern machinery. Human models do not include human work animations. Test actual Unity 6000.6.4f1 URP import before adoption. |
+| [RTS Pack / weesals](https://assetstore.unity.com/packages/3d/environments/fantasy/rts-pack-stylized-buildings-props-ships-set-237270) | Later medieval settlements, ships and river trade; not a Stone Age starter replacement and not a construction simulation. |
+| [Cartoon Army Universe / PolySquid](https://assetstore.unity.com/packages/3d/environments/cartoon-army-universe-240055) | Modern military styling; skip for the current era. |
+| [Tower Defense Pack / Tarbo](https://marketplace.unity.com/packages/3d/environments/fantasy/tower-defense-pack-low-poly-3d-art-143627) | Optional later fortifications. Building/destroyed variants are art states, not a worker/building system. |
+| [POLYGON Tropical Jungle / Synty](https://syntystore.com/products/polygon-tropical-jungle-nature-biome) | Good family match only for a genuinely tropical region. Ruins, docks, canoes and vegetation can create points of interest. Cosmetic fish/animal FX are not catchable wildlife. Audit shared PNB_Core updates against the existing Meadow import. |
+| [Low Poly Asset Bundle / JustCreate](https://justcreate3d.itch.io/low-poly-asset-bundle) | Broad pack with much irrelevant modern content; do not bulk-import for model count. Curated subsets only if an actual gap remains. |
+| [Low Poly Insurgent / ArtStore3D](https://marketplace.unity.com/packages/3d/characters/humanoids/humans/low-poly-insurgent-228607) | Modern armed character; skip for this era and visual direction. |
+| [Wild Boar Free Sample / Rip Vertices Studio](https://assetstore.unity.com/packages/3d/characters/animals/wild-boar-free-sample-ultrarealistic-forest-animals-415578) | Official free sample is an optional isolated wildlife trial. Realistic styling may clash with Synty; do not assume the full collection's animation count or rendering cost applies to this sample. |
+
+Proposed later stages, not authorized implementation in this pass: (1) close starter-loop native
+acceptance; (2) curate a farm test sector from Toon Farm; (3) connect animals, hunting, fishing and
+crop yields to actual canonical gameplay; (4) add meaningful settlements/ruins/bridges/trade routes;
+(5) propagate validated biome compositions across the existing 144 terrain chunks, preserving
+identities and streaming only presentation. A generator swap or mass random prop fill does not
+solve command execution, hauling or an interesting world economy.

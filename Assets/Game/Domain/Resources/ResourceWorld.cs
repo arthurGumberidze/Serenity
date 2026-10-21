@@ -12,6 +12,12 @@ namespace Game.Domain.Resources
         public IEnumerable<ResourceInventory> All => inventories.Values;
         public int Count => inventories.Count;
 
+        public InventoryOwner WorkerOwner(StableEntityId id)
+        {
+            var load = new InventoryOwner(InventoryOwnerKind.CarryLoad, id);
+            return inventories.ContainsKey(load) ? load : new InventoryOwner(InventoryOwnerKind.Character, id);
+        }
+
         public void Add(ResourceInventory inventory)
         {
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));

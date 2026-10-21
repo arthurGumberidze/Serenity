@@ -233,6 +233,26 @@ namespace Game.Tests.Editor
             Assert.That(basket.StorageCapacity, Is.EqualTo(40));
         }
 
+        [Test]
+        public void WorksiteRequiresWorkerAndRetainsProgressAcrossRestore()
+        {
+            var setup = NewConstruction();
+            setup.Funding.RequiresWorker = true;
+            setup.Source.TryAdd(Wood, new ResourceQuantity(10));
+            setup.Source.TryAdd(Fiber, new ResourceQuantity(5));
+            var result = setup.Funding.TryConfirm(setup.Shelter, default, BuildingOrientation.North,
+                new[] { setup.Source.Owner }, out var building);
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(building.IsOperational, Is.False);
+            building.AdvanceConstruction(TimeSpan.FromMinutes(10));
+            var restored = Building.Restore(building.CaptureState());
+            Assert.That(restored.ConstructionWorkTicks, Is.EqualTo(TimeSpan.FromMinutes(10).Ticks));
+            Assert.That(restored.IsOperational, Is.False);
+            restored.AdvanceConstruction(TimeSpan.FromHours(1));
+            Assert.That(restored.IsOperational, Is.True);
+            Assert.That(restored.ConstructionProgress, Is.EqualTo(1));
+        }
+
         private static ResourceCatalog NewCatalog() => new ResourceCatalog(new[]
         {
             new ResourceDefinition(Wood, "Wood Logs", ResourceCategory.Construction),

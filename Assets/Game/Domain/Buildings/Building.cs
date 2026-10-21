@@ -20,7 +20,8 @@ namespace Game.Domain.Buildings
             int currentIntegrity, BuildingStructuralStatus structuralStatus, CombatSideId ownerSideId,
             BuildingFireStatus fireStatus, int fireIntensity, long fireStartTick, long lastFireProcessedTick,
             long accumulatedFireDamage, bool destructionProcessed, bool storageSpilled,
-            IEnumerable<StableEntityId> processedDamageEvents, IEnumerable<BuildingEventState> history)
+            IEnumerable<StableEntityId> processedDamageEvents, IEnumerable<BuildingEventState> history,
+            long constructionWorkTicks = 0, long constructionRequiredTicks = 0)
         {
             if (!id.IsValid) throw new ArgumentException("Building identity is required.", nameof(id));
             if (!definitionId.IsValid) throw new ArgumentException("Definition identity is required.", nameof(definitionId));
@@ -55,6 +56,10 @@ namespace Game.Domain.Buildings
             Coordinate = coordinate;
             Orientation = orientation;
             ConstructionState = constructionState;
+            if (constructionWorkTicks < 0 || constructionRequiredTicks < constructionWorkTicks)
+                throw new ArgumentOutOfRangeException(nameof(constructionWorkTicks));
+            ConstructionWorkTicks = constructionWorkTicks;
+            ConstructionRequiredTicks = constructionRequiredTicks;
             MaxIntegrity = maxIntegrity;
             CurrentIntegrity = currentIntegrity;
             StructuralStatus = structuralStatus;
@@ -75,6 +80,8 @@ namespace Game.Domain.Buildings
         public GridCoordinate Coordinate { get; }
         public BuildingOrientation Orientation { get; }
         public ConstructionState ConstructionState { get; }
+        public long ConstructionWorkTicks { get; }
+        public long ConstructionRequiredTicks { get; }
         public int MaxIntegrity { get; }
         public int CurrentIntegrity { get; }
         public BuildingStructuralStatus StructuralStatus { get; }
@@ -105,6 +112,8 @@ namespace Game.Domain.Buildings
             Coordinate = state.Coordinate;
             Orientation = state.Orientation;
             ConstructionState = state.ConstructionState;
+            ConstructionWorkTicks = state.ConstructionWorkTicks;
+            ConstructionRequiredTicks = state.ConstructionRequiredTicks;
             MaxIntegrity = state.MaxIntegrity;
             CurrentIntegrity = state.CurrentIntegrity;
             StructuralStatus = state.StructuralStatus;
@@ -130,6 +139,25 @@ namespace Game.Domain.Buildings
         public GridCoordinate Coordinate { get; }
         public BuildingOrientation Orientation { get; }
         public ConstructionState ConstructionState { get; private set; }
+        public long ConstructionWorkTicks { get; private set; }
+        public long ConstructionRequiredTicks { get; private set; }
+        public double ConstructionProgress => ConstructionState == ConstructionState.Completed ? 1d :
+            ConstructionRequiredTicks <= 0 ? 0d : (double)ConstructionWorkTicks / ConstructionRequiredTicks;
+
+        public void RequireConstructionWork(TimeSpan duration)
+        {
+            if (duration.Ticks <= 0 || ConstructionState == ConstructionState.Completed)
+                throw new InvalidOperationException("Only an unfinished building may require work.");
+            ConstructionRequiredTicks = duration.Ticks;
+        }
+
+        public void AdvanceConstruction(TimeSpan work)
+        {
+            if (work.Ticks < 0) throw new ArgumentOutOfRangeException(nameof(work));
+            if (IsDestroyed || IsOperational || ConstructionRequiredTicks == 0) return;
+            ConstructionWorkTicks += Math.Min(work.Ticks, ConstructionRequiredTicks - ConstructionWorkTicks);
+            if (ConstructionWorkTicks == ConstructionRequiredTicks) MarkCompleted();
+        }
         public int MaxIntegrity { get; }
         public int CurrentIntegrity { get; private set; }
         public BuildingStructuralStatus StructuralStatus { get; private set; }
@@ -257,7 +285,8 @@ namespace Game.Domain.Buildings
         public BuildingState CaptureState() => new BuildingState(Id, DefinitionId, Coordinate, Orientation,
             ConstructionState, MaxIntegrity, CurrentIntegrity, StructuralStatus, OwnerSideId, FireStatus,
             FireIntensity, FireStartTick, LastFireProcessedTick, AccumulatedFireDamage, DestructionProcessed,
-            StorageSpilled, processedDamageEvents.OrderBy(x => x), history);
+            StorageSpilled, processedDamageEvents.OrderBy(x => x), history,
+            ConstructionWorkTicks, ConstructionRequiredTicks);
 
         private static BuildingStructuralStatus StatusFor(int integrity, int maximum) => integrity == 0
             ? BuildingStructuralStatus.Destroyed

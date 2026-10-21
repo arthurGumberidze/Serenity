@@ -50,6 +50,21 @@ namespace Game.Presentation.Characters
         private Quaternion lastRightLowerArmOffset = Quaternion.identity;
         private Quaternion lastLeftLowerArmOffset = Quaternion.identity;
         private float locomotionPlaybackRate = 1f;
+        private GameObject workTool;
+
+        public void ConfigureWorkTool(GameObject prefab)
+        {
+            if (prefab == null || animator == null || !animator.isHuman) return;
+            if (workTool != null) Destroy(workTool);
+            var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            if (hand == null) return;
+            workTool = Instantiate(prefab, hand, false);
+            workTool.name = "Work stone axe";
+            workTool.transform.localPosition = new Vector3(0.01f, 0.08f, 0.02f);
+            workTool.transform.localRotation = Quaternion.Euler(15f, 8f, 92f);
+            foreach (var collider in workTool.GetComponentsInChildren<Collider>()) collider.enabled = false;
+            workTool.SetActive(false);
+        }
 
         public bool IsBound => character != null;
         public Character Character => character;
@@ -180,6 +195,8 @@ namespace Game.Presentation.Characters
             if (Time.unscaledTime < manualAttackUntil) intent = CharacterAnimationIntent.Combat;
             var previousIntent = animationIntent;
             animationIntent = intent;
+            if (workTool != null) workTool.SetActive(intent == CharacterAnimationIntent.Chop ||
+                intent == CharacterAnimationIntent.Mine || intent == CharacterAnimationIntent.Build);
             if (animator == null || !hasActionIntentParameter) return;
             if (Application.isPlaying && intent != CharacterAnimationIntent.Idle &&
                 (automaticAnimationAllowed || IsSelected) && DetailedVisualActive)
@@ -235,6 +252,15 @@ namespace Game.Presentation.Characters
             if (animator == null || !Application.isPlaying) return;
             if (float.IsNaN(unscaledTime) || float.IsInfinity(unscaledTime) || unscaledTime < 0f)
                 throw new ArgumentOutOfRangeException(nameof(unscaledTime));
+
+            // A visible resident must finish transitions and continue idle/work cycles. A fixed
+            // 0.2s retirement timer could freeze Run -> Walk -> Idle halfway through the transition.
+            if ((automaticAnimationAllowed || IsSelected) && DetailedVisualActive)
+            {
+                if (!manualAnimationInitialized) InitializeManualAnimation();
+                animator.enabled = true;
+                return;
+            }
 
             if (!manualAnimationInitialized)
             {

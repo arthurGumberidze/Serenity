@@ -970,7 +970,7 @@ namespace Game.Infrastructure
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "PlayablePatch", "Saves")
+                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "WorksiteV2", "Saves")
                 : configured;
         }
 

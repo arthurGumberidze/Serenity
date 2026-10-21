@@ -52,6 +52,7 @@ namespace Game.Presentation.Characters
                     instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);
                 }
                 presenter.Bind(character, registry, requested);
+                presenter.ConfigureWorkTool(catalog.WorkAxe);
                 return presenter;
             }
             catch

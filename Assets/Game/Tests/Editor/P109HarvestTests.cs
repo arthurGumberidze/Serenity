@@ -7,12 +7,54 @@ using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Simulation.Production;
 using Game.Simulation.Resources;
+using Game.Simulation.AI;
 using NUnit.Framework;
 
 namespace Game.Tests.Editor
 {
     public sealed class P109HarvestTests
     {
+        [Test]
+        public void HarvestLeavesGroundPileAndHaulReservesOnlyStorageSpace()
+        {
+            var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries" }
+                .Select(x => new ResourceDefinition(new ResourceId(x), x, ResourceCategory.Construction)));
+            var inventories = new ResourceInventoryRegistry();
+            var worker = StableEntityId.NewId();
+            var carrier = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, worker), resources, 12);
+            inventories.Add(carrier);
+            var buildings = new BuildingRegistry();
+            var storage = Building.CreateNew(new BuildingDefinitionId("storage_basket"), new GridCoordinate(4, 4), BuildingOrientation.North);
+            storage.MarkCompleted();
+            buildings.Add(storage);
+            inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, storage.Id), resources, 5));
+            var piles = new WorldPileService(resources, inventories);
+            var production = new ProductionService(ProductionCatalog.CreatePlayablePatch(resources), resources,
+                inventories, buildings, new ResourceTransferService(inventories));
+            production.UseGroundOutputs(piles, _ => new GridCoordinate(10, 10));
+            var tree = ProductionSite.CreateNatural(new ProductionRecipeId("chop_wood"), new WorldPosition(10, 0, 10), 24);
+            production.AddSite(tree);
+            Assert.That(production.TryReserveAtSite(worker, tree.Id, out var work), Is.True);
+            var result = production.AdvanceTask(work.Task.Id, TimeSpan.FromHours(1));
+            Assert.That(result.Completed, Is.True);
+            Assert.That(result.OutputOwner.Kind, Is.EqualTo(InventoryOwnerKind.WorldPile));
+            Assert.That(carrier.TotalUnits, Is.Zero);
+            var pile = piles.All.Single();
+            var wood = new ResourceId("wood_log");
+            Assert.That(inventories.Get(pile.InventoryOwner).GetAmount(wood).Units, Is.EqualTo(24));
+            var claims = new HaulClaimRegistry();
+            var query = new HaulWorldQuery(inventories, piles, buildings, claims);
+            var agent = new Tier1AiAgentState(worker, tree.Position);
+            Assert.That(query.TryClaim(agent, 12, out var candidate, out _), Is.True);
+            Assert.That(candidate.Quantity.Units, Is.EqualTo(5));
+            Assert.That(new ResourceTransferService(inventories).TransferExact(candidate.Source, carrier.Owner,
+                wood, candidate.Quantity), Is.EqualTo(TransferFailureReason.None));
+            Assert.That(inventories.Get(pile.InventoryOwner).GetAmount(wood).Units, Is.EqualTo(19));
+            query.DropTransportLoad(worker, tree.Position);
+            Assert.That(carrier.TotalUnits, Is.Zero);
+            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(wood).Units), Is.EqualTo(24));
+        }
+
         [Test]
         public void WholeTreeIsReservedOnceAndCommitsExactQuantityOnce()
         {

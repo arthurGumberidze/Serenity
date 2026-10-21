@@ -35,6 +35,24 @@ namespace Game.Presentation.Production
             if (!preserveColor) gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(site.Id, ContextTargetKind.ResourceSource);
+            if (site.RecipeId.ToString() != "chop_wood" && transform.Find("Resource selection volume") == null)
+            {
+                var meshes = GetComponentsInChildren<MeshRenderer>(true);
+                if (meshes.Length > 0)
+                {
+                    var bounds = meshes[0].bounds;
+                    foreach (var mesh in meshes) bounds.Encapsulate(mesh.bounds);
+                    var volume = new GameObject("Resource selection volume");
+                    volume.transform.SetParent(transform, false);
+                    var box = volume.AddComponent<BoxCollider>();
+                    box.isTrigger = true;
+                    box.center = transform.InverseTransformPoint(bounds.center);
+                    var scale = transform.lossyScale;
+                    box.size = new Vector3(Mathf.Max(0.5f, bounds.size.x) / Mathf.Max(0.01f, Mathf.Abs(scale.x)),
+                        Mathf.Max(0.6f, bounds.size.y) / Mathf.Max(0.01f, Mathf.Abs(scale.y)),
+                        Mathf.Max(0.5f, bounds.size.z) / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
+                }
+            }
             if (site.RecipeId.ToString() == "chop_wood" && transform.Find("Tree selection volume") == null)
             {
                 // Select the visible crown as well as the trunk without blocking navigation.

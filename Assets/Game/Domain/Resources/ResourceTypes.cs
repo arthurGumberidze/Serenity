@@ -60,7 +60,9 @@ namespace Game.Domain.Resources
 
     public enum ResourceCategory { Construction = 0, Food = 1, Other = 2 }
 
-    public enum InventoryOwnerKind { WorldPile = 0, Character = 1, BuildingStorage = 2 }
+    // Character is retained only for historical simulations/snapshots. CarryLoad is a bounded
+    // transport payload, never a resident's personal stockpile or a production output owner.
+    public enum InventoryOwnerKind { WorldPile = 0, Character = 1, BuildingStorage = 2, CarryLoad = 3 }
 
     public readonly struct InventoryOwner : IEquatable<InventoryOwner>
     {

@@ -9,7 +9,9 @@ public static class P109StarterNatureAuthoring
 {
     private const string Vendor = "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/";
     private const string Output = "Assets/Game/Art/StarterNature";
-    public static void BuildPlayable()
+    public static void BuildPlayable() => Build("Builds/P109SyntyPlayable/Serenity.exe");
+    public static void BuildWorksite() => Build("Builds/P109Worksite/Serenity.exe");
+    private static void Build(string outputPath)
     {
         if (Application.unityVersion != "6000.6.4f1") throw new InvalidOperationException("Pinned Editor required");
         var catalog = UnityEngine.Resources.Load<StarterNatureCatalog>("World/StarterNature");
@@ -20,7 +22,7 @@ public static class P109StarterNatureAuthoring
         var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
             scenes = scenes,
-            locationPathName = "Builds/P109SyntyPlayable/Serenity.exe",
+            locationPathName = outputPath,
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.Development
         });
