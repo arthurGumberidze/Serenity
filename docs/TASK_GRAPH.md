@@ -13,12 +13,13 @@ The implementation order and gates are defined in `P109_STONE_AGE_BUILDINGS_PLAN
 P10.9 post-E visual/gameplay feedback repair (2026-10-22): DONE in implementation, acceptance remains F1.
 Mixed-category construction buffers fix Clan House's cured-hide delivery/progress deadlock. Existing authored
 resource colliders suppress duplicate broad selection volumes. Campfire VFX has an explicit URP particle
-material. Completed facilities show downloaded CityBuilderThree/RTS Toon/Synty final models instead of
-construction primitives. Primitive Garden uses a bounded 2×2–8×8 held-LMB rectangle and persists the exact
+material. Completed facilities show downloaded CityBuilderThree/Low Poly Farm/RTS Toon/Synty final models
+instead of construction primitives; Primitive Shelter and Storage Basket are included. Primitive Garden uses
+a bounded 2×2–8×8 held-LMB rectangle and persists the exact
 zone cells. Focused EditMode passed 31/31 and new visual/model regression passed 7/7. Broader P109 recorded
 65/68 EditMode and 6/9 PlayMode, with failures outside this repair documented in PROJECT_STATE. Two Player
 build attempts stalled in Unity's import-worker startup before the build method and were terminated by exact
-PID; F1 retains the required clean Player build/native acceptance gate.
+PID; F1 retains the required clean Player build/native acceptance gate. The starter-prefab rerun passed 2/2.
 
 P10.9 E1-E4 extended buildings and lifecycle (2026-10-22): DONE. Fourteen canonical definitions and
 project-owned prefabs cover clan housing, healer/shrine/chief/meeting/training facilities, fishing,

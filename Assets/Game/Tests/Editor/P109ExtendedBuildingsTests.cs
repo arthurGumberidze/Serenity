@@ -52,7 +52,7 @@ namespace Game.Tests.Editor
         {
             var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
                 "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
-            foreach (var id in new[] { "clan_house", "healer_hut", "chief_hut", "training_ground",
+            foreach (var id in new[] { "primitive_shelter", "storage_basket", "clan_house", "healer_hut", "chief_hut", "training_ground",
                          "fishing_camp", "well", "palisade", "gate", "watchtower", "primitive_path" })
             {
                 var prefab = catalog.ResolvePrefab(new BuildingDefinitionId(id));

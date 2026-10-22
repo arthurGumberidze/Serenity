@@ -1026,7 +1026,8 @@ U29 is checkpointed as PARTIAL; its residual gate and evidence are in `docs/U29_
 - Campfire/building fire particle systems use a shared explicit URP unlit particle material, eliminating the
   magenta missing-material renderer.
 - Completed buildings hide lower construction stages. Final models now come from the installed
-  CityBuilderThree, RTS Toon Buildings and Synty Polygon Nature packages; imported visual colliders are removed
+  CityBuilderThree, Low Poly Farm, RTS Toon Buildings and Synty Polygon Nature packages; Primitive Shelter and
+  Storage Basket are included rather than remaining on their old U08 meshes. Imported visual colliders are removed
   so canonical root placement/selection remains project-owned.
 - Primitive Garden placement uses held-LMB rectangular drag, 2×2 minimum and 8×8/64-cell maximum. Authored
   cells pass through the existing placement/funding/occupancy flow, determine the presentation centre and
@@ -1056,6 +1057,10 @@ Validation commands and results:
 
 - 6/9 passed after 197.39 s. The existing failures are the missing isolated-save environment assertion,
   unavailable fishing recipe fixture and starter recipe availability assertion.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ExtendedBuildingsTests.FinishedFacilitiesUseDownloadedModelsAndGardenOwnsVariableCellVisuals;Game.Tests.Editor.BuildingFoundationTests.CatalogContainsFivePlayableBaseBuildingsWithAuthoredStages' -testResults 'C:\serenity_game\Artifacts\P109\visual-feedback\starter-edit.xml' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\starter-edit.log'`
+
+- passed 2/2 after replacing the original Primitive Shelter and Storage Basket visuals.
 
 Player build attempts used both `-nographics` (`build-final.log`) and `-force-d3d11`
 (`build-d3d11.log`) with `-executeMethod U00Build.WindowsDevelopment -serenityBuildPath

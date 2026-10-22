@@ -1177,7 +1177,8 @@ an explicit 2×2 minimum and 8×8/64-cell maximum. The exact cells travel throug
 presentation component repeats one imported crop visual per cell and recentres the instance, while cost and
 work remain the current definition values pending a separate balance decision.
 
-Final facility art references already imported assets. Construction stages may use simple readable foundation
+Final facility art references already imported assets, including CityBuilderThree tent art for Primitive
+Shelter and Low Poly Farm basket art for Storage Basket. Construction stages may use simple readable foundation
 geometry, but a completed building shows only its highest authored stage. Runtime selection colliders and fire
 materials are project-owned adapters: imported prefab colliders are stripped from building visuals, existing
 narrow resource colliders are preserved, and particle renderers receive an explicit URP material. These choices

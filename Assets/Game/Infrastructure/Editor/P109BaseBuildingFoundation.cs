@@ -58,6 +58,7 @@ namespace Game.Infrastructure.Editor
         public static void EnsureBasePrefabs()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(HutPath));
+            BuildStarterShelterAndStorage();
             BuildHut();
             BuildCampfire();
             BuildWorkshop();
@@ -67,6 +68,37 @@ namespace Game.Infrastructure.Editor
             BuildDryingRack();
             BuildHideWorkshop();
             BuildExtendedBuildings();
+        }
+
+        private static void BuildStarterShelterAndStorage()
+        {
+            var shelter = Root("Serenity Primitive Shelter", new Vector3(4f, 3.2f, 3f),
+                new Vector3(0f, 1.6f, 0f));
+            var shelterBase = Stage(shelter.transform, "Stage 1 Cleared Ground", 1);
+            Part(PrimitiveType.Cube, "Packed ground", shelterBase, new Vector3(0f, .04f, 0f),
+                new Vector3(3.6f, .08f, 2.6f), Soil);
+            var shelterFrame = Stage(shelter.transform, "Stage 2 Shelter Frame", 2);
+            foreach (var x in new[] { -1.45f, 1.45f })
+                foreach (var z in new[] { -.95f, .95f })
+                    Part(PrimitiveType.Cylinder, "Frame post", shelterFrame, new Vector3(x, 1.2f, z),
+                        new Vector3(.1f, 1.2f, .1f), Bark);
+            var shelterFinish = Stage(shelter.transform, "Stage 3 Finished Shelter", 3);
+            AddFittedModel(Load<GameObject>(CityModels + "tent.fbx"), shelterFinish,
+                new Vector3(3.8f, 3.05f, 2.85f));
+            Save(shelter, U08BuildingFoundation.ShelterPrefabPath);
+
+            var storage = Root("Serenity Storage Basket", new Vector3(1.1f, .9f, .8f),
+                new Vector3(0f, .45f, 0f));
+            var storageBase = Stage(storage.transform, "Stage 1 Woven Base", 1);
+            Part(PrimitiveType.Cylinder, "Basket base", storageBase, new Vector3(0f, .08f, 0f),
+                new Vector3(.42f, .08f, .32f), DarkBark);
+            var storageFrame = Stage(storage.transform, "Stage 2 Woven Frame", 2);
+            Part(PrimitiveType.Cylinder, "Basket frame", storageFrame, new Vector3(0f, .28f, 0f),
+                new Vector3(.48f, .28f, .36f), Bark);
+            var storageFinish = Stage(storage.transform, "Stage 3 Finished Basket", 3);
+            AddFittedModel(Load<GameObject>("Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab"),
+                storageFinish, new Vector3(1f, .82f, .72f));
+            Save(storage, U08BuildingFoundation.StoragePrefabPath);
         }
 
         public static void ConfigureCatalog(BuildingPresentationCatalog catalog)
