@@ -167,3 +167,34 @@ cadence, no broad regression or Windows build was run at C1.
 ## Next stage
 
 C2 adds the five playable base definitions and their visual construction stages.
+
+## Stage C2 complete
+
+Date: 22 October 2026. The presentation catalog now contains the five first playable objects:
+Primitive Shelter, Stone Age Hut, Campfire, Storage Basket and Stone Tool Workshop. Their costs,
+work, stage counts, footprints, housing/storage capabilities and research prerequisites are authored
+as data. The existing shelter/storage prefabs remain supported; three new project-owned primitive
+prefabs add clear silhouettes, colliders and `BuildingConstructionStageVisual` markers. The presenter
+derives visible groups from canonical construction stages.
+
+The worker route exposed an integration edge: autonomous cleanup had reserved an entire fibre pile
+before construction claims were created. `HaulClaimRegistry` now supports deterministic release of
+matching unpicked source claims. `ConstructionFundingService` invokes it only after a construction
+transaction is confirmed and only for the exact selected deductions. Carried resources are not
+preempted and all ownership changes remain physical transfers.
+
+Verification commands:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.Editor.BuildingFoundationTests;Game.Tests.Editor.P109BuildingDefinitionTests;Game.Tests.Editor.ResearchFrameworkTests' -testResults C:\serenity_game\Artifacts\P109\buildings-c2\focused-editmode-final2.xml -logFile C:\serenity_game\Artifacts\P109\buildings-c2\focused-editmode-final2.log
+
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.BuildingPlacementPlayModeTests.ResidentApproachesAndBuildsInsteadOfInstantCompletion' -testResults C:\serenity_game\Artifacts\P109\buildings-c2\placement-worker-playmode-final3.xml -logFile C:\serenity_game\Artifacts\P109\buildings-c2\placement-worker-playmode-final3.log
+```
+
+Results: focused EditMode 36/36 passed; physical delivery/build PlayMode 1/1 passed. Catalog and
+prefab generation succeeded in `Artifacts/P109/buildings-c2/generate-final.log`. Per the agreed
+cadence, no broad regression or Windows build was run at C2.
+
+## Next stage
+
+C3 adds work slots, production queues and the kitchen panel using the existing production authority.

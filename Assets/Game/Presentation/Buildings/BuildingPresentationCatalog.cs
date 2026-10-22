@@ -44,6 +44,7 @@ namespace Game.Presentation.Buildings
             [SerializeField, Range(1, 32)] private int constructionStageCount = 3;
             [SerializeField, Min(0)] private long storageCapacity;
             [SerializeField] private List<ResourceCategory> storageCategories = new List<ResourceCategory>();
+            [SerializeField, Min(0)] private int housingCapacity;
             [SerializeField, Min(1)] private int maxIntegrity = 1000;
             [SerializeField, Range(1, 2000)] private int fireDamagePerThousand = 1000;
             [SerializeField, Range(1, 2000)] private int combatDamagePerThousand = 1000;
@@ -99,6 +100,13 @@ namespace Game.Presentation.Buildings
                 return this;
             }
 
+            public Entry ConfigureHousing(int residentCapacity)
+            {
+                if (residentCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(residentCapacity));
+                housingCapacity = residentCapacity;
+                return this;
+            }
+
             public Entry Configure(string id, string name, BuildingCategory buildingCategory, int width, int depth,
                 GameObject presentationPrefab, BuildingPlacementMode mode = BuildingPlacementMode.Grid, bool overlap = false)
             {
@@ -131,8 +139,9 @@ namespace Game.Presentation.Buildings
                     storageCategories == null || storageCategories.Count == 0
                         ? Enum.GetValues(typeof(ResourceCategory)) as ResourceCategory[]
                         : storageCategories) : null;
+                var housing = housingCapacity > 0 ? new HousingSpec(housingCapacity) : null;
                 return new BuildingDefinition(new BuildingDefinitionId(definitionId), displayName, category,
-                    era, description, iconKey, technologies, construction, placement, storage: storage,
+                    era, description, iconKey, technologies, construction, placement, housing, storage,
                     maxIntegrity: maxIntegrity <= 0 ? 1000 : maxIntegrity,
                     fireDamagePerThousand: fireDamagePerThousand <= 0 ? 1000 : fireDamagePerThousand,
                     combatDamagePerThousand: combatDamagePerThousand <= 0 ? 1000 : combatDamagePerThousand,

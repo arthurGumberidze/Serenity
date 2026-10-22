@@ -112,13 +112,23 @@ namespace Game.Tests.PlayMode
             root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Maximum);
             var sawBuild = false;
             var deadline = Time.realtimeSinceStartup + 60f;
-            while (!building.IsOperational && Time.realtimeSinceStartup < deadline)
+            while ((!sawBuild || building.ConstructionPhase != Game.Domain.Buildings.ConstructionPhase.Building) &&
+                   Time.realtimeSinceStartup < deadline)
             {
                 sawBuild |= root.AiRuntime.Movements.Any(x => x.Presenter.AnimationIntent ==
                     Game.Presentation.Characters.CharacterAnimationIntent.Build);
                 yield return null;
             }
             Assert.That(sawBuild, Is.True, string.Join(",", root.Work.Jobs.Select(x => x.Type + ":" + x.Status)));
+            Assert.That(building.ConstructionPhase, Is.EqualTo(Game.Domain.Buildings.ConstructionPhase.Building),
+                "The physical material deliveries did not finish before the deadline. Jobs=" +
+                string.Join(",", root.Work.Jobs.Select(x => x.Type + ":" + x.Status + ":" + x.Quantity.Units +
+                    ":" + (x.AssigneeId.HasValue ? x.AssigneeId.Value.ToString() : "none"))) +
+                "; Movers=" + string.Join(",", root.AiRuntime.Movements.Select(x =>
+                    x.CharacterId + ":" + x.Authority + ":" + x.State + ":" + x.IsAvailable)) +
+                "; Materials=" + string.Join(",", building.ConstructionMaterials.Select(x =>
+                    x.ResourceId + ":" + x.InstalledUnits + "/" + x.RequiredUnits)));
+            root.AiRuntime.AdvanceForDebug(System.TimeSpan.FromMinutes(4));
             Assert.That(building.IsOperational, Is.True);
             yield return new WaitForSecondsRealtime(0.5f);
             Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.False);

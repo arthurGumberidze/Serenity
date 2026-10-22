@@ -550,7 +550,7 @@ namespace Game.Infrastructure
                     starterTerritoryRadius, starterTerritoryRadius)
             });
             BuildingPlacementService.ConfigureTerritories(BuildingTerritories);
-            Construction.ConfigureLogistics(ConstructionSites, Work, WorldPiles, StarterSettlementId);
+            Construction.ConfigureLogistics(ConstructionSites, Work, WorldPiles, StarterSettlementId, HaulClaims);
             InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
             ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,

@@ -9,6 +9,7 @@ using Game.Domain.Research;
 using Game.Domain.Work;
 using Game.Domain.World;
 using Game.Simulation.Work;
+using Game.Simulation.AI;
 
 namespace Game.Simulation.Resources
 {
@@ -42,6 +43,7 @@ namespace Game.Simulation.Resources
         private WorkManager work;
         private WorldPileService piles;
         private SettlementId settlementId;
+        private HaulClaimRegistry haulClaims;
         private const long DeliveryBatchUnits = 8;
         public bool RequiresWorker { get; set; }
         public TimeSpan MinimumBuildTime { get; set; } = TimeSpan.FromMinutes(30);
@@ -70,13 +72,14 @@ namespace Game.Simulation.Resources
             unlocks == null || unlocks.IsBuildingUnlocked(definitionId);
 
         public void ConfigureLogistics(ConstructionSiteService constructionSites, WorkManager workManager,
-            WorldPileService worldPiles, SettlementId settlement)
+            WorldPileService worldPiles, SettlementId settlement, HaulClaimRegistry claims = null)
         {
             sites = constructionSites ?? throw new ArgumentNullException(nameof(constructionSites));
             work = workManager ?? throw new ArgumentNullException(nameof(workManager));
             piles = worldPiles ?? throw new ArgumentNullException(nameof(worldPiles));
             if (!settlement.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlement));
             settlementId = settlement;
+            haulClaims = claims;
         }
 
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
@@ -118,6 +121,8 @@ namespace Game.Simulation.Resources
                 {
                     foreach (var deduction in deductions)
                     {
+                        haulClaims?.ReleaseReservedAtSource(deduction.Source.Owner, deduction.Id,
+                            deduction.Quantity.Units);
                         var remaining = deduction.Quantity.Units;
                         while (remaining > 0)
                         {

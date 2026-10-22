@@ -112,6 +112,27 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries()
+        {
+            var setup = CreateLogisticsFixture();
+            var wood = setup.Sources.Single(x => x.GetAmount(Wood).Units > 0);
+            var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage, Id(99));
+            Assert.That(setup.Claims.TryClaim(Id(40), wood.Owner, destination, Wood, new ResourceQuantity(4),
+                6, 100, out _), Is.True);
+            Assert.That(setup.Claims.TryClaim(Id(41), wood.Owner, destination, Wood, new ResourceQuantity(2),
+                6, 100, out _), Is.True);
+            Assert.That(setup.Claims.ReservedAtSource(wood.Owner, Wood), Is.EqualTo(6));
+
+            var result = setup.Funding.TryConfirm(Definition(), new GridCoordinate(3, 4), BuildingOrientation.North,
+                setup.Sources.Select(x => x.Owner), out _);
+
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(setup.Claims.ReservedAtSource(wood.Owner, Wood), Is.Zero);
+            Assert.That(setup.Work.Jobs.Where(x => x.Type == WorkJobType.Haul && x.ResourceId == Wood)
+                .Sum(x => x.Quantity.Units), Is.EqualTo(5));
+        }
+
+        [Test]
         public void Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles()
         {
             var setup = CreateLogisticsFixture();
@@ -242,10 +263,11 @@ namespace Game.Tests.Editor
                 new BuildingGridBounds(-10, -10, 10, 10));
             var sites = new ConstructionSiteService(resources, inventories);
             var work = new WorkManager(new CharacterRegistry());
+            var claims = new HaulClaimRegistry();
             var funding = new ConstructionFundingService(placement, inventories, resources,
                 new StorageService(inventories, resources)) { RequiresWorker = true };
-            funding.ConfigureLogistics(sites, work, piles, new SettlementId(Id(30)));
-            return new LogisticsFixture(resources, inventories, piles, sources, buildings, sites, work, funding);
+            funding.ConfigureLogistics(sites, work, piles, new SettlementId(Id(30)), claims);
+            return new LogisticsFixture(resources, inventories, piles, sources, buildings, sites, work, funding, claims);
         }
 
         private static void DeliverAll(Fixture fixture)
@@ -286,9 +308,10 @@ namespace Game.Tests.Editor
         {
             public LogisticsFixture(ResourceCatalog resources, ResourceInventoryRegistry inventories,
                 WorldPileService piles, IReadOnlyList<ResourceInventory> sources, BuildingRegistry buildings,
-                ConstructionSiteService sites, WorkManager work, ConstructionFundingService funding)
+                ConstructionSiteService sites, WorkManager work, ConstructionFundingService funding,
+                HaulClaimRegistry claims)
             { Resources = resources; Inventories = inventories; Piles = piles; Sources = sources; Buildings = buildings;
-                Sites = sites; Work = work; Funding = funding; }
+                Sites = sites; Work = work; Funding = funding; Claims = claims; }
             public ResourceCatalog Resources { get; }
             public ResourceInventoryRegistry Inventories { get; }
             public WorldPileService Piles { get; }
@@ -297,6 +320,7 @@ namespace Game.Tests.Editor
             public ConstructionSiteService Sites { get; }
             public WorkManager Work { get; }
             public ConstructionFundingService Funding { get; }
+            public HaulClaimRegistry Claims { get; }
         }
     }
 }

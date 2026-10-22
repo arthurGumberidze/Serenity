@@ -39,25 +39,8 @@ namespace Game.Infrastructure.Editor
                 AssetDatabase.CreateAsset(catalog, CatalogPath);
             }
 
-            var shelter = AssetDatabase.LoadAssetAtPath<GameObject>(ShelterPrefabPath);
-            var storage = AssetDatabase.LoadAssetAtPath<GameObject>(StoragePrefabPath);
-            catalog.Configure(new[]
-            {
-                new BuildingPresentationCatalog.Entry().Configure("primitive_shelter", "Primitive Shelter",
-                    BuildingCategory.Shelter, 4, 3, shelter),
-                new BuildingPresentationCatalog.Entry().Configure("storage_basket", "Storage Basket",
-                    BuildingCategory.Storage, 2, 1, storage),
-                new BuildingPresentationCatalog.Entry().Configure("primitive_crop_plot", "Primitive Crop Plot",
-                    BuildingCategory.Structure, 3, 3, storage),
-                new BuildingPresentationCatalog.Entry().Configure("military_barracks", "Military Barracks",
-                    BuildingCategory.Structure, 4, 3, shelter)
-            }, "primitive_shelter");
-            var resources = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
-            if (resources != null)
-            {
-                U09ResourceFoundation.ApplyEconomy(catalog);
-                catalog.ConfigureResources(resources);
-            }
+            P109BaseBuildingFoundation.EnsureBasePrefabs();
+            P109BaseBuildingFoundation.ConfigureCatalog(catalog);
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
         }

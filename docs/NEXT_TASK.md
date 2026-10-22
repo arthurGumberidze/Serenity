@@ -4,9 +4,9 @@
 
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1-B3 are complete. The current active slice is
-**C2: five base definitions and visual construction stages**, followed continuously in this
-chat by C3-C4. C1 is complete: construction now creates bounded physical haul orders into the
+small tested builds and commits. B1-B3 and C1-C2 are complete. The current active slice is
+**C3: work slots, production and the kitchen panel**, followed continuously in this
+chat by C4. C1 is complete: construction now creates bounded physical haul orders into the
 shared construction buffer, reserves queued source stock, survives save/load, advances material
 stages only after delivery, and returns buffered plus installed materials on cancellation. Do not
 pause for approval between those internal commits. No additional chat,
@@ -56,6 +56,14 @@ materials to physical piles and removes the plan/storage/occupancy. Snapshot v27
 the buffer and work orders, so no format change was needed. Focused EditMode passed 7/7 and the
 directly affected construction/resource/work/Tier1 set passed 34/34. No broad regression or Player
 build was run by design; those gates remain after C4.
+
+C2 adds five playable definitions and readable staged visuals: Primitive Shelter, Stone Age Hut,
+Campfire, Storage Basket and Stone Tool Workshop. Housing/storage and technology prerequisites are
+authored through the existing definition/catalog path. Confirmed construction preempts only
+unpicked autonomous source claims needed for its high-priority deliveries, preventing a cleanup
+reservation from deadlocking the site without teleporting carried stock. Focused EditMode passed
+36/36 and the physical worker PlayMode route passed 1/1. No broad regression or Player build was
+run by design; those gates remain after C4.
 
 ## Superseded screenshot-feedback handoff
 

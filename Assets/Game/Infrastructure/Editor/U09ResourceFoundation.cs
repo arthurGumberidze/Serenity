@@ -70,6 +70,26 @@ namespace Game.Infrastructure.Editor
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 12),
                         new BuildingPresentationCatalog.Entry.CostEntry().Configure("stone", 6)
                     });
+                else if (entry.DefinitionId == "stone_age_hut")
+                    entry.ConfigureEconomy(new[]
+                    {
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 12),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 6),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("hide", 2)
+                    });
+                else if (entry.DefinitionId == "campfire")
+                    entry.ConfigureEconomy(new[]
+                    {
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 3),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("stone", 4)
+                    });
+                else if (entry.DefinitionId == "stone_tool_workshop")
+                    entry.ConfigureEconomy(new[]
+                    {
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 10),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("stone", 8),
+                        new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 4)
+                    });
             }
         }
 

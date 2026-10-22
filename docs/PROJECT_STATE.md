@@ -1,5 +1,24 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings C2
+
+C2 is complete. The existing presentation catalog now authors five playable Stone Age definitions:
+Primitive Shelter, Stone Age Hut, Campfire, Storage Basket and Stone Tool Workshop. Housing and
+storage capabilities are definition data; shelter/hut/campfire/workshop research gates use the
+existing technology catalog. Three project-owned primitive prefabs provide readable silhouettes,
+colliders and explicit material-stage groups; the two existing prefabs retain compatible fallback
+presentation. `BuildingPresenter` reveals authored groups from canonical construction stage state.
+
+During PlayMode verification, autonomous cleanup claims were found to reserve all fibre before a
+new high-priority construction delivery could claim it. Confirmed construction now releases only
+unpicked source claims needed by its selected deductions; carried stock remains canonical and is
+never preempted. Focused EditMode passed 36/36 at
+`Artifacts/P109/buildings-c2/focused-editmode-final2.xml`; the physical worker placement route passed
+1/1 at `Artifacts/P109/buildings-c2/placement-worker-playmode-final3.xml`. Catalog/prefab generation
+completed successfully in `generate-final.log`. No broad regression or Windows build was run at
+this internal checkpoint by design. C3 is active; the broad regression and separate Player build
+remain scheduled after C4.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings C1
 
 C1 is complete. LocalGameplay construction confirmation now initializes the existing staged

@@ -1,7 +1,12 @@
 using System;
 using System.Linq;
+using Game.Domain;
 using Game.Domain.Buildings;
+using Game.Domain.Combat;
+using Game.Domain.Resources;
+using Game.Domain.World;
 using Game.Presentation.Buildings;
+using Game.Presentation.Resources;
 using Game.Simulation.Buildings;
 using NUnit.Framework;
 using UnityEditor;
@@ -118,6 +123,73 @@ namespace Game.Tests.Editor
             Assert.That(storage.Footprint, Is.EqualTo(new BuildingFootprint(2, 1)));
             Assert.That(catalog.ResolvePrefab(shelter.Id).GetComponent<BuildingPresenter>(), Is.Not.Null);
             Assert.That(catalog.ResolvePrefab(storage.Id).GetComponent<BuildingPresenter>(), Is.Not.Null);
+        }
+
+        [Test]
+        public void CatalogContainsFivePlayableBaseBuildingsWithAuthoredStages()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var baseIds = new[] { "primitive_shelter", "stone_age_hut", "campfire", "storage_basket",
+                "stone_tool_workshop" }.Select(x => new BuildingDefinitionId(x)).ToArray();
+
+            foreach (var id in baseIds)
+            {
+                var definition = catalog.ResolveDefinition(id);
+                var prefab = catalog.ResolvePrefab(id);
+                Assert.That(definition.Construction.Cost, Is.Not.Empty, id.ToString());
+                Assert.That(definition.Construction.StageCount, Is.GreaterThanOrEqualTo(2), id.ToString());
+                Assert.That(prefab.GetComponent<BuildingPresenter>(), Is.Not.Null, id.ToString());
+                Assert.That(prefab.GetComponent<Collider>(), Is.Not.Null, id.ToString());
+            }
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("primitive_shelter")).Housing.ResidentCapacity,
+                Is.EqualTo(2));
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut")).Housing.ResidentCapacity,
+                Is.EqualTo(4));
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("storage_basket")).Storage.Capacity,
+                Is.EqualTo(40));
+            foreach (var id in new[] { "stone_age_hut", "campfire", "stone_tool_workshop" })
+                Assert.That(catalog.ResolvePrefab(new BuildingDefinitionId(id))
+                    .GetComponentsInChildren<BuildingConstructionStageVisual>(true).Length, Is.GreaterThanOrEqualTo(2));
+        }
+
+        [Test]
+        public void AuthoredConstructionStageVisualsFollowInstalledMaterialStages()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var resourcesAsset = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(
+                "Assets/Game/Art/Config/ResourceCatalog.asset");
+            var resources = resourcesAsset.CreateCatalog();
+            var definition = catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut"));
+            var inventories = new ResourceInventoryRegistry();
+            var source = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage,
+                StableEntityId.NewId()), resources, 100);
+            foreach (var amount in definition.Construction.Cost) source.TryAdd(amount.ResourceId, amount.Quantity);
+            inventories.Add(source);
+            var building = Building.CreateNew(definition, default, BuildingOrientation.North,
+                new CombatSideId("player"));
+            var sites = new ConstructionSiteService(resources, inventories);
+            sites.Initialize(building, definition, new SettlementId(StableEntityId.NewId()));
+            var presenter = new BuildingPresentationSpawner(catalog, new BuildingPresentationRegistry(), 1f,
+                Vector3.zero, inventoryRegistry: inventories).Spawn(building);
+            try
+            {
+                var stages = presenter.GetComponentsInChildren<BuildingConstructionStageVisual>(true);
+                Assert.That(stages.All(x => !x.gameObject.activeSelf), Is.True);
+                foreach (var amount in building.NextStageMaterialCost())
+                    Assert.That(sites.Deliver(building, source.Owner, amount.ResourceId, amount.Quantity),
+                        Is.EqualTo(Game.Simulation.Resources.TransferFailureReason.None));
+                Assert.That(sites.CommitReadyStage(building), Is.True);
+                presenter.RefreshStructuralPresentation();
+                Assert.That(stages.Where(x => x.RequiredStage == 1).All(x => x.gameObject.activeSelf), Is.True);
+                Assert.That(stages.Where(x => x.RequiredStage > 1).All(x => !x.gameObject.activeSelf), Is.True);
+            }
+            finally
+            {
+                presenter.Unbind();
+                UnityEngine.Object.DestroyImmediate(presenter.gameObject);
+            }
         }
 
         [Test]

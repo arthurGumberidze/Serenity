@@ -1072,3 +1072,18 @@ buffered and recorded as installed—back into canonical world piles before remo
 building, attached storage and occupancy. In-flight cargo uses the established Tier1 cancellation
 drop path. Buffer contents, material progress and work orders already fit snapshot v27, so C1 does
 not introduce another manager, inventory, save version or migration.
+
+## D-164 Base-building visuals follow canonical stages; construction outranks unpicked cleanup (2026-10-22)
+
+The first playable set is authored in the existing `BuildingPresentationCatalog`: Primitive Shelter,
+Stone Age Hut, Campfire, Storage Basket and Stone Tool Workshop. Housing, storage and research
+requirements remain immutable definition data. Project-owned primitive prefabs use explicit stage
+markers read by `BuildingPresenter`; canonical `Building.ConstructionStageIndex` is the only progress
+authority, while older prefabs retain the combined-renderer fallback. No mutable progress is stored
+in prefabs or ScriptableObjects and no external asset dependency is added.
+
+Autonomous cleanup may already hold source claims when a player confirms construction. A confirmed
+high-priority construction transaction may release only matching `ReservedAtSource` claims required
+by its deductions before creating delivery orders. It never revokes `Carrying` claims or moves stock:
+ownership still changes only through the shared transfer/haul path. This prevents a valid plan from
+deadlocking behind speculative cleanup reservations without introducing a second reservation system.

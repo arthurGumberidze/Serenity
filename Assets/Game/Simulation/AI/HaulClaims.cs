@@ -130,6 +130,24 @@ namespace Game.Simulation.AI
             return claims.TryGetValue(claim.Id.Value, out var active) && ReferenceEquals(active, claim) && claims.Remove(claim.Id.Value);
         }
 
+        public long ReleaseReservedAtSource(InventoryOwner source, ResourceId resourceId, long requiredUnits)
+        {
+            if (requiredUnits <= 0) return 0;
+            var candidates = new List<HaulClaim>();
+            foreach (var claim in claims.Values)
+                if (claim.Phase == HaulClaimPhase.ReservedAtSource && claim.Source == source &&
+                    claim.ResourceId == resourceId) candidates.Add(claim);
+            candidates.Sort((left, right) => left.Id.Value.CompareTo(right.Id.Value));
+            long released = 0;
+            foreach (var claim in candidates)
+            {
+                if (!claims.Remove(claim.Id.Value)) continue;
+                released = checked(released + claim.Quantity.Units);
+                if (released >= requiredUnits) break;
+            }
+            return released;
+        }
+
         public int ReleaseForAgent(StableEntityId claimant)
         {
             var ids = new List<long>();

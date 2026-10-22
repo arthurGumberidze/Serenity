@@ -220,6 +220,8 @@ namespace Game.Domain.Research
                 TechnologyUnlock.Recipe(new ProductionRecipeId("gather_stone")),
                 TechnologyUnlock.Recipe(new ProductionRecipeId("chop_wood"))
             };
+            if (availableBuildingIds.Contains(new BuildingDefinitionId("stone_tool_workshop")))
+                stoneToolUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("stone_tool_workshop")));
             if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_iron")))
                 stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_iron")));
             if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_gold")))
@@ -244,9 +246,14 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("gathering"), "Gathering", new[] { T("basic_survival") }, TimeSpan.FromDays(1),
                     gatheringUnlocks, startingKnowledge: true),
                 new TechnologyDefinition(T("controlled_fire"), "Controlled Fire", new[] { T("basic_survival") }, TimeSpan.FromDays(2),
-                    new[] { C("controlled_fire") }),
+                    availableBuildingIds.Contains(new BuildingDefinitionId("campfire"))
+                        ? new[] { C("controlled_fire"), TechnologyUnlock.Building(new BuildingDefinitionId("campfire")) }
+                        : new[] { C("controlled_fire") }),
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
-                    new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")) }),
+                    availableBuildingIds.Contains(new BuildingDefinitionId("stone_age_hut"))
+                        ? new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")),
+                            TechnologyUnlock.Building(new BuildingDefinitionId("stone_age_hut")) }
+                        : new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")) }),
                 new TechnologyDefinition(T("stone_tools"), "Stone Tools", new[] { T("gathering") }, TimeSpan.FromDays(3),
                     stoneToolUnlocks, startingKnowledge: startsWithStoneTools),
                 new TechnologyDefinition(T("fiber_working"), "Fiber Working", new[] { T("gathering") }, TimeSpan.FromDays(2),

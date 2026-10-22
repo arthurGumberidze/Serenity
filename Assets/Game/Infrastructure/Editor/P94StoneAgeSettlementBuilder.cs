@@ -459,20 +459,8 @@ namespace Game.Infrastructure.Editor
         private static void ConfigureBuildingCatalog()
         {
             var catalog = Load<BuildingPresentationCatalog>(U08BuildingFoundation.CatalogPath);
-            catalog.Configure(new[]
-            {
-                new BuildingPresentationCatalog.Entry().Configure("primitive_shelter", "Primitive Shelter",
-                    BuildingCategory.Shelter, 4, 3, Load<GameObject>(ShelterPath)),
-                new BuildingPresentationCatalog.Entry().Configure("storage_basket", "Storage Basket",
-                    BuildingCategory.Storage, 2, 1, Load<GameObject>(StoragePath)),
-                new BuildingPresentationCatalog.Entry().Configure("primitive_crop_plot", "Primitive Crop Plot",
-                    BuildingCategory.Structure, 3, 3, Load<GameObject>(CropPath)),
-                new BuildingPresentationCatalog.Entry().Configure("military_barracks", "Military Barracks",
-                    BuildingCategory.Structure, 4, 3, Load<GameObject>(ShelterPath))
-            }, "primitive_shelter");
-            var resources = Load<Game.Presentation.Resources.ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
-            U09ResourceFoundation.ApplyEconomy(catalog);
-            catalog.ConfigureResources(resources);
+            P109BaseBuildingFoundation.EnsureBasePrefabs();
+            P109BaseBuildingFoundation.ConfigureCatalog(catalog);
             catalog.Validate();
             EditorUtility.SetDirty(catalog);
         }

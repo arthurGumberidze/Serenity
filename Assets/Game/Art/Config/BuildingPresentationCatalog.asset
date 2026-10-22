@@ -15,76 +15,221 @@ MonoBehaviour:
   entries:
   - definitionId: primitive_shelter
     displayName: Primitive Shelter
+    description: A quick hide shelter for the first residents.
+    iconKey: building_primitive_shelter
     category: 0
+    era: 0
+    requiredTechnologyIds:
+    - shelter_construction
     footprintWidth: 4
     footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
     prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
     - resourceId: plant_fiber
       quantity: 3
+    constructionWorkMinutes: 50
+    constructionStageCount: 3
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
+    housingCapacity: 2
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: stone_age_hut
+    displayName: Stone Age Hut
+    description: A sturdier timber and hide home.
+    iconKey: building_stone_age_hut
+    category: 0
+    era: 0
+    requiredTechnologyIds:
+    - shelter_construction
+    footprintWidth: 4
+    footprintDepth: 4
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4497993395105743423, guid: cc4a74738936e194397cd42db16388d6, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: plant_fiber
+      quantity: 6
+    - resourceId: hide
+      quantity: 2
+    constructionWorkMinutes: 80
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 4
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: campfire
+    displayName: Campfire
+    description: A controlled fire and the settlement's first cooking place.
+    iconKey: building_campfire
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - controlled_fire
+    footprintWidth: 2
+    footprintDepth: 2
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 6771108735984779082, guid: 75c5f853e798d6443a2b565c786558e2, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: stone
+      quantity: 4
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
   - definitionId: storage_basket
     displayName: Storage Basket
+    description: A woven shared store for settlement supplies.
+    iconKey: building_storage_basket
     category: 1
+    era: 0
+    requiredTechnologyIds:
+    - woodworking
     footprintWidth: 2
     footprintDepth: 1
     placementMode: 0
     allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
     prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
     - resourceId: plant_fiber
       quantity: 5
+    constructionWorkMinutes: 45
+    constructionStageCount: 3
     storageCapacity: 40
     storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: stone_tool_workshop
+    displayName: Stone Tool Workshop
+    description: A covered knapping bench for early tools.
+    iconKey: building_stone_tool_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - stone_tools
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4137803262028555564, guid: 095346f27eb45cf46be465533f056d48, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 10
+    - resourceId: stone
+      quantity: 8
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 90
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
   - definitionId: primitive_crop_plot
     displayName: Primitive Crop Plot
+    description: A small worked plot.
+    iconKey: building_primitive_crop_plot
     category: 2
+    era: 0
+    requiredTechnologyIds:
+    - primitive_agriculture
     footprintWidth: 3
     footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
     prefab: {fileID: 1417715211975955541, guid: fddd9261bb9cbda4093f87f1e9f59aae, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 2
     - resourceId: plant_fiber
       quantity: 2
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
+    housingCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
   - definitionId: military_barracks
     displayName: Military Barracks
-    category: 2
+    description: A simple training and mustering shelter.
+    iconKey: building_military_barracks
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
     footprintWidth: 4
     footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
     prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
     - resourceId: stone
       quantity: 6
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
+    housingCapacity: 0
     maxIntegrity: 1400
     fireDamagePerThousand: 900
     combatDamagePerThousand: 1000

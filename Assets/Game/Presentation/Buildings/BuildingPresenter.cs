@@ -19,6 +19,7 @@ namespace Game.Presentation.Buildings
         private bool[] originalVisibility;
         private GameObject scaffold;
         private Material scaffoldMaterial;
+        private BuildingConstructionStageVisual[] constructionStages;
 
         public bool IsBound => building != null;
         public Building Building => building;
@@ -37,6 +38,7 @@ namespace Game.Presentation.Buildings
             storageInventory = inventory;
             originalRenderers = GetComponentsInChildren<Renderer>(true);
             originalVisibility = Array.ConvertAll(originalRenderers, x => x.enabled);
+            constructionStages = GetComponentsInChildren<BuildingConstructionStageVisual>(true);
             gameObject.name = $"Building {source.DefinitionId} [{source.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(source.Id, ContextTargetKind.Building);
@@ -129,10 +131,18 @@ namespace Game.Presentation.Buildings
                     CreateBeam(new Vector3(0f, height * 0.75f, z), new Vector3(width, 0.12f, 0.12f));
             }
             if (scaffold != null) scaffold.SetActive(!finished && !building.IsDestroyed);
+            if (constructionStages != null)
+                foreach (var stage in constructionStages)
+                    if (stage != null) stage.gameObject.SetActive(finished ||
+                        building.ConstructionStageIndex >= stage.RequiredStage);
+            var stagedProgress = building.ConstructionStageCount <= 0 ? building.ConstructionProgress :
+                Mathf.Clamp01((building.ConstructionStageIndex + (float)building.ConstructionProgress) /
+                    (building.ConstructionStageCount + 1f));
             for (var i = 0; i < originalRenderers.Length; i++)
                 if (originalRenderers[i] != null)
                     originalRenderers[i].enabled = originalVisibility[i] &&
-                        (finished || building.ConstructionProgress >= (i + 1f) / (originalRenderers.Length + 1f));
+                        (originalRenderers[i].GetComponentInParent<BuildingConstructionStageVisual>() != null ||
+                         finished || stagedProgress >= (i + 1f) / (originalRenderers.Length + 1f));
         }
 
         private void CreateBeam(Vector3 position, Vector3 scale)
