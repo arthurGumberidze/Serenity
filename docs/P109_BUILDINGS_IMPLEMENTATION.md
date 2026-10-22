@@ -1,5 +1,43 @@
 # P10.9 Stone Age buildings implementation
 
+## Stages D1-D2 complete
+
+Date: 22 October 2026. The shared building and production catalogs now contain the complete D set:
+Hunting Camp, Butcher Station, Food Storage, Drying Rack and Hide Workshop. Hunting requires a completed
+camp and yields a whole carcass. The butcher recipe converts exactly one carcass to five meat, two hides
+and three bones. Preservation converts three meat to two dried meat and two hides plus one plant fibre
+to two cured hides. The food store is a 120-unit ordinary storage inventory restricted to food, and
+dried meat is edible only after it reaches an eligible storage or character inventory.
+
+The new definitions reuse canonical construction, research, workplace, bounded production buffers,
+physical hauling, inventory transactions, skill progression and snapshot state. Organized Hunting owns
+the camp/butcher unlocks; Food Preservation owns the store/rack/workshop and preservation recipes.
+No ammunition resource, parallel hunting manager or alternate stock balance was introduced.
+
+Authoring command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod Game.Infrastructure.Editor.U09ResourceFoundation.Build -quit -logFile 'C:\serenity_game\Artifacts\P109\buildings-d2\authoring.log'
+```
+
+Focused verification command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P104NaturalResourcesTests;Game.Tests.Editor.P109BuildingProductionTests;Game.Tests.Editor.ResearchFrameworkTests;Game.Tests.Editor.BuildingFoundationTests' -testResults 'C:\serenity_game\Artifacts\P109\buildings-d2\focused-editmode-2.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-d2\focused-editmode-4.log'
+```
+
+Result: 37/37 passed. Windows build command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\buildings-d2\build-final.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109BuildingsD/Serenity.exe'
+```
+
+Result: succeeded, 0 errors / 53 warnings, GUID `dc35880aece74843b8f7d799bb8576c2`,
+source fingerprint `D1F5ED70AAA44A77FC8DEFD6CD8DC0EFE440FEB0D245E3E2F3A16B0057023108`.
+The two earlier shell-wrapped build launches were stopped after they remained in the initial import
+phase and produced neither a Player nor a BuildReport. The listed direct final build is authoritative.
+E1 is next; C5 remains deferred and broad final acceptance remains F1.
+
 ## Gameplay feedback stabilization before D1
 
 Date: 22 October 2026. By user direction C5 acceptance is deferred and the reported gameplay

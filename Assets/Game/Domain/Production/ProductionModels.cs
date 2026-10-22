@@ -142,6 +142,10 @@ namespace Game.Domain.Production
             var gold = new ResourceId("gold_ore");
             var hide = new ResourceId("hide");
             var meat = new ResourceId("meat");
+            var carcass = new ResourceId("carcass");
+            var bone = new ResourceId("bone");
+            var curedHide = new ResourceId("cured_hide");
+            var driedMeat = new ResourceId("dried_meat");
             var fish = new ResourceId("fish");
             var recipes = new List<ProductionRecipe>
             {
@@ -169,11 +173,33 @@ namespace Game.Domain.Production
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_gold"), "Gather Gold Ore", null,
                     new[] { new ResourceAmount(gold, new ResourceQuantity(2)) }, TimeSpan.FromHours(16), ProductionSiteKind.NaturalSource,
                     weatherExposure: ProductionWeatherExposure.Outdoor));
-            if (resources.Contains(hide) && resources.Contains(meat))
+            if (resources.Contains(carcass))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
+                    new[] { new ResourceAmount(carcass, new ResourceQuantity(1)) }, TimeSpan.FromHours(12),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            else if (resources.Contains(hide) && resources.Contains(meat))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
                     new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
                         new ResourceAmount(meat, new ResourceQuantity(4)) }, TimeSpan.FromHours(12),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(carcass) && resources.Contains(hide) && resources.Contains(meat) && resources.Contains(bone))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("butcher_carcass"), "Butcher Carcass",
+                    new[] { new ResourceAmount(carcass, new ResourceQuantity(1)) },
+                    new[] { new ResourceAmount(meat, new ResourceQuantity(5)),
+                        new ResourceAmount(hide, new ResourceQuantity(2)),
+                        new ResourceAmount(bone, new ResourceQuantity(3)) },
+                    TimeSpan.FromMinutes(45), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(meat) && resources.Contains(driedMeat))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("dry_meat"), "Dry Meat",
+                    new[] { new ResourceAmount(meat, new ResourceQuantity(3)) },
+                    new[] { new ResourceAmount(driedMeat, new ResourceQuantity(2)) },
+                    TimeSpan.FromHours(2), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(hide) && resources.Contains(curedHide))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("cure_hide"), "Cure Hide",
+                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
+                        new ResourceAmount(fiber, new ResourceQuantity(1)) },
+                    new[] { new ResourceAmount(curedHide, new ResourceQuantity(2)) },
+                    TimeSpan.FromHours(3), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_water"), "Fish Water", null,
                     new[] { new ResourceAmount(fish, new ResourceQuantity(4)) }, TimeSpan.FromHours(8),

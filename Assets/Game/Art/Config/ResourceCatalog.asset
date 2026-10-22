@@ -25,6 +25,15 @@ MonoBehaviour:
   - id: hide
     displayName: Hide
     category: 2
+  - id: carcass
+    displayName: Animal Carcass
+    category: 2
+  - id: bone
+    displayName: Bone
+    category: 2
+  - id: cured_hide
+    displayName: Cured Hide
+    category: 2
   - id: berries
     displayName: Berries
     category: 1
@@ -48,4 +57,7 @@ MonoBehaviour:
     category: 1
   - id: cooked_berries
     displayName: Cooked Berries
+    category: 1
+  - id: dried_meat
+    displayName: Dried Meat
     category: 1

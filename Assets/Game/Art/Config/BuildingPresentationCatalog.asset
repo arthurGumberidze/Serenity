@@ -195,6 +195,192 @@ MonoBehaviour:
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
+  - definitionId: butcher_station
+    displayName: Butcher Station
+    description: A dedicated table turns whole carcasses into meat, hide and bone.
+    iconKey: building_butcher_station
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - hunting
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 1651891879297022418, guid: e2f3d59f1c69bdf4bba99a481a49de05, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 7
+    - resourceId: stone
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 3
+    constructionWorkMinutes: 65
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 1
+    productionRecipeIds:
+    - butcher_carcass
+    productionInputCapacity: 12
+    productionOutputCapacity: 24
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: hunting_camp
+    displayName: Hunting Camp
+    description: A field camp required to organize nearby animal hunts.
+    iconKey: building_hunting_camp
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - hunting
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 7559929419030301708, guid: 9fb32eb288756fc48970206371ce4635, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 9
+    - resourceId: plant_fiber
+      quantity: 5
+    - resourceId: hide
+      quantity: 2
+    constructionWorkMinutes: 75
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: food_storage
+    displayName: Food Storage
+    description: A raised, covered store reserved for food supplies.
+    iconKey: building_food_storage
+    category: 1
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5338887291422888517, guid: 39023f37b66f3474798b8f8831493cbb, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 10
+    - resourceId: plant_fiber
+      quantity: 7
+    - resourceId: hide
+      quantity: 2
+    constructionWorkMinutes: 70
+    constructionStageCount: 3
+    storageCapacity: 120
+    storageCategories: 01000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: drying_rack
+    displayName: Drying Rack
+    description: An open rack preserves butchered meat without fuel.
+    iconKey: building_drying_rack
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    footprintWidth: 3
+    footprintDepth: 2
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 6389391837826904269, guid: 3a9661f7f2f402a41b340d52a167579f, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 6
+    - resourceId: plant_fiber
+      quantity: 5
+    constructionWorkMinutes: 55
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 1
+    productionRecipeIds:
+    - dry_meat
+    productionInputCapacity: 18
+    productionOutputCapacity: 18
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: hide_workshop
+    displayName: Hide Workshop
+    description: A covered frame for cleaning and curing hides.
+    iconKey: building_hide_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 413966355839806363, guid: acd72aaca4d6ada409bdf98b0c4590b8, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 9
+    - resourceId: stone
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 7
+    constructionWorkMinutes: 80
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 1
+    productionRecipeIds:
+    - cure_hide
+    productionInputCapacity: 18
+    productionOutputCapacity: 18
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   - definitionId: primitive_crop_plot
     displayName: Primitive Crop Plot
     description: A small worked plot.

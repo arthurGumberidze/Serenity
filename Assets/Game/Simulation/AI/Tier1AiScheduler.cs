@@ -681,6 +681,9 @@ namespace Game.Simulation.AI
         {
             var key = recipeId ?? string.Empty;
             if (key.IndexOf("hunt", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Hunting;
+            if (key.IndexOf("butcher", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Hunting;
+            if (key.IndexOf("dry", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Cooking;
+            if (key.IndexOf("hide", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Crafting;
             if (key.IndexOf("cook", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Cooking;
             if (key.IndexOf("cultivate", StringComparison.Ordinal) >= 0 ||
                 key.IndexOf("farm", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Farming;

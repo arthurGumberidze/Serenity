@@ -1,5 +1,29 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings D1-D2
+
+D1 and D2 are complete. Hunting now requires an operational Hunting Camp and yields one whole
+`carcass`; the Butcher Station converts it atomically into five meat, two hides and three bones.
+The same production/logistics authority now supports a Drying Rack (`3 meat -> 2 dried_meat`) and
+Hide Workshop (`2 hide + 1 plant_fiber -> 2 cured_hide`). Food Storage is a 120-unit canonical
+storage inventory restricted to food. Dried meat is a finished edible resource; raw meat remains
+inedible. Organized Hunting unlocks the camp, butcher station and carcass recipe; Food Preservation
+unlocks the food store, drying rack, hide workshop and their recipes.
+
+All five D-stage objects use the existing building catalog, construction stages, worker slots,
+production buffers, hauling and save state. No ammunition resource was added: arrows remain visible
+feedback and weapon durability remains the persistent cost. Butchering advances Hunting skill,
+drying advances Cooking, and hide curing advances Crafting through the established skill authority.
+
+Authoring completed in `Artifacts/P109/buildings-d2/authoring.log`. The final focused EditMode set
+passed 37/37 at `Artifacts/P109/buildings-d2/focused-editmode-2.xml`, including exact carcass
+conservation, both preservation transactions, food-only storage and consumption of hauled dried meat.
+Windows Development build `Builds/P109BuildingsD/Serenity.exe` succeeded with 0 errors / 53 warnings
+(`Artifacts/P109/buildings-d2/build-final.log`), GUID `dc35880aece74843b8f7d799bb8576c2`,
+source fingerprint `D1F5ED70AAA44A77FC8DEFD6CD8DC0EFE440FEB0D245E3E2F3A16B0057023108`.
+C5 remains explicitly deferred; E1 is the next unblocked implementation slice, while broad final
+Player acceptance remains F1.
+
 ## Working checkpoint — 2026-10-22 gameplay feedback stabilization
 
 The user-requested pre-D stabilization slice is implemented. Natural sources now reserve at most one

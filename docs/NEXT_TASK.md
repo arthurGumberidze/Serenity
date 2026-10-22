@@ -1,13 +1,18 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings D1, 2026-10-22
+## Current scope — P10.9 Stone Age buildings E1, 2026-10-22
 
 The user approved the audited architecture and staged B-F implementation in
-`P109_STONE_AGE_BUILDINGS_PLAN.md`. B1-B3 and C1-C4 are complete. The user explicitly deferred
+`P109_STONE_AGE_BUILDINGS_PLAN.md`. B1-B3, C1-C4 and D1-D2 are complete. The user explicitly deferred
 C5 because it is an acceptance/test stage, requested the gameplay-feedback repairs first, and then
 directed work to D. Those repairs are implemented and covered by affected EditMode 46/46; final Player
 acceptance remains at F1 because the local PlayMode runner stalls during UMA scene initialization.
-The next unblocked implementation slice is **D1: carcass processing and the hunting camp**.
+The next unblocked implementation slice is **E1: clan house, social/medical buildings and zones**.
+D1-D2 added the Hunting Camp, Butcher Station, Food Storage, Drying Rack and Hide Workshop through
+the existing building/production/logistics authorities. Hunting yields a whole carcass, butchering
+conserves all products, preservation produces edible dried meat and cured hides, and Food Storage
+accepts only food. Focused EditMode passed 37/37 and the Windows build succeeded with 0 errors / 53
+warnings. Do not repeat these gates unless E1 changes their shared contracts.
 C1 is complete: construction creates bounded physical haul orders into the shared construction
 buffer, reserves queued source stock, survives save/load, advances material stages only after delivery,
 and returns buffered plus installed materials on cancellation. Do not pause for approval between those

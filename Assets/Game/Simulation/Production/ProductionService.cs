@@ -199,7 +199,9 @@ namespace Game.Simulation.Production
                 if (!targets.TryAdd(target.ResourceId, target.Target))
                     throw new ArgumentException("Duplicate production target.", nameof(productionSettings));
             }
-            var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat" }
+            var carcass = new ResourceId("carcass");
+            if (resources.Contains(carcass) && !targets.ContainsKey(carcass)) targets.Add(carcass, 4);
+            var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat", "dried_meat" }
                 .Select(id => new ResourceId(id)).Where(resources.Contains).ToArray();
             Food = new FoodConsumptionService(inventories, edible, settings.FoodTicksPerPersonUnit);
         }
@@ -419,7 +421,14 @@ namespace Game.Simulation.Production
             return checked(GetCanonicalTotal(id) + ReservedOutput(id)) < target;
         }
 
-        public bool IsRecipeAvailable(ProductionRecipeId id) => unlocks == null || unlocks.IsProductionRecipeUnlocked(id);
+        public bool IsRecipeAvailable(ProductionRecipeId id)
+        {
+            if (unlocks != null && !unlocks.IsProductionRecipeUnlocked(id)) return false;
+            if (id.ToString() == "hunt_animal" && resources.Contains(new ResourceId("carcass")) &&
+                !buildings.All.Any(building => building.IsOperational &&
+                    building.DefinitionId == new BuildingDefinitionId("hunting_camp"))) return false;
+            return true;
+        }
 
         public bool TryReserve(StableEntityId workerId, WorldPosition workerPosition, out ProductionJob job)
         {
@@ -649,6 +658,8 @@ namespace Game.Simulation.Production
             tasks.Clear(); foreach (var pair in restoredTasks) tasks.Add(pair.Key, pair.Value);
             workerTasks.Clear(); foreach (var pair in restoredWorkerTasks) workerTasks.Add(pair.Key, pair.Value);
             targets.Clear(); foreach (var target in state.Targets) targets.Add(target.ResourceId, target.Target);
+            var carcass = new ResourceId("carcass");
+            if (resources.Contains(carcass) && !targets.ContainsKey(carcass)) targets.Add(carcass, 4);
             producedTotals.Clear(); foreach (var amount in state.ProducedTotals) producedTotals.Add(amount.ResourceId, amount.Quantity.Units);
             LastCalendarTick = state.LastCalendarTick;
             Food.Restore(state.FoodRemainderTicks, state.FoodConsumed, state.FoodShortage);

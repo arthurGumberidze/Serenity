@@ -160,6 +160,33 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void CatalogContainsCompleteStageDHuntingAndPreservationChain()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var ids = new[] { "butcher_station", "hunting_camp", "food_storage", "drying_rack", "hide_workshop" };
+            foreach (var text in ids)
+            {
+                var id = new BuildingDefinitionId(text);
+                var definition = catalog.ResolveDefinition(id);
+                var prefab = catalog.ResolvePrefab(id);
+                Assert.That(definition.RequiredTechnologies.Select(x => x.ToString()),
+                    Does.Contain(text == "butcher_station" || text == "hunting_camp" ? "hunting" : "food_preservation"));
+                Assert.That(prefab.GetComponent<BuildingPresenter>(), Is.Not.Null, text);
+                Assert.That(prefab.GetComponent<Collider>(), Is.Not.Null, text);
+                Assert.That(prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true).Length,
+                    Is.GreaterThanOrEqualTo(2), text);
+            }
+            var foodStorage = catalog.ResolveDefinition(new BuildingDefinitionId("food_storage"));
+            Assert.That(foodStorage.Storage.Capacity, Is.EqualTo(120));
+            Assert.That(foodStorage.Storage.AcceptedCategories, Is.EquivalentTo(new[] { ResourceCategory.Food }));
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("drying_rack")).Production.RecipeIds
+                .Select(x => x.ToString()), Is.EqualTo(new[] { "dry_meat" }));
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("hide_workshop")).Production.RecipeIds
+                .Select(x => x.ToString()), Is.EqualTo(new[] { "cure_hide" }));
+        }
+
+        [Test]
         public void AuthoredConstructionStageVisualsFollowInstalledMaterialStages()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(

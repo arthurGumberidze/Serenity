@@ -15,6 +15,11 @@ namespace Game.Infrastructure.Editor
         public const string HutPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_StoneAgeHut.prefab";
         public const string CampfirePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_BuildableCampfire.prefab";
         public const string WorkshopPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_StoneToolWorkshop.prefab";
+        public const string ButcherPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_ButcherStation.prefab";
+        public const string HuntingCampPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_HuntingCamp.prefab";
+        public const string FoodStoragePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_FoodStorage.prefab";
+        public const string DryingRackPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_DryingRack.prefab";
+        public const string HideWorkshopPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_HideWorkshop.prefab";
         private const string CropPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveCropPlot.prefab";
         private const string MaterialFolder = "Assets/Game/Art/Materials/P94";
         private const string HutModelPath = "Assets/SoftLeitner/CityBuilderThree/Models/hut.fbx";
@@ -39,6 +44,11 @@ namespace Game.Infrastructure.Editor
             BuildHut();
             BuildCampfire();
             BuildWorkshop();
+            BuildButcherStation();
+            BuildHuntingCamp();
+            BuildFoodStorage();
+            BuildDryingRack();
+            BuildHideWorkshop();
         }
 
         public static void ConfigureCatalog(BuildingPresentationCatalog catalog)
@@ -69,6 +79,32 @@ namespace Game.Infrastructure.Editor
                     Load<GameObject>(WorkshopPath), "A covered knapping bench for early tools.",
                     "building_stone_tool_workshop", 90, 3,
                     new[] { Cost("wood_log", 10), Cost("stone", 8), Cost("plant_fiber", 4) }, "stone_tools"),
+                Entry("butcher_station", "Butcher Station", BuildingCategory.Food, 3, 3,
+                    Load<GameObject>(ButcherPath), "A dedicated table turns whole carcasses into meat, hide and bone.",
+                    "building_butcher_station", 65, 3,
+                    new[] { Cost("wood_log", 7), Cost("stone", 3), Cost("plant_fiber", 3) }, "hunting")
+                    .ConfigureProduction(1, new[] { "butcher_carcass" }, 12, 24),
+                Entry("hunting_camp", "Hunting Camp", BuildingCategory.Production, 4, 3,
+                    Load<GameObject>(HuntingCampPath), "A field camp required to organize nearby animal hunts.",
+                    "building_hunting_camp", 75, 3,
+                    new[] { Cost("wood_log", 9), Cost("plant_fiber", 5), Cost("hide", 2) }, "hunting")
+                    .ConfigureProduction(3, Array.Empty<string>(), 0, 0),
+                Entry("food_storage", "Food Storage", BuildingCategory.Storage, 4, 3,
+                    Load<GameObject>(FoodStoragePath), "A raised, covered store reserved for food supplies.",
+                    "building_food_storage", 70, 3,
+                    new[] { Cost("wood_log", 10), Cost("plant_fiber", 7), Cost("hide", 2) }, "food_preservation")
+                    .ConfigureEconomy(new[] { Cost("wood_log", 10), Cost("plant_fiber", 7), Cost("hide", 2) },
+                        120, new[] { ResourceCategory.Food }),
+                Entry("drying_rack", "Drying Rack", BuildingCategory.Food, 3, 2,
+                    Load<GameObject>(DryingRackPath), "An open rack preserves butchered meat without fuel.",
+                    "building_drying_rack", 55, 3,
+                    new[] { Cost("wood_log", 6), Cost("plant_fiber", 5) }, "food_preservation")
+                    .ConfigureProduction(1, new[] { "dry_meat" }, 18, 18),
+                Entry("hide_workshop", "Hide Workshop", BuildingCategory.Production, 4, 3,
+                    Load<GameObject>(HideWorkshopPath), "A covered frame for cleaning and curing hides.",
+                    "building_hide_workshop", 80, 3,
+                    new[] { Cost("wood_log", 9), Cost("stone", 3), Cost("plant_fiber", 7) }, "food_preservation")
+                    .ConfigureProduction(1, new[] { "cure_hide" }, 18, 18),
                 Entry("primitive_crop_plot", "Primitive Crop Plot", BuildingCategory.Structure, 3, 3,
                     Load<GameObject>(CropPath), "A small worked plot.", "building_primitive_crop_plot", 35, 2,
                     new[] { Cost("wood_log", 2), Cost("plant_fiber", 2) }, "primitive_agriculture"),
@@ -86,7 +122,8 @@ namespace Game.Infrastructure.Editor
         {
             var catalog = Load<BuildingPresentationCatalog>(U08BuildingFoundation.CatalogPath);
             catalog.Validate();
-            foreach (var path in new[] { HutPath, CampfirePath, WorkshopPath })
+            foreach (var path in new[] { HutPath, CampfirePath, WorkshopPath, ButcherPath, HuntingCampPath,
+                         FoodStoragePath, DryingRackPath, HideWorkshopPath })
             {
                 var prefab = Load<GameObject>(path);
                 if (prefab.GetComponent<BuildingPresenter>() == null || prefab.GetComponent<Collider>() == null)
@@ -188,6 +225,107 @@ namespace Game.Infrastructure.Editor
                 Part(PrimitiveType.Sphere, "Knapping stone", tools, new Vector3(i * .35f, .94f, .25f),
                     new Vector3(.22f, .12f, .18f), Stone);
             Save(root, WorkshopPath);
+        }
+
+        private static void BuildButcherStation()
+        {
+            var root = Root("Serenity Butcher Station", new Vector3(3f, 2.4f, 3f), new Vector3(0f, 1.2f, 0f));
+            var foundation = Stage(root.transform, "Stage 1 Work Ground", 1);
+            Part(PrimitiveType.Cube, "Packed ground", foundation, new Vector3(0f, .05f, 0f),
+                new Vector3(2.6f, .1f, 2.4f), Soil);
+            var frame = Stage(root.transform, "Stage 2 Rack", 2);
+            foreach (var x in new[] { -1f, 1f })
+                Part(PrimitiveType.Cylinder, "Rack post", frame, new Vector3(x, 1.1f, .65f),
+                    new Vector3(.11f, 1.1f, .11f), Bark);
+            Part(PrimitiveType.Cylinder, "Rack beam", frame, new Vector3(0f, 2.08f, .65f),
+                new Vector3(.11f, 1.1f, .11f), Bark, new Vector3(0f, 0f, 90f));
+            var finish = Stage(root.transform, "Stage 3 Butcher Table", 3);
+            Part(PrimitiveType.Cube, "Work slab", finish, new Vector3(0f, .82f, -.35f),
+                new Vector3(2.15f, .18f, 1.05f), DarkBark);
+            foreach (var x in new[] { -.8f, .8f })
+                foreach (var z in new[] { -.68f, -.02f })
+                    Part(PrimitiveType.Cylinder, "Table leg", finish, new Vector3(x, .4f, z),
+                        new Vector3(.1f, .4f, .1f), Bark);
+            Save(root, ButcherPath);
+        }
+
+        private static void BuildHuntingCamp()
+        {
+            var root = Root("Serenity Hunting Camp", new Vector3(4f, 3f, 3f), new Vector3(0f, 1.5f, 0f));
+            var ground = Stage(root.transform, "Stage 1 Camp Ground", 1);
+            Part(PrimitiveType.Cube, "Cleared ground", ground, new Vector3(0f, .04f, 0f),
+                new Vector3(3.6f, .08f, 2.6f), Soil);
+            var frame = Stage(root.transform, "Stage 2 Camp Frame", 2);
+            foreach (var x in new[] { -1.5f, 1.5f })
+                foreach (var z in new[] { -.9f, .9f })
+                    Part(PrimitiveType.Cylinder, "Camp pole", frame, new Vector3(x, 1.25f, z),
+                        new Vector3(.1f, 1.25f, .1f), Bark);
+            var finish = Stage(root.transform, "Stage 3 Hide Canopy", 3);
+            Part(PrimitiveType.Cube, "Hide canopy", finish, new Vector3(0f, 2.35f, 0f),
+                new Vector3(3.7f, .1f, 2.7f), Hide, new Vector3(0f, 0f, 6f));
+            Part(PrimitiveType.Cube, "Gear bench", finish, new Vector3(0f, .55f, .5f),
+                new Vector3(2.1f, .16f, .55f), DarkBark);
+            Save(root, HuntingCampPath);
+        }
+
+        private static void BuildFoodStorage()
+        {
+            var root = Root("Serenity Food Storage", new Vector3(4f, 3f, 3f), new Vector3(0f, 1.5f, 0f));
+            var baseStage = Stage(root.transform, "Stage 1 Raised Base", 1);
+            foreach (var x in new[] { -1.45f, 1.45f })
+                foreach (var z in new[] { -.95f, .95f })
+                    Part(PrimitiveType.Cylinder, "Foundation post", baseStage, new Vector3(x, .35f, z),
+                        new Vector3(.14f, .35f, .14f), Bark);
+            Part(PrimitiveType.Cube, "Raised floor", baseStage, new Vector3(0f, .72f, 0f),
+                new Vector3(3.5f, .16f, 2.45f), DarkBark);
+            var walls = Stage(root.transform, "Stage 2 Woven Store", 2);
+            Part(PrimitiveType.Cube, "Store body", walls, new Vector3(0f, 1.55f, 0f),
+                new Vector3(3.15f, 1.45f, 2.1f), Hide);
+            var roof = Stage(root.transform, "Stage 3 Weather Roof", 3);
+            Part(PrimitiveType.Cube, "Sloped roof", roof, new Vector3(0f, 2.55f, 0f),
+                new Vector3(3.8f, .16f, 2.75f), DarkBark, new Vector3(0f, 0f, 5f));
+            Save(root, FoodStoragePath);
+        }
+
+        private static void BuildDryingRack()
+        {
+            var root = Root("Serenity Drying Rack", new Vector3(3f, 2.6f, 2f), new Vector3(0f, 1.3f, 0f));
+            var feet = Stage(root.transform, "Stage 1 Rack Feet", 1);
+            foreach (var x in new[] { -1.1f, 1.1f })
+                Part(PrimitiveType.Cylinder, "Rack foot", feet, new Vector3(x, .55f, 0f),
+                    new Vector3(.13f, .55f, .13f), Bark);
+            var frame = Stage(root.transform, "Stage 2 Crossbar", 2);
+            Part(PrimitiveType.Cylinder, "Crossbar", frame, new Vector3(0f, 1.75f, 0f),
+                new Vector3(.12f, 1.25f, .12f), Bark, new Vector3(0f, 0f, 90f));
+            var finish = Stage(root.transform, "Stage 3 Drying Lines", 3);
+            for (var i = -2; i <= 2; i++)
+            {
+                Part(PrimitiveType.Cylinder, "Hanging cord", finish, new Vector3(i * .42f, 1.28f, 0f),
+                    new Vector3(.025f, .4f, .025f), DarkBark);
+                Part(PrimitiveType.Cube, "Drying strip", finish, new Vector3(i * .42f, .92f, 0f),
+                    new Vector3(.25f, .5f, .08f), Hide);
+            }
+            Save(root, DryingRackPath);
+        }
+
+        private static void BuildHideWorkshop()
+        {
+            var root = Root("Serenity Hide Workshop", new Vector3(4f, 3f, 3f), new Vector3(0f, 1.5f, 0f));
+            var ground = Stage(root.transform, "Stage 1 Work Ground", 1);
+            Part(PrimitiveType.Cube, "Packed ground", ground, new Vector3(0f, .05f, 0f),
+                new Vector3(3.6f, .1f, 2.5f), Soil);
+            var frame = Stage(root.transform, "Stage 2 Tanning Frame", 2);
+            foreach (var x in new[] { -1.25f, 1.25f })
+                Part(PrimitiveType.Cylinder, "Frame post", frame, new Vector3(x, 1.25f, .45f),
+                    new Vector3(.12f, 1.25f, .12f), Bark);
+            Part(PrimitiveType.Cylinder, "Frame top", frame, new Vector3(0f, 2.35f, .45f),
+                new Vector3(.12f, 1.35f, .12f), Bark, new Vector3(0f, 0f, 90f));
+            var finish = Stage(root.transform, "Stage 3 Stretched Hide", 3);
+            Part(PrimitiveType.Cube, "Stretched hide", finish, new Vector3(0f, 1.35f, .42f),
+                new Vector3(2.1f, 1.55f, .06f), Hide);
+            Part(PrimitiveType.Cube, "Scraping bench", finish, new Vector3(0f, .55f, -.7f),
+                new Vector3(2.2f, .16f, .65f), DarkBark);
+            Save(root, HideWorkshopPath);
         }
 
         private static GameObject Root(string name, Vector3 colliderSize, Vector3 colliderCenter)

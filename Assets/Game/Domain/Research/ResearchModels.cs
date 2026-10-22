@@ -236,9 +236,28 @@ namespace Game.Domain.Research
             var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
                 huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("butcher_carcass")))
+                huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("butcher_carcass")));
+            foreach (var id in new[] { "hunting_camp", "butcher_station" })
+            {
+                var buildingId = new BuildingDefinitionId(id);
+                if (availableBuildingIds.Contains(buildingId)) huntingUnlocks.Add(TechnologyUnlock.Building(buildingId));
+            }
             var organizedLaborUnlocks = new List<TechnologyUnlock> { C("organized_labor") };
             if (availableBuildingIds.Contains(new BuildingDefinitionId("military_barracks")))
                 organizedLaborUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("military_barracks")));
+            var foodPreservationUnlocks = new List<TechnologyUnlock> { C("food_preservation") };
+            foreach (var recipeId in new[] { "dry_meat", "cure_hide" })
+            {
+                var id = new ProductionRecipeId(recipeId);
+                if (production.All.Any(x => x.Id == id)) foodPreservationUnlocks.Add(TechnologyUnlock.Recipe(id));
+            }
+            foreach (var id in new[] { "food_storage", "drying_rack", "hide_workshop" })
+            {
+                var buildingId = new BuildingDefinitionId(id);
+                if (availableBuildingIds.Contains(buildingId))
+                    foodPreservationUnlocks.Add(TechnologyUnlock.Building(buildingId));
+            }
             var definitions = new[]
             {
                 new TechnologyDefinition(T("basic_survival"), "Basic Survival", null, TimeSpan.FromDays(1),
@@ -263,7 +282,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("hunting"), "Organized Hunting", new[] { T("stone_tools") }, TimeSpan.FromDays(3),
                     huntingUnlocks),
                 new TechnologyDefinition(T("food_preservation"), "Food Preservation", new[] { T("controlled_fire"), T("hunting") }, TimeSpan.FromDays(4),
-                    new[] { C("food_preservation") }),
+                    foodPreservationUnlocks),
                 new TechnologyDefinition(T("organized_labor"), "Organized Labor", new[] { T("shelter_construction"), T("woodworking") }, TimeSpan.FromDays(4),
                     organizedLaborUnlocks),
                 new TechnologyDefinition(T("primitive_agriculture"), "Primitive Agriculture",

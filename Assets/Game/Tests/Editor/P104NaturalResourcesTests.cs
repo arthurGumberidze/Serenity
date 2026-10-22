@@ -37,11 +37,15 @@ namespace Game.Tests.Editor
             new ResourceDefinition(new ResourceId("stone"), "Stone", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("plant_fiber"), "Fiber", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("hide"), "Hide", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("carcass"), "Carcass", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("bone"), "Bone", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("cured_hide"), "Cured Hide", ResourceCategory.Other),
             new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food),
             new ResourceDefinition(new ResourceId("iron_ore"), "Iron", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("gold_ore"), "Gold", ResourceCategory.Other),
             new ResourceDefinition(new ResourceId("meat"), "Meat", ResourceCategory.Food),
-            new ResourceDefinition(new ResourceId("fish"), "Fish", ResourceCategory.Food)
+            new ResourceDefinition(new ResourceId("fish"), "Fish", ResourceCategory.Food),
+            new ResourceDefinition(new ResourceId("dried_meat"), "Dried Meat", ResourceCategory.Food)
         });
 
         [Test]
@@ -52,12 +56,18 @@ namespace Game.Tests.Editor
             var resources = asset.CreateCatalog();
             Assert.That(resources.All.Select(x => x.Id.ToString()), Is.EquivalentTo(new[]
             {
-                "wood_log", "stone", "plant_fiber", "hide", "berries", "iron_ore", "gold_ore", "meat", "fish",
-                "cooked_berries", "cooked_fish", "cooked_meat"
+                "wood_log", "stone", "plant_fiber", "hide", "carcass", "bone", "berries", "iron_ore", "gold_ore", "meat", "fish",
+                "cooked_berries", "cooked_fish", "cooked_meat", "cured_hide", "dried_meat"
             }));
             var recipes = ProductionCatalog.CreateStoneAge(resources);
             Assert.That(recipes.Get(new ProductionRecipeId("hunt_animal")).Outputs
-                .Select(x => x.ResourceId.ToString()), Is.EquivalentTo(new[] { "hide", "meat" }));
+                .Select(x => x.ResourceId.ToString()), Is.EqualTo(new[] { "carcass" }));
+            Assert.That(recipes.Get(new ProductionRecipeId("butcher_carcass")).Outputs
+                .Select(x => x.ResourceId.ToString()), Is.EquivalentTo(new[] { "meat", "hide", "bone" }));
+            Assert.That(recipes.Get(new ProductionRecipeId("dry_meat")).Outputs.Single().ResourceId.ToString(),
+                Is.EqualTo("dried_meat"));
+            Assert.That(recipes.Get(new ProductionRecipeId("cure_hide")).Outputs.Single().ResourceId.ToString(),
+                Is.EqualTo("cured_hide"));
             Assert.That(recipes.Get(new ProductionRecipeId("fish_water")).Outputs.Single().ResourceId.ToString(),
                 Is.EqualTo("fish"));
         }
@@ -120,6 +130,33 @@ namespace Game.Tests.Editor
             Assert.That(production.AdvanceTask(second.Task.Id, TimeSpan.FromHours(8)).Completed, Is.True);
             Assert.That(production.GetProducedTotal(new ResourceId("wood_log")), Is.EqualTo(8));
             Assert.That(site.RemainingAmount, Is.Zero);
+        }
+
+        [Test]
+        public void OrganizedHuntRequiresOperationalCampAndProducesWholeCarcass()
+        {
+            var resources = FullCatalog();
+            var inventories = new ResourceInventoryRegistry();
+            var buildings = new BuildingRegistry();
+            var production = new ProductionService(ProductionCatalog.CreateStoneAge(resources), resources,
+                inventories, buildings, new ResourceTransferService(inventories));
+            var worker = Id(190);
+            inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, worker),
+                resources, 20));
+            var site = ProductionSite.Restore(new ProductionSiteState(Id(191),
+                new ProductionRecipeId("hunt_animal"), ProductionSiteKind.NaturalSource, default, 1, 1,
+                CropPlotPhase.Unplanted, 0, 0));
+            production.AddSite(site);
+            Assert.That(production.TryReserveAtSite(worker, site.Id, out _), Is.False);
+
+            buildings.Add(Building.Restore(new BuildingState(Id(192), new BuildingDefinitionId("hunting_camp"),
+                new GridCoordinate(0, 0), BuildingOrientation.North, ConstructionState.Completed)));
+            Assert.That(production.TryReserveAtSite(worker, site.Id, out var job), Is.True);
+            Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromHours(12)).Completed, Is.True);
+            Assert.That(inventories.Get(inventories.WorkerOwner(worker))
+                .GetAmount(new ResourceId("carcass")).Units, Is.EqualTo(1));
+            Assert.That(production.GetProducedTotal(new ResourceId("meat")), Is.Zero,
+                "Meat must exist only after the separate butchering transaction.");
         }
 
         [Test]

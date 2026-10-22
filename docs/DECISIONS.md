@@ -1137,3 +1137,17 @@ zero durability selects the existing unarmed profile. Arrows are presentation fe
 inventory/ammunition resource. Wildlife HP is presented from canonical hunting work remaining, so visible
 damage cannot diverge from task completion. Building color blocks are cleared in the undamaged friendly
 state to preserve authored material colors; damage/enemy tints remain derived presentation.
+
+## D-168 Stage D keeps hunting products and preservation in the shared economy (2026-10-22)
+
+An operational `hunting_camp` is a settlement-level prerequisite for reserving `hunt_animal` work.
+The hunt produces one `carcass`, not independent meat/hide rewards. A `butcher_station` consumes that
+single inventory unit and atomically emits five meat, two hides and three bones, so output capacity,
+save/load and retry use the existing production transaction and cannot duplicate individual products.
+
+`food_storage` is a standard `BuildingStorage` inventory accepting only `ResourceCategory.Food`.
+`drying_rack` converts three raw meat to two `dried_meat`; `hide_workshop` converts two hides plus one
+plant fibre to two `cured_hide`. Dried meat joins the established edible-resource set only after normal
+hauling reaches eligible storage. No second decay, inventory, recipe, worker or save authority is added.
+Stage-D work maps to the existing Hunting, Cooking and Crafting skills. Arrows remain non-consumable
+presentation; persistent weapon durability remains the equipment cost agreed in D-167.

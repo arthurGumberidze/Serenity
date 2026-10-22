@@ -2,13 +2,20 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
-P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3 and C1-C4 DONE; C5 DEFERRED by
+P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3, C1-C4 and D1-D2 DONE; C5 DEFERRED by
 explicit user direction on 2026-10-22; the gameplay-feedback stabilization slice is DONE in code
-with final Player acceptance retained for F1. D1 is next; D1-D2, E1-E4 and F1 remain inside P10.9. Internal slices keep targeted
+with final Player acceptance retained for F1. E1 is next; E1-E4 and F1 remain inside P10.9. Internal slices keep targeted
 automated tests, documentation and local commits. By user direction on 2026-10-22, C1-C4 run
 continuously with one sufficiently broad regression and separate Windows build after C4; broad
 regressions are otherwise reserved for F1 or a concrete compatibility/data-loss risk.
 The implementation order and gates are defined in `P109_STONE_AGE_BUILDINGS_PLAN.md`.
+
+P10.9 D1-D2 hunting and preservation (2026-10-22): DONE. An operational Hunting Camp gates hunting;
+whole carcasses are conserved through a Butcher Station into meat, hides and bones. Food Storage,
+Drying Rack and Hide Workshop complete the shared logistics/production chain with dried edible meat
+and cured hides. The five D-stage prefabs have staged visuals and canonical definitions. Focused
+EditMode passed 37/37; Windows Development build succeeded with 0 errors / 53 warnings, GUID
+dc35880aece74843b8f7d799bb8576c2. E1 is next; C5 remains deferred and final acceptance stays at F1.
 
 P10.9 gameplay-feedback stabilization (2026-10-22): DONE in implementation. Independent gatherers
 and source-capacity rejection, locomotion/sleep/indoor visibility, construction cancel/reasons/progress,
@@ -17,7 +24,7 @@ material-color correction, upgraded hut art, bed capacity/ground sleep/mood/work
 favorite activities, skill effects/progression and persisted weapon durability are integrated through
 the existing authorities. Affected EditMode passed 46/46. PlayMode runner attempts stalled during UMA
 scene initialization without NUnit results and were cleaned by verified PID; final Player acceptance is
-therefore not claimed here. D1 is the next implementation slice.
+therefore not claimed here. The follow-on D1-D2 slice is now complete.
 
 P10.9 screenshot-feedback slice (2026-10-21): PARTIAL pending
 user-owned visual acceptance. Six visual/interaction defects and normal-RMB priority
