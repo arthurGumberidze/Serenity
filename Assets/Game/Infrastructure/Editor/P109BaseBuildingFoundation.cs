@@ -37,6 +37,9 @@ namespace Game.Infrastructure.Editor
         private const string CropPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveCropPlot.prefab";
         private const string MaterialFolder = "Assets/Game/Art/Materials/P94";
         private const string HutModelPath = "Assets/SoftLeitner/CityBuilderThree/Models/hut.fbx";
+        private const string CityModels = "Assets/SoftLeitner/CityBuilderThree/Models/";
+        private const string RtsBuildings = "Assets/RTSToonBuildings/Prefabs/Buildings/";
+        private const string SyntyCampfire = "Assets/Synty/PolygonNature/Prefabs/Props/SM_Prop_CampFire_01.prefab";
 
         [MenuItem("Serenity/P10.9/Build Five Base Buildings")]
         public static void Build()
@@ -262,15 +265,15 @@ namespace Game.Infrastructure.Editor
             Save(root, HutPath);
         }
 
-        private static void AddFittedModel(GameObject source, Transform parent, Vector3 maximumSize)
+        private static GameObject AddFittedModel(GameObject source, Transform parent, Vector3 maximumSize)
         {
             var model = (GameObject)PrefabUtility.InstantiatePrefab(source, parent);
-            model.name = "Finished hut model";
+            model.name = "Finished authored model";
             model.transform.localPosition = Vector3.zero;
             model.transform.localRotation = Quaternion.identity;
             model.transform.localScale = Vector3.one;
             var renderers = model.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0) throw new InvalidDataException("Hut model has no renderers: " + HutModelPath);
+            if (renderers.Length == 0) throw new InvalidDataException("Authored model has no renderers: " + source.name);
             var bounds = renderers[0].bounds;
             for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             var scale = Mathf.Min(maximumSize.x / Mathf.Max(.01f, bounds.size.x),
@@ -280,6 +283,9 @@ namespace Game.Infrastructure.Editor
             bounds = renderers[0].bounds;
             for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             model.transform.position += new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+            foreach (var collider in model.GetComponentsInChildren<Collider>(true))
+                UnityEngine.Object.DestroyImmediate(collider);
+            return model;
         }
 
         private static void BuildCampfire()
@@ -294,10 +300,7 @@ namespace Game.Infrastructure.Editor
                     new Vector3(.36f, .22f, .3f), Stone, new Vector3(0f, -angle * Mathf.Rad2Deg, 0f));
             }
             var fuel = Stage(root.transform, "Stage 2 Fuel", 2);
-            Part(PrimitiveType.Cylinder, "Log A", fuel, new Vector3(0f, .28f, 0f),
-                new Vector3(.14f, .72f, .14f), DarkBark, new Vector3(0f, 0f, 90f));
-            Part(PrimitiveType.Cylinder, "Log B", fuel, new Vector3(0f, .3f, 0f),
-                new Vector3(.14f, .72f, .14f), DarkBark, new Vector3(90f, 0f, 0f));
+            AddFittedModel(Load<GameObject>(SyntyCampfire), fuel, new Vector3(1.75f, .75f, 1.75f));
             Save(root, CampfirePath);
         }
 
@@ -324,6 +327,8 @@ namespace Game.Infrastructure.Editor
             for (var i = -1; i <= 1; i++)
                 Part(PrimitiveType.Sphere, "Knapping stone", tools, new Vector3(i * .35f, .94f, .25f),
                     new Vector3(.22f, .12f, .18f), Stone);
+            ClearChildren(tools);
+            AddFittedModel(Load<GameObject>(CityModels + "workshop.fbx"), tools, new Vector3(3.8f, 2.9f, 2.8f));
             Save(root, WorkshopPath);
         }
 
@@ -346,6 +351,8 @@ namespace Game.Infrastructure.Editor
                 foreach (var z in new[] { -.68f, -.02f })
                     Part(PrimitiveType.Cylinder, "Table leg", finish, new Vector3(x, .4f, z),
                         new Vector3(.1f, .4f, .1f), Bark);
+            ClearChildren(finish);
+            AddFittedModel(Load<GameObject>(CityModels + "MasonCamp.fbx"), finish, new Vector3(2.8f, 2.25f, 2.8f));
             Save(root, ButcherPath);
         }
 
@@ -365,6 +372,8 @@ namespace Game.Infrastructure.Editor
                 new Vector3(3.7f, .1f, 2.7f), Hide, new Vector3(0f, 0f, 6f));
             Part(PrimitiveType.Cube, "Gear bench", finish, new Vector3(0f, .55f, .5f),
                 new Vector3(2.1f, .16f, .55f), DarkBark);
+            ClearChildren(finish);
+            AddFittedModel(Load<GameObject>(CityModels + "Hunter.fbx"), finish, new Vector3(3.8f, 2.9f, 2.8f));
             Save(root, HuntingCampPath);
         }
 
@@ -384,6 +393,8 @@ namespace Game.Infrastructure.Editor
             var roof = Stage(root.transform, "Stage 3 Weather Roof", 3);
             Part(PrimitiveType.Cube, "Sloped roof", roof, new Vector3(0f, 2.55f, 0f),
                 new Vector3(3.8f, .16f, 2.75f), DarkBark, new Vector3(0f, 0f, 5f));
+            ClearChildren(roof);
+            AddFittedModel(Load<GameObject>(CityModels + "silo.fbx"), roof, new Vector3(3.8f, 2.9f, 2.8f));
             Save(root, FoodStoragePath);
         }
 
@@ -425,6 +436,8 @@ namespace Game.Infrastructure.Editor
                 new Vector3(2.1f, 1.55f, .06f), Hide);
             Part(PrimitiveType.Cube, "Scraping bench", finish, new Vector3(0f, .55f, -.7f),
                 new Vector3(2.2f, .16f, .65f), DarkBark);
+            ClearChildren(finish);
+            AddFittedModel(Load<GameObject>(CityModels + "labourCamp.fbx"), finish, new Vector3(3.8f, 2.9f, 2.8f));
             Save(root, HideWorkshopPath);
         }
 
@@ -434,10 +447,10 @@ namespace Game.Infrastructure.Editor
             BuildFacility(HealerHutPath, "Serenity Healer Hut", new Vector3(4f, 3.2f, 4f), FacilityKind.Healer);
             BuildFacility(ShrinePath, "Serenity Shrine", new Vector3(3f, 2.8f, 3f), FacilityKind.Shrine);
             BuildFacility(ChiefHutPath, "Serenity Chief Hut", new Vector3(5f, 3.8f, 4f), FacilityKind.Chief);
-            BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, .2f, 3f), FacilityKind.Zone);
+            BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, .2f, 3f), FacilityKind.Meeting);
             BuildFacility(TrainingGroundPath, "Serenity Training Ground", new Vector3(3f, .2f, 3f), FacilityKind.Training);
             BuildFacility(FishingCampPath, "Serenity Fishing Camp", new Vector3(4f, 2.8f, 3f), FacilityKind.Fishing);
-            BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, .2f, 3f), FacilityKind.Zone);
+            BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, .2f, 3f), FacilityKind.Gathering);
             BuildFacility(PrimitiveGardenPath, "Serenity Primitive Garden", new Vector3(3f, .2f, 3f), FacilityKind.Garden);
             BuildFacility(WellPath, "Serenity Well", new Vector3(3f, 2.5f, 3f), FacilityKind.Well);
             BuildFacility(PalisadePath, "Serenity Palisade", new Vector3(1f, 2.8f, 1f), FacilityKind.Palisade);
@@ -446,102 +459,59 @@ namespace Game.Infrastructure.Editor
             BuildFacility(PrimitivePathPath, "Serenity Primitive Path", new Vector3(1f, .08f, 1f), FacilityKind.Path);
         }
 
-        private enum FacilityKind { House, Healer, Shrine, Chief, Zone, Training, Fishing, Garden, Well, Palisade, Gate, Watchtower, Path }
+        private enum FacilityKind { House, Healer, Shrine, Chief, Meeting, Training, Fishing, Gathering, Garden, Well, Palisade, Gate, Watchtower, Path }
 
         private static void BuildFacility(string path, string name, Vector3 size, FacilityKind kind)
         {
             var root = Root(name, size, new Vector3(0f, size.y * .5f, 0f));
-            if (kind == FacilityKind.Zone || kind == FacilityKind.Training || kind == FacilityKind.Garden ||
+            if (kind == FacilityKind.Meeting || kind == FacilityKind.Gathering || kind == FacilityKind.Training || kind == FacilityKind.Garden ||
                 kind == FacilityKind.Path) root.GetComponent<BoxCollider>().isTrigger = true;
             var baseStage = Stage(root.transform, "Stage 1 Foundation", 1);
             Part(PrimitiveType.Cube, "Ground", baseStage, new Vector3(0f, .04f, 0f),
                 new Vector3(Mathf.Max(.85f, size.x * .9f), .08f, Mathf.Max(.85f, size.z * .9f)),
                 kind == FacilityKind.Path || kind == FacilityKind.Garden ? Soil : Stone);
             var finish = Stage(root.transform, "Stage 2 Finished", 2);
-            if (kind == FacilityKind.Zone)
+            if (kind == FacilityKind.Garden)
             {
-                for (var i = 0; i < 4; i++)
-                {
-                    var angle = i * Mathf.PI * .5f;
-                    Part(PrimitiveType.Cylinder, "Boundary marker", finish,
-                        new Vector3(Mathf.Cos(angle) * 1.15f, .16f, Mathf.Sin(angle) * 1.15f),
-                        new Vector3(.12f, .16f, .12f), Bark);
-                }
-            }
-            else if (kind == FacilityKind.Training)
-            {
-                Part(PrimitiveType.Cylinder, "Practice post", finish, new Vector3(0f, .9f, 0f),
-                    new Vector3(.18f, .9f, .18f), Bark);
-                Part(PrimitiveType.Sphere, "Straw target", finish, new Vector3(0f, 1.45f, 0f),
-                    new Vector3(.55f, .55f, .18f), Hide);
-            }
-            else if (kind == FacilityKind.Garden)
-            {
-                for (var z = -1; z <= 1; z++)
-                    Part(PrimitiveType.Cube, "Cultivated row", finish, new Vector3(0f, .13f, z * .72f),
-                        new Vector3(2.55f, .16f, .32f), DarkBark);
-            }
-            else if (kind == FacilityKind.Well)
-            {
-                for (var i = 0; i < 12; i++)
-                {
-                    var angle = i * Mathf.PI * 2f / 12f;
-                    Part(PrimitiveType.Cube, "Well stone", finish,
-                        new Vector3(Mathf.Cos(angle) * .82f, .38f, Mathf.Sin(angle) * .82f),
-                        new Vector3(.38f, .38f, .32f), Stone, new Vector3(0f, -angle * Mathf.Rad2Deg, 0f));
-                }
-                foreach (var x in new[] { -.92f, .92f })
-                    Part(PrimitiveType.Cylinder, "Well post", finish, new Vector3(x, 1.45f, 0f),
-                        new Vector3(.11f, 1.2f, .11f), Bark);
-            }
-            else if (kind == FacilityKind.Palisade)
-            {
-                for (var z = -1; z <= 1; z++)
-                    Part(PrimitiveType.Cylinder, "Palisade stake", finish, new Vector3(0f, 1.25f, z * .3f),
-                        new Vector3(.2f, 1.25f, .2f), Bark);
-            }
-            else if (kind == FacilityKind.Gate)
-            {
-                foreach (var z in new[] { -.34f, .34f })
-                    Part(PrimitiveType.Cylinder, "Gate post", finish, new Vector3(0f, 1.45f, z),
-                        new Vector3(.18f, 1.45f, .18f), Bark);
-                Part(PrimitiveType.Cube, "Gate lintel", finish, new Vector3(0f, 2.75f, 0f),
-                    new Vector3(.34f, .18f, 1.05f), DarkBark);
-            }
-            else if (kind == FacilityKind.Path)
-            {
-                Part(PrimitiveType.Cube, "Packed path", finish, new Vector3(0f, .07f, 0f),
-                    new Vector3(.92f, .06f, .92f), Soil);
-            }
-            else if (kind == FacilityKind.Watchtower)
-            {
-                foreach (var x in new[] { -1f, 1f }) foreach (var z in new[] { -1f, 1f })
-                    Part(PrimitiveType.Cylinder, "Tower post", finish, new Vector3(x, 2.7f, z),
-                        new Vector3(.16f, 2.7f, .16f), Bark);
-                Part(PrimitiveType.Cube, "Watch platform", finish, new Vector3(0f, 5.2f, 0f),
-                    new Vector3(2.7f, .18f, 2.7f), DarkBark);
-                Part(PrimitiveType.Cube, "Hide roof", finish, new Vector3(0f, 5.85f, 0f),
-                    new Vector3(3f, .12f, 3f), Hide);
+                var template = new GameObject("Garden cell template");
+                template.transform.SetParent(finish, false);
+                Part(PrimitiveType.Cube, "Cultivated soil", template.transform, new Vector3(0f, .035f, 0f),
+                    new Vector3(.9f, .07f, .9f), Soil);
+                AddFittedModel(Load<GameObject>(CityModels + "Crop.fbx"), template.transform,
+                    new Vector3(.8f, .55f, .8f));
+                root.AddComponent<BuildingZoneVisual>().Configure(template, 64);
             }
             else
             {
-                foreach (var x in new[] { -size.x * .38f, size.x * .38f })
-                    foreach (var z in new[] { -size.z * .36f, size.z * .36f })
-                        Part(PrimitiveType.Cylinder, "Timber post", finish, new Vector3(x, size.y * .42f, z),
-                            new Vector3(.14f, size.y * .42f, .14f), Bark);
-                Part(PrimitiveType.Cube, kind == FacilityKind.Shrine ? "Offering stone" : "Hide roof", finish,
-                    new Vector3(0f, size.y * .82f, 0f),
-                    kind == FacilityKind.Shrine ? new Vector3(1.4f, .45f, 1.4f) :
-                        new Vector3(size.x * .92f, .14f, size.z * .92f),
-                    kind == FacilityKind.Shrine ? Stone : kind == FacilityKind.Chief ? DarkBark : Hide);
-                if (kind == FacilityKind.Fishing)
-                    Part(PrimitiveType.Cylinder, "Net rack", finish, new Vector3(0f, 1.05f, .7f),
-                        new Vector3(.08f, 1.2f, .08f), Bark, new Vector3(0f, 0f, 90f));
-                if (kind == FacilityKind.Healer)
-                    Part(PrimitiveType.Cube, "Treatment bed", finish, new Vector3(0f, .5f, 0f),
-                        new Vector3(2f, .18f, .75f), Hide);
+                AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), finish,
+                    new Vector3(Mathf.Max(.8f, size.x * .95f), Mathf.Max(.07f, size.y * .95f),
+                        Mathf.Max(.8f, size.z * .95f)));
             }
             Save(root, path);
+        }
+
+        private static string FacilityModelPath(FacilityKind kind) => kind switch
+        {
+            FacilityKind.House => CityModels + "house.fbx",
+            FacilityKind.Healer => CityModels + "doctor.fbx",
+            FacilityKind.Shrine => CityModels + "ObelisksSite.fbx",
+            FacilityKind.Chief => CityModels + "villa.fbx",
+            FacilityKind.Meeting => CityModels + "stage.fbx",
+            FacilityKind.Training => RtsBuildings + "ArcheryRange.prefab",
+            FacilityKind.Fishing => RtsBuildings + "Dock.prefab",
+            FacilityKind.Gathering => CityModels + "StorageYard.fbx",
+            FacilityKind.Well => CityModels + "well.fbx",
+            FacilityKind.Palisade => RtsBuildings + "Wall_01.prefab",
+            FacilityKind.Gate => RtsBuildings + "Gate.prefab",
+            FacilityKind.Watchtower => RtsBuildings + "WatchTower.prefab",
+            FacilityKind.Path => CityModels + "Roads/road0.fbx",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
+        };
+
+        private static void ClearChildren(Transform parent)
+        {
+            for (var i = parent.childCount - 1; i >= 0; i--)
+                UnityEngine.Object.DestroyImmediate(parent.GetChild(i).gameObject);
         }
 
         private static GameObject Root(string name, Vector3 colliderSize, Vector3 colliderCenter)

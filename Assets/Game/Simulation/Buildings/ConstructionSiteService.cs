@@ -29,8 +29,15 @@ namespace Game.Simulation.Buildings
                 throw new InvalidOperationException("Construction buffer is already registered.");
             building.InitializeConstruction(definition, settlementId);
             var capacity = checked(definition.Construction.Cost.Sum(x => x.Quantity.Units));
+            // A construction contract may legitimately contain hides, food or other authored
+            // categories. Restrict the buffer to the exact categories used by this building,
+            // rather than silently rejecting every non-"Construction" material.
+            var acceptedCategories = definition.Construction.Cost
+                .Select(x => resources.Get(x.ResourceId).Category)
+                .Distinct()
+                .ToArray();
             var buffer = new ResourceInventory(building.ConstructionBufferOwner, resources, capacity,
-                new[] { ResourceCategory.Construction });
+                acceptedCategories);
             inventories.Add(buffer);
             RefreshReadiness(building);
             return buffer;

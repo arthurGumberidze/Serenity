@@ -4,12 +4,14 @@ using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Presentation.Interaction;
+using System.Linq;
 using UnityEngine;
 
 namespace Game.Presentation.Buildings
 {
     public sealed class BuildingPresenter : MonoBehaviour
     {
+        private static Material sharedFlameMaterial;
         private Building building;
         private BuildingPresentationRegistry registry;
         private ResourceInventory storageInventory;
@@ -28,7 +30,8 @@ namespace Game.Presentation.Buildings
         public ConstructionState ConstructionState => building != null ? building.ConstructionState : throw new InvalidOperationException("Presenter is not bound.");
         public ResourceInventory StorageInventory => storageInventory;
 
-        public void Bind(Building source, BuildingPresentationRegistry presentationRegistry, ResourceInventory inventory = null)
+        public void Bind(Building source, BuildingPresentationRegistry presentationRegistry,
+            ResourceInventory inventory = null, float gridSize = 1f)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (presentationRegistry == null) throw new ArgumentNullException(nameof(presentationRegistry));
@@ -37,6 +40,7 @@ namespace Game.Presentation.Buildings
             building = source;
             registry = presentationRegistry;
             storageInventory = inventory;
+            GetComponent<BuildingZoneVisual>()?.Render(source.PlacementCells, gridSize);
             originalRenderers = GetComponentsInChildren<Renderer>(true);
             originalVisibility = Array.ConvertAll(originalRenderers, x => x.enabled);
             constructionStages = GetComponentsInChildren<BuildingConstructionStageVisual>(true);
@@ -112,6 +116,7 @@ namespace Game.Presentation.Buildings
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(1.2f, 0.1f, 1.2f);
+            ConfigureFlameRenderer(particles);
             return particles;
         }
 
@@ -141,6 +146,7 @@ namespace Game.Presentation.Buildings
                     shape.shapeType = ParticleSystemShapeType.Cone;
                     shape.radius = 0.16f;
                     shape.angle = 8f;
+                    ConfigureFlameRenderer(campfireParticles);
                 }
                 campfireParticles.gameObject.SetActive(true);
                 if (!campfireParticles.isPlaying) campfireParticles.Play();
@@ -149,6 +155,28 @@ namespace Game.Presentation.Buildings
             {
                 campfireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 campfireParticles.gameObject.SetActive(false);
+            }
+        }
+
+        private static void ConfigureFlameRenderer(ParticleSystem particles)
+        {
+            var renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = FlameMaterial;
+        }
+
+        private static Material FlameMaterial
+        {
+            get
+            {
+                if (sharedFlameMaterial != null) return sharedFlameMaterial;
+                var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit") ??
+                    Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+                sharedFlameMaterial = new Material(shader) { name = "Serenity Runtime Flame" };
+                var flame = new Color(1f, 0.42f, 0.035f, 0.92f);
+                if (sharedFlameMaterial.HasProperty("_BaseColor")) sharedFlameMaterial.SetColor("_BaseColor", flame);
+                if (sharedFlameMaterial.HasProperty("_Color")) sharedFlameMaterial.SetColor("_Color", flame);
+                return sharedFlameMaterial;
             }
         }
 
@@ -178,9 +206,15 @@ namespace Game.Presentation.Buildings
             }
             if (scaffold != null) scaffold.SetActive(!finished && !building.IsDestroyed);
             if (constructionStages != null)
+            {
+                var finalStage = constructionStages.Length == 0 ? 0 : constructionStages.Max(x => x.RequiredStage);
                 foreach (var stage in constructionStages)
                     if (stage != null) stage.gameObject.SetActive(finished ||
                         building.ConstructionStageIndex >= stage.RequiredStage);
+                if (finished)
+                    foreach (var stage in constructionStages)
+                        if (stage != null) stage.gameObject.SetActive(stage.RequiredStage == finalStage);
+            }
             var stagedProgress = building.ConstructionStageCount <= 0 ? building.ConstructionProgress :
                 Mathf.Clamp01((building.ConstructionStageIndex + (float)building.ConstructionProgress) /
                     (building.ConstructionStageCount + 1f));

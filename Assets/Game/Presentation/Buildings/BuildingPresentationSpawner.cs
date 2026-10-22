@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using UnityEngine;
@@ -34,7 +36,10 @@ namespace Game.Presentation.Buildings
             if (building == null) throw new ArgumentNullException(nameof(building));
             var prefab = catalog.ResolvePrefab(building.DefinitionId);
             var definition = catalog.ResolveDefinition(building.DefinitionId);
-            var position = GridToWorld(building.Coordinate, definition, building.Orientation);
+            var position = definition.Placement.SpatialForm != BuildingSpatialForm.Structure &&
+                building.PlacementCells.Count > 0
+                ? GridToWorld(building.PlacementCells)
+                : GridToWorld(building.Coordinate, definition, building.Orientation);
             var rotation = Quaternion.Euler(0f, building.Orientation.Degrees(), 0f);
             var instance = UnityEngine.Object.Instantiate(prefab, position, rotation, parent);
             var presenter = instance.GetComponent<BuildingPresenter>();
@@ -48,7 +53,7 @@ namespace Game.Presentation.Buildings
             {
                 ResourceInventory storage = null;
                 inventories?.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id), out storage);
-                presenter.Bind(building, registry, storage);
+                presenter.Bind(building, registry, storage, gridSize);
             }
             catch
             {
@@ -79,6 +84,17 @@ namespace Game.Presentation.Buildings
             return ResolveGround(origin + new Vector3((coordinate.X + (footprint.Width - 1) * 0.5f) * gridSize,
                 coordinate.Level * gridSize, (coordinate.Z + (footprint.Depth - 1) * 0.5f) * gridSize),
                 coordinate.Level);
+        }
+
+        public Vector3 GridToWorld(IReadOnlyList<GridCoordinate> cells)
+        {
+            if (cells == null || cells.Count == 0) throw new ArgumentException("Placement cells are required.", nameof(cells));
+            var minX = cells.Min(x => x.X);
+            var maxX = cells.Max(x => x.X);
+            var minZ = cells.Min(x => x.Z);
+            var maxZ = cells.Max(x => x.Z);
+            return ResolveGround(origin + new Vector3((minX + maxX) * .5f * gridSize,
+                cells[0].Level * gridSize, (minZ + maxZ) * .5f * gridSize), cells[0].Level);
         }
 
         private Vector3 ResolveGround(Vector3 position, int level)

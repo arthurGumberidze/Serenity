@@ -83,10 +83,11 @@ namespace Game.Simulation.Resources
         }
 
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
-            BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources)
+            BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources,
+            IEnumerable<GridCoordinate> authoredCells = null)
         {
             var request = new BuildingPlacementRequest(definition, coordinate, orientation,
-                settlementId.IsValid ? (SettlementId?)settlementId : null);
+                settlementId.IsValid ? (SettlementId?)settlementId : null, authoredCells);
             var spatial = placement.Evaluate(request);
             if (!spatial.IsValid) return new ConstructionEvaluation(spatial, ConstructionFailureReason.InvalidPlacement, default);
             if (!IsBuildingUnlocked(definition.Id))
@@ -98,10 +99,10 @@ namespace Game.Simulation.Resources
         public ConstructionEvaluation TryConfirm(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources, out Building building,
             Action<Building> afterPlacement = null, Game.Domain.Combat.CombatSideId ownerSideId = default,
-            StableEntityId? stableId = null)
+            StableEntityId? stableId = null, IEnumerable<GridCoordinate> authoredCells = null)
         {
             building = null;
-            var result = Evaluate(definition, coordinate, orientation, fundingSources);
+            var result = Evaluate(definition, coordinate, orientation, fundingSources, authoredCells);
             if (!result.IsValid) return result;
             // Replan immediately before mutation. All writes below run on the one simulation owner thread.
             var funding = Plan(definition, fundingSources, out var deductions, out var missing);
@@ -114,7 +115,7 @@ namespace Game.Simulation.Resources
             try
             {
                 var request = new BuildingPlacementRequest(definition, coordinate, orientation,
-                    settlementId.IsValid ? (SettlementId?)settlementId : null);
+                    settlementId.IsValid ? (SettlementId?)settlementId : null, authoredCells);
                 candidate = placement.Confirm(request, ownerSideId, stableId);
                 var physicalLogistics = sites != null && work != null && piles != null && settlementId.IsValid;
                 if (physicalLogistics) sites.Initialize(candidate, definition, settlementId);

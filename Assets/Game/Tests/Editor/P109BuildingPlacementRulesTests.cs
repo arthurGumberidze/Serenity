@@ -15,6 +15,21 @@ namespace Game.Tests.Editor
     public sealed class P109BuildingPlacementRulesTests
     {
         [Test]
+        public void GardenDragBuildsBoundedRectanglesWithAnchorFirst()
+        {
+            var anchor = new GridCoordinate(10, 20);
+            var cells = Game.Presentation.Buildings.BuildingPlacementController.CreateRectangularZoneCells(
+                anchor, new GridCoordinate(30, 10));
+
+            Assert.That(cells[0], Is.EqualTo(anchor));
+            Assert.That(cells.Count, Is.EqualTo(64));
+            Assert.That(cells.Select(x => x.X).Distinct().Count(), Is.EqualTo(8));
+            Assert.That(cells.Select(x => x.Z).Distinct().Count(), Is.EqualTo(8));
+            var minimum = Game.Presentation.Buildings.BuildingPlacementController.CreateRectangularZoneCells(
+                anchor, anchor);
+            Assert.That(minimum.Count, Is.EqualTo(4));
+        }
+        [Test]
         public void OwnedTerritoryRequiresSettlementAndKeepsWholeFootprintInside()
         {
             var service = Service(out _);

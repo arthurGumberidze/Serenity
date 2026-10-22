@@ -1017,6 +1017,52 @@ U11 GUI click-through follow-up validation completed on 2026-10-06 with:
 ## Next action
 U29 is checkpointed as PARTIAL; its residual gate and evidence are in `docs/U29_HANDOFF.md`. Do not run another U29 matrix unless explicitly returning to that debt. The failed U30 run3 is immutable; wait for the fresh external run at `C:\serenity_u30_soak_20261012_run4`, then use a fresh finalizer to audit its result and either keep U30 IN_PROGRESS with exact failure evidence or mark it DONE in a separate validation commit. By explicit user authorization, U30A is the next implementation task while that run is pending; U31 still cannot claim DONE with unresolved gates.
 
+## P10.9 post-E visual/gameplay feedback repair — 2026-10-22
+
+- Fixed Clan House's permanent 0% state: construction buffers now accept the distinct categories of every
+  authored cost item, including `cured_hide` (`Other`), rather than hard-coding `Construction` only.
+- Resource presentation no longer creates a second broad invisible selection collider when the imported
+  source already owns a collider; fallback X/Z hit volumes are capped at 2.2 m.
+- Campfire/building fire particle systems use a shared explicit URP unlit particle material, eliminating the
+  magenta missing-material renderer.
+- Completed buildings hide lower construction stages. Final models now come from the installed
+  CityBuilderThree, RTS Toon Buildings and Synty Polygon Nature packages; imported visual colliders are removed
+  so canonical root placement/selection remains project-owned.
+- Primitive Garden placement uses held-LMB rectangular drag, 2×2 minimum and 8×8/64-cell maximum. Authored
+  cells pass through the existing placement/funding/occupancy flow, determine the presentation centre and
+  generate one crop cell visual per selected cell.
+
+Validation commands and results:
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod Game.Infrastructure.Editor.P109BaseBuildingFoundation.Build -quit -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\build-assets-3.log'`
+
+- prefab/catalog authoring completed successfully.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.Editor.P109BuildingPlacementRulesTests;Game.Tests.Editor.P109ExtendedBuildingsTests;Game.Tests.Editor.BuildingFoundationTests' -testResults 'C:\serenity_game\Artifacts\P109\visual-feedback\editmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\editmode.log'`
+
+- passed 31/31.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ExtendedBuildingsTests' -testResults 'C:\serenity_game\Artifacts\P109\visual-feedback\extended.xml' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\extended.log'`
+
+- passed 7/7, including downloaded-model references, non-error campfire particle material and resource-collider
+  regression.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109' -testResults 'C:\serenity_game\Artifacts\P109\visual-feedback\p109-editmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\p109-editmode.log'`
+
+- 65/68 passed. Unrelated failures: `P109HarvestTests.EveryCatchCreatesASeparateBankPileAndHaulTakesOnlyAvailableStorageSpace`
+  and two expanded-Synty audit assumptions (expected asset count and legacy Aurora shader text).
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P109PlayablePatchTests' -testResults 'C:\serenity_game\Artifacts\P109\visual-feedback\playmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\playmode.log'`
+
+- 6/9 passed after 197.39 s. The existing failures are the missing isolated-save environment assertion,
+  unavailable fishing recipe fixture and starter recipe availability assertion.
+
+Player build attempts used both `-nographics` (`build-final.log`) and `-force-d3d11`
+(`build-d3d11.log`) with `-executeMethod U00Build.WindowsDevelopment -serenityBuildPath
+Builds/P109VisualFeedback/Serenity.exe`. Both stalled after AssetDatabase refresh while the import worker
+remained responsive but before the build method logged entry; each was terminated by its verified command-line
+PID. No executable or successful BuildReport was produced, so F1 retains the clean-build gate.
+
 U16 final validation command:
 
 `& 'C:\serenity_game\Tools\Verify-U16.ps1' -ProjectPath 'C:\serenity_game' -FullRegression -ManagedPostgres -GpuValidation -StepTimeoutSeconds 900`

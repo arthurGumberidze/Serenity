@@ -1168,3 +1168,17 @@ owner and returns configured construction materials as physical piles. These ser
 not duplicate mutable building or resource state. Gate openness and facility assignment are presently
 session state; F1 must either prove the intended reset-on-load behavior or add persistence before final
 acceptance.
+
+## D-170 Variable gardens and final building art remain presentation over canonical placement (2026-10-22)
+
+Primitive Garden is the first player-authored rectangular zone: held LMB selects a connected rectangle with
+an explicit 2×2 minimum and 8×8/64-cell maximum. The exact cells travel through the existing
+`BuildingPlacementRequest`, occupancy grid and `Building.PlacementCells`; there is no second farm grid. A
+presentation component repeats one imported crop visual per cell and recentres the instance, while cost and
+work remain the current definition values pending a separate balance decision.
+
+Final facility art references already imported assets. Construction stages may use simple readable foundation
+geometry, but a completed building shows only its highest authored stage. Runtime selection colliders and fire
+materials are project-owned adapters: imported prefab colliders are stripped from building visuals, existing
+narrow resource colliders are preserved, and particle renderers receive an explicit URP material. These choices
+do not make vendor prefabs authoritative for simulation, placement, inventory or save state.

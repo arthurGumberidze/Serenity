@@ -2,17 +2,21 @@ using System;
 using System.Linq;
 using Game.Domain;
 using Game.Domain.Buildings;
+using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.Combat;
 using Game.Domain.Health;
 using Game.Domain.Resources;
+using Game.Domain.Production;
 using Game.Domain.World;
 using Game.Presentation.Buildings;
+using Game.Presentation.Production;
 using Game.Simulation.Buildings;
 using Game.Simulation.Health;
 using Game.Simulation.Resources;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 namespace Game.Tests.Editor
 {
@@ -41,6 +45,67 @@ namespace Game.Tests.Editor
             var hut = catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut"));
             Assert.That(hut.Upgrades.Options.Single().TargetDefinitionId.ToString(), Is.EqualTo("clan_house"));
             Assert.That(ids.All(id => catalog.ResolveDefinition(new BuildingDefinitionId(id)).Maintenance != null), Is.True);
+        }
+
+        [Test]
+        public void FinishedFacilitiesUseDownloadedModelsAndGardenOwnsVariableCellVisuals()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            foreach (var id in new[] { "clan_house", "healer_hut", "chief_hut", "training_ground",
+                         "fishing_camp", "well", "palisade", "gate", "watchtower", "primitive_path" })
+            {
+                var prefab = catalog.ResolvePrefab(new BuildingDefinitionId(id));
+                var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                    .OrderByDescending(x => x.RequiredStage).First();
+                Assert.That(finalStage.GetComponentsInChildren<Renderer>(true), Is.Not.Empty, id);
+                Assert.That(finalStage.transform.Find("Finished authored model"), Is.Not.Null, id);
+            }
+            Assert.That(catalog.ResolvePrefab(new BuildingDefinitionId("primitive_garden"))
+                .GetComponent<BuildingZoneVisual>(), Is.Not.Null);
+        }
+
+        [Test]
+        public void CampfireUsesRenderableUrpParticleMaterial()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var definition = catalog.ResolveDefinition(new BuildingDefinitionId("campfire"));
+            var building = Building.CreateNew(definition, default, BuildingOrientation.North,
+                new CombatSideId("player"));
+            building.MarkCompleted();
+            var presenter = new BuildingPresentationSpawner(catalog, new BuildingPresentationRegistry(), 1f,
+                Vector3.zero).Spawn(building);
+            try
+            {
+                var particles = presenter.GetComponentsInChildren<ParticleSystemRenderer>(true)
+                    .Single(x => x.name == "Campfire Flame VFX");
+                Assert.That(particles.sharedMaterial, Is.Not.Null);
+                Assert.That(particles.sharedMaterial.shader.name, Does.Not.Contain("InternalError"));
+            }
+            finally
+            {
+                presenter.Unbind();
+                UnityEngine.Object.DestroyImmediate(presenter.gameObject);
+            }
+        }
+
+        [Test]
+        public void AuthoredResourceColliderDoesNotGainASecondInvisibleSelectionVolume()
+        {
+            var root = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                var presenter = root.AddComponent<ProductionSourcePresenter>();
+                presenter.Bind(ProductionSite.CreateNatural(new ProductionRecipeId("gather_stone"),
+                    new WorldPosition(0f, 0f, 0f), 32), Color.gray, true);
+                Assert.That(root.transform.Find("Resource selection volume"), Is.Null);
+                Assert.That(root.GetComponentsInChildren<Collider>(true).Length, Is.EqualTo(1));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         [Test]

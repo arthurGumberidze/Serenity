@@ -7,6 +7,7 @@ using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Game.Presentation.Environment;
 
 namespace Game.Presentation.Buildings
@@ -40,6 +41,11 @@ namespace Game.Presentation.Buildings
         private bool subscribed;
         private bool exitModeAtEndOfFrame;
         private P102WorldPlacementSurface connectedWorldSurface;
+        private IReadOnlyList<GridCoordinate> authoredPlacementCells = Array.Empty<GridCoordinate>();
+        private GridCoordinate zoneDragAnchor;
+        private bool zoneDragActive;
+        private const int GardenMinimumSide = 2;
+        private const int GardenMaximumSide = 8;
 
         public bool IsActive => activeDefinition != null;
         public bool HasPreview => previewObject != null;
@@ -103,23 +109,44 @@ namespace Game.Presentation.Buildings
         public bool TryMovePreviewToWorldPoint(Vector3 worldPoint)
         {
             if (!IsActive) return false;
+            if (zoneDragActive)
+            {
+                authoredPlacementCells = CreateRectangularZoneCells(zoneDragAnchor, WorldToCell(worldPoint),
+                    GardenMinimumSide, GardenMaximumSide);
+                return EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, worldPoint);
+            }
             connectedWorldSurface ??= FindAnyObjectByType<P102WorldPlacementSurface>();
             var footprint = activeDefinition.Footprint.Rotate(orientation);
             previewCoordinate = new GridCoordinate(
                 Mathf.RoundToInt((worldPoint.x - gridOrigin.x) / gridSize - (footprint.Width - 1) * 0.5f),
                 Mathf.RoundToInt((worldPoint.z - gridOrigin.z) / gridSize - (footprint.Depth - 1) * 0.5f), 0);
-            previewEvaluation = placementService.Evaluate(activeDefinition, previewCoordinate, orientation);
-            if (previewEvaluation.IsValid && connectedWorldSurface != null && !connectedWorldSurface.IsSuitable(worldPoint))
+            authoredPlacementCells = Array.Empty<GridCoordinate>();
+            return EvaluatePreview(previewCoordinate, authoredPlacementCells, worldPoint);
+        }
+
+        private bool EvaluatePreview(GridCoordinate coordinate, IReadOnlyList<GridCoordinate> authoredCells,
+            Vector3 terrainPoint)
+        {
+            connectedWorldSurface ??= FindAnyObjectByType<P102WorldPlacementSurface>();
+            previewCoordinate = coordinate;
+            var request = new BuildingPlacementRequest(activeDefinition, coordinate, orientation, null, authoredCells);
+            previewEvaluation = placementService.Evaluate(request);
+            if (previewEvaluation.IsValid && connectedWorldSurface != null && !connectedWorldSurface.IsSuitable(terrainPoint))
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells);
             constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
-                previewCoordinate, orientation, fundingSources());
+                coordinate, orientation, fundingSources(), authoredCells);
             if (construction != null) previewEvaluation = constructionEvaluation.Placement;
             LastConstructionFailure = constructionEvaluation.Failure;
             if (previewObject != null)
             {
-                previewObject.transform.SetPositionAndRotation(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation),
+                var position = authoredCells.Count > 0 ? spawner.GridToWorld(authoredCells) :
+                    spawner.GridToWorld(coordinate, activeDefinition, orientation);
+                previewObject.transform.SetPositionAndRotation(position,
                     Quaternion.Euler(0f, orientation.Degrees(), 0f));
+                previewObject.GetComponent<BuildingZoneVisual>()?.Render(
+                    authoredCells.Count > 0 ? authoredCells : previewEvaluation.Cells, gridSize);
+                previewRenderers = previewObject.GetComponentsInChildren<Renderer>(true);
                 ApplyPreviewColor(IsPreviewValid ? validColor : invalidColor);
             }
             return IsPreviewValid;
@@ -137,26 +164,31 @@ namespace Game.Presentation.Buildings
         {
             if (!IsActive) return null;
             // Recheck blockers and the complete footprint at commit time too.
-            TryMovePreviewToWorldPoint(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation));
+            var cells = authoredPlacementCells;
+            var center = cells.Count > 0 ? spawner.GridToWorld(cells) :
+                spawner.GridToWorld(previewCoordinate, activeDefinition, orientation);
+            EvaluatePreview(previewCoordinate, cells, center);
             if (!IsPreviewValid) return null;
             Building building;
             if (construction != null)
             {
                 BuildingPresenter staged = null;
                 var result = construction.TryConfirm(activeDefinition, previewCoordinate, orientation,
-                    fundingSources(), out building, candidate => staged = spawner.Spawn(candidate));
+                    fundingSources(), out building, candidate => staged = spawner.Spawn(candidate),
+                    authoredCells: cells);
                 LastConstructionFailure = result.Failure;
                 if (!result.IsValid)
                 {
                     if (staged != null) spawner.Despawn(staged);
-                    TryMovePreviewToWorldPoint(spawner.GridToWorld(previewCoordinate, activeDefinition, orientation));
+                    EvaluatePreview(previewCoordinate, cells, center);
                     return null;
                 }
                 LastPlacedPresenter = staged;
             }
             else
             {
-                building = placementService.Confirm(activeDefinition, previewCoordinate, orientation);
+                building = placementService.Confirm(new BuildingPlacementRequest(activeDefinition,
+                    previewCoordinate, orientation, authoredCells: cells));
                 if (completeImmediately) building.MarkCompleted();
                 LastPlacedPresenter = spawner.Spawn(building);
             }
@@ -164,6 +196,8 @@ namespace Game.Presentation.Buildings
             activeDefinition = null;
             previewEvaluation = default;
             constructionEvaluation = default;
+            authoredPlacementCells = Array.Empty<GridCoordinate>();
+            zoneDragActive = false;
             exitModeAtEndOfFrame = true;
             BuildingPlaced?.Invoke(building, LastPlacedPresenter);
             return building;
@@ -175,6 +209,8 @@ namespace Game.Presentation.Buildings
             activeDefinition = null;
             previewEvaluation = default;
             constructionEvaluation = default;
+            authoredPlacementCells = Array.Empty<GridCoordinate>();
+            zoneDragActive = false;
             exitModeAtEndOfFrame = false;
             interactionMode?.ExitBuildingPlacement();
         }
@@ -199,6 +235,11 @@ namespace Game.Presentation.Buildings
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.OutsideBuildableBounds,
                     Array.Empty<GridCoordinate>());
                 ApplyPreviewColor(invalidColor);
+            }
+            if (zoneDragActive && Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
+            {
+                zoneDragActive = false;
+                ConfirmPlacement();
             }
         }
 
@@ -260,6 +301,16 @@ namespace Game.Presentation.Buildings
         {
             if (inputSource != null && raycaster != null && raycaster.IsPointerBlockedByUi(inputSource.PointerPosition))
                 return;
+            if (IsVariableGarden() && raycaster != null && inputSource != null &&
+                raycaster.TryGetGroundHit(inputSource.PointerPosition, out var hit))
+            {
+                zoneDragAnchor = WorldToCell(hit.point);
+                zoneDragActive = true;
+                authoredPlacementCells = CreateRectangularZoneCells(zoneDragAnchor, zoneDragAnchor,
+                    GardenMinimumSide, GardenMaximumSide);
+                EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, hit.point);
+                return;
+            }
             ConfirmPlacement();
         }
         private void OnBuildCancelled() => CancelPlacement();
@@ -297,6 +348,39 @@ namespace Game.Presentation.Buildings
         {
             if (placementService == null || spawner == null || interactionMode == null || catalog == null)
                 throw new InvalidOperationException("Building placement controller is not initialized.");
+        }
+
+        private bool IsVariableGarden() => activeDefinition != null &&
+            activeDefinition.Id == new BuildingDefinitionId("primitive_garden");
+
+        private GridCoordinate WorldToCell(Vector3 worldPoint) => new GridCoordinate(
+            Mathf.RoundToInt((worldPoint.x - gridOrigin.x) / gridSize),
+            Mathf.RoundToInt((worldPoint.z - gridOrigin.z) / gridSize), 0);
+
+        public static IReadOnlyList<GridCoordinate> CreateRectangularZoneCells(GridCoordinate anchor,
+            GridCoordinate pointer, int minimumSide = GardenMinimumSide, int maximumSide = GardenMaximumSide)
+        {
+            if (minimumSide < 1 || maximumSide < minimumSide) throw new ArgumentOutOfRangeException(nameof(minimumSide));
+            static int ClampedEnd(int start, int end, int min, int max)
+            {
+                var direction = end < start ? -1 : 1;
+                var distance = Mathf.Clamp(Mathf.Abs(end - start) + 1, min, max);
+                return start + direction * (distance - 1);
+            }
+            var endX = ClampedEnd(anchor.X, pointer.X, minimumSide, maximumSide);
+            var endZ = ClampedEnd(anchor.Z, pointer.Z, minimumSide, maximumSide);
+            var minX = Math.Min(anchor.X, endX);
+            var maxX = Math.Max(anchor.X, endX);
+            var minZ = Math.Min(anchor.Z, endZ);
+            var maxZ = Math.Max(anchor.Z, endZ);
+            var result = new List<GridCoordinate>((maxX - minX + 1) * (maxZ - minZ + 1));
+            for (var x = minX; x <= maxX; x++)
+                for (var z = minZ; z <= maxZ; z++)
+                    result.Add(new GridCoordinate(x, z, anchor.Level));
+            // PlacementService requires the authored anchor to be the first item.
+            result.Remove(anchor);
+            result.Insert(0, anchor);
+            return result;
         }
     }
 }

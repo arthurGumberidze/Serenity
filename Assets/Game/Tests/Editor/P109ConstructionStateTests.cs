@@ -26,6 +26,38 @@ namespace Game.Tests.Editor
         private static readonly ResourceId Stone = new ResourceId("stone");
 
         [Test]
+        public void ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract()
+        {
+            var hide = new ResourceId("cured_hide");
+            var resources = new ResourceCatalog(new[]
+            {
+                new ResourceDefinition(Wood, "Wood", ResourceCategory.Construction),
+                new ResourceDefinition(hide, "Cured hide", ResourceCategory.Other)
+            });
+            var inventories = new ResourceInventoryRegistry();
+            var source = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, Id(1)),
+                resources, 10);
+            source.TryAdd(Wood, new ResourceQuantity(2));
+            source.TryAdd(hide, new ResourceQuantity(2));
+            inventories.Add(source);
+            var definition = new BuildingDefinition(new BuildingDefinitionId("mixed_contract"), "Mixed contract",
+                BuildingCategory.Shelter, BuildingEra.StoneAge, "", "", null,
+                new ConstructionSpec(new[] { new ResourceAmount(Wood, new ResourceQuantity(2)),
+                    new ResourceAmount(hide, new ResourceQuantity(2)) }, TimeSpan.FromTicks(10)),
+                new PlacementSpec(new BuildingFootprint(1, 1)));
+            var building = Building.CreateNew(definition, default, BuildingOrientation.North,
+                new CombatSideId("player"), Id(2));
+            var sites = new ConstructionSiteService(resources, inventories);
+            sites.Initialize(building, definition, new SettlementId(Id(3)));
+
+            Assert.That(sites.Deliver(building, source.Owner, hide, new ResourceQuantity(2)),
+                Is.EqualTo(TransferFailureReason.None));
+            Assert.That(sites.Deliver(building, source.Owner, Wood, new ResourceQuantity(2)),
+                Is.EqualTo(TransferFailureReason.None));
+            Assert.That(building.ConstructionPhase, Is.EqualTo(ConstructionPhase.ReadyForWork));
+        }
+
+        [Test]
         public void ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock()
         {
             var fixture = CreateFixture();

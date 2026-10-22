@@ -35,7 +35,8 @@ namespace Game.Presentation.Production
             if (!preserveColor) gameObject.name = $"Production {site.RecipeId} [{site.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(site.Id, ContextTargetKind.ResourceSource);
-            if (site.RecipeId.ToString() != "chop_wood" && transform.Find("Resource selection volume") == null)
+            if (site.RecipeId.ToString() != "chop_wood" && transform.Find("Resource selection volume") == null &&
+                GetComponentInChildren<Collider>(true) == null)
             {
                 var meshes = GetComponentsInChildren<MeshRenderer>(true);
                 if (meshes.Length > 0)
@@ -48,9 +49,11 @@ namespace Game.Presentation.Production
                     box.isTrigger = true;
                     box.center = transform.InverseTransformPoint(bounds.center);
                     var scale = transform.lossyScale;
-                    box.size = new Vector3(Mathf.Max(0.5f, bounds.size.x) / Mathf.Max(0.01f, Mathf.Abs(scale.x)),
+                    // Imported rock meshes can have very broad or offset renderer bounds. A large
+                    // invisible trigger made unrelated ground under the cursor select that rock.
+                    box.size = new Vector3(Mathf.Min(2.2f, Mathf.Max(0.5f, bounds.size.x)) / Mathf.Max(0.01f, Mathf.Abs(scale.x)),
                         Mathf.Max(0.6f, bounds.size.y) / Mathf.Max(0.01f, Mathf.Abs(scale.y)),
-                        Mathf.Max(0.5f, bounds.size.z) / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
+                        Mathf.Min(2.2f, Mathf.Max(0.5f, bounds.size.z)) / Mathf.Max(0.01f, Mathf.Abs(scale.z)));
                 }
             }
             if (site.RecipeId.ToString() == "chop_wood" && transform.Find("Tree selection volume") == null)
