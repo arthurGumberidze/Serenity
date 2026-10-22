@@ -55,16 +55,18 @@ namespace Game.Simulation.Production
     public sealed class FoodConsumptionService
     {
         private readonly ResourceInventoryRegistry inventories;
-        private readonly ResourceId foodResource;
+        private readonly ResourceId[] edibleResources;
         private readonly long ticksPerPersonUnit;
 
-        public FoodConsumptionService(ResourceInventoryRegistry inventories, ResourceId foodResource,
+        public FoodConsumptionService(ResourceInventoryRegistry inventories, IEnumerable<ResourceId> edibleResourceIds,
             TimeSpan ticksPerPersonUnit)
         {
             this.inventories = inventories ?? throw new ArgumentNullException(nameof(inventories));
-            if (!foodResource.IsValid) throw new ArgumentException("Food resource required.", nameof(foodResource));
+            edibleResources = (edibleResourceIds ?? throw new ArgumentNullException(nameof(edibleResourceIds)))
+                .OrderBy(x => x).Distinct().ToArray();
+            if (edibleResources.Any(x => !x.IsValid))
+                throw new ArgumentException("Edible resource identities must be valid.", nameof(edibleResourceIds));
             if (ticksPerPersonUnit <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ticksPerPersonUnit));
-            this.foodResource = foodResource;
             this.ticksPerPersonUnit = ticksPerPersonUnit.Ticks;
         }
 
@@ -72,6 +74,23 @@ namespace Game.Simulation.Production
         public long TotalConsumed { get; private set; }
         public long TotalShortage { get; private set; }
         public bool IsShortage => TotalShortage > 0;
+        public IReadOnlyList<ResourceId> EdibleResources => Array.AsReadOnly(edibleResources);
+
+        public bool TryConsumeMeal()
+        {
+            foreach (var inventory in inventories.All
+                         .Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ||
+                             x.Owner.Kind == InventoryOwnerKind.Character)
+                         .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
+                         .ThenBy(x => x.Owner.Id))
+            foreach (var resourceId in edibleResources)
+            {
+                if (!inventory.TryRemove(resourceId, new ResourceQuantity(1))) continue;
+                TotalConsumed = checked(TotalConsumed + 1);
+                return true;
+            }
+            return false;
+        }
 
         public void Advance(TimeSpan elapsed, int population)
         {
@@ -83,17 +102,7 @@ namespace Game.Simulation.Production
             RemainderTicks = accumulated % ticksPerPersonUnit;
             if (due == 0) return;
             var remaining = due;
-            foreach (var inventory in inventories.All.Where(x => x.Owner.Kind != InventoryOwnerKind.CarryLoad)
-                         .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
-                         .ThenBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
-            {
-                var available = inventory.GetAmount(foodResource).Units;
-                var take = Math.Min(available, remaining);
-                if (take > 0) inventory.TryRemove(foodResource, new ResourceQuantity(take));
-                remaining -= take;
-                if (remaining == 0) break;
-            }
-            TotalConsumed = checked(TotalConsumed + due - remaining);
+            while (remaining > 0 && TryConsumeMeal()) remaining--;
             TotalShortage = checked(TotalShortage + remaining);
         }
 
@@ -155,7 +164,6 @@ namespace Game.Simulation.Production
         private readonly Dictionary<ResourceId, long> targets = new Dictionary<ResourceId, long>();
         private readonly Dictionary<ResourceId, long> producedTotals = new Dictionary<ResourceId, long>();
         private readonly List<StableEntityId> orderedWorkerBuffer = new List<StableEntityId>();
-        private readonly ResourceId foodResource = new ResourceId("berries");
         private readonly IResearchUnlockView unlocks;
         private readonly ICharacterCapabilityProvider capabilities;
         private readonly IWeatherModifierProvider weather;
@@ -185,14 +193,15 @@ namespace Game.Simulation.Production
             unlocks = researchUnlocks;
             capabilities = capabilityProvider;
             weather = weatherModifierProvider;
-            resources.Get(foodResource);
             foreach (var target in settings.Targets)
             {
                 resources.Get(target.ResourceId);
                 if (!targets.TryAdd(target.ResourceId, target.Target))
                     throw new ArgumentException("Duplicate production target.", nameof(productionSettings));
             }
-            Food = new FoodConsumptionService(inventories, foodResource, settings.FoodTicksPerPersonUnit);
+            var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat" }
+                .Select(id => new ResourceId(id)).Where(resources.Contains).ToArray();
+            Food = new FoodConsumptionService(inventories, edible, settings.FoodTicksPerPersonUnit);
         }
 
         public ProductionCatalog Recipes => recipes;

@@ -61,7 +61,8 @@ namespace Game.Tests.Editor
 
             var initial = BuildingDebugCatalogView.Capture(catalog, research);
 
-            CollectionAssert.AreEquivalent(new[] { "primitive_shelter", "storage_basket", "primitive_crop_plot", "military_barracks" },
+            CollectionAssert.AreEquivalent(new[]
+                { "primitive_shelter", "storage_basket", "primitive_crop_plot", "military_barracks", "campfire", "stone_age_hut", "stone_tool_workshop" },
                 initial.Select(option => option.Definition.Id.ToString()));
             var shelter = initial.Single(option => option.Definition.Id == new BuildingDefinitionId("primitive_shelter"));
             Assert.That(shelter.IsAvailable,

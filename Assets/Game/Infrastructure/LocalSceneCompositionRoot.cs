@@ -766,6 +766,7 @@ namespace Game.Infrastructure
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
+            Production.Population = CountAbstractPlayerPopulation();
             Production.AdvanceTo(targetCalendarTick, abstractWorkerBuffer);
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
@@ -791,6 +792,17 @@ namespace Game.Infrastructure
                 if (Tiers.GetTier(managedIds[index]) == CharacterSimulationTier.Tier3)
                     tier3WorkerCache.Add(managedIds[index]);
             tier3WorkerCacheRevision = Tiers.Revision;
+        }
+
+        private int CountAbstractPlayerPopulation()
+        {
+            if (Tiers == null) return Characters.Count;
+            var count = 0;
+            foreach (var id in Tiers.ManagedIds)
+                if (Tiers.GetTier(id) != CharacterSimulationTier.Tier1 &&
+                    Characters.TryGet(id, out var character) && character.LifeState == CharacterLifeState.Alive)
+                    count++;
+            return count;
         }
 
         private static void MergeSortedDistinct(IReadOnlyList<StableEntityId> first,
@@ -1003,7 +1015,9 @@ namespace Game.Infrastructure
             DemoStorageBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(5, 5),
                 BuildingOrientation.North, new CombatSideId("player"),
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 0));
-            Storage.Attach(DemoStorageBuilding, definition);
+            var inventory = Storage.Attach(DemoStorageBuilding, definition);
+            if (inventory != null && Resources.Contains(new ResourceId("cooked_berries")))
+                inventory.TryAdd(new ResourceId("cooked_berries"), new ResourceQuantity(8));
             DemoStorageBuilding.MarkCompleted();
             DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
         }

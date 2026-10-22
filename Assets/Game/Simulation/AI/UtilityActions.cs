@@ -122,25 +122,46 @@ namespace Game.Simulation.AI
     {
         private readonly Tier1AiAgentState agent;
         private readonly Tier1AiSettings settings;
+        private readonly FoodConsumptionService food;
+        private bool mealConsumed;
+        private bool succeeded;
 
-        public EatActionExecution(Tier1AiAgentState agent, Tier1AiSettings settings)
+        public EatActionExecution(Tier1AiAgentState agent, Tier1AiSettings settings,
+            FoodConsumptionService food = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            this.food = food;
             agent.SetAction(UtilityActionKind.Eat, AiActionPhase.Eating);
         }
 
         public UtilityActionKind Kind => UtilityActionKind.Eat;
         public AiActionPhase Phase => AiActionPhase.Eating;
         public bool IsFinished { get; private set; }
-        public bool Succeeded => IsFinished;
+        public bool Succeeded => succeeded;
         public bool IsInterruptible => true;
         public bool IsValid => !IsFinished;
 
         public void Tick(TimeSpan simulationDelta)
         {
+            if (!mealConsumed)
+            {
+                if (food != null && !food.TryConsumeMeal())
+                {
+                    IsFinished = true;
+                    succeeded = false;
+                    agent.SetPhase(AiActionPhase.Failed);
+                    return;
+                }
+                mealConsumed = true;
+            }
             agent.Needs.SatisfyHunger(settings.HungerRecoveryPerDay * simulationDelta.TotalDays);
-            if (agent.Needs.Hunger <= Tier1AiScheduler.CriticalHungerCompletion) IsFinished = true;
+            if (agent.Needs.Hunger <= Tier1AiScheduler.CriticalHungerCompletion)
+            {
+                IsFinished = true;
+                succeeded = true;
+                agent.SetPhase(AiActionPhase.Completed);
+            }
         }
 
         public void Cancel() => IsFinished = true;

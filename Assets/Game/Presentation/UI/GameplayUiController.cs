@@ -1320,13 +1320,13 @@ namespace Game.Presentation.UI
             var playerIds = PlayerCharacterIds();
             var population = playerIds.Count(id => context.Characters.TryGet(id, out var person) &&
                                                    person.LifeState == CharacterLifeState.Alive);
-            var berryUnits = TotalResource(new ResourceId("berries"));
-            var foodDays = population == 0 ? 0d : berryUnits * context.Production.Settings.FoodTicksPerPersonUnit.TotalDays / population;
+            var edibleUnits = context.Production.Food.EdibleResources.Sum(TotalResource);
+            var foodDays = population == 0 ? 0d : edibleUnits * context.Production.Settings.FoodTicksPerPersonUnit.TotalDays / population;
             AddSection(mainPanel, T("ui.economy.overview"));
             AddLine(mainPanel, F("ui.economy.ruler_population", CharacterName(context.Dynasty.CurrentMonarchId), population));
             AddLine(mainPanel, F("ui.economy.camp_ready", T(shelterReady ? "ui.economy.ready" : "ui.economy.missing"),
                 T(storageReady ? "ui.economy.ready" : "ui.economy.missing")));
-            AddLine(mainPanel, F("ui.economy.food_days", berryUnits, RussianTextCatalog.Decimal(foodDays, "0.#")));
+            AddLine(mainPanel, F("ui.economy.food_days", edibleUnits, RussianTextCatalog.Decimal(foodDays, "0.#")));
             if (foodDays < 5d) AddMuted(mainPanel, T("ui.economy.food_warning"));
             AddSection(mainPanel, T("ui.economy.starting_group"));
             foreach (var person in playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)

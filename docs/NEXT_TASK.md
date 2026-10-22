@@ -1,12 +1,13 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings C1-C4, 2026-10-22
+## Current scope — P10.9 Stone Age buildings C5, 2026-10-22
 
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1-B3 and C1-C3 are complete. The current active slice is
-**C4: food system integration**, followed continuously in this
-chat by C4. C1 is complete: construction now creates bounded physical haul orders into the
+small tested builds and commits. B1-B3 and C1-C4 are complete. The next unblocked slice is
+**C5: acceptance of the first complete construction/cooking loop**. It must prove New Game →
+construction → cooking → storage → eating → save/load without introducing another authority.
+C1 is complete: construction now creates bounded physical haul orders into the
 shared construction buffer, reserves queued source stock, survives save/load, advances material
 stages only after delivery, and returns buffered plus installed materials on cancellation. Do not
 pause for approval between those internal commits. No additional chat,
@@ -73,6 +74,15 @@ persists queues, pause state, owner building, active progress and both buffers. 
 panel exposes recipes, quantities, queue controls, pause, worker/progress and waiting reason. Focused
 EditMode passed 25/25 and campfire placement PlayMode passed 1/1. No broad regression or Player build
 was run by design; both gates now belong to C4.
+
+C4 makes cooked berries, fish and meat the only edible resources. Tier1 `Eat` and aggregate Tier2/3
+consumption delegate to the same service and spend one canonical unit per meal; materialized Tier1
+residents are excluded from the aggregate population to prevent a second charge. Starter cooked
+rations prevent a bootstrap hunger deadlock. Focused tests passed 32/32 EditMode and 6/6 PlayMode;
+the affected PlayMode matrix is green after exact reruns. Broad EditMode passed 631/634 with only the
+known P8.2 geography failure and two user-owned expanded-Synty failures. Windows build
+`Builds/P109BuildingsC4/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
+`94165ea0731843f4b0be90bfee0cfc87`; protected files match 44/44. C5 has not started.
 
 ## Superseded screenshot-feedback handoff
 

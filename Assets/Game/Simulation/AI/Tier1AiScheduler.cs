@@ -489,7 +489,7 @@ namespace Game.Simulation.AI
                     break;
                 case UtilityActionKind.Eat:
                     entry.Movement.Stop();
-                    entry.Action = new EatActionExecution(entry.Agent, settings);
+                    entry.Action = new EatActionExecution(entry.Agent, settings, world.Production?.Food);
                     break;
                 case UtilityActionKind.Haul:
                     if (world.HaulJobs.TryClaim(entry.Agent, settings.MaxHaulUnits, out var job, out var claim))

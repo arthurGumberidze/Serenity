@@ -71,7 +71,8 @@ namespace Game.Infrastructure
             foreach (var id in residentIds)
                 inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, id),
                     resources, 128));
-            Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "berries", 40);
+            if (resources.Contains(new ResourceId("cooked_berries")))
+                Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "cooked_berries", 40);
             Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "wood_log", 36);
             Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "plant_fiber", 24);
             Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "stone", 20);

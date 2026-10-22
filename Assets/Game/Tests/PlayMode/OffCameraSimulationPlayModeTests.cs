@@ -35,9 +35,8 @@ namespace Game.Tests.PlayMode
             var id = character.Id;
             var canonicalBefore = character.CaptureState();
             var owner = new InventoryOwner(InventoryOwnerKind.Character, id);
-            var inventory = root.Inventories.Get(owner);
-            var wood = new ResourceId("wood_log");
-            var woodBefore = inventory.GetAmount(wood);
+            Assert.That(root.Inventories.TryGet(owner, out _), Is.False,
+                "P10.9 carry loads and settlement storage supersede persistent per-character inventories.");
             var group = root.Work.CreateGroup("U14 continuity", new[] { id });
             var order = root.Work.CreateMoveJob(id, new WorldPosition(8f, 0f, 8f), WorkPriority.High, group.Id);
 
@@ -58,8 +57,7 @@ namespace Game.Tests.PlayMode
             Assert.That(restored.OffCameraStepCount, Is.EqualTo(remote.OffCameraStepCount));
             Assert.That(character.CaptureState().Health, Is.EqualTo(canonicalBefore.Health));
             Assert.That(character.CaptureState().Parents, Is.EquivalentTo(canonicalBefore.Parents));
-            Assert.That(root.Inventories.Get(owner), Is.SameAs(inventory));
-            Assert.That(inventory.GetAmount(wood), Is.EqualTo(woodBefore));
+            Assert.That(root.Inventories.TryGet(owner, out _), Is.False);
             Assert.That(root.Work.Groups.TryGetForMember(id, out var restoredGroup), Is.True);
             Assert.That(restoredGroup, Is.SameAs(group));
             Assert.That(order.Status, Is.EqualTo(WorkJobStatus.Assigned));

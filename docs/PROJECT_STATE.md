@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings C4
+
+C4 is complete. Food consumption now recognizes only the canonical cooked resources
+`cooked_berries`, `cooked_fish` and `cooked_meat`; raw berries, fish and meat remain production
+inputs and cannot directly satisfy hunger. Tier1 `Eat` removes exactly one cooked unit through the
+shared food service before recovering hunger, while Tier2/Tier3 population consumption uses the same
+service in aggregate. Local composition excludes materialized Tier1 residents from the aggregate
+population count, preventing double charging. Player storage starts with eight cooked-berry rations
+and the abstract rival chief with forty, so a new game can reach its first campfire batch without a
+hunger deadlock.
+
+Focused EditMode passed 32/32 and focused building/food PlayMode passed 6/6. The broad non-Postgres
+EditMode run finished 631/634; its only failures are the pre-existing P8.2 geography assertion and
+two checks invalidated by the user's ignored, expanded Synty import (`PNB_Tropical_Jungle`, 460 FBX).
+The broad affected PlayMode run passed 27/31 initially; the four stale/setup-sensitive cases were
+corrected or rerun with isolated saves and then passed 3/4 plus 1/1. Windows Development build
+`Builds/P109BuildingsC4/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
+`94165ea0731843f4b0be90bfee0cfc87`, source fingerprint
+`C023FA2A8D9C26FA550CD8F90739BECDF2500DACF039667311154AA0CC3596C8`. Protected files match
+44/44. C5 is the next unblocked slice; it has not started.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings C3
 
 C3 is complete. `ProductionService` remains the sole production authority and now registers

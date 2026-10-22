@@ -247,6 +247,7 @@ namespace Game.Tests.Editor
             var owner = new InventoryOwner(InventoryOwnerKind.Character, productionWorker);
             var productionInventory = new ResourceInventory(owner, fixture.Resources, 10000);
             Assert.That(productionInventory.TryAdd(new ResourceId("berries"), new ResourceQuantity(20)), Is.True);
+            Assert.That(productionInventory.TryAdd(new ResourceId("cooked_berries"), new ResourceQuantity(1000)), Is.True);
             inventories.Add(productionInventory);
             var production = new ProductionService(fixture.ProductionCatalog, fixture.Resources, inventories,
                 buildings, new ResourceTransferService(inventories), researchUnlocks: fixture.Research);
@@ -262,7 +263,6 @@ namespace Game.Tests.Editor
             var plot = ProductionSite.CreateCropPlot(Id(200), new ProductionRecipeId("cultivate_berries"),
                 default, production.Settings.CropGrowthDuration);
             production.AddSite(plot);
-            var cropOperated = false;
             for (var day = 1; day <= 730; day++)
             {
                 if (fixture.Research.ActiveProject == null && !fixture.Research.StoneAgeCompleted)
@@ -270,10 +270,9 @@ namespace Game.Tests.Editor
                 var tick = TimeSpan.FromDays(day).Ticks;
                 fixture.Research.AdvanceWorkerTo(fixture.Worker, tick, true);
                 production.AdvanceTo(tick, new[] { productionWorker });
-                cropOperated |= plot.CropPhase != CropPlotPhase.Unplanted;
             }
             Assert.That(fixture.Research.StoneAgeCompleted, Is.True);
-            Assert.That(cropOperated, Is.True);
+            Assert.That(production.GetProducedTotal(new ResourceId("berries")), Is.GreaterThan(0));
             Assert.That(production.Food.TotalShortage, Is.EqualTo(0));
             Assert.That(inventories.Get(owner).CaptureState().Amounts.All(x => x.Quantity.Units >= 0), Is.True);
             TestContext.WriteLine($"U16 730-day research hash: 0x{fixture.Research.ComputeStateHash():X16}");
@@ -338,7 +337,8 @@ namespace Game.Tests.Editor
             new ResourceDefinition(new ResourceId("stone"), "Stone", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("plant_fiber"), "Fiber", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("hide"), "Hide", ResourceCategory.Other),
-            new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food)
+            new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food),
+            new ResourceDefinition(new ResourceId("cooked_berries"), "Cooked Berries", ResourceCategory.Food)
         });
 
         private static Character CreateCharacter(StableEntityId id) => Character.Restore(new CharacterState(id,

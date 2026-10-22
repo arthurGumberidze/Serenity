@@ -1102,3 +1102,17 @@ slots remain immutable building/catalog data. A batch commits only when every in
 all outputs fit simultaneously. If input is absent or output fills after work starts, completed progress
 waits and retry cannot duplicate output. Snapshot v28 appends the new site fields while keeping v1-v27
 readable and preserving active tasks and buffer inventories in their existing sections.
+
+## D-166 Cooked resources are the single edible contract across simulation tiers (2026-10-22)
+
+Raw berries, fish and meat are production inputs, not meals. `FoodConsumptionService` owns the
+ordered cooked-resource set and is the only service that removes a meal: first from operational
+building storage, then from explicitly registered character inventories. Tier1 `Eat` must acquire one
+meal before applying hunger recovery; failure leaves hunger unchanged. Tier2/Tier3 consume through
+the same service's aggregate tick, and LocalGameplay subtracts materialized Tier1 residents from that
+population so a person cannot be charged both physically and abstractly.
+
+New Game seeds a small cooked reserve rather than permitting raw-food fallback: eight cooked berries
+in player storage and forty on the abstract rival chief. This is bootstrap content, not an alternate
+food rule. Production buffers and world piles remain inedible until normal hauling/cooking places
+finished food in an eligible inventory. No new save fields or manager are required.

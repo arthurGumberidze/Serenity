@@ -234,3 +234,35 @@ artifacts are green. Per the agreed cadence, no broad regression or Windows buil
 C4 unifies edible resources in needs/food consumption, prevents raw-food consumption and proves that
 the starter loop cannot deadlock hunger before the first cooked batch. It ends with the scheduled broad
 regression and separate Windows Player build.
+
+## Stage C4 complete
+
+Date: 22 October 2026. `FoodConsumptionService` now exposes the catalog-backed cooked set and spends
+exactly one cooked unit per meal. Tier1 eating calls it before hunger recovery; aggregate production
+handles only non-materialized population. Raw food remains available to campfire recipes but is never
+selected as edible. Player storage receives eight cooked-berry starter rations and the rival abstract
+inventory receives forty.
+
+Final verification commands:
+
+```powershell
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109FoodIntegrationTests;Game.Tests.Editor.P109BuildingProductionTests;Game.Tests.Editor.ProductionAndFarmingTests;Game.Tests.Editor.ResearchFrameworkTests' -testResults Artifacts/P109/buildings-c4/focused-editmode-final.xml -logFile Artifacts/P109/buildings-c4/focused-editmode-final.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.BuildingPlacementPlayModeTests -testResults Artifacts/P109/buildings-c4/focused-playmode-final.xml -logFile Artifacts/P109/buildings-c4/focused-playmode-final.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testCategory '!PostgresIntegration' -testResults Artifacts/P109/buildings-c4/broad-editmode-final.xml -logFile Artifacts/P109/buildings-c4/broad-editmode-final.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.BuildingPlacementPlayModeTests;Game.Tests.PlayMode.GameplayUiPlayModeTests;Game.Tests.PlayMode.ProductionPlayModeTests;Game.Tests.PlayMode.P105CharacterProductionPlayModeTests;Game.Tests.PlayMode.P109PlayablePatchTests;Game.Tests.PlayMode.P109FunctionalIntegrationPlayModeTests;Game.Tests.PlayMode.OffCameraSimulationPlayModeTests' -testResults Artifacts/P109/buildings-c4/broad-playmode.xml -logFile Artifacts/P109/buildings-c4/broad-playmode.log
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\P109\buildings-c4\test-saves'; Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.OffCameraSimulationPlayModeTests.Tier3CatchUpReturnsLatestStateWithoutChangingCanonicalOwnership;Game.Tests.PlayMode.P109PlayablePatchTests.ChopCommandFellsWholeTreeCommitsExactLogsAndSurvivesIsolatedSave;Game.Tests.PlayMode.ProductionPlayModeTests.CropPlotPlacementUsesU08OccupancyConstructionAndActivation;Game.Tests.PlayMode.ProductionPlayModeTests.Tier1WalksWorksAndCommitsOneCanonicalProductionOutput' -testResults Artifacts/P109/buildings-c4/broad-playmode-failures-rerun.xml -logFile Artifacts/P109/buildings-c4/broad-playmode-failures-rerun.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.ProductionPlayModeTests.CropPlotPlacementUsesU08OccupancyConstructionAndRegistration -testResults Artifacts/P109/buildings-c4/crop-placement-final.xml -logFile Artifacts/P109/buildings-c4/crop-placement-final.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath C:\serenity_game\Builds\P109BuildingsC4\Serenity.exe -logFile C:\serenity_game\Artifacts\P109\buildings-c4\build.log
+```
+
+Results: focused EditMode 32/32; focused PlayMode 6/6. Broad EditMode 631/634 with only the
+pre-existing P8.2 geography failure and two failures caused by the user's ignored expanded Synty
+import. Broad affected PlayMode passed 27/31 first; exact reruns closed the four stale/setup-sensitive
+cases at 3/4 and 1/1. The Windows build succeeded with 0 errors / 53 warnings, GUID
+`94165ea0731843f4b0be90bfee0cfc87`, fingerprint
+`C023FA2A8D9C26FA550CD8F90739BECDF2500DACF039667311154AA0CC3596C8`. Protected baseline: 44/44.
+
+## Next stage
+
+C5 proves the complete New Game → construction → cooking → storage → eating → save/load route. It has
+not started.

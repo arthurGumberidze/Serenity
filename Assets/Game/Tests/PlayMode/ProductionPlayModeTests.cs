@@ -35,7 +35,7 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root, Is.Not.Null);
             Assert.That(root.Production, Is.Not.Null);
-            Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(9));
+            Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(12));
             Assert.That(root.Production.Sites.Count, Is.GreaterThanOrEqualTo(4),
                 "The reference camp has at least the original sources; P5 may add authored regional sources.");
             Assert.That(root.DemoCropPlotBuilding, Is.Null);
@@ -98,7 +98,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator CropPlotPlacementUsesU08OccupancyConstructionAndActivation()
+        public IEnumerator CropPlotPlacementUsesU08OccupancyConstructionAndRegistration()
         {
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
@@ -108,10 +108,10 @@ namespace Game.Tests.PlayMode
             CompleteTechnology(root, "primitive_agriculture");
             var beforeSites = root.Production.Sites.Count;
             root.BuildingPlacementController.StartPlacement(new Game.Domain.Buildings.BuildingDefinitionId("primitive_crop_plot"));
-            Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(15f, 0f, 15f)), Is.True);
+            Assert.That(TryFindClearPlacement(root, out _), Is.True);
             var building = root.BuildingPlacementController.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
-            Assert.That(building.ConstructionState, Is.EqualTo(Game.Domain.Buildings.ConstructionState.Completed));
+            Assert.That(building.ConstructionState, Is.EqualTo(Game.Domain.Buildings.ConstructionState.Planned));
             Assert.That(root.BuildingOccupancy.IsOccupied(building.Coordinate), Is.True);
             Assert.That(root.Production.TryGetSite(building.Id, out var site), Is.True);
             Assert.That(site.Kind, Is.EqualTo(ProductionSiteKind.PrimitiveCropPlot));
@@ -129,6 +129,18 @@ namespace Game.Tests.PlayMode
             var target = root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks;
             root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id, target, true);
             Assert.That(root.Research.IsCompleted(technologyId), Is.True);
+        }
+
+        private static bool TryFindClearPlacement(LocalSceneCompositionRoot root, out Vector3 point)
+        {
+            for (var z = 12; z <= 48; z += 3)
+            for (var x = 12; x <= 48; x += 3)
+            {
+                point = new Vector3(x, root.WorldHeight.SampleHeight(x, z), z);
+                if (root.BuildingPlacementController.TryMovePreviewToWorldPoint(point)) return true;
+            }
+            point = default;
+            return false;
         }
     }
 }

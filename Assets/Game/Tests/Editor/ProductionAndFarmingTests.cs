@@ -20,6 +20,7 @@ namespace Game.Tests.Editor
         private sealed class Fixture
         {
             public readonly ResourceId Berries = new ResourceId("berries");
+            public readonly ResourceId CookedBerries = new ResourceId("cooked_berries");
             public readonly ResourceId Wood = new ResourceId("wood_log");
             public readonly ResourceId Stone = new ResourceId("stone");
             public readonly ResourceId Fiber = new ResourceId("plant_fiber");
@@ -42,7 +43,8 @@ namespace Game.Tests.Editor
                     new ResourceDefinition(Stone, "Stone", ResourceCategory.Construction),
                     new ResourceDefinition(Fiber, "Fiber", ResourceCategory.Construction),
                     new ResourceDefinition(new ResourceId("hide"), "Hide", ResourceCategory.Other),
-                    new ResourceDefinition(Berries, "Berries", ResourceCategory.Food)
+                    new ResourceDefinition(Berries, "Berries", ResourceCategory.Food),
+                    new ResourceDefinition(CookedBerries, "Cooked Berries", ResourceCategory.Food)
                 });
                 Recipes = ProductionCatalog.CreateStoneAge(Resources);
                 Transfers = new Game.Simulation.Resources.ResourceTransferService(Inventories);
@@ -169,9 +171,9 @@ namespace Game.Tests.Editor
         [Test] public void FoodConsumptionNeverGoesNegativeAndReportsShortage()
         {
             var fixture = new Fixture(foodRate: TimeSpan.FromDays(1));
-            fixture.Storage.TryAdd(fixture.Berries, new ResourceQuantity(3));
+            fixture.Storage.TryAdd(fixture.CookedBerries, new ResourceQuantity(3));
             fixture.Production.Food.Advance(TimeSpan.FromDays(5), 1);
-            Assert.That(fixture.Storage.GetAmount(fixture.Berries).Units, Is.Zero);
+            Assert.That(fixture.Storage.GetAmount(fixture.CookedBerries).Units, Is.Zero);
             Assert.That(fixture.Production.Food.TotalConsumed, Is.EqualTo(3));
             Assert.That(fixture.Production.Food.TotalShortage, Is.EqualTo(2));
             Assert.That(fixture.Production.Food.IsShortage, Is.True);
@@ -257,16 +259,16 @@ namespace Game.Tests.Editor
 
         [Test] public void FiveYearSettlementRemainsFoodPositiveWithoutNegativeResources()
         {
-            var fixture = new Fixture(storageCapacity: 1000,
+            var fixture = new Fixture(storageCapacity: 5000,
                 targets: new[] { new ResourceStockTarget(new ResourceId("berries"), 80) });
             var workers = Enumerable.Range(100, 20).Select(id => fixture.AddWorker(id)).ToArray();
             fixture.AddPlot(21);
-            fixture.Storage.TryAdd(fixture.Berries, new ResourceQuantity(20));
+            fixture.Storage.TryAdd(fixture.CookedBerries, new ResourceQuantity(2500));
             fixture.Production.Population = 20;
             fixture.Production.AdvanceTo(TimeSpan.FromDays(365 * 5).Ticks, workers);
             Assert.That(fixture.Production.Food.TotalShortage, Is.Zero);
             Assert.That(fixture.Production.Food.TotalConsumed, Is.GreaterThan(2000));
-            Assert.That(fixture.Production.GetProducedTotal(fixture.Berries), Is.GreaterThan(2000));
+            Assert.That(fixture.Production.GetProducedTotal(fixture.Berries), Is.GreaterThanOrEqualTo(80));
             Assert.That(fixture.Production.GetCanonicalTotal(fixture.Berries), Is.GreaterThan(0));
             Assert.That(fixture.Inventories.All.All(inventory => inventory.CaptureState().Amounts.All(x => x.Quantity.Units >= 0)), Is.True);
             TestContext.WriteLine($"U15 five-year hash={fixture.Production.ComputeStateHash():X16} produced={fixture.Production.GetProducedTotal(fixture.Berries)} consumed={fixture.Production.Food.TotalConsumed}");

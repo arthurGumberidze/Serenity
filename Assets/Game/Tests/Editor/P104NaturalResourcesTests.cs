@@ -45,14 +45,15 @@ namespace Game.Tests.Editor
         });
 
         [Test]
-        public void CanonicalCatalogContainsExactlyNineResourcesAndAnimalWaterRecipes()
+        public void CanonicalCatalogContainsRawCookedResourcesAndAnimalWaterRecipes()
         {
             var asset = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(
                 "Assets/Game/Art/Config/ResourceCatalog.asset");
             var resources = asset.CreateCatalog();
             Assert.That(resources.All.Select(x => x.Id.ToString()), Is.EquivalentTo(new[]
             {
-                "wood_log", "stone", "plant_fiber", "hide", "berries", "iron_ore", "gold_ore", "meat", "fish"
+                "wood_log", "stone", "plant_fiber", "hide", "berries", "iron_ore", "gold_ore", "meat", "fish",
+                "cooked_berries", "cooked_fish", "cooked_meat"
             }));
             var recipes = ProductionCatalog.CreateStoneAge(resources);
             Assert.That(recipes.Get(new ProductionRecipeId("hunt_animal")).Outputs

@@ -137,6 +137,20 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator StarterStorageProvidesCookedRationsAndRawFoodIsNotDirectlyEdible()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var storage = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.BuildingStorage,
+                root.DemoStorageBuilding.Id));
+            var cookedBerries = new ResourceId("cooked_berries");
+
+            Assert.That(storage.GetAmount(cookedBerries).Units, Is.GreaterThanOrEqualTo(8));
+            CollectionAssert.Contains(root.Production.Food.EdibleResources.ToArray(), cookedBerries);
+            CollectionAssert.DoesNotContain(root.Production.Food.EdibleResources.ToArray(), new ResourceId("berries"));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator PlacingCampfireRegistersKitchenSlotsAndPersistentBuffers()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
