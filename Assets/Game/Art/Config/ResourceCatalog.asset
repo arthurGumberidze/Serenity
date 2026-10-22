@@ -61,3 +61,6 @@ MonoBehaviour:
   - id: dried_meat
     displayName: Dried Meat
     category: 1
+  - id: water
+    displayName: Water
+    category: 1

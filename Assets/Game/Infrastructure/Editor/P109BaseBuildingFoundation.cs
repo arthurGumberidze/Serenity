@@ -20,6 +20,20 @@ namespace Game.Infrastructure.Editor
         public const string FoodStoragePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_FoodStorage.prefab";
         public const string DryingRackPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_DryingRack.prefab";
         public const string HideWorkshopPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_HideWorkshop.prefab";
+        public const string ClanHousePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_ClanHouse.prefab";
+        public const string HealerHutPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_HealerHut.prefab";
+        public const string ShrinePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_Shrine.prefab";
+        public const string ChiefHutPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_ChiefHut.prefab";
+        public const string MeetingAreaPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_MeetingArea.prefab";
+        public const string TrainingGroundPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_TrainingGround.prefab";
+        public const string FishingCampPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_FishingCamp.prefab";
+        public const string GatheringAreaPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_GatheringArea.prefab";
+        public const string PrimitiveGardenPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveGarden.prefab";
+        public const string WellPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_Well.prefab";
+        public const string PalisadePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_Palisade.prefab";
+        public const string GatePath = "Assets/Game/Art/Prefabs/Buildings/Serenity_Gate.prefab";
+        public const string WatchtowerPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_Watchtower.prefab";
+        public const string PrimitivePathPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitivePath.prefab";
         private const string CropPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveCropPlot.prefab";
         private const string MaterialFolder = "Assets/Game/Art/Materials/P94";
         private const string HutModelPath = "Assets/SoftLeitner/CityBuilderThree/Models/hut.fbx";
@@ -49,6 +63,7 @@ namespace Game.Infrastructure.Editor
             BuildFoodStorage();
             BuildDryingRack();
             BuildHideWorkshop();
+            BuildExtendedBuildings();
         }
 
         public static void ConfigureCatalog(BuildingPresentationCatalog catalog)
@@ -65,7 +80,9 @@ namespace Game.Infrastructure.Editor
                 Entry("stone_age_hut", "Stone Age Hut", BuildingCategory.Shelter, 4, 4, Load<GameObject>(HutPath),
                     "A sturdier timber and hide home.", "building_stone_age_hut", 80, 3,
                     new[] { Cost("wood_log", 12), Cost("plant_fiber", 6), Cost("hide", 2) },
-                    "shelter_construction").ConfigureHousing(4),
+                    "shelter_construction").ConfigureHousing(4)
+                    .ConfigureMaintenance(24, 8, new[] { Cost("wood_log", 2), Cost("plant_fiber", 1) }, 30)
+                    .ConfigureUpgrades(new[] { Upgrade("clan_house", 100, Cost("wood_log", 16), Cost("stone", 8), Cost("cured_hide", 4)) }),
                 Entry("campfire", "Campfire", BuildingCategory.Food, 2, 2, Load<GameObject>(CampfirePath),
                     "A controlled fire and the settlement's first cooking place.", "building_campfire", 35, 2,
                     new[] { Cost("wood_log", 3), Cost("stone", 4) }, "controlled_fire")
@@ -111,7 +128,62 @@ namespace Game.Infrastructure.Editor
                 Entry("military_barracks", "Military Barracks", BuildingCategory.Military, 4, 3, shelter,
                     "A simple training and mustering shelter.", "building_military_barracks", 120, 3,
                     new[] { Cost("wood_log", 12), Cost("stone", 6) }, "organized_labor")
-                    .ConfigureStructure(1400, 900)
+                    .ConfigureStructure(1400, 900),
+                Entry("clan_house", "Clan House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
+                    "A large shared home with room for an extended clan.", "building_clan_house", 150, 4,
+                    new[] { Cost("wood_log", 26), Cost("stone", 12), Cost("cured_hide", 6) }, "organized_labor")
+                    .ConfigureHousing(10).ConfigureMaintenance(24, 6,
+                        new[] { Cost("wood_log", 3), Cost("plant_fiber", 2) }, 50),
+                Entry("healer_hut", "Healer Hut", BuildingCategory.Medical, 4, 4, Load<GameObject>(HealerHutPath),
+                    "A sheltered medical workplace for treating injuries and disease.", "building_healer_hut", 100, 3,
+                    new[] { Cost("wood_log", 12), Cost("stone", 5), Cost("plant_fiber", 8) }, "organized_labor")
+                    .ConfigureHousing(2).ConfigureWorkplace(2).ConfigureMaintenance(24, 7,
+                        new[] { Cost("wood_log", 2), Cost("plant_fiber", 2) }, 35),
+                Entry("shrine", "Shrine", BuildingCategory.Community, 3, 3, Load<GameObject>(ShrinePath),
+                    "A maintained communal place that supports settlement morale.", "building_shrine", 65, 3,
+                    new[] { Cost("stone", 10), Cost("wood_log", 4) }, "organized_labor")
+                    .ConfigureWorkplace(1).ConfigureMaintenance(24, 5, new[] { Cost("stone", 2) }, 25,
+                        new[] { Cost("plant_fiber", 1) }),
+                Entry("chief_hut", "Chief Hut", BuildingCategory.Community, 5, 4, Load<GameObject>(ChiefHutPath),
+                    "The chief's residence and the settlement governance workplace.", "building_chief_hut", 130, 4,
+                    new[] { Cost("wood_log", 20), Cost("stone", 8), Cost("cured_hide", 5) }, "organized_labor")
+                    .ConfigureHousing(4).ConfigureWorkplace(1).ConfigureMaintenance(24, 6,
+                        new[] { Cost("wood_log", 3), Cost("cured_hide", 1) }, 45),
+                Zone("meeting_area", "Meeting Area", BuildingCategory.Community, Load<GameObject>(MeetingAreaPath),
+                    "A marked area for settlement gatherings.", 35, Cost("wood_log", 3), Cost("stone", 2))
+                    .ConfigureWorkplace(12),
+                Zone("training_ground", "Training Ground", BuildingCategory.Military, Load<GameObject>(TrainingGroundPath),
+                    "An open practice area for improving combat skill.", 55, Cost("wood_log", 6), Cost("stone", 4))
+                    .ConfigureWorkplace(6),
+                Entry("fishing_camp", "Fishing Camp", BuildingCategory.Food, 4, 3, Load<GameObject>(FishingCampPath),
+                    "A shoreline base required for organized fishing.", "building_fishing_camp", 70, 3,
+                    new[] { Cost("wood_log", 8), Cost("plant_fiber", 6) }, "gathering")
+                    .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach |
+                        BuildingPlacementConstraint.OwnedTerritory | BuildingPlacementConstraint.Shoreline)
+                    .ConfigureWorkplace(4),
+                Zone("gathering_area", "Gathering Area", BuildingCategory.Production, Load<GameObject>(GatheringAreaPath),
+                    "A managed zone over wild berry and fibre sources.", 30, Cost("wood_log", 2), Cost("plant_fiber", 2))
+                    .ConfigureWorkplace(8),
+                Zone("primitive_garden", "Primitive Garden", BuildingCategory.Food, Load<GameObject>(PrimitiveGardenPath),
+                    "A larger cultivated zone with sowing and harvest cycles.", 60, Cost("wood_log", 4), Cost("plant_fiber", 5))
+                    .ConfigureWorkplace(4),
+                Entry("well", "Well", BuildingCategory.Infrastructure, 3, 3, Load<GameObject>(WellPath),
+                    "A stone-lined groundwater source.", "building_well", 85, 3,
+                    new[] { Cost("stone", 12), Cost("wood_log", 6) }, "advanced_stonecraft")
+                    .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach |
+                        BuildingPlacementConstraint.OwnedTerritory | BuildingPlacementConstraint.Groundwater)
+                    .ConfigureProduction(2, new[] { "draw_water" }, 4, 24),
+                Segment("palisade", "Palisade", BuildingCategory.Military, Load<GameObject>(PalisadePath), false,
+                    "A connected timber defensive barrier.", 35, Cost("wood_log", 5)),
+                Segment("gate", "Gate", BuildingCategory.Military, Load<GameObject>(GatePath), false,
+                    "A controllable passage through a palisade.", 55, Cost("wood_log", 8), Cost("stone", 2)),
+                Entry("watchtower", "Watchtower", BuildingCategory.Military, 3, 3, Load<GameObject>(WatchtowerPath),
+                    "An elevated defensive observation platform.", "building_watchtower", 100, 4,
+                    new[] { Cost("wood_log", 14), Cost("stone", 5), Cost("plant_fiber", 4) }, "organized_labor")
+                    .ConfigureWorkplace(2).ConfigureStructure(1600, 850),
+                Segment("primitive_path", "Primitive Path", BuildingCategory.Infrastructure,
+                    Load<GameObject>(PrimitivePathPath), true,
+                    "A terrain-following footpath that remains traversable.", 15, Cost("stone", 1))
             };
             catalog.Configure(entries, "primitive_shelter");
             var resources = Load<ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
@@ -123,7 +195,10 @@ namespace Game.Infrastructure.Editor
             var catalog = Load<BuildingPresentationCatalog>(U08BuildingFoundation.CatalogPath);
             catalog.Validate();
             foreach (var path in new[] { HutPath, CampfirePath, WorkshopPath, ButcherPath, HuntingCampPath,
-                         FoodStoragePath, DryingRackPath, HideWorkshopPath })
+                         FoodStoragePath, DryingRackPath, HideWorkshopPath, ClanHousePath, HealerHutPath,
+                         ShrinePath, ChiefHutPath, MeetingAreaPath, TrainingGroundPath, FishingCampPath,
+                         GatheringAreaPath, PrimitiveGardenPath, WellPath, PalisadePath, GatePath,
+                         WatchtowerPath, PrimitivePathPath })
             {
                 var prefab = Load<GameObject>(path);
                 if (prefab.GetComponent<BuildingPresenter>() == null || prefab.GetComponent<Collider>() == null)
@@ -135,14 +210,39 @@ namespace Game.Infrastructure.Editor
 
         private static BuildingPresentationCatalog.Entry Entry(string id, string name, BuildingCategory category,
             int width, int depth, GameObject prefab, string description, string icon, int minutes, int stages,
-            IEnumerable<BuildingPresentationCatalog.Entry.CostEntry> cost, params string[] technologies) =>
-            new BuildingPresentationCatalog.Entry().Configure(id, name, category, width, depth, prefab)
+            IEnumerable<BuildingPresentationCatalog.Entry.CostEntry> cost, params string[] technologies)
+        {
+            return new BuildingPresentationCatalog.Entry().Configure(id, name, category, width, depth, prefab)
                 .ConfigureMetadata(BuildingEra.StoneAge, description, icon, technologies)
                 .ConfigureConstruction(minutes, stages).ConfigureEconomy(cost)
-                .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach);
+                .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach)
+                .ConfigureMaintenance(24, 5, new[] { Cost("wood_log", 1) }, 30);
+        }
 
         private static BuildingPresentationCatalog.Entry.CostEntry Cost(string id, long quantity) =>
             new BuildingPresentationCatalog.Entry.CostEntry().Configure(id, quantity);
+
+        private static BuildingPresentationCatalog.Entry.UpgradeEntry Upgrade(string targetId, int minutes,
+            params BuildingPresentationCatalog.Entry.CostEntry[] cost) =>
+            new BuildingPresentationCatalog.Entry.UpgradeEntry().Configure(targetId, cost, minutes);
+
+        private static BuildingPresentationCatalog.Entry Zone(string id, string name, BuildingCategory category,
+            GameObject prefab, string description, int minutes,
+            params BuildingPresentationCatalog.Entry.CostEntry[] cost) =>
+            Entry(id, name, category, 3, 3, prefab, description, "building_" + id, minutes, 2, cost,
+                id == "primitive_garden" ? "primitive_agriculture" : "organized_labor")
+                .Configure("" + id, name, category, 3, 3, prefab, BuildingPlacementMode.Grid, true)
+                .ConfigurePlacement(BuildingSpatialForm.Zone, BuildingPlacementConstraint.OwnedTerritory);
+
+        private static BuildingPresentationCatalog.Entry Segment(string id, string name, BuildingCategory category,
+            GameObject prefab, bool overlap, string description, int minutes,
+            params BuildingPresentationCatalog.Entry.CostEntry[] cost) =>
+            new BuildingPresentationCatalog.Entry().Configure(id, name, category, 1, 1, prefab,
+                    BuildingPlacementMode.Grid, overlap)
+                .ConfigureMetadata(BuildingEra.StoneAge, description, "building_" + id,
+                    new[] { "organized_labor" }).ConfigureConstruction(minutes, 2).ConfigureEconomy(cost)
+                .ConfigurePlacement(BuildingSpatialForm.Segment, BuildingPlacementConstraint.OwnedTerritory)
+                .ConfigureMaintenance(24, 5, new[] { Cost("wood_log", 1) }, 20);
 
         private static void BuildHut()
         {
@@ -326,6 +426,122 @@ namespace Game.Infrastructure.Editor
             Part(PrimitiveType.Cube, "Scraping bench", finish, new Vector3(0f, .55f, -.7f),
                 new Vector3(2.2f, .16f, .65f), DarkBark);
             Save(root, HideWorkshopPath);
+        }
+
+        private static void BuildExtendedBuildings()
+        {
+            BuildFacility(ClanHousePath, "Serenity Clan House", new Vector3(6f, 4f, 5f), FacilityKind.House);
+            BuildFacility(HealerHutPath, "Serenity Healer Hut", new Vector3(4f, 3.2f, 4f), FacilityKind.Healer);
+            BuildFacility(ShrinePath, "Serenity Shrine", new Vector3(3f, 2.8f, 3f), FacilityKind.Shrine);
+            BuildFacility(ChiefHutPath, "Serenity Chief Hut", new Vector3(5f, 3.8f, 4f), FacilityKind.Chief);
+            BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, .2f, 3f), FacilityKind.Zone);
+            BuildFacility(TrainingGroundPath, "Serenity Training Ground", new Vector3(3f, .2f, 3f), FacilityKind.Training);
+            BuildFacility(FishingCampPath, "Serenity Fishing Camp", new Vector3(4f, 2.8f, 3f), FacilityKind.Fishing);
+            BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, .2f, 3f), FacilityKind.Zone);
+            BuildFacility(PrimitiveGardenPath, "Serenity Primitive Garden", new Vector3(3f, .2f, 3f), FacilityKind.Garden);
+            BuildFacility(WellPath, "Serenity Well", new Vector3(3f, 2.5f, 3f), FacilityKind.Well);
+            BuildFacility(PalisadePath, "Serenity Palisade", new Vector3(1f, 2.8f, 1f), FacilityKind.Palisade);
+            BuildFacility(GatePath, "Serenity Gate", new Vector3(1f, 3.2f, 1f), FacilityKind.Gate);
+            BuildFacility(WatchtowerPath, "Serenity Watchtower", new Vector3(3f, 6f, 3f), FacilityKind.Watchtower);
+            BuildFacility(PrimitivePathPath, "Serenity Primitive Path", new Vector3(1f, .08f, 1f), FacilityKind.Path);
+        }
+
+        private enum FacilityKind { House, Healer, Shrine, Chief, Zone, Training, Fishing, Garden, Well, Palisade, Gate, Watchtower, Path }
+
+        private static void BuildFacility(string path, string name, Vector3 size, FacilityKind kind)
+        {
+            var root = Root(name, size, new Vector3(0f, size.y * .5f, 0f));
+            if (kind == FacilityKind.Zone || kind == FacilityKind.Training || kind == FacilityKind.Garden ||
+                kind == FacilityKind.Path) root.GetComponent<BoxCollider>().isTrigger = true;
+            var baseStage = Stage(root.transform, "Stage 1 Foundation", 1);
+            Part(PrimitiveType.Cube, "Ground", baseStage, new Vector3(0f, .04f, 0f),
+                new Vector3(Mathf.Max(.85f, size.x * .9f), .08f, Mathf.Max(.85f, size.z * .9f)),
+                kind == FacilityKind.Path || kind == FacilityKind.Garden ? Soil : Stone);
+            var finish = Stage(root.transform, "Stage 2 Finished", 2);
+            if (kind == FacilityKind.Zone)
+            {
+                for (var i = 0; i < 4; i++)
+                {
+                    var angle = i * Mathf.PI * .5f;
+                    Part(PrimitiveType.Cylinder, "Boundary marker", finish,
+                        new Vector3(Mathf.Cos(angle) * 1.15f, .16f, Mathf.Sin(angle) * 1.15f),
+                        new Vector3(.12f, .16f, .12f), Bark);
+                }
+            }
+            else if (kind == FacilityKind.Training)
+            {
+                Part(PrimitiveType.Cylinder, "Practice post", finish, new Vector3(0f, .9f, 0f),
+                    new Vector3(.18f, .9f, .18f), Bark);
+                Part(PrimitiveType.Sphere, "Straw target", finish, new Vector3(0f, 1.45f, 0f),
+                    new Vector3(.55f, .55f, .18f), Hide);
+            }
+            else if (kind == FacilityKind.Garden)
+            {
+                for (var z = -1; z <= 1; z++)
+                    Part(PrimitiveType.Cube, "Cultivated row", finish, new Vector3(0f, .13f, z * .72f),
+                        new Vector3(2.55f, .16f, .32f), DarkBark);
+            }
+            else if (kind == FacilityKind.Well)
+            {
+                for (var i = 0; i < 12; i++)
+                {
+                    var angle = i * Mathf.PI * 2f / 12f;
+                    Part(PrimitiveType.Cube, "Well stone", finish,
+                        new Vector3(Mathf.Cos(angle) * .82f, .38f, Mathf.Sin(angle) * .82f),
+                        new Vector3(.38f, .38f, .32f), Stone, new Vector3(0f, -angle * Mathf.Rad2Deg, 0f));
+                }
+                foreach (var x in new[] { -.92f, .92f })
+                    Part(PrimitiveType.Cylinder, "Well post", finish, new Vector3(x, 1.45f, 0f),
+                        new Vector3(.11f, 1.2f, .11f), Bark);
+            }
+            else if (kind == FacilityKind.Palisade)
+            {
+                for (var z = -1; z <= 1; z++)
+                    Part(PrimitiveType.Cylinder, "Palisade stake", finish, new Vector3(0f, 1.25f, z * .3f),
+                        new Vector3(.2f, 1.25f, .2f), Bark);
+            }
+            else if (kind == FacilityKind.Gate)
+            {
+                foreach (var z in new[] { -.34f, .34f })
+                    Part(PrimitiveType.Cylinder, "Gate post", finish, new Vector3(0f, 1.45f, z),
+                        new Vector3(.18f, 1.45f, .18f), Bark);
+                Part(PrimitiveType.Cube, "Gate lintel", finish, new Vector3(0f, 2.75f, 0f),
+                    new Vector3(.34f, .18f, 1.05f), DarkBark);
+            }
+            else if (kind == FacilityKind.Path)
+            {
+                Part(PrimitiveType.Cube, "Packed path", finish, new Vector3(0f, .07f, 0f),
+                    new Vector3(.92f, .06f, .92f), Soil);
+            }
+            else if (kind == FacilityKind.Watchtower)
+            {
+                foreach (var x in new[] { -1f, 1f }) foreach (var z in new[] { -1f, 1f })
+                    Part(PrimitiveType.Cylinder, "Tower post", finish, new Vector3(x, 2.7f, z),
+                        new Vector3(.16f, 2.7f, .16f), Bark);
+                Part(PrimitiveType.Cube, "Watch platform", finish, new Vector3(0f, 5.2f, 0f),
+                    new Vector3(2.7f, .18f, 2.7f), DarkBark);
+                Part(PrimitiveType.Cube, "Hide roof", finish, new Vector3(0f, 5.85f, 0f),
+                    new Vector3(3f, .12f, 3f), Hide);
+            }
+            else
+            {
+                foreach (var x in new[] { -size.x * .38f, size.x * .38f })
+                    foreach (var z in new[] { -size.z * .36f, size.z * .36f })
+                        Part(PrimitiveType.Cylinder, "Timber post", finish, new Vector3(x, size.y * .42f, z),
+                            new Vector3(.14f, size.y * .42f, .14f), Bark);
+                Part(PrimitiveType.Cube, kind == FacilityKind.Shrine ? "Offering stone" : "Hide roof", finish,
+                    new Vector3(0f, size.y * .82f, 0f),
+                    kind == FacilityKind.Shrine ? new Vector3(1.4f, .45f, 1.4f) :
+                        new Vector3(size.x * .92f, .14f, size.z * .92f),
+                    kind == FacilityKind.Shrine ? Stone : kind == FacilityKind.Chief ? DarkBark : Hide);
+                if (kind == FacilityKind.Fishing)
+                    Part(PrimitiveType.Cylinder, "Net rack", finish, new Vector3(0f, 1.05f, .7f),
+                        new Vector3(.08f, 1.2f, .08f), Bark, new Vector3(0f, 0f, 90f));
+                if (kind == FacilityKind.Healer)
+                    Part(PrimitiveType.Cube, "Treatment bed", finish, new Vector3(0f, .5f, 0f),
+                        new Vector3(2f, .18f, .75f), Hide);
+            }
+            Save(root, path);
         }
 
         private static GameObject Root(string name, Vector3 colliderSize, Vector3 colliderCenter)

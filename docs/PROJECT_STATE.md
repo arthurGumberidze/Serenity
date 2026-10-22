@@ -1,5 +1,32 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings E1-E4
+
+E1-E4 are complete. The building catalog now contains fourteen additional playable definitions and
+project-owned prefabs: Clan House, Healer Hut, Shrine, Chief Hut, Meeting Area, Training Ground,
+Fishing Camp, Gathering Area, Primitive Garden, Well, Palisade, Gate, Watchtower and Primitive Path.
+They retain the shared construction, placement, occupancy, production, logistics and research authorities.
+Housing and workplace assignments enforce capacity and one active home/workplace per resident. Healer
+treatment and Training Ground progression call the existing health/skill services; shrine, meeting and
+chief facilities expose bounded settlement effects without creating a second population authority.
+
+Fishing requires an operational Fishing Camp. The Well produces the canonical `water` resource, while
+Fishing Camp and Well use shoreline/groundwater plus owned-territory placement rules. Zone and segment
+forms are placeable through the normal UI. Gates open and close by releasing/reserving their exact shared
+occupancy cells, and destroyed structures release their cells. Building wear uses deterministic operation
+IDs. Repairs and upgrades validate work and atomically charge once; a Stone Age Hut upgrades to Clan House
+without changing its stable entity ID. Demolition cancels production, spills storage cargo, returns the
+configured material fraction exactly once, and removes registry/occupancy state.
+
+Authoring commands for the building and resource catalogs completed successfully. Final P10.9 EditMode
+passed 24/24 (`Artifacts/P109/buildings-e/p109-editmode-final.xml`); the directly affected EditMode set
+passed 66/66 (`affected-editmode-2.xml`). The affected PlayMode command entered LocalGameplay but stalled
+during known UMA initialization and produced no NUnit XML; the verified test-owned process tree was stopped,
+so no PlayMode pass is claimed. Windows Development build `Builds/P109BuildingsE/Serenity.exe` succeeded
+with 0 errors / 53 warnings (`build.log`), GUID `709397d549104081bccd3d70d355d5e7`. The build process was
+stopped after Unity recorded success but before its optional provenance post-step finished, so no immutable
+source-fingerprint claim is made for this build. C5 remains deferred by user direction; F1 is next.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings D1-D2
 
 D1 and D2 are complete. Hunting now requires an operational Hunting Camp and yields one whole

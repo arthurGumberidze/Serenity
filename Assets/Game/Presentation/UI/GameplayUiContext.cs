@@ -32,6 +32,7 @@ using Game.Simulation.Events;
 using Game.Simulation.Campaign;
 using Game.Simulation.Domestic;
 using Game.Simulation.Diagnostics;
+using Game.Simulation.Buildings;
 using UnityEngine;
 
 namespace Game.Presentation.UI
@@ -108,6 +109,39 @@ namespace Game.Presentation.UI
             CampaignProgressService campaign = null, Action<long> startNewGame = null,
             Action requestMainMenu = null, Func<IReadOnlyList<StableEntityId>> playerCharacterIds = null,
             Action<WorldPosition> focusWorld = null)
+            : this(clock, characters, selection, resources, inventories, storedResources, production, research,
+                aiAgents, aiScheduler, work, directWork, contextCommands, tiers, presentations,
+                manualMoveCommands, worldPiles, buildings, buildingCatalog, buildingPlacement, health, domestic,
+                weather, dynasty, family, gameRun, military, militaryRepresentations, militaryCommands,
+                militaryTraining, militaryAttack, settlementCapture, battles, combat, diagnostics, playerControl,
+                thirdPerson, globalMap, saves, setPaused, setSpeed, requestEnterGlobal, requestEnterLocation,
+                requestEnterBattle, setDeveloperUiVisible, legacyDebugOverlays, events, campaign, startNewGame,
+                requestMainMenu, playerCharacterIds, focusWorld, null, null)
+        {
+        }
+
+        public GameplayUiContext(Func<GameClock> clock, CharacterRegistry characters,
+            SelectionProbe selection, ResourceCatalog resources, ResourceInventoryRegistry inventories,
+            SettlementResourceView storedResources, ProductionService production, ResearchService research,
+            Tier1AiAgentRegistry aiAgents, Tier1AiScheduler aiScheduler, WorkManager work,
+            DirectWorkCommandService directWork, ContextCommandService contextCommands, TierManager tiers,
+            CharacterPresentationRegistry presentations,
+            ManualMoveCommandService manualMoveCommands, WorldPileService worldPiles, BuildingRegistry buildings,
+            BuildingPresentationCatalog buildingCatalog, BuildingPlacementController buildingPlacement,
+            HealthAndFamilyService health, DomesticService domestic, WeatherService weather, DynastyState dynasty,
+            FamilyTreeQuery family, GameRunState gameRun, MilitaryUnitService military,
+            MilitaryUnitRepresentationService militaryRepresentations, MilitaryUnitCommandService militaryCommands,
+            MilitaryTrainingService militaryTraining, MilitaryAttackCommandService militaryAttack,
+            SettlementFlagCaptureService settlementCapture, BattleResolutionService battles, CombatService combat,
+            DiagnosticService diagnostics, PlayerControlService playerControl, ThirdPersonControlController thirdPerson,
+            GlobalMapService globalMap, IGameplaySaveFacade saves, Action<bool> setPaused,
+            Action<Game.Simulation.Time.GameSpeed> setSpeed, Action requestEnterGlobal,
+            Action<WorldLocationId> requestEnterLocation, Action<StableEntityId> requestEnterBattle,
+            Action<bool> setDeveloperUiVisible, IEnumerable<Behaviour> legacyDebugOverlays,
+            EventService events, CampaignProgressService campaign, Action<long> startNewGame,
+            Action requestMainMenu, Func<IReadOnlyList<StableEntityId>> playerCharacterIds,
+            Action<WorldPosition> focusWorld, BuildingLifecycleService buildingLifecycle,
+            BuildingPathingService buildingPathing, SettlementFacilityService facilities = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -161,6 +195,9 @@ namespace Game.Presentation.UI
             RequestMainMenu = requestMainMenu;
             PlayerCharacterIds = playerCharacterIds ?? (() => Array.Empty<StableEntityId>());
             FocusWorld = focusWorld ?? (_ => { });
+            BuildingLifecycle = buildingLifecycle;
+            BuildingPathing = buildingPathing;
+            Facilities = facilities;
         }
 
         public Func<GameClock> Clock { get; }
@@ -215,5 +252,8 @@ namespace Game.Presentation.UI
         public Action RequestMainMenu { get; }
         public Func<IReadOnlyList<StableEntityId>> PlayerCharacterIds { get; }
         public Action<WorldPosition> FocusWorld { get; }
+        public BuildingLifecycleService BuildingLifecycle { get; }
+        public BuildingPathingService BuildingPathing { get; }
+        public SettlementFacilityService Facilities { get; }
     }
 }

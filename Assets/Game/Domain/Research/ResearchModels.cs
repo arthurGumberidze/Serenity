@@ -233,6 +233,11 @@ namespace Game.Domain.Research
             };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_water")))
                 gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
+            foreach (var id in new[] { "fishing_camp", "gathering_area" })
+            {
+                var buildingId = new BuildingDefinitionId(id);
+                if (availableBuildingIds.Contains(buildingId)) gatheringUnlocks.Add(TechnologyUnlock.Building(buildingId));
+            }
             var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
                 huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
@@ -244,8 +249,12 @@ namespace Game.Domain.Research
                 if (availableBuildingIds.Contains(buildingId)) huntingUnlocks.Add(TechnologyUnlock.Building(buildingId));
             }
             var organizedLaborUnlocks = new List<TechnologyUnlock> { C("organized_labor") };
-            if (availableBuildingIds.Contains(new BuildingDefinitionId("military_barracks")))
-                organizedLaborUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("military_barracks")));
+            foreach (var id in new[] { "military_barracks", "clan_house", "healer_hut", "shrine", "chief_hut",
+                         "meeting_area", "training_ground", "palisade", "gate", "watchtower", "primitive_path" })
+            {
+                var buildingId = new BuildingDefinitionId(id);
+                if (availableBuildingIds.Contains(buildingId)) organizedLaborUnlocks.Add(TechnologyUnlock.Building(buildingId));
+            }
             var foodPreservationUnlocks = new List<TechnologyUnlock> { C("food_preservation") };
             foreach (var recipeId in new[] { "dry_meat", "cure_hide" })
             {
@@ -288,12 +297,18 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("primitive_agriculture"), "Primitive Agriculture",
                     new[] { T("controlled_fire"), T("fiber_working"), T("stone_tools") }, TimeSpan.FromDays(5),
                     new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_crop_plot")),
+                        availableBuildingIds.Contains(new BuildingDefinitionId("primitive_garden"))
+                            ? TechnologyUnlock.Building(new BuildingDefinitionId("primitive_garden"))
+                            : TechnologyUnlock.Capability(new CapabilityId("basic_survival")),
                         TechnologyUnlock.Recipe(new ProductionRecipeId("cultivate_berries")) }),
                 new TechnologyDefinition(T("weaving"), "Weaving", new[] { T("fiber_working"), T("organized_labor") }, TimeSpan.FromDays(4),
                     new[] { C("weaving") }),
                 new TechnologyDefinition(T("advanced_stonecraft"), "Advanced Stonecraft",
                     new[] { T("stone_tools"), T("woodworking"), T("hunting") }, TimeSpan.FromDays(5),
-                    new[] { C("advanced_stonecraft") }),
+                    availableBuildingIds.Contains(new BuildingDefinitionId("well"))
+                        ? new[] { C("advanced_stonecraft"), TechnologyUnlock.Building(new BuildingDefinitionId("well")),
+                            TechnologyUnlock.Recipe(new ProductionRecipeId("draw_water")) }
+                        : new[] { C("advanced_stonecraft") }),
                 new TechnologyDefinition(T("industrial_extraction"), "Industrial Extraction",
                     new[] { T("advanced_stonecraft"), T("organized_labor") }, TimeSpan.FromDays(5),
                     new[] { C("industrial_extraction") }),

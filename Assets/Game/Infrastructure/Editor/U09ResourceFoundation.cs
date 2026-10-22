@@ -40,7 +40,8 @@ namespace Game.Infrastructure.Editor
                 new ResourceCatalogAsset.Entry().Configure("cooked_meat", "Cooked Meat", ResourceCategory.Food),
                 new ResourceCatalogAsset.Entry().Configure("cooked_fish", "Cooked Fish", ResourceCategory.Food),
                 new ResourceCatalogAsset.Entry().Configure("cooked_berries", "Cooked Berries", ResourceCategory.Food),
-                new ResourceCatalogAsset.Entry().Configure("dried_meat", "Dried Meat", ResourceCategory.Food)
+                new ResourceCatalogAsset.Entry().Configure("dried_meat", "Dried Meat", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("water", "Water", ResourceCategory.Food)
             });
             EditorUtility.SetDirty(catalog);
             U08BuildingFoundation.RefreshCatalogAndPrefabs();

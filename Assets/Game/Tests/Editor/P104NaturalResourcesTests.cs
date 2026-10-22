@@ -57,7 +57,7 @@ namespace Game.Tests.Editor
             Assert.That(resources.All.Select(x => x.Id.ToString()), Is.EquivalentTo(new[]
             {
                 "wood_log", "stone", "plant_fiber", "hide", "carcass", "bone", "berries", "iron_ore", "gold_ore", "meat", "fish",
-                "cooked_berries", "cooked_fish", "cooked_meat", "cured_hide", "dried_meat"
+                "cooked_berries", "cooked_fish", "cooked_meat", "cured_hide", "dried_meat", "water"
             }));
             var recipes = ProductionCatalog.CreateStoneAge(resources);
             Assert.That(recipes.Get(new ProductionRecipeId("hunt_animal")).Outputs
@@ -70,6 +70,8 @@ namespace Game.Tests.Editor
                 Is.EqualTo("cured_hide"));
             Assert.That(recipes.Get(new ProductionRecipeId("fish_water")).Outputs.Single().ResourceId.ToString(),
                 Is.EqualTo("fish"));
+            Assert.That(recipes.Get(new ProductionRecipeId("draw_water")).Outputs.Single().ResourceId.ToString(),
+                Is.EqualTo("water"));
         }
 
         [Test]

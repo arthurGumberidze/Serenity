@@ -114,6 +114,7 @@ namespace Game.Presentation.Buildings
                     previewEvaluation.Cells);
             constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
                 previewCoordinate, orientation, fundingSources());
+            if (construction != null) previewEvaluation = constructionEvaluation.Placement;
             LastConstructionFailure = constructionEvaluation.Failure;
             if (previewObject != null)
             {

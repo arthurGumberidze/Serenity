@@ -183,7 +183,7 @@ namespace Game.Domain.Buildings
         private ulong nextEventSequence;
 
         public StableEntityId Id { get; }
-        public BuildingDefinitionId DefinitionId { get; }
+        public BuildingDefinitionId DefinitionId { get; private set; }
         public GridCoordinate Coordinate { get; }
         public BuildingOrientation Orientation { get; }
         public ConstructionState ConstructionState { get; private set; }
@@ -279,7 +279,7 @@ namespace Game.Domain.Buildings
             ConstructionPhase = ConstructionStageIndex == ConstructionStageCount
                 ? ConstructionPhase.Building : ConstructionPhase.AwaitingMaterials;
         }
-        public int MaxIntegrity { get; }
+        public int MaxIntegrity { get; private set; }
         public int CurrentIntegrity { get; private set; }
         public BuildingStructuralStatus StructuralStatus { get; private set; }
         public CombatSideId OwnerSideId { get; private set; }
@@ -375,6 +375,38 @@ namespace Game.Domain.Buildings
                 history.Add(new BuildingEventState(nextEventSequence++, calendarTick, BuildingEventKind.Destroyed));
             }
             return applied;
+        }
+
+        public int Repair(StableEntityId eventId, int amount, long calendarTick)
+        {
+            if (!eventId.IsValid) throw new ArgumentException("Repair event identity required.", nameof(eventId));
+            if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (IsDestroyed || !IsOperational || CurrentIntegrity >= MaxIntegrity || !processedDamageEvents.Add(eventId))
+                return 0;
+            var applied = Math.Min(amount, MaxIntegrity - CurrentIntegrity);
+            CurrentIntegrity += applied;
+            StructuralStatus = StatusFor(CurrentIntegrity, MaxIntegrity);
+            history.Add(new BuildingEventState(nextEventSequence++, calendarTick, BuildingEventKind.Repaired,
+                eventId, amount: applied));
+            return applied;
+        }
+
+        public bool UpgradeTo(StableEntityId eventId, BuildingDefinition target, long calendarTick)
+        {
+            if (!eventId.IsValid) throw new ArgumentException("Upgrade event identity required.", nameof(eventId));
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (IsDestroyed || !IsOperational || target.Id == DefinitionId || !processedDamageEvents.Add(eventId)) return false;
+            var oldMaximum = MaxIntegrity;
+            CurrentIntegrity = Math.Max(1, (int)Math.Min(target.MaxIntegrity,
+                ((long)CurrentIntegrity * target.MaxIntegrity + oldMaximum - 1L) / oldMaximum));
+            DefinitionId = target.Id;
+            MaxIntegrity = target.MaxIntegrity;
+            StructuralStatus = StatusFor(CurrentIntegrity, MaxIntegrity);
+            history.Add(new BuildingEventState(nextEventSequence++, calendarTick, BuildingEventKind.Upgraded,
+                eventId));
+            return true;
         }
 
         public void MarkStorageSpilled()

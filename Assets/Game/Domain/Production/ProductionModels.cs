@@ -147,6 +147,7 @@ namespace Game.Domain.Production
             var curedHide = new ResourceId("cured_hide");
             var driedMeat = new ResourceId("dried_meat");
             var fish = new ResourceId("fish");
+            var water = new ResourceId("water");
             var recipes = new List<ProductionRecipe>
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
@@ -204,6 +205,10 @@ namespace Game.Domain.Production
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_water"), "Fish Water", null,
                     new[] { new ResourceAmount(fish, new ResourceQuantity(4)) }, TimeSpan.FromHours(8),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(water))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("draw_water"), "Draw Water", null,
+                    new[] { new ResourceAmount(water, new ResourceQuantity(4)) }, TimeSpan.FromMinutes(30),
+                    ProductionSiteKind.BuildingWorkplace));
             var cookedMeat = new ResourceId("cooked_meat");
             var cookedFish = new ResourceId("cooked_fish");
             var cookedBerries = new ResourceId("cooked_berries");

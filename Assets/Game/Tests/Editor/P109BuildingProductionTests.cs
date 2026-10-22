@@ -269,6 +269,30 @@ namespace Game.Tests.Editor
             Assert.That(inventories.Get(foodStorage).GetAmount(driedMeat).Units, Is.EqualTo(1));
         }
 
+        [Test]
+        public void FishingRequiresAnOperationalFishingCamp()
+        {
+            var resources = new ResourceCatalog(new[]
+            {
+                new ResourceDefinition(new ResourceId("wood_log"), "Wood", ResourceCategory.Construction),
+                new ResourceDefinition(new ResourceId("stone"), "Stone", ResourceCategory.Construction),
+                new ResourceDefinition(new ResourceId("plant_fiber"), "Fiber", ResourceCategory.Construction),
+                new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food),
+                new ResourceDefinition(new ResourceId("fish"), "Fish", ResourceCategory.Food)
+            });
+            var inventories = new ResourceInventoryRegistry(); var buildings = new BuildingRegistry();
+            var production = new ProductionService(ProductionCatalog.CreateStoneAge(resources), resources,
+                inventories, buildings, new ResourceTransferService(inventories));
+            var recipe = new ProductionRecipeId("fish_water");
+            Assert.That(production.IsRecipeAvailable(recipe), Is.False);
+            var camp = Building.Restore(new BuildingState(Fixture.Id(90), new BuildingDefinitionId("fishing_camp"),
+                default, BuildingOrientation.North, ConstructionState.Completed));
+            buildings.Add(camp);
+            Assert.That(production.IsRecipeAvailable(recipe), Is.True);
+            camp.ApplyDamage(Fixture.Id(91), camp.MaxIntegrity, BuildingDamageType.Generic, 1);
+            Assert.That(production.IsRecipeAvailable(recipe), Is.False);
+        }
+
         private static Building AddWorkplace(BuildingRegistry buildings, ProductionService production,
             string buildingId, string recipeId, int identity)
         {

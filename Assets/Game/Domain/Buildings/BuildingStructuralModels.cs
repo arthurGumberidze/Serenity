@@ -10,7 +10,8 @@ namespace Game.Domain.Buildings
     public enum BuildingStructuralStatus { Intact = 1, Damaged = 2, Critical = 3, Destroyed = 4 }
     public enum BuildingDamageType { Generic = 1, Combat = 2, Fire = 3 }
     public enum BuildingFireStatus { None = 0, Burning = 1, Extinguished = 2, BurnedOut = 3 }
-    public enum BuildingEventKind { Damaged = 1, Ignited = 2, Extinguished = 3, Destroyed = 4, Captured = 5 }
+    public enum BuildingEventKind { Damaged = 1, Ignited = 2, Extinguished = 3, Destroyed = 4, Captured = 5,
+        Repaired = 6, Upgraded = 7 }
     public enum BuildingDamageFailure { None = 0, MissingBuilding = 1, InvalidAmount = 2, AlreadyDestroyed = 3, DuplicateEvent = 4 }
     public enum BuildingFireFailure { None = 0, MissingBuilding = 1, InvalidIntensity = 2, AlreadyDestroyed = 3, AlreadyBurning = 4, NotBurning = 5 }
     public enum BuildingCaptureFailure

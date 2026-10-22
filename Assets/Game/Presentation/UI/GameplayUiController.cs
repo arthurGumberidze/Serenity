@@ -2234,6 +2234,47 @@ namespace Game.Presentation.UI
                 new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
             inspector.Add(ActionButton(building.IsOperational ? "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
+            if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
+            {
+                if (definition.Housing != null)
+                    inspector.Add(ActionButton("Поселить выбранных", () => TryCommand(() =>
+                    {
+                        var assigned = context.Selection.SelectedCharacterIds.Count(id =>
+                            context.Facilities.AssignHome(id, building.Id).Succeeded);
+                        SetStatus($"Назначено жильцов: {assigned}.");
+                    })));
+                if (definition.Workplace != null && definition.Production == null)
+                    inspector.Add(ActionButton("Назначить выбранных работников", () => TryCommand(() =>
+                    {
+                        var assigned = context.Selection.SelectedCharacterIds.Count(id =>
+                            context.Facilities.AssignWorkplace(id, building.Id).Succeeded);
+                        SetStatus($"Назначено работников: {assigned}.");
+                    })));
+                if (building.DefinitionId == new BuildingDefinitionId("training_ground"))
+                    inspector.Add(ActionButton("Провести тренировку", () => TryCommand(() =>
+                    {
+                        var trained = 0;
+                        foreach (var id in context.Selection.SelectedCharacterIds)
+                        {
+                            context.Facilities.AssignWorkplace(id, building.Id);
+                            if (context.Facilities.Train(id)) trained++;
+                        }
+                        SetStatus($"Прошли тренировку: {trained}.");
+                    })));
+                if (building.DefinitionId == new BuildingDefinitionId("healer_hut") &&
+                    context.Selection.SelectedCharacterIds.Count >= 2)
+                    inspector.Add(ActionButton("Лечить выбранных", () => TryCommand(() =>
+                    {
+                        var healerId = context.Selection.SelectedCharacterIds[0];
+                        var assignment = context.Facilities.AssignWorkplace(healerId, building.Id);
+                        if (!assignment.Succeeded && assignment.BuildingId != building.Id)
+                            throw new PlayerFacingException("Первого выбранного жителя нельзя назначить лекарем.");
+                        var recovered = 0;
+                        foreach (var patientId in context.Selection.SelectedCharacterIds.Skip(1))
+                            recovered += context.Facilities.Treat(healerId, patientId);
+                        SetStatus($"Лекарь завершил лечение; снято состояний: {recovered}.");
+                    })));
+            }
             if (!building.IsOperational)
                 inspector.Add(ActionButton("Отменить стройку", () => TryCommand(() =>
                 {
@@ -2241,7 +2282,59 @@ namespace Game.Presentation.UI
                         throw new PlayerFacingException("Стройку уже нельзя отменить.");
                     SetStatus("Стройка отменена; доставленные материалы возвращены на землю.");
                 })));
+            else if (context.BuildingLifecycle != null)
+            {
+                if (definition.Maintenance != null && building.CurrentIntegrity < building.MaxIntegrity)
+                    inspector.Add(ActionButton("Ремонтировать", () => TryCommand(() =>
+                    {
+                        var result = context.BuildingLifecycle.Repair(building.Id, StableEntityId.NewId(),
+                            TimeSpan.FromTicks(definition.Maintenance.RepairWorkRequiredTicks),
+                            context.Clock().State.CalendarTicks, LifecycleFundingSources());
+                        if (!result.Succeeded) throw new PlayerFacingException("Ремонт недоступен: " + result.Failure);
+                        SetStatus($"Ремонт завершён: +{result.IntegrityChanged} прочности.");
+                    })));
+                if (definition.Upgrades != null)
+                    foreach (var upgrade in definition.Upgrades.Options)
+                    {
+                        var capturedUpgrade = upgrade;
+                        inspector.Add(ActionButton("Улучшить: " + Content("building", upgrade.TargetDefinitionId.ToString()),
+                            () => TryCommand(() =>
+                            {
+                                var result = context.BuildingLifecycle.Upgrade(building.Id,
+                                    capturedUpgrade.TargetDefinitionId, StableEntityId.NewId(),
+                                    TimeSpan.FromTicks(capturedUpgrade.WorkRequiredTicks),
+                                    context.Clock().State.CalendarTicks, LifecycleFundingSources());
+                                if (!result.Succeeded) throw new PlayerFacingException("Улучшение недоступно: " + result.Failure);
+                                SetStatus("Здание улучшено.");
+                            })));
+                    }
+                if (building.DefinitionId == new BuildingDefinitionId("gate") && context.BuildingPathing != null)
+                {
+                    var open = context.BuildingPathing.IsGateOpen(building.Id);
+                    inspector.Add(ActionButton(open ? "Закрыть ворота" : "Открыть ворота", () => TryCommand(() =>
+                    {
+                        if (!context.BuildingPathing.SetGateOpen(building.Id, !open))
+                            throw new PlayerFacingException("Состояние ворот изменить нельзя.");
+                        SetStatus(open ? "Ворота закрыты." : "Ворота открыты.");
+                    })));
+                }
+                if (definition.Maintenance != null && definition.Maintenance.CanDemolish)
+                    inspector.Add(ActionButton("Демонтировать", () => TryCommand(() =>
+                    {
+                        var result = context.BuildingLifecycle.Demolish(building.Id,
+                            context.Clock().State.CalendarTicks);
+                        if (!result.Succeeded) throw new PlayerFacingException("Демонтаж недоступен: " + result.Failure);
+                        SetStatus("Здание демонтировано; пригодные материалы и содержимое склада возвращены.");
+                    })));
+            }
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));
+        }
+
+        private IEnumerable<InventoryOwner> LifecycleFundingSources()
+        {
+            foreach (var pile in context.WorldPiles.All.OrderBy(x => x.Id)) yield return pile.InventoryOwner;
+            foreach (var inventory in context.Inventories.All.OrderBy(x => x.Owner.Id))
+                if (inventory.Owner.Kind == InventoryOwnerKind.BuildingStorage) yield return inventory.Owner;
         }
 
         private void QueueProduction(Building building, ProductionRecipeId recipeId, int batches)

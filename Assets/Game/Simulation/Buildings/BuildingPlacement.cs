@@ -191,7 +191,14 @@ namespace Game.Simulation.Buildings
                 return request.AuthoredCells.Count == 0;
             }
             var authored = request.AuthoredCells;
-            if (authored.Count == 0 || authored.Count > MaximumAuthoredCells || authored[0] != request.Anchor || authored.Any(x => x.Level != request.Anchor.Level) || authored.Distinct().Count() != authored.Count)
+            if (authored.Count == 0)
+            {
+                cells = request.Definition.Placement.SpatialForm == BuildingSpatialForm.Segment
+                    ? new[] { request.Anchor }
+                    : request.Definition.Footprint.EnumerateCells(request.Anchor, request.Orientation).ToArray();
+                return true;
+            }
+            if (authored.Count > MaximumAuthoredCells || authored[0] != request.Anchor || authored.Any(x => x.Level != request.Anchor.Level) || authored.Distinct().Count() != authored.Count)
             { cells = Array.Empty<GridCoordinate>(); return false; }
             if (request.Definition.Placement.SpatialForm == BuildingSpatialForm.Segment)
             {

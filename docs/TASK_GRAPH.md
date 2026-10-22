@@ -2,20 +2,31 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
-P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3, C1-C4 and D1-D2 DONE; C5 DEFERRED by
+P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3, C1-C4, D1-D2 and E1-E4 DONE; C5 DEFERRED by
 explicit user direction on 2026-10-22; the gameplay-feedback stabilization slice is DONE in code
-with final Player acceptance retained for F1. E1 is next; E1-E4 and F1 remain inside P10.9. Internal slices keep targeted
+with final Player acceptance retained for F1. F1 is next and remains inside P10.9. Internal slices keep targeted
 automated tests, documentation and local commits. By user direction on 2026-10-22, C1-C4 run
 continuously with one sufficiently broad regression and separate Windows build after C4; broad
 regressions are otherwise reserved for F1 or a concrete compatibility/data-loss risk.
 The implementation order and gates are defined in `P109_STONE_AGE_BUILDINGS_PLAN.md`.
+
+P10.9 E1-E4 extended buildings and lifecycle (2026-10-22): DONE. Fourteen canonical definitions and
+project-owned prefabs cover clan housing, healer/shrine/chief/meeting/training facilities, fishing,
+gathering, garden, well, palisade, gate, watchtower and path. Home/work assignments enforce capacity and
+exclusivity; healer/training and passive social effects use existing character authorities. Shoreline and
+groundwater placement rules, fishing-camp gating and well water production are data-driven. Gates alter
+the shared occupancy graph; destruction releases occupied cells. Wear, repair, hut upgrade and demolition
+are exactly-once operations over canonical building/inventory state, preserving stable identity and cargo.
+P10.9 EditMode passed 24/24 and affected EditMode 66/66. Windows Development build succeeded with
+0 errors / 53 warnings, GUID `709397d549104081bccd3d70d355d5e7`. Affected PlayMode stalled during
+known UMA LocalGameplay initialization and produced no NUnit result; final native acceptance remains F1.
 
 P10.9 D1-D2 hunting and preservation (2026-10-22): DONE. An operational Hunting Camp gates hunting;
 whole carcasses are conserved through a Butcher Station into meat, hides and bones. Food Storage,
 Drying Rack and Hide Workshop complete the shared logistics/production chain with dried edible meat
 and cured hides. The five D-stage prefabs have staged visuals and canonical definitions. Focused
 EditMode passed 37/37; Windows Development build succeeded with 0 errors / 53 warnings, GUID
-dc35880aece74843b8f7d799bb8576c2. E1 is next; C5 remains deferred and final acceptance stays at F1.
+dc35880aece74843b8f7d799bb8576c2. E1-E4 are now complete; C5 remains deferred and final acceptance stays at F1.
 
 P10.9 gameplay-feedback stabilization (2026-10-22): DONE in implementation. Independent gatherers
 and source-capacity rejection, locomotion/sleep/indoor visibility, construction cancel/reasons/progress,

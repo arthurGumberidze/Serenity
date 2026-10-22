@@ -164,6 +164,9 @@ namespace Game.Infrastructure
         public DynastyDebugOverlay DynastyDebug { get; private set; }
         public HealthAndFamilyService HealthFamily { get; private set; }
         public DomesticService Domestic { get; private set; }
+        public SettlementFacilityService Facilities { get; private set; }
+        public BuildingPathingService BuildingPathing { get; private set; }
+        public BuildingLifecycleService BuildingLifecycle { get; private set; }
         public HealthFamilyDebugOverlay HealthFamilyDebug { get; private set; }
         public WeatherService Weather { get; private set; }
         public WeatherDebugOverlay WeatherDebug { get; private set; }
@@ -300,6 +303,8 @@ namespace Game.Infrastructure
                     Mathf.CeilToInt(WorldDefinition.Origin.Z),
                     Mathf.CeilToInt(WorldDefinition.Origin.X + WorldDefinition.WidthMeters) - 1,
                     Mathf.CeilToInt(WorldDefinition.Origin.Z + WorldDefinition.DepthMeters) - 1));
+            BuildingPathing = new BuildingPathingService(Buildings, BuildingOccupancy,
+                id => buildingCatalog.ResolveDefinition(id));
             if (buildingCatalog.ResourceCatalog == null) throw new InvalidOperationException("Building catalog has no resource catalog.");
             Resources = buildingCatalog.ResourceCatalog.CreateCatalog();
             InhabitableRegion = GetComponent<P5InhabitableRegionPresentation>();
@@ -406,6 +411,8 @@ namespace Game.Infrastructure
             FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
             Domestic = new DomesticService(Characters, Buildings, HealthFamily);
+            Facilities = new SettlementFacilityService(Characters, Buildings,
+                id => buildingCatalog.ResolveDefinition(id), HealthFamily);
             RegisterStarterDomestic();
             SpawnDemoPile("berries", 60, new GridCoordinate(-8, -4), new Color(0.6f, 0.12f, 0.18f), 4);
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
@@ -558,6 +565,11 @@ namespace Game.Infrastructure
             BuildingDamage = new BuildingDamageService(Buildings,
                 buildingCatalog.Entries.Select(entry => buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))),
                 Production, Inventories, WorldPiles, Weather, Combat, BuildingOccupancy);
+            BuildingLifecycle = new BuildingLifecycleService(Buildings,
+                id => buildingCatalog.ResolveDefinition(id), BuildingDamage, Inventories, WorldPiles,
+                BuildingOccupancy, Production);
+            BuildingLifecycle.BuildingChanged += OnBuildingChanged;
+            BuildingLifecycle.BuildingDemolished += OnBuildingDemolished;
             var strategicDefinitions = buildingCatalog.Entries.Select(entry =>
                 buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))).ToArray();
             StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(worldSeed,
@@ -653,7 +665,8 @@ namespace Game.Infrastructure
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
                     () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray(),
-                    position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f)),
+                    position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
+                    BuildingLifecycle, BuildingPathing, Facilities),
                 pointerRaycaster, input);
             ManualMoveInput.EnableContextMenus();
 
@@ -664,6 +677,7 @@ namespace Game.Infrastructure
                 StreamingNavigationRoutes);
             BuildingPlacementService.ConfigureEnvironment(cells =>
                 WorldPlacementSurface.AllowsFootprint(cells, buildingGridSize, buildingGridOrigin));
+            BuildingPlacementService.ConfigureRuleEvaluator(EvaluateSpecialPlacementRule);
 
             if (SessionLaunchState.TryConsumeLoad(out var startupSlot))
             {
@@ -708,6 +722,11 @@ namespace Game.Infrastructure
             if (HealthFamily != null) HealthFamily.ChildBorn -= OnChildBorn;
             if (buildingPlacementController != null) buildingPlacementController.BuildingPlaced -= OnBuildingPlaced;
             if (BuildingDamage != null) BuildingDamage.BuildingChanged -= OnBuildingChanged;
+            if (BuildingLifecycle != null)
+            {
+                BuildingLifecycle.BuildingChanged -= OnBuildingChanged;
+                BuildingLifecycle.BuildingDemolished -= OnBuildingDemolished;
+            }
             Tier2Runtime?.Dispose();
         }
 
@@ -767,6 +786,7 @@ namespace Game.Infrastructure
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
+            BuildingLifecycle.AdvanceWearTo(targetCalendarTick);
             Production.Population = CountAbstractPlayerPopulation();
             Production.AdvanceTo(targetCalendarTick, abstractWorkerBuffer);
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
@@ -828,6 +848,36 @@ namespace Game.Infrastructure
             }
         }
 
+        private PlacementFailureReason EvaluateSpecialPlacementRule(PlacementRuleContext context)
+        {
+            var constraints = context.Request.Definition.Placement.Constraints;
+            if ((constraints & BuildingPlacementConstraint.Shoreline) != 0)
+            {
+                var shore = context.Cells.Any(cell =>
+                {
+                    var x = buildingGridOrigin.x + (cell.X + .5f) * buildingGridSize;
+                    var z = buildingGridOrigin.z + (cell.Z + .5f) * buildingGridSize;
+                    if (WorldHeight.IsWater(x, z)) return false;
+                    var radius = Mathf.Max(2f, buildingGridSize * 4f);
+                    return WorldHeight.IsWater(x - radius, z) || WorldHeight.IsWater(x + radius, z) ||
+                           WorldHeight.IsWater(x, z - radius) || WorldHeight.IsWater(x, z + radius);
+                });
+                if (!shore) return PlacementFailureReason.ShorelineRequired;
+            }
+            if ((constraints & BuildingPlacementConstraint.Groundwater) != 0)
+            {
+                var groundwater = context.Cells.All(cell =>
+                {
+                    var x = buildingGridOrigin.x + (cell.X + .5f) * buildingGridSize;
+                    var z = buildingGridOrigin.z + (cell.Z + .5f) * buildingGridSize;
+                    return !WorldHeight.IsWater(x, z) &&
+                           WorldHeight.SampleHeight(x, z) <= TiledWorldHeightSampler.WaterLevelMeters + 14f;
+                });
+                if (!groundwater) return PlacementFailureReason.GroundwaterRequired;
+            }
+            return PlacementFailureReason.None;
+        }
+
         private void OnChildBorn(Character child)
         {
             Appearances.GetOrCreate(child);
@@ -886,6 +936,7 @@ namespace Game.Infrastructure
             RebindRegionResourcePresenters();
             foreach (var building in Buildings.All)
                 ConstructionSites.RebindRestored(building);
+            BuildingPathing.RebindAfterLoad();
             RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
@@ -1100,16 +1151,28 @@ namespace Game.Infrastructure
                     WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
                         new WorldPosition(target.x, target.y, target.z)), WorkPriority.Normal);
             }
-            if (building != null && building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot"))
+            if (building != null && (building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
+                                     building.DefinitionId == new BuildingDefinitionId("primitive_garden")))
                 RegisterCropPlot(building, presenter);
             if (building != null)
+            {
+                BuildingPathing.Reconcile(building);
                 RegisterBuildingWorkplace(building, presenter);
+            }
         }
 
         private void OnBuildingChanged(Building building)
         {
+            BuildingPathing?.Reconcile(building);
+            if (building != null && building.IsDestroyed) Facilities?.RemoveBuildingAssignments(building.Id);
             if (building != null && BuildingPresentations.TryGet(building.Id, out var presenter))
                 presenter.RefreshStructuralPresentation();
+        }
+
+        private void OnBuildingDemolished(StableEntityId buildingId)
+        {
+            Facilities?.RemoveBuildingAssignments(buildingId);
+            if (BuildingPresentations.TryGet(buildingId, out var presenter)) BuildingSpawner.Despawn(presenter);
         }
 
         private void RegisterCropPlot(Building building, BuildingPresenter buildingPresenter)

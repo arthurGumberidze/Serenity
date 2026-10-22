@@ -427,6 +427,9 @@ namespace Game.Simulation.Production
             if (id.ToString() == "hunt_animal" && resources.Contains(new ResourceId("carcass")) &&
                 !buildings.All.Any(building => building.IsOperational &&
                     building.DefinitionId == new BuildingDefinitionId("hunting_camp"))) return false;
+            if (id.ToString() == "fish_water" &&
+                !buildings.All.Any(building => building.IsOperational &&
+                    building.DefinitionId == new BuildingDefinitionId("fishing_camp"))) return false;
             return true;
         }
 

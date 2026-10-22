@@ -1,5 +1,40 @@
 # P10.9 Stone Age buildings implementation
 
+## Stages E1-E4 complete
+
+Date: 22 October 2026. Fourteen definitions/prefabs complete the planned E set. Clan House, Healer Hut,
+Shrine, Chief Hut, Meeting Area and Training Ground use capacity-checked home/workplace assignments;
+medical and training actions delegate to existing health and skill authorities. Fishing Camp, Gathering
+Area, Primitive Garden and Well use the established production/resource graph; fishing is camp-gated and
+the well creates canonical water. Shoreline, groundwater and territory restrictions are evaluated by the
+normal placement service. Palisade, Gate, Watchtower and Primitive Path use the shared placement occupancy;
+opening a gate releases its cells and closing it reserves them again.
+
+`BuildingLifecycleService` adds deterministic wear, repair, Stone Age Hut to Clan House upgrade and
+demolition. Repair/upgrade operations validate elapsed work before atomically charging and use persisted
+building operation IDs for exactly-once behavior. Upgrade preserves `StableEntityId`; demolition spills
+canonical storage before registry removal and creates physical return piles. The selected-building UI
+exposes assignments, treatment/training, repair, upgrade, gate controls and demolition.
+
+Verification commands:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath 'C:\serenity_game' -executeMethod Game.Infrastructure.Editor.P109BaseBuildingFoundation.Build -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\authoring.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -quit -projectPath 'C:\serenity_game' -executeMethod Game.Infrastructure.Editor.U09ResourceFoundation.Build -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\resources.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testCategory 'P10.9' -testResults 'C:\serenity_game\Artifacts\P109\buildings-e\p109-editmode-final.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\p109-editmode-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.BuildingFoundationTests;Game.Tests.Editor.ResourceInventoryTests;Game.Tests.Editor.ResearchFrameworkTests;Game.Tests.Editor.P104NaturalResourcesTests;Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.Editor.P109BuildingProductionTests;Game.Tests.Editor.P109BuildingPlacementRulesTests;Game.Tests.Editor.P109ExtendedBuildingsTests' -testResults 'C:\serenity_game\Artifacts\P109\buildings-e\affected-editmode-2.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\affected-editmode-2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.BuildingPlacementPlayModeTests;Game.Tests.PlayMode.ProductionPlayModeTests' -testResults 'C:\serenity_game\Artifacts\P109\buildings-e\affected-playmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\affected-playmode.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\buildings-e\build.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109BuildingsE/Serenity.exe'
+```
+
+Results: P10.9 EditMode 24/24 passed; directly affected EditMode 66/66 passed. The affected PlayMode
+runner stalled during UMA initialization after loading LocalGameplay and produced no NUnit result; its
+verified process tree was stopped, so the run is not counted as pass or fail. Windows Development build
+succeeded with 0 errors / 53 warnings, GUID `709397d549104081bccd3d70d355d5e7`. Unity recorded build
+success before the post-build process was stopped; no `build-provenance.json` was completed and no source
+fingerprint is claimed. F1 is the next stage and owns the full multi-settlement, tier, save/load and native
+Player acceptance matrix.
+
 ## Stages D1-D2 complete
 
 Date: 22 October 2026. The shared building and production catalogs now contain the complete D set:

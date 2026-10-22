@@ -25,6 +25,28 @@ namespace Game.Presentation.Buildings
                 public ResourceAmount CreateAmount() => new ResourceAmount(new ResourceId(resourceId), new ResourceQuantity(quantity));
             }
 
+            [Serializable]
+            public sealed class UpgradeEntry
+            {
+                [SerializeField] private string targetDefinitionId;
+                [SerializeField] private List<CostEntry> cost = new List<CostEntry>();
+                [SerializeField, Min(1)] private int workMinutes = 60;
+
+                public UpgradeEntry Configure(string targetId, IEnumerable<CostEntry> configuredCost, int minutes)
+                {
+                    targetDefinitionId = targetId;
+                    cost = new List<CostEntry>(configuredCost ?? throw new ArgumentNullException(nameof(configuredCost)));
+                    workMinutes = minutes;
+                    return this;
+                }
+
+                public BuildingUpgradeOption CreateOption() => new BuildingUpgradeOption(
+                    new BuildingDefinitionId(targetDefinitionId),
+                    (cost ?? new List<CostEntry>()).Select(x => x != null
+                        ? x.CreateAmount() : throw new InvalidOperationException("Null upgrade cost entry.")),
+                    TimeSpan.FromMinutes(workMinutes <= 0 ? 60 : workMinutes));
+            }
+
             [SerializeField] private string definitionId;
             [SerializeField] private string displayName;
             [SerializeField, TextArea] private string description;
@@ -51,6 +73,14 @@ namespace Game.Presentation.Buildings
             [SerializeField] private List<string> productionRecipeIds = new List<string>();
             [SerializeField, Min(0)] private long productionInputCapacity;
             [SerializeField, Min(0)] private long productionOutputCapacity;
+            [SerializeField, Min(0)] private long wearIntervalHours;
+            [SerializeField, Min(0)] private int wearPerInterval;
+            [SerializeField] private List<CostEntry> repairCost = new List<CostEntry>();
+            [SerializeField, Min(1)] private int repairWorkMinutes = 30;
+            [SerializeField] private List<CostEntry> upkeepCost = new List<CostEntry>();
+            [SerializeField] private bool canDemolish = true;
+            [SerializeField, Range(0, 1000)] private int demolitionReturnPerThousand = 500;
+            [SerializeField] private List<UpgradeEntry> upgrades = new List<UpgradeEntry>();
             [SerializeField, Min(1)] private int maxIntegrity = 1000;
             [SerializeField, Range(1, 2000)] private int fireDamagePerThousand = 1000;
             [SerializeField, Range(1, 2000)] private int combatDamagePerThousand = 1000;
@@ -124,6 +154,33 @@ namespace Game.Presentation.Buildings
                 return this;
             }
 
+            public Entry ConfigureWorkplace(int workers)
+            {
+                if (workers <= 0) throw new ArgumentOutOfRangeException(nameof(workers));
+                maximumWorkers = workers;
+                return this;
+            }
+
+            public Entry ConfigureMaintenance(int intervalHours, int wear, IEnumerable<CostEntry> repair,
+                int repairMinutes, IEnumerable<CostEntry> upkeep = null, bool demolishable = true,
+                int returnPerThousand = 500)
+            {
+                wearIntervalHours = intervalHours;
+                wearPerInterval = wear;
+                repairCost = new List<CostEntry>(repair ?? Array.Empty<CostEntry>());
+                repairWorkMinutes = repairMinutes;
+                upkeepCost = new List<CostEntry>(upkeep ?? Array.Empty<CostEntry>());
+                canDemolish = demolishable;
+                demolitionReturnPerThousand = returnPerThousand;
+                return this;
+            }
+
+            public Entry ConfigureUpgrades(IEnumerable<UpgradeEntry> configuredUpgrades)
+            {
+                upgrades = new List<UpgradeEntry>(configuredUpgrades ?? throw new ArgumentNullException(nameof(configuredUpgrades)));
+                return this;
+            }
+
             public Entry Configure(string id, string name, BuildingCategory buildingCategory, int width, int depth,
                 GameObject presentationPrefab, BuildingPlacementMode mode = BuildingPlacementMode.Grid, bool overlap = false)
             {
@@ -161,9 +218,22 @@ namespace Game.Presentation.Buildings
                 var production = productionRecipeIds != null && productionRecipeIds.Count > 0
                     ? new ProductionSpec(productionRecipeIds.Select(id => new ProductionRecipeId(id)),
                         productionInputCapacity, productionOutputCapacity) : null;
+                var maintenance = wearIntervalHours > 0 || wearPerInterval > 0 ||
+                    repairCost != null && repairCost.Count > 0 || upkeepCost != null && upkeepCost.Count > 0
+                    ? new MaintenanceSpec(TimeSpan.FromHours(Math.Max(0, wearIntervalHours)).Ticks,
+                        Math.Max(0, wearPerInterval),
+                        (repairCost ?? new List<CostEntry>()).Select(x => x != null
+                            ? x.CreateAmount() : throw new InvalidOperationException("Null repair cost entry.")),
+                        TimeSpan.FromMinutes(repairWorkMinutes <= 0 ? 30 : repairWorkMinutes),
+                        (upkeepCost ?? new List<CostEntry>()).Select(x => x != null
+                            ? x.CreateAmount() : throw new InvalidOperationException("Null upkeep cost entry.")),
+                        canDemolish, demolitionReturnPerThousand) : null;
+                var upgradeSpec = upgrades != null && upgrades.Count > 0
+                    ? new UpgradeSpec(upgrades.Select(x => x != null
+                        ? x.CreateOption() : throw new InvalidOperationException("Null upgrade entry."))) : null;
                 return new BuildingDefinition(new BuildingDefinitionId(definitionId), displayName, category,
                     era, description, iconKey, technologies, construction, placement, housing, storage,
-                    workplace, production,
+                    workplace, production, maintenance, upgradeSpec,
                     maxIntegrity: maxIntegrity <= 0 ? 1000 : maxIntegrity,
                     fireDamagePerThousand: fireDamagePerThousand <= 0 ? 1000 : fireDamagePerThousand,
                     combatDamagePerThousand: combatDamagePerThousand <= 0 ? 1000 : combatDamagePerThousand,

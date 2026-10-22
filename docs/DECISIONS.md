@@ -1151,3 +1151,20 @@ plant fibre to two `cured_hide`. Dried meat joins the established edible-resourc
 hauling reaches eligible storage. No second decay, inventory, recipe, worker or save authority is added.
 Stage-D work maps to the existing Hunting, Cooking and Crafting skills. Arrows remain non-consumable
 presentation; persistent weapon durability remains the equipment cost agreed in D-167.
+
+## D-169 Extended facilities and lifecycle remain adapters over shared authorities (2026-10-22)
+
+E-stage buildings extend immutable `BuildingDefinition` capabilities and the existing building registry;
+they do not introduce separate settlement, inventory or production truth. A resident may have at most one
+home and one workplace assignment, with capacities read from the definition. Treatment and training call
+the canonical health and skill services. Fishing and water production remain ordinary recipes/resources,
+and shoreline/groundwater restrictions are placement predicates evaluated alongside territory ownership.
+
+Open gates release their exact cells from the shared occupancy map and closed gates reserve them; damage,
+demolition and load reconciliation use the same pathing adapter. Building wear, repair, upgrade and
+demolition carry deterministic operation IDs. Repair/upgrade charge only after their work requirement is
+met, upgrade preserves stable identity, and demolition spills registered cargo before removing the storage
+owner and returns configured construction materials as physical piles. These services own orchestration,
+not duplicate mutable building or resource state. Gate openness and facility assignment are presently
+session state; F1 must either prove the intended reset-on-load behavior or add persistence before final
+acceptance.

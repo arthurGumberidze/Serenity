@@ -85,7 +85,9 @@ namespace Game.Simulation.Resources
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources)
         {
-            var spatial = placement.Evaluate(definition, coordinate, orientation);
+            var request = new BuildingPlacementRequest(definition, coordinate, orientation,
+                settlementId.IsValid ? (SettlementId?)settlementId : null);
+            var spatial = placement.Evaluate(request);
             if (!spatial.IsValid) return new ConstructionEvaluation(spatial, ConstructionFailureReason.InvalidPlacement, default);
             if (!IsBuildingUnlocked(definition.Id))
                 return new ConstructionEvaluation(spatial, ConstructionFailureReason.LockedByResearch, default);
@@ -111,7 +113,9 @@ namespace Game.Simulation.Resources
             var deliveryJobs = new List<JobId>();
             try
             {
-                candidate = placement.Confirm(definition, coordinate, orientation, ownerSideId, stableId);
+                var request = new BuildingPlacementRequest(definition, coordinate, orientation,
+                    settlementId.IsValid ? (SettlementId?)settlementId : null);
+                candidate = placement.Confirm(request, ownerSideId, stableId);
                 var physicalLogistics = sites != null && work != null && piles != null && settlementId.IsValid;
                 if (physicalLogistics) sites.Initialize(candidate, definition, settlementId);
                 if (RequiresWorker) candidate.RequireConstructionWork(TimeSpan.FromTicks(Math.Max(MinimumBuildTime.Ticks,
