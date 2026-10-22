@@ -215,7 +215,7 @@ namespace Game.Domain.Work
     {
         WorldPosition = 0, Character = 1, WorldPile = 2, BuildingStorage = 3,
         ProductionSite = 4, Building = 5, Research = 6, WorldLocation = 7,
-        ConstructionBuffer = 8
+        ConstructionBuffer = 8, ProductionInput = 9, ProductionOutput = 10
     }
     public enum WorkClaimState { None = 0, Reserved = 1, Carrying = 2, Released = 3 }
 
@@ -267,9 +267,11 @@ namespace Game.Domain.Work
             if (type == WorkJobType.Move && target.Kind != WorkTargetKind.WorldPosition)
                 throw new ArgumentException("Move jobs require a world-position target.", nameof(target));
             if (type == WorkJobType.Haul && (!resourceId.HasValue || !resourceId.Value.IsValid || !quantity.IsPositive ||
-                (target.Kind != WorkTargetKind.WorldPile && target.Kind != WorkTargetKind.BuildingStorage) ||
+                (target.Kind != WorkTargetKind.WorldPile && target.Kind != WorkTargetKind.BuildingStorage &&
+                    target.Kind != WorkTargetKind.ProductionOutput) ||
                 !destination.HasValue || (destination.Value.Kind != WorkTargetKind.BuildingStorage &&
-                    destination.Value.Kind != WorkTargetKind.ConstructionBuffer)))
+                    destination.Value.Kind != WorkTargetKind.ConstructionBuffer &&
+                    destination.Value.Kind != WorkTargetKind.ProductionInput)))
                 throw new ArgumentException("Haul jobs require source, destination, resource and positive quantity.");
             Id = id;
             Type = type;

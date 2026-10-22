@@ -1,5 +1,28 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings C3
+
+C3 is complete. `ProductionService` remains the sole production authority and now registers
+building-owned workplace sites with deterministic IDs, bounded input/output inventories, recipe
+queues, pause state and a shared per-building worker limit. The Campfire authors three fuelled recipes:
+cooked meat, fish and berries. Queueing creates ordinary high-priority haul jobs for raw food and wood;
+stock ownership changes only during the existing pickup/drop-off transaction. Finished batches commit
+atomically to the output buffer, and autonomous hauling can move them to operational storage. Missing
+input and full output wait without consuming or duplicating a batch.
+
+The selected-building panel shows recipes, buffers, queue quantity, +1/+5 controls, pause/resume,
+assigned worker/progress and localized waiting reasons. Snapshot v28 appends the workplace owner,
+queue, pause and worker-limit fields while retaining v1-v27 readability; active task progress and both
+buffers already use the canonical production/inventory sections. Resource and building catalog assets
+now include cooked foods and the Campfire production specification.
+
+Final targeted EditMode passed 25/25 at
+`Artifacts/P109/buildings-c3/focused-suite-final.xml`; the LocalGameplay campfire placement and buffer
+registration PlayMode passed 1/1 at `Artifacts/P109/buildings-c3/placement-playmode.xml`. Resource and
+catalog generation succeeded at `Artifacts/P109/buildings-c3/generate-resources-2.log`. Exact commands
+are recorded in `P109_BUILDINGS_IMPLEMENTATION.md`. No broad regression or Windows build was run at
+this internal checkpoint by design. C4 is active and owns those two gates.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings C2
 
 C2 is complete. The existing presentation catalog now authors five playable Stone Age definitions:

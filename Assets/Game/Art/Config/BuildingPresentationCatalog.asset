@@ -40,6 +40,10 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 2
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -73,6 +77,10 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 4
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -104,6 +112,13 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
+    maximumWorkers: 1
+    productionRecipeIds:
+    - cook_meat
+    - cook_fish
+    - cook_berries
+    productionInputCapacity: 24
+    productionOutputCapacity: 24
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -135,6 +150,10 @@ MonoBehaviour:
     storageCapacity: 40
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -168,6 +187,10 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -199,6 +222,10 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1000
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
@@ -230,6 +257,10 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
     maxIntegrity: 1400
     fireDamagePerThousand: 900
     combatDamagePerThousand: 1000

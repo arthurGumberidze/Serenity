@@ -49,7 +49,8 @@ namespace Game.Infrastructure
                 root.Add(new XElement("saveGenerationId", snapshot.SaveGenerationId));
             if (snapshot.FormatVersion >= SaveSnapshot.ProductionVersion)
                 root.Add(SerializeProduction(snapshot.Production,
-                    snapshot.FormatVersion >= SaveSnapshot.ResourceIndustryVersion));
+                    snapshot.FormatVersion >= SaveSnapshot.ResourceIndustryVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.BuildingProductionVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.ResearchVersion)
                 root.Add(SerializeResearch(snapshot.Research));
             if (snapshot.FormatVersion >= SaveSnapshot.DynastyVersion)
@@ -137,12 +138,14 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.MilitaryCampaignVersion &&
                         version != SaveSnapshot.DiagnosticVersion &&
                         version != SaveSnapshot.BuildingConstructionVersion &&
+                        version != SaveSnapshot.BuildingPlacementVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
                         ? DeserializeProduction(root.Element("production"),
-                            version >= SaveSnapshot.ResourceIndustryVersion) : null;
+                            version >= SaveSnapshot.ResourceIndustryVersion,
+                            version >= SaveSnapshot.BuildingProductionVersion) : null;
                     var research = version >= SaveSnapshot.ResearchVersion
                         ? DeserializeResearch(root.Element("research")) : null;
                     var dynastyWorld = version >= SaveSnapshot.DynastyVersion
@@ -202,7 +205,8 @@ namespace Game.Infrastructure
             }
         }
 
-        private static XElement SerializeProduction(ProductionSaveState state, bool includeNaturalResources)
+        private static XElement SerializeProduction(ProductionSaveState state, bool includeNaturalResources,
+            bool includeBuildingProduction = false)
         {
             var element = new XElement("production");
             if (state == null) return element;
@@ -218,7 +222,12 @@ namespace Game.Infrastructure
                     new XElement("y", XmlConvert.ToString(site.Position.Y)), new XElement("z", XmlConvert.ToString(site.Position.Z)),
                     new XElement("remaining", site.RemainingAmount), new XElement("capacity", site.SourceCapacity),
                     new XElement("cropPhase", (int)site.CropPhase), new XElement("growthProgress", site.GrowthProgressTicks),
-                    new XElement("growthRequired", site.GrowthRequiredTicks)))),
+                    new XElement("growthRequired", site.GrowthRequiredTicks),
+                    includeBuildingProduction ? new XElement("ownerBuildingId",
+                        site.OwnerBuildingId.IsValid ? site.OwnerBuildingId.ToString() : string.Empty) : null,
+                    includeBuildingProduction ? new XElement("queuedBatches", site.QueuedBatches) : null,
+                    includeBuildingProduction ? new XElement("paused", site.Paused) : null,
+                    includeBuildingProduction ? new XElement("maximumWorkers", site.MaximumWorkers) : null))),
                 new XElement("tasks", state.Tasks.Select(task => new XElement("task",
                     new XElement("id", task.Id.ToString()), new XElement("workerId", task.WorkerId.ToString()),
                     new XElement("siteId", task.SiteId.ToString()), new XElement("recipeId", task.RecipeId.ToString()),
@@ -258,7 +267,8 @@ namespace Game.Infrastructure
         private static XElement SerializeAmount(ResourceAmount amount) => new XElement("amount",
             new XElement("resourceId", amount.ResourceId.ToString()), new XElement("quantity", amount.Quantity.Units));
 
-        private static ProductionSaveState DeserializeProduction(XElement element, bool includeNaturalResources)
+        private static ProductionSaveState DeserializeProduction(XElement element, bool includeNaturalResources,
+            bool includeBuildingProduction = false)
         {
             if (element == null) throw new FormatException("Missing production state.");
             if (!element.HasElements)
@@ -277,13 +287,20 @@ namespace Game.Infrastructure
             });
             var sites = Items(element.Element("sites"), "site", item =>
             {
-                RequireFields(item, new[] { "id", "recipeId", "kind", "x", "y", "z", "remaining", "capacity",
-                    "cropPhase", "growthProgress", "growthRequired" });
+                var siteFields = new List<string> { "id", "recipeId", "kind", "x", "y", "z", "remaining", "capacity",
+                    "cropPhase", "growthProgress", "growthRequired" };
+                if (includeBuildingProduction) siteFields.AddRange(new[] { "ownerBuildingId", "queuedBatches", "paused", "maximumWorkers" });
+                RequireFields(item, siteFields.ToArray());
+                var ownerText = includeBuildingProduction ? Value(item, "ownerBuildingId") : string.Empty;
                 return new ProductionSiteState(StableEntityId.Parse(Value(item, "id")),
                     new ProductionRecipeId(Value(item, "recipeId")), (ProductionSiteKind)Int(item, "kind"),
                     new WorldPosition(XmlConvert.ToSingle(Value(item, "x")), XmlConvert.ToSingle(Value(item, "y")),
                         XmlConvert.ToSingle(Value(item, "z"))), Long(item, "remaining"), Long(item, "capacity"),
-                    (CropPlotPhase)Int(item, "cropPhase"), Long(item, "growthProgress"), Long(item, "growthRequired"));
+                    (CropPlotPhase)Int(item, "cropPhase"), Long(item, "growthProgress"), Long(item, "growthRequired"),
+                    string.IsNullOrEmpty(ownerText) ? default : StableEntityId.Parse(ownerText),
+                    includeBuildingProduction ? Int(item, "queuedBatches") : 0,
+                    includeBuildingProduction && XmlConvert.ToBoolean(Value(item, "paused")),
+                    includeBuildingProduction ? Int(item, "maximumWorkers") : 1);
             });
             var tasks = Items(element.Element("tasks"), "task", item =>
             {

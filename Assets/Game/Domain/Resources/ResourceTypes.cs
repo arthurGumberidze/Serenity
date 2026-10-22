@@ -68,7 +68,9 @@ namespace Game.Domain.Resources
         Character = 1,
         BuildingStorage = 2,
         CarryLoad = 3,
-        ConstructionBuffer = 4
+        ConstructionBuffer = 4,
+        ProductionInput = 5,
+        ProductionOutput = 6
     }
 
     public readonly struct InventoryOwner : IEquatable<InventoryOwner>

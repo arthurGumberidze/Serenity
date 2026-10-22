@@ -2174,12 +2174,46 @@ namespace Game.Presentation.UI
                     AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
                         site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
             }
+            var workplaceSites = context.Production.Sites.Where(x =>
+                x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id).ToArray();
+            if (workplaceSites.Length > 0)
+            {
+                var inputOwner = context.Production.InputOwner(building.Id);
+                var outputOwner = context.Production.OutputOwner(building.Id);
+                if (context.Inventories.TryGet(inputOwner, out var input))
+                    AddLine(inspector, $"Вход: {input.TotalUnits}/{input.Capacity} · {InventoryText(input)}");
+                if (context.Inventories.TryGet(outputOwner, out var output))
+                    AddLine(inspector, $"Выход: {output.TotalUnits}/{output.Capacity} · {InventoryText(output)}");
+                foreach (var workplaceSite in workplaceSites)
+                {
+                    var recipe = context.Production.Recipes.Get(workplaceSite.RecipeId);
+                    var active = context.Production.ActiveTasks.FirstOrDefault(x => x.SiteId == workplaceSite.Id);
+                    AddLine(inspector, $"{Content("recipe", recipe.Id.ToString())}: очередь {workplaceSite.QueuedBatches} · " +
+                        (active == null ? $"ожидание: {E(context.Production.GetWaitingReason(workplaceSite))}" :
+                            $"рабочий {CharacterName(active.WorkerId)} · работа {active.AccumulatedWorkTicks * 100 / active.RequiredWorkTicks}%"));
+                    var capturedRecipe = recipe.Id;
+                    var recipeRow = Row();
+                    recipeRow.Add(ActionButton("+1", () => TryCommand(() => QueueProduction(building, capturedRecipe, 1))));
+                    recipeRow.Add(ActionButton("+5", () => TryCommand(() => QueueProduction(building, capturedRecipe, 5))));
+                    recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
+                        context.Production.SetWorkplacePaused(building.Id, capturedRecipe, !workplaceSite.Paused))));
+                    inspector.Add(recipeRow);
+                }
+            }
             DrawDirectPriority();
             var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
                 new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
             inspector.Add(ActionButton(building.IsOperational ? "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));
+        }
+
+        private void QueueProduction(Building building, ProductionRecipeId recipeId, int batches)
+        {
+            if (context.Production.QueueBatchesWithDeliveries(building.Id, recipeId, batches, context.Work) == 0 &&
+                !context.Production.Sites.Any(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&
+                    x.OwnerBuildingId == building.Id && x.RecipeId == recipeId))
+                throw new PlayerFacingException("Производственный рецепт недоступен.");
         }
 
         private void RefreshNotifications()

@@ -1087,3 +1087,18 @@ high-priority construction transaction may release only matching `ReservedAtSour
 by its deductions before creating delivery orders. It never revokes `Carrying` claims or moves stock:
 ownership still changes only through the shared transfer/haul path. This prevents a valid plan from
 deadlocking behind speculative cleanup reservations without introducing a second reservation system.
+
+## D-165 Building production is a U15 site with physical edge buffers (2026-10-22)
+
+A productive building is represented by one existing `ProductionSite` per recipe, using a deterministic
+site ID and an explicit stable owner-building ID. Recipes in the same building share a definition-owned
+worker cap and two inventories in the canonical registry: `ProductionInput` and `ProductionOutput`.
+These are logistics endpoints, not hidden stock or a second inventory system. Raw material/fuel reaches
+the input through normal `WorkOrder` hauling and finished output returns to operational storage through
+the same claim/transfer path.
+
+Queue state, pause and worker limit live in production state; recipe definitions, buffer capacity and
+slots remain immutable building/catalog data. A batch commits only when every input can be consumed and
+all outputs fit simultaneously. If input is absent or output fills after work starts, completed progress
+waits and retry cannot duplicate output. Snapshot v28 appends the new site fields while keeping v1-v27
+readable and preserving active tasks and buffer inventories in their existing sections.

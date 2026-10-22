@@ -57,7 +57,8 @@ namespace Game.Infrastructure.Editor
                     "shelter_construction").ConfigureHousing(4),
                 Entry("campfire", "Campfire", BuildingCategory.Food, 2, 2, Load<GameObject>(CampfirePath),
                     "A controlled fire and the settlement's first cooking place.", "building_campfire", 35, 2,
-                    new[] { Cost("wood_log", 3), Cost("stone", 4) }, "controlled_fire"),
+                    new[] { Cost("wood_log", 3), Cost("stone", 4) }, "controlled_fire")
+                    .ConfigureProduction(1, new[] { "cook_meat", "cook_fish", "cook_berries" }, 24, 24),
                 Entry("storage_basket", "Storage Basket", BuildingCategory.Storage, 2, 1, storage,
                     "A woven shared store for settlement supplies.", "building_storage_basket", 45, 3,
                     new[] { Cost("wood_log", 3), Cost("plant_fiber", 5) }, "woodworking")

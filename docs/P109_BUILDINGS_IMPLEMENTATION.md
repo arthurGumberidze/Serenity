@@ -198,3 +198,39 @@ cadence, no broad regression or Windows build was run at C2.
 ## Next stage
 
 C3 adds work slots, production queues and the kitchen panel using the existing production authority.
+
+## Stage C3 complete
+
+Date: 22 October 2026. U15 production now supports `BuildingWorkplace` sites without a parallel
+manager. Each recipe site has a deterministic identity and refers to its owning building; the building
+shares bounded `ProductionInput` and `ProductionOutput` inventories and a maximum-worker limit across
+all its recipes. Campfire queues consume physically delivered raw food plus wood fuel and atomically
+place cooked food into the output buffer. Missing inputs, pauses and full outputs preserve queue and
+task progress. The standard haul query accepts production inputs as destinations and production outputs
+as sources, so both supply and collection use the established work/claim/transfer pipeline.
+
+The building inspector exposes localized recipes, both buffers, queue counts, +1/+5, pause/resume,
+waiting reason, worker and progress. Snapshot v28 persists building ownership, queue, pause and slot
+limits in the existing production section; v1-v27 readers remain supported. Active work and inventories
+already round-trip through their existing sections.
+
+Verification commands:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod Game.Infrastructure.Editor.U09ResourceFoundation.Build -quit -logFile 'C:\serenity_game\Artifacts\P109\buildings-c3\generate-resources-2.log'
+
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109BuildingProductionTests;Game.Tests.Editor.BuildingFoundationTests.CatalogContainsFivePlayableBaseBuildingsWithAuthoredStages;Game.Tests.Editor.ProductionAndFarmingTests;Game.Tests.Editor.WorkGroupAndJobTests;Game.Tests.Editor.PlayerControlStateTests' -testResults 'C:\serenity_game\Artifacts\P109\buildings-c3\focused-suite-final.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-c3\focused-suite-final.log'
+
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.BuildingPlacementPlayModeTests.PlacingCampfireRegistersKitchenSlotsAndPersistentBuffers' -testResults 'C:\serenity_game\Artifacts\P109\buildings-c3\placement-playmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\buildings-c3\placement-playmode.log'
+```
+
+Results: the final focused EditMode set passed 25/25 and the focused PlayMode route passed 1/1.
+The first compiler attempt found a missing LINQ import; an intermediate 24/25 run found the old
+`WorkOrder` endpoint whitelist and led to the production-buffer validation fix. The listed final
+artifacts are green. Per the agreed cadence, no broad regression or Windows build was run at C3.
+
+## Next stage
+
+C4 unifies edible resources in needs/food consumption, prevents raw-food consumption and proves that
+the starter loop cannot deadlock hunger before the first cooked batch. It ends with the scheduled broad
+regression and separate Windows Player build.

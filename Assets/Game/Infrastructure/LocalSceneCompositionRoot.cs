@@ -1087,6 +1087,8 @@ namespace Game.Infrastructure
             }
             if (building != null && building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot"))
                 RegisterCropPlot(building, presenter);
+            if (building != null)
+                RegisterBuildingWorkplace(building, presenter);
         }
 
         private void OnBuildingChanged(Building building)
@@ -1107,6 +1109,15 @@ namespace Game.Infrastructure
             var presenter = buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f));
             productionPresenters.Add(presenter);
+        }
+
+        private void RegisterBuildingWorkplace(Building building, BuildingPresenter buildingPresenter)
+        {
+            var definition = buildingCatalog.ResolveDefinition(building.DefinitionId);
+            if (definition.Workplace == null || definition.Production == null) return;
+            var world = BuildingSpawner.GridToWorld(building.Coordinate, definition, building.Orientation);
+            Production.RegisterBuildingWorkplace(building.Id, definition,
+                new WorldPosition(world.x, world.y, world.z));
         }
 
         private void SpawnRegionProductionSources()

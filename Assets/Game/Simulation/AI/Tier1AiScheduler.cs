@@ -602,6 +602,8 @@ namespace Game.Simulation.AI
                 case WorkTargetKind.WorldPile: return InventoryOwnerKind.WorldPile;
                 case WorkTargetKind.BuildingStorage: return InventoryOwnerKind.BuildingStorage;
                 case WorkTargetKind.ConstructionBuffer: return InventoryOwnerKind.ConstructionBuffer;
+                case WorkTargetKind.ProductionInput: return InventoryOwnerKind.ProductionInput;
+                case WorkTargetKind.ProductionOutput: return InventoryOwnerKind.ProductionOutput;
                 default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
         }

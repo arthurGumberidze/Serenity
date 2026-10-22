@@ -100,7 +100,7 @@ namespace Game.Tests.Editor
             Assert.That(SaveSnapshot.DiagnosticVersion, Is.EqualTo(25));
             Assert.That(SaveSnapshot.BuildingConstructionVersion, Is.EqualTo(26));
             Assert.That(SaveSnapshot.BuildingPlacementVersion, Is.EqualTo(27));
-            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.BuildingPlacementVersion));
+            Assert.That(SaveSnapshot.CurrentVersion, Is.EqualTo(SaveSnapshot.BuildingProductionVersion));
         }
 
         private sealed class Owner : IExternalCharacterActivityOwner

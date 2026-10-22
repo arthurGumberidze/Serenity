@@ -4,8 +4,8 @@
 
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1-B3 and C1-C2 are complete. The current active slice is
-**C3: work slots, production and the kitchen panel**, followed continuously in this
+small tested builds and commits. B1-B3 and C1-C3 are complete. The current active slice is
+**C4: food system integration**, followed continuously in this
 chat by C4. C1 is complete: construction now creates bounded physical haul orders into the
 shared construction buffer, reserves queued source stock, survives save/load, advances material
 stages only after delivery, and returns buffered plus installed materials on cancellation. Do not
@@ -64,6 +64,15 @@ unpicked autonomous source claims needed for its high-priority deliveries, preve
 reservation from deadlocking the site without teleporting carried stock. Focused EditMode passed
 36/36 and the physical worker PlayMode route passed 1/1. No broad regression or Player build was
 run by design; those gates remain after C4.
+
+C3 extends the existing U15 production authority with building workplaces. Campfires own one shared
+worker slot, recipe queues and bounded input/output inventories; raw food and wood fuel arrive through
+ordinary high-priority haul orders, completed food leaves through the existing autonomous logistics
+path, and full output or missing input pauses without consuming or duplicating a batch. Snapshot v28
+persists queues, pause state, owner building, active progress and both buffers. The selected-building
+panel exposes recipes, quantities, queue controls, pause, worker/progress and waiting reason. Focused
+EditMode passed 25/25 and campfire placement PlayMode passed 1/1. No broad regression or Player build
+was run by design; both gates now belong to C4.
 
 ## Superseded screenshot-feedback handoff
 

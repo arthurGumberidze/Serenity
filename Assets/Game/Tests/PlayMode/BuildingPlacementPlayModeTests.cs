@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Linq;
 using Game.Domain.Buildings;
+using Game.Domain.Production;
+using Game.Domain.Resources;
 using Game.Infrastructure;
 using Game.Presentation.Buildings;
 using NUnit.Framework;
@@ -132,6 +134,28 @@ namespace Game.Tests.PlayMode
             Assert.That(building.IsOperational, Is.True);
             yield return new WaitForSecondsRealtime(0.5f);
             Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator PlacingCampfireRegistersKitchenSlotsAndPersistentBuffers()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            CompleteTechnology(root, "controlled_fire");
+            var controller = root.BuildingPlacementController;
+            controller.StartPlacement(new BuildingDefinitionId("campfire"));
+            Assert.That(TryFindClearPlacement(root, controller, out _), Is.True);
+            var campfire = controller.ConfirmPlacement();
+            Assert.That(campfire, Is.Not.Null);
+
+            var sites = root.Production.Sites.Where(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&
+                x.OwnerBuildingId == campfire.Id).ToArray();
+            Assert.That(sites.Select(x => x.RecipeId.ToString()),
+                Is.EquivalentTo(new[] { "cook_meat", "cook_fish", "cook_berries" }));
+            Assert.That(root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.ProductionInput, campfire.Id)).Capacity,
+                Is.EqualTo(24));
+            Assert.That(root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.ProductionOutput, campfire.Id)).Capacity,
+                Is.EqualTo(24));
+            yield return null;
         }
 
         private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)

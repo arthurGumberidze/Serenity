@@ -148,6 +148,12 @@ namespace Game.Tests.Editor
                 Is.EqualTo(4));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("storage_basket")).Storage.Capacity,
                 Is.EqualTo(40));
+            var campfire = catalog.ResolveDefinition(new BuildingDefinitionId("campfire"));
+            Assert.That(campfire.Workplace.MaximumWorkers, Is.EqualTo(1));
+            Assert.That(campfire.Production.RecipeIds.Select(x => x.ToString()),
+                Is.EquivalentTo(new[] { "cook_meat", "cook_fish", "cook_berries" }));
+            Assert.That(campfire.Production.InputCapacity, Is.EqualTo(24));
+            Assert.That(campfire.Production.OutputCapacity, Is.EqualTo(24));
             foreach (var id in new[] { "stone_age_hut", "campfire", "stone_tool_workshop" })
                 Assert.That(catalog.ResolvePrefab(new BuildingDefinitionId(id))
                     .GetComponentsInChildren<BuildingConstructionStageVisual>(true).Length, Is.GreaterThanOrEqualTo(2));

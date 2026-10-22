@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Research;
 using Game.Domain.Resources;
+using Game.Domain.Production;
 using Game.Presentation.Resources;
 using UnityEngine;
 
@@ -45,6 +47,10 @@ namespace Game.Presentation.Buildings
             [SerializeField, Min(0)] private long storageCapacity;
             [SerializeField] private List<ResourceCategory> storageCategories = new List<ResourceCategory>();
             [SerializeField, Min(0)] private int housingCapacity;
+            [SerializeField, Min(0)] private int maximumWorkers;
+            [SerializeField] private List<string> productionRecipeIds = new List<string>();
+            [SerializeField, Min(0)] private long productionInputCapacity;
+            [SerializeField, Min(0)] private long productionOutputCapacity;
             [SerializeField, Min(1)] private int maxIntegrity = 1000;
             [SerializeField, Range(1, 2000)] private int fireDamagePerThousand = 1000;
             [SerializeField, Range(1, 2000)] private int combatDamagePerThousand = 1000;
@@ -107,6 +113,17 @@ namespace Game.Presentation.Buildings
                 return this;
             }
 
+            public Entry ConfigureProduction(int workers, IEnumerable<string> recipeIds,
+                long inputCapacity, long outputCapacity)
+            {
+                if (workers <= 0) throw new ArgumentOutOfRangeException(nameof(workers));
+                maximumWorkers = workers;
+                productionRecipeIds = new List<string>(recipeIds ?? throw new ArgumentNullException(nameof(recipeIds)));
+                productionInputCapacity = inputCapacity;
+                productionOutputCapacity = outputCapacity;
+                return this;
+            }
+
             public Entry Configure(string id, string name, BuildingCategory buildingCategory, int width, int depth,
                 GameObject presentationPrefab, BuildingPlacementMode mode = BuildingPlacementMode.Grid, bool overlap = false)
             {
@@ -140,8 +157,13 @@ namespace Game.Presentation.Buildings
                         ? Enum.GetValues(typeof(ResourceCategory)) as ResourceCategory[]
                         : storageCategories) : null;
                 var housing = housingCapacity > 0 ? new HousingSpec(housingCapacity) : null;
+                var workplace = maximumWorkers > 0 ? new WorkplaceSpec(maximumWorkers) : null;
+                var production = productionRecipeIds != null && productionRecipeIds.Count > 0
+                    ? new ProductionSpec(productionRecipeIds.Select(id => new ProductionRecipeId(id)),
+                        productionInputCapacity, productionOutputCapacity) : null;
                 return new BuildingDefinition(new BuildingDefinitionId(definitionId), displayName, category,
                     era, description, iconKey, technologies, construction, placement, housing, storage,
+                    workplace, production,
                     maxIntegrity: maxIntegrity <= 0 ? 1000 : maxIntegrity,
                     fireDamagePerThousand: fireDamagePerThousand <= 0 ? 1000 : fireDamagePerThousand,
                     combatDamagePerThousand: combatDamagePerThousand <= 0 ? 1000 : combatDamagePerThousand,

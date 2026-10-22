@@ -97,11 +97,13 @@ namespace Game.Simulation.Work
             WorkGroupId? groupId = null, WorldPosition sourcePosition = default, bool exclusiveTarget = false,
             WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
-            if (source.Kind != InventoryOwnerKind.WorldPile && source.Kind != InventoryOwnerKind.BuildingStorage)
-                throw new ArgumentException("Haul source must be a world pile or building storage.", nameof(source));
+            if (source.Kind != InventoryOwnerKind.WorldPile && source.Kind != InventoryOwnerKind.BuildingStorage &&
+                source.Kind != InventoryOwnerKind.ProductionOutput)
+                throw new ArgumentException("Haul source must be a world pile, building storage or production output.", nameof(source));
             if (destination.Kind != InventoryOwnerKind.BuildingStorage &&
-                destination.Kind != InventoryOwnerKind.ConstructionBuffer)
-                throw new ArgumentException("Haul destination must be building storage or a construction buffer.",
+                destination.Kind != InventoryOwnerKind.ConstructionBuffer &&
+                destination.Kind != InventoryOwnerKind.ProductionInput)
+                throw new ArgumentException("Haul destination must be building storage, construction or production input.",
                     nameof(destination));
             return Create(WorkJobType.Haul, priority,
                 WorkTarget.ForEntity(TargetKind(source.Kind), source.Id, sourcePosition),
@@ -116,6 +118,8 @@ namespace Game.Simulation.Work
                 case InventoryOwnerKind.WorldPile: return WorkTargetKind.WorldPile;
                 case InventoryOwnerKind.BuildingStorage: return WorkTargetKind.BuildingStorage;
                 case InventoryOwnerKind.ConstructionBuffer: return WorkTargetKind.ConstructionBuffer;
+                case InventoryOwnerKind.ProductionInput: return WorkTargetKind.ProductionInput;
+                case InventoryOwnerKind.ProductionOutput: return WorkTargetKind.ProductionOutput;
                 default: throw new ArgumentOutOfRangeException(nameof(kind));
             }
         }

@@ -101,6 +101,45 @@ namespace Game.Simulation.AI
                     }
                 }
             }
+            foreach (var sourceInventory in inventories.All)
+            {
+                if (sourceInventory.Owner.Kind != InventoryOwnerKind.ProductionOutput ||
+                    !buildings.TryGet(sourceInventory.Owner.Id, out var sourceBuilding) ||
+                    !sourceBuilding.IsOperational) continue;
+                var sourcePosition = ToWorld(sourceBuilding.Coordinate);
+                foreach (var amount in sourceInventory.CaptureState().Amounts)
+                {
+                    var availableAtSource = amount.Quantity.Units -
+                        claims.ReservedAtSource(sourceInventory.Owner, amount.ResourceId);
+                    if (availableAtSource <= 0) continue;
+                    foreach (var destinationInventory in inventories.All)
+                    {
+                        if (destinationInventory.Owner.Kind != InventoryOwnerKind.BuildingStorage ||
+                            !buildings.TryGet(destinationInventory.Owner.Id, out var destinationBuilding) ||
+                            !destinationBuilding.IsOperational) continue;
+                        var destinationCapacity = destinationInventory.Capacity - destinationInventory.TotalUnits -
+                            claims.ReservedAtDestination(destinationInventory.Owner);
+                        if (destinationCapacity <= 0 ||
+                            !destinationInventory.CanAdd(amount.ResourceId, new ResourceQuantity(1))) continue;
+                        var units = Math.Min(maxUnits, Math.Min(characterCapacity,
+                            Math.Min(availableAtSource, destinationCapacity)));
+                        if (units <= 0) continue;
+                        var destinationPosition = ToWorld(destinationBuilding.Coordinate);
+                        var sourceDistance = agent.Position.DistanceSquared(sourcePosition);
+                        var destinationDistance = sourcePosition.DistanceSquared(destinationPosition);
+                        if (!found || IsBetter(sourceDistance, destinationDistance, sourceInventory.Owner,
+                            destinationInventory.Owner, bestSourceDistance, bestDestinationDistance,
+                            candidate.Source, candidate.Destination))
+                        {
+                            found = true;
+                            bestSourceDistance = sourceDistance;
+                            bestDestinationDistance = destinationDistance;
+                            candidate = new HaulJobCandidate(sourceInventory.Owner, destinationInventory.Owner,
+                                amount.ResourceId, new ResourceQuantity(units), sourcePosition, destinationPosition);
+                        }
+                    }
+                }
+            }
             return found;
         }
 
@@ -123,9 +162,11 @@ namespace Game.Simulation.AI
             candidate = default;
             claim = null;
             if ((sourceOwner.Kind != InventoryOwnerKind.WorldPile &&
-                    sourceOwner.Kind != InventoryOwnerKind.BuildingStorage) ||
+                    sourceOwner.Kind != InventoryOwnerKind.BuildingStorage &&
+                    sourceOwner.Kind != InventoryOwnerKind.ProductionOutput) ||
                 (destinationOwner.Kind != InventoryOwnerKind.BuildingStorage &&
-                    destinationOwner.Kind != InventoryOwnerKind.ConstructionBuffer) ||
+                    destinationOwner.Kind != InventoryOwnerKind.ConstructionBuffer &&
+                    destinationOwner.Kind != InventoryOwnerKind.ProductionInput) ||
                 !resourceId.IsValid || !quantity.IsPositive ||
                 !TryInventoryPosition(sourceOwner, resourceId, false, out var sourcePosition) ||
                 !TryInventoryPosition(destinationOwner, resourceId, true, out var destinationPosition) ||
@@ -208,6 +249,16 @@ namespace Game.Simulation.AI
             if (owner.Kind == InventoryOwnerKind.BuildingStorage)
             {
                 if (!building.IsOperational) return false;
+                position = ToWorld(building.Coordinate);
+                return true;
+            }
+            if (owner.Kind == InventoryOwnerKind.ProductionOutput && !destination && building.IsOperational)
+            {
+                position = ToWorld(building.Coordinate);
+                return true;
+            }
+            if (owner.Kind == InventoryOwnerKind.ProductionInput && destination && building.IsOperational)
+            {
                 position = ToWorld(building.Coordinate);
                 return true;
             }

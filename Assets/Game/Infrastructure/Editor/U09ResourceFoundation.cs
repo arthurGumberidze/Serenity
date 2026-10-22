@@ -33,7 +33,10 @@ namespace Game.Infrastructure.Editor
                 new ResourceCatalogAsset.Entry().Configure("iron_ore", "Iron Ore", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("gold_ore", "Gold Ore", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("meat", "Meat", ResourceCategory.Food),
-                new ResourceCatalogAsset.Entry().Configure("fish", "Fish", ResourceCategory.Food)
+                new ResourceCatalogAsset.Entry().Configure("fish", "Fish", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("cooked_meat", "Cooked Meat", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("cooked_fish", "Cooked Fish", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("cooked_berries", "Cooked Berries", ResourceCategory.Food)
             });
             EditorUtility.SetDirty(catalog);
             U08BuildingFoundation.RefreshCatalogAndPrefabs();

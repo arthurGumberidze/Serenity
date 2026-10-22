@@ -6,6 +6,8 @@ using Game.Domain.AI;
 using Game.Domain.Buildings;
 using Game.Domain.Production;
 using Game.Domain.Resources;
+using Game.Domain.Work;
+using Game.Simulation.Work;
 using Game.Simulation.Resources;
 using Game.Simulation.Tiers;
 using Game.Domain.Research;
@@ -14,6 +16,12 @@ using Game.Domain.Weather;
 
 namespace Game.Simulation.Production
 {
+    public enum ProductionWaitingReason
+    {
+        None = 0, QueueEmpty = 1, Paused = 2, MissingInputs = 3,
+        OutputFull = 4, WorkerSlotFull = 5, BuildingUnavailable = 6
+    }
+
     public sealed class ProductionSettings
     {
         public ProductionSettings(TimeSpan fixedStep, TimeSpan cropGrowthDuration,
@@ -199,6 +207,11 @@ namespace Game.Simulation.Production
         public IReadOnlyList<ResourceStockTarget> Targets => targets.OrderBy(x => x.Key)
             .Select(x => new ResourceStockTarget(x.Key, x.Value)).ToArray();
 
+        public InventoryOwner InputOwner(StableEntityId buildingId) =>
+            new InventoryOwner(InventoryOwnerKind.ProductionInput, buildingId);
+        public InventoryOwner OutputOwner(StableEntityId buildingId) =>
+            new InventoryOwner(InventoryOwnerKind.ProductionOutput, buildingId);
+
         public void AttachNaturalResources(ResourceEcologyService ecology, IndustrialExtractionService industry)
         {
             Ecology = ecology ?? throw new ArgumentNullException(nameof(ecology));
@@ -215,12 +228,132 @@ namespace Game.Simulation.Production
             orderedSites.Sort((left, right) => left.Id.CompareTo(right.Id));
         }
 
+        public IReadOnlyList<ProductionSite> RegisterBuildingWorkplace(StableEntityId buildingId,
+            BuildingDefinition definition, WorldPosition position)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Building identity required.", nameof(buildingId));
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (definition.Workplace == null || definition.Production == null)
+                throw new ArgumentException("Building definition requires workplace and production specs.", nameof(definition));
+            var inputOwner = InputOwner(buildingId);
+            var outputOwner = OutputOwner(buildingId);
+            if (!inventories.TryGet(inputOwner, out _))
+                inventories.Add(new ResourceInventory(inputOwner, resources, definition.Production.InputCapacity));
+            if (!inventories.TryGet(outputOwner, out _))
+                inventories.Add(new ResourceInventory(outputOwner, resources, definition.Production.OutputCapacity));
+            var result = new List<ProductionSite>();
+            foreach (var recipeId in definition.Production.RecipeIds)
+            {
+                var id = WorkplaceSiteId(buildingId, recipeId);
+                if (!sites.TryGetValue(id, out var site))
+                {
+                    site = ProductionSite.CreateBuildingWorkplace(id, buildingId, recipeId, position,
+                        definition.Workplace.MaximumWorkers);
+                    AddSite(site);
+                }
+                result.Add(site);
+            }
+            return result;
+        }
+
+        public bool QueueBatches(StableEntityId buildingId, ProductionRecipeId recipeId, int count)
+        {
+            if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+            var id = WorkplaceSiteId(buildingId, recipeId);
+            if (!sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.BuildingWorkplace) return false;
+            site.QueueBatches(count);
+            return true;
+        }
+
+        public int QueueBatchesWithDeliveries(StableEntityId buildingId, ProductionRecipeId recipeId, int count,
+            WorkManager work, WorkPriority priority = WorkPriority.High)
+        {
+            if (work == null) throw new ArgumentNullException(nameof(work));
+            if (!QueueBatches(buildingId, recipeId, count)) return 0;
+            var site = sites[WorkplaceSiteId(buildingId, recipeId)];
+            var recipe = recipes.Get(recipeId);
+            var destination = InputOwner(buildingId);
+            var input = inventories.Get(destination);
+            var created = 0;
+            foreach (var amount in recipe.Inputs)
+            {
+                var required = checked(amount.Quantity.Units * site.QueuedBatches);
+                var pendingDestination = work.Jobs.Where(job => !job.IsTerminal &&
+                    job.Type == WorkJobType.Haul && job.ResourceId == amount.ResourceId &&
+                    job.Destination.HasValue && job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
+                    job.Destination.Value.EntityId == buildingId).Sum(job => job.Quantity.Units);
+                var missing = Math.Max(0, required - input.GetAmount(amount.ResourceId).Units - pendingDestination);
+                foreach (var source in inventories.All.OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
+                {
+                    if (missing == 0) break;
+                    if (source.Owner.Kind != InventoryOwnerKind.WorldPile &&
+                        source.Owner.Kind != InventoryOwnerKind.BuildingStorage) continue;
+                    var pendingSource = work.Jobs.Where(job => !job.IsTerminal &&
+                        job.Type == WorkJobType.Haul && job.ResourceId == amount.ResourceId &&
+                        job.Target.EntityId == source.Owner.Id).Sum(job => job.Quantity.Units);
+                    var units = Math.Min(missing,
+                        Math.Max(0, source.GetAmount(amount.ResourceId).Units - pendingSource));
+                    if (units <= 0) continue;
+                    work.CreateHaulJob(null, source.Owner, destination, amount.ResourceId,
+                        new ResourceQuantity(units), priority);
+                    missing -= units;
+                    created++;
+                }
+            }
+            return created;
+        }
+
+        public bool SetWorkplacePaused(StableEntityId buildingId, ProductionRecipeId recipeId, bool paused)
+        {
+            var id = WorkplaceSiteId(buildingId, recipeId);
+            if (!sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.BuildingWorkplace) return false;
+            site.SetPaused(paused);
+            return true;
+        }
+
+        public ProductionWaitingReason GetWaitingReason(ProductionSite site)
+        {
+            if (site == null || site.Kind != ProductionSiteKind.BuildingWorkplace)
+                throw new ArgumentException("Building workplace required.", nameof(site));
+            if (!IsSiteOperational(site.Id)) return ProductionWaitingReason.BuildingUnavailable;
+            if (site.Paused) return ProductionWaitingReason.Paused;
+            if (site.QueuedBatches == 0) return ProductionWaitingReason.QueueEmpty;
+            var recipe = recipes.Get(site.RecipeId);
+            if (!InputsAvailable(recipe, site)) return ProductionWaitingReason.MissingInputs;
+            if (!CanPlaceOutputs(default, recipe, site)) return ProductionWaitingReason.OutputFull;
+            if (ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers &&
+                !tasks.Values.Any(task => !task.IsTerminal && task.SiteId == site.Id))
+                return ProductionWaitingReason.WorkerSlotFull;
+            return ProductionWaitingReason.None;
+        }
+
+        public static StableEntityId WorkplaceSiteId(StableEntityId buildingId, ProductionRecipeId recipeId)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Building identity required.", nameof(buildingId));
+            if (!recipeId.IsValid) throw new ArgumentException("Recipe identity required.", nameof(recipeId));
+            ulong first = 14695981039346656037UL;
+            ulong second = 1099511628211UL;
+            foreach (var value in buildingId.ToGuid().ToByteArray())
+            {
+                first = (first ^ value) * 1099511628211UL;
+                second = (second ^ (byte)(value + 31)) * 14695981039346656037UL;
+            }
+            var text = recipeId.ToString();
+            for (var i = 0; i < text.Length; i++)
+            {
+                first = (first ^ text[i]) * 1099511628211UL;
+                second = (second ^ text[text.Length - i - 1]) * 1099511628211UL;
+            }
+            return StableEntityId.FromDeterministicHash(first, second);
+        }
+
         public bool TryGetSite(StableEntityId id, out ProductionSite site) => sites.TryGetValue(id, out site);
         public bool IsSiteOperational(StableEntityId id)
         {
             if (!sites.TryGetValue(id, out var site)) return false;
             if (site.Kind == ProductionSiteKind.NaturalSource) return true;
-            return !buildings.TryGet(id, out var building) || building.IsOperational;
+            var ownerId = site.Kind == ProductionSiteKind.BuildingWorkplace ? site.OwnerBuildingId : id;
+            return !buildings.TryGet(ownerId, out var building) || building.IsOperational;
         }
 
         public int CancelTasksForSite(StableEntityId siteId)
@@ -303,9 +436,11 @@ namespace Game.Simulation.Production
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
             if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
+            if (site.Kind == ProductionSiteKind.BuildingWorkplace && ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers)
+                return false;
             var kind = TaskKindFor(site);
             if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe, site)) return false;
-            if (!InputsAvailable(recipe)) return false;
+            if (!InputsAvailable(recipe, site)) return false;
             var task = ProductionTask.Create(workerId, site.Id, site.RecipeId, kind, recipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
             workerTasks.Add(workerId, task.Id);
@@ -488,6 +623,9 @@ namespace Game.Simulation.Production
                 DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.RemainingAmount));
                 DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.GrowthProgressTicks));
                 DeterministicKeyedRandom.Add(ref hash, (ulong)site.CropPhase);
+                if (site.OwnerBuildingId.IsValid) AddId(ref hash, site.OwnerBuildingId);
+                DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.QueuedBatches));
+                DeterministicKeyedRandom.Add(ref hash, site.Paused ? 1UL : 0UL);
             }
             foreach (var definition in resources.All)
             {
@@ -578,11 +716,16 @@ namespace Game.Simulation.Production
             }
             var recipe = recipes.Get(task.RecipeId);
             var outputs = recipe.OutputsFor(site);
-            var outputOwner = inventories.WorkerOwner(task.WorkerId);
-            if (task.Kind != ProductionTaskKind.Plant && !UsesGroundOutputs &&
+            var outputOwner = site.Kind == ProductionSiteKind.BuildingWorkplace
+                ? OutputOwner(site.OwnerBuildingId) : inventories.WorkerOwner(task.WorkerId);
+            if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
+                (!inventories.TryGet(outputOwner, out var workplaceOutput) || !CanAddAll(workplaceOutput, outputs)))
+                return default;
+            if (site.Kind != ProductionSiteKind.BuildingWorkplace &&
+                task.Kind != ProductionTaskKind.Plant && !UsesGroundOutputs &&
                 !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
                 return default;
-            if (!TryConsumeInputs(recipe)) return default;
+            if (!TryConsumeInputs(recipe, site)) return default;
             site.CompleteWork(task.Kind, recipe.HarvestEntireSource);
             var produced = false;
             var outputId = default(ResourceId);
@@ -591,7 +734,12 @@ namespace Game.Simulation.Production
             {
                 foreach (var output in outputs)
                 {
-                    if (UsesGroundOutputs)
+                    if (site.Kind == ProductionSiteKind.BuildingWorkplace)
+                    {
+                        if (!inventories.Get(outputOwner).TryAdd(output.ResourceId, output.Quantity))
+                            throw new InvalidOperationException("Production output buffer changed during a committed batch.");
+                    }
+                    else if (UsesGroundOutputs)
                     {
                         var pile = outputPiles.Create(output.ResourceId, output.Quantity,
                             outputCoordinate(site.Position));
@@ -644,10 +792,12 @@ namespace Game.Simulation.Production
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
+                if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
+                    ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers) continue;
                 var kind = TaskKindFor(site);
-                if (!RecipeNeeded(recipe)) continue;
+                if (site.Kind != ProductionSiteKind.BuildingWorkplace && !RecipeNeeded(recipe)) continue;
                 if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe, site)) continue;
-                if (!InputsAvailable(recipe)) continue;
+                if (!InputsAvailable(recipe, site)) continue;
                 var distance = workerPosition.DistanceSquared(site.Position);
                 if (selected == null || distance < bestDistance ||
                     (distance.Equals(bestDistance) && site.Id.CompareTo(selected.Id) < 0))
@@ -660,8 +810,13 @@ namespace Game.Simulation.Production
             return selected != null;
         }
 
-        private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site) =>
-            UsesGroundOutputs || TrySelectOutputOwner(workerId, recipe.OutputsFor(site), out _);
+        private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site)
+        {
+            if (site.Kind == ProductionSiteKind.BuildingWorkplace)
+                return inventories.TryGet(OutputOwner(site.OwnerBuildingId), out var output) &&
+                    CanAddAll(output, recipe.OutputsFor(site));
+            return UsesGroundOutputs || TrySelectOutputOwner(workerId, recipe.OutputsFor(site), out _);
+        }
 
         private bool TrySelectOutputOwner(StableEntityId workerId, IReadOnlyList<ResourceAmount> outputs, out InventoryOwner owner)
         {
@@ -689,18 +844,23 @@ namespace Game.Simulation.Production
             return total <= inventory.Capacity - inventory.TotalUnits;
         }
 
-        private bool InputsAvailable(ProductionRecipe recipe)
+        private bool InputsAvailable(ProductionRecipe recipe, ProductionSite site)
         {
             if (recipe.Inputs.Count == 0) return true;
+            if (site.Kind == ProductionSiteKind.BuildingWorkplace)
+                return inventories.TryGet(InputOwner(site.OwnerBuildingId), out var input) &&
+                    recipe.Inputs.All(amount => input.CanRemove(amount.ResourceId, amount.Quantity));
             return inventories.All.Any(inventory => recipe.Inputs.All(input => inventory.CanRemove(input.ResourceId, input.Quantity)));
         }
 
-        private bool TryConsumeInputs(ProductionRecipe recipe)
+        private bool TryConsumeInputs(ProductionRecipe recipe, ProductionSite site)
         {
             if (recipe.Inputs.Count == 0) return true;
-            var owner = inventories.All.OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id)
-                .FirstOrDefault(inventory => recipe.Inputs.All(input => inventory.CanRemove(input.ResourceId, input.Quantity)));
-            if (owner == null) return false;
+            var owner = site.Kind == ProductionSiteKind.BuildingWorkplace
+                ? (inventories.TryGet(InputOwner(site.OwnerBuildingId), out var workplaceInput) ? workplaceInput : null)
+                : inventories.All.OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id)
+                .FirstOrDefault(inventory => recipe.Inputs.All(amount => inventory.CanRemove(amount.ResourceId, amount.Quantity)));
+            if (owner == null || !recipe.Inputs.All(amount => owner.CanRemove(amount.ResourceId, amount.Quantity))) return false;
             foreach (var input in recipe.Inputs) owner.TryRemove(input.ResourceId, input.Quantity);
             return true;
         }
@@ -717,8 +877,13 @@ namespace Game.Simulation.Production
             return reserved;
         }
 
+        private int ActiveWorkersAt(StableEntityId buildingId) => tasks.Values.Count(task => !task.IsTerminal &&
+            sites.TryGetValue(task.SiteId, out var site) && site.Kind == ProductionSiteKind.BuildingWorkplace &&
+            site.OwnerBuildingId == buildingId);
+
         private static ProductionTaskKind TaskKindFor(ProductionSite site) =>
             site.Kind == ProductionSiteKind.NaturalSource ? ProductionTaskKind.Gather :
+            site.Kind == ProductionSiteKind.BuildingWorkplace ? ProductionTaskKind.Craft :
             site.CropPhase == CropPlotPhase.Unplanted ? ProductionTaskKind.Plant : ProductionTaskKind.Harvest;
 
         private static void AddId(ref ulong hash, StableEntityId id)
