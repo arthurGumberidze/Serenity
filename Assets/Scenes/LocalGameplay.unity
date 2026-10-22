@@ -56726,6 +56726,7 @@ MonoBehaviour:
   terrain: {fileID: 200139938}
   waterLevel: 0.15
   maximumSlopeDegrees: 32
+  maximumFoundationHeightDifference: 0.75
 --- !u!114 &654590268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86720,7 +86721,7 @@ MonoBehaviour:
   - {fileID: 2100000, guid: fadff01af66843346abe85b05ec03836, type: 2}
   - {fileID: 2100000, guid: 9e3a8349c1b164b4daee268e92d08cb8, type: 2}
   - {fileID: 2100000, guid: a7bfefe5a2c4aba4cbd79972ca77d3e8, type: 2}
-  layoutHash: 681E040B60C66ED2
+  layoutHash: 9F63771429196181
   sourceAsset: Unity URP Terrain Sample 1.0.3 + UMA 3 + Serenity project-owned P9.4 derivatives
 --- !u!1001 &865346948
 PrefabInstance:

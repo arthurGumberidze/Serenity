@@ -107,23 +107,19 @@ namespace Game.Presentation.Environment
                 Mix(ref hash, supply.position);
             }
             foreach (var prefab in new[] { shelterPrefab, storagePrefab, cropPlotPrefab, workIndicatorPrefab })
-            {
                 Mix(ref hash, prefab != null ? prefab.name : string.Empty);
-                if (prefab != null)
-                    foreach (var filter in prefab.GetComponentsInChildren<MeshFilter>(true)
-                                 .Where(x => x.sharedMesh != null).OrderBy(x => x.name, StringComparer.Ordinal))
-                        Mix(ref hash, filter.sharedMesh.name);
-            }
             return hash.ToString("X16", CultureInfo.InvariantCulture);
         }
+
+        public void RefreshLayoutHash() => layoutHash = ComputeLayoutHash();
 
         public void ValidateConfiguration()
         {
             if (biomeWorld == null) throw new InvalidOperationException("P9.4 requires the completed P9.3 world.");
             biomeWorld.ValidateConfiguration();
-            ValidateBuildingPrefab(shelterPrefab, "shelter", 18);
-            ValidateBuildingPrefab(storagePrefab, "storage", 14);
-            ValidateBuildingPrefab(cropPlotPrefab, "crop plot", 12);
+            ValidateBuildingPrefab(shelterPrefab, "shelter");
+            ValidateBuildingPrefab(storagePrefab, "storage");
+            ValidateBuildingPrefab(cropPlotPrefab, "crop plot");
             if (workIndicatorPrefab == null || workIndicatorPrefab.GetComponentsInChildren<Renderer>(true).Length < 2)
                 throw new InvalidOperationException("P9.4 requires a readable world work-priority indicator.");
             if (worksites.Length < 6 || Enum.GetValues(typeof(WorksiteKind)).Cast<WorksiteKind>()
@@ -145,16 +141,23 @@ namespace Game.Presentation.Environment
                 throw new InvalidOperationException("P9.4 authored settlement layout hash is stale.");
         }
 
-        private static void ValidateBuildingPrefab(GameObject prefab, string label, int minimumRenderers)
+        private static void ValidateBuildingPrefab(GameObject prefab, string label)
         {
             if (prefab == null || prefab.GetComponent<BuildingPresenter>() == null ||
                 prefab.GetComponent<Collider>() == null)
                 throw new InvalidOperationException("P9.4 " + label + " prefab is not interaction-ready.");
-            var filters = prefab.GetComponentsInChildren<MeshFilter>(true).Where(x => x.sharedMesh != null).ToArray();
-            if (filters.Length < minimumRenderers || prefab.GetComponentsInChildren<Renderer>(true).Length < minimumRenderers)
-                throw new InvalidOperationException("P9.4 " + label + " remains below the authored-detail floor.");
-            if (filters.Any(x => !x.sharedMesh.name.StartsWith("P94", StringComparison.Ordinal)))
-                throw new InvalidOperationException("P9.4 " + label + " still exposes a primitive/non-P9.4 mesh.");
+            var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                .OrderByDescending(x => x.RequiredStage).FirstOrDefault();
+            var detailRoot = finalStage != null ? finalStage.transform : prefab.transform;
+            var filters = detailRoot.GetComponentsInChildren<MeshFilter>(true)
+                .Where(x => x.sharedMesh != null).ToArray();
+            var renderers = detailRoot.GetComponentsInChildren<Renderer>(true);
+            var vertexCount = filters.Sum(x => x.sharedMesh.vertexCount);
+            if (filters.Length == 0 || renderers.Length == 0 || vertexCount < 32)
+                throw new InvalidOperationException("P9.4 " + label + " has no authored finished visual.");
+            if (renderers.Any(x => x.sharedMaterial == null || x.sharedMaterial.shader == null ||
+                    string.Equals(x.sharedMaterial.shader.name, "Hidden/InternalErrorShader", StringComparison.Ordinal)))
+                throw new InvalidOperationException("P9.4 " + label + " uses a missing or invalid material.");
         }
 
         private static void Mix(ref ulong hash, string value)

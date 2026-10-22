@@ -1196,3 +1196,15 @@ It must not re-hash every unchanged vendor asset. The former implementation read
 tree twice for each build and exposed no progress, making healthy Unity runs look stalled. The optimized
 manifest preserves immutable provenance while making build time depend on actual dirty payload rather than the
 size of the imported art library.
+
+## D-172 Presentation quality audits follow the completed authored stage (2026-10-23)
+
+A building presentation audit evaluates the highest `BuildingConstructionStageVisual` when staged visuals
+exist, otherwise the prefab root. A valid final visual must contain renderable mesh geometry, a minimum useful
+vertex payload and non-error materials. The number of renderer components and a project-era mesh-name prefix
+are not quality measures: an imported authored building may correctly combine the same detail into one mesh.
+
+Settlement layout identity covers authored worksite/supply placement and stable prefab root identities. It does
+not include nested FBX mesh names because Unity's Editor and Player import paths may expose those names
+differently. Geometry/material validity is checked separately. Any authoring step that replaces shared starter
+prefabs must refresh the serialized settlement layout hash before validation and build.

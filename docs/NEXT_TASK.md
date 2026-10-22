@@ -15,8 +15,11 @@ known failures (one fishing fixture and two expanded-import audit assumptions). 
 its three failures are existing environment/fixture assertions outside this repair. The final starter-prefab
 regressions passed 2/2. The updated Windows Development Player now succeeds at
 `Builds/P109VisualFeedback/Serenity.exe` with 0 errors / 53 warnings and GUID
-`3a1b43981f5c4599919aec9280f0c7d2`; a hidden smoke reached runtime UI initialization. F1 remains the next
-unblocked scope for the broader multi-settlement/tier regression and final visible native gameplay route.
+`64ec73cb93504dbe8490f9fd129428fc`. Its post-build P9.4 bootstrap failure is repaired: the legacy
+renderer-count/mesh-prefix audit now accepts authored final-stage vendor models, the layout hash is stable and
+refreshed by P10.9 authoring, focused EditMode passes 10/10 and a full-scene PlayMode bootstrap explicitly
+confirms `GameplayUi` plus both starter residents 1/1. F1 remains the next unblocked scope for the broader
+multi-settlement/tier regression and final visible native gameplay route.
 
 The user approved the audited architecture and staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`. B1-B3, C1-C4, D1-D2 and E1-E4 are complete. C5 remains explicitly

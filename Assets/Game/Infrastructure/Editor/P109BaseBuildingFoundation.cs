@@ -4,8 +4,10 @@ using System.IO;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Presentation.Buildings;
+using Game.Presentation.Environment;
 using Game.Presentation.Resources;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Game.Infrastructure.Editor
@@ -40,6 +42,7 @@ namespace Game.Infrastructure.Editor
         private const string CityModels = "Assets/SoftLeitner/CityBuilderThree/Models/";
         private const string RtsBuildings = "Assets/RTSToonBuildings/Prefabs/Buildings/";
         private const string SyntyCampfire = "Assets/Synty/PolygonNature/Prefabs/Props/SM_Prop_CampFire_01.prefab";
+        private const string LocalGameplayScenePath = "Assets/Scenes/LocalGameplay.unity";
 
         [MenuItem("Serenity/P10.9/Build Five Base Buildings")]
         public static void Build()
@@ -51,8 +54,22 @@ namespace Game.Infrastructure.Editor
             EditorUtility.SetDirty(catalog);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            RefreshSettlementLayoutHash();
             Validate();
             Debug.Log("P10.9 five base building assets generated successfully.");
+        }
+
+        public static void RefreshSettlementLayoutHash()
+        {
+            var scene = EditorSceneManager.OpenScene(LocalGameplayScenePath, OpenSceneMode.Single);
+            var marker = UnityEngine.Object.FindAnyObjectByType<P94StoneAgeSettlement>();
+            if (marker == null)
+                throw new InvalidDataException("LocalGameplay is missing the P9.4 settlement marker.");
+            marker.RefreshLayoutHash();
+            EditorUtility.SetDirty(marker);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, LocalGameplayScenePath);
+            AssetDatabase.SaveAssets();
         }
 
         public static void EnsureBasePrefabs()

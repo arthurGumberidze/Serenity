@@ -19,8 +19,10 @@ a bounded 2×2–8×8 held-LMB rectangle and persists the exact
 zone cells. Focused EditMode passed 31/31 and new visual/model regression passed 7/7. Broader P109 recorded
 65/68 EditMode and 6/9 PlayMode, with failures outside this repair documented in PROJECT_STATE. The separate
 Windows Development build now succeeds with 0 errors / 53 warnings, GUID
-`3a1b43981f5c4599919aec9280f0c7d2`; a hidden Player smoke reached runtime UI initialization. F1 retains the
-final visible native route and broader acceptance matrix. The starter-prefab rerun passed 2/2.
+`64ec73cb93504dbe8490f9fd129428fc`. The post-build P9.4 bootstrap regression caused by obsolete
+renderer-count/mesh-prefix checks is repaired; 10/10 focused EditMode and the exact UI/two-resident PlayMode
+bootstrap test pass 1/1. F1 retains the final visible native route and broader acceptance matrix. The
+starter-prefab rerun passed 2/2.
 
 P10.9 E1-E4 extended buildings and lifecycle (2026-10-22): DONE. Fourteen canonical definitions and
 project-owned prefabs cover clan housing, healer/shrine/chief/meeting/training facilities, fishing,

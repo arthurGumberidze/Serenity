@@ -1080,6 +1080,35 @@ fail-closed without rereading every vendor asset twice.
   `-1` is therefore forced termination, not a Player failure. Unity's non-fatal missing-ICU warning remains.
   F1 still owns the final visible native gameplay route and the broader deferred acceptance matrix.
 
+## P10.9 post-build bootstrap repair — 2026-10-23
+
+- The first visual-feedback Player exposed a fail-fast P9.4 audit left behind by the old project-owned shelter:
+  it required at least 18 separate renderers and `P94*` mesh names. The new CityBuilder tent is a legitimate
+  authored finished model with fewer combined renderers, so the obsolete audit threw during
+  `LocalSceneCompositionRoot.Awake` before residents and `GameplayUi` were created.
+- Building presentation validation now selects the highest construction stage and requires real mesh geometry,
+  renderers and valid materials. It no longer treats renderer fragmentation or a historical mesh-name prefix as
+  quality. The P9.4 layout hash excludes importer-dependent nested FBX mesh names, while the P10.9 authoring
+  command refreshes and saves the hash whenever it replaces shared starter prefabs.
+- `LocalGameplay.unity` now carries the refreshed stable hash `9F63771429196181`.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P94StoneAgeSettlementTests;Game.Tests.Editor.P109ExtendedBuildingsTests' -testResults 'C:\serenity_game\Artifacts\P109\boot-repair\editmode-stable-hash.xml' -logFile 'C:\serenity_game\Artifacts\P109\boot-repair\editmode-stable-hash.log'`
+
+- passed 10/10.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests.AuthoredSettlementSpawnsDistinctBuildingsAndStoneAgeWear' -testResults 'C:\serenity_game\Artifacts\P109\boot-repair\playmode-bootstrap-pass.xml' -logFile 'C:\serenity_game\Artifacts\P109\boot-repair\playmode-bootstrap-pass.log'`
+
+- passed 1/1 after a full `LocalGameplay` load, explicitly asserting non-null `GameplayUi`, male resident and
+  female resident plus the current finished-model geometry. The broader historical P94 class was diagnostic
+  only: its other two cases still fail unrelated stale indicator-count and NavMesh assumptions.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\boot-repair\build-fixed.log' -quit -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109VisualFeedback/Serenity.exe'`
+
+- replacement Windows x64 Mono Development build succeeded with 0 errors / 53 warnings; GUID
+  `64ec73cb93504dbe8490f9fd129428fc`. `Game.Presentation.dll`, `Game.Infrastructure.dll` and `level0` were
+  rebuilt at 2026-10-23 00:33 local time. A subsequent hidden Player launch reported engine/Input System
+  initialization and no `InvalidOperationException` or P9.4 bootstrap error before its verified PID was stopped.
+
 U16 final validation command:
 
 `& 'C:\serenity_game\Tools\Verify-U16.ps1' -ProjectPath 'C:\serenity_game' -FullRegression -ManagedPostgres -GpuValidation -StepTimeoutSeconds 900`

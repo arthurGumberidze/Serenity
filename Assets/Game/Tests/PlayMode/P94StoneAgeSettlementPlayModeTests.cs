@@ -8,6 +8,7 @@ using Game.Domain.Resources;
 using Game.Domain.Weather;
 using Game.Domain.Work;
 using Game.Infrastructure;
+using Game.Presentation.Buildings;
 using Game.Presentation.Environment;
 using Game.Presentation.Production;
 using NUnit.Framework;
@@ -33,15 +34,19 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.StoneAgeSettlement, Is.Not.Null);
-            Assert.DoesNotThrow(root.StoneAgeSettlement.ValidateConfiguration);
-            Assert.That(root.DemoShelterPresenter.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(18));
-            Assert.That(root.DemoStoragePresenter.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(14));
-            Assert.That(root.StoneAgeSettlement.CropPlotPrefab.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(12));
-            Assert.That(root.DemoShelterPresenter.GetComponentsInChildren<MeshFilter>(true)
-                .All(x => x.sharedMesh.name.StartsWith("P94")), Is.True);
+            Assert.That(root.StoneAgeSettlement.LayoutHash, Is.Not.Empty);
+            Assert.That(root.GameplayUi, Is.Not.Null);
+            Assert.That(root.MaleDemoCharacter, Is.Not.Null);
+            Assert.That(root.FemaleDemoCharacter, Is.Not.Null);
+            foreach (var prefab in new[] { root.StoneAgeSettlement.ShelterPrefab,
+                         root.StoneAgeSettlement.StoragePrefab, root.StoneAgeSettlement.CropPlotPrefab })
+            {
+                var detailRoot = DetailedVisualRoot(prefab);
+                Assert.That(detailRoot.GetComponentsInChildren<Renderer>(true), Is.Not.Empty, prefab.name);
+                Assert.That(detailRoot.GetComponentsInChildren<MeshFilter>(true)
+                    .Where(x => x.sharedMesh != null).Sum(x => x.sharedMesh.vertexCount),
+                    Is.GreaterThanOrEqualTo(32), prefab.name);
+            }
             yield return null;
         }
 
@@ -157,6 +162,13 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Research.Start(technologyId), Is.True);
             root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
                 root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks, true);
+        }
+
+        private static Transform DetailedVisualRoot(GameObject prefab)
+        {
+            var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                .OrderByDescending(x => x.RequiredStage).FirstOrDefault();
+            return finalStage != null ? finalStage.transform : prefab.transform;
         }
     }
 }

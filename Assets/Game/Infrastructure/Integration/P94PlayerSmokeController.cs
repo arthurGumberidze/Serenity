@@ -9,6 +9,7 @@ using Game.Domain.Research;
 using Game.Domain.Resources;
 using Game.Domain.Weather;
 using Game.Domain.Work;
+using Game.Presentation.Buildings;
 using Game.Presentation.Environment;
 using Game.Presentation.Production;
 using Game.Presentation.Resources;
@@ -94,8 +95,8 @@ namespace Game.Infrastructure.Integration
                 result.storage_renderers = marker.StoragePrefab.GetComponentsInChildren<Renderer>(true).Length;
                 result.crop_renderers = marker.CropPlotPrefab.GetComponentsInChildren<Renderer>(true).Length;
                 result.layout_hash = marker.LayoutHash;
-                result.settlement_assets = result.shelter_renderers >= 18 && result.storage_renderers >= 14 &&
-                    result.crop_renderers >= 12;
+                result.settlement_assets = HasDetailedVisual(marker.ShelterPrefab) &&
+                    HasDetailedVisual(marker.StoragePrefab) && HasDetailedVisual(marker.CropPlotPrefab);
                 result.worksite_readability = result.worksites >= 6 &&
                     marker.Worksites.Select(x => x.Kind).Distinct().Count() == 6 &&
                     marker.Worksites.All(x => x.VisualRoot.GetComponentsInChildren<Renderer>(true).Length >= 2);
@@ -267,6 +268,18 @@ namespace Game.Infrastructure.Integration
         {
             try { action(); }
             catch (Exception exception) { result.error = exception.ToString(); }
+        }
+
+        private static bool HasDetailedVisual(GameObject prefab)
+        {
+            if (prefab == null) return false;
+            var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                .OrderByDescending(x => x.RequiredStage).FirstOrDefault();
+            var detailRoot = finalStage != null ? finalStage.transform : prefab.transform;
+            var filters = detailRoot.GetComponentsInChildren<MeshFilter>(true)
+                .Where(x => x.sharedMesh != null).ToArray();
+            return detailRoot.GetComponentsInChildren<Renderer>(true).Length > 0 &&
+                filters.Sum(x => x.sharedMesh.vertexCount) >= 32;
         }
 
         private string Capture(string fileName)

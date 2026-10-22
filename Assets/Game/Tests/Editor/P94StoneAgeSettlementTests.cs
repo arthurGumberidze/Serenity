@@ -31,25 +31,31 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void BuildingPrefabsAreDistinctDetailedAndContainNoPrimitiveMeshes()
+        public void BuildingPrefabsAreDistinctAndOwnDetailedFinishedVisuals()
         {
             var marker = Object.FindAnyObjectByType<P94StoneAgeSettlement>();
             var prefabs = new[] { marker.ShelterPrefab, marker.StoragePrefab, marker.CropPlotPrefab };
             Assert.That(prefabs.Distinct().Count(), Is.EqualTo(3));
             Assert.That(prefabs.Select(x => AssetDatabase.GetAssetPath(x)).Distinct().Count(), Is.EqualTo(3));
-            Assert.That(marker.ShelterPrefab.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(18));
-            Assert.That(marker.StoragePrefab.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(14));
-            Assert.That(marker.CropPlotPrefab.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThanOrEqualTo(12));
             foreach (var prefab in prefabs)
             {
                 Assert.That(prefab.GetComponent<BuildingPresenter>(), Is.Not.Null);
                 Assert.That(prefab.GetComponent<Collider>(), Is.Not.Null);
-                Assert.That(prefab.GetComponentsInChildren<MeshFilter>(true).All(x =>
-                    x.sharedMesh != null && x.sharedMesh.name.StartsWith("P94")), Is.True, prefab.name);
+                var detailRoot = DetailedVisualRoot(prefab);
+                var filters = detailRoot.GetComponentsInChildren<MeshFilter>(true)
+                    .Where(x => x.sharedMesh != null).ToArray();
+                Assert.That(detailRoot.GetComponentsInChildren<Renderer>(true), Is.Not.Empty, prefab.name);
+                Assert.That(filters.Sum(x => x.sharedMesh.vertexCount), Is.GreaterThanOrEqualTo(32), prefab.name);
             }
+            Assert.That(DetailedVisualRoot(marker.ShelterPrefab).Find("Finished authored model"), Is.Not.Null);
+            Assert.That(DetailedVisualRoot(marker.StoragePrefab).Find("Finished authored model"), Is.Not.Null);
+        }
+
+        private static Transform DetailedVisualRoot(GameObject prefab)
+        {
+            var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                .OrderByDescending(x => x.RequiredStage).FirstOrDefault();
+            return finalStage != null ? finalStage.transform : prefab.transform;
         }
 
         [Test]
