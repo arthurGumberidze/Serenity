@@ -121,6 +121,7 @@ namespace Game.Infrastructure
         public WorldPileService WorldPiles { get; private set; }
         public SettlementResourceView StoredResources { get; private set; }
         public ConstructionFundingService Construction { get; private set; }
+        public ConstructionSiteService ConstructionSites { get; private set; }
         public Building DemoStorageBuilding { get; private set; }
         public BuildingPresenter DemoStoragePresenter { get; private set; }
         public Building DemoShelterBuilding { get; private set; }
@@ -362,6 +363,7 @@ namespace Game.Infrastructure
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
             WorldPiles = new WorldPileService(Resources, Inventories);
+            ConstructionSites = new ConstructionSiteService(Resources, Inventories);
             StoredResources = new SettlementResourceView(Inventories);
             ProductionRecipes = ProductionCatalog.CreatePlayablePatch(Resources);
             Technologies = TechnologyCatalog.CreateStoneAge(ProductionRecipes,
@@ -451,7 +453,13 @@ namespace Game.Infrastructure
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z),
                 point => new WorldPosition(point.X, WorldHeight.SampleHeight(point.X, point.Z) + 0.04f, point.Z));
-            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings);
+            var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings,
+                owner =>
+                {
+                    if (owner.Kind == InventoryOwnerKind.ConstructionBuffer &&
+                        Buildings.TryGet(owner.Id, out var construction))
+                        ConstructionSites.NotifyDelivery(construction);
+                });
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily, domesticService: Domestic);
             AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.NeedsOnly);
@@ -542,6 +550,7 @@ namespace Game.Infrastructure
                     starterTerritoryRadius, starterTerritoryRadius)
             });
             BuildingPlacementService.ConfigureTerritories(BuildingTerritories);
+            Construction.ConfigureLogistics(ConstructionSites, Work, WorldPiles, StarterSettlementId);
             InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
             ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,
@@ -862,6 +871,8 @@ namespace Game.Infrastructure
             selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
             RebindRegionResourcePresenters();
+            foreach (var building in Buildings.All)
+                ConstructionSites.RebindRestored(building);
             RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))

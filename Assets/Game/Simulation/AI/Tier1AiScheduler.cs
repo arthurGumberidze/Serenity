@@ -537,8 +537,8 @@ namespace Game.Simulation.AI
             }
             else if (job.Type == WorkJobType.Haul)
             {
-                var source = new InventoryOwner(InventoryOwnerKind.WorldPile, job.Target.EntityId);
-                var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage,
+                var source = new InventoryOwner(OwnerKind(job.Target.Kind), job.Target.EntityId);
+                var destination = new InventoryOwner(OwnerKind(job.Destination.Value.Kind),
                     job.Destination.Value.EntityId);
                 if (world.HaulJobs.TryClaimSpecified(entry.Agent, source, destination, job.ResourceId.Value,
                         job.Quantity, out var candidate, out var claim))
@@ -594,6 +594,17 @@ namespace Game.Simulation.AI
         private static bool IsManual(UtilityActionKind kind) =>
             kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul ||
             kind == UtilityActionKind.ManualTask;
+
+        private static InventoryOwnerKind OwnerKind(WorkTargetKind kind)
+        {
+            switch (kind)
+            {
+                case WorkTargetKind.WorldPile: return InventoryOwnerKind.WorldPile;
+                case WorkTargetKind.BuildingStorage: return InventoryOwnerKind.BuildingStorage;
+                case WorkTargetKind.ConstructionBuffer: return InventoryOwnerKind.ConstructionBuffer;
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+        }
 
         private void AdvanceResearch()
         {

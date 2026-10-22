@@ -1057,3 +1057,18 @@ rules and directly affected connections, without repeating green unrelated suite
 regression and separate Player build occur after C4, then at the C5 and F1 control points, or earlier
 only when a concrete save/resource-loss risk justifies it. Compilation, old-save readability,
 protected-resource checks and honest reporting remain mandatory.
+
+## D-163 Construction funding reserves intent; ownership changes only through hauling (2026-10-22)
+
+In LocalGameplay, confirming a construction plan no longer consumes its cost. It creates ordinary
+high-priority `WorkOrder` haul batches whose destination is the building's existing shared-registry
+`ConstructionBuffer`. Open construction deliveries count as source reservations during later funding
+evaluation, while canonical ownership changes only through `ResourceTransferService` pickup and
+drop-off. Material readiness commits complete stages after delivery; build work may wait at the site
+but cannot progress before every material stage is installed.
+
+Cancellation terminates the site's open haul/build orders and converts all delivered material—both
+buffered and recorded as installed—back into canonical world piles before removing the unfinished
+building, attached storage and occupancy. In-flight cargo uses the established Tier1 cancellation
+drop path. Buffer contents, material progress and work orders already fit snapshot v27, so C1 does
+not introduce another manager, inventory, save version or migration.

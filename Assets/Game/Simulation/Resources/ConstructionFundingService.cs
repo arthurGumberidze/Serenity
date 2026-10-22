@@ -6,6 +6,9 @@ using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Buildings;
 using Game.Domain.Research;
+using Game.Domain.Work;
+using Game.Domain.World;
+using Game.Simulation.Work;
 
 namespace Game.Simulation.Resources
 {
@@ -35,6 +38,11 @@ namespace Game.Simulation.Resources
         private readonly ResourceCatalog resources;
         private readonly StorageService storage;
         private readonly IResearchUnlockView unlocks;
+        private ConstructionSiteService sites;
+        private WorkManager work;
+        private WorldPileService piles;
+        private SettlementId settlementId;
+        private const long DeliveryBatchUnits = 8;
         public bool RequiresWorker { get; set; }
         public TimeSpan MinimumBuildTime { get; set; } = TimeSpan.FromMinutes(30);
         public TimeSpan BuildTimePerResource { get; set; } = TimeSpan.FromMinutes(2);
@@ -60,6 +68,16 @@ namespace Game.Simulation.Resources
 
         public bool IsBuildingUnlocked(BuildingDefinitionId definitionId) =>
             unlocks == null || unlocks.IsBuildingUnlocked(definitionId);
+
+        public void ConfigureLogistics(ConstructionSiteService constructionSites, WorkManager workManager,
+            WorldPileService worldPiles, SettlementId settlement)
+        {
+            sites = constructionSites ?? throw new ArgumentNullException(nameof(constructionSites));
+            work = workManager ?? throw new ArgumentNullException(nameof(workManager));
+            piles = worldPiles ?? throw new ArgumentNullException(nameof(worldPiles));
+            if (!settlement.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlement));
+            settlementId = settlement;
+        }
 
         public ConstructionEvaluation Evaluate(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources)
@@ -87,33 +105,78 @@ namespace Game.Simulation.Resources
             Building candidate = null;
             ResourceInventory attachedStorage = null;
             var charged = new List<Deduction>();
+            var deliveryJobs = new List<JobId>();
             try
             {
                 candidate = placement.Confirm(definition, coordinate, orientation, ownerSideId, stableId);
-                if (RequiresWorker) candidate.RequireConstructionWork(TimeSpan.FromTicks(Math.Max(
-                    MinimumBuildTime.Ticks, checked(definition.ConstructionCost.Sum(x => x.Quantity.Units) *
-                        BuildTimePerResource.Ticks))));
+                var physicalLogistics = sites != null && work != null && piles != null && settlementId.IsValid;
+                if (physicalLogistics) sites.Initialize(candidate, definition, settlementId);
+                if (RequiresWorker) candidate.RequireConstructionWork(TimeSpan.FromTicks(Math.Max(MinimumBuildTime.Ticks,
+                    checked(definition.ConstructionCost.Sum(x => x.Quantity.Units) * BuildTimePerResource.Ticks))));
                 attachedStorage = storage.Attach(candidate, definition);
-                foreach (var deduction in deductions)
+                if (physicalLogistics)
                 {
-                    if (!deduction.Source.TryRemove(deduction.Id, deduction.Quantity))
-                        throw new InvalidOperationException("Funding changed during construction transaction.");
-                    charged.Add(deduction);
+                    foreach (var deduction in deductions)
+                    {
+                        var remaining = deduction.Quantity.Units;
+                        while (remaining > 0)
+                        {
+                            var quantity = new ResourceQuantity(Math.Min(DeliveryBatchUnits, remaining));
+                            var order = work.CreateHaulJob(null, deduction.Source.Owner,
+                                candidate.ConstructionBufferOwner, deduction.Id, quantity, WorkPriority.High);
+                            deliveryJobs.Add(order.Id);
+                            remaining -= quantity.Units;
+                        }
+                    }
                 }
-                afterPlacement?.Invoke(candidate); // deterministic post-charge failure injection and presentation boundary
-                if (!RequiresWorker) candidate.MarkCompleted(); // Historical simulations retain their old contract.
+                else
+                {
+                    foreach (var deduction in deductions)
+                    {
+                        if (!deduction.Source.TryRemove(deduction.Id, deduction.Quantity))
+                            throw new InvalidOperationException("Funding changed during construction transaction.");
+                        charged.Add(deduction);
+                    }
+                }
+                afterPlacement?.Invoke(candidate); // deterministic transaction/presentation boundary
+                if (!physicalLogistics && !RequiresWorker) candidate.MarkCompleted(); // Historical simulations retain their contract.
                 building = candidate;
                 return result;
             }
             catch
             {
+                foreach (var jobId in deliveryJobs) work?.Cancel(jobId);
                 for (var i = charged.Count - 1; i >= 0; i--)
                     if (!charged[i].Source.TryAdd(charged[i].Id, charged[i].Quantity))
                         throw new InvalidOperationException("Failed to restore construction funding.");
                 if (attachedStorage != null) inventories.Remove(attachedStorage.Owner, attachedStorage);
-                if (candidate != null) placement.Rollback(candidate, definition);
+                if (candidate != null)
+                {
+                    if (inventories.TryGet(candidate.ConstructionBufferOwner, out var buffer))
+                        inventories.Remove(buffer.Owner, buffer);
+                    placement.Rollback(candidate, definition);
+                }
                 return new ConstructionEvaluation(result.Placement, ConstructionFailureReason.CommitFailed, default);
             }
+        }
+
+        public bool Cancel(Building building, BuildingDefinition definition)
+        {
+            if (building == null) throw new ArgumentNullException(nameof(building));
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (sites == null || work == null || piles == null || building.IsOperational) return false;
+            foreach (var order in work.Jobs.Where(x => !x.IsTerminal &&
+                ((x.Type == WorkJobType.Build && x.Target.EntityId == building.Id) ||
+                 (x.Type == WorkJobType.Haul && x.Destination.HasValue &&
+                  x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
+                  x.Destination.Value.EntityId == building.Id))).ToArray())
+                work.Cancel(order.Id);
+            sites.Cancel(building, piles);
+            var storageOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id);
+            if (inventories.TryGet(storageOwner, out var attachedStorage))
+                inventories.Remove(storageOwner, attachedStorage);
+            placement.Rollback(building, definition);
+            return true;
         }
 
         private ConstructionFailureReason Plan(BuildingDefinition definition, IEnumerable<InventoryOwner> fundingSources,
@@ -135,7 +198,13 @@ namespace Game.Simulation.Resources
                 var remaining = cost.Quantity.Units;
                 foreach (var source in sources)
                 {
-                    var available = source.GetAmount(cost.ResourceId).Units;
+                    var reserved = work == null ? 0L : work.Jobs.Where(x => !x.IsTerminal && x.Type == WorkJobType.Haul &&
+                        x.ResourceId == cost.ResourceId && x.Target.EntityId == source.Owner.Id &&
+                        ((source.Owner.Kind == InventoryOwnerKind.WorldPile && x.Target.Kind == WorkTargetKind.WorldPile) ||
+                         (source.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
+                          x.Target.Kind == WorkTargetKind.BuildingStorage)) && x.Destination.HasValue &&
+                        x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer).Sum(x => x.Quantity.Units);
+                    var available = Math.Max(0, source.GetAmount(cost.ResourceId).Units - reserved);
                     var take = Math.Min(available, remaining);
                     if (take > 0) deductions.Add(new Deduction(source, cost.ResourceId, new ResourceQuantity(take)));
                     remaining -= take;

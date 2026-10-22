@@ -2,8 +2,8 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
-P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3 DONE; C1 IN_PROGRESS;
-C2-C5, D1-D2, E1-E4 and F1 are TODO and remain inside P10.9. Internal slices keep targeted
+P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3 and C1 DONE; C2 IN_PROGRESS;
+C3-C5, D1-D2, E1-E4 and F1 are TODO and remain inside P10.9. Internal slices keep targeted
 automated tests, documentation and local commits. By user direction on 2026-10-22, C1-C4 run
 continuously with one sufficiently broad regression and separate Windows build after C4; broad
 regressions are otherwise reserved for C5/F1 or a concrete compatibility/data-loss risk.

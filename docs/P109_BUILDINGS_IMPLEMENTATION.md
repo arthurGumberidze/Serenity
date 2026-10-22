@@ -142,6 +142,28 @@ After C4, run one sufficiently broad regression and create one separate Windows 
 user's construction/cooking route. Broad control points then remain C5 and F1 unless a concrete
 save/resource-loss risk requires an earlier expansion.
 
+## Stage C1 complete
+
+Date: 22 October 2026. Placement now creates physical, saveable haul work instead of removing
+construction cost from source inventories. The existing `WorkManager`, `HaulWorldQuery`,
+`ResourceTransferService` and Tier1 action path accept world-pile/storage sources and construction
+buffer destinations. Delivery batches are bounded to eight units, queued delivery quantities reserve
+their source stock during later funding evaluations, and material stages commit only after actual
+drop-off. Restored construction buffers are rebound and validated after load.
+
+Cancellation terminates open haul/build orders, returns both buffered and already installed materials
+as canonical world piles, removes attached unfinished storage and releases placement occupancy. A
+worker carrying stock at cancellation remains covered by the established lossless cargo-drop path.
+Legacy isolated simulations without configured physical logistics retain their earlier transaction
+contract; LocalGameplay explicitly configures the new path.
+
+Focused command/result: `P109ConstructionStateTests` passed 7/7 at
+`Artifacts/P109/buildings-c1/focused-editmode-final.xml`. Directly affected construction, resources,
+work orders and Tier1 hauling passed 34/34 at
+`Artifacts/P109/buildings-c1/affected-editmode-final.xml`. The earlier 5/6 run exposed a double count
+in the new cancellation assertion only; the implementation already conserved stock. Per the agreed
+cadence, no broad regression or Windows build was run at C1.
+
 ## Next stage
 
-C1 connects physical haul work to construction buffers and makes cancellation lossless.
+C2 adds the five playable base definitions and their visual construction stages.

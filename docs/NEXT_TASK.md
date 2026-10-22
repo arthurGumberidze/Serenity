@@ -5,8 +5,11 @@
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
 small tested builds and commits. B1-B3 are complete. The current active slice is
-**C1: physical delivery to construction and lossless cancellation**, followed continuously in this
-chat by C2-C4. Do not pause for approval between those internal commits. No additional chat,
+**C2: five base definitions and visual construction stages**, followed continuously in this
+chat by C3-C4. C1 is complete: construction now creates bounded physical haul orders into the
+shared construction buffer, reserves queued source stock, survives save/load, advances material
+stages only after delivery, and returns buffered plus installed materials on cancellation. Do not
+pause for approval between those internal commits. No additional chat,
 P10.10 work, deferred performance benchmark, push, dependency download or old-save
 migration is authorized.
 
@@ -44,6 +47,15 @@ perimeters, snapshot v27 placement-cell persistence and exact occupancy restore.
 passed 25/25, affected EditMode 154/154 and placement PlayMode 4/4. The separate B3 build succeeded
 at `Builds/P109BuildingsB3/Serenity.exe` with 0 errors / 53 warnings, GUID
 `563c001610724baf8e0a7b343e1a9dac`; protected files match 44/44.
+
+C1 connects the normal `WorkManager`/Tier1 haul path to `ConstructionBuffer` destinations. Placement
+does not deduct stock; high-priority delivery orders move batches of at most eight units from world
+piles or operational storage, and source reservations prevent a second construction plan from
+spending queued stock. Cancellation terminates construction work, spills buffered and installed
+materials to physical piles and removes the plan/storage/occupancy. Snapshot v27 already carries
+the buffer and work orders, so no format change was needed. Focused EditMode passed 7/7 and the
+directly affected construction/resource/work/Tier1 set passed 34/34. No broad regression or Player
+build was run by design; those gates remain after C4.
 
 ## Superseded screenshot-feedback handoff
 

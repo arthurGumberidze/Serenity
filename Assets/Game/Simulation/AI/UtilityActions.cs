@@ -214,7 +214,7 @@ namespace Game.Simulation.AI
                     Pickup();
                     break;
                 case AiActionPhase.MoveToDestination:
-                    if (!world.HaulJobs.BuildingStorageExists(job.Destination))
+                    if (!world.HaulJobs.DestinationExists(job.Destination))
                     {
                         if (!TryReplanDestination()) Fail();
                     }
@@ -258,6 +258,7 @@ namespace Game.Simulation.AI
             if (failure == TransferFailureReason.None)
             {
                 movement.Stop();
+                world.ResourceDelivered?.Invoke(job.Destination);
                 world.Claims.Release(claim);
                 IsFinished = true;
                 Succeeded = true;

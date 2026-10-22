@@ -1,5 +1,23 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings C1
+
+C1 is complete. LocalGameplay construction confirmation now initializes the existing staged
+construction buffer and creates ordinary high-priority haul work in bounded batches; source stock is
+not removed until a worker picks it up. World piles and operational building storage are valid
+sources, construction buffers are valid destinations, and drop-off commits any newly complete
+material stages. Open delivery quantities reserve source availability against later plans. Work
+orders, buffers and building progress round-trip through snapshot v27 and are rebound after load.
+
+Cancellation terminates the site's open delivery/build orders, spills buffered and already installed
+materials as physical canonical piles, removes unfinished attached storage and releases placement
+occupancy. Existing in-flight cargo cancellation remains lossless. Focused C1 EditMode passed 7/7 at
+`Artifacts/P109/buildings-c1/focused-editmode-final.xml`; the directly affected construction,
+resource, work-order and Tier1 hauling set passed 34/34 at
+`Artifacts/P109/buildings-c1/affected-editmode-final.xml`. No broad regression or Windows build was
+run at this internal checkpoint by design. C2 is active; the broad regression and separate Player
+build remain scheduled after C4.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings B3
 
 B3 is complete. `BuildingPlacementService` now resolves deterministic structure footprints,

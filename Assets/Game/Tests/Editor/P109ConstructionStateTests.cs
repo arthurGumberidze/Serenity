@@ -1,15 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
+using Game.Domain.AI;
 using Game.Domain.Buildings;
+using Game.Domain.Characters;
 using Game.Domain.Combat;
 using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Domain.Time;
 using Game.Domain.World;
+using Game.Domain.Work;
 using Game.Infrastructure;
 using Game.Simulation.Buildings;
+using Game.Simulation.AI;
 using Game.Simulation.Resources;
+using Game.Simulation.Work;
 using NUnit.Framework;
 
 namespace Game.Tests.Editor
@@ -58,6 +64,103 @@ namespace Game.Tests.Editor
             fixture.Building.AdvanceConstruction(TimeSpan.FromTicks(20));
             Assert.That(fixture.Building.ConstructionState, Is.EqualTo(ConstructionState.Completed));
             Assert.That(fixture.Building.ConstructionPhase, Is.EqualTo(ConstructionPhase.Completed));
+        }
+
+        [Test]
+        public void Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock()
+        {
+            var setup = CreateLogisticsFixture();
+            var initial = setup.Sources.Sum(x => x.TotalUnits);
+
+            var result = setup.Funding.TryConfirm(Definition(), new GridCoordinate(3, 4), BuildingOrientation.North,
+                setup.Sources.Select(x => x.Owner), out var building);
+
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(setup.Sources.Sum(x => x.TotalUnits), Is.EqualTo(initial),
+                "Planning must not teleport resources.");
+            Assert.That(setup.Inventories.Get(building.ConstructionBufferOwner).TotalUnits, Is.Zero);
+            var deliveries = setup.Work.Jobs.Where(x => x.Type == WorkJobType.Haul).ToArray();
+            Assert.That(deliveries.Sum(x => x.Quantity.Units), Is.EqualTo(7));
+            Assert.That(deliveries.All(x => x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer), Is.True);
+
+            var carryOwner = new InventoryOwner(InventoryOwnerKind.CarryLoad, Id(41));
+            setup.Inventories.Add(new ResourceInventory(carryOwner, setup.Resources, 12));
+            var claims = new HaulClaimRegistry();
+            var query = new HaulWorldQuery(setup.Inventories, setup.Piles, setup.Buildings, claims);
+            var firstDelivery = deliveries[0];
+            Assert.That(query.TryClaimSpecified(new Tier1AiAgentState(Id(41), default),
+                new InventoryOwner(InventoryOwnerKind.WorldPile, firstDelivery.Target.EntityId),
+                building.ConstructionBufferOwner, firstDelivery.ResourceId.Value, firstDelivery.Quantity,
+                out var candidate, out var claim), Is.True);
+            Assert.That(candidate.Destination, Is.EqualTo(building.ConstructionBufferOwner));
+            claims.Release(claim);
+            var transfers = new ResourceTransferService(setup.Inventories);
+            foreach (var delivery in deliveries)
+            {
+                var source = new InventoryOwner(InventoryOwnerKind.WorldPile, delivery.Target.EntityId);
+                Assert.That(transfers.TransferExact(source, carryOwner, delivery.ResourceId.Value,
+                    delivery.Quantity), Is.EqualTo(TransferFailureReason.None));
+                Assert.That(transfers.TransferExact(carryOwner, building.ConstructionBufferOwner,
+                    delivery.ResourceId.Value, delivery.Quantity), Is.EqualTo(TransferFailureReason.None));
+                setup.Sites.NotifyDelivery(building);
+            }
+
+            Assert.That(building.ConstructionPhase, Is.EqualTo(ConstructionPhase.Building));
+            Assert.That(setup.Sources.Sum(x => x.TotalUnits) + setup.Inventories.Get(carryOwner).TotalUnits +
+                setup.Inventories.Get(building.ConstructionBufferOwner).TotalUnits +
+                building.ConstructionMaterials.Sum(x => x.InstalledUnits), Is.EqualTo(initial));
+        }
+
+        [Test]
+        public void Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles()
+        {
+            var setup = CreateLogisticsFixture();
+            var initial = setup.Sources.Sum(x => x.TotalUnits);
+            Assert.That(setup.Funding.TryConfirm(Definition(), new GridCoordinate(3, 4), BuildingOrientation.North,
+                setup.Sources.Select(x => x.Owner), out var building).IsValid, Is.True);
+            Assert.That(setup.Sites.Deliver(building, setup.Sources.Single(x => x.GetAmount(Wood).Units > 0).Owner,
+                Wood, new ResourceQuantity(2)),
+                Is.EqualTo(TransferFailureReason.None));
+            Assert.That(setup.Sites.Deliver(building, setup.Sources.Single(x => x.GetAmount(Stone).Units > 0).Owner,
+                Stone, new ResourceQuantity(1)),
+                Is.EqualTo(TransferFailureReason.None));
+            setup.Sites.NotifyDelivery(building);
+            Assert.That(building.ConstructionStageIndex, Is.EqualTo(1));
+
+            Assert.That(setup.Funding.Cancel(building, Definition()), Is.True);
+
+            Assert.That(setup.Buildings.TryGet(building.Id, out _), Is.False);
+            Assert.That(setup.Inventories.TryGet(building.ConstructionBufferOwner, out _), Is.False);
+            Assert.That(setup.Work.Jobs.Where(x => x.Type == WorkJobType.Haul).All(x => x.IsTerminal), Is.True);
+            var sourceOwners = setup.Sources.Select(x => x.Owner).ToHashSet();
+            var spilled = setup.Piles.All.Where(pile => !sourceOwners.Contains(pile.InventoryOwner))
+                .Sum(pile => setup.Inventories.Get(pile.InventoryOwner).TotalUnits);
+            Assert.That(setup.Sources.Sum(x => x.TotalUnits) + spilled, Is.EqualTo(initial));
+        }
+
+        [Test]
+        public void PendingConstructionDelivery_RoundTripsWithBufferDestination()
+        {
+            var setup = CreateLogisticsFixture();
+            Assert.That(setup.Funding.TryConfirm(Definition(), new GridCoordinate(3, 4), BuildingOrientation.North,
+                setup.Sources.Select(x => x.Owner), out var building).IsValid, Is.True);
+            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(902), new GameTimeState(), 400,
+                production: new ProductionSaveState(0, 0, 0, 0, null, null, null, null,
+                    setup.Inventories.CaptureStates()),
+                buildingWorld: new BuildingWorldSaveState(new[] { building.CaptureState() },
+                    setup.Piles.CaptureStates(), 0), work: setup.Work.CaptureState(),
+                saveGenerationId: SaveSnapshot.StoneAgeBuildingSaveGenerationId);
+
+            var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
+            var work = new WorkManager(new CharacterRegistry());
+            work.RestoreState(restored.Work);
+
+            Assert.That(work.Jobs.Count(x => !x.IsTerminal && x.Type == WorkJobType.Haul), Is.EqualTo(2));
+            Assert.That(work.Jobs.Where(x => x.Type == WorkJobType.Haul)
+                .All(x => x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
+                    x.Destination.Value.EntityId == building.Id), Is.True);
+            Assert.That(restored.Production.Inventories.Single(x => x.Owner == building.ConstructionBufferOwner)
+                .Amounts, Is.Empty);
         }
 
         [Test]
@@ -121,6 +224,30 @@ namespace Game.Tests.Editor
             return new Fixture(inventories, source, building, settlement, sites, buffer);
         }
 
+        private static LogisticsFixture CreateLogisticsFixture()
+        {
+            var resources = new ResourceCatalog(new[]
+            {
+                new ResourceDefinition(Wood, "Wood", ResourceCategory.Construction),
+                new ResourceDefinition(Stone, "Stone", ResourceCategory.Construction)
+            });
+            var inventories = new ResourceInventoryRegistry();
+            var piles = new WorldPileService(resources, inventories);
+            var woodPile = piles.Create(Wood, new ResourceQuantity(6), new GridCoordinate(-2, 0), Id(10));
+            var stonePile = piles.Create(Stone, new ResourceQuantity(4), new GridCoordinate(-3, 0), Id(11));
+            var sources = new[] { inventories.Get(woodPile.InventoryOwner), inventories.Get(stonePile.InventoryOwner) };
+            var buildings = new BuildingRegistry();
+            var occupancy = new BuildingOccupancyGrid();
+            var placement = new BuildingPlacementService(buildings, occupancy,
+                new BuildingGridBounds(-10, -10, 10, 10));
+            var sites = new ConstructionSiteService(resources, inventories);
+            var work = new WorkManager(new CharacterRegistry());
+            var funding = new ConstructionFundingService(placement, inventories, resources,
+                new StorageService(inventories, resources)) { RequiresWorker = true };
+            funding.ConfigureLogistics(sites, work, piles, new SettlementId(Id(30)));
+            return new LogisticsFixture(resources, inventories, piles, sources, buildings, sites, work, funding);
+        }
+
         private static void DeliverAll(Fixture fixture)
         {
             while (fixture.Building.ConstructionPhase != ConstructionPhase.Building)
@@ -153,6 +280,23 @@ namespace Game.Tests.Editor
             public SettlementId Settlement { get; }
             public ConstructionSiteService Sites { get; }
             public ResourceInventory Buffer { get; }
+        }
+
+        private sealed class LogisticsFixture
+        {
+            public LogisticsFixture(ResourceCatalog resources, ResourceInventoryRegistry inventories,
+                WorldPileService piles, IReadOnlyList<ResourceInventory> sources, BuildingRegistry buildings,
+                ConstructionSiteService sites, WorkManager work, ConstructionFundingService funding)
+            { Resources = resources; Inventories = inventories; Piles = piles; Sources = sources; Buildings = buildings;
+                Sites = sites; Work = work; Funding = funding; }
+            public ResourceCatalog Resources { get; }
+            public ResourceInventoryRegistry Inventories { get; }
+            public WorldPileService Piles { get; }
+            public IReadOnlyList<ResourceInventory> Sources { get; }
+            public BuildingRegistry Buildings { get; }
+            public ConstructionSiteService Sites { get; }
+            public WorkManager Work { get; }
+            public ConstructionFundingService Funding { get; }
         }
     }
 }

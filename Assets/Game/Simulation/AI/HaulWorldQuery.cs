@@ -122,12 +122,13 @@ namespace Game.Simulation.AI
             if (agent == null) throw new ArgumentNullException(nameof(agent));
             candidate = default;
             claim = null;
-            if (sourceOwner.Kind != InventoryOwnerKind.WorldPile ||
-                destinationOwner.Kind != InventoryOwnerKind.BuildingStorage ||
-                !resourceId.IsValid || !quantity.IsPositive) return false;
-            if (!piles.TryGet(sourceOwner.Id, out var pile) || pile.ResourceId != resourceId ||
-                !buildings.TryGet(destinationOwner.Id, out var building) ||
-                building.ConstructionState != ConstructionState.Completed ||
+            if ((sourceOwner.Kind != InventoryOwnerKind.WorldPile &&
+                    sourceOwner.Kind != InventoryOwnerKind.BuildingStorage) ||
+                (destinationOwner.Kind != InventoryOwnerKind.BuildingStorage &&
+                    destinationOwner.Kind != InventoryOwnerKind.ConstructionBuffer) ||
+                !resourceId.IsValid || !quantity.IsPositive ||
+                !TryInventoryPosition(sourceOwner, resourceId, false, out var sourcePosition) ||
+                !TryInventoryPosition(destinationOwner, resourceId, true, out var destinationPosition) ||
                 !inventories.TryGet(sourceOwner, out var source) ||
                 !inventories.TryGet(destinationOwner, out var destination)) return false;
             var characterOwner = inventories.WorkerOwner(agent.CharacterId);
@@ -138,7 +139,7 @@ namespace Game.Simulation.AI
                     source.GetAmount(resourceId).Units, destination.Capacity - destination.TotalUnits, out claim))
                 return false;
             candidate = new HaulJobCandidate(sourceOwner, destinationOwner, resourceId, quantity,
-                ToWorld(pile.Coordinate), ToWorld(building.Coordinate));
+                sourcePosition, destinationPosition);
             return true;
         }
 
@@ -189,9 +190,35 @@ namespace Game.Simulation.AI
                     throw new InvalidOperationException("Transport load changed during drop transaction.");
             }
         }
-        public bool BuildingStorageExists(InventoryOwner owner) => owner.Kind == InventoryOwnerKind.BuildingStorage &&
-            inventories.TryGet(owner, out _) && buildings.TryGet(owner.Id, out var building) &&
-            building.IsOperational;
+        public bool DestinationExists(InventoryOwner owner) =>
+            TryInventoryPosition(owner, default, true, out _) && inventories.TryGet(owner, out _);
+
+        private bool TryInventoryPosition(InventoryOwner owner, ResourceId resourceId, bool destination,
+            out WorldPosition position)
+        {
+            position = default;
+            if (owner.Kind == InventoryOwnerKind.WorldPile)
+            {
+                if (destination || !piles.TryGet(owner.Id, out var pile) ||
+                    (resourceId.IsValid && pile.ResourceId != resourceId)) return false;
+                position = ToWorld(pile.Coordinate);
+                return true;
+            }
+            if (!buildings.TryGet(owner.Id, out var building)) return false;
+            if (owner.Kind == InventoryOwnerKind.BuildingStorage)
+            {
+                if (!building.IsOperational) return false;
+                position = ToWorld(building.Coordinate);
+                return true;
+            }
+            if (owner.Kind == InventoryOwnerKind.ConstructionBuffer && destination &&
+                !building.IsOperational && building.ConstructionPhase != ConstructionPhase.Cancelled)
+            {
+                position = ToWorld(building.Coordinate);
+                return true;
+            }
+            return false;
+        }
 
         private WorldPosition ToWorld(GridCoordinate coordinate)
         {
@@ -218,7 +245,7 @@ namespace Game.Simulation.AI
     {
         public Tier1AiWorld(HaulWorldQuery haulJobs, HaulClaimRegistry claims, ResourceTransferService transfers,
             ProductionService production = null, ResearchService research = null,
-            BuildingRegistry buildings = null)
+            BuildingRegistry buildings = null, Action<InventoryOwner> resourceDelivered = null)
         {
             HaulJobs = haulJobs ?? throw new ArgumentNullException(nameof(haulJobs));
             Claims = claims ?? throw new ArgumentNullException(nameof(claims));
@@ -226,6 +253,7 @@ namespace Game.Simulation.AI
             Production = production;
             Research = research;
             Buildings = buildings;
+            ResourceDelivered = resourceDelivered;
         }
         public HaulWorldQuery HaulJobs { get; }
         public HaulClaimRegistry Claims { get; }
@@ -233,5 +261,6 @@ namespace Game.Simulation.AI
         public ProductionService Production { get; }
         public ResearchService Research { get; }
         public BuildingRegistry Buildings { get; }
+        public Action<InventoryOwner> ResourceDelivered { get; }
     }
 }

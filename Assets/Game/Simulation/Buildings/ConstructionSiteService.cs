@@ -67,6 +67,34 @@ namespace Game.Simulation.Buildings
             return true;
         }
 
+        public void NotifyDelivery(Building building)
+        {
+            if (building == null) throw new ArgumentNullException(nameof(building));
+            RefreshReadiness(building);
+            while (building.ConstructionPhase == ConstructionPhase.ReadyForWork && CommitReadyStage(building)) { }
+        }
+
+        public void Cancel(Building building, WorldPileService piles)
+        {
+            if (building == null) throw new ArgumentNullException(nameof(building));
+            if (piles == null) throw new ArgumentNullException(nameof(piles));
+            if (building.IsOperational) throw new InvalidOperationException("Completed buildings cannot be cancelled.");
+            if (inventories.TryGet(building.ConstructionBufferOwner, out var buffer))
+            {
+                foreach (var amount in buffer.CaptureState().Amounts)
+                {
+                    if (!amount.Quantity.IsPositive) continue;
+                    piles.Create(amount.ResourceId, amount.Quantity, building.Coordinate);
+                    if (!buffer.TryRemove(amount.ResourceId, amount.Quantity))
+                        throw new InvalidOperationException("Construction buffer changed during cancellation.");
+                }
+                inventories.Remove(buffer.Owner, buffer);
+            }
+            foreach (var material in building.ConstructionMaterials.Where(x => x.InstalledUnits > 0))
+                piles.Create(material.ResourceId, new ResourceQuantity(material.InstalledUnits), building.Coordinate);
+            building.CancelConstruction();
+        }
+
         public void RebindRestored(Building building)
         {
             if (building == null) throw new ArgumentNullException(nameof(building));

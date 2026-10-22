@@ -97,14 +97,27 @@ namespace Game.Simulation.Work
             WorkGroupId? groupId = null, WorldPosition sourcePosition = default, bool exclusiveTarget = false,
             WorkQueuePlacement queuePlacement = WorkQueuePlacement.RejectWhenBusy)
         {
-            if (source.Kind != InventoryOwnerKind.WorldPile)
-                throw new ArgumentException("Manual haul source must be a world pile.", nameof(source));
-            if (destination.Kind != InventoryOwnerKind.BuildingStorage)
-                throw new ArgumentException("Manual haul destination must be building storage.", nameof(destination));
+            if (source.Kind != InventoryOwnerKind.WorldPile && source.Kind != InventoryOwnerKind.BuildingStorage)
+                throw new ArgumentException("Haul source must be a world pile or building storage.", nameof(source));
+            if (destination.Kind != InventoryOwnerKind.BuildingStorage &&
+                destination.Kind != InventoryOwnerKind.ConstructionBuffer)
+                throw new ArgumentException("Haul destination must be building storage or a construction buffer.",
+                    nameof(destination));
             return Create(WorkJobType.Haul, priority,
-                WorkTarget.ForEntity(WorkTargetKind.WorldPile, source.Id, sourcePosition),
-                WorkTarget.ForEntity(WorkTargetKind.BuildingStorage, destination.Id), assigneeId, groupId,
+                WorkTarget.ForEntity(TargetKind(source.Kind), source.Id, sourcePosition),
+                WorkTarget.ForEntity(TargetKind(destination.Kind), destination.Id), assigneeId, groupId,
                 resourceId, quantity, exclusiveTarget, queuePlacement);
+        }
+
+        private static WorkTargetKind TargetKind(InventoryOwnerKind kind)
+        {
+            switch (kind)
+            {
+                case InventoryOwnerKind.WorldPile: return WorkTargetKind.WorldPile;
+                case InventoryOwnerKind.BuildingStorage: return WorkTargetKind.BuildingStorage;
+                case InventoryOwnerKind.ConstructionBuffer: return WorkTargetKind.ConstructionBuffer;
+                default: throw new ArgumentOutOfRangeException(nameof(kind));
+            }
         }
 
         public WorkOrder CreateDirectJob(WorkJobType type, StableEntityId? assigneeId, WorkTarget target,

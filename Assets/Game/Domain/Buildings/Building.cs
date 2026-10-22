@@ -346,6 +346,12 @@ namespace Game.Domain.Buildings
             ConstructionPhase = ConstructionPhase.Completed;
         }
 
+        public void CancelConstruction()
+        {
+            if (IsOperational) throw new InvalidOperationException("Completed buildings cannot be cancelled as construction.");
+            ConstructionPhase = ConstructionPhase.Cancelled;
+        }
+
         public bool HasProcessedDamage(StableEntityId eventId) => processedDamageEvents.Contains(eventId);
 
         public int ApplyDamage(StableEntityId eventId, int amount, BuildingDamageType type, long calendarTick)
