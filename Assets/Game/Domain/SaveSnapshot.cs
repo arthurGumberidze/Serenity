@@ -51,7 +51,8 @@ namespace Game.Domain
         public const int BuildingConstructionVersion = 26;
         public const int BuildingPlacementVersion = 27;
         public const int BuildingProductionVersion = 28;
-        public const int CurrentVersion = BuildingProductionVersion;
+        public const int NeedsMoodVersion = 29;
+        public const int CurrentVersion = NeedsMoodVersion;
         public const string StoneAgeBuildingSaveGenerationId = "p109-stone-age-buildings-v1";
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
@@ -109,6 +110,7 @@ namespace Game.Domain
                 formatVersion != MilitaryCampaignVersion && formatVersion != DiagnosticVersion &&
                 formatVersion != BuildingConstructionVersion &&
                 formatVersion != BuildingPlacementVersion &&
+                formatVersion != BuildingProductionVersion &&
                 formatVersion != CurrentVersion)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));

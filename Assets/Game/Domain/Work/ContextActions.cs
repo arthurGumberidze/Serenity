@@ -14,7 +14,8 @@ namespace Game.Domain.Work
         Build = 5,
         Guard = 6,
         Move = 7,
-        Attack = 8
+        Attack = 8,
+        Craft = 9
     }
 
     public enum ContextTargetKind
@@ -180,6 +181,8 @@ namespace Game.Domain.Work
                 case ContextActionKind.Haul:
                     return target.Kind == ContextTargetKind.ResourcePile;
                 case ContextActionKind.Build:
+                    return target.Kind == ContextTargetKind.Building;
+                case ContextActionKind.Craft:
                     return target.Kind == ContextTargetKind.Building;
                 case ContextActionKind.Guard:
                     return target.Kind == ContextTargetKind.Character || target.Kind == ContextTargetKind.Building ||

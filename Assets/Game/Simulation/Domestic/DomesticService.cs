@@ -133,6 +133,9 @@ namespace Game.Simulation.Domestic
             if (bed != null) beds[bed.Id] = CopyBed(bed, occupied: null, setOccupied: true);
         }
 
+        public bool IsSleepingInBed(StableEntityId characterId) =>
+            characterId.IsValid && beds.Values.Any(x => x.OccupiedResidentId == characterId);
+
         public void SetConsent(StableEntityId characterId, StableEntityId partnerId, bool grantsConsent)
         {
             characters.Get(characterId); characters.Get(partnerId);

@@ -38,6 +38,22 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void StartingFavoriteComesFromLimitedListAndDoesNotChangeWhenOtherSkillsGrow()
+        {
+            var bootstrap = NewGameBootstrap.Create(new NewGameConfiguration(10503));
+            var characters = bootstrap.PlayerCharacters.Select(Character.Restore).ToArray();
+            Assert.That(characters.Select(CharacterSkillRules.Favorite)
+                .All(value => CharacterSkillRules.StartingFavorites.Contains(value)), Is.True);
+            Assert.That(characters.Select(CharacterSkillRules.Favorite).Distinct().Count(),
+                Is.EqualTo(CharacterSkillRules.StartingFavorites.Length));
+
+            var character = characters[0];
+            var favorite = CharacterSkillRules.Favorite(character);
+            character.SetSkill(new SkillState(CharacterSkillRules.Combat, new SkillLevel(100)));
+            Assert.That(CharacterSkillRules.Favorite(character), Is.EqualTo(favorite));
+        }
+
+        [Test]
         public void DataDrivenWardrobeHookPreservesCanonicalMilitaryIdThroughV22RoundTrip()
         {
             var definitions = StoneAgeClothingDefinitions.CreateCatalog();

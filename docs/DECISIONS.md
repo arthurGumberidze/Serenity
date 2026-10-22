@@ -1116,3 +1116,24 @@ New Game seeds a small cooked reserve rather than permitting raw-food fallback: 
 in player storage and forty on the abstract rival chief. This is bootstrap content, not an alternate
 food rule. Production buffers and world piles remain inedible until normal hauling/cooking places
 finished food in an eligible inventory. No new save fields or manager are required.
+
+## D-167 Feedback mechanics extend canonical work, needs and combat state (2026-10-22)
+
+A natural source admits no more active gather tasks than its remaining portions. Accepted workers own
+separate production tasks and outputs; worker count never multiplies one shared task's speed. Indoor
+presence is presentation derived from an arrived `Working` phase plus canonical bed/workplace ownership:
+the presenter hides inside enclosed buildings, but Campfire work is explicitly outdoor and visible.
+
+Mood belongs to `Tier1Needs` and snapshot v29. It changes from bed/ground sleep, cooked meals and favorite
+work; at or below 20% it blocks ordinary work but not survival recovery. Favorites are persisted as one
+reserved `favorite.<skill>` marker in the existing skill collection, so later skill growth cannot silently
+change the person's preference and older saves can fall back to their highest known skill. Skill levels
+modify the existing production, construction, carry and combat calculations and grow through their
+canonical completion points. Existing barracks training is the first formal training path; future schools
+must award levels through `CharacterSkillRules`, not a second progression store.
+
+Combatant state owns weapon durability (0–100) in v29. Each armed resolved attack consumes one point;
+zero durability selects the existing unarmed profile. Arrows are presentation feedback and are not an
+inventory/ammunition resource. Wildlife HP is presented from canonical hunting work remaining, so visible
+damage cannot diverge from task completion. Building color blocks are cleared in the undamaged friendly
+state to preserve authored material colors; damage/enemy tints remain derived presentation.

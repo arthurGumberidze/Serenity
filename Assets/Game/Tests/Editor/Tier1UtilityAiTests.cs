@@ -64,6 +64,17 @@ namespace Game.Tests
             Assert.That(needs.Energy, Is.Zero);
             needs.RecoverEnergy(2d);
             Assert.That(needs.Energy, Is.EqualTo(1d));
+            needs.AdjustMood(-0.8d);
+            Assert.That(needs.Mood, Is.EqualTo(0.2d).Within(0.0001d));
+        }
+
+        [Test]
+        public void ResidentAtTwentyPercentMoodRefusesOrdinaryWork()
+        {
+            var fixture = CreateFixture(1, 8, 40, thinkBatchSize: 1, initialMood: 0.2d);
+            fixture.AdvanceSeconds(2d);
+            Assert.That(fixture.Agents[0].CurrentAction, Is.EqualTo(UtilityActionKind.Idle));
+            Assert.That(fixture.SourceInventory.GetAmount(fixture.Wood).Units, Is.EqualTo(8));
         }
 
         [Test]
@@ -259,7 +270,7 @@ namespace Game.Tests
         }
 
         private static Fixture CreateFixture(int agentCount, long sourceUnits, long storageCapacity, int thinkBatchSize,
-            double initialEnergy = 1d)
+            double initialEnergy = 1d, double initialMood = 1d)
         {
             var resources = new ResourceCatalog(new[]
             {
@@ -291,7 +302,8 @@ namespace Game.Tests
                 characters.Add(character);
                 inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, character.Id), resources, 4));
                 var movement = new FakeMovement(character.Id, new WorldPosition(i * 0.01f, 0f, 0f));
-                var agent = new Tier1AiAgentState(character.Id, movement.CurrentPosition, new Tier1Needs(0d, initialEnergy));
+                var agent = new Tier1AiAgentState(character.Id, movement.CurrentPosition,
+                    new Tier1Needs(0d, initialEnergy, initialMood));
                 scheduler.Register(character, agent, movement);
                 fixture.Characters.Add(character);
                 fixture.Agents.Add(agent);

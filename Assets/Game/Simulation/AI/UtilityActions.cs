@@ -25,11 +25,13 @@ namespace Game.Simulation.AI
     {
         private readonly Tier1AiAgentState agent;
         private readonly Tier1AiSettings settings;
+        private readonly bool groundSleep;
 
-        public RestActionExecution(Tier1AiAgentState agent, Tier1AiSettings settings)
+        public RestActionExecution(Tier1AiAgentState agent, Tier1AiSettings settings, bool groundSleep = false)
         {
             this.agent = agent;
             this.settings = settings;
+            this.groundSleep = groundSleep;
             agent.SetAction(UtilityActionKind.Rest, AiActionPhase.Resting);
         }
 
@@ -44,6 +46,7 @@ namespace Game.Simulation.AI
         {
             var days = simulationDelta.TotalDays;
             agent.Needs.RecoverEnergy(settings.RestRecoveryPerDay * days);
+            if (groundSleep) agent.Needs.AdjustMood(-0.12d * days);
             if (agent.Needs.Energy >= settings.RestCompletionEnergy) IsFinished = true;
         }
 
@@ -97,6 +100,7 @@ namespace Game.Simulation.AI
             }
             if (Phase != AiActionPhase.Resting) return;
             agent.Needs.RecoverEnergy(settings.RestRecoveryPerDay * simulationDelta.TotalDays);
+            agent.Needs.AdjustMood(0.08d * simulationDelta.TotalDays);
             if (agent.Needs.Energy < settings.RestCompletionEnergy) return;
             Finish();
         }
@@ -154,6 +158,7 @@ namespace Game.Simulation.AI
                     return;
                 }
                 mealConsumed = true;
+                agent.Needs.AdjustMood(0.08d);
             }
             agent.Needs.SatisfyHunger(settings.HungerRecoveryPerDay * simulationDelta.TotalDays);
             if (agent.Needs.Hunger <= Tier1AiScheduler.CriticalHungerCompletion)
@@ -331,15 +336,21 @@ namespace Game.Simulation.AI
         private TimeSpan phaseElapsed;
         private ProductionCompletion completion;
         private InventoryOwner destination;
+        private readonly int workRatePerThousand;
+        private readonly Action onWorkExperience;
 
         public ProductionActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
-            ProductionService production, Tier1AiSettings settings, ProductionJob job)
+            ProductionService production, Tier1AiSettings settings, ProductionJob job,
+            int workRatePerThousand = 1000, Action onWorkExperience = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
             this.production = production ?? throw new ArgumentNullException(nameof(production));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.job = job;
+            if (workRatePerThousand <= 0) throw new ArgumentOutOfRangeException(nameof(workRatePerThousand));
+            this.workRatePerThousand = workRatePerThousand;
+            this.onWorkExperience = onWorkExperience;
             SetPhase(AiActionPhase.MoveToSource);
             movement.MoveTo(job.SourcePosition, 0.9f);
         }
@@ -375,7 +386,8 @@ namespace Game.Simulation.AI
                     }
                     break;
                 case AiActionPhase.Working:
-                    completion = production.AdvanceTask(job.Task.Id, simulationDelta);
+                    completion = production.AdvanceTask(job.Task.Id, TimeSpan.FromTicks(checked(
+                        simulationDelta.Ticks * workRatePerThousand / 1000L)));
                     if (!completion.Completed) break;
                     if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage ||
                         completion.OutputOwner.Kind == InventoryOwnerKind.WorldPile)
@@ -412,6 +424,7 @@ namespace Game.Simulation.AI
         private void Finish()
         {
             movement.Stop();
+            onWorkExperience?.Invoke();
             IsFinished = true;
             Succeeded = true;
             SetPhase(AiActionPhase.Completed);

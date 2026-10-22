@@ -17,6 +17,7 @@ namespace Game.Infrastructure.Editor
         public const string WorkshopPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_StoneToolWorkshop.prefab";
         private const string CropPath = "Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveCropPlot.prefab";
         private const string MaterialFolder = "Assets/Game/Art/Materials/P94";
+        private const string HutModelPath = "Assets/SoftLeitner/CityBuilderThree/Models/hut.fbx";
 
         [MenuItem("Serenity/P10.9/Build Five Base Buildings")]
         public static void Build()
@@ -119,12 +120,29 @@ namespace Game.Infrastructure.Editor
                 for (var z = -1; z <= 1; z += 2)
                     Part(PrimitiveType.Cylinder, "Post", frame, new Vector3(x * 1.45f, 1.45f, z * 1.45f),
                         new Vector3(.18f, 1.45f, .18f), Bark);
-            var finish = Stage(root.transform, "Stage 3 Hide Cover", 3);
-            Part(PrimitiveType.Cube, "Left roof", finish, new Vector3(-.8f, 2.55f, 0f),
-                new Vector3(2.15f, .12f, 3.5f), Hide, new Vector3(0f, 0f, -28f));
-            Part(PrimitiveType.Cube, "Right roof", finish, new Vector3(.8f, 2.55f, 0f),
-                new Vector3(2.15f, .12f, 3.5f), Hide, new Vector3(0f, 0f, 28f));
+            var finish = Stage(root.transform, "Stage 3 Finished Hut", 3);
+            AddFittedModel(Load<GameObject>(HutModelPath), finish, new Vector3(3.8f, 3.1f, 3.8f));
             Save(root, HutPath);
+        }
+
+        private static void AddFittedModel(GameObject source, Transform parent, Vector3 maximumSize)
+        {
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(source, parent);
+            model.name = "Finished hut model";
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale = Vector3.one;
+            var renderers = model.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) throw new InvalidDataException("Hut model has no renderers: " + HutModelPath);
+            var bounds = renderers[0].bounds;
+            for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            var scale = Mathf.Min(maximumSize.x / Mathf.Max(.01f, bounds.size.x),
+                maximumSize.y / Mathf.Max(.01f, bounds.size.y),
+                maximumSize.z / Mathf.Max(.01f, bounds.size.z));
+            model.transform.localScale = Vector3.one * scale;
+            bounds = renderers[0].bounds;
+            for (var i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            model.transform.position += new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
         }
 
         private static void BuildCampfire()

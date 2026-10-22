@@ -11,6 +11,7 @@ using Game.Simulation.Work;
 using Game.Domain.Health;
 using Game.Domain.Domestic;
 using Game.Simulation.Domestic;
+using Game.Simulation.Production;
 
 namespace Game.Simulation.AI
 {
@@ -83,6 +84,28 @@ namespace Game.Simulation.AI
         public Tier1AiSchedulerMetrics Metrics { get; } = new Tier1AiSchedulerMetrics();
         public bool IsFishing(StableEntityId characterId) => world.Production != null &&
             world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "fish_water");
+        public bool IsHunting(StableEntityId characterId) => world.Production != null &&
+            world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "hunt_animal");
+
+        public bool TryGetHuntingTarget(StableEntityId characterId, out WorldPosition position)
+        {
+            position = default;
+            if (world.Production == null ||
+                !world.Production.TryGetActiveTask(characterId, out var task, out var site) ||
+                task.RecipeId.ToString() != "hunt_animal") return false;
+            position = site.Position;
+            return true;
+        }
+
+        public bool ShouldHideInsideBuilding(StableEntityId characterId)
+        {
+            if (!byId.TryGetValue(characterId, out var entry) || entry.Agent.Phase != AiActionPhase.Working)
+                return false;
+            if (domestic?.IsSleepingInBed(characterId) == true) return true;
+            return world.Production != null &&
+                world.Production.TryGetActiveWorkplace(characterId, out var building) &&
+                building.DefinitionId != new Game.Domain.Buildings.BuildingDefinitionId("campfire");
+        }
         public AutonomousWorkMode WorkMode => autonomousWorkMode;
 
         public void SetAutonomousWorkMode(AutonomousWorkMode mode)
@@ -93,6 +116,7 @@ namespace Game.Simulation.AI
         public const double CriticalRestEnergy = 0.10d;
         public const double CriticalHunger = 0.90d;
         public const double CriticalHungerCompletion = 0.20d;
+        public const double WorkRefusalMood = 0.20d;
 
         public bool TryStartSleepNow(StableEntityId characterId, out SleepDenialReason reason)
         {
@@ -109,9 +133,7 @@ namespace Game.Simulation.AI
                 entry.Action?.Cancel(); entry.Action = null; Start(entry, UtilityActionKind.Rest);
                 reason = SleepDenialReason.None; return true;
             }
-            var eligibility = domestic.EvaluateSleep(characterId);
-            reason = eligibility.Reason;
-            if (!eligibility.Allowed) return false;
+            reason = SleepDenialReason.None;
             entry.Action?.Cancel(); entry.Action = null; Start(entry, UtilityActionKind.Rest);
             return entry.Action != null;
         }
@@ -349,7 +371,7 @@ namespace Game.Simulation.AI
             if (entry.Action == null) world.HaulJobs.DropTransportLoad(entry.Agent.CharacterId, entry.Agent.Position);
 
             if (work != null && work.TryGetAssigned(entry.Agent.CharacterId, out var direct) &&
-                direct.Priority == WorkPriority.Immediate)
+                direct.Priority == WorkPriority.Immediate && entry.Agent.Needs.Mood > WorkRefusalMood)
             {
                 if (entry.Action != null && IsManual(entry.Action.Kind)) return;
                 entry.Action?.Cancel(); entry.Action = null;
@@ -381,6 +403,18 @@ namespace Game.Simulation.AI
                 return;
             }
 
+            if (entry.Agent.Needs.Mood <= WorkRefusalMood)
+            {
+                if (entry.Action != null && IsManual(entry.Action.Kind))
+                {
+                    entry.Action.Cancel();
+                    entry.Action = null;
+                }
+                entry.Movement.Stop();
+                entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                return;
+            }
+
             if (entry.Action != null && IsManual(entry.Action.Kind)) return;
             if (work != null)
             {
@@ -405,7 +439,7 @@ namespace Game.Simulation.AI
                 if (world.Production?.UsesGroundOutputs == true && entry.Movement.IsAvailable)
                 {
                     if (entry.Action?.Kind == UtilityActionKind.Haul && entry.Action.IsValid) return;
-                    if (entry.Action == null && world.HaulJobs.TryFindJob(entry.Agent, settings.MaxHaulUnits, out _))
+                    if (entry.Action == null && world.HaulJobs.TryFindJob(entry.Agent, HaulCapacity(entry), out _))
                     {
                         Start(entry, UtilityActionKind.Haul);
                         return;
@@ -429,7 +463,7 @@ namespace Game.Simulation.AI
             var rest = new UtilityCandidate(UtilityActionKind.Rest,
                 new UtilityScore(1d - entry.Agent.Needs.Energy), true, 0);
             var haulAvailable = entry.Movement.IsAvailable &&
-                world.HaulJobs.TryFindJob(entry.Agent, settings.MaxHaulUnits, out _);
+                world.HaulJobs.TryFindJob(entry.Agent, HaulCapacity(entry), out _);
             var haulScore = 0.65d * entry.Agent.Needs.Energy * (1d - 0.5d * entry.Agent.Needs.Hunger);
             var haul = new UtilityCandidate(UtilityActionKind.Haul, new UtilityScore(haulScore), haulAvailable, 2);
             var productionAvailable = entry.Movement.IsAvailable && world.Production != null &&
@@ -483,7 +517,7 @@ namespace Game.Simulation.AI
                         else
                         {
                             entry.Movement.Stop();
-                            entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                            entry.Action = new RestActionExecution(entry.Agent, settings, true);
                         }
                     }
                     break;
@@ -492,7 +526,7 @@ namespace Game.Simulation.AI
                     entry.Action = new EatActionExecution(entry.Agent, settings, world.Production?.Food);
                     break;
                 case UtilityActionKind.Haul:
-                    if (world.HaulJobs.TryClaim(entry.Agent, settings.MaxHaulUnits, out var job, out var claim))
+                    if (world.HaulJobs.TryClaim(entry.Agent, HaulCapacity(entry), out var job, out var claim))
                         entry.Action = new HaulActionExecution(entry.Agent, entry.Movement, world, settings, job, claim);
                     else
                         entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
@@ -500,8 +534,14 @@ namespace Game.Simulation.AI
                 case UtilityActionKind.Produce:
                     if (world.Production != null &&
                         world.Production.TryReserve(entry.Agent.CharacterId, entry.Agent.Position, out var productionJob))
+                    {
+                        var skill = SkillForRecipe(productionJob.Task.RecipeId.ToString());
+                        var character = characters.Get(entry.Agent.CharacterId);
                         entry.Action = new ProductionActionExecution(entry.Agent, entry.Movement,
-                            world.Production, settings, productionJob);
+                            world.Production, settings, productionJob,
+                            CharacterSkillRules.WorkRatePerThousand(character, skill),
+                            () => GainExperience(entry, character, skill));
+                    }
                     else
                         entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
                     break;
@@ -557,11 +597,21 @@ namespace Game.Simulation.AI
                      job.Type == WorkJobType.Chop || job.Type == WorkJobType.Farm ||
                      job.Type == WorkJobType.Craft)
             {
-                if (world.Production != null && entry.Movement.IsAvailable &&
-                    world.Production.TryReserveAtSite(entry.Agent.CharacterId, job.Target.EntityId, out var productionJob))
+                ProductionJob productionJob = default;
+                var reserved = world.Production != null && entry.Movement.IsAvailable &&
+                    (job.Type == WorkJobType.Craft && job.Target.Kind == WorkTargetKind.Building
+                        ? world.Production.TryReserveAtBuilding(entry.Agent.CharacterId, job.Target.EntityId,
+                            out productionJob)
+                        : world.Production.TryReserveAtSite(entry.Agent.CharacterId, job.Target.EntityId,
+                            out productionJob));
+                if (reserved)
                 {
+                    var character = characters.Get(entry.Agent.CharacterId);
+                    var skill = SkillForJob(job.Type, productionJob.Task.RecipeId.ToString());
                     var production = new ProductionActionExecution(entry.Agent, entry.Movement,
-                        world.Production, settings, productionJob);
+                        world.Production, settings, productionJob,
+                        CharacterSkillRules.WorkRatePerThousand(character, skill),
+                        () => GainExperience(entry, character, skill));
                     entry.Action = new ManualProductionActionExecution(production, work, job);
                 }
                 else
@@ -585,8 +635,12 @@ namespace Game.Simulation.AI
                     completion = building.MarkCompleted;
                     construction = building;
                 }
+                var character = characters.Get(entry.Agent.CharacterId);
+                var skill = SkillForJob(job.Type, null);
                 entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
-                    settings.MovementTimeout, completion, construction);
+                    settings.MovementTimeout, completion, construction,
+                    CharacterSkillRules.WorkRatePerThousand(character, skill),
+                    () => GainExperience(entry, character, skill));
             }
             entry.LastActionTicks = calendarTicks;
         }
@@ -594,6 +648,46 @@ namespace Game.Simulation.AI
         private static bool IsManual(UtilityActionKind kind) =>
             kind == UtilityActionKind.ManualMove || kind == UtilityActionKind.ManualHaul ||
             kind == UtilityActionKind.ManualTask;
+
+        private long HaulCapacity(Entry entry) => CharacterSkillRules.CarryCapacity(
+            characters.Get(entry.Agent.CharacterId), settings.MaxHaulUnits);
+
+        private static void GainExperience(Entry entry, Character character, SkillId skill)
+        {
+            CharacterSkillRules.GainWorkExperience(character, skill);
+            if (CharacterSkillRules.Favorite(character).Equals(skill)) entry.Agent.Needs.AdjustMood(0.03d);
+        }
+
+        private static SkillId SkillForJob(WorkJobType type, string recipeId)
+        {
+            switch (type)
+            {
+                case WorkJobType.Build: return CharacterSkillRules.Construction;
+                case WorkJobType.Military:
+                case WorkJobType.Guard: return CharacterSkillRules.Combat;
+                case WorkJobType.Farm: return CharacterSkillRules.Farming;
+                case WorkJobType.Craft: return SkillForRecipe(recipeId);
+                case WorkJobType.Gather:
+                case WorkJobType.Mine:
+                case WorkJobType.Chop:
+                case WorkJobType.Haul: return CharacterSkillRules.Gathering;
+                case WorkJobType.Research: return CharacterSkillRules.Research;
+                case WorkJobType.Care: return CharacterSkillRules.Medicine;
+                default: return CharacterSkillRules.Gathering;
+            }
+        }
+
+        private static SkillId SkillForRecipe(string recipeId)
+        {
+            var key = recipeId ?? string.Empty;
+            if (key.IndexOf("hunt", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Hunting;
+            if (key.IndexOf("cook", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Cooking;
+            if (key.IndexOf("cultivate", StringComparison.Ordinal) >= 0 ||
+                key.IndexOf("farm", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Farming;
+            if (key.IndexOf("craft", StringComparison.Ordinal) >= 0 ||
+                key.IndexOf("tool", StringComparison.Ordinal) >= 0) return CharacterSkillRules.Crafting;
+            return CharacterSkillRules.Gathering;
+        }
 
         private static InventoryOwnerKind OwnerKind(WorkTargetKind kind)
         {

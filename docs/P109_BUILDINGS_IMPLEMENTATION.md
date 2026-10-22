@@ -1,5 +1,39 @@
 # P10.9 Stone Age buildings implementation
 
+## Gameplay feedback stabilization before D1
+
+Date: 22 October 2026. By user direction C5 acceptance is deferred and the reported gameplay
+defects were fixed before entering D1. The implementation includes bounded independent gather work,
+sleep/indoor visibility with Campfire exception, construction cancellation, clickable notification
+focus, animal roaming/hunting HP/arrows, human HP/mood, Campfire production/fire, authored material
+color preservation, CityBuilder hut art, favorite activities, skill effects/progression and persisted
+weapon durability. See D-167 and the current PROJECT_STATE checkpoint for the exact contracts.
+
+Final affected EditMode command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P104NaturalResourcesTests;Game.Tests.Editor.P105CharacterProductionTests;Game.Tests.Editor.P106DomesticAndSaveTests;Game.Tests.Editor.P109BuildingProductionTests;Game.Tests.Editor.PlayerControlStateTests;Game.Tests.Editor.TacticalCombatTests;Game.Tests.Editor.Tier1UtilityAiTests' -testResults 'C:\serenity_game\Artifacts\P109\feedback-stabilization\affected-final-editmode.xml' -logFile 'C:\serenity_game\Artifacts\P109\feedback-stabilization\affected-final-editmode.log'
+```
+
+Result: 46/46 passed. Earlier focused checkpoints passed 17/17, 50/50, 55/55, 23/23,
+14/14 and 33/33. Both a headless GameplayUi PlayMode command and a D3D11
+BuildingPlacementPlayModeTests command stalled after real-scene entry during UMA initialization;
+neither emitted NUnit XML, so neither is claimed as passed. Verified test-owned PIDs were terminated
+and their generated InitTestScene/lock artifacts removed.
+
+Windows build command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\feedback-stabilization\build.log' -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109FeedbackStabilization/Serenity.exe'
+```
+
+Result: succeeded, 0 errors / 53 warnings; executable:
+`Builds/P109FeedbackStabilization/Serenity.exe`. Unity recorded `Build Successful` and
+`U00_BUILD_RESULT: Succeeded` before its post-build process tree failed to exit; only the verified
+build-owned Unity/worker/crash-handler PIDs were stopped and the residual lock was removed. The
+tracked Synty/PNB content is repository content from `a8114d70`; it is not part of the excluded
+user-owned dirty set.
+
 ## Stage B1 complete
 
 Date: 21 October 2026. Commit scope: extensible building definition specifications and validation.

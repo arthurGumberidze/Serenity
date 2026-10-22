@@ -81,6 +81,14 @@ namespace Game.Presentation.UI
         private Label tpsLabel;
         private Label gameOverLabel;
         private readonly List<string> notificationFeed = new List<string>();
+        private sealed class NotificationTarget
+        {
+            public StableEntityId? CharacterId;
+            public StableEntityId? BuildingId;
+            public WorldPosition? Position;
+            public GameplayPanel? Panel;
+        }
+        private readonly List<NotificationTarget> notificationTargets = new List<NotificationTarget>();
         private int notificationVersion;
         private int renderedNotificationVersion = -1;
         private bool emptyInspectorRendered;
@@ -584,6 +592,13 @@ namespace Game.Presentation.UI
                 targetStatusValid = context.Buildings.TryGet(target.EntityId, out var building) &&
                     !building.IsOperational && !building.IsDestroyed;
             }
+            else if (action == ContextActionKind.Craft && target.Kind == ContextTargetKind.Building)
+            {
+                targetStatusValid = context.Buildings.TryGet(target.EntityId, out var building) &&
+                    building.IsOperational && context.Production.Sites.Any(x =>
+                        x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id &&
+                        x.IsWorkAvailable);
+            }
             var busy = context.Work.HasOpenJob(id);
             var criticalNeed = context.AiAgents.TryGet(id, out var agent) &&
                 (agent.Needs.Energy <= Game.Simulation.AI.Tier1AiScheduler.CriticalRestEnergy ||
@@ -611,6 +626,7 @@ namespace Game.Presentation.UI
                 case ContextActionKind.Chop: required = WorkGroupRole.Gatherers; break;
                 case ContextActionKind.Haul: required = WorkGroupRole.Haulers; break;
                 case ContextActionKind.Build: required = WorkGroupRole.Builders; break;
+                case ContextActionKind.Craft: required = WorkGroupRole.Crafters; break;
                 case ContextActionKind.Guard: required = WorkGroupRole.Warriors; break;
                 default: return true;
             }
@@ -710,6 +726,7 @@ namespace Game.Presentation.UI
                 case ContextActionKind.Chop: return "Рубить";
                 case ContextActionKind.Haul: return "Нести";
                 case ContextActionKind.Build: return "Строить";
+                case ContextActionKind.Craft: return "Готовить / производить";
                 case ContextActionKind.Guard: return "Охранять";
                 case ContextActionKind.Move: return "Идти";
                 case ContextActionKind.Attack: return "Напасть";
@@ -1604,7 +1621,7 @@ namespace Game.Presentation.UI
             var character = context.Characters.Get(id.Value);
             AddLine(mainPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
             if (context.AiAgents.TryGet(id.Value, out var agent))
-                AddLine(mainPanel, $"Голод: {agent.Needs.Hunger:P0} · энергия: {agent.Needs.Energy:P0}");
+                AddLine(mainPanel, $"Голод: {agent.Needs.Hunger:P0} · энергия: {agent.Needs.Energy:P0} · настроение: {agent.Needs.Mood:P0}");
             var sleep = context.Domestic.EvaluateSleep(id.Value);
             AddLine(mainPanel, sleep.Allowed
                 ? "Спальное место назначено в закрытом обитаемом доме."
@@ -2093,9 +2110,19 @@ namespace Game.Presentation.UI
             AddLine(inspector, F("ui.character.profession", ProfessionName(character.ProfessionId?.ToString())));
             AddLine(inspector, F("ui.character.health", capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("common.active"),
                 Percent(capabilities.WorkPerThousand), Percent(capabilities.ResearchPerThousand)));
+            var body = character.Health;
+            var hitPoints = new[] { body.Head.Value, body.Torso.Value, body.LeftArm.Value, body.RightArm.Value,
+                body.LeftLeg.Value, body.RightLeg.Value };
+            AddLine(inspector, $"Жизнь: {hitPoints.Sum() / hitPoints.Length}/100 · минимум части тела {hitPoints.Min()}/100");
+            AddLine(inspector, $"Любимое занятие: {CharacterSkillRules.Favorite(character)}");
+            AddMuted(inspector, "Навыки: " + string.Join(", ", character.CaptureState().Skills
+                .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
+                .OrderByDescending(x => x.Level.Value).ThenBy(x => x.Id.Value)
+                .Select(x => $"{x.Id} {x.Level.Value}")));
             if (context.AiAgents.TryGet(id, out var agent))
                 AddLine(inspector, F("ui.character.needs", RussianTextCatalog.Percent(agent.Needs.Hunger),
-                    RussianTextCatalog.Percent(agent.Needs.Energy), E(agent.CurrentAction), E(agent.Phase)));
+                    RussianTextCatalog.Percent(agent.Needs.Energy), E(agent.CurrentAction), E(agent.Phase)) +
+                    $" · настроение {agent.Needs.Mood:P0}");
             else AddMuted(inspector, T("ui.character.offcamera"));
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
                 x.State != HealthConditionState.Recovered).ToArray();
@@ -2115,6 +2142,8 @@ namespace Game.Presentation.UI
             AddLine(inspector, F("ui.character.military", context.Military.TryGetForMember(id, out var unit)
                 ? T("ui.character.member") + (unit.CaptainId == id ? ", " + T("ui.character.captain") : string.Empty)
                 : T("ui.character.civilian")));
+            if (context.Combat.TryGetCombatant(id, out var combatant))
+                AddLine(inspector, $"Оружие: {combatant.WeaponId} · прочность {combatant.WeaponDurability}/100");
             if (context.Events != null)
             {
                 var eventHistory = context.Events.History.Where(x => x.Targets.Any(target =>
@@ -2205,6 +2234,13 @@ namespace Game.Presentation.UI
                 new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
             inspector.Add(ActionButton(building.IsOperational ? "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
+            if (!building.IsOperational)
+                inspector.Add(ActionButton("Отменить стройку", () => TryCommand(() =>
+                {
+                    if (!context.BuildingPlacement.CancelConstruction(building))
+                        throw new PlayerFacingException("Стройку уже нельзя отменить.");
+                    SetStatus("Стройка отменена; доставленные материалы возвращены на землю.");
+                })));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));
         }
 
@@ -2225,8 +2261,13 @@ namespace Game.Presentation.UI
             if (notificationFeed.Count == 0) AddMuted(notifications, T("ui.notifications.none"));
             // The fixed-height player HUD intentionally shows only the two newest messages; older entries remain
             // in the bounded feed for tests/history without spilling into the selection inspector.
-            foreach (var message in notificationFeed.Skip(Math.Max(0, notificationFeed.Count - 2)).Reverse())
-                AddLine(notifications, message);
+            for (var index = notificationFeed.Count - 1; index >= Math.Max(0, notificationFeed.Count - 2); index--)
+            {
+                var captured = index;
+                var button = ActionButton(notificationFeed[index], () => FocusNotification(notificationTargets[captured]));
+                button.tooltip = "Перейти к событию";
+                notifications.Add(button);
+            }
         }
 
         private void CaptureNotifications()
@@ -2249,39 +2290,65 @@ namespace Game.Presentation.UI
                 Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears);
             if (notificationsPrimed && !suppressNotificationCaptureOnce)
             {
-                if (researchCount > knownResearchCount) AddNotification(T("ui.notification.research"));
-                if (characterCount > knownCharacterCount) AddNotification(T("ui.notification.birth"));
-                if (aliveCount < knownAliveCount) AddNotification(T("ui.notification.death"));
-                if (dynastyCount > knownDynastyHistoryCount) AddNotification(T("ui.notification.succession"));
-                if (conditionCount > knownConditionCount) AddNotification(T("ui.notification.condition"));
+                if (researchCount > knownResearchCount) AddNotification(T("ui.notification.research"),
+                    new NotificationTarget { Panel = GameplayPanel.Research });
+                if (characterCount > knownCharacterCount)
+                {
+                    var born = PlayerCharacterIds().Select(id => context.Characters.Get(id))
+                        .OrderByDescending(x => x.BiologicalBirthTick).ThenBy(x => x.Id).First();
+                    AddNotification(T("ui.notification.birth"), new NotificationTarget { CharacterId = born.Id });
+                }
+                if (aliveCount < knownAliveCount)
+                {
+                    var dead = PlayerCharacterIds().Select(id => context.Characters.Get(id))
+                        .Where(x => x.LifeState == CharacterLifeState.Dead)
+                        .OrderByDescending(x => x.BiologicalDeathTick).ThenBy(x => x.Id).FirstOrDefault();
+                    AddNotification(T("ui.notification.death"),
+                        new NotificationTarget { CharacterId = dead?.Id, Panel = GameplayPanel.Dynasty });
+                }
+                if (dynastyCount > knownDynastyHistoryCount) AddNotification(T("ui.notification.succession"),
+                    new NotificationTarget { CharacterId = context.Dynasty.CurrentMonarchId, Panel = GameplayPanel.Dynasty });
+                if (conditionCount > knownConditionCount)
+                {
+                    var condition = context.Health.Conditions.Last();
+                    AddNotification(T("ui.notification.condition"),
+                        new NotificationTarget { CharacterId = condition.TargetId });
+                }
                 if (buildingHistory > knownBuildingHistoryCount)
                 {
-                    var change = context.Buildings.All.SelectMany(x => x.History).OrderByDescending(x => x.CalendarTick)
-                        .ThenByDescending(x => x.Sequence).First();
-                    AddNotification(F("ui.notification.building", E(change.Kind)));
+                    var entry = context.Buildings.All.SelectMany(building => building.History.Select(change =>
+                            new { Building = building, Change = change }))
+                        .OrderByDescending(x => x.Change.CalendarTick).ThenByDescending(x => x.Change.Sequence).First();
+                    AddNotification(F("ui.notification.building", E(entry.Change.Kind)),
+                        new NotificationTarget { BuildingId = entry.Building.Id });
                 }
                 if (battleEvents > knownBattleEventCount)
                 {
                     var change = context.Battles.Battles.SelectMany(x => x.BattleHistory)
                         .OrderByDescending(x => x.CalendarTick).ThenByDescending(x => x.Sequence).First();
                     AddNotification(T(change.Kind == BattleEventKind.Started ? "ui.notification.battle_started" :
-                        change.Kind == BattleEventKind.Finished ? "ui.notification.battle_finished" : "ui.notification.battle_changed"));
+                        change.Kind == BattleEventKind.Finished ? "ui.notification.battle_finished" : "ui.notification.battle_changed"),
+                        new NotificationTarget { Panel = GameplayPanel.Military });
                 }
-                if (travelCount < knownTravelCount) AddNotification(T("ui.notification.arrival"));
-                if (shortage > knownFoodShortage) AddNotification(T("ui.notification.shortage"));
-                if (pendingEventCount > knownPendingEventCount) AddNotification(T("ui.notification.event"));
+                if (travelCount < knownTravelCount) AddNotification(T("ui.notification.arrival"),
+                    new NotificationTarget { Panel = GameplayPanel.Global });
+                if (shortage > knownFoodShortage) AddNotification(T("ui.notification.shortage"),
+                    new NotificationTarget { Panel = GameplayPanel.Economy });
+                if (pendingEventCount > knownPendingEventCount) AddNotification(T("ui.notification.event"),
+                    new NotificationTarget { Panel = GameplayPanel.Events });
                 if (eventHistoryCount > knownEventHistoryCount)
                 {
                     var entry = context.Events.History.Last();
                     AddNotification(F("ui.notification.event_resolved", EventTitle(entry.DefinitionId,
-                        context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Id)));
+                        context.Events.Catalog.Get(entry.DefinitionId).Nodes[0].Id)),
+                        new NotificationTarget { Panel = GameplayPanel.Events });
                 }
                 if (campaignSequence > knownCampaignEventSequence && context.Campaign != null)
                 {
                     if (context.Campaign.State.MilitaryVictory)
-                        AddNotification(T("ui.notification.victory"));
+                        AddNotification(T("ui.notification.victory"), new NotificationTarget { Panel = GameplayPanel.Military });
                     else if (context.Campaign.State.RivalDiscovered)
-                        AddNotification(T("ui.notification.discovery"));
+                        AddNotification(T("ui.notification.discovery"), new NotificationTarget { Panel = GameplayPanel.Global });
                 }
                 if (occupationSequence > knownOccupationEventSequence)
                 {
@@ -2291,9 +2358,17 @@ namespace Game.Presentation.UI
                         : change.Kind == SettlementOccupationEventKind.Completed
                             ? "ui.notification.occupation_completed"
                             : "ui.notification.occupation_interrupted";
-                    AddNotification(F(key, SideName(change.ClaimantSideId)));
+                    AddNotification(F(key, SideName(change.ClaimantSideId)),
+                        new NotificationTarget { Panel = GameplayPanel.Global });
                 }
-                if (adultCount > knownAdultCount) AddNotification(T("ui.notification.adulthood"));
+                if (adultCount > knownAdultCount)
+                {
+                    var adult = PlayerCharacterIds().Select(id => context.Characters.Get(id))
+                        .Where(x => x.AgeInCompletedYears(context.Clock().State.BiologicalTicks) >=
+                            Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears)
+                        .OrderByDescending(x => x.BiologicalBirthTick).ThenBy(x => x.Id).First();
+                    AddNotification(T("ui.notification.adulthood"), new NotificationTarget { CharacterId = adult.Id });
+                }
             }
             suppressNotificationCaptureOnce = false;
             notificationsPrimed = true;
@@ -2614,12 +2689,44 @@ namespace Game.Presentation.UI
 
         private void SetStatus(string message) => statusLabel.text = message ?? string.Empty;
 
-        private void AddNotification(string message)
+        private void AddNotification(string message, NotificationTarget target = null)
         {
             if (string.IsNullOrWhiteSpace(message)) return;
             notificationFeed.Add(message.Trim());
-            if (notificationFeed.Count > 20) notificationFeed.RemoveAt(0);
+            notificationTargets.Add(target ?? new NotificationTarget());
+            if (notificationFeed.Count > 20)
+            {
+                notificationFeed.RemoveAt(0);
+                notificationTargets.RemoveAt(0);
+            }
             notificationVersion++;
+        }
+
+        private void FocusNotification(NotificationTarget target)
+        {
+            if (target == null) return;
+            if (target.Panel.HasValue) SetPanel(target.Panel.Value);
+            if (target.CharacterId.HasValue)
+            {
+                context.Selection.SelectCharacterIds(new[] { target.CharacterId.Value });
+                if (context.Presentations.TryGet(target.CharacterId.Value, out var presenter) && presenter != null)
+                    context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
+                        presenter.transform.position.z));
+            }
+            else if (target.BuildingId.HasValue)
+            {
+                var presenter = FindObjectsByType<Game.Presentation.Buildings.BuildingPresenter>(FindObjectsInactive.Exclude)
+                    .FirstOrDefault(x => x.IsBound && x.BuildingId == target.BuildingId.Value);
+                if (presenter != null)
+                {
+                    context.Selection.SelectBuilding(presenter);
+                    context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
+                        presenter.transform.position.z));
+                }
+            }
+            else if (target.Position.HasValue) context.FocusWorld(target.Position.Value);
+            SetStatus("Переход к событию.");
+            RefreshNow();
         }
 
         private void CloseModal()

@@ -330,7 +330,7 @@ namespace Game.Simulation.Combat
                 state: CombatantState.Attacking);
             if (!positions.TryGetPosition(attackerId, out var attackerPosition) ||
                 !positions.TryGetPosition(targetId, out var targetPosition)) return ManualCombatAttackStatus.Invalid;
-            var attackerStats = EffectiveStats(attackerId, attacker.WeaponId, calendarTick);
+            var attackerStats = EffectiveStats(attackerId, EffectiveWeapon(attacker), calendarTick);
             if (attackerPosition.DistanceSquared(targetPosition) > attackerStats.RangeMetres * attackerStats.RangeMetres)
                 return ManualCombatAttackStatus.OutOfRange;
             if (calendarTick < attacker.NextAttackTick) return ManualCombatAttackStatus.Cooldown;
@@ -575,7 +575,7 @@ namespace Game.Simulation.Combat
                 }
                 combatant = combatant.With(targetId: targetId.Value);
                 encounter.Combatants[id] = combatant;
-                var attackerStats = EffectiveStats(id, combatant.WeaponId, calendarTick);
+                var attackerStats = EffectiveStats(id, EffectiveWeapon(combatant), calendarTick);
                 if (!positions.TryGetPosition(id, out var attackerPosition) ||
                     !positions.TryGetPosition(targetId.Value, out var targetPosition)) continue;
                 var range = attackerStats.RangeMetres;
@@ -646,7 +646,7 @@ namespace Game.Simulation.Combat
                     encounter.Combatants[id] = combatant;
                     if (nextStep < combatant.NextAttackTick) continue;
                     ResolveAttack(encounter, combatant, targetId.Value,
-                        EffectiveStats(id, combatant.WeaponId, nextStep), nextStep, biologicalTick);
+                        EffectiveStats(id, EffectiveWeapon(combatant), nextStep), nextStep, biologicalTick);
                 }
                 encounter.LastTick = nextStep;
                 ResolveOutcome(encounter);
@@ -680,14 +680,18 @@ namespace Game.Simulation.Combat
             CombatStats attackerStats, long calendarTick, long biologicalTick)
         {
             var defender = encounter.Combatants[defenderId];
-            var defenderStats = stats.Get(defenderId, defender.WeaponId);
+              var defenderStats = stats.Get(defenderId, EffectiveWeapon(defender));
             var impact = CombatRules.CalculateImpact(attackerStats, defenderStats);
-            var requested = CombatRules.SelectInjury(impact, weapons.Get(attacker.WeaponId).MinimumInjury);
+              var effectiveWeapon = EffectiveWeapon(attacker);
+              var requested = CombatRules.SelectInjury(impact, weapons.Get(effectiveWeapon).MinimumInjury);
             var application = health.ApplyCombatInjury(defenderId, requested, calendarTick, biologicalTick);
+              CharacterSkillRules.GainWorkExperience(characters.Get(attacker.CharacterId), CharacterSkillRules.Combat);
             var sequence = checked(attacker.AttackSequence + 1UL);
             encounter.Combatants[attacker.CharacterId] = attacker.With(state: CombatantState.Attacking,
                 nextAttackTick: checked(calendarTick + attackerStats.AttackIntervalTicks), attackSequence: sequence,
-                recentInjury: application.ConditionId.ToString());
+                  recentInjury: application.ConditionId.ToString(),
+                  weaponDurability: effectiveWeapon.Equals(attacker.WeaponId) && attacker.WeaponId.Value != "unarmed"
+                      ? Math.Max(0, attacker.WeaponDurability - 1) : attacker.WeaponDurability);
             encounter.History.Add(new CombatAttackRecordState(attacker.CharacterId, defenderId, sequence,
                 calendarTick, application.ConditionId, application.Applied, application.Fatal));
 
@@ -843,11 +847,16 @@ namespace Game.Simulation.Combat
             var modifier = combatModifier?.Invoke(characterId, calendarTick) ?? 1000;
             if (modifier < 1 || modifier > 1000)
                 throw new InvalidOperationException("Combat modifier must be in 1..1000 per-thousand.");
-            return modifier == 1000 ? value : new CombatStats(
-                Math.Max(0, value.AttackPower * modifier / 1000), value.Defense,
+              var skillModifier = CharacterSkillRules.WorkRatePerThousand(
+                  characters.Get(characterId), CharacterSkillRules.Combat);
+              return modifier == 1000 && skillModifier == 1000 ? value : new CombatStats(
+                  Math.Max(0, checked(value.AttackPower * modifier / 1000 * skillModifier / 1000)), value.Defense,
                 value.AttackIntervalTicks, value.RangeMillimetres, value.MovementPerThousand,
                 value.MoraleInfluence);
         }
+
+          private static CombatWeaponId EffectiveWeapon(CombatantCombatState combatant) =>
+              combatant.WeaponDurability > 0 ? combatant.WeaponId : new CombatWeaponId("unarmed");
 
         private void MoveToUnlessSuppressed(StableEntityId characterId, WorldPosition target, float stoppingDistance)
         {

@@ -17,10 +17,13 @@ namespace Game.Simulation.AI
         private TimeSpan elapsed;
         private TimeSpan workElapsed;
         private readonly Game.Domain.Buildings.Building construction;
+        private readonly int workRatePerThousand;
+        private readonly Action onWorkExperience;
 
         public ManualDirectActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null,
-            Game.Domain.Buildings.Building construction = null)
+            Game.Domain.Buildings.Building construction = null, int workRatePerThousand = 1000,
+            Action onWorkExperience = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
@@ -29,6 +32,9 @@ namespace Game.Simulation.AI
             this.timeout = timeout;
             this.onCompleted = onCompleted;
             this.construction = construction;
+            if (workRatePerThousand <= 0) throw new ArgumentOutOfRangeException(nameof(workRatePerThousand));
+            this.workRatePerThousand = workRatePerThousand;
+            this.onWorkExperience = onWorkExperience;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
             movement.MoveTo(job.Target.Position, 0.9f);
@@ -65,11 +71,13 @@ namespace Game.Simulation.AI
             workElapsed += simulationDelta;
             if (construction != null && construction.ConstructionRequiredTicks > 0)
             {
-                construction.AdvanceConstruction(simulationDelta);
+                construction.AdvanceConstruction(TimeSpan.FromTicks(checked(
+                    simulationDelta.Ticks * workRatePerThousand / 1000L)));
                 if (!construction.IsOperational) return;
             }
             else if (workElapsed < TimeSpan.FromMinutes(10)) return;
             onCompleted?.Invoke();
+            onWorkExperience?.Invoke();
             work.Complete(job.Id);
             IsFinished = true;
             Succeeded = true;

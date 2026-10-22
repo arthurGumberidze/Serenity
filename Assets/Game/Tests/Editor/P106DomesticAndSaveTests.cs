@@ -92,7 +92,7 @@ namespace Game.Tests.Editor
             {
                 new CharacterRuntimeSaveEntry(CharacterSimulationTier.Tier1,
                     new CharacterRuntimeState(fixture.Man.Id, new WorldPosition(2, 0, 3), default, false,
-                        hunger: 0.72, energy: 0.19))
+                        hunger: 0.72, energy: 0.19, mood: 0.34))
             });
             var connected = new ConnectedWorldSaveState(ConnectedWorldContract.GenerationId,
                 Array.Empty<WorldDiscoveryCell>(), Array.Empty<ScoutingAssignmentState>(), 0);
@@ -107,6 +107,7 @@ namespace Game.Tests.Editor
             Assert.That(restored.Domestic.Homes.Count, Is.EqualTo(1));
             Assert.That(restored.Domestic.Beds.Single().AssignedResidentId, Is.EqualTo(fixture.Man.Id));
             Assert.That(restored.CharacterRuntime.Entries.Single().State.Hunger, Is.EqualTo(0.72));
+            Assert.That(restored.CharacterRuntime.Entries.Single().State.Mood, Is.EqualTo(0.34));
 
             var xml = System.Text.Encoding.UTF8.GetString(bytes)
                 .Replace("<domestic>", "<domesticMissing>").Replace("</domestic>", "</domesticMissing>");

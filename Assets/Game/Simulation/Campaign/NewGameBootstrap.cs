@@ -82,8 +82,7 @@ namespace Game.Simulation.Campaign
                     i <= 3 && i != 1 ? dynastyId : (StableEntityId?)null,
                     i >= 4 ? (ProfessionId?)new ProfessionId(i % 2 == 0 ? "worker" : "farmer") : null,
                     new[] { new TraitId("calm"), new TraitId("brave"), new TraitId("kind"), new TraitId("curious") },
-                    new[] { new SkillState(new SkillId("combat"), new SkillLevel(25 + i)),
-                        new SkillState(new SkillId("research"), new SkillLevel(20 + i)) },
+                    StartingSkills(i),
                     new CharacterAttributes(new CharacterAttributeValue(50), new CharacterAttributeValue(50)),
                     BodyHealth.Healthy, new Wealth(0), new Influence(i == 0 ? 100 : 10), null);
             }
@@ -119,5 +118,19 @@ namespace Game.Simulation.Campaign
 
         private static ParentLink Parent(StableEntityId id, ParentRole role) =>
             new ParentLink(id, role, ParentageKind.Biological, true);
+
+        private static IReadOnlyList<SkillState> StartingSkills(int index)
+        {
+            var favorite = CharacterSkillRules.StartingFavorites[index % CharacterSkillRules.StartingFavorites.Length];
+            var values = new Dictionary<SkillId, int>
+            {
+                [CharacterSkillRules.Combat] = 18 + index,
+                [CharacterSkillRules.Research] = 15 + index,
+                [favorite] = 50 + index % 9
+            };
+            return values.OrderBy(x => x.Key.Value, StringComparer.Ordinal)
+                .Select(x => new SkillState(x.Key, new SkillLevel(x.Value)))
+                .Append(CharacterSkillRules.FavoriteMarker(favorite)).ToArray();
+        }
     }
 }

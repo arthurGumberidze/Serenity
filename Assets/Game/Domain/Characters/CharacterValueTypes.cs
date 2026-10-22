@@ -258,6 +258,79 @@ namespace Game.Domain.Characters
         }
     }
 
+    public static class CharacterSkillRules
+    {
+        private const string FavoritePrefix = "favorite.";
+        public static readonly SkillId Construction = new SkillId("construction");
+        public static readonly SkillId Hunting = new SkillId("hunting");
+        public static readonly SkillId Combat = new SkillId("combat");
+        public static readonly SkillId Gathering = new SkillId("gathering");
+        public static readonly SkillId Cooking = new SkillId("cooking");
+        public static readonly SkillId Crafting = new SkillId("crafting");
+        public static readonly SkillId Farming = new SkillId("farming");
+        public static readonly SkillId Medicine = new SkillId("medicine");
+        public static readonly SkillId Research = new SkillId("research");
+
+        public static readonly SkillId[] StartingFavorites =
+        {
+            Construction, Hunting, Combat, Gathering, Cooking, Crafting, Farming, Medicine, Research
+        };
+
+        public static int Level(Character character, SkillId skillId) =>
+            character != null && character.TryGetSkill(skillId, out var skill) ? skill.Level.Value : 0;
+
+        public static SkillId Favorite(Character character)
+        {
+            if (character == null) throw new ArgumentNullException(nameof(character));
+            foreach (var skill in character.CaptureState().Skills)
+            {
+                if (!IsFavoriteMarker(skill.Id)) continue;
+                var marked = new SkillId(skill.Id.Value.Substring(FavoritePrefix.Length));
+                if (Array.IndexOf(StartingFavorites, marked) >= 0) return marked;
+            }
+            var favorite = StartingFavorites[0];
+            var best = -1;
+            foreach (var skill in StartingFavorites)
+            {
+                var level = Level(character, skill);
+                if (level <= best) continue;
+                best = level;
+                favorite = skill;
+            }
+            return favorite;
+        }
+
+        public static SkillState FavoriteMarker(SkillId favorite)
+        {
+            if (Array.IndexOf(StartingFavorites, favorite) < 0)
+                throw new ArgumentException("Favorite activity must come from the starting list.", nameof(favorite));
+            return new SkillState(new SkillId(FavoritePrefix + favorite.Value), new SkillLevel(0));
+        }
+
+        public static bool IsFavoriteMarker(SkillId skillId) =>
+            skillId.IsValid && skillId.Value.StartsWith(FavoritePrefix, StringComparison.Ordinal);
+
+        public static int WorkRatePerThousand(Character character, SkillId skillId) =>
+            1000 + Level(character, skillId) * 10;
+
+        public static long CarryCapacity(Character character, long baseCapacity)
+        {
+            if (baseCapacity <= 0) throw new ArgumentOutOfRangeException(nameof(baseCapacity));
+            return Math.Max(1L, checked(baseCapacity * (1000L + Level(character, Gathering) * 10L) / 1000L));
+        }
+
+        public static bool GainWorkExperience(Character character, SkillId skillId, int levels = 1)
+        {
+            if (character == null) throw new ArgumentNullException(nameof(character));
+            if (levels <= 0) throw new ArgumentOutOfRangeException(nameof(levels));
+            var old = Level(character, skillId);
+            var next = Math.Min(SkillLevel.Maximum, checked(old + levels));
+            if (next == old) return false;
+            character.SetSkill(new SkillState(skillId, new SkillLevel(next)));
+            return true;
+        }
+    }
+
     internal static class DefinitionKey
     {
         public const int MaxLength = 64;

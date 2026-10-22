@@ -46,7 +46,7 @@ namespace Game.Domain.Characters
             long processedCalendarTicks = 0, long processedBiologicalTicks = 0, uint stepCount = 0,
             double hunger = 0d, double energy = 1d, long lastSimulationCalendarTick = 0,
             long lastSimulationBiologicalTick = 0, ulong offCameraStepCount = 0,
-            ulong deterministicAccumulator = 0, long abstractActivityProgress = 0)
+            ulong deterministicAccumulator = 0, long abstractActivityProgress = 0, double mood = 1d)
         {
             if (!characterId.IsValid) throw new ArgumentException("Character identity required.", nameof(characterId));
             if (string.IsNullOrWhiteSpace(locationKey) || locationKey != locationKey.Trim() || locationKey.Length > 64)
@@ -60,6 +60,8 @@ namespace Game.Domain.Characters
                 throw new ArgumentOutOfRangeException(nameof(hunger));
             if (double.IsNaN(energy) || double.IsInfinity(energy) || energy < 0d || energy > 1d)
                 throw new ArgumentOutOfRangeException(nameof(energy));
+            if (double.IsNaN(mood) || double.IsInfinity(mood) || mood < 0d || mood > 1d)
+                throw new ArgumentOutOfRangeException(nameof(mood));
 
             CharacterId = characterId;
             Position = position;
@@ -76,6 +78,7 @@ namespace Game.Domain.Characters
             OffCameraStepCount = offCameraStepCount;
             DeterministicAccumulator = deterministicAccumulator;
             AbstractActivityProgress = abstractActivityProgress;
+            Mood = mood;
         }
 
         public StableEntityId CharacterId { get; }
@@ -93,33 +96,35 @@ namespace Game.Domain.Characters
         public ulong OffCameraStepCount { get; }
         public ulong DeterministicAccumulator { get; }
         public long AbstractActivityProgress { get; }
+        public double Mood { get; }
 
         public CharacterRuntimeState WithProjection(WorldPosition position, WorldPosition unitsPerGameDay,
             bool isMoving, long processedCalendarTicks, long processedBiologicalTicks, uint stepCount) =>
             new CharacterRuntimeState(CharacterId, position, unitsPerGameDay, isMoving, LocationKey,
                 processedCalendarTicks, processedBiologicalTicks, stepCount, Hunger, Energy,
                 LastSimulationCalendarTick, LastSimulationBiologicalTick, OffCameraStepCount,
-                DeterministicAccumulator, AbstractActivityProgress);
+                DeterministicAccumulator, AbstractActivityProgress, Mood);
 
-        public CharacterRuntimeState WithTier1State(WorldPosition position, double hunger, double energy) =>
+        public CharacterRuntimeState WithTier1State(WorldPosition position, double hunger, double energy,
+            double mood = 1d) =>
             new CharacterRuntimeState(CharacterId, position, default, false, LocationKey,
                 ProcessedCalendarTicks, ProcessedBiologicalTicks, StepCount, hunger, energy,
                 LastSimulationCalendarTick, LastSimulationBiologicalTick, OffCameraStepCount,
-                DeterministicAccumulator, AbstractActivityProgress);
+                DeterministicAccumulator, AbstractActivityProgress, mood);
 
         public CharacterRuntimeState WithOffCameraSimulation(long lastCalendarTick, long lastBiologicalTick,
             ulong offCameraStepCount, ulong deterministicAccumulator, long abstractActivityProgress) =>
             new CharacterRuntimeState(CharacterId, Position, UnitsPerGameDay, IsMoving, LocationKey,
                 ProcessedCalendarTicks, ProcessedBiologicalTicks, StepCount, Hunger, Energy,
                 lastCalendarTick, lastBiologicalTick, offCameraStepCount, deterministicAccumulator,
-                abstractActivityProgress);
+                abstractActivityProgress, Mood);
 
         public bool Equals(CharacterRuntimeState other) => CharacterId == other.CharacterId &&
             Position.Equals(other.Position) && UnitsPerGameDay.Equals(other.UnitsPerGameDay) &&
             IsMoving == other.IsMoving && string.Equals(LocationKey, other.LocationKey, StringComparison.Ordinal) &&
             ProcessedCalendarTicks == other.ProcessedCalendarTicks &&
             ProcessedBiologicalTicks == other.ProcessedBiologicalTicks && StepCount == other.StepCount &&
-            Hunger.Equals(other.Hunger) && Energy.Equals(other.Energy) &&
+            Hunger.Equals(other.Hunger) && Energy.Equals(other.Energy) && Mood.Equals(other.Mood) &&
             LastSimulationCalendarTick == other.LastSimulationCalendarTick &&
             LastSimulationBiologicalTick == other.LastSimulationBiologicalTick &&
             OffCameraStepCount == other.OffCameraStepCount &&
@@ -141,6 +146,7 @@ namespace Game.Domain.Characters
                 hash = (hash * 397) ^ StepCount.GetHashCode();
                 hash = (hash * 397) ^ Hunger.GetHashCode();
                 hash = (hash * 397) ^ Energy.GetHashCode();
+                hash = (hash * 397) ^ Mood.GetHashCode();
                 hash = (hash * 397) ^ LastSimulationCalendarTick.GetHashCode();
                 hash = (hash * 397) ^ LastSimulationBiologicalTick.GetHashCode();
                 hash = (hash * 397) ^ OffCameraStepCount.GetHashCode();

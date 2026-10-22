@@ -117,6 +117,7 @@ namespace Game.Simulation.Work
                 case ContextActionKind.Mine: return WorkJobType.Mine;
                 case ContextActionKind.Chop: return WorkJobType.Chop;
                 case ContextActionKind.Build: return WorkJobType.Build;
+                case ContextActionKind.Craft: return WorkJobType.Craft;
                 case ContextActionKind.Guard: return WorkJobType.Guard;
                 default: throw new ArgumentOutOfRangeException(nameof(action));
             }

@@ -652,7 +652,8 @@ namespace Game.Infrastructure
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
-                    () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray()),
+                    () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray(),
+                    position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f)),
                 pointerRaycaster, input);
             ManualMoveInput.EnableContextMenus();
 

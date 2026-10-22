@@ -120,6 +120,28 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void ArmedAttackConsumesDurabilityAndCurrentSaveRoundTripsIt()
+        {
+            var fixture = Fixture.Create(1, 1);
+            fixture.Start(id => id == fixture.SideA[0]
+                ? new CombatWeaponId("stone_axe") : new CombatWeaponId("unarmed"));
+            Assert.That(fixture.Combat.TryManualAttack(fixture.SideA[0], fixture.SideB[0], 0, 0),
+                Is.EqualTo(ManualCombatAttackStatus.Hit));
+            var attacker = fixture.Combat.Encounters.Single().Combatants
+                .Single(value => value.CharacterId == fixture.SideA[0]);
+            var defender = fixture.Combat.Encounters.Single().Combatants
+                .Single(value => value.CharacterId == fixture.SideB[0]);
+            Assert.That(attacker.WeaponDurability, Is.EqualTo(99));
+            Assert.That(defender.WeaponDurability, Is.EqualTo(100), "Unarmed attacks have no weapon to wear down.");
+
+            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(989), new GameTimeState(), 400,
+                healthFamily: fixture.Health.CaptureState(), combat: fixture.Combat.CaptureState());
+            var decoded = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
+            Assert.That(decoded.Combat.Encounters.Single().Combatants
+                .Single(value => value.CharacterId == fixture.SideA[0]).WeaponDurability, Is.EqualTo(99));
+        }
+
+        [Test]
         public void CombatInjuryEscalatesThroughU18AndIncapacitatedCombatantStopsAttacking()
         {
             var fixture = Fixture.Create(1, 1);

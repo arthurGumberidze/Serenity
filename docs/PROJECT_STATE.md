@@ -1,5 +1,47 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 gameplay feedback stabilization
+
+The user-requested pre-D stabilization slice is implemented. Natural sources now reserve at most one
+worker per remaining portion, so each accepted gatherer performs and yields an independent gather while
+excess workers stay available. Tier1 locomotion playback follows accelerated world movement more closely.
+Ground sleep uses the lying animation; bed sleepers and indoor workplace occupants disappear only after
+arrival and remain canonically active inside, while Campfire cooks stay visible beside the fire.
+
+Construction can be cancelled from the selected-building panel with delivered and installed materials
+returned to physical piles. Existing build buttons expose their shortage/technology reason and remain
+disabled when unaffordable. Construction work uses visible canonical progress and construction skill.
+Campfire RMB now resolves the building to its production workplace; completed Campfires emit flame VFX.
+Normal building materials are no longer overwritten by a white `_BaseColor` property block, and the Stone
+Age Hut uses the existing CityBuilder Three hut mesh instead of the generated box roof.
+
+Animal presentation roams within a bounded spawn radius. Hunting uses a dedicated animation and visible,
+non-consumable arrow projectiles; the target has 120 HP derived from canonical hunting-task progress.
+Human inspectors expose body HP, mood, favorite activity and skills. Combat skill scales attack, work raises
+the relevant skill, gathering skill raises carry capacity, and armed attacks reduce persisted weapon
+durability; a broken weapon falls back to unarmed stats. Each New Game resident owns a persistent favorite
+marker from the limited skill list. Barracks training remains the existing canonical school-like combat
+training path; general schools are later content and must call the same skill authority.
+
+Mood is canonical Tier1/save state in snapshot v29. Bed sleep and cooked meals improve it, ground sleep
+reduces it, favorite work gives a small benefit, and at 20% or below ordinary work is refused while eating
+and sleep remain available. Notifications are buttons and focus/select their character, building or event
+position when the event provides one.
+
+Verification: focused/affected EditMode runs passed 17/17, 50/50, 55/55, 23/23, 14/14, 33/33 and finally
+46/46 (`Artifacts/P109/feedback-stabilization/affected-final-editmode.xml`). Two isolated PlayMode attempts
+stalled after entering the real LocalGameplay scene during UMA initialization and produced no NUnit result;
+only the verified test-owned Unity/worker/crash-handler PIDs were stopped, and generated InitTestScene and
+lock files were removed. This is recorded as runner infrastructure evidence, not a test pass or assertion
+failure. Windows Development build `Builds/P109FeedbackStabilization/Serenity.exe` succeeded with
+0 errors / 53 warnings (`Artifacts/P109/feedback-stabilization/build.log`). Unity recorded success
+before its post-build process tree failed to exit; only that verified build-owned tree was stopped.
+
+Per explicit user direction, C5 is deferred as a test/acceptance stage. D1 is the next implementation slice;
+final acceptance remains after D/E/F rather than being claimed here. The tracked Synty/PNB imports are
+project content introduced by commit `a8114d70`, not user-owned dirty files; their old count assertions and
+the historical P8.2 bounds assertion are stale relative to later integrated content/world decisions.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings C4
 
 C4 is complete. Food consumption now recognizes only the canonical cooked resources
@@ -13,7 +55,7 @@ hunger deadlock.
 
 Focused EditMode passed 32/32 and focused building/food PlayMode passed 6/6. The broad non-Postgres
 EditMode run finished 631/634; its only failures are the pre-existing P8.2 geography assertion and
-two checks invalidated by the user's ignored, expanded Synty import (`PNB_Tropical_Jungle`, 460 FBX).
+two checks made stale by the later tracked Synty/PNB integration (`PNB_Tropical_Jungle`, 460 FBX).
 The broad affected PlayMode run passed 27/31 initially; the four stale/setup-sensitive cases were
 corrected or rerun with isolated saves and then passed 3/4 plus 1/1. Windows Development build
 `Builds/P109BuildingsC4/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID

@@ -249,6 +249,10 @@ namespace Game.Presentation.Interaction
             SetSelection(null, pilePresenter: presenter,
                 proxy: presenter != null ? presenter.GetComponent<StableWorldHitProxy>() : null);
 
+        public void SelectBuilding(BuildingPresenter presenter) =>
+            SetSelection(null, buildingPresenter: presenter,
+                proxy: presenter != null ? presenter.GetComponent<StableWorldHitProxy>() : null);
+
         private void ClearNonCharacterSelection()
         {
             if (Selected != null) Selected.SetSelected(false);

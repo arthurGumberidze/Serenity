@@ -14,6 +14,7 @@ namespace Game.Presentation.Buildings
         private BuildingPresentationRegistry registry;
         private ResourceInventory storageInventory;
         private ParticleSystem fireParticles;
+        private ParticleSystem campfireParticles;
         private MaterialPropertyBlock propertyBlock;
         private Renderer[] originalRenderers;
         private bool[] originalVisibility;
@@ -58,7 +59,10 @@ namespace Game.Presentation.Buildings
         {
             if (building == null) return;
             RefreshConstruction();
+            RefreshCampfire();
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
+            var hasTint = building.IsDestroyed || building.StructuralStatus == BuildingStructuralStatus.Critical ||
+                building.StructuralStatus == BuildingStructuralStatus.Damaged || building.OwnerSideId.ToString() == "enemy";
             var color = building.IsDestroyed ? new Color(0.18f, 0.16f, 0.15f) :
                 building.StructuralStatus == BuildingStructuralStatus.Critical ? new Color(0.48f, 0.22f, 0.12f) :
                 building.StructuralStatus == BuildingStructuralStatus.Damaged ? new Color(0.62f, 0.42f, 0.18f) :
@@ -67,6 +71,11 @@ namespace Game.Presentation.Buildings
             {
                 if (fireParticles != null && renderer.transform.IsChildOf(fireParticles.transform)) continue;
                 if (scaffold != null && renderer.transform.IsChildOf(scaffold.transform)) continue;
+                if (!hasTint)
+                {
+                    renderer.SetPropertyBlock(null);
+                    continue;
+                }
                 renderer.GetPropertyBlock(propertyBlock);
                 propertyBlock.SetColor("_BaseColor", color);
                 renderer.SetPropertyBlock(propertyBlock);
@@ -104,6 +113,43 @@ namespace Game.Presentation.Buildings
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(1.2f, 0.1f, 1.2f);
             return particles;
+        }
+
+        private void RefreshCampfire()
+        {
+            var shouldBurn = building.DefinitionId == new BuildingDefinitionId("campfire") &&
+                building.IsOperational && !building.IsDestroyed;
+            if (shouldBurn)
+            {
+                if (campfireParticles == null)
+                {
+                    var flame = new GameObject("Campfire Flame VFX");
+                    flame.transform.SetParent(transform, false);
+                    flame.transform.localPosition = Vector3.up * 0.35f;
+                    campfireParticles = flame.AddComponent<ParticleSystem>();
+                    var main = campfireParticles.main;
+                    main.loop = true;
+                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.7f);
+                    main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.55f);
+                    main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.28f);
+                    main.startColor = new ParticleSystem.MinMaxGradient(
+                        new Color(1f, 0.22f, 0.01f, 0.95f), new Color(1f, 0.82f, 0.08f, 0.85f));
+                    main.maxParticles = 28;
+                    var emission = campfireParticles.emission;
+                    emission.rateOverTime = 18f;
+                    var shape = campfireParticles.shape;
+                    shape.shapeType = ParticleSystemShapeType.Cone;
+                    shape.radius = 0.16f;
+                    shape.angle = 8f;
+                }
+                campfireParticles.gameObject.SetActive(true);
+                if (!campfireParticles.isPlaying) campfireParticles.Play();
+            }
+            else if (campfireParticles != null)
+            {
+                campfireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                campfireParticles.gameObject.SetActive(false);
+            }
         }
 
         private void RefreshConstruction()

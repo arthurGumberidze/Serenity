@@ -1,16 +1,17 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings C5, 2026-10-22
+## Current scope — P10.9 Stone Age buildings D1, 2026-10-22
 
-The user approved the audited architecture and the staged B-F implementation in
-`P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1-B3 and C1-C4 are complete. The next unblocked slice is
-**C5: acceptance of the first complete construction/cooking loop**. It must prove New Game →
-construction → cooking → storage → eating → save/load without introducing another authority.
-C1 is complete: construction now creates bounded physical haul orders into the
-shared construction buffer, reserves queued source stock, survives save/load, advances material
-stages only after delivery, and returns buffered plus installed materials on cancellation. Do not
-pause for approval between those internal commits. No additional chat,
+The user approved the audited architecture and staged B-F implementation in
+`P109_STONE_AGE_BUILDINGS_PLAN.md`. B1-B3 and C1-C4 are complete. The user explicitly deferred
+C5 because it is an acceptance/test stage, requested the gameplay-feedback repairs first, and then
+directed work to D. Those repairs are implemented and covered by affected EditMode 46/46; final Player
+acceptance remains at F1 because the local PlayMode runner stalls during UMA scene initialization.
+The next unblocked implementation slice is **D1: carcass processing and the hunting camp**.
+C1 is complete: construction creates bounded physical haul orders into the shared construction
+buffer, reserves queued source stock, survives save/load, advances material stages only after delivery,
+and returns buffered plus installed materials on cancellation. Do not pause for approval between those
+internal commits. No additional chat,
 P10.10 work, deferred performance benchmark, push, dependency download or old-save
 migration is authorized.
 
@@ -19,9 +20,9 @@ resource, production, work and save authorities. It must not introduce parallel 
 inventories or NPC systems. The five inherited dirty materials and `New Unity Project/`
 remain user-owned and excluded from commits. Automated tests use an Artifacts-only save
 directory; the protected 44-file baseline must still match. Manual Player acceptance belongs to the
-user and receives one exact build path plus a short route after C4. Use targeted tests for the rule
-and directly affected connections after C1-C3; do not repeat successful suites without relevant code
-changes. Run the sufficiently broad regression and separate Windows build after C4 (and later at C5/F1),
+user and receives one exact build path plus a short route at F1. Use targeted tests for the rule
+and directly affected connections; do not repeat successful suites without relevant code
+changes. Run the sufficiently broad regression and separate Windows build at F1,
 or earlier only for a concrete data-loss/compatibility risk.
 
 ### Completed prerequisites

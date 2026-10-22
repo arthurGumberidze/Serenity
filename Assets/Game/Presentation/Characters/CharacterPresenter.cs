@@ -35,6 +35,8 @@ namespace Game.Presentation.Characters
         private float disableAutomaticAnimationAfter = float.PositiveInfinity;
         private SkinnedMeshRenderer[] detailedRenderers = Array.Empty<SkinnedMeshRenderer>();
         private bool[] detailedRendererDefaults = Array.Empty<bool>();
+        private Renderer[] activityRenderers = Array.Empty<Renderer>();
+        private bool[] activityRendererDefaults = Array.Empty<bool>();
         private GameObject detailedVisualRoot;
         private Material lightweightMaterial;
         private bool lightweightVisual;
@@ -51,6 +53,7 @@ namespace Game.Presentation.Characters
         private Quaternion lastLeftLowerArmOffset = Quaternion.identity;
         private float locomotionPlaybackRate = 1f;
         private GameObject workTool;
+        private bool activityHidden;
 
         public void ConfigureWorkTool(GameObject prefab)
         {
@@ -78,6 +81,7 @@ namespace Game.Presentation.Characters
         public Material LightweightMaterial => lightweightMaterial;
         public bool DetailedVisualActive => detailedVisualRoot == null || detailedVisualRoot.activeSelf;
         public CharacterAnimationIntent AnimationIntent => animationIntent;
+        public bool IsActivityHidden => activityHidden;
         public CharacterLodStyle LodStyle => CharacterLodStyle.From(appearance);
 
         public void SetSelected(bool selected)
@@ -171,7 +175,7 @@ namespace Game.Presentation.Characters
             var moving = safeSpeed > 0.05f;
             locomotionPlaybackRate = !moving ? 1f : safeSpeed <= 1.5f
                 ? Mathf.Clamp(safeSpeed / 1.15f, 0.65f, 1.6f)
-                : Mathf.Clamp(safeSpeed / 3.4f, 0.75f, 3f);
+                : Mathf.Clamp(safeSpeed / 3.4f, 0.75f, 12f);
             ApplyAnimatorPlaybackRate();
             if (hasMovingParameter && displayedMoving != moving)
             {
@@ -192,6 +196,26 @@ namespace Game.Presentation.Characters
             if (animator == null || displayedPaused == paused) return;
             displayedPaused = paused;
             ApplyAnimatorPlaybackRate();
+        }
+
+        public void SetActivityHidden(bool hidden)
+        {
+            if (activityHidden == hidden) return;
+            activityHidden = hidden;
+            if (hidden)
+            {
+                foreach (var renderer in activityRenderers)
+                    if (renderer != null) renderer.enabled = false;
+                if (detailedVisualRoot != null) detailedVisualRoot.SetActive(false);
+                lightweightVisual = false;
+            }
+            else
+            {
+                for (var index = 0; index < activityRenderers.Length; index++)
+                    if (activityRenderers[index] != null)
+                        activityRenderers[index].enabled = activityRendererDefaults[index];
+                ApplyVisualDetail(automaticAnimationAllowed || IsSelected);
+            }
         }
 
         public void SetAnimationIntent(CharacterAnimationIntent intent)
@@ -392,6 +416,9 @@ namespace Game.Presentation.Characters
 
         private void CacheDetailedRenderers()
         {
+            activityRenderers = GetComponentsInChildren<Renderer>(true);
+            activityRendererDefaults = activityRenderers
+                .Select(renderer => renderer != null && renderer.enabled).ToArray();
             detailedRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
             detailedRendererDefaults = detailedRenderers.Select(renderer => renderer != null && renderer.enabled).ToArray();
             detailedVisualRoot = animator != null && animator.gameObject != gameObject ? animator.gameObject : null;
@@ -404,6 +431,14 @@ namespace Game.Presentation.Characters
         private void ApplyVisualDetail(bool detailed)
         {
             if (!Application.isPlaying || detailedRenderers.Length == 0) return;
+            if (activityHidden)
+            {
+                foreach (var renderer in detailedRenderers)
+                    if (renderer != null) renderer.enabled = false;
+                lightweightVisual = false;
+                if (detailedVisualRoot != null && detailedVisualRoot.activeSelf) detailedVisualRoot.SetActive(false);
+                return;
+            }
             if (detailed && detailedVisualRoot != null && !detailedVisualRoot.activeSelf)
                 detailedVisualRoot.SetActive(true);
             for (var index = 0; index < detailedRenderers.Length; index++)

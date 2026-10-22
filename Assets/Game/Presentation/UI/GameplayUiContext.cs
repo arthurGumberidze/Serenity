@@ -106,7 +106,8 @@ namespace Game.Presentation.UI
             Action<StableEntityId> requestEnterBattle, Action<bool> setDeveloperUiVisible,
             IEnumerable<Behaviour> legacyDebugOverlays, EventService events = null,
             CampaignProgressService campaign = null, Action<long> startNewGame = null,
-            Action requestMainMenu = null, Func<IReadOnlyList<StableEntityId>> playerCharacterIds = null)
+            Action requestMainMenu = null, Func<IReadOnlyList<StableEntityId>> playerCharacterIds = null,
+            Action<WorldPosition> focusWorld = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -159,6 +160,7 @@ namespace Game.Presentation.UI
             StartNewGame = startNewGame;
             RequestMainMenu = requestMainMenu;
             PlayerCharacterIds = playerCharacterIds ?? (() => Array.Empty<StableEntityId>());
+            FocusWorld = focusWorld ?? (_ => { });
         }
 
         public Func<GameClock> Clock { get; }
@@ -212,5 +214,6 @@ namespace Game.Presentation.UI
         public Action<long> StartNewGame { get; }
         public Action RequestMainMenu { get; }
         public Func<IReadOnlyList<StableEntityId>> PlayerCharacterIds { get; }
+        public Action<WorldPosition> FocusWorld { get; }
     }
 }

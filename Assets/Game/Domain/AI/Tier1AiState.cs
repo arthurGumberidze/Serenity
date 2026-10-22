@@ -70,14 +70,16 @@ namespace Game.Domain.AI
 
     public sealed class Tier1Needs
     {
-        public Tier1Needs(double hunger = 0d, double energy = 1d)
+        public Tier1Needs(double hunger = 0d, double energy = 1d, double mood = 1d)
         {
             Hunger = Validate(hunger, nameof(hunger));
             Energy = Validate(energy, nameof(energy));
+            Mood = Validate(mood, nameof(mood));
         }
 
         public double Hunger { get; private set; }
         public double Energy { get; private set; }
+        public double Mood { get; private set; }
 
         public void Advance(double hungerIncrease, double energyDecrease)
         {
@@ -99,6 +101,12 @@ namespace Game.Domain.AI
             Hunger = Clamp01(Hunger - amount);
         }
 
+        public void AdjustMood(double delta)
+        {
+            if (double.IsNaN(delta) || double.IsInfinity(delta)) throw new ArgumentOutOfRangeException(nameof(delta));
+            Mood = Clamp01(Mood + delta);
+        }
+
         private static double Validate(double value, string parameterName)
         {
             if (!IsFiniteNonNegative(value) || value > 1d) throw new ArgumentOutOfRangeException(parameterName);
@@ -112,7 +120,7 @@ namespace Game.Domain.AI
     public readonly struct Tier1AiAgentSnapshot
     {
         public Tier1AiAgentSnapshot(StableEntityId characterId, WorldPosition position, double hunger, double energy,
-            UtilityActionKind currentAction, AiActionPhase phase)
+            UtilityActionKind currentAction, AiActionPhase phase, double mood = 1d)
         {
             if (!characterId.IsValid) throw new ArgumentException("Character identity required.", nameof(characterId));
             if (!Enum.IsDefined(typeof(UtilityActionKind), currentAction)) throw new ArgumentOutOfRangeException(nameof(currentAction));
@@ -121,6 +129,7 @@ namespace Game.Domain.AI
             Position = position;
             Hunger = hunger;
             Energy = energy;
+            Mood = mood;
             CurrentAction = currentAction;
             Phase = phase;
         }
@@ -129,6 +138,7 @@ namespace Game.Domain.AI
         public WorldPosition Position { get; }
         public double Hunger { get; }
         public double Energy { get; }
+        public double Mood { get; }
         public UtilityActionKind CurrentAction { get; }
         public AiActionPhase Phase { get; }
     }
@@ -171,7 +181,7 @@ namespace Game.Domain.AI
         public void RecordDecision() => DecisionsMade = checked(DecisionsMade + 1);
 
         public Tier1AiAgentSnapshot CaptureState() => new Tier1AiAgentSnapshot(CharacterId, Position,
-            Needs.Hunger, Needs.Energy, CurrentAction, Phase);
+            Needs.Hunger, Needs.Energy, CurrentAction, Phase, Needs.Mood);
     }
 
     public sealed class Tier1AiAgentRegistry

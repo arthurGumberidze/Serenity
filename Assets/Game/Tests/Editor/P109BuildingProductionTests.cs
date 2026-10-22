@@ -162,7 +162,7 @@ namespace Game.Tests.Editor
             restored.Production.RestoreState(decoded.Production);
 
             var site = restored.Production.Sites.Single();
-            Assert.That(decoded.FormatVersion, Is.EqualTo(SaveSnapshot.BuildingProductionVersion));
+            Assert.That(decoded.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
             Assert.That(site.OwnerBuildingId, Is.EqualTo(fixture.Building.Id));
             Assert.That(site.QueuedBatches, Is.EqualTo(2));
             Assert.That(site.Paused, Is.True);

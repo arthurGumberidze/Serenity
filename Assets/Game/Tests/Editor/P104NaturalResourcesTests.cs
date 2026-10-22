@@ -97,6 +97,32 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void NaturalSourceAcceptsOnlyOneWorkerPerRemainingPortion()
+        {
+            var resources = FullCatalog();
+            var inventories = new ResourceInventoryRegistry();
+            var production = new ProductionService(ProductionCatalog.CreateStoneAge(resources), resources,
+                inventories, new BuildingRegistry(), new ResourceTransferService(inventories));
+            var site = ProductionSite.Restore(new ProductionSiteState(Id(180),
+                new ProductionRecipeId("chop_wood"), ProductionSiteKind.NaturalSource, default, 2, 2,
+                CropPlotPhase.Unplanted, 0, 0));
+            production.AddSite(site);
+            var workers = new[] { Id(181), Id(182), Id(183) };
+            foreach (var worker in workers)
+                inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, worker),
+                    resources, 100));
+
+            Assert.That(production.TryReserveAtSite(workers[0], site.Id, out var first), Is.True);
+            Assert.That(production.TryReserveAtSite(workers[1], site.Id, out var second), Is.True);
+            Assert.That(production.TryReserveAtSite(workers[2], site.Id, out _), Is.False,
+                "A third worker must not travel to a two-portion source.");
+            Assert.That(production.AdvanceTask(first.Task.Id, TimeSpan.FromHours(8)).Completed, Is.True);
+            Assert.That(production.AdvanceTask(second.Task.Id, TimeSpan.FromHours(8)).Completed, Is.True);
+            Assert.That(production.GetProducedTotal(new ResourceId("wood_log")), Is.EqualTo(8));
+            Assert.That(site.RemainingAmount, Is.Zero);
+        }
+
+        [Test]
         public void IndustrialFacilitiesEnforceTechPlacementCostStorageCapacityAndRestoration()
         {
             var resources = FullCatalog();

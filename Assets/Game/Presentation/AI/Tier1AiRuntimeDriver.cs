@@ -70,6 +70,16 @@ namespace Game.Presentation.AI
         private MaterialPropertyBlock lightweightProperties;
         private float nextLodRefresh;
         private Func<StableEntityId, bool> combatActivityProvider;
+        private sealed class ArrowFlight
+        {
+            public GameObject View;
+            public Vector3 Start;
+            public Vector3 Target;
+            public float StartedAt;
+        }
+        private readonly List<ArrowFlight> arrows = new List<ArrowFlight>();
+        private readonly Dictionary<StableEntityId, float> nextHuntingShot =
+            new Dictionary<StableEntityId, float>();
 
         public GameClock Clock => clock;
         public Tier1AiScheduler Scheduler => scheduler;
@@ -236,6 +246,7 @@ namespace Game.Presentation.AI
                 Advance(TimeSpan.FromSeconds(deltaSeconds), TakeMovementPresentationBudget(deltaSeconds));
             using (AnimationMarker.Auto())
                 RefreshAnimationPresentation(TakeAnimationPresentationBudget(deltaSeconds), now);
+            RefreshHuntingArrows(now);
             using (LightweightRenderingMarker.Auto()) DrawLightweightPresenters();
         }
 
@@ -247,6 +258,7 @@ namespace Game.Presentation.AI
             {
                 var movement = movements[index];
                 if (!movement.CrowdDetailEnabled || movement.Presenter == null) continue;
+                movement.Presenter.SetActivityHidden(scheduler.ShouldHideInsideBuilding(movement.CharacterId));
                 var intent = ResolveAnimationIntent(movement.CharacterId);
                 movement.Presenter.SetAnimationIntent(intent);
                 movement.Presenter.RefreshActionPose(now);
@@ -261,7 +273,57 @@ namespace Game.Presentation.AI
             if (lightweightMesh != null) Destroy(lightweightMesh);
             if (farMesh != null) Destroy(farMesh);
             if (lightweightMaterial != null) Destroy(lightweightMaterial);
+            foreach (var arrow in arrows) if (arrow.View != null) Destroy(arrow.View);
+            arrows.Clear();
+            nextHuntingShot.Clear();
             SimulationAdvanced = null;
+        }
+
+        private void RefreshHuntingArrows(float now)
+        {
+            for (var index = arrows.Count - 1; index >= 0; index--)
+            {
+                var arrow = arrows[index];
+                var progress = (now - arrow.StartedAt) / 0.38f;
+                if (progress >= 1f)
+                {
+                    if (arrow.View != null) Destroy(arrow.View);
+                    arrows.RemoveAt(index);
+                    continue;
+                }
+                if (arrow.View != null)
+                    arrow.View.transform.position = Vector3.Lerp(arrow.Start, arrow.Target, progress);
+            }
+            foreach (var movement in movements)
+            {
+                if (movement.Presenter == null || !agentStates.TryGetValue(movement.CharacterId, out var state) ||
+                    state.Phase != AiActionPhase.Working ||
+                    !scheduler.TryGetHuntingTarget(movement.CharacterId, out var target))
+                    continue;
+                if (nextHuntingShot.TryGetValue(movement.CharacterId, out var next) && now < next) continue;
+                nextHuntingShot[movement.CharacterId] = now + 0.85f;
+                var start = movement.Presenter.RightHandSocket != null
+                    ? movement.Presenter.RightHandSocket.position
+                    : movement.Presenter.transform.position + Vector3.up * 1.25f;
+                var end = new Vector3(target.X, target.Y + 0.9f, target.Z);
+                var direction = end - start;
+                if (direction.sqrMagnitude < 0.01f) continue;
+                var view = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                view.name = "Hunting arrow";
+                view.transform.position = start;
+                view.transform.localScale = new Vector3(0.025f, 0.22f, 0.025f);
+                view.transform.rotation = Quaternion.FromToRotation(Vector3.up, direction.normalized);
+                var collider = view.GetComponent<Collider>();
+                if (collider != null) Destroy(collider);
+                var renderer = view.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    var block = new MaterialPropertyBlock();
+                    block.SetColor("_BaseColor", new Color(0.28f, 0.16f, 0.07f));
+                    renderer.SetPropertyBlock(block);
+                }
+                arrows.Add(new ArrowFlight { View = view, Start = start, Target = end, StartedAt = now });
+            }
         }
 
         private void RefreshMovementPresentation()
@@ -385,7 +447,7 @@ namespace Game.Presentation.AI
             for (var index = 0; index < movements.Count; index++)
             {
                 var presenter = movements[index].Presenter;
-                if (presenter == null || !presenter.UsesLightweightVisual) continue;
+                if (presenter == null || presenter.IsActivityHidden || !presenter.UsesLightweightVisual) continue;
                 EnsureLightweightRenderResources(presenter);
                 if (lightweightMesh == null || farMesh == null || lightweightMaterial == null) continue;
                 var transform = presenter.transform;
@@ -526,11 +588,13 @@ namespace Game.Presentation.AI
         {
             if (combatActivityProvider != null && combatActivityProvider(characterId)) return CharacterAnimationIntent.Combat;
             if (!agentStates.TryGetValue(characterId, out var state)) return CharacterAnimationIntent.Idle;
+            if (state.Phase == AiActionPhase.Resting) return CharacterAnimationIntent.Sleep;
             if (state.Phase == AiActionPhase.Pickup || state.Phase == AiActionPhase.Dropoff ||
                 state.Phase == AiActionPhase.MoveToDestination) return CharacterAnimationIntent.Carry;
             if (state.Phase != AiActionPhase.Working && state.Phase != AiActionPhase.Researching)
                 return CharacterAnimationIntent.Idle;
             if (scheduler.IsFishing(characterId)) return CharacterAnimationIntent.Fish;
+            if (scheduler.IsHunting(characterId)) return CharacterAnimationIntent.Hunt;
             if (!scheduler.TryGetAssignedWorkType(characterId, out var workType))
                 return CharacterAnimationIntent.Gather;
             return workType switch

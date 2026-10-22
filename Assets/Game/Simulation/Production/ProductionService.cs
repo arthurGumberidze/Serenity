@@ -357,6 +357,25 @@ namespace Game.Simulation.Production
         }
 
         public bool TryGetSite(StableEntityId id, out ProductionSite site) => sites.TryGetValue(id, out site);
+
+        public bool TryGetActiveWorkplace(StableEntityId workerId, out Building building)
+        {
+            building = null;
+            if (!workerTasks.TryGetValue(workerId, out var taskId) ||
+                !tasks.TryGetValue(taskId, out var task) || task.IsTerminal ||
+                !sites.TryGetValue(task.SiteId, out var site) ||
+                site.Kind != ProductionSiteKind.BuildingWorkplace || !site.OwnerBuildingId.IsValid)
+                return false;
+            return buildings.TryGet(site.OwnerBuildingId, out building) && building.IsOperational;
+        }
+
+        public bool TryGetActiveTask(StableEntityId workerId, out ProductionTask task, out ProductionSite site)
+        {
+            task = null;
+            site = null;
+            return workerTasks.TryGetValue(workerId, out var taskId) && tasks.TryGetValue(taskId, out task) &&
+                !task.IsTerminal && sites.TryGetValue(task.SiteId, out site);
+        }
         public bool IsSiteOperational(StableEntityId id)
         {
             if (!sites.TryGetValue(id, out var site)) return false;
@@ -445,6 +464,7 @@ namespace Game.Simulation.Production
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
             if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
+              if (!HasNaturalSourceCapacity(site)) return false;
             if (site.Kind == ProductionSiteKind.BuildingWorkplace && ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers)
                 return false;
             var kind = TaskKindFor(site);
@@ -455,6 +475,24 @@ namespace Game.Simulation.Production
             workerTasks.Add(workerId, task.Id);
             job = new ProductionJob(task, site.Position);
             return true;
+        }
+
+        public bool TryReserveAtBuilding(StableEntityId workerId, StableEntityId buildingId, out ProductionJob job)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Building identity required.", nameof(buildingId));
+            job = default;
+            if (workerTasks.TryGetValue(workerId, out var existingId) &&
+                tasks.TryGetValue(existingId, out var existing) && !existing.IsTerminal &&
+                sites.TryGetValue(existing.SiteId, out var existingSite) &&
+                existingSite.OwnerBuildingId == buildingId)
+            {
+                job = new ProductionJob(existing, existingSite.Position);
+                return true;
+            }
+            foreach (var site in orderedSites.Where(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&
+                         x.OwnerBuildingId == buildingId && x.IsWorkAvailable).OrderBy(x => x.Id))
+                if (TryReserveAtSite(workerId, site.Id, out job)) return true;
+            return false;
         }
 
         public bool HasEligibleWork(StableEntityId workerId, WorldPosition workerPosition)
@@ -801,6 +839,7 @@ namespace Game.Simulation.Production
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
+                  if (!HasNaturalSourceCapacity(site)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
                     ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers) continue;
                 var kind = TaskKindFor(site);
@@ -818,6 +857,13 @@ namespace Game.Simulation.Production
             }
             return selected != null;
         }
+
+          private bool HasNaturalSourceCapacity(ProductionSite site)
+          {
+              if (site.Kind != ProductionSiteKind.NaturalSource) return true;
+              var reservedUnits = tasks.Values.LongCount(task => !task.IsTerminal && task.SiteId == site.Id);
+              return reservedUnits < site.RemainingAmount;
+          }
 
         private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site)
         {

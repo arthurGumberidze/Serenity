@@ -66,6 +66,9 @@ namespace Game.Presentation.Buildings
             UnityEngine.Object.Destroy(presenter.gameObject);
         }
 
+        public bool TryGetPresenter(Game.Domain.StableEntityId buildingId, out BuildingPresenter presenter) =>
+            registry.TryGet(buildingId, out presenter);
+
         public Vector3 GridToWorld(GridCoordinate coordinate) => ResolveGround(origin + new Vector3(
             coordinate.X * gridSize, coordinate.Level * gridSize, coordinate.Z * gridSize), coordinate.Level);
 

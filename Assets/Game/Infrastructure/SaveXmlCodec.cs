@@ -60,7 +60,8 @@ namespace Game.Infrastructure
             if (snapshot.FormatVersion >= SaveSnapshot.WeatherVersion)
                 root.Add(SerializeWeather(snapshot.Weather));
             if (snapshot.FormatVersion >= SaveSnapshot.CombatVersion)
-                root.Add(SerializeCombat(snapshot.Combat, snapshot.FormatVersion >= SaveSnapshot.BattleVersion));
+                root.Add(SerializeCombat(snapshot.Combat, snapshot.FormatVersion >= SaveSnapshot.BattleVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryVersion)
                 root.Add(SerializeMilitary(snapshot.Military, snapshot.FormatVersion >= SaveSnapshot.CampaignVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
@@ -89,7 +90,8 @@ namespace Game.Infrastructure
             if (snapshot.FormatVersion >= SaveSnapshot.DomesticVersion)
             {
                 root.Add(SerializeDomestic(snapshot.Domestic));
-                root.Add(SerializeCharacterRuntime(snapshot.CharacterRuntime));
+                root.Add(SerializeCharacterRuntime(snapshot.CharacterRuntime,
+                    snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion));
             }
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion)
                 root.Add(SerializeMilitaryCampaign(snapshot.MilitaryCampaign));
@@ -139,6 +141,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.DiagnosticVersion &&
                         version != SaveSnapshot.BuildingConstructionVersion &&
                         version != SaveSnapshot.BuildingPlacementVersion &&
+                        version != SaveSnapshot.BuildingProductionVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -155,7 +158,8 @@ namespace Game.Infrastructure
                     var weather = version >= SaveSnapshot.WeatherVersion
                         ? DeserializeWeather(root.Element("weather")) : null;
                     var combat = version >= SaveSnapshot.CombatVersion
-                        ? DeserializeCombat(root.Element("combat"), version >= SaveSnapshot.BattleVersion) : null;
+                        ? DeserializeCombat(root.Element("combat"), version >= SaveSnapshot.BattleVersion,
+                            version >= SaveSnapshot.NeedsMoodVersion) : null;
                     var military = version >= SaveSnapshot.MilitaryVersion
                         ? DeserializeMilitary(root.Element("military"), version >= SaveSnapshot.CampaignVersion) : null;
                     var playerControl = version >= SaveSnapshot.PlayerControlVersion
@@ -182,7 +186,8 @@ namespace Game.Infrastructure
                     var domestic = version >= SaveSnapshot.DomesticVersion
                         ? DeserializeDomestic(root.Element("domestic")) : null;
                     var characterRuntime = version >= SaveSnapshot.DomesticVersion
-                        ? DeserializeCharacterRuntime(root.Element("characterRuntime")) : null;
+                        ? DeserializeCharacterRuntime(root.Element("characterRuntime"),
+                            version >= SaveSnapshot.NeedsMoodVersion) : null;
                     var militaryCampaign = version >= SaveSnapshot.MilitaryCampaignVersion
                         ? DeserializeMilitaryCampaign(root.Element("militaryCampaign")) : null;
                     var diagnostics = version >= SaveSnapshot.DiagnosticVersion
@@ -652,7 +657,7 @@ namespace Game.Infrastructure
                 new ClimateProfileId(Value(element, "climateProfileId")), checkpoints);
         }
 
-        private static XElement SerializeCombat(CombatSaveState state, bool includeBattleState)
+        private static XElement SerializeCombat(CombatSaveState state, bool includeBattleState, bool includeWeaponDurability)
         {
             var element = new XElement("combat");
             if (state == null) return element;
@@ -675,6 +680,7 @@ namespace Game.Infrastructure
                         new XElement("characterId", value.CharacterId.ToString()),
                         new XElement("sideId", value.SideId.ToString()),
                         new XElement("weaponId", value.WeaponId.ToString()),
+                        includeWeaponDurability ? new XElement("weaponDurability", value.WeaponDurability) : null,
                         new XElement("state", (int)value.State),
                         OptionalId("targetId", value.TargetId),
                         OptionalId("assignedTargetId", value.AssignedTargetId),
@@ -705,7 +711,7 @@ namespace Game.Infrastructure
             return element;
         }
 
-        private static CombatSaveState DeserializeCombat(XElement element, bool includeBattleState)
+        private static CombatSaveState DeserializeCombat(XElement element, bool includeBattleState, bool includeWeaponDurability)
         {
             if (element == null) throw new FormatException("Missing combat state.");
             if (!element.HasElements)
@@ -725,7 +731,8 @@ namespace Game.Infrastructure
                 {
                     RequireFields(value, new[] { "characterId", "sideId", "weaponId", "state", "targetId",
                         "assignedTargetId", "nextAttackTick", "attackSequence", "morale", "retreatX",
-                        "retreatY", "retreatZ", "recentInjury", "casualtyPenaltyApplied" });
+                        "retreatY", "retreatZ", "recentInjury", "casualtyPenaltyApplied" }.Concat(
+                            includeWeaponDurability ? new[] { "weaponDurability" } : Array.Empty<string>()).ToArray());
                     return new CombatantCombatState(StableEntityId.Parse(Value(value, "characterId")),
                         new CombatSideId(Value(value, "sideId")), new CombatWeaponId(Value(value, "weaponId")),
                         (CombatantState)Int(value, "state"), OptionalStableId(value, "targetId"),
@@ -733,7 +740,8 @@ namespace Game.Infrastructure
                         ULong(value, "attackSequence"), Int(value, "morale"),
                         new WorldPosition(XmlConvert.ToSingle(Value(value, "retreatX")),
                             XmlConvert.ToSingle(Value(value, "retreatY")), XmlConvert.ToSingle(Value(value, "retreatZ"))),
-                        Value(value, "recentInjury"), XmlConvert.ToBoolean(Value(value, "casualtyPenaltyApplied")));
+                        Value(value, "recentInjury"), XmlConvert.ToBoolean(Value(value, "casualtyPenaltyApplied")),
+                        includeWeaponDurability ? Int(value, "weaponDurability") : 100);
                 });
                 var attacks = Items(encounter.Element("attacks"), "attack", value =>
                 {
@@ -1730,7 +1738,7 @@ namespace Game.Infrastructure
             return new DomesticWorldSaveState(homes, beds, consents, interactions);
         }
 
-        private static XElement SerializeCharacterRuntime(CharacterRuntimeWorldSaveState state)
+        private static XElement SerializeCharacterRuntime(CharacterRuntimeWorldSaveState state, bool includeMood)
         {
             var element = new XElement("characterRuntime");
             if (state == null) return element;
@@ -1748,6 +1756,7 @@ namespace Game.Infrastructure
                 new XElement("stepCount", entry.State.StepCount),
                 new XElement("hunger", XmlConvert.ToString(entry.State.Hunger)),
                 new XElement("energy", XmlConvert.ToString(entry.State.Energy)),
+                includeMood ? new XElement("mood", XmlConvert.ToString(entry.State.Mood)) : null,
                 new XElement("lastCalendar", entry.State.LastSimulationCalendarTick),
                 new XElement("lastBiological", entry.State.LastSimulationBiologicalTick),
                 new XElement("offCameraSteps", entry.State.OffCameraStepCount),
@@ -1756,7 +1765,7 @@ namespace Game.Infrastructure
             return element;
         }
 
-        private static CharacterRuntimeWorldSaveState DeserializeCharacterRuntime(XElement element)
+        private static CharacterRuntimeWorldSaveState DeserializeCharacterRuntime(XElement element, bool includeMood)
         {
             if (element == null) throw new FormatException("Missing character runtime state.");
             if (!element.HasElements)
@@ -1766,9 +1775,11 @@ namespace Game.Infrastructure
             }
             var entries = element.Elements("character").Select(item =>
             {
-                RequireFields(item, new[] { "id", "tier", "x", "y", "z", "velocityX", "velocityY", "velocityZ", "moving", "location",
-                    "processedCalendar", "processedBiological", "stepCount", "hunger", "energy", "lastCalendar", "lastBiological",
-                    "offCameraSteps", "deterministicAccumulator", "activityProgress" });
+                var fields = new List<string> { "id", "tier", "x", "y", "z", "velocityX", "velocityY", "velocityZ", "moving", "location",
+                    "processedCalendar", "processedBiological", "stepCount", "hunger", "energy" };
+                if (includeMood) fields.Add("mood");
+                fields.AddRange(new[] { "lastCalendar", "lastBiological", "offCameraSteps", "deterministicAccumulator", "activityProgress" });
+                RequireFields(item, fields.ToArray());
                 var state = new CharacterRuntimeState(StableEntityId.Parse(Value(item, "id")),
                     new WorldPosition(Float(item, "x"), Float(item, "y"), Float(item, "z")),
                     new WorldPosition(Float(item, "velocityX"), Float(item, "velocityY"), Float(item, "velocityZ")),
@@ -1776,7 +1787,8 @@ namespace Game.Infrastructure
                     Long(item, "processedCalendar"), Long(item, "processedBiological"),
                     checked((uint)ULong(item, "stepCount")), Double(item, "hunger"), Double(item, "energy"),
                     Long(item, "lastCalendar"), Long(item, "lastBiological"), ULong(item, "offCameraSteps"),
-                    ULong(item, "deterministicAccumulator"), Long(item, "activityProgress"));
+                    ULong(item, "deterministicAccumulator"), Long(item, "activityProgress"),
+                    includeMood ? Double(item, "mood") : 1d);
                 return new CharacterRuntimeSaveEntry((CharacterSimulationTier)Int(item, "tier"), state);
             }).ToArray();
             return new CharacterRuntimeWorldSaveState(entries);

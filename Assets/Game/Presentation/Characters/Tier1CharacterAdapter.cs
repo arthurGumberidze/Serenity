@@ -48,15 +48,17 @@ namespace Game.Presentation.Characters
             var position = new WorldPosition(unityPosition.x, unityPosition.y, unityPosition.z);
             var hunger = 0d;
             var energy = 1d;
+            var mood = 1d;
             if (aiAgents.TryGet(characterId, out var agent))
             {
                 hunger = agent.Needs.Hunger;
                 energy = agent.Needs.Energy;
+                mood = agent.Needs.Mood;
             }
             var basis = continuity.TryGetValue(characterId, out var retained)
                 ? retained
                 : new CharacterRuntimeState(characterId, position, default, false);
-            var state = basis.WithTier1State(position, hunger, energy);
+            var state = basis.WithTier1State(position, hunger, energy, mood);
             continuity[characterId] = state;
             return state;
         }
@@ -77,8 +79,8 @@ namespace Game.Presentation.Characters
             var presenter = spawner.Spawn(character, position, Quaternion.identity);
             try
             {
-                aiRuntime.Register(character, presenter, new Tier1Needs(state.Hunger, state.Energy));
-                continuity[character.Id] = state.WithTier1State(state.Position, state.Hunger, state.Energy);
+                aiRuntime.Register(character, presenter, new Tier1Needs(state.Hunger, state.Energy, state.Mood));
+                continuity[character.Id] = state.WithTier1State(state.Position, state.Hunger, state.Energy, state.Mood);
             }
             catch
             {
@@ -109,7 +111,7 @@ namespace Game.Presentation.Characters
                 new Vector3(state.Position.X, state.Position.Y, state.Position.Z), Quaternion.identity);
             try
             {
-                aiRuntime.Register(character, replacement, new Tier1Needs(state.Hunger, state.Energy));
+                aiRuntime.Register(character, replacement, new Tier1Needs(state.Hunger, state.Energy, state.Mood));
                 continuity[character.Id] = state;
                 return replacement;
             }

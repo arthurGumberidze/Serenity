@@ -151,7 +151,7 @@ namespace Game.Domain.Combat
         public CombatantCombatState(StableEntityId characterId, CombatSideId sideId, CombatWeaponId weaponId,
             CombatantState state, StableEntityId? targetId, StableEntityId? assignedTargetId,
             long nextAttackTick, ulong attackSequence, int morale, WorldPosition retreatPoint,
-            string recentInjury, bool casualtyPenaltyApplied)
+            string recentInjury, bool casualtyPenaltyApplied, int weaponDurability = 100)
         {
             if (!characterId.IsValid) throw new ArgumentException("Combatant character ID required.", nameof(characterId));
             if (!sideId.IsValid) throw new ArgumentException("Combat side ID required.", nameof(sideId));
@@ -163,6 +163,8 @@ namespace Game.Domain.Combat
                 throw new ArgumentException("A combatant cannot target itself.");
             if (nextAttackTick < 0) throw new ArgumentOutOfRangeException(nameof(nextAttackTick));
             if (morale < 0 || morale > 1000) throw new ArgumentOutOfRangeException(nameof(morale));
+            if (weaponDurability < 0 || weaponDurability > 100)
+                throw new ArgumentOutOfRangeException(nameof(weaponDurability));
             if (recentInjury != null && recentInjury.Length > 64) throw new ArgumentException("Recent injury text is too long.", nameof(recentInjury));
             CharacterId = characterId;
             SideId = sideId;
@@ -176,6 +178,7 @@ namespace Game.Domain.Combat
             RetreatPoint = retreatPoint;
             RecentInjury = recentInjury ?? string.Empty;
             CasualtyPenaltyApplied = casualtyPenaltyApplied;
+            WeaponDurability = weaponDurability;
         }
 
         public StableEntityId CharacterId { get; }
@@ -190,17 +193,18 @@ namespace Game.Domain.Combat
         public WorldPosition RetreatPoint { get; }
         public string RecentInjury { get; }
         public bool CasualtyPenaltyApplied { get; }
+        public int WeaponDurability { get; }
 
         public CombatantCombatState With(CombatantState? state = null, StableEntityId? targetId = null,
             bool clearTarget = false, StableEntityId? assignedTargetId = null, bool clearAssignedTarget = false,
             long? nextAttackTick = null, ulong? attackSequence = null, int? morale = null,
-            string recentInjury = null, bool? casualtyPenaltyApplied = null) =>
+            string recentInjury = null, bool? casualtyPenaltyApplied = null, int? weaponDurability = null) =>
             new CombatantCombatState(CharacterId, SideId, WeaponId, state ?? State,
                 clearTarget ? (StableEntityId?)null : targetId ?? TargetId,
                 clearAssignedTarget ? (StableEntityId?)null : assignedTargetId ?? AssignedTargetId,
                 nextAttackTick ?? NextAttackTick, attackSequence ?? AttackSequence,
                 morale ?? Morale, RetreatPoint, recentInjury ?? RecentInjury,
-                casualtyPenaltyApplied ?? CasualtyPenaltyApplied);
+                casualtyPenaltyApplied ?? CasualtyPenaltyApplied, weaponDurability ?? WeaponDurability);
 
         private static void ValidateOptional(StableEntityId? id, string name)
         {

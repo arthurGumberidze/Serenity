@@ -31,6 +31,15 @@ namespace Game.Infrastructure
         private TiledTerrainWorld terrainWorld;
         private long seed;
         private CompactWorldArtCatalog art;
+        private sealed class AnimalView
+        {
+            public StableEntityId SiteId;
+            public Transform Transform;
+            public Vector3 Origin;
+            public float Phase;
+            public TextMesh HealthLabel;
+        }
+        private readonly List<AnimalView> animals = new List<AnimalView>();
 
         public TiledWorldPopulationPlan Plan { get; private set; }
         public int ActiveTileViewCount => tileViews.Count;
@@ -68,6 +77,7 @@ namespace Game.Infrastructure
                 Destroy(tileViews[tile]);
                 tileViews.Remove(tile);
             }
+            animals.RemoveAll(x => x.Transform == null);
             foreach (var tile in required.OrderBy(value => value))
                 if (!tileViews.ContainsKey(tile)) tileViews.Add(tile, CreateTileView(tile));
             foreach (var presenter in tileViews.Values.SelectMany(root =>
@@ -183,6 +193,56 @@ namespace Game.Infrastructure
                 site.Position.Y + (node.RecipeId == "fish_water" ? 0.08f : 0.1f), site.Position.Z);
             var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, ResourceColor(node.RecipeId), reviewed != null || templates.ContainsKey(node.RecipeId));
+            if (node.RecipeId == "hunt_animal") RegisterAnimalView(view, site, node.StableIndex);
+        }
+
+        private void RegisterAnimalView(GameObject view, ProductionSite site, int stableIndex)
+        {
+            var labelObject = new GameObject("Animal HP");
+            labelObject.transform.SetParent(view.transform, false);
+            labelObject.transform.localPosition = Vector3.up * 1.65f;
+            var label = labelObject.AddComponent<TextMesh>();
+            label.anchor = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignment.Center;
+            label.characterSize = 0.08f;
+            label.fontSize = 32;
+            label.color = new Color(0.95f, 0.22f, 0.16f);
+            label.text = "HP 120/120";
+            animals.Add(new AnimalView
+            {
+                SiteId = site.Id,
+                Transform = view.transform,
+                Origin = view.transform.position,
+                Phase = stableIndex * 0.73f,
+                HealthLabel = label
+            });
+        }
+
+        private void Update()
+        {
+            var now = Time.time;
+            var camera = Camera.main;
+            for (var index = animals.Count - 1; index >= 0; index--)
+            {
+                var animal = animals[index];
+                if (animal.Transform == null) { animals.RemoveAt(index); continue; }
+                var offset = new Vector3(Mathf.Sin(now * 0.32f + animal.Phase), 0f,
+                    Mathf.Cos(now * 0.27f + animal.Phase)) * 2.4f;
+                animal.Transform.position = Vector3.Lerp(animal.Transform.position, animal.Origin + offset,
+                    Time.deltaTime * 0.8f);
+                var hp = 120;
+                var task = production.ActiveTasks.Where(x => x.SiteId == animal.SiteId &&
+                        x.RecipeId.ToString() == "hunt_animal")
+                    .OrderByDescending(x => x.AccumulatedWorkTicks).FirstOrDefault();
+                if (task != null && task.RequiredWorkTicks > 0)
+                    hp = Mathf.Clamp(Mathf.CeilToInt(120f * (1f -
+                        task.AccumulatedWorkTicks / (float)task.RequiredWorkTicks)), 0, 120);
+                if (animal.HealthLabel != null)
+                {
+                    animal.HealthLabel.text = $"HP {hp}/120";
+                    if (camera != null) animal.HealthLabel.transform.rotation = camera.transform.rotation;
+                }
+            }
         }
 
         private static void ExpandAuthoredFormation(GameObject root, int stableIndex)
@@ -312,6 +372,7 @@ namespace Game.Infrastructure
         private void OnDestroy()
         {
             if (terrainWorld != null) terrainWorld.VisualTilesChanged -= RefreshViews;
+            animals.Clear();
         }
     }
 }

@@ -178,6 +178,16 @@ namespace Game.Presentation.Buildings
             interactionMode?.ExitBuildingPlacement();
         }
 
+        public bool CancelConstruction(Building building)
+        {
+            EnsureInitialized();
+            if (building == null || building.IsOperational || construction == null) return false;
+            var definition = catalog.ResolveDefinition(building.DefinitionId);
+            if (!construction.Cancel(building, definition)) return false;
+            if (spawner.TryGetPresenter(building.Id, out var presenter)) spawner.Despawn(presenter);
+            return true;
+        }
+
         private void Update()
         {
             if (!IsActive || inputSource == null || raycaster == null) return;
