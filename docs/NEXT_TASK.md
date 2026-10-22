@@ -1,6 +1,6 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings F1, 2026-10-22
+## Current scope — P10.9 Stone Age buildings F1, 2026-10-23
 
 The post-E visual/gameplay feedback repair is implemented before F1. Clan House construction buffers now
 accept every resource category present in their authored contract, so cured hides no longer leave progress
@@ -12,10 +12,11 @@ is now a held-LMB rectangular drag from 2×2 through 8×8 cells, with the author
 placement state and repeated crop visuals centred on the selected rectangle. Focused EditMode passed 31/31;
 the added visual/model regressions passed 7/7. The broader P109 run passed 65/68, retaining three unrelated
 known failures (one fishing fixture and two expanded-import audit assumptions). P109 PlayMode passed 6/9;
-its three failures are existing environment/fixture assertions outside this repair. Two separate Player-build
-attempts stalled during Unity's post-refresh import worker before `U00Build.WindowsDevelopment` began and
-were terminated by verified PID; no new Player build is claimed. The final starter-prefab regressions passed
-2/2. F1 remains the next unblocked scope and must include a clean Player build plus the final native route.
+its three failures are existing environment/fixture assertions outside this repair. The final starter-prefab
+regressions passed 2/2. The updated Windows Development Player now succeeds at
+`Builds/P109VisualFeedback/Serenity.exe` with 0 errors / 53 warnings and GUID
+`3a1b43981f5c4599919aec9280f0c7d2`; a hidden smoke reached runtime UI initialization. F1 remains the next
+unblocked scope for the broader multi-settlement/tier regression and final visible native gameplay route.
 
 The user approved the audited architecture and staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`. B1-B3, C1-C4, D1-D2 and E1-E4 are complete. C5 remains explicitly

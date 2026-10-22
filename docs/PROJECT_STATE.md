@@ -1062,11 +1062,23 @@ Validation commands and results:
 
 - passed 2/2 after replacing the original Primitive Shelter and Storage Basket visuals.
 
-Player build attempts used both `-nographics` (`build-final.log`) and `-force-d3d11`
-(`build-d3d11.log`) with `-executeMethod U00Build.WindowsDevelopment -serenityBuildPath
-Builds/P109VisualFeedback/Serenity.exe`. Both stalled after AssetDatabase refresh while the import worker
-remained responsive but before the build method logged entry; each was terminated by its verified command-line
-PID. No executable or successful BuildReport was produced, so F1 retains the clean-build gate.
+The apparent pre-build stall was the provenance guard hashing the complete 9.87 GB asset tree without progress
+logging. `U00Build.SourceManifest` now represents unchanged tracked content by `HEAD` and hashes the raw scoped
+Git status plus only modified, staged and untracked payloads. The before/after immutable-source check remains
+fail-closed without rereading every vendor asset twice.
+
+`& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -logFile 'C:\serenity_game\Artifacts\P109\visual-feedback\build-optimized.log' -quit -executeMethod U00Build.WindowsDevelopment -serenityBuildPath 'Builds/P109VisualFeedback/Serenity.exe'`
+
+- Windows x64 Mono Development build succeeded with 0 errors / 53 warnings at
+  `Builds/P109VisualFeedback/Serenity.exe`; GUID `3a1b43981f5c4599919aec9280f0c7d2`, source fingerprint
+  `B164D45ABA11D688B902D53142870BA8E8B73CF28C08AFC671E59A0C73E2C759`.
+
+`$process = Start-Process -FilePath 'C:\serenity_game\Builds\P109VisualFeedback\Serenity.exe' -ArgumentList @('-batchmode','-nographics','-logFile','C:\serenity_game\Artifacts\P109\visual-feedback\player-smoke.log','-quit') -WindowStyle Hidden -PassThru -Wait`
+
+- the built Player reached engine 6000.6.4f1, Input System, PhysX and runtime UI initialization with no fatal
+  exception. Standalone ignored `-quit`, so the exact verified smoke PID was stopped after startup; exit code
+  `-1` is therefore forced termination, not a Player failure. Unity's non-fatal missing-ICU warning remains.
+  F1 still owns the final visible native gameplay route and the broader deferred acceptance matrix.
 
 U16 final validation command:
 

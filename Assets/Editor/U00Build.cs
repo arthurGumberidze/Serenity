@@ -80,14 +80,20 @@ public static class U00Build
 
     private static string SourceManifest()
     {
-        // Commit ID alone does not identify a normal uncommitted edit/test/build.
-        var paths = Git("ls-files -z --cached --others --exclude-standard").Split('\0')
-            .Where(x => x.StartsWith("Assets/", StringComparison.Ordinal) ||
-                x.StartsWith("Packages/", StringComparison.Ordinal) || x.StartsWith("ProjectSettings/", StringComparison.Ordinal))
+        // HEAD already fingerprints every unchanged tracked file. Hash only the dirty/staged/untracked
+        // payload instead of rereading the project's multi-gigabyte asset library before and after a build.
+        const string scope = "-- Assets Packages ProjectSettings";
+        var status = Git($"status --porcelain=v1 -z --untracked-files=all {scope}");
+        var paths = Git($"diff --name-only -z {scope}").Split('\0')
+            .Concat(Git($"diff --cached --name-only -z {scope}").Split('\0'))
+            .Concat(Git($"ls-files -z --others --exclude-standard {scope}").Split('\0'))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct().OrderBy(x => x, StringComparer.Ordinal);
         using (var hash = new SHA256CryptoServiceProvider())
         {
             var manifest = new StringBuilder();
+            manifest.Append("HEAD|").Append(Git("rev-parse HEAD").Trim()).Append('\n');
+            manifest.Append("STATUS|").Append(Hash(Encoding.UTF8.GetBytes(status))).Append('\n');
             foreach (var path in paths)
             {
                 var digest = "deleted";

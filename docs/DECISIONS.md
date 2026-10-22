@@ -1183,3 +1183,16 @@ geometry, but a completed building shows only its highest authored stage. Runtim
 materials are project-owned adapters: imported prefab colliders are stripped from building visuals, existing
 narrow resource colliders are preserved, and particle renderers receive an explicit URP material. These choices
 do not make vendor prefabs authoritative for simulation, placement, inventory or save state.
+
+## D-171 Build provenance fingerprints committed content once (2026-10-23)
+
+The Windows build provenance guard uses the current Git `HEAD` as the content identity for every unchanged
+tracked file. It additionally hashes the raw `Assets`/`Packages`/`ProjectSettings` worktree status and the
+contents of every modified, staged or untracked file in that scope. Comparing this manifest before and after
+`BuildPipeline.BuildPlayer` therefore still fails closed when source changes during a build and still identifies
+ordinary uncommitted builds.
+
+It must not re-hash every unchanged vendor asset. The former implementation read the complete 9.87 GB asset
+tree twice for each build and exposed no progress, making healthy Unity runs look stalled. The optimized
+manifest preserves immutable provenance while making build time depend on actual dirty payload rather than the
+size of the imported art library.
