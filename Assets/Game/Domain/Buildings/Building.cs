@@ -26,7 +26,8 @@ namespace Game.Domain.Buildings
             long constructionWorkTicks = 0, long constructionRequiredTicks = 0,
             SettlementId? settlementId = null, ConstructionPhase? constructionPhase = null,
             int constructionStageIndex = 0, int constructionStageCount = 0,
-            IEnumerable<ConstructionMaterialProgress> constructionMaterials = null)
+            IEnumerable<ConstructionMaterialProgress> constructionMaterials = null,
+            IEnumerable<GridCoordinate> placementCells = null)
         {
             if (!id.IsValid) throw new ArgumentException("Building identity is required.", nameof(id));
             if (!definitionId.IsValid) throw new ArgumentException("Definition identity is required.", nameof(definitionId));
@@ -89,6 +90,10 @@ namespace Game.Domain.Buildings
             ConstructionStageIndex = constructionStageIndex;
             ConstructionStageCount = constructionStageCount;
             ConstructionMaterials = Array.AsReadOnly(materials);
+            var placed = (placementCells ?? Array.Empty<GridCoordinate>()).ToArray();
+            if (placed.Distinct().Count() != placed.Length)
+                throw new ArgumentException("Placement cells must be unique.", nameof(placementCells));
+            PlacementCells = Array.AsReadOnly(placed);
             MaxIntegrity = maxIntegrity;
             CurrentIntegrity = currentIntegrity;
             StructuralStatus = structuralStatus;
@@ -116,6 +121,7 @@ namespace Game.Domain.Buildings
         public int ConstructionStageIndex { get; }
         public int ConstructionStageCount { get; }
         public IReadOnlyList<ConstructionMaterialProgress> ConstructionMaterials { get; }
+        public IReadOnlyList<GridCoordinate> PlacementCells { get; }
         public int MaxIntegrity { get; }
         public int CurrentIntegrity { get; }
         public BuildingStructuralStatus StructuralStatus { get; }
@@ -153,6 +159,7 @@ namespace Game.Domain.Buildings
             ConstructionStageIndex = state.ConstructionStageIndex;
             ConstructionStageCount = state.ConstructionStageCount;
             constructionMaterials = state.ConstructionMaterials.ToList();
+            placementCells = state.PlacementCells.ToList();
             MaxIntegrity = state.MaxIntegrity;
             CurrentIntegrity = state.CurrentIntegrity;
             StructuralStatus = state.StructuralStatus;
@@ -172,6 +179,7 @@ namespace Game.Domain.Buildings
         private readonly HashSet<StableEntityId> processedDamageEvents;
         private readonly List<BuildingEventState> history;
         private readonly List<ConstructionMaterialProgress> constructionMaterials;
+        private readonly List<GridCoordinate> placementCells;
         private ulong nextEventSequence;
 
         public StableEntityId Id { get; }
@@ -186,6 +194,7 @@ namespace Game.Domain.Buildings
         public int ConstructionStageIndex { get; private set; }
         public int ConstructionStageCount { get; private set; }
         public IReadOnlyList<ConstructionMaterialProgress> ConstructionMaterials => constructionMaterials.AsReadOnly();
+        public IReadOnlyList<GridCoordinate> PlacementCells => placementCells.AsReadOnly();
         public InventoryOwner ConstructionBufferOwner => new InventoryOwner(InventoryOwnerKind.ConstructionBuffer, Id);
         public double ConstructionProgress => ConstructionState == ConstructionState.Completed ? 1d :
             ConstructionRequiredTicks <= 0 ? 0d : (double)ConstructionWorkTicks / ConstructionRequiredTicks;
@@ -214,7 +223,7 @@ namespace Game.Domain.Buildings
             if (!settlementId.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlementId));
             if (ConstructionState == ConstructionState.Completed || ConstructionPhase != ConstructionPhase.LegacyPlanned)
                 throw new InvalidOperationException("Construction is already initialized or complete.");
-            SettlementId = settlementId;
+            AssignSettlement(settlementId);
             ConstructionRequiredTicks = definition.Construction.WorkRequiredTicks;
             ConstructionStageCount = definition.Construction.StageCount;
             ConstructionStageIndex = 0;
@@ -306,7 +315,26 @@ namespace Game.Domain.Buildings
                 BuildingStructuralStatus.Intact, ownerSideId, BuildingFireStatus.None, 0, 0, 0, 0,
                 false, false, null, null));
 
+        public static Building CreateNew(BuildingDefinition definition, GridCoordinate coordinate,
+            BuildingOrientation orientation, CombatSideId ownerSideId, IEnumerable<GridCoordinate> placementCells,
+            SettlementId? settlementId = null, StableEntityId? id = null) => definition == null
+            ? throw new ArgumentNullException(nameof(definition))
+            : id.HasValue && !id.Value.IsValid
+                ? throw new ArgumentException("A stable building identity is required.", nameof(id))
+                : Restore(new BuildingState(id ?? StableEntityId.NewId(), definition.Id, coordinate, orientation,
+                    ConstructionState.Planned, definition.MaxIntegrity, definition.MaxIntegrity,
+                    BuildingStructuralStatus.Intact, ownerSideId, BuildingFireStatus.None, 0, 0, 0, 0,
+                    false, false, null, null, settlementId: settlementId, placementCells: placementCells));
+
         public static Building Restore(BuildingState state) => new Building(state);
+
+        public void AssignSettlement(SettlementId settlementId)
+        {
+            if (!settlementId.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlementId));
+            if (SettlementId.HasValue && SettlementId.Value != settlementId)
+                throw new InvalidOperationException("Building is already assigned to another settlement.");
+            SettlementId = settlementId;
+        }
 
         public void MarkCompleted()
         {
@@ -405,7 +433,7 @@ namespace Game.Domain.Buildings
             ConstructionWorkTicks, ConstructionRequiredTicks, SettlementId,
             ConstructionPhase == ConstructionPhase.LegacyPlanned || ConstructionStageCount > 0
                 ? (ConstructionPhase?)ConstructionPhase : null,
-            ConstructionStageIndex, ConstructionStageCount, constructionMaterials);
+            ConstructionStageIndex, ConstructionStageCount, constructionMaterials, placementCells);
 
         private static BuildingStructuralStatus StatusFor(int integrity, int maximum) => integrity == 0
             ? BuildingStructuralStatus.Destroyed

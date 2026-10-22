@@ -107,6 +107,7 @@ namespace Game.Infrastructure
         public IReadOnlyList<CharacterPresenter> DemoPresenters => demoPresenters;
         public BuildingRegistry Buildings { get; private set; }
         public BuildingOccupancyGrid BuildingOccupancy { get; private set; }
+        public SettlementTerritoryRegistry BuildingTerritories { get; private set; }
         public BuildingPlacementService BuildingPlacementService { get; private set; }
         public BuildingPresentationRegistry BuildingPresentations { get; private set; }
         public BuildingPresentationSpawner BuildingSpawner { get; private set; }
@@ -533,6 +534,14 @@ namespace Game.Infrastructure
             ConnectedWorld = new ConnectedWorldService(GlobalMap.Locations,
                 ConnectedWorldLayout.For(WorldDefinition), Clock.State.CalendarTicks);
             StarterSettlementId = GlobalMap.Settlements.Single(x => x.LocationId == new WorldLocationId("starter_settlement")).Id;
+            BuildingTerritories = new SettlementTerritoryRegistry();
+            var starterTerritoryRadius = Mathf.Max(1, Mathf.RoundToInt(128f / buildingGridSize));
+            BuildingTerritories.Replace(StarterSettlementId, new[]
+            {
+                new GridTerritoryRegion(-starterTerritoryRadius, -starterTerritoryRadius,
+                    starterTerritoryRadius, starterTerritoryRadius)
+            });
+            BuildingPlacementService.ConfigureTerritories(BuildingTerritories);
             InhabitableRegion?.BindCanonicalMap(GlobalMap.Locations.Select(x => x.Id.Value));
             SynchronizeStarterSettlement();
             ModeTransitions = new GameModeTransitionService(GlobalMap, Tiers, MilitaryUnits,

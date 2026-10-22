@@ -42,10 +42,12 @@ namespace Game.Tests.PlayMode
             var beforeBuildings = root.Buildings.Count;
             var beforePresenters = Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound);
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
-            controller.TryMovePreviewToWorldPoint(new Vector3(20.3f, 0f, 20.4f));
+            Assert.That(TryFindClearPlacement(root, controller, out _), Is.True,
+                "No clear construction preview was found near the camp.");
             Assert.That(controller.IsActive, Is.True);
             Assert.That(controller.HasPreview, Is.True);
-            Assert.That(controller.IsPreviewValid, Is.True);
+            Assert.That(controller.IsPreviewValid, Is.True,
+                $"Placement={controller.LastPlacementFailure}; construction={controller.LastConstructionFailure}");
             Assert.That(Object.FindObjectsByType<BuildingPresenter>().Count(candidate => candidate.IsBound), Is.EqualTo(beforePresenters));
             Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings));
             controller.CancelPlacement();
@@ -63,11 +65,13 @@ namespace Game.Tests.PlayMode
             var controller = root.BuildingPlacementController;
             var beforeBuildings = root.Buildings.Count;
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
-            controller.TryMovePreviewToWorldPoint(new Vector3(15.2f, 0f, 15.2f));
             controller.RotatePreview();
             Assert.That(controller.Orientation, Is.EqualTo(BuildingOrientation.East));
+            Assert.That(TryFindClearPlacement(root, controller, out _), Is.True,
+                "No clear rotated construction preview was found near the camp.");
             var building = controller.ConfirmPlacement();
-            Assert.That(building, Is.Not.Null);
+            Assert.That(building, Is.Not.Null,
+                $"Placement={controller.LastPlacementFailure}; construction={controller.LastConstructionFailure}");
             Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Planned));
             Assert.That(root.Work.Jobs.Any(x => x.Type == Game.Domain.Work.WorkJobType.Build &&
                 x.Target.EntityId == building.Id), Is.True);
@@ -75,7 +79,7 @@ namespace Game.Tests.PlayMode
             Assert.That(controller.LastPlacedPresenter.BuildingId, Is.EqualTo(building.Id));
 
             controller.StartPlacement(new BuildingDefinitionId("primitive_shelter"));
-            Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(15f, 0f, 15f)), Is.False);
+            Assert.That(controller.TryMovePreviewToWorldPoint(controller.LastPlacedPresenter.transform.position), Is.False);
             Assert.That(controller.ConfirmPlacement(), Is.Null);
             Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             controller.CancelPlacement();
@@ -128,6 +132,19 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Research.Start(technologyId), Is.True);
             root.Research.AdvanceWorkerTo(root.MaleDemoCharacter.Id,
                 root.Research.LastProcessedTick + root.Technologies.Get(technologyId).ResearchWorkRequiredTicks, true);
+        }
+
+        private static bool TryFindClearPlacement(LocalSceneCompositionRoot root,
+            Game.Presentation.Buildings.BuildingPlacementController controller, out Vector3 point)
+        {
+            for (var z = 12; z <= 48; z += 3)
+            for (var x = 12; x <= 48; x += 3)
+            {
+                point = new Vector3(x, root.WorldHeight.SampleHeight(x, z), z);
+                if (controller.TryMovePreviewToWorldPoint(point)) return true;
+            }
+            point = default;
+            return false;
         }
     }
 }

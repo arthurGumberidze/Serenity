@@ -1036,3 +1036,24 @@ all other registry owners. Historical v1-v25 files remain codec-readable for met
 but the live B2 rules require save generation `p109-stone-age-buildings-v1` in the new
 `Serenity/P109/StoneAgeBuildingsV1/Saves` directory. `CompactWorldV1` is legacy read-only input;
 there is no in-place migration, resource-ID rewrite or terrain-generation-ID change.
+
+## D-162 Placement shapes persist exact cells; verification scales with slice risk (2026-10-22)
+
+The existing placement service remains the single authority. Structures derive their rotated
+rectangle; zones accept one bounded, unique, same-level, cardinally connected authored cell set;
+segments preserve a unique ordered cardinal path so turns are deterministic. Placement evaluates
+the same cells for bounds, occupancy, environment and owned territory, and exposes a sorted free
+perimeter for approach rules. Shoreline and groundwater requirements fail closed unless an injected
+world rule authority explicitly accepts them. The starter settlement territory is explicit data,
+not a second building grid.
+
+Arbitrary zone/segment geometry cannot be reconstructed from anchor and definition alone, so
+snapshot v27 appends exact placement cells to `BuildingState`. Restore reserves those cells; v26 and
+older structures retain footprint-derived fallback behavior. Settlement assignment is one-way and
+idempotent for the same ID. No Unity instance ID or mutable ScriptableObject becomes canonical.
+
+The user requested shorter feedback cycles after B3. C1-C3 therefore use targeted tests for changed
+rules and directly affected connections, without repeating green unrelated suites. A broad
+regression and separate Player build occur after C4, then at the C5 and F1 control points, or earlier
+only when a concrete save/resource-loss risk justifies it. Compilation, old-save readability,
+protected-resource checks and honest reporting remain mandatory.

@@ -1,12 +1,12 @@
 # NEXT_TASK.md
 
-## Current scope — P10.9 Stone Age buildings B3, 2026-10-21
+## Current scope — P10.9 Stone Age buildings C1-C4, 2026-10-22
 
 The user approved the audited architecture and the staged B-F implementation in
 `P109_STONE_AGE_BUILDINGS_PLAN.md`, to be completed in this one chat as a sequence of
-small tested builds and commits. B1 and B2 are complete. The current active slice is
-**B3: settlement territories, reachable approaches, zone footprints and segment placement**.
-C1 may start only after B3 tests, separate Windows build, documentation and commit are complete. No additional chat,
+small tested builds and commits. B1-B3 are complete. The current active slice is
+**C1: physical delivery to construction and lossless cancellation**, followed continuously in this
+chat by C2-C4. Do not pause for approval between those internal commits. No additional chat,
 P10.10 work, deferred performance benchmark, push, dependency download or old-save
 migration is authorized.
 
@@ -14,8 +14,11 @@ The implementation must extend the existing `BuildingDefinition`, `Building`, pl
 resource, production, work and save authorities. It must not introduce parallel managers,
 inventories or NPC systems. The five inherited dirty materials and `New Unity Project/`
 remain user-owned and excluded from commits. Automated tests use an Artifacts-only save
-directory; the protected 44-file baseline must still match after every slice. Manual Player
-acceptance belongs to the user and receives one exact build path plus a short route.
+directory; the protected 44-file baseline must still match. Manual Player acceptance belongs to the
+user and receives one exact build path plus a short route after C4. Use targeted tests for the rule
+and directly affected connections after C1-C3; do not repeat successful suites without relevant code
+changes. Run the sufficiently broad regression and separate Windows build after C4 (and later at C5/F1),
+or earlier only for a concrete data-loss/compatibility risk.
 
 ### Completed prerequisites
 
@@ -35,6 +38,12 @@ isolated `p109-stone-age-buildings-v1` generation. Expanded save/building regres
 succeeded with 0 errors / 27 warnings, GUID `525f7a3748aa4356914f184b450b84f1`;
 protected files match 44/44. B3 must extend the existing
 placement authority rather than adding a second grid or territory system.
+
+B3 adds deterministic structure/zone/segment cell resolution, settlement territory and approach
+perimeters, snapshot v27 placement-cell persistence and exact occupancy restore. Focused EditMode
+passed 25/25, affected EditMode 154/154 and placement PlayMode 4/4. The separate B3 build succeeded
+at `Builds/P109BuildingsB3/Serenity.exe` with 0 errors / 53 warnings, GUID
+`563c001610724baf8e0a7b343e1a9dac`; protected files match 44/44.
 
 ## Superseded screenshot-feedback handoff
 

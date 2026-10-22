@@ -104,3 +104,44 @@ Final exact-source focused rerun: 30/30 passed at
 Result: succeeded, 0 errors / 27 warnings, GUID `525f7a3748aa4356914f184b450b84f1`,
 source fingerprint `EB936BC5B7CB43109DBB1EC469D51F92C7C1BEEE3C1E0CD187D2597C3F90CEAD`.
 Protected baseline: 44/44 unchanged. B3 is next.
+
+## Stage B3 complete
+
+Date: 22 October 2026. Commit scope: settlement territory, approach perimeter, authored zone and
+segment placement, and snapshot v27 exact-cell persistence.
+
+Implemented:
+
+- deterministic rectangular structures, connected zone cells and ordered cardinal segment paths;
+- explicit settlement territory regions and whole-shape ownership checks;
+- deterministic free approach perimeter with occupancy/bounds/territory filtering;
+- injected specialized world-rule hook, with shoreline and groundwater constraints failing closed;
+- exact placement cells and settlement ID retained on confirmed buildings and occupancy restore;
+- snapshot v27 placement-cell XML; v26 construction snapshots remain readable;
+- runtime starter-settlement territory without a parallel grid or manager.
+
+Verification: focused EditMode 25/25
+(`Artifacts/P109/buildings-b3/focused-editmode-3.xml`), affected EditMode 154/154
+(`expanded-editmode.xml`) and final placement PlayMode 4/4 (`placement-playmode-final.xml`). The two
+historical hard-coded preview points were terrain-blocked on the current tiled map; their tests now
+find an actual clear footprint. Windows build command:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath C:\serenity_game -logFile C:\serenity_game\Artifacts\P109\buildings-b3\build-clean.log -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109BuildingsB3/Serenity.exe
+```
+
+Result: succeeded, 0 errors / 53 warnings, GUID `563c001610724baf8e0a7b343e1a9dac`, source
+fingerprint `C9C5A6E07E2766373E849E70BEFBA4025F06416A3E0C6A2D8249906739FB21B4`.
+Protected baseline: 44/44 unchanged.
+
+## Verification cadence from C1
+
+Per the user's 22 October direction, C1-C4 continue in this chat. C1-C3 receive targeted tests for
+their changed rule and directly affected integration; successful unrelated suites are not repeated.
+After C4, run one sufficiently broad regression and create one separate Windows Player for the
+user's construction/cooking route. Broad control points then remain C5 and F1 unless a concrete
+save/resource-loss risk requires an earlier expansion.
+
+## Next stage
+
+C1 connects physical haul work to construction buffers and makes cancellation lossless.

@@ -371,7 +371,9 @@ namespace Game.Simulation.Buildings
                 foreach (var building in buildings.All.OrderBy(x => x.Id))
                 {
                     var definition = Definition(building);
-                    occupancy.Reserve(definition.Footprint.EnumerateCells(building.Coordinate, building.Orientation),
+                    occupancy.Reserve(building.PlacementCells.Count == 0
+                            ? definition.Footprint.EnumerateCells(building.Coordinate, building.Orientation)
+                            : building.PlacementCells,
                         building.Id, definition.AllowsOverlap);
                 }
             }

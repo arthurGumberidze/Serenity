@@ -46,6 +46,7 @@ namespace Game.Presentation.Buildings
         public bool IsPreviewValid => HasPreview && previewEvaluation.IsValid &&
             (construction == null || constructionEvaluation.IsValid);
         public ConstructionFailureReason LastConstructionFailure { get; private set; }
+        public PlacementFailureReason LastPlacementFailure => previewEvaluation.FailureReason;
         public BuildingOrientation Orientation => orientation;
         public GridCoordinate PreviewCoordinate => previewCoordinate;
         public BuildingDefinitionId? ActiveDefinitionId => activeDefinition?.Id;

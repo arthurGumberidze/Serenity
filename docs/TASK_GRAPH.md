@@ -2,9 +2,11 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
-P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B2 DONE; B3 IN_PROGRESS;
-C1-C5, D1-D2, E1-E4 and F1 are TODO and remain inside P10.9. Each slice requires
-its own automated tests, separate Windows build, documentation update and local commit.
+P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3 DONE; C1 IN_PROGRESS;
+C2-C5, D1-D2, E1-E4 and F1 are TODO and remain inside P10.9. Internal slices keep targeted
+automated tests, documentation and local commits. By user direction on 2026-10-22, C1-C4 run
+continuously with one sufficiently broad regression and separate Windows build after C4; broad
+regressions are otherwise reserved for C5/F1 or a concrete compatibility/data-loss risk.
 The implementation order and gates are defined in `P109_STONE_AGE_BUILDINGS_PLAN.md`.
 
 P10.9 screenshot-feedback slice (2026-10-21): PARTIAL pending

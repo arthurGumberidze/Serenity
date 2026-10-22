@@ -66,7 +66,8 @@ namespace Game.Infrastructure
                 root.Add(SerializePlayerControl(snapshot.PlayerControl));
             if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
                 root.Add(SerializeBuildingWorld(snapshot.BuildingWorld,
-                    snapshot.FormatVersion >= SaveSnapshot.BuildingConstructionVersion));
+                    snapshot.FormatVersion >= SaveSnapshot.BuildingConstructionVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.BuildingPlacementVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
                 root.Add(SerializeGlobalMap(snapshot.GlobalMap,
                     snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
@@ -135,6 +136,7 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.DomesticVersion &&
                         version != SaveSnapshot.MilitaryCampaignVersion &&
                         version != SaveSnapshot.DiagnosticVersion &&
+                        version != SaveSnapshot.BuildingConstructionVersion &&
                         version != SaveSnapshot.CurrentVersion)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
@@ -157,7 +159,8 @@ namespace Game.Infrastructure
                         ? DeserializePlayerControl(root.Element("playerControl")) : null;
                     var buildingWorld = version >= SaveSnapshot.BuildingVersion
                         ? DeserializeBuildingWorld(root.Element("buildingWorld"),
-                            version >= SaveSnapshot.BuildingConstructionVersion) : null;
+                            version >= SaveSnapshot.BuildingConstructionVersion,
+                            version >= SaveSnapshot.BuildingPlacementVersion) : null;
                     var globalMap = version >= SaveSnapshot.GlobalMapVersion
                         ? DeserializeGlobalMap(root.Element("globalMap"), version >= SaveSnapshot.OccupationVersion) : null;
                     var strategicAi = version >= SaveSnapshot.StrategicAiVersion
@@ -877,7 +880,8 @@ namespace Game.Infrastructure
                 OptionalStableId(element, "controlledCharacterId"));
         }
 
-        private static XElement SerializeBuildingWorld(BuildingWorldSaveState state, bool includeConstruction)
+        private static XElement SerializeBuildingWorld(BuildingWorldSaveState state, bool includeConstruction,
+            bool includePlacement)
         {
             var element = new XElement("buildingWorld");
             if (state == null) return element;
@@ -920,6 +924,10 @@ namespace Game.Infrastructure
                                 new XElement("material", new XElement("resourceId", material.ResourceId.ToString()),
                                     new XElement("requiredUnits", material.RequiredUnits),
                                     new XElement("installedUnits", material.InstalledUnits)))));
+                    if (includePlacement)
+                        building.Add(new XElement("placementCells", value.PlacementCells.Select(cell =>
+                            new XElement("cell", new XElement("x", cell.X), new XElement("z", cell.Z),
+                                new XElement("level", cell.Level)))));
                     return building;
                 })),
                 new XElement("worldPiles", state.WorldPiles.Select(value => new XElement("pile",
@@ -929,7 +937,8 @@ namespace Game.Infrastructure
             return element;
         }
 
-        private static BuildingWorldSaveState DeserializeBuildingWorld(XElement element, bool includeConstruction)
+        private static BuildingWorldSaveState DeserializeBuildingWorld(XElement element, bool includeConstruction,
+            bool includePlacement)
         {
             if (element == null) throw new FormatException("Missing building-world state.");
             if (!element.HasElements)
@@ -950,6 +959,7 @@ namespace Game.Infrastructure
                 if (includeConstruction)
                     fields = fields.Concat(new[] { "settlementId", "constructionPhase", "constructionStageIndex",
                         "constructionStageCount", "constructionMaterials" });
+                if (includePlacement) fields = fields.Concat(new[] { "placementCells" });
                 RequireFields(item, fields.ToArray());
                 var processed = Items(item.Element("processedDamageEvents"), "eventId", value =>
                     StableEntityId.Parse(Scalar(value)));
@@ -972,6 +982,13 @@ namespace Game.Infrastructure
                             Long(material, "requiredUnits"), Long(material, "installedUnits"));
                     })
                     : Array.Empty<ConstructionMaterialProgress>();
+                var placementCells = includePlacement
+                    ? Items(item.Element("placementCells"), "cell", cell =>
+                    {
+                        RequireFields(cell, new[] { "x", "z", "level" });
+                        return new GridCoordinate(Int(cell, "x"), Int(cell, "z"), Int(cell, "level"));
+                    })
+                    : Array.Empty<GridCoordinate>();
                 return new BuildingState(StableEntityId.Parse(Value(item, "id")),
                     new BuildingDefinitionId(Value(item, "definitionId")),
                     new GridCoordinate(Int(item, "x"), Int(item, "z"), Int(item, "level")),
@@ -988,7 +1005,7 @@ namespace Game.Infrastructure
                     includeConstruction ? (ConstructionPhase?)Int(item, "constructionPhase") : null,
                     includeConstruction ? Int(item, "constructionStageIndex") : 0,
                     includeConstruction ? Int(item, "constructionStageCount") : 0,
-                    materials);
+                    materials, placementCells);
             });
             var piles = Items(element.Element("worldPiles"), "pile", item =>
             {

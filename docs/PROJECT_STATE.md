@@ -1,5 +1,24 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-22 Stone Age buildings B3
+
+B3 is complete. `BuildingPlacementService` now resolves deterministic structure footprints,
+connected authored zones and ordered cardinal segments; exposes the exact preview cells and free
+approach perimeter; enforces build bounds, occupancy and optional settlement territory; and fails
+closed for shoreline/groundwater rules until a world authority is supplied. The starter settlement
+owns an explicit 128-cell-radius grid region through `SettlementTerritoryRegistry`. Confirmed buildings
+retain settlement identity and exact placement cells, so turns and irregular zones survive restore
+and occupancy rebuild. Snapshot v27 appends those cells while v26 remains readable.
+
+Focused EditMode passed 25/25, expanded affected EditMode passed 154/154, and final placement
+PlayMode passed 4/4. Two old PlayMode cases used fixed points now blocked by the tiled terrain; they
+now find a real clear footprint like the existing construction-worker case. Windows Development
+build `Builds/P109BuildingsB3/Serenity.exe` succeeded with 0 errors / 53 warnings, GUID
+`563c001610724baf8e0a7b343e1a9dac`, fingerprint
+`C9C5A6E07E2766373E849E70BEFBA4025F06416A3E0C6A2D8249906739FB21B4`. Protected files match
+44/44. C1 is active. Per the user's 2026-10-22 direction, C1-C4 continue in this chat with targeted
+tests after internal slices; the next broad regression and separate Player build are after C4.
+
 ## Working checkpoint — 2026-10-21 Stone Age buildings B2
 
 B2 is complete. Existing `Building` state now persists settlement identity, detailed construction

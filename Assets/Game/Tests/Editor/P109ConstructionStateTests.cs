@@ -72,7 +72,7 @@ namespace Game.Tests.Editor
             var production = new ProductionSaveState(0, 0, 0, 0, null, null, null, null,
                 fixture.Inventories.CaptureStates());
             var buildings = new BuildingWorldSaveState(new[] { fixture.Building.CaptureState() }, null, 0);
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(900), new GameTimeState(), 400,
+            var snapshot = new SaveSnapshot(SaveSnapshot.BuildingConstructionVersion, Id(900), new GameTimeState(), 400,
                 production: production, buildingWorld: buildings);
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
 
