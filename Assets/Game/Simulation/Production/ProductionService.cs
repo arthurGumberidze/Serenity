@@ -667,7 +667,7 @@ namespace Game.Simulation.Production
             LastCalendarTick = state.LastCalendarTick;
             Food.Restore(state.FoodRemainderTicks, state.FoodConsumed, state.FoodShortage);
             Ecology?.RebindSites(orderedSites.Where(site => site.Kind == ProductionSiteKind.NaturalSource));
-            Ecology?.RestoreState(state.NaturalLifecycles);
+            Ecology?.RestoreState(state.NaturalLifecycles, state.LastCalendarTick);
             Industry?.RestoreState(state.Industry);
         }
 

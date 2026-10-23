@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM07 World Map V2 fish and water-body recovery (2026-10-23): DONE. The proposed plan contains exactly 24
+stable populations: 16 lake sources at capacity 48 and eight river sources at capacity 42. Every production
+point is dry/buildable with a local dry approach, while its disposable fish visual remains over WM03 water.
+Partial and full depletion recover through the existing `ResourceEcologyService` with bounded daily logistic
+growth; the existing production snapshot calendar baseline prevents same-tick replay after load. The audited
+PNB fish prefab is reused with no new art or dependency. EditMode passed 16/16, PlayMode passed 1/1 and the
+legacy affected slice passed 13/13. Legacy remains active and unchanged; WM08 is next and has not started.
+
 WM06 World Map V2 natural resources (2026-10-23): DONE. Typed resource types/zones now drive a pure seeded
 `TiledWorldPopulation` plan through canonical resource masks, terrain/biome affinity and authored exclusions.
 Seed `20261023` yields 277 visible nodes and 19 hidden deposits, preserves the complete start guarantee and
@@ -9,7 +17,7 @@ stable IDs across tile order, and leaves fish to WM07. Visible nodes use the exi
 ResourceEcology authorities; non-renewable depletion and save/load persist canonically. Ten audited existing
 prefabs supply V2 presentation with no imported dependency. Focused EditMode passed 6/6, Save/Load PlayMode
 1/1, affected EditMode 26/26 and final research integration 18/18. Legacy remains active and unchanged; WM07
-is next and has not started.
+followed this completed checkpoint.
 
 WM05 World Map V2 vegetation and LOD (2026-10-23): DONE. Typed JSON vegetation classes/zones/clearings and a
 pure seeded planner produce 3,500 interactive trees, 9,000 decorative tree/shrub instances and 26,500 Terrain

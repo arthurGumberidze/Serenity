@@ -18,6 +18,38 @@ namespace Game.Domain.Production
         AnimalRange = 6
     }
 
+    public enum NaturalRecoveryKind
+    {
+        None = 0,
+        CarryingCapacity = 1
+    }
+
+    public readonly struct NaturalRecoveryPolicy
+    {
+        public NaturalRecoveryPolicy(NaturalRecoveryKind kind, int dailyGrowthPermille,
+            int minimumRecoveryUnits)
+        {
+            if (!Enum.IsDefined(typeof(NaturalRecoveryKind), kind) || dailyGrowthPermille < 0 ||
+                dailyGrowthPermille > 1000 || minimumRecoveryUnits < 0 ||
+                kind == NaturalRecoveryKind.None && (dailyGrowthPermille != 0 || minimumRecoveryUnits != 0) ||
+                kind == NaturalRecoveryKind.CarryingCapacity &&
+                (dailyGrowthPermille == 0 || minimumRecoveryUnits == 0))
+                throw new ArgumentOutOfRangeException(nameof(dailyGrowthPermille));
+            Kind = kind;
+            DailyGrowthPermille = dailyGrowthPermille;
+            MinimumRecoveryUnits = minimumRecoveryUnits;
+        }
+
+        public NaturalRecoveryKind Kind { get; }
+        public int DailyGrowthPermille { get; }
+        public int MinimumRecoveryUnits { get; }
+        public bool IsEnabled => Kind != NaturalRecoveryKind.None;
+
+        public static NaturalRecoveryPolicy CarryingCapacity(int dailyGrowthPermille,
+            int minimumRecoveryUnits) => new NaturalRecoveryPolicy(NaturalRecoveryKind.CarryingCapacity,
+            dailyGrowthPermille, minimumRecoveryUnits);
+    }
+
     public enum IndustrialFacilityKind
     {
         Workshop = 0,
@@ -53,7 +85,8 @@ namespace Game.Domain.Production
         private readonly WorldPosition[] respawnCandidates;
 
         public NaturalNodeRegistration(ProductionSite site, NaturalResourceBiome biome,
-            IEnumerable<WorldPosition> candidates, bool renewable = true)
+            IEnumerable<WorldPosition> candidates, bool renewable = true,
+            NaturalRecoveryPolicy recoveryPolicy = default)
         {
             Site = site ?? throw new ArgumentNullException(nameof(site));
             if (site.Kind != ProductionSiteKind.NaturalSource)
@@ -65,11 +98,15 @@ namespace Game.Domain.Production
             if (respawnCandidates.Length == 0) throw new ArgumentException("At least one respawn candidate is required.", nameof(candidates));
             Biome = biome;
             Renewable = renewable;
+            if (recoveryPolicy.IsEnabled && !renewable)
+                throw new ArgumentException("Recovery requires a renewable natural node.", nameof(recoveryPolicy));
+            RecoveryPolicy = recoveryPolicy;
         }
 
         public ProductionSite Site { get; }
         public NaturalResourceBiome Biome { get; }
         public bool Renewable { get; }
+        public NaturalRecoveryPolicy RecoveryPolicy { get; }
         public IReadOnlyList<WorldPosition> RespawnCandidates => Array.AsReadOnly(respawnCandidates);
     }
 

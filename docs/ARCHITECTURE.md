@@ -1,5 +1,19 @@
 # Architecture — U01
 
+## WM07 World Map V2 fishery boundary (2026-10-23)
+
+The flow is `WORLD_MAP_RESOURCES/WATER -> WorldMapFisheryDefinition + WM03 hydrology ->
+TiledWorldPopulationPlanner -> ProductionSite -> ResourceEcologyService -> optional fish prefab projection`.
+Definition data owns source identity, water-body link, capacity and recovery coefficients. The population plan
+owns deterministic shore/water coordinates and stable keys. `ProductionSite` alone owns mutable remaining
+stock, and the existing production save state persists it.
+
+`ResourceEcologyService` is the only recovery clock. It advances carrying-capacity policies once per crossed
+calendar day and restores its baseline from `ProductionSaveState.LastCalendarTick`; same-tick load/advance is
+therefore idempotent. The fish particle prefab, trigger and streamed tile object are disposable presentation.
+Only the V2 plan carries the new recovery policy; the active compact-world definition has no `MapData` and
+continues through its existing placement, ecology and presentation branches.
+
 ## WM06 World Map V2 natural-resource boundary (2026-10-23)
 
 The flow is `WorldMapResourceDefinition + WM02/WM03/WM04 samplers -> TiledWorldPopulationPlanner -> immutable

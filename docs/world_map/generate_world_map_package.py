@@ -529,6 +529,8 @@ def write_data() -> None:
                 "totalInitialSchoolCount": 24,
                 "model": "logistic_growth_with_harvest_pressure",
                 "minimumBankWorkPointOffsetMeters": 12,
+                "dailyGrowthPermille": 120,
+                "minimumRecoveryUnits": 1,
             },
             "hydrologyValidation": {"allLakesConnectedBySurfaceDrainage": True, "riverTouchesNorthwestAndSoutheastBorders": True},
         },

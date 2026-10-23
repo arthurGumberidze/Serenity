@@ -1,18 +1,17 @@
 # NEXT_TASK.md
 
-## Current scope — WM07 fish and water-body recovery, after WM06 completion on 2026-10-23
+## Current scope — WM08 wildlife populations and migration, after WM07 completion on 2026-10-23
 
-WM06 is DONE. Typed resource contracts and the pure seeded population planner now produce 277 visible resource
-nodes and 19 hidden deposits from canonical masks, terrain and biome affinity. The start guarantee, stable IDs,
-non-renewable depletion and focused Save/Load persistence pass. Audited existing prefabs provide presentation
-without owning gameplay state. The active `p109-compact-world-v1` reference, scene and save paths remain
-unchanged, and `p109-world-map-v2-proposed` is still not activated.
+WM07 is DONE. The proposed V2 plan now contains exactly 16 lake and eight river fish populations, dry/reachable
+bank production points, separate over-water visuals, authored carrying capacities, bounded daily recovery and
+save/reload idempotence through the existing Production/ResourceEcology authorities. The active
+`p109-compact-world-v1` reference, scene, save paths and fish behavior remain unchanged;
+`p109-world-map-v2-proposed` is still not activated.
 
-The next unblocked world-map task is **WM07 — fish and water-body recovery**. It depends on WM03 and WM06 and
-must add the authored 24 fish populations, dry/reachable bank work points, carrying-capacity recovery and
-save/reload coverage through the existing Production/ResourceEcology authorities. It must not duplicate the
-WM06 resource planner, activate `p109-world-map-v2-proposed`, alter legacy save slots or start WM08. This WM06
-chat stops after its commit and does not implement WM07.
+The next unblocked world-map task is **WM08 — wildlife populations and migration**. Follow its scope and gates
+from `docs/world_map/WORLD_MAP_CODEX_TASKS.md` and the canonical wildlife package. Reuse the existing simulation
+authorities, keep state stable across streaming/save/load, audit project assets before creating or importing
+art, and do not activate V2 or start WM09. This WM07 chat stops after its commit and does not implement WM08.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

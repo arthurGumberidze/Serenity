@@ -11,8 +11,8 @@
   "files": [
     {
       "path": "generate_world_map_package.py",
-      "bytes": 95700,
-      "sha256": "cd89a77f9c3f593d6c07e91964e9784b993bf0e77083a9f2f2794aee91cabe18"
+      "bytes": 95787,
+      "sha256": "aadc4a75b129ca10ddc62fb7baca8ab6873fdefc5b6df73034e0769585f5eabe"
     },
     {
       "path": "images/world_map_buildability.png",
@@ -146,8 +146,8 @@
     },
     {
       "path": "WORLD_MAP_WATER.json",
-      "bytes": 8139,
-      "sha256": "845730b17c7ebf758df1458eb60bfeab29e9468a3a054b3e70d01c1b8207c979"
+      "bytes": 8204,
+      "sha256": "6479edb16d0bc6c1f76953069985df070e329d4c36c775ba7b6104b16f90006a"
     },
     {
       "path": "WORLD_MAP_WILDLIFE.json",

@@ -520,11 +520,65 @@ namespace Game.Domain.World
         public string Access { get; }
     }
 
+    public sealed class WorldMapFishPopulationDefinition
+    {
+        public WorldMapFishPopulationDefinition(string id, string waterBodyId, bool river,
+            int schoolOrdinal, long carryingCapacityUnits)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(waterBodyId))
+                throw new ArgumentException(nameof(id));
+            if (schoolOrdinal < 0 || carryingCapacityUnits < 20 || carryingCapacityUnits > 50)
+                throw new ArgumentOutOfRangeException(nameof(carryingCapacityUnits));
+            Id = id;
+            WaterBodyId = waterBodyId;
+            IsRiver = river;
+            SchoolOrdinal = schoolOrdinal;
+            CarryingCapacityUnits = carryingCapacityUnits;
+        }
+
+        public string Id { get; }
+        public string WaterBodyId { get; }
+        public bool IsRiver { get; }
+        public int SchoolOrdinal { get; }
+        public long CarryingCapacityUnits { get; }
+    }
+
+    /// <summary>Immutable WM07 population and recovery policy; mutable stock remains in ProductionService.</summary>
+    public sealed class WorldMapFisheryDefinition
+    {
+        public WorldMapFisheryDefinition(IEnumerable<WorldMapFishPopulationDefinition> populations,
+            string growthModel, float minimumBankWorkPointOffsetMeters, int dailyGrowthPermille,
+            int minimumRecoveryUnits)
+        {
+            var values = (populations ?? throw new ArgumentNullException(nameof(populations))).ToArray();
+            if (values.Length != 24 || values.Any(value => value == null) ||
+                values.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != values.Length)
+                throw new ArgumentException("World Map V2 requires exactly 24 unique fish populations.",
+                    nameof(populations));
+            if (growthModel != "logistic_growth_with_harvest_pressure" ||
+                !WorldMapPoint.IsFinite(minimumBankWorkPointOffsetMeters) ||
+                minimumBankWorkPointOffsetMeters <= 0f || dailyGrowthPermille <= 0 ||
+                dailyGrowthPermille > 1000 || minimumRecoveryUnits <= 0)
+                throw new ArgumentOutOfRangeException(nameof(dailyGrowthPermille));
+            Populations = Array.AsReadOnly(values.OrderBy(value => value.Id, StringComparer.Ordinal).ToArray());
+            GrowthModel = growthModel;
+            MinimumBankWorkPointOffsetMeters = minimumBankWorkPointOffsetMeters;
+            DailyGrowthPermille = dailyGrowthPermille;
+            MinimumRecoveryUnits = minimumRecoveryUnits;
+        }
+
+        public IReadOnlyList<WorldMapFishPopulationDefinition> Populations { get; }
+        public string GrowthModel { get; }
+        public float MinimumBankWorkPointOffsetMeters { get; }
+        public int DailyGrowthPermille { get; }
+        public int MinimumRecoveryUnits { get; }
+    }
+
     /// <summary>Canonical WM06 masks and visibility policy; it contains no mutable depletion state.</summary>
     public sealed class WorldMapResourceDefinition
     {
         public WorldMapResourceDefinition(IEnumerable<WorldMapResourceType> types,
-            IEnumerable<WorldMapResourceZone> zones)
+            IEnumerable<WorldMapResourceZone> zones, WorldMapFisheryDefinition fishery)
         {
             var typeValues = (types ?? throw new ArgumentNullException(nameof(types))).ToArray();
             var zoneValues = (zones ?? throw new ArgumentNullException(nameof(zones))).ToArray();
@@ -538,10 +592,14 @@ namespace Game.Domain.World
                 throw new ArgumentException("Resource zones require unique IDs and known resources.", nameof(zones));
             Types = Array.AsReadOnly(typeValues);
             Zones = Array.AsReadOnly(zoneValues);
+            Fishery = fishery ?? throw new ArgumentNullException(nameof(fishery));
+            if (!known.Contains("fish"))
+                throw new ArgumentException("Fishery requires the canonical fish resource type.", nameof(types));
         }
 
         public IReadOnlyList<WorldMapResourceType> Types { get; }
         public IReadOnlyList<WorldMapResourceZone> Zones { get; }
+        public WorldMapFisheryDefinition Fishery { get; }
         public WorldMapResourceType Type(string id) => Types.Single(value => value.Id == id);
     }
 
@@ -661,13 +719,14 @@ namespace Game.Domain.World
     {
         public WorldMapWaterBody(string id, WorldMapPoint center, WorldMapPolygon shoreline, float surfaceY,
             float maximumDepthMeters, float minimumBankBlendMeters, float maximumBankBlendMeters,
-            string shoreKind, IEnumerable<WorldMapPoint> fishingLandings)
+            string shoreKind, float fishCapacityIndex, IEnumerable<WorldMapPoint> fishingLandings)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
             if (!WorldMapPoint.IsFinite(surfaceY) || !WorldMapPoint.IsFinite(maximumDepthMeters) ||
                 maximumDepthMeters <= 0f || !WorldMapPoint.IsFinite(minimumBankBlendMeters) ||
                 !WorldMapPoint.IsFinite(maximumBankBlendMeters) || minimumBankBlendMeters <= 0f ||
-                maximumBankBlendMeters < minimumBankBlendMeters || string.IsNullOrWhiteSpace(shoreKind))
+                maximumBankBlendMeters < minimumBankBlendMeters || string.IsNullOrWhiteSpace(shoreKind) ||
+                !WorldMapPoint.IsFinite(fishCapacityIndex) || fishCapacityIndex <= 0f)
                 throw new ArgumentOutOfRangeException(nameof(surfaceY));
             Id = id;
             Center = center;
@@ -677,6 +736,7 @@ namespace Game.Domain.World
             MinimumBankBlendMeters = minimumBankBlendMeters;
             MaximumBankBlendMeters = maximumBankBlendMeters;
             ShoreKind = shoreKind;
+            FishCapacityIndex = fishCapacityIndex;
             SurfaceLevelPolicy = new WorldMapWaterLevelPolicy(WorldMapWaterLevelPolicyKind.Fixed,
                 surfaceY, surfaceY);
             FishingLandings = Array.AsReadOnly((fishingLandings ??
@@ -690,6 +750,7 @@ namespace Game.Domain.World
         public float MinimumBankBlendMeters { get; }
         public float MaximumBankBlendMeters { get; }
         public string ShoreKind { get; }
+        public float FishCapacityIndex { get; }
         public WorldMapWaterLevelPolicy SurfaceLevelPolicy { get; }
         public IReadOnlyList<WorldMapPoint> FishingLandings { get; }
     }

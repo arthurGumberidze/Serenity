@@ -125,9 +125,13 @@ namespace Game.Infrastructure
                         CropPlotPhase.Unplanted, 0, 0));
                     production.AddSite(site);
                 }
+                var recovery = node.CarryingCapacityGrowthPermillePerDay > 0
+                    ? NaturalRecoveryPolicy.CarryingCapacity(node.CarryingCapacityGrowthPermillePerDay,
+                        node.MinimumRecoveryUnits)
+                    : default;
                 ecology.Register(new NaturalNodeRegistration(site, node.Biome,
                     node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position),
-                    node.RenewalPolicy != "none"));
+                    node.RenewalPolicy != "none", recovery));
             }
             foreach (var node in Plan.Industry)
             {
@@ -156,6 +160,28 @@ namespace Game.Infrastructure
             if (!production.TryGetSite(ResourceId(node), out var site)) return;
             if (node.RecipeId == "fish_water")
             {
+                if (terrainWorld.Definition.MapData != null)
+                {
+                    var fishPrefab = worldMapResourceArt?.PrefabFor("fish");
+                    if (fishPrefab == null)
+                    {
+                        Debug.LogError("No audited World Map V2 resource prefab for fish");
+                        return;
+                    }
+                    var fishView = Instantiate(fishPrefab, parent);
+                    fishView.name = "World Map fish population " + node.SourceZoneId + " " + node.StableIndex;
+                    fishView.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y,
+                        node.VisualPosition.Z);
+                    var collider = fishView.GetComponent<Collider>() ?? fishView.AddComponent<BoxCollider>();
+                    collider.isTrigger = true;
+                    if (collider is BoxCollider box)
+                    {
+                        box.center = Vector3.up * 0.25f;
+                        box.size = new Vector3(4f, 1.5f, 4f);
+                    }
+                    fishView.AddComponent<ProductionSourcePresenter>().Bind(site, Color.white, true);
+                    return;
+                }
                 var school = new GameObject("Fishing school " + node.SourceZoneId + " " + node.StableIndex);
                 school.transform.SetParent(parent, false);
                 school.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y, node.VisualPosition.Z);

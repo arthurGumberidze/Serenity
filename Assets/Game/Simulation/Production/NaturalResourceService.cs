@@ -21,6 +21,7 @@ namespace Game.Simulation.Production
         private readonly Dictionary<StableEntityId, NaturalNodeLifecycleState> states =
             new Dictionary<StableEntityId, NaturalNodeLifecycleState>();
         private readonly long respawnDelayTicks;
+        private long lastCalendarTick = -1;
 
         public ResourceEcologyService(TimeSpan? respawnDelay = null)
         {
@@ -30,6 +31,7 @@ namespace Game.Simulation.Production
         }
 
         public IReadOnlyList<NaturalNodeLifecycleState> States => states.Values.OrderBy(x => x.SiteId).ToArray();
+        public long LastCalendarTick => lastCalendarTick;
 
         public void Register(NaturalNodeRegistration registration)
         {
@@ -44,10 +46,27 @@ namespace Game.Simulation.Production
         {
             if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
             if (surface == null) throw new ArgumentNullException(nameof(surface));
+            if (lastCalendarTick > calendarTick)
+                throw new InvalidOperationException("Resource ecology cannot move backwards in time.");
+            var recoveryDays = lastCalendarTick < 0 ? 0L :
+                calendarTick / TimeSpan.TicksPerDay - lastCalendarTick / TimeSpan.TicksPerDay;
             foreach (var id in registrations.Keys.OrderBy(x => x))
             {
                 var registration = registrations[id];
                 var state = states[id];
+                if (registration.RecoveryPolicy.IsEnabled)
+                {
+                    if (registration.Site.IsDepleted && state.DepletedAtTick < 0)
+                        state = new NaturalNodeLifecycleState(id, state.Biome,
+                            lastCalendarTick < 0 ? calendarTick : lastCalendarTick, state.RespawnAttempt);
+                    for (var day = 0L; day < recoveryDays &&
+                                          registration.Site.RemainingAmount < registration.Site.SourceCapacity; day++)
+                        RecoverPopulation(registration);
+                    states[id] = registration.Site.IsDepleted
+                        ? state
+                        : new NaturalNodeLifecycleState(id, state.Biome, -1, state.RespawnAttempt);
+                    continue;
+                }
                 if (!registration.Site.IsDepleted)
                 {
                     if (state.DepletedAtTick >= 0)
@@ -78,6 +97,22 @@ namespace Game.Simulation.Production
                     states[id] = new NaturalNodeLifecycleState(id, state.Biome, state.DepletedAtTick,
                         checked(state.RespawnAttempt + 1));
             }
+            lastCalendarTick = calendarTick;
+        }
+
+        private static void RecoverPopulation(NaturalNodeRegistration registration)
+        {
+            var site = registration.Site;
+            var missing = site.SourceCapacity - site.RemainingAmount;
+            if (missing <= 0) return;
+            var breedingStock = Math.Max(site.RemainingAmount,
+                registration.RecoveryPolicy.MinimumRecoveryUnits);
+            var numerator = checked((long)registration.RecoveryPolicy.DailyGrowthPermille *
+                                    breedingStock * missing);
+            var denominator = checked(site.SourceCapacity * 1000L);
+            var logisticGrowth = checked((numerator + denominator - 1L) / denominator);
+            site.RecoverNatural(Math.Max(registration.RecoveryPolicy.MinimumRecoveryUnits,
+                logisticGrowth));
         }
 
         public NaturalNodeLifecycleState[] CaptureState() => states.Values.OrderBy(x => x.SiteId).ToArray();
@@ -93,12 +128,16 @@ namespace Game.Simulation.Production
                         nameof(restoredSites));
                 var current = registrations[id];
                 registrations[id] = new NaturalNodeRegistration(restored, current.Biome,
-                    current.RespawnCandidates, current.Renewable);
+                    current.RespawnCandidates, current.Renewable, current.RecoveryPolicy);
             }
         }
 
-        public void RestoreState(IEnumerable<NaturalNodeLifecycleState> restored)
+        public void RestoreState(IEnumerable<NaturalNodeLifecycleState> restored) => RestoreState(restored, null);
+
+        public void RestoreState(IEnumerable<NaturalNodeLifecycleState> restored, long? calendarBaseline)
         {
+            if (calendarBaseline < 0) throw new ArgumentOutOfRangeException(nameof(calendarBaseline));
+            if (calendarBaseline.HasValue) lastCalendarTick = calendarBaseline.Value;
             var values = (restored ?? Array.Empty<NaturalNodeLifecycleState>()).ToArray();
             if (values.Length == 0) return;
             var replacement = new Dictionary<StableEntityId, NaturalNodeLifecycleState>();

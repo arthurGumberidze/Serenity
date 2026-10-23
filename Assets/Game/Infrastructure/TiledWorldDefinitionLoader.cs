@@ -149,7 +149,7 @@ namespace Game.Infrastructure
                 ValidatePoiRules(poiRoot.Object("rules"));
 
                 var resources = roots["WORLD_MAP_RESOURCES.json"];
-                var resourceDefinition = ParseResourceDefinition(resources, bounds);
+                var resourceDefinition = ParseResourceDefinition(resources, water, bounds, lakes, river.Spline);
                 var resourceTypes = UniqueStrings(resourceDefinition.Types.Select(value => value.Id), "resource type");
                 var resourceMasks = resourceDefinition.Zones.Select(zone => new WorldMapMask(zone.Id, "resources",
                     zone.Shape, zone.ResourceIds, zone.Density + ":" + zone.Access)).ToArray();
@@ -444,7 +444,7 @@ namespace Game.Infrastructure
                 if (!polygon.Contains(center)) throw new InvalidDataException($"Lake center for {id} must be inside its shoreline.");
                 return new WorldMapWaterBody(id, center, polygon, lake.Float("surfaceY"),
                     lake.Float("maxDepthMeters"), minimumBankBlendMeters, maximumBankBlendMeters,
-                    lake.String("shore"), landings);
+                    lake.String("shore"), lake.Float("fishCapacityIndex"), landings);
             }).ToArray();
             if (result.Length != 4) throw new InvalidDataException("The V2 contract requires exactly four lakes.");
             UniqueStrings(result.Select(value => value.Id), "lake");
@@ -553,9 +553,12 @@ namespace Game.Infrastructure
         private static void ValidateWaterRules(Node water)
         {
             var fish = water.Object("fishPopulation");
-            if (fish.Int("schoolCountPerLake") <= 0 || fish.Int("riverSchoolCount") <= 0 ||
-                fish.Int("totalInitialSchoolCount") != fish.Int("schoolCountPerLake") * 4 +
-                fish.Int("riverSchoolCount") || fish.Float("minimumBankWorkPointOffsetMeters") <= 0f)
+            if (fish.Int("schoolCountPerLake") != 4 || fish.Int("riverSchoolCount") != 8 ||
+                fish.Int("totalInitialSchoolCount") != 24 ||
+                fish.Float("minimumBankWorkPointOffsetMeters") <= 0f ||
+                fish.String("model") != "logistic_growth_with_harvest_pressure" ||
+                fish.Int("dailyGrowthPermille") <= 0 || fish.Int("dailyGrowthPermille") > 1000 ||
+                fish.Int("minimumRecoveryUnits") <= 0)
                 throw new InvalidDataException("Water fish-population contract is invalid.");
             ValidateRequiredTrueFlags(water.Object("hydrologyValidation"), "hydrology",
                 "allLakesConnectedBySurfaceDrainage", "riverTouchesNorthwestAndSoutheastBorders");
@@ -662,7 +665,8 @@ namespace Game.Infrastructure
         private static void ValidatePoiRules(Node rules) => ValidateRequiredTrueFlags(rules, "POI",
             "uniqueObjectsPersistByStableId", "noAutomaticConstructionClearance", "discoveryStateSaved");
 
-        private static WorldMapResourceDefinition ParseResourceDefinition(Node root, WorldMapBounds bounds)
+        private static WorldMapResourceDefinition ParseResourceDefinition(Node root, Node water,
+            WorldMapBounds bounds, IReadOnlyList<WorldMapWaterBody> lakes, WorldMapSpline river)
         {
             var types = root.Array("resourceTypes").Select(value =>
             {
@@ -684,7 +688,36 @@ namespace Game.Infrastructure
                     ParseShape(zone.Object("shape"), bounds, zone.String("id")), references,
                     zone.String("density"), zone.String("access"));
             }).ToArray();
-            return new WorldMapResourceDefinition(types, zones);
+            var populations = root.Array("fishSources").Select(value =>
+            {
+                var source = value.Object();
+                return new WorldMapFishPopulationDefinition(source.String("id"), source.String("lakeId"), false,
+                    source.Int("schoolOrdinal"), source.Int("initialCapacityUnits"));
+            }).Concat(root.Array("riverFishSources").Select(value =>
+            {
+                var source = value.Object();
+                return new WorldMapFishPopulationDefinition(source.String("id"), source.String("riverId"), true,
+                    source.Int("schoolOrdinal"), source.Int("initialCapacityUnits"));
+            })).ToArray();
+            var population = water.Object("fishPopulation");
+            var fishery = new WorldMapFisheryDefinition(populations, population.String("model"),
+                population.Float("minimumBankWorkPointOffsetMeters"),
+                population.Int("dailyGrowthPermille"), population.Int("minimumRecoveryUnits"));
+            var lakeIds = new HashSet<string>(lakes.Select(value => value.Id), StringComparer.Ordinal);
+            if (fishery.Populations.Count(value => !value.IsRiver) != 16 ||
+                fishery.Populations.Count(value => value.IsRiver) != 8 ||
+                fishery.Populations.Any(value => value.IsRiver
+                    ? value.WaterBodyId != river.Id
+                    : !lakeIds.Contains(value.WaterBodyId)) ||
+                lakes.Any(lake => fishery.Populations.Count(value => !value.IsRiver &&
+                    value.WaterBodyId == lake.Id) != 4) ||
+                lakes.Any(lake => !fishery.Populations.Where(value => !value.IsRiver &&
+                        value.WaterBodyId == lake.Id).Select(value => value.SchoolOrdinal)
+                    .OrderBy(value => value).SequenceEqual(new[] { 0, 1, 2, 3 })) ||
+                !fishery.Populations.Where(value => value.IsRiver).Select(value => value.SchoolOrdinal)
+                    .OrderBy(value => value).SequenceEqual(Enumerable.Range(0, 8)))
+                throw new InvalidDataException("Fish populations do not match the canonical hydrology graph.");
+            return new WorldMapResourceDefinition(types, zones, fishery);
         }
 
         private static IReadOnlyList<WorldMapMask> ParseWildlifeMasks(IReadOnlyList<Node> values,

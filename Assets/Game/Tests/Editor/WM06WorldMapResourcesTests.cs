@@ -85,7 +85,7 @@ namespace Game.Tests.Editor
         {
             var zones = world.MapData.Resources.Zones.ToDictionary(value => value.Id, StringComparer.Ordinal);
             var types = world.MapData.Resources.Types.ToDictionary(value => value.Id, StringComparer.Ordinal);
-            foreach (var node in plan.Resources)
+            foreach (var node in plan.Resources.Where(value => value.ResourceTypeId != "fish"))
             {
                 var design = world.MapData.CoordinateTransform.ToDesign(node.Position);
                 Assert.That(zones[node.SourceZoneId].Shape.Contains(design), Is.True, node.StableKey);

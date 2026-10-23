@@ -13,13 +13,18 @@ namespace Game.Domain.World
             NaturalResourceBiome biome, WorldPosition position, long capacity, string sourceZoneId,
             WorldPosition? visualPosition = null, string resourceTypeId = "", bool hidden = false,
             string unlockTechnologyId = "", string depletionPolicy = "", string renewalPolicy = "",
-            string stableKey = "")
+            string stableKey = "", int carryingCapacityGrowthPermillePerDay = 0,
+            int minimumRecoveryUnits = 0)
         {
             if (stableIndex < 0) throw new ArgumentOutOfRangeException(nameof(stableIndex));
             if (string.IsNullOrWhiteSpace(recipeId)) throw new ArgumentException(nameof(recipeId));
             if (capacity < 20 || capacity > 50) throw new ArgumentOutOfRangeException(nameof(capacity));
             if (hidden && string.IsNullOrWhiteSpace(unlockTechnologyId))
                 throw new ArgumentException("Hidden deposits require an unlock technology.", nameof(unlockTechnologyId));
+            if (carryingCapacityGrowthPermillePerDay < 0 || carryingCapacityGrowthPermillePerDay > 1000 ||
+                minimumRecoveryUnits < 0 || carryingCapacityGrowthPermillePerDay == 0 && minimumRecoveryUnits != 0 ||
+                carryingCapacityGrowthPermillePerDay > 0 && minimumRecoveryUnits == 0)
+                throw new ArgumentOutOfRangeException(nameof(carryingCapacityGrowthPermillePerDay));
             StableIndex = stableIndex;
             Tile = tile;
             RecipeId = recipeId;
@@ -34,6 +39,8 @@ namespace Game.Domain.World
             DepletionPolicy = depletionPolicy ?? string.Empty;
             RenewalPolicy = renewalPolicy ?? string.Empty;
             StableKey = string.IsNullOrWhiteSpace(stableKey) ? "legacy:" + stableIndex : stableKey;
+            CarryingCapacityGrowthPermillePerDay = carryingCapacityGrowthPermillePerDay;
+            MinimumRecoveryUnits = minimumRecoveryUnits;
         }
 
         public int StableIndex { get; }
@@ -50,6 +57,8 @@ namespace Game.Domain.World
         public string DepletionPolicy { get; }
         public string RenewalPolicy { get; }
         public string StableKey { get; }
+        public int CarryingCapacityGrowthPermillePerDay { get; }
+        public int MinimumRecoveryUnits { get; }
 
         public StableEntityId CreateStableId(long worldSeed, string generationId) =>
             StableKey == "legacy:" + StableIndex
@@ -229,7 +238,167 @@ namespace Game.Domain.World
                 if (result.Count(value => value.SourceZoneId == "res_start_basics" &&
                                           value.ResourceTypeId == pair.Key) < pair.Value)
                     throw new InvalidOperationException("The authored start resource guarantee was not met: " + pair.Key);
+            AddWorldMapFishPopulations(result, ref stableIndex);
             return new TiledWorldPopulationPlan(result, Array.Empty<TiledWorldIndustrialNode>());
+        }
+
+        private void AddWorldMapFishPopulations(ICollection<TiledWorldResourceNode> target, ref int stableIndex)
+        {
+            var fishery = definition.MapData.Resources.Fishery;
+            var fishType = definition.MapData.Resources.Type("fish");
+            foreach (var population in fishery.Populations.OrderBy(value => value.Id, StringComparer.Ordinal))
+            {
+                WorldPosition bank;
+                WorldPosition water;
+                float habitatCapacityIndex;
+                if (population.IsRiver)
+                {
+                    ResolveRiverFishPosition(population, fishery, out bank, out water);
+                    habitatCapacityIndex = 1f;
+                }
+                else
+                {
+                    var lake = definition.MapData.Hydrology.Lakes.Single(value =>
+                        value.Id == population.WaterBodyId);
+                    ResolveLakeFishPosition(population, lake, out bank, out water);
+                    habitatCapacityIndex = lake.FishCapacityIndex;
+                }
+                if (!definition.TryGetTile(bank.X, bank.Z, out var tile))
+                    throw new InvalidOperationException("Fish landing escaped the tiled world: " + population.Id);
+                var dailyGrowth = Math.Max(1, (int)Math.Round(fishery.DailyGrowthPermille *
+                    habitatCapacityIndex, MidpointRounding.AwayFromZero));
+                target.Add(new TiledWorldResourceNode(stableIndex++, tile, "fish_water",
+                    NaturalResourceBiome.Lake, bank, population.CarryingCapacityUnits,
+                    population.WaterBodyId, water, "fish", false, string.Empty,
+                    fishType.DepletionPolicy, fishType.RenewalPolicy,
+                    definition.MapData.MapVersion + ":fish:" + population.Id,
+                    dailyGrowth, fishery.MinimumRecoveryUnits));
+                occupied.Add(bank);
+            }
+        }
+
+        private void ResolveLakeFishPosition(WorldMapFishPopulationDefinition population,
+            WorldMapWaterBody lake, out WorldPosition bank, out WorldPosition water)
+        {
+            var landing = lake.FishingLandings[population.SchoolOrdinal % lake.FishingLandings.Count];
+            if (!TryResolveDryBank(landing, population.SchoolOrdinal, out bank))
+                throw new InvalidOperationException("No dry reachable fishing landing for " + population.Id);
+            var dx = landing.X - lake.Center.X;
+            var dz = landing.Z - lake.Center.Z;
+            WorldMapPoint visual = lake.Center;
+            for (var factor = 0.72f; factor >= 0.2f; factor -= 0.08f)
+            {
+                var candidate = new WorldMapPoint(lake.Center.X + dx * factor,
+                    lake.Center.Z + dz * factor);
+                if (!lake.Shoreline.Contains(candidate)) continue;
+                visual = candidate;
+                break;
+            }
+            var runtime = definition.MapData.CoordinateTransform.ToUnity(visual);
+            water = new WorldPosition(runtime.X, lake.SurfaceY + 0.12f, runtime.Z);
+        }
+
+        private void ResolveRiverFishPosition(WorldMapFishPopulationDefinition population,
+            WorldMapFisheryDefinition fishery, out WorldPosition bank, out WorldPosition water)
+        {
+            var river = definition.MapData.Hydrology.MainRiver;
+            var progress = (population.SchoolOrdinal + 1f) /
+                           (fishery.Populations.Count(value => value.IsRiver) + 1f);
+            SampleSpline(river.Spline, progress, out var center, out var width, out var tangentX, out var tangentZ);
+            var centerRuntime = definition.MapData.CoordinateTransform.ToUnity(center);
+            water = new WorldPosition(centerRuntime.X,
+                river.SurfaceLevelPolicy.Sample(progress) + 0.12f, centerRuntime.Z);
+            var length = (float)Math.Sqrt(tangentX * tangentX + tangentZ * tangentZ);
+            var normalX = -tangentZ / Math.Max(0.001f, length);
+            var normalZ = tangentX / Math.Max(0.001f, length);
+            for (var attempt = 0; attempt < 48; attempt++)
+            {
+                var side = ((population.SchoolOrdinal + attempt) & 1) == 0 ? 1f : -1f;
+                var along = (attempt / 2 % 5 - 2) * 2.5f;
+                var offset = width * 0.5f + fishery.MinimumBankWorkPointOffsetMeters + attempt / 10 * 2f;
+                var design = new WorldMapPoint(center.X + normalX * offset * side + tangentX / length * along,
+                    center.Z + normalZ * offset * side + tangentZ / length * along);
+                if (!definition.MapData.CoordinateTransform.DesignBounds.Contains(design) ||
+                    !TryResolveDryBank(design, population.SchoolOrdinal + attempt, out bank)) continue;
+                return;
+            }
+            throw new InvalidOperationException("No dry reachable river landing for " + population.Id);
+        }
+
+        private bool TryResolveDryBank(WorldMapPoint authored, int salt, out WorldPosition bank)
+        {
+            for (var ring = 0; ring <= 20; ring++)
+            for (var direction = 0; direction < (ring == 0 ? 1 : 16); direction++)
+            {
+                var radius = ring * 1.5f;
+                var angle = (salt * 17f + direction * 22.5f) * Math.PI / 180d;
+                var candidate = new WorldMapPoint(authored.X + (float)Math.Cos(angle) * radius,
+                    authored.Z + (float)Math.Sin(angle) * radius);
+                if (!definition.MapData.CoordinateTransform.DesignBounds.Contains(candidate)) continue;
+                var runtime = definition.MapData.CoordinateTransform.ToUnity(candidate);
+                if (!heights.IsBuildable(runtime.X, runtime.Z, 30f) || !HasDryApproach(runtime.X, runtime.Z))
+                    continue;
+                bank = new WorldPosition(runtime.X, heights.SampleHeight(runtime.X, runtime.Z), runtime.Z);
+                return true;
+            }
+            bank = default;
+            return false;
+        }
+
+        private bool HasDryApproach(float worldX, float worldZ)
+        {
+            for (var i = 0; i < 8; i++)
+            {
+                var angle = i * Math.PI * 0.25d;
+                var x = worldX + (float)Math.Cos(angle) * 3f;
+                var z = worldZ + (float)Math.Sin(angle) * 3f;
+                if (heights.IsBuildable(x, z, 30f) &&
+                    Math.Abs(heights.SampleHeight(x, z) - heights.SampleHeight(worldX, worldZ)) <= 1.5f)
+                    return true;
+            }
+            return false;
+        }
+
+        private static void SampleSpline(WorldMapSpline spline, float progress, out WorldMapPoint point,
+            out float width, out float tangentX, out float tangentZ)
+        {
+            progress = Math.Max(0f, Math.Min(1f, progress));
+            var lengths = new float[spline.Points.Count - 1];
+            var total = 0f;
+            for (var i = 0; i < lengths.Length; i++)
+            {
+                var a = spline.Points[i].Position;
+                var b = spline.Points[i + 1].Position;
+                var dx = b.X - a.X;
+                var dz = b.Z - a.Z;
+                lengths[i] = (float)Math.Sqrt(dx * dx + dz * dz);
+                total += lengths[i];
+            }
+            var target = progress * total;
+            var traversed = 0f;
+            for (var i = 0; i < lengths.Length; i++)
+            {
+                if (target > traversed + lengths[i] && i + 1 < lengths.Length)
+                {
+                    traversed += lengths[i];
+                    continue;
+                }
+                var local = lengths[i] <= 0f ? 0f : (target - traversed) / lengths[i];
+                var a = spline.Points[i];
+                var b = spline.Points[i + 1];
+                point = new WorldMapPoint(a.Position.X + (b.Position.X - a.Position.X) * local,
+                    a.Position.Z + (b.Position.Z - a.Position.Z) * local);
+                width = a.WidthMeters + (b.WidthMeters - a.WidthMeters) * local;
+                tangentX = b.Position.X - a.Position.X;
+                tangentZ = b.Position.Z - a.Position.Z;
+                return;
+            }
+            var last = spline.Points[spline.Points.Count - 1];
+            var previous = spline.Points[spline.Points.Count - 2];
+            point = last.Position;
+            width = last.WidthMeters;
+            tangentX = last.Position.X - previous.Position.X;
+            tangentZ = last.Position.Z - previous.Position.Z;
         }
 
         private bool TryFindWorldMapPoint(WorldMapResourceZone zone, WorldMapResourceType type, int ordinal,

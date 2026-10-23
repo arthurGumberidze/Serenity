@@ -1,5 +1,25 @@
 # DECISIONS.md
 
+## D-181 WM07 models fish as canonical production sites with calendar-based carrying-capacity recovery (2026-10-23)
+
+The 24 authored fish sources are immutable `WorldMapFishPopulationDefinition` values connected to the WM03
+hydrology graph. `TiledWorldPopulationPlanner` is their only placement and stable-ID authority: a production
+point is resolved to dry/buildable shore with a local dry approach, while a separate disposable visual point
+lies in its lake or on `river_main`. Lake habitat indexes scale a shared authored daily growth rate; capacities
+remain the authored 48/42 units. Terrain, water meshes, fish particles and colliders own no population state.
+
+`ProductionSite.RemainingAmount` remains the mutable stock authority. A typed `NaturalRecoveryPolicy` extends
+the existing `ResourceEcologyService` with bounded integer logistic growth per crossed calendar day. Recovery
+is clamped to `SourceCapacity`; a minimum breeding/recovery unit lets a fully depleted population resume. The
+ecology calendar baseline restores from the already persisted `ProductionSaveState.LastCalendarTick`, avoiding
+a save-version change and preventing the saved day from recovering twice. No second fish scheduler, inventory,
+save payload or per-school `Update` is introduced.
+
+The V2 presenter reuses the already audited PNB `FX_Fish_Small_01` prefab from
+`WorldMapResourceArtCatalog`. The legacy definition carries no recovery policy and continues through its exact
+existing fish branch. WM07 does not activate `p109-world-map-v2-proposed`; generation activation remains a
+later gated task.
+
 ## D-180 WM05 separates deterministic vegetation identity from streamed Terrain presentation (2026-10-23)
 
 `WorldMapVegetationDefinition` is immutable definition data parsed from the authored JSON. A pure

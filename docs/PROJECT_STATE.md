@@ -1,5 +1,45 @@
 # PROJECT_STATE.md
 
+## WM07 checkpoint — 2026-10-23 World Map V2 fish and water-body recovery DONE
+
+WM07 loads the 16 authored lake populations and eight authored river populations as one immutable fishery
+contract. `TiledWorldPopulationPlanner` now emits exactly 24 stable `fish_water` sources for the proposed V2
+generation. Each source has a dry, buildable bank work/output point with a local dry approach and a separate
+visual point over canonical WM03 water. Lake sources reuse all 15 authored landing areas; river sources are
+distributed deterministically along `river_main`. Capacities remain authored at 48 lake / 42 river units.
+
+Mutable stock continues to live only in `ProductionSite`. The existing `ResourceEcologyService` applies one
+integer logistic carrying-capacity step per crossed calendar day, using the V2 recovery policy and lake
+capacity index. Its calendar baseline is restored from the existing `ProductionSaveState.LastCalendarTick`,
+so loading and advancing the saved tick cannot replay recovery or extraction. No save schema/version change,
+parallel fish manager, per-population `Update`, or ScriptableObject mutable state was introduced. The legacy
+`p109-compact-world-v1` fish path receives no recovery policy and retains its previous placement, identity,
+respawn and presentation behavior. `p109-world-map-v2-proposed` remains inactive.
+
+The asset-first audit reused the existing
+`Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Prefabs/FX_Fish_Small_01.prefab` already referenced by
+`WorldMapResourceArtCatalog`. V2 fish presentation instantiates that audited prefab at the water visual point;
+the canonical production site stays on shore. Existing shore/water assets and adapters were sufficient, so no
+model, texture, material, shader, package or external dependency was created or imported.
+
+Exact validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' docs/world_map/generate_world_map_package.py
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','EditMode','-testFilter','Game.Tests.Editor.WM07WorldMapFisheryTests;Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.WM03WorldMapHydrologyTests','-testResults','C:\serenity_game\Artifacts\WM07\editmode-results-final.xml','-logFile','C:\serenity_game\Artifacts\WM07\editmode-final.log'); $proc=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -Wait -PassThru -WindowStyle Hidden
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','PlayMode','-testFilter','Game.Tests.PlayMode.WM07WorldMapFisheryPlayModeTests','-testResults','C:\serenity_game\Artifacts\WM07\playmode-results-final.xml','-logFile','C:\serenity_game\Artifacts\WM07\playmode-final.log'); $proc=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -Wait -PassThru -WindowStyle Hidden
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','EditMode','-testFilter','Game.Tests.Editor.P109CompactWorldTests;Game.Tests.Editor.P104NaturalResourcesTests','-testResults','C:\serenity_game\Artifacts\WM07\editmode-legacy-affected.xml','-logFile','C:\serenity_game\Artifacts\WM07\editmode-legacy-affected.log'); $proc=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -Wait -PassThru -WindowStyle Hidden
+git diff --check
+```
+
+Results: design-package validation **PASS**; focused/affected WM03/WM06/WM07 EditMode **16/16**; WM07
+PlayMode **1/1**; legacy compact-world/natural-resource EditMode **13/13**. The PlayMode test verifies all 24
+dry-bank/water-visual pairs, depletion, XML save/reload, unchanged stock at the restored tick and exactly one
+recovery step on the next day. The first sandboxed Unity attempt crashed in its internal
+`BuildReportRestService`/`HttpListener`; the permitted unsandboxed runs above completed. No broad suite, Player
+build, profiler capture or full visual run was performed by instruction. The inherited dirty materials and
+`New Unity Project/` remain user-owned and excluded. WM08 is next and unstarted.
+
 ## WM06 checkpoint — 2026-10-23 World Map V2 natural resources DONE
 
 WM06 replaces the generic WM01 resource masks with immutable typed resource/zone contracts loaded from

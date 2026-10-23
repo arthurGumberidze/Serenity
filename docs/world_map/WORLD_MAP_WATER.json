@@ -484,7 +484,9 @@
     "riverSchoolCount": 8,
     "totalInitialSchoolCount": 24,
     "model": "logistic_growth_with_harvest_pressure",
-    "minimumBankWorkPointOffsetMeters": 12
+    "minimumBankWorkPointOffsetMeters": 12,
+    "dailyGrowthPermille": 120,
+    "minimumRecoveryUnits": 1
   },
   "hydrologyValidation": {
     "allLakesConnectedBySurfaceDrainage": true,

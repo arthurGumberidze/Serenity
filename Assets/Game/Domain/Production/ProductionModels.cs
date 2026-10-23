@@ -435,6 +435,16 @@ namespace Game.Domain.Production
             RemainingAmount = amount;
         }
 
+        public long RecoverNatural(long amount)
+        {
+            if (Kind != ProductionSiteKind.NaturalSource)
+                throw new InvalidOperationException("Only natural sources can recover.");
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            var applied = Math.Min(amount, SourceCapacity - RemainingAmount);
+            RemainingAmount = checked(RemainingAmount + applied);
+            return applied;
+        }
+
         public ProductionSiteState CaptureState() => new ProductionSiteState(Id, RecipeId, Kind, Position,
             RemainingAmount, SourceCapacity, CropPhase, GrowthProgressTicks, GrowthRequiredTicks,
             OwnerBuildingId, QueuedBatches, Paused, MaximumWorkers);
