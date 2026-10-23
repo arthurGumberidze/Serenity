@@ -8,6 +8,7 @@ namespace Game.Presentation.Environment
         public GameObject[] Trees;
         public GameObject[] ShoreProps;
         public TerrainLayer[] GroundLayers;
+        public TerrainLayer[] WorldMapGroundLayers;
         public Texture WaterRipples;
         public float MinimumTreeHeight = 9f;
         public float MaximumTreeHeight = 13f;

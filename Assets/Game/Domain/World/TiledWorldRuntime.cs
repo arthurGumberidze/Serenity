@@ -311,6 +311,40 @@ namespace Game.Domain.World
             return best;
         }
 
+        /// <summary>Distance from dry ground to the nearest canonical water edge; zero inside water.</summary>
+        public float DistanceToWater(float worldX, float worldZ)
+        {
+            if (!definition.ContainsClosed(worldX, worldZ))
+                throw new ArgumentOutOfRangeException(nameof(worldX));
+            if (authoredHydrology == null)
+            {
+                var best = Math.Max(0f, DistanceToRiver(worldX, worldZ) - RiverHalfWidthMeters);
+                foreach (var lake in definition.Zones.Where(value => value.Uses.HasFlag(WorldZoneUse.Fishing)))
+                {
+                    var dx = (worldX - lake.Center.X) / lake.RadiusX;
+                    var dz = (worldZ - lake.Center.Z) / lake.RadiusZ;
+                    var normalized = (float)Math.Sqrt(dx * dx + dz * dz);
+                    if (normalized <= 1f) return 0f;
+                    best = Math.Min(best, (normalized - 1f) * Math.Min(lake.RadiusX, lake.RadiusZ));
+                }
+                return best;
+            }
+
+            var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
+            var distance = float.MaxValue;
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                if (lake.Shoreline.Contains(point)) return 0f;
+                distance = Math.Min(distance, DistanceToPolygon(point, lake.Shoreline));
+            }
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point, course.Spline);
+                distance = Math.Min(distance, Math.Max(0f, sample.Distance - sample.WidthMeters * 0.5f));
+            }
+            return distance;
+        }
+
         private bool IsLegacyWater(float worldX, float worldZ)
         {
             if (DistanceToRiver(worldX, worldZ) <= RiverHalfWidthMeters) return true;

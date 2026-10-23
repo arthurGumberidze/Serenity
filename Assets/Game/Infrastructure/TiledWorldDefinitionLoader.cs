@@ -118,9 +118,9 @@ namespace Game.Infrastructure
                 ValidateTiles(tiling.Array("tiles"), transform, columns, rows, tileSize);
                 ValidateCanonicalFileIndex(coordinates.StringArray("canonicalFiles"));
 
-                var regions = ParseRegions(roots["WORLD_MAP_BIOMES.json"], bounds);
+                var biomes = ParseBiomeContracts(roots["WORLD_MAP_BIOMES.json"], bounds);
+                var regions = biomes.Regions.Select(value => value.Polygon).ToArray();
                 ValidateCoordinateRegionIndex(coordinates.Array("regionPolygons"), regions, bounds);
-                ValidateBiomeRules(roots["WORLD_MAP_BIOMES.json"]);
                 var terrainDefinition = ParseTerrainContracts(roots["WORLD_MAP_TERRAIN.json"], bounds);
                 var heightMasks = terrainDefinition.HeightMasks;
 
@@ -183,7 +183,7 @@ namespace Game.Infrastructure
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
-                    regions, river.Spline, tributaries.Select(value => value.Spline),
+                    biomes, river.Spline, tributaries.Select(value => value.Spline),
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
@@ -279,29 +279,30 @@ namespace Game.Infrastructure
             }
         }
 
-        private static IReadOnlyList<WorldMapPolygon> ParseRegions(Node biomes, WorldMapBounds bounds) =>
-            biomes.Array("regions").Select(value =>
-            {
-                var region = value.Object();
-                return new WorldMapPolygon(region.String("id"), region.Points("polygon"), bounds);
-            }).ToArray();
-
-        private static void ValidateBiomeRules(Node biomes)
+        private static WorldMapBiomeDefinition ParseBiomeContracts(Node biomes, WorldMapBounds bounds)
         {
-            foreach (var value in biomes.Array("regions"))
+            var regions = biomes.Array("regions").Select(value =>
             {
                 var region = value.Object();
                 var elevation = region.NumberArray("elevationMeters", 2);
                 if (elevation[1] < elevation[0] || region.StringArray("biomes").Count == 0 ||
                     region.StringArray("soil").Count == 0 || region.StringArray("gameplay").Count == 0)
                     throw new InvalidDataException($"Region {region.String("id")} has invalid authored ranges.");
-            }
+                return new WorldMapBiomeRegion(
+                    new WorldMapPolygon(region.String("id"), region.Points("polygon"), bounds),
+                    region.String("code"), region.String("name"), region.String("nameEn"),
+                    elevation[0], elevation[1], region.StringArray("biomes"), region.StringArray("soil"),
+                    region.StringArray("gameplay"));
+            }).ToArray();
             var transition = biomes.Object("transitionRules");
             var preferred = transition.NumberArray("preferredBlendWidthMeters", 2);
             if (transition.Float("minimumBlendWidthMeters") <= 0f || preferred[0] <= 0f ||
                 preferred[1] < preferred[0] || !transition.Bool("noRectangularVisualEdges") ||
                 transition.StringArray("ecotoneLayers").Count == 0)
                 throw new InvalidDataException("Biome transition rules are invalid.");
+            return new WorldMapBiomeDefinition(regions, new WorldMapBiomeTransitionDefinition(
+                transition.Float("minimumBlendWidthMeters"), preferred[0], preferred[1],
+                transition.Bool("noRectangularVisualEdges"), transition.StringArray("ecotoneLayers")));
         }
 
         private static WorldMapTerrainDefinition ParseTerrainContracts(Node terrain,

@@ -1,5 +1,22 @@
 # DECISIONS.md
 
+## D-179 WM04 owns biome intent in Domain data and projects one deterministic Terrain mask (2026-10-23)
+
+`WorldMapBiomeDefinition` is the single immutable authority for the eight authored region polygons, their
+biome/soil/elevation/gameplay tags and ecotone widths. Compatibility region bounds are derived from it rather
+than parsed as a second source. `WorldMapTerrainPaintSampler` remains pure Domain code and combines polygon
+distance with the shared WM02 height sampler and WM03 water-distance query. Height, broad slope, moisture,
+soil and deterministic microvariation influence seven normalized semantic weights. Edge-aligned global samples
+make adjacent Terrain tiles consume the exact same border values; Terrain and strategic colors are disposable
+presentations of that mask.
+
+The loaded-asset audit selected the seven already admitted official `TerrainDemoScene_URP` layers previously
+used by P9.3: Grass_A, Grass_Moss_A, Cliff_Mossy_E, Pebbles_B, Grass_Soil_A, Heather_A and Tidal_Pools_B.
+Together they provide diffuse, normal and mask coverage for the seven WM04 roles more completely than the
+legacy five PNB Meadow Forest layers. They are exposed through a V2-only `StarterNatureCatalog` array; the
+legacy array and paint formula remain unchanged. No substitute textures/materials/shaders or package dependency
+are added, and no V2 activation, scene authority or save-state authority is introduced.
+
 ## D-178 WM03 hydrology is an immutable graph evaluated by the shared terrain authority (2026-10-23)
 
 `WorldMapHydrologyDefinition` is definition data over the canonical `WORLD_MAP_WATER.json`, not mutable world

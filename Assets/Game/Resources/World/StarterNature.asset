@@ -26,6 +26,14 @@ MonoBehaviour:
   - {fileID: 8574412962073106934, guid: 87aae03485560b9449f4ff3cfae78f5f, type: 2}
   - {fileID: 8574412962073106934, guid: 293e4d77527fe5f41a5ec2cb08e3a8d6, type: 2}
   - {fileID: 8574412962073106934, guid: 7a793ad88696ced4ab9639847d1bdf16, type: 2}
+  WorldMapGroundLayers:
+  - {fileID: 8574412962073106934, guid: e83e5b2c03473f74983ef0f5b9c160c0, type: 2}
+  - {fileID: 8574412962073106934, guid: c92d180648e3c4149b7f024457016b52, type: 2}
+  - {fileID: 8574412962073106934, guid: 7ba7a711695a4904a86967c335f59fc9, type: 2}
+  - {fileID: 8574412962073106934, guid: 4e32022d306550941935a9898d9a184c, type: 2}
+  - {fileID: 8574412962073106934, guid: ffb94bff813c3c041b5c22cc023fb25e, type: 2}
+  - {fileID: 8574412962073106934, guid: 795e383430200a14bb52726e97a0e7f4, type: 2}
+  - {fileID: 8574412962073106934, guid: b5fcb6edb24b4544dbcf0dad9462ee5b, type: 2}
   WaterRipples: {fileID: 2800000, guid: a4b970a3609f4f94ea150a6f10e8e540, type: 3}
   MinimumTreeHeight: 9
   MaximumTreeHeight: 13

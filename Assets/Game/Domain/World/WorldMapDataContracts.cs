@@ -162,6 +162,100 @@ namespace Game.Domain.World
             point.Z <= Math.Max(a.Z, b.Z) + Epsilon;
     }
 
+    /// <summary>Immutable authored biome metadata attached to one canonical region polygon.</summary>
+    public sealed class WorldMapBiomeRegion
+    {
+        public WorldMapBiomeRegion(WorldMapPolygon polygon, string code, string name, string englishName,
+            float minimumElevationMeters, float maximumElevationMeters, IEnumerable<string> biomes,
+            IEnumerable<string> soils, IEnumerable<string> gameplayTags)
+        {
+            if (polygon == null) throw new ArgumentNullException(nameof(polygon));
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name) ||
+                string.IsNullOrWhiteSpace(englishName) || !WorldMapPoint.IsFinite(minimumElevationMeters) ||
+                !WorldMapPoint.IsFinite(maximumElevationMeters) || maximumElevationMeters < minimumElevationMeters)
+                throw new ArgumentException(nameof(code));
+            Polygon = polygon;
+            Code = code;
+            Name = name;
+            EnglishName = englishName;
+            MinimumElevationMeters = minimumElevationMeters;
+            MaximumElevationMeters = maximumElevationMeters;
+            Biomes = Strings(biomes, nameof(biomes));
+            Soils = Strings(soils, nameof(soils));
+            GameplayTags = Strings(gameplayTags, nameof(gameplayTags));
+        }
+
+        public string Id => Polygon.Id;
+        public WorldMapPolygon Polygon { get; }
+        public string Code { get; }
+        public string Name { get; }
+        public string EnglishName { get; }
+        public float MinimumElevationMeters { get; }
+        public float MaximumElevationMeters { get; }
+        public IReadOnlyList<string> Biomes { get; }
+        public IReadOnlyList<string> Soils { get; }
+        public IReadOnlyList<string> GameplayTags { get; }
+
+        private static IReadOnlyList<string> Strings(IEnumerable<string> values, string parameter)
+        {
+            var result = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (result.Length == 0 || result.Any(string.IsNullOrWhiteSpace) ||
+                result.Distinct(StringComparer.Ordinal).Count() != result.Length)
+                throw new ArgumentException("Biome tags must be non-empty and unique.", parameter);
+            return Array.AsReadOnly(result);
+        }
+    }
+
+    public sealed class WorldMapBiomeTransitionDefinition
+    {
+        public WorldMapBiomeTransitionDefinition(float minimumBlendWidthMeters,
+            float preferredMinimumBlendWidthMeters, float preferredMaximumBlendWidthMeters,
+            bool noRectangularVisualEdges, IEnumerable<string> ecotoneLayers)
+        {
+            if (!WorldMapPoint.IsFinite(minimumBlendWidthMeters) || minimumBlendWidthMeters <= 0f ||
+                !WorldMapPoint.IsFinite(preferredMinimumBlendWidthMeters) ||
+                preferredMinimumBlendWidthMeters < minimumBlendWidthMeters ||
+                !WorldMapPoint.IsFinite(preferredMaximumBlendWidthMeters) ||
+                preferredMaximumBlendWidthMeters < preferredMinimumBlendWidthMeters ||
+                !noRectangularVisualEdges)
+                throw new ArgumentOutOfRangeException(nameof(minimumBlendWidthMeters));
+            var layers = (ecotoneLayers ?? throw new ArgumentNullException(nameof(ecotoneLayers))).ToArray();
+            if (layers.Length == 0 || layers.Any(string.IsNullOrWhiteSpace) ||
+                layers.Distinct(StringComparer.Ordinal).Count() != layers.Length)
+                throw new ArgumentException(nameof(ecotoneLayers));
+            MinimumBlendWidthMeters = minimumBlendWidthMeters;
+            PreferredMinimumBlendWidthMeters = preferredMinimumBlendWidthMeters;
+            PreferredMaximumBlendWidthMeters = preferredMaximumBlendWidthMeters;
+            NoRectangularVisualEdges = noRectangularVisualEdges;
+            EcotoneLayers = Array.AsReadOnly(layers);
+        }
+
+        public float MinimumBlendWidthMeters { get; }
+        public float PreferredMinimumBlendWidthMeters { get; }
+        public float PreferredMaximumBlendWidthMeters { get; }
+        public bool NoRectangularVisualEdges { get; }
+        public IReadOnlyList<string> EcotoneLayers { get; }
+    }
+
+    /// <summary>One canonical biome authority consumed by paint, vegetation and later ecology stages.</summary>
+    public sealed class WorldMapBiomeDefinition
+    {
+        public WorldMapBiomeDefinition(IEnumerable<WorldMapBiomeRegion> regions,
+            WorldMapBiomeTransitionDefinition transitions)
+        {
+            var values = (regions ?? throw new ArgumentNullException(nameof(regions))).ToArray();
+            if (values.Length == 0 || values.Any(value => value == null) ||
+                values.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != values.Length ||
+                values.Select(value => value.Code).Distinct(StringComparer.Ordinal).Count() != values.Length)
+                throw new ArgumentException("Biome regions require unique IDs and codes.", nameof(regions));
+            Regions = Array.AsReadOnly(values);
+            Transitions = transitions ?? throw new ArgumentNullException(nameof(transitions));
+        }
+
+        public IReadOnlyList<WorldMapBiomeRegion> Regions { get; }
+        public WorldMapBiomeTransitionDefinition Transitions { get; }
+    }
+
     public enum WorldMapShapeKind { Polygon, Ellipse, Ring }
 
     public sealed class WorldMapShape
@@ -667,8 +761,7 @@ namespace Game.Domain.World
     {
         public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
-            WorldMapHydrologyDefinition hydrology,
-            IEnumerable<WorldMapPolygon> regions,
+            WorldMapHydrologyDefinition hydrology, WorldMapBiomeDefinition biomes,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
@@ -683,7 +776,8 @@ namespace Game.Domain.World
             CoordinateTransform = coordinateTransform ?? throw new ArgumentNullException(nameof(coordinateTransform));
             Terrain = terrain ?? throw new ArgumentNullException(nameof(terrain));
             Hydrology = hydrology ?? throw new ArgumentNullException(nameof(hydrology));
-            Regions = ReadOnly(regions, nameof(regions));
+            Biomes = biomes ?? throw new ArgumentNullException(nameof(biomes));
+            Regions = Array.AsReadOnly(Biomes.Regions.Select(value => value.Polygon).ToArray());
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
             Lakes = ReadOnly(lakes, nameof(lakes));
@@ -703,6 +797,7 @@ namespace Game.Domain.World
         public WorldMapCoordinateTransform CoordinateTransform { get; }
         public WorldMapTerrainDefinition Terrain { get; }
         public WorldMapHydrologyDefinition Hydrology { get; }
+        public WorldMapBiomeDefinition Biomes { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

@@ -88,6 +88,14 @@ public static class P109StarterNatureAuthoring
         catalog.GroundLayers = new[] { "Grass_01", "Grass_Leaves_01", "Rock_Moss_01", "Grass_Clover_01", "Mud_Gravel_01" }
             .Select(name => AssetDatabase.LoadAssetAtPath<TerrainLayer>(Vendor + "Terrain/Terrain_Meadow_" + name + ".terrainlayer")).ToArray();
         if (catalog.GroundLayers.Any(x => x == null)) throw new InvalidOperationException("Missing terrain layer");
+        catalog.WorldMapGroundLayers = new[]
+        {
+            "Grass_A", "Grass_Moss_A", "Cliff_Mossy_E", "Pebbles_B", "Grass_Soil_A", "Heather_A",
+            "Tidal_Pools_B"
+        }.Select(name => AssetDatabase.LoadAssetAtPath<TerrainLayer>(
+            "Assets/TerrainDemoScene_URP/Terrain/Layers/" + name + ".terrainlayer")).ToArray();
+        if (catalog.WorldMapGroundLayers.Any(x => x == null))
+            throw new InvalidOperationException("Missing World Map V2 terrain layer");
         var water = AssetDatabase.LoadAssetAtPath<Material>(Vendor + "Materials/Water_Lake_01.mat");
         catalog.WaterRipples = water.GetTexture("_DistortionMap");
         EditorUtility.SetDirty(catalog);

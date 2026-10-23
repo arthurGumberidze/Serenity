@@ -1,17 +1,18 @@
 # NEXT_TASK.md
 
-## Current scope — WM04 biomes and Terrain paint, after WM03 completion on 2026-10-23
+## Current scope — WM05 vegetation and LOD, after WM04 completion on 2026-10-23
 
-WM03 is DONE. The proposed map's canonical water graph now drives the existing `TiledWorldHeightSampler` and
-`TiledTerrainWorld`: variable-width main river and tributaries, four polygonal basins, deterministic reference/
-fixed/linear surface levels, bounded dry banks and validated drainage. Focused and affected EditMode plus the
-short PlayMode bank check pass. The active `p109-compact-world-v1` reference, scene and save paths remain
-unchanged.
+WM04 is DONE. One typed biome definition and one pure deterministic paint sampler now blend the eight authored
+regions with WM02 height/slope and WM03 water distance into seven V2-only Terrain roles. Existing official
+TerrainDemo layers are reused, all shared tile borders match, and focused/affected tests pass. The active
+`p109-compact-world-v1` reference, scene, legacy paint and save paths remain unchanged.
 
-The next unblocked world-map task is **WM04 — biomes and Terrain paint**. It may blend the eight authored region,
-ecotone and soil masks through the existing Terrain paint projection while preserving the WM02 relief and WM03
-water geometry. It must not activate `p109-world-map-v2-proposed`, start WM05 or alter legacy save slots. This
-WM03 chat stops after its commit and does not implement WM04.
+The next unblocked world-map task is **WM05 — vegetation and LOD**. It may implement seeded distribution,
+interactive/decorative separation and collider culling from `WORLD_MAP_VEGETATION.json` through the existing
+`StarterNatureCatalog` and environment LOD boundaries. It must keep the start clearing open, stay within the
+authored density budgets, use no per-instance `Update`, and verify determinism plus focused profiler gates. It
+must not activate `p109-world-map-v2-proposed`, start WM06 or alter legacy save slots. This WM04 chat stops
+after its commit and does not implement WM05.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

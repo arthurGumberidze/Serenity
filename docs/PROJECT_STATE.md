@@ -1,5 +1,39 @@
 # PROJECT_STATE.md
 
+## WM04 checkpoint — 2026-10-23 World Map V2 biomes and Terrain paint DONE
+
+WM04 adds one immutable `WorldMapBiomeDefinition` over `WORLD_MAP_BIOMES.json`: eight authored region
+polygons, biome/soil/elevation/gameplay tags and the 24 m minimum / 35–70 m preferred ecotone contract.
+`WorldMapTerrainPaintSampler` is a pure deterministic Domain projection over that definition, the shared WM02
+height sampler and WM03 water distance. It produces normalized grass, forest-moss, rock, shore, soil, scrub and
+wetland weights from region membership, boundary distance, elevation, broad slope, moisture and seeded
+microvariation. All samples use global edge-aligned coordinates, so every shared Terrain border is identical.
+
+`TiledTerrainWorld` applies those weights only when explicitly initialized with V2 `MapData`; its strategic
+overview uses the same mask. The active `p109-compact-world-v1` branch retains its previous five-layer paint,
+generation ID, scenes and save paths. `p109-world-map-v2-proposed` remains inactive, and WM05 was not begun.
+
+The asset-first audit compared the existing five PNB Meadow Forest ground layers with the seven already
+admitted official `TerrainDemoScene_URP` layers used by P9.3. WM04 reuses the latter because they already cover
+grass, moss, cliff, pebbled shore, exposed soil, heather scrub and tidal/wet ground with matching diffuse,
+normal and mask maps. The seven references live in a V2-only catalog field; the legacy five are untouched.
+No new texture, material, shader, package or external dependency was created.
+
+Lightweight verification on Unity 6000.6.4f1:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\WM04\Saves'
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','EditMode','-testFilter','Game.Tests.Editor.WM04WorldMapTerrainPaintTests;Game.Tests.Editor.WM03WorldMapHydrologyTests;Game.Tests.Editor.WM02WorldMapTerrainGeneratorTests;Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.P109TiledWorldRuntimeTests;Game.Tests.Editor.P109CompactWorldTests','-testResults','C:\serenity_game\Artifacts\WM04\editmode-affected.xml','-logFile','C:\serenity_game\Artifacts\WM04\editmode-affected.log'); $unityProcess=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -PassThru -WindowStyle Hidden; while(-not $unityProcess.HasExited){Start-Sleep -Seconds 1; $unityProcess.Refresh()}
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','PlayMode','-testFilter','Game.Tests.PlayMode.WM04WorldMapTerrainPaintPlayModeTests','-testResults','C:\serenity_game\Artifacts\WM04\playmode-wm04-r2.xml','-logFile','C:\serenity_game\Artifacts\WM04\playmode-wm04-r2.log'); $unityProcess=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -PassThru -WindowStyle Hidden; while(-not $unityProcess.HasExited){Start-Sleep -Seconds 1; $unityProcess.Refresh()}
+```
+
+Results: affected EditMode 30/30 passed and focused PlayMode 1/1 passed. The WM04 mask golden hash is
+`8FBB90EAB3982861`; all 24 shared edges across the sixteen tiles are bit-identical; normalized alphamaps survive
+`TerrainData` application/readback. The global 15.625 m continuity audit records maximum L1 change 1.492 only
+across the authored cliff transition and remains below the 1.6 bound. No broad suite, Windows build, profiler
+gate or Player visual acceptance was run; those remain deferred by scope to WM15. The inherited dirty materials
+and `New Unity Project/` remain user-owned and were not modified or staged.
+
 ## WM03 checkpoint — 2026-10-23 World Map V2 hydrology DONE
 
 WM03 extends the WM01 water contracts and the WM02 `TiledWorldHeightSampler`; it does not create a second

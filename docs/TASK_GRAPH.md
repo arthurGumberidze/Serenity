@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM04 World Map V2 biomes and Terrain paint (2026-10-23): DONE. One immutable typed biome definition now owns
+the eight authored regions and ecotone contract. A pure deterministic sampler combines those masks with WM02
+height/slope and WM03 water distance into seven normalized Terrain roles; global edge-aligned sampling makes
+all 24 tile borders bit-identical. V2 reuses seven existing official TerrainDemo layers through a separate
+catalog field, while legacy keeps its five previous layers and remains active. Affected EditMode passed 30/30
+and focused PlayMode passed 1/1. No new art/dependency, generation activation, save change or WM05 work was
+introduced. WM05 is next and has not started.
+
 WM03 World Map V2 hydrology (2026-10-23): DONE. The canonical water package now produces one immutable
 hydrology graph consumed by `TiledWorldHeightSampler` and `TiledTerrainWorld`: per-point main-river widths,
 interpolated tributary widths, spatially validated connections, monotonic level policies, four polygonal lake

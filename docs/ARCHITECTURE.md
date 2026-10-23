@@ -1,5 +1,17 @@
 # Architecture — U01
 
+## WM04 World Map V2 biome-paint boundary (2026-10-23)
+
+`WorldMapBiomeDefinition` is immutable Domain configuration for authored region polygons, biome/soil tags and
+ecotone widths. `WorldMapTerrainPaintSampler` is the only V2 biome-paint evaluator: it reads that configuration,
+the shared `TiledWorldHeightSampler` and hydrology distance, then returns normalized semantic layer weights.
+It samples global edge-aligned coordinates, so Terrain tile order and local origins cannot change borders.
+
+The projection flow is `WorldMapBiomeDefinition + height/water samplers -> WorldMapTerrainPaintSampler ->
+TiledTerrainWorld TerrainData/strategic texture`. `StarterNatureCatalog.WorldMapGroundLayers` maps the seven
+semantic roles to already admitted art but owns no rules or mutable state. The mapping is selected only for a
+definition carrying V2 `MapData`; the compact-world branch and its existing five layers are unchanged.
+
 ## WM02 World Map V2 terrain boundary (2026-10-23)
 
 `WorldMapTerrainDefinition` is immutable Domain configuration for height ranges/resolution, authored noise

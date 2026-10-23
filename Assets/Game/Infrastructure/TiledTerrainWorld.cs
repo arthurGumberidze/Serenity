@@ -23,6 +23,7 @@ namespace Game.Infrastructure
         private readonly List<GameObject> linkObjects = new List<GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
+        private WorldMapTerrainPaintSampler terrainPaintSampler;
         private Material sourceTerrainMaterial;
         private Func<WorldPosition> cameraFocusProvider;
         private Func<IEnumerable<WorldPosition>> physicalPositionProvider;
@@ -88,7 +89,16 @@ namespace Game.Infrastructure
                 if (legacyCollider != null) legacyCollider.enabled = false;
             }
             var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
-            if (nature != null && nature.GroundLayers != null && nature.GroundLayers.Length > 0)
+            if (definition.MapData != null)
+            {
+                if (nature == null || nature.WorldMapGroundLayers == null ||
+                    nature.WorldMapGroundLayers.Length != WorldMapTerrainPaintSampler.LayerCount ||
+                    nature.WorldMapGroundLayers.Any(value => value == null))
+                    throw new InvalidOperationException("World Map V2 requires its seven admitted Terrain layers.");
+                sourceLayers = nature.WorldMapGroundLayers;
+                terrainPaintSampler = new WorldMapTerrainPaintSampler(definition, heightSampler);
+            }
+            else if (nature != null && nature.GroundLayers != null && nature.GroundLayers.Length > 0)
                 sourceLayers = nature.GroundLayers;
             BuildStrategicOverview();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
@@ -239,6 +249,8 @@ namespace Game.Infrastructure
 
         private float[,,] CreateTerrainPaint(WorldTileId id, TerrainData data)
         {
+            if (terrainPaintSampler != null)
+                return terrainPaintSampler.CreateTileWeights(id, data.alphamapResolution);
             var map = new float[data.alphamapHeight, data.alphamapWidth, sourceLayers.Length];
             var origin = Definition.TileOrigin(id);
             for (var z = 0; z < data.alphamapHeight; z++)
@@ -485,6 +497,29 @@ namespace Game.Infrastructure
                     var waterVariation = Mathf.Sin(wx * 0.0041f + wz * 0.0033f) * 0.035f;
                     pixels[z * resolution + x] = new Color(0.08f + waterVariation,
                         0.36f + waterVariation, 0.55f + waterVariation, 1f);
+                    continue;
+                }
+                if (terrainPaintSampler != null)
+                {
+                    var weights = terrainPaintSampler.SampleWeights(wx, wz);
+                    var palette = new[]
+                    {
+                        new Color(0.32f, 0.43f, 0.2f), new Color(0.16f, 0.31f, 0.15f),
+                        new Color(0.42f, 0.41f, 0.36f), new Color(0.5f, 0.45f, 0.35f),
+                        new Color(0.46f, 0.38f, 0.24f), new Color(0.38f, 0.34f, 0.23f),
+                        new Color(0.2f, 0.3f, 0.18f)
+                    };
+                    var painted = Color.black;
+                    for (var layer = 0; layer < weights.Length; layer++) painted += palette[layer] * weights[layer];
+                    var paintSampleStep = 36f;
+                    var paintRiseX = HeightSampler.SampleHeight(Mathf.Clamp(wx + paintSampleStep, minX, maxX), wz) -
+                                     HeightSampler.SampleHeight(Mathf.Clamp(wx - paintSampleStep, minX, maxX), wz);
+                    var paintRiseZ = HeightSampler.SampleHeight(wx, Mathf.Clamp(wz + paintSampleStep, minZ, maxZ)) -
+                                     HeightSampler.SampleHeight(wx, Mathf.Clamp(wz - paintSampleStep, minZ, maxZ));
+                    var relief = Mathf.Clamp((paintRiseZ - paintRiseX) * 0.006f, -0.1f, 0.1f);
+                    pixels[z * resolution + x] = new Color(
+                        Mathf.Clamp01(painted.r + relief), Mathf.Clamp01(painted.g + relief),
+                        Mathf.Clamp01(painted.b + relief), 1f);
                     continue;
                 }
                 var variation = Mathf.Sin(wx * 0.0017f + wz * 0.0011f) * 0.035f +
