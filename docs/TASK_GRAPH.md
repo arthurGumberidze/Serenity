@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM02 World Map V2 terrain generator (2026-10-23): DONE. `TiledWorldHeightSampler` now has an isolated
+data-driven branch for WM01 `MapData`: deterministic macro/meso/detail octaves, eight authored anchors,
+ridge/erosion, marsh, pass and plateau masks, plus a pure slope-budget histogram. `TiledTerrainWorld` consumes
+the authored 257 resolution and 96 m vertical range when explicitly initialized with the proposed definition.
+All 24 shared borders across sixteen tiles are bit-identical. The 129×129 audit records 55.21% ≤12°,
+76.47% ≤18°, 2.01% >32°, 5.54–82.68 m and 0% height clamps. Focused/affected EditMode passed 20/20.
+`p109-compact-world-v1` remains active and its tests pass; WM03 is next and has not started.
+
 WM01 world-map data contracts (2026-10-23): DONE. Immutable Domain contracts and a separate strict package
 loader cover schema/generation identity, design-to-Unity transform, polygons, width-bearing splines, river,
 tributaries, four lakes and landings, POIs, crossings, height/vegetation/resource/wildlife/buildability masks,

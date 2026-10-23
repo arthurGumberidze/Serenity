@@ -204,17 +204,18 @@ namespace Game.Infrastructure
 
         private LoadedTile CreateTile(WorldTileId id)
         {
+            var heightmapResolution = HeightSampler.HeightmapResolution;
             var data = new TerrainData
             {
                 name = "P10.9 TerrainData " + id,
-                heightmapResolution = HeightmapResolution,
-                size = new Vector3(Definition.TileSizeMeters, TiledWorldHeightSampler.TerrainHeightMeters,
+                heightmapResolution = heightmapResolution,
+                size = new Vector3(Definition.TileSizeMeters, HeightSampler.MaximumTerrainHeightMeters,
                     Definition.TileSizeMeters),
                 alphamapResolution = 128,
                 baseMapResolution = 128,
                 terrainLayers = sourceLayers
             };
-            data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, HeightmapResolution));
+            data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, heightmapResolution));
             if (sourceLayers.Length > 0) data.SetAlphamaps(0, 0, CreateTerrainPaint(id, data));
             var root = Terrain.CreateTerrainGameObject(data);
             root.name = "P10.9 Terrain " + id;

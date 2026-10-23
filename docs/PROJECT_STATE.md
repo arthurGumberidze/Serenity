@@ -1,5 +1,35 @@
 # PROJECT_STATE.md
 
+## WM02 checkpoint — 2026-10-23 World Map V2 terrain generator DONE
+
+WM02 extends the existing `TiledWorldHeightSampler` rather than introducing another terrain authority. The
+strict V2 loader now retains typed terrain settings for the three authored noise octaves, eight height anchors,
+five manual masks, heightmap dimensions/range and slope targets. Only definitions carrying WM01 `MapData` use
+the new branch; the legacy `p109-compact-world-v1` formula is preserved behind the unchanged
+`LoadReference()` route. `LocalSceneCompositionRoot` still does not load `p109-world-map-v2-proposed`.
+
+The proposed sampler evaluates one global design-coordinate field, applies frequency-weighted deterministic
+macro/meso/detail relief, authored regional anchors, ridge/erosion and marsh masks, then applies the ridge pass
+and start plateau last. `TiledTerrainWorld` consumes the authored tile resolution and vertical range when that
+definition is explicitly supplied. A pure slope audit reports the authored ≤12°, buildable ≤18° and >32°
+bands. At 129×129 samples for seed 20261023 the final histogram is 55.21% ≤12°, 76.47% ≤18° and 2.01% >32°;
+sampled heights are 5.54–82.68 m with 0.00% clamped to the 4/96 m bounds. Every east/west and north/south
+heightmap border across the sixteen 257×257 Terrain projections compares bit-identically.
+
+Lightweight verification on Unity 6000.6.4f1:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\WM02\Saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM02WorldMapTerrainGeneratorTests;Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.P109TiledWorldRuntimeTests;Game.Tests.Editor.P109CompactWorldTests' -testResults 'C:\serenity_game\Artifacts\WM02\editmode-final.xml' -logFile 'C:\serenity_game\Artifacts\WM02\editmode-final.log'
+```
+
+Result: 20/20 passed, 0 failed/skipped; Domain, Infrastructure and EditMode test assemblies compiled. The first
+sandboxed attempt crashed inside Unity's internal `HttpListener` before compilation, so the same focused run
+was executed outside the sandbox. No PlayMode smoke, broad suite, Windows build, long profiling or visual
+acceptance was run; those are unnecessary for the still-inactive pure terrain branch and remain deferred to
+later map stages/WM15. The five inherited dirty materials and `New Unity Project/` remain user-owned and
+excluded. WM03 hydrology is the next unblocked stage and has not started.
+
 ## WM01 checkpoint — 2026-10-23 world-map data contracts DONE
 
 WM01 adds immutable, engine-free contracts for design-space points/bounds, simple polygons, ellipse/ring

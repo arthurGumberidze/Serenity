@@ -1,16 +1,16 @@
 # NEXT_TASK.md
 
-## Current scope — WM02 terrain generator, after WM01 completion on 2026-10-23
+## Current scope — WM03 hydrology, after WM02 completion on 2026-10-23
 
-WM01 is DONE. The eleven `serenity-world-map-v1` JSON documents now load through a separate strict contract
-path for generation `p109-world-map-v2-proposed`; malformed geometry, versions, IDs and references fail
-closed. The existing `p109-compact-world-v1` reference, scene, Terrain and save paths remain active and
-unchanged.
+WM02 is DONE. The proposed map's existing `TiledWorldHeightSampler` branch now consumes typed noise octaves,
+height anchors, ridge/marsh/pass/plateau masks and slope targets. Shared 257×257 Terrain borders are
+bit-identical, and the final slope histogram meets the authored budget without height clamps. The active
+`p109-compact-world-v1` reference, scene and save paths remain unchanged.
 
-The next unblocked world-map task is **WM02 — terrain generator**. It may consume the WM01 height-mask and
-coordinate contracts to extend `TiledWorldHeightSampler`/Terrain authoring with shared-border deterministic
-samples, authored anchors, ridge/pass/plateau masks and slope-budget checks. Do not start WM03 or switch the
-working map as part of WM02. This WM01 chat must stop after its commit and does not implement WM02.
+The next unblocked world-map task is **WM03 — hydrology**. It may extend the same sampler/Terrain projection
+with authored river widths, tributaries, four lake basins, distinct surface-level policy, dry banks and
+connected drainage. It must not redo WM02, activate `p109-world-map-v2-proposed`, start WM04 or alter legacy
+save slots. This WM02 chat stops after its commit and does not implement WM03.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

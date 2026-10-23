@@ -1,5 +1,24 @@
 # DECISIONS.md
 
+## D-177 WM02 applies authored relief through the existing global height sampler (2026-10-23)
+
+`TiledWorldHeightSampler` remains the sole pure height/buildability authority. A definition with WM01
+`WorldMapDataDefinition` selects a V2 data-driven path; a definition without it follows the previous compact
+formula unchanged. The V2 path converts Unity coordinates back to the canonical design grid before every
+sample, so tile load order and local Terrain origins cannot affect a shared border. Unity Terrain remains a
+disposable projection and reads its heightmap resolution and vertical range from the same terrain contract.
+
+Authored noise bands are frequency-weighted before applying regional anchors, so the slope target is met by
+local relief rather than large areas clamped to minimum/maximum height. The ridge and marsh masks follow the
+general anchors; the pass and start plateau are deliberately last, preserving traversable authored surfaces.
+The checked-in slope audit uses a fixed world lattice and the JSON targets: ≤12° must be 45–58%, ≤18° must be
+at least 38%, and >32° must be at most 9%. This is terrain-only. River/lake carving, distinct water levels,
+dry banks and drainage remain WM03; no hydrology placeholder is promoted here.
+
+WM02 does not activate `p109-world-map-v2-proposed`, change scene composition, create save state or reinterpret
+legacy slots. The final lightweight gate is 20/20 EditMode over WM02, WM01 loader contracts and the affected
+legacy height tests. Broad tests, Player build and visual acceptance remain WM15 work.
+
 ## D-176 WM01 loads World Map V2 through a separate fail-closed contract path (2026-10-23)
 
 The current compact world remains the only active reference: `LoadReference()` still accepts only

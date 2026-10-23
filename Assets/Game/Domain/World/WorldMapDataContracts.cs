@@ -384,11 +384,146 @@ namespace Game.Domain.World
         public float MaximumValue { get; }
     }
 
+    public sealed class WorldMapHeightAnchor
+    {
+        public WorldMapHeightAnchor(string id, WorldMapPoint position, float heightMeters,
+            float radiusMeters, string mode)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(mode) ||
+                !WorldMapPoint.IsFinite(heightMeters) || !WorldMapPoint.IsFinite(radiusMeters) ||
+                radiusMeters <= 0f)
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            Position = position;
+            HeightMeters = heightMeters;
+            RadiusMeters = radiusMeters;
+            Mode = mode;
+        }
+
+        public string Id { get; }
+        public WorldMapPoint Position { get; }
+        public float HeightMeters { get; }
+        public float RadiusMeters { get; }
+        public string Mode { get; }
+    }
+
+    public sealed class WorldMapNoiseOctave
+    {
+        public WorldMapNoiseOctave(string id, float minimumWavelengthMeters, float maximumWavelengthMeters,
+            float minimumAmplitudeMeters, float maximumAmplitudeMeters, float weight)
+        {
+            if (string.IsNullOrWhiteSpace(id) || !WorldMapPoint.IsFinite(minimumWavelengthMeters) ||
+                !WorldMapPoint.IsFinite(maximumWavelengthMeters) || minimumWavelengthMeters <= 0f ||
+                maximumWavelengthMeters < minimumWavelengthMeters ||
+                !WorldMapPoint.IsFinite(minimumAmplitudeMeters) ||
+                !WorldMapPoint.IsFinite(maximumAmplitudeMeters) || minimumAmplitudeMeters < 0f ||
+                maximumAmplitudeMeters < minimumAmplitudeMeters || !WorldMapPoint.IsFinite(weight) || weight <= 0f)
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            MinimumWavelengthMeters = minimumWavelengthMeters;
+            MaximumWavelengthMeters = maximumWavelengthMeters;
+            MinimumAmplitudeMeters = minimumAmplitudeMeters;
+            MaximumAmplitudeMeters = maximumAmplitudeMeters;
+            Weight = weight;
+        }
+
+        public string Id { get; }
+        public float MinimumWavelengthMeters { get; }
+        public float MaximumWavelengthMeters { get; }
+        public float MinimumAmplitudeMeters { get; }
+        public float MaximumAmplitudeMeters { get; }
+        public float Weight { get; }
+    }
+
+    public sealed class WorldMapSlopeTargets
+    {
+        public WorldMapSlopeTargets(float buildablePercentMinimum, float slopeUnder12PercentMinimum,
+            float slopeUnder12PercentMaximum, float slopeOver32PercentMaximum)
+        {
+            if (!WorldMapPoint.IsFinite(buildablePercentMinimum) || buildablePercentMinimum < 0f ||
+                buildablePercentMinimum > 100f || !WorldMapPoint.IsFinite(slopeUnder12PercentMinimum) ||
+                !WorldMapPoint.IsFinite(slopeUnder12PercentMaximum) || slopeUnder12PercentMinimum < 0f ||
+                slopeUnder12PercentMaximum < slopeUnder12PercentMinimum || slopeUnder12PercentMaximum > 100f ||
+                !WorldMapPoint.IsFinite(slopeOver32PercentMaximum) || slopeOver32PercentMaximum < 0f ||
+                slopeOver32PercentMaximum > 100f)
+                throw new ArgumentOutOfRangeException(nameof(buildablePercentMinimum));
+            BuildablePercentMinimum = buildablePercentMinimum;
+            SlopeUnder12PercentMinimum = slopeUnder12PercentMinimum;
+            SlopeUnder12PercentMaximum = slopeUnder12PercentMaximum;
+            SlopeOver32PercentMaximum = slopeOver32PercentMaximum;
+        }
+
+        public float BuildablePercentMinimum { get; }
+        public float SlopeUnder12PercentMinimum { get; }
+        public float SlopeUnder12PercentMaximum { get; }
+        public float SlopeOver32PercentMaximum { get; }
+    }
+
+    public sealed class WorldMapTerrainDefinition
+    {
+        public WorldMapTerrainDefinition(float minimumHeightMeters, float maximumHeightMeters,
+            float waterLevelMeters, float minimumTypicalLandMeters, float maximumTypicalLandMeters,
+            float ridgePeakMeters, int worldResolution, int tileResolution, bool sharedBorderSamples,
+            IEnumerable<WorldMapHeightAnchor> anchors, IEnumerable<WorldMapNoiseOctave> noiseOctaves,
+            IEnumerable<WorldMapHeightMask> masks, WorldMapSlopeTargets slopeTargets)
+        {
+            if (!WorldMapPoint.IsFinite(minimumHeightMeters) || !WorldMapPoint.IsFinite(maximumHeightMeters) ||
+                maximumHeightMeters <= minimumHeightMeters || !WorldMapPoint.IsFinite(waterLevelMeters) ||
+                waterLevelMeters < minimumHeightMeters || waterLevelMeters > maximumHeightMeters ||
+                !WorldMapPoint.IsFinite(minimumTypicalLandMeters) ||
+                !WorldMapPoint.IsFinite(maximumTypicalLandMeters) ||
+                maximumTypicalLandMeters < minimumTypicalLandMeters ||
+                !WorldMapPoint.IsFinite(ridgePeakMeters) || ridgePeakMeters > maximumHeightMeters ||
+                worldResolution < 2 || tileResolution < 2)
+                throw new ArgumentOutOfRangeException(nameof(maximumHeightMeters));
+            MinimumHeightMeters = minimumHeightMeters;
+            MaximumHeightMeters = maximumHeightMeters;
+            WaterLevelMeters = waterLevelMeters;
+            MinimumTypicalLandMeters = minimumTypicalLandMeters;
+            MaximumTypicalLandMeters = maximumTypicalLandMeters;
+            RidgePeakMeters = ridgePeakMeters;
+            WorldResolution = worldResolution;
+            TileResolution = tileResolution;
+            SharedBorderSamples = sharedBorderSamples;
+            Anchors = ReadOnly(anchors, nameof(anchors), value => value.Id);
+            NoiseOctaves = ReadOnly(noiseOctaves, nameof(noiseOctaves), value => value.Id);
+            HeightMasks = ReadOnly(masks, nameof(masks), value => value.Id);
+            SlopeTargets = slopeTargets ?? throw new ArgumentNullException(nameof(slopeTargets));
+            if (Math.Abs(NoiseOctaves.Sum(value => value.Weight) - 1f) > 0.0001f)
+                throw new ArgumentException("Terrain noise weights must total one.", nameof(noiseOctaves));
+        }
+
+        public float MinimumHeightMeters { get; }
+        public float MaximumHeightMeters { get; }
+        public float WaterLevelMeters { get; }
+        public float MinimumTypicalLandMeters { get; }
+        public float MaximumTypicalLandMeters { get; }
+        public float RidgePeakMeters { get; }
+        public int WorldResolution { get; }
+        public int TileResolution { get; }
+        public bool SharedBorderSamples { get; }
+        public IReadOnlyList<WorldMapHeightAnchor> Anchors { get; }
+        public IReadOnlyList<WorldMapNoiseOctave> NoiseOctaves { get; }
+        public IReadOnlyList<WorldMapHeightMask> HeightMasks { get; }
+        public WorldMapSlopeTargets SlopeTargets { get; }
+
+        private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values, string parameter,
+            Func<T, string> identity) where T : class
+        {
+            var array = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (array.Any(value => value == null) || array.Select(identity)
+                    .Distinct(StringComparer.Ordinal).Count() != array.Length)
+                throw new ArgumentException("Terrain definitions require unique stable IDs.", parameter);
+            return Array.AsReadOnly(array);
+        }
+    }
+
     /// <summary>Immutable WM01 package. Later stages consume these contracts; none is mutable save-state.</summary>
     public sealed class WorldMapDataDefinition
     {
         public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
-            WorldMapCoordinateTransform coordinateTransform, IEnumerable<WorldMapPolygon> regions,
+            WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
+            IEnumerable<WorldMapPolygon> regions,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
@@ -401,6 +536,7 @@ namespace Game.Domain.World
             MapVersion = mapVersion;
             GenerationId = generationId;
             CoordinateTransform = coordinateTransform ?? throw new ArgumentNullException(nameof(coordinateTransform));
+            Terrain = terrain ?? throw new ArgumentNullException(nameof(terrain));
             Regions = ReadOnly(regions, nameof(regions));
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -419,6 +555,7 @@ namespace Game.Domain.World
         public string MapVersion { get; }
         public string GenerationId { get; }
         public WorldMapCoordinateTransform CoordinateTransform { get; }
+        public WorldMapTerrainDefinition Terrain { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

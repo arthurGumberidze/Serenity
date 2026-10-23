@@ -1,5 +1,19 @@
 # Architecture — U01
 
+## WM02 World Map V2 terrain boundary (2026-10-23)
+
+`WorldMapTerrainDefinition` is immutable Domain configuration for height ranges/resolution, authored noise
+octaves, height anchors, masks and slope targets. `TiledWorldHeightSampler` detects that configuration through
+the existing optional `TiledWorldDefinition.MapData`; otherwise it executes the legacy compact-world branch.
+The V2 branch samples only canonical global design coordinates and returns a deterministic height independent
+of tile/load order. `WorldMapSlopeHistogram` is a derived audit value, not mutable gameplay or save state.
+
+The projection flow is `WorldMapTerrainDefinition -> TiledWorldHeightSampler -> TiledTerrainWorld TerrainData`.
+Terrain objects consume the sampler's authored resolution/range and never own the height rules. General relief
+and ridge/marsh masks run before the pass/plateau masks so traversable surfaces remain authored constraints.
+WM02 intentionally does not carve river/lakes or create water policy; WM03 owns that next layer. The active
+composition still calls `LoadReference()`, so this boundary cannot switch generations by itself.
+
 ## WM01 World Map V2 data boundary (2026-10-23)
 
 `Game.Domain.World.WorldMapDataDefinition` is the immutable contract for the proposed map's authoring data.

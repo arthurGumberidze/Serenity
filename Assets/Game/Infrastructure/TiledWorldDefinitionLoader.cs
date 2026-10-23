@@ -121,7 +121,8 @@ namespace Game.Infrastructure
                 var regions = ParseRegions(roots["WORLD_MAP_BIOMES.json"], bounds);
                 ValidateCoordinateRegionIndex(coordinates.Array("regionPolygons"), regions, bounds);
                 ValidateBiomeRules(roots["WORLD_MAP_BIOMES.json"]);
-                var heightMasks = ParseTerrainContracts(roots["WORLD_MAP_TERRAIN.json"], bounds);
+                var terrainDefinition = ParseTerrainContracts(roots["WORLD_MAP_TERRAIN.json"], bounds);
+                var heightMasks = terrainDefinition.HeightMasks;
 
                 var water = roots["WORLD_MAP_WATER.json"];
                 var river = ParseRiver(water.Object("river"), bounds);
@@ -175,7 +176,8 @@ namespace Game.Infrastructure
                     throw new InvalidDataException("Player start must be contained by its referenced region.");
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
-                    TiledWorldDefinition.ProposedWorldMapGenerationId, transform, regions, river, tributaries,
+                    TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition,
+                    regions, river, tributaries,
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Points.Select(point => transform.ToUnity(point.Position));
@@ -296,7 +298,7 @@ namespace Game.Infrastructure
                 throw new InvalidDataException("Biome transition rules are invalid.");
         }
 
-        private static IReadOnlyList<WorldMapHeightMask> ParseTerrainContracts(Node terrain,
+        private static WorldMapTerrainDefinition ParseTerrainContracts(Node terrain,
             WorldMapBounds bounds)
         {
             var heightRange = terrain.NumberArray("heightRangeMeters", 2);
@@ -311,39 +313,46 @@ namespace Game.Infrastructure
                 tileCounts[0] != 4f || tileCounts[1] != 4f || !heightmap.Bool("sharedBorderSamples"))
                 throw new InvalidDataException("Terrain heightmap contract is incompatible.");
 
-            var anchorIds = new List<string>();
-            foreach (var value in terrain.Array("heightAnchors"))
+            var anchors = terrain.Array("heightAnchors").Select(value =>
             {
                 var anchor = value.Object();
-                anchorIds.Add(anchor.String("id"));
+                var mode = anchor.String("mode");
+                if (mode != "flatten_blend" && mode != "raise" && mode != "lower_pass" &&
+                    mode != "rolling" && mode != "gentle" && mode != "lower")
+                    throw new InvalidDataException($"Unsupported terrain anchor mode {mode}.");
                 if (!bounds.Contains(anchor.Point2("position")) || anchor.Float("radiusMeters") <= 0f ||
                     !WorldMapPoint.IsFinite(anchor.Float("heightMeters")))
                     throw new InvalidDataException("Terrain height anchor is invalid.");
-                anchor.String("mode");
-            }
-            UniqueStrings(anchorIds, "height anchor");
+                return new WorldMapHeightAnchor(anchor.String("id"), anchor.Point2("position"),
+                    anchor.Float("heightMeters"), anchor.Float("radiusMeters"), mode);
+            }).ToArray();
+            UniqueStrings(anchors.Select(value => value.Id), "height anchor");
 
-            var noiseIds = new List<string>();
-            var weight = 0f;
-            foreach (var value in terrain.Array("noise"))
+            var noise = terrain.Array("noise").Select(value =>
             {
-                var noise = value.Object();
-                noiseIds.Add(noise.String("id"));
-                var wavelength = noise.NumberArray("wavelengthMeters", 2);
-                var amplitude = noise.NumberArray("amplitudeMeters", 2);
-                var currentWeight = noise.Float("weight");
+                var octave = value.Object();
+                var wavelength = octave.NumberArray("wavelengthMeters", 2);
+                var amplitude = octave.NumberArray("amplitudeMeters", 2);
+                var currentWeight = octave.Float("weight");
                 if (wavelength[0] <= 0f || wavelength[1] < wavelength[0] || amplitude[0] < 0f ||
                     amplitude[1] < amplitude[0] || currentWeight <= 0f)
                     throw new InvalidDataException("Terrain noise octave is invalid.");
-                weight += currentWeight;
-            }
-            UniqueStrings(noiseIds, "noise octave");
+                return new WorldMapNoiseOctave(octave.String("id"), wavelength[0], wavelength[1],
+                    amplitude[0], amplitude[1], currentWeight);
+            }).ToArray();
+            UniqueStrings(noise.Select(value => value.Id), "noise octave");
+            var weight = noise.Sum(value => value.Weight);
             if (Math.Abs(weight - 1f) > 0.0001f) throw new InvalidDataException("Terrain noise weights must total one.");
 
             var result = terrain.Array("manualMasks").Select(value =>
             {
                 var mask = value.Object();
                 var id = mask.String("id");
+                var operation = mask.String("operation");
+                if (operation != "flatten_blend" && operation != "carve_spline" &&
+                    operation != "carve_polygons" && operation != "ridge_spline_plus_erosion" &&
+                    operation != "flatten_low")
+                    throw new InvalidDataException($"Unsupported terrain mask operation {operation}.");
                 WorldMapShape shape = null;
                 WorldMapSpline spline = null;
                 var source = string.Empty;
@@ -360,7 +369,7 @@ namespace Game.Infrastructure
                     mask.Has("bankBlendMeters") ? mask.Range("bankBlendMeters") :
                     mask.Has("talusAngleDegrees") ? mask.Range("talusAngleDegrees") :
                     mask.Has("maximumSlopeDegrees") ? mask.Range("maximumSlopeDegrees") : new[] { 0f, 0f };
-                return new WorldMapHeightMask(id, mask.String("operation"), shape, spline, source, range[0], range[1]);
+                return new WorldMapHeightMask(id, operation, shape, spline, source, range[0], range[1]);
             }).ToArray();
             UniqueStrings(result.Select(value => value.Id), "height mask");
 
@@ -369,7 +378,12 @@ namespace Game.Infrastructure
             if (slopes.Float("buildablePercentMinimum") <= 0f || under[0] < 0f || under[1] > 100f ||
                 under[1] < under[0] || slopes.Float("slopeOver32DegreesPercentMaximum") < 0f)
                 throw new InvalidDataException("Terrain slope targets are invalid.");
-            return result;
+            return new WorldMapTerrainDefinition(heightRange[0], heightRange[1],
+                terrain.Float("waterLevelReferenceMeters"), walkable[0], walkable[1],
+                terrain.Float("ridgePeakMeters"), heightmap.Int("worldResolution"),
+                heightmap.Int("tileResolution"), heightmap.Bool("sharedBorderSamples"), anchors, noise, result,
+                new WorldMapSlopeTargets(slopes.Float("buildablePercentMinimum"), under[0], under[1],
+                    slopes.Float("slopeOver32DegreesPercentMaximum")));
         }
 
         private static void ValidateCoordinateRegionIndex(IReadOnlyList<Node> index,
