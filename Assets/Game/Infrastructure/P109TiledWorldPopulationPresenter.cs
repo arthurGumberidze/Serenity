@@ -14,6 +14,8 @@ using Game.Presentation.Production;
 using Game.Presentation.Resources;
 using Game.Simulation.Production;
 using Game.Simulation.Resources;
+using Game.Simulation.Events;
+using Game.Simulation.World;
 using UnityEngine;
 
 namespace Game.Infrastructure
@@ -35,6 +37,8 @@ namespace Game.Infrastructure
         private WorldMapResourceArtCatalog worldMapResourceArt;
         private WildlifePopulationService wildlifePopulation;
         private WorldMapWildlifePresenter wildlifePresenter;
+        private WorldMapPoiArtCatalog poiArt;
+        private WorldMapPoiDiscoveryAdapter poiDiscovery;
         private sealed class AnimalView
         {
             public StableEntityId SiteId;
@@ -61,6 +65,10 @@ namespace Game.Infrastructure
             root.GetComponentsInChildren<WorldResourcePilePresenter>(true).Length);
         public WildlifePopulationService WildlifePopulation => wildlifePopulation;
         public WorldMapWildlifePresenter WildlifePresenter => wildlifePresenter;
+        public WorldMapPoiPlan PoiPlan { get; private set; }
+        public WorldMapPoiDiscoveryAdapter PoiDiscovery => poiDiscovery;
+        public int ActivePoiViewCount => tileViews.Values.Sum(root =>
+            root.GetComponentsInChildren<WorldMapPoiPresenter>(true).Length);
 
         public void Initialize(TiledTerrainWorld world, ProductionService productionService,
             ResourceEcologyService ecologyService, IndustrialExtractionService industryService,
@@ -77,9 +85,18 @@ namespace Game.Infrastructure
             session = FindAnyObjectByType<LocalSceneCompositionRoot>();
             art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
             worldMapResourceArt = Resources.Load<WorldMapResourceArtCatalog>("World/WorldMapResourceArt");
+            poiArt = Resources.Load<WorldMapPoiArtCatalog>("World/WorldMapPoiArt");
             CreateForestAmbience();
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
+            if (world.Definition.MapData != null)
+            {
+                if (terrainWorld.RoadNetworkPlan == null)
+                    throw new InvalidOperationException("WM11 requires the existing WM09 road plan.");
+                PoiPlan = new WorldMapPoiPlanner(world.Definition, world.HeightSampler,
+                    terrainWorld.RoadNetworkPlan, worldSeed).Create();
+                if (poiArt == null) throw new InvalidOperationException("World Map V2 POI art catalog is missing.");
+            }
             if (world.Definition.MapData?.Wildlife != null)
                 wildlifePopulation = new WildlifePopulationService(
                     new WorldMapWildlifePlanner(world.Definition, world.HeightSampler, worldSeed).Create(), worldSeed);
@@ -115,6 +132,15 @@ namespace Game.Infrastructure
             wildlifePresenter.Initialize(wildlifePopulation, tier2Runtime, catalog, WildlifeFocus());
             wildlifePresenter.AdvanceTo(calendarTicks);
         }
+
+        public void InitializePoiExploration(ConnectedWorldService discovery, EventService events)
+        {
+            if (PoiPlan == null) return;
+            poiDiscovery = new WorldMapPoiDiscoveryAdapter(PoiPlan, discovery, events);
+            poiDiscovery.Advance(events.LastProcessedTick);
+        }
+
+        public int AdvancePoiExploration(long calendarTicks) => poiDiscovery?.Advance(calendarTicks) ?? 0;
 
         public void AdvanceWildlifeTo(long calendarTicks)
         {
@@ -191,7 +217,19 @@ namespace Game.Infrastructure
             foreach (var node in Plan.Industry.Where(value => value.Tile.Equals(tile))) CreateIndustrialView(node, root.transform);
             CreateSettlementAndFieldViews(tile, root.transform);
             CreateWoodlandDetails(tile, root.transform);
+            CreatePoiViews(tile, root.transform);
             return root;
+        }
+
+        private void CreatePoiViews(WorldTileId tile, Transform parent)
+        {
+            if (PoiPlan == null) return;
+            foreach (var point in PoiPlan.Points.Where(value => value.Tile.Equals(tile)))
+            {
+                var entry = poiArt.For(point.Id);
+                if (entry == null) throw new InvalidOperationException("Missing audited POI art for " + point.Id);
+                WorldMapPoiPresenter.Create(point, entry, parent);
+            }
         }
 
         private void CreateResourceView(TiledWorldResourceNode node, Transform parent)

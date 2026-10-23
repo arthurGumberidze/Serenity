@@ -817,19 +817,21 @@ namespace Game.Domain.World
     public sealed class WorldMapPointOfInterest
     {
         public WorldMapPointOfInterest(string id, WorldMapPoint position, string regionId,
-            float protectionRadiusMeters, IEnumerable<string> purposes)
+            float protectionRadiusMeters, IEnumerable<string> purposes, string displayName = null)
         {
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(regionId))
                 throw new ArgumentException(nameof(id));
             if (!WorldMapPoint.IsFinite(protectionRadiusMeters) || protectionRadiusMeters <= 0f)
                 throw new ArgumentOutOfRangeException(nameof(protectionRadiusMeters));
             Id = id;
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? id : displayName.Trim();
             Position = position;
             RegionId = regionId;
             ProtectionRadiusMeters = protectionRadiusMeters;
             Purposes = Array.AsReadOnly((purposes ?? throw new ArgumentNullException(nameof(purposes))).ToArray());
         }
         public string Id { get; }
+        public string DisplayName { get; }
         public WorldMapPoint Position { get; }
         public string RegionId { get; }
         public float ProtectionRadiusMeters { get; }

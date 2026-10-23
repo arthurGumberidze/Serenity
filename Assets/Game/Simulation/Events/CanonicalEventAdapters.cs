@@ -6,6 +6,8 @@ using Game.Domain.Characters;
 using Game.Domain.Events;
 using Game.Domain.Health;
 using Game.Simulation.Health;
+using Game.Domain.World;
+using Game.Simulation.World;
 
 namespace Game.Simulation.Events
 {
@@ -152,14 +154,14 @@ namespace Game.Simulation.Events
 
     public static class StoneAgeEventCatalog
     {
-        public static EventCatalog Create()
+        public static EventCatalog Create(IEnumerable<WorldMapPoiPlanEntry> pointsOfInterest = null)
         {
             var day = TimeSpan.FromDays(1).Ticks;
             var alive = new[] { new EventConditionDefinition(EventConditionKind.TargetAlive) };
             var spouses = new[] { new EventConditionDefinition(EventConditionKind.TargetAlive),
                 new EventConditionDefinition(EventConditionKind.TargetsAreSpouses) };
 
-            return new EventCatalog(new[]
+            var definitions = new List<EventDefinition>(new[]
             {
             new EventDefinition(
                 new EventDefinitionId("family_dispute_chain"), EventCategory.Family, EventAudience.Player,
@@ -240,6 +242,9 @@ namespace Game.Simulation.Events
                         })
                 }, alive, InvalidEventTargetPolicy.Cancel)
             });
+            if (pointsOfInterest != null)
+                definitions.AddRange(WorldMapPoiEventCatalog.CreateDefinitions(pointsOfInterest));
+            return new EventCatalog(definitions);
         }
     }
 }

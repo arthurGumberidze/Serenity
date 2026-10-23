@@ -614,9 +614,14 @@ namespace Game.Infrastructure
                 () => Characters.GetAll().Select(x => x.Id).Except(StarterEnemyAi.Residents),
                 () => StarterEnemyAi.Residents,
                 () => Clock.State.BiologicalTicks);
-            Events = new EventService(StoneAgeEventCatalog.Create(), eventTargets,
+            IEventTargetSource combinedEventTargets = WorldPopulation?.PoiPlan == null
+                ? eventTargets
+                : new CompositeEventTargetSource(eventTargets,
+                    new WorldMapPoiEventTargetSource(WorldPopulation.PoiPlan.Points));
+            Events = new EventService(StoneAgeEventCatalog.Create(WorldPopulation?.PoiPlan?.Points), combinedEventTargets,
                 new CanonicalEventEffectExecutor(Characters, HealthFamily), worldSeed,
                 Clock.State.CalendarTicks);
+            WorldPopulation?.InitializePoiExploration(ConnectedWorld, Events);
             CampaignProgress = new CampaignProgressService(ActiveNewGameConfiguration, new CombatSideId("player"),
                 StarterEnemyAi, GlobalMap, MilitaryUnits, StrategicAi, Battles, Clock.State.CalendarTicks, GameRun);
             gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
@@ -759,14 +764,15 @@ namespace Game.Infrastructure
 
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
+            var targetCalendarTick = Clock.State.CalendarTicks;
             ConnectedWorld?.AdvanceTo(Clock.State.CalendarTicks);
             if (ConnectedWorld != null)
                 foreach (var presenter in demoPresenters.Where(x => x != null && x.gameObject.activeInHierarchy))
                     ConnectedWorld.ReportPhysicalPresence(presenter.transform.position.x, presenter.transform.position.z);
+            WorldPopulation?.AdvancePoiExploration(targetCalendarTick);
             ConstructionClearance?.Advance();
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
-            var targetCalendarTick = Clock.State.CalendarTicks;
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
             Tier2Runtime.Step(advance, Weather.GetMovementModifierForInterval(startCalendarTick, targetCalendarTick));
             WorldPopulation?.AdvanceWildlifeTo(targetCalendarTick);

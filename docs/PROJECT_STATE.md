@@ -1,5 +1,44 @@
 # PROJECT_STATE.md
 
+## WM11 checkpoint — 2026-10-23 World Map V2 POI and exploration DONE
+
+WM11 loads and plans exactly nine canonical POIs at their authored coordinates and protection radii. Each
+point receives a deterministic `StableEntityId`, its authored region, and a dry 8 m-grid approach connected
+to the reachable WM09 road network; every approach sample is at no more than 30 degrees slope and terminates
+inside the POI protection circle. The planner is immutable Domain data and does not create a second navigation
+authority. WM05 vegetation and WM06 resources remain outside the authored protection circles.
+
+Discovery reuses `ConnectedWorldService` revealed cells as the only mutable exploration state. One explicit
+player event per POI is offered through the existing `EventService`; active instances and history prevent
+duplicate offers across XML save/load, so no parallel discovered/processed collection or save schema was
+added. Streamed presentation uses one audited catalog of existing prefabs for the sacred grove, stone circle,
+abandoned camp, ancient ruins, overlook, rock spire, cave, giant tree and secluded glade. Each streamed root
+has a circular protection authority consumed by existing placement evaluation; it is a hard blocker and
+cannot be automatically cleared.
+
+The asset-first audit reused the project shrine/watchtower, PNB tent/fireplace/ruins/monolith/flowers/effects,
+and Synty cave/giant-tree prefabs with their existing meshes and materials. No model, texture, material,
+package or external dependency was added. `p109-world-map-v2-proposed` remains inactive; the active
+`p109-compact-world-v1`, `LoadReference()` and live scene are unchanged.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod WM11PoiAssetAuthoring.Generate -quit -logFile 'C:\serenity_game\Artifacts\WM11\asset-authoring-r3.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM11WorldMapPoiExplorationTests' -testResults 'C:\serenity_game\Artifacts\WM11\editmode-r10.xml' -logFile 'C:\serenity_game\Artifacts\WM11\editmode-r10.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM11WorldMapPoiExplorationPlayModeTests' -testResults 'C:\serenity_game\Artifacts\WM11\playmode-r2.xml' -logFile 'C:\serenity_game\Artifacts\WM11\playmode-r2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.WM09WorldMapRoadNavigationTests;Game.Tests.Editor.EventSystemTests;Game.Tests.Editor.P102ConnectedWorldTests' -testResults 'C:\serenity_game\Artifacts\WM11\affected-editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM11\affected-editmode.log'
+git diff --check -- Assets/Game/Domain/Events/EventModels.cs Assets/Game/Domain/World/ConnectedWorldModels.cs Assets/Game/Domain/World/WorldMapDataContracts.cs Assets/Game/Domain/World/WorldMapPoiExploration.cs Assets/Game/Infrastructure/Editor/WM11PoiAssetAuthoring.cs Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs Assets/Game/Infrastructure/P109TiledWorldPopulationPresenter.cs Assets/Game/Infrastructure/TiledWorldDefinitionLoader.cs Assets/Game/Presentation/Environment/P102WorldPlacementSurface.cs Assets/Game/Presentation/Environment/WorldMapPoiArtCatalog.cs Assets/Game/Presentation/Environment/WorldMapPoiPresenter.cs Assets/Game/Simulation/Events/CanonicalEventAdapters.cs Assets/Game/Simulation/World/WorldMapPoiDiscoveryAdapter.cs Assets/Game/Tests/Editor/WM11WorldMapPoiExplorationTests.cs Assets/Game/Tests/PlayMode/WM11WorldMapPoiExplorationPlayModeTests.cs docs/PROJECT_STATE.md docs/TASK_GRAPH.md docs/NEXT_TASK.md docs/DECISIONS.md docs/ARCHITECTURE.md
+```
+
+Results: asset authoring completed with **9/9** audited mappings; focused WM11 EditMode **4/4** in 16.91 s;
+focused discovery/event/save-load PlayMode **1/1** in 5.22 s; affected WM01/WM09/events/P102 EditMode
+**33/33** in 3.17 s. Touched assemblies compiled without C# errors. A third-party UMA startup window required
+a temporary batchmode-only guard in ignored `Library/PackageCache`; that guard was removed after validation
+and no package source or tracked setting changed. No broad suite, Player build, profiler capture, visual
+acceptance, V2 activation or WM12 work was run by instruction. The inherited five dirty materials and
+`New Unity Project/` remain user-owned and excluded. WM12 is next and unstarted.
+
 ## WM10 checkpoint — 2026-10-23 World Map V2 start territory DONE
 
 WM10 parses the canonical north-west start as one immutable `WorldMapStartTerritoryDefinition` and derives one

@@ -650,7 +650,7 @@ namespace Game.Infrastructure
                 if (!bounds.Contains(position) || region == null || !region.Contains(position))
                     throw new InvalidDataException($"POI {poi.String("id")} is outside its referenced region.");
                 return new WorldMapPointOfInterest(poi.String("id"), position, regionId,
-                    poi.Float("protectionRadiusMeters"), poi.StringArray("purpose"));
+                    poi.Float("protectionRadiusMeters"), poi.StringArray("purpose"), poi.String("name"));
             }).ToArray();
             UniqueStrings(result.Select(value => value.Id), "POI");
             return result;

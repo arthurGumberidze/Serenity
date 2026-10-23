@@ -1,5 +1,26 @@
 # DECISIONS.md
 
+## D-185 WM11 derives discovery from existing revealed cells and event history (2026-10-23)
+
+`WorldMapPoiPlanner` is the sole immutable POI projection. It preserves the nine authored coordinates,
+regions, purposes and protection radii, derives stable IDs from world seed/generation/POI ID, and computes a
+dry slope-bounded last-mile route from the existing WM09 network to each protection circle. WM09 remains the
+navigation authority; the approach plan proves local terrain reachability and introduces no second pathfinder,
+agent scheduler or mutable route state.
+
+`ConnectedWorldService` revealed cells remain the canonical discovery state. `WorldMapPoiDiscoveryAdapter`
+owns no collection: it derives discovery from those saved cells and uses existing `EventService` active
+instances/history as the exactly-once record. Each POI has one explicit player event targeted by stable ID.
+The existing connected-world/event XML payloads therefore provide round-trip persistence without a save
+version bump; WM11 only permits the already-defined proposed generation ID in connected-world state. WM13
+still owns generation activation, compatibility policy and broader world-version persistence.
+
+POI GameObjects, colliders and imported prefab compositions are streamed disposable presentation. The
+protection component performs exact circle-versus-placement-footprint checks and always rejects automatic
+clearance. The asset catalog references only existing project content; stone circle, grove and glade are
+compositions of imported prefabs rather than generated models. No ScriptableObject owns mutable discovery,
+no package is added and the compact-world branch never constructs the V2 POI plan.
+
 ## D-184 WM10 extends the population/New Game plan without creating a settlement authority (2026-10-23)
 
 The authored player-start metadata, `build_start_core` and three expansion directions load into immutable

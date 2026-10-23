@@ -115,7 +115,8 @@ namespace Game.Domain.World
             IEnumerable<ScoutingAssignmentState> scoutingAssignments, long lastProcessedTick)
         {
             if (!string.Equals(generationId, ConnectedWorldContract.GenerationId, StringComparison.Ordinal) &&
-                !string.Equals(generationId, TiledWorldDefinition.ReferenceGenerationId, StringComparison.Ordinal))
+                !string.Equals(generationId, TiledWorldDefinition.ReferenceGenerationId, StringComparison.Ordinal) &&
+                !string.Equals(generationId, TiledWorldDefinition.ProposedWorldMapGenerationId, StringComparison.Ordinal))
                 throw new ArgumentException("Unknown connected-world generation.", nameof(generationId));
             if (lastProcessedTick < 0) throw new ArgumentOutOfRangeException(nameof(lastProcessedTick));
             var cells = (revealedCells ?? throw new ArgumentNullException(nameof(revealedCells))).Distinct().OrderBy(x => x).ToArray();

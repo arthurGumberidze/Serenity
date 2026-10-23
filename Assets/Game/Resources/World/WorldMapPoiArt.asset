@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99ee2bf7036ab814f8e892cfe3d81891, type: 3}
+  m_Name: WorldMapPoiArt
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.WorldMapPoiArtCatalog
+  entries:
+  - poiId: poi_sacred_grove
+    primaryPrefab: {fileID: 896245607924915164, guid: c241117bb9be3f04794fd3cd06aa2e27, type: 3}
+    accentPrefab: {fileID: 1992559430955086, guid: 5301afbcc2367b5469f618258a227b39, type: 3}
+    effectPrefab: {fileID: 6553351812565585173, guid: 708814b005bc93541b743c8a5df6bcc5, type: 3}
+    visualScale: 1
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 5
+    accentRadius: 12
+  - poiId: poi_stone_circle
+    primaryPrefab: {fileID: 3783172376195406270, guid: 25cbb7cd007b1f141807d65eee830da8, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 0}
+    visualScale: 0.8
+    primaryCount: 8
+    primaryRadius: 8.5
+    accentCount: 0
+    accentRadius: 0
+  - poiId: poi_abandoned_camp
+    primaryPrefab: {fileID: 5036276263380499166, guid: eaba0d5d851714d4ebdefa3ab9809493, type: 3}
+    accentPrefab: {fileID: 5382931658967475936, guid: 5fcfede59b6afa64d99b40426743a5ad, type: 3}
+    effectPrefab: {fileID: 0}
+    visualScale: 1
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 1
+    accentRadius: 0
+  - poiId: poi_ancient_ruins
+    primaryPrefab: {fileID: 6467388601554043688, guid: c5dc2cb2eda0d7946b9c6754360d61ed, type: 3}
+    accentPrefab: {fileID: 916115565686720363, guid: 49c1bc25c0f99f6449c9b06424b2fa75, type: 3}
+    effectPrefab: {fileID: 0}
+    visualScale: 1
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 4
+    accentRadius: 7
+  - poiId: poi_overlook
+    primaryPrefab: {fileID: 2037994050957237548, guid: 42e6eedbf0b6e6949b28bb6810a845fa, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 0}
+    visualScale: 1
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 0
+    accentRadius: 0
+  - poiId: poi_rock_spire
+    primaryPrefab: {fileID: 1756931353436749007, guid: cc3aa56d3314a4b43a563d977969ed87, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 0}
+    visualScale: 2
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 0
+    accentRadius: 0
+  - poiId: poi_cave
+    primaryPrefab: {fileID: 1965262673095252, guid: b02415e50456dea469f21d4618a16267, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 0}
+    visualScale: 1.2
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 0
+    accentRadius: 0
+  - poiId: poi_giant_tree
+    primaryPrefab: {fileID: 1992559430955086, guid: 5301afbcc2367b5469f618258a227b39, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 0}
+    visualScale: 1.35
+    primaryCount: 1
+    primaryRadius: 0
+    accentCount: 0
+    accentRadius: 0
+  - poiId: poi_secluded_glade
+    primaryPrefab: {fileID: 6557918496105492796, guid: 94871858625b51e4e8fb27236a8b2efb, type: 3}
+    accentPrefab: {fileID: 0}
+    effectPrefab: {fileID: 6553351812565585173, guid: 708814b005bc93541b743c8a5df6bcc5, type: 3}
+    visualScale: 1
+    primaryCount: 7
+    primaryRadius: 9
+    accentCount: 0
+    accentRadius: 0

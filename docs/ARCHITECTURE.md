@@ -1,5 +1,24 @@
 # Architecture — U01
 
+## WM11 World Map V2 POI/exploration boundary (2026-10-23)
+
+The flow is `WORLD_MAP_POI -> WorldMapPointOfInterest -> WorldMapPoiPlanner -> immutable WorldMapPoiPlan ->
+streamed WorldMapPoiPresenter`. Authored JSON owns exact identity, design coordinates, region, purpose and
+protection radius. The pure planner owns stable runtime identity, tile assignment and an 8 m dry/slope-bounded
+approach to the existing WM09 road network. Roads, Terrain and the existing NavMesh remain the movement
+authority; the approach is derived validation data, not another runtime navigation system.
+
+The mutable flow is `ConnectedWorldService revealed cells -> WorldMapPoiDiscoveryAdapter -> EventService`.
+The adapter stores nothing. Existing connected-world save state answers whether a POI is discovered; existing
+event active/history state answers whether its explicit one-time event was already offered. POI target
+projection is composed with the established character/dynasty target source. Save/load reuses those payloads
+and retains stable POI references.
+
+`WorldMapPoiArtCatalog`, instantiated prefab rings/effects and trigger volumes are disposable presentation.
+`P102WorldPlacementSurface` consumes the protection volume as an exact circular hard blocker and never marks
+it clearable. Only the V2 definition with `MapData` creates this plan; the active compact-world definition and
+legacy presentation remain unchanged.
+
 ## WM10 World Map V2 start-territory boundary (2026-10-23)
 
 The flow is `playerStart/build_start_core/expansionDirections -> WorldMapStartTerritoryDefinition ->

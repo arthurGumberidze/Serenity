@@ -67,6 +67,13 @@ namespace Game.Presentation.Environment
                 {
                     if (blocker is TerrainCollider || blocker.GetComponentInParent<BuildableGround>() != null ||
                         blocker.GetComponentInParent<CharacterPresenter>() != null) continue;
+                    var poi = blocker.GetComponentInParent<WorldMapPoiProtectionVolume>();
+                    if (poi != null)
+                    {
+                        if (!poi.OverlapsHorizontalBox(center, gridSize * 0.49f)) continue;
+                        return new PlacementSurfaceEvaluation(false, clearable,
+                            "Уникальная точка интереса защищена от строительства и автоматической расчистки.");
+                    }
                     var source = blocker.GetComponentInParent<ProductionSourcePresenter>();
                     if (source != null && source.IsBound && IsClearable(source.Site))
                     {

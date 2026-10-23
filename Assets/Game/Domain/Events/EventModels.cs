@@ -88,9 +88,9 @@ namespace Game.Domain.Events
         public override string ToString() => Value ?? string.Empty;
     }
 
-    public enum EventCategory { Character = 1, Family = 2, Dynasty = 3, Settlement = 4, Building = 5, Military = 6, Research = 7 }
+    public enum EventCategory { Character = 1, Family = 2, Dynasty = 3, Settlement = 4, Building = 5, Military = 6, Research = 7, Exploration = 8 }
     public enum EventAudience { Player = 1, Ai = 2 }
-    public enum EventTargetKind { Character = 1, Dynasty = 2, Building = 3, MilitaryUnit = 4, Battle = 5, Settlement = 6, WorldLocation = 7, Faction = 8 }
+    public enum EventTargetKind { Character = 1, Dynasty = 2, Building = 3, MilitaryUnit = 4, Battle = 5, Settlement = 6, WorldLocation = 7, Faction = 8, PointOfInterest = 9 }
     public enum EventTargetSelector { Explicit = 1, PlayerCharacter = 2, PlayerCouple = 3, AiCharacter = 4 }
     public enum EventTriggerKind { AbsoluteTick = 1, Periodic = 2, StatePredicate = 3, CanonicalHook = 4, Explicit = 5 }
     public enum CanonicalEventHookKind { CharacterStateChanged = 1, BattleFinished = 2, BuildingChanged = 3, ResearchCompleted = 4 }
@@ -115,6 +115,11 @@ namespace Game.Domain.Events
         {
             if (!id.IsValid) throw new ArgumentException("Character ID required.", nameof(id));
             return new EventTargetRef(EventTargetKind.Character, id.ToString());
+        }
+        public static EventTargetRef PointOfInterest(StableEntityId id)
+        {
+            if (!id.IsValid) throw new ArgumentException("POI ID required.", nameof(id));
+            return new EventTargetRef(EventTargetKind.PointOfInterest, id.ToString());
         }
         public bool TryGetStableEntityId(out StableEntityId id) => StableEntityId.TryParse(PersistentId, out id);
         public int CompareTo(EventTargetRef other)
