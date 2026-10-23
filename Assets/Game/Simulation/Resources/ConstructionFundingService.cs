@@ -92,7 +92,7 @@ namespace Game.Simulation.Resources
             if (!spatial.IsValid) return new ConstructionEvaluation(spatial, ConstructionFailureReason.InvalidPlacement, default);
             if (!IsBuildingUnlocked(definition.Id))
                 return new ConstructionEvaluation(spatial, ConstructionFailureReason.LockedByResearch, default);
-            var funding = Plan(definition, fundingSources, out _, out var missing);
+            var funding = Plan(definition.ForSegmentLength(request.AuthoredCells.Count), fundingSources, out _, out var missing);
             return new ConstructionEvaluation(spatial, funding, missing);
         }
 
@@ -104,6 +104,7 @@ namespace Game.Simulation.Resources
             building = null;
             var result = Evaluate(definition, coordinate, orientation, fundingSources, authoredCells);
             if (!result.IsValid) return result;
+            definition = definition.ForSegmentLength(authoredCells?.Count() ?? 0);
             // Replan immediately before mutation. All writes below run on the one simulation owner thread.
             var funding = Plan(definition, fundingSources, out var deductions, out var missing);
             if (funding != ConstructionFailureReason.None)

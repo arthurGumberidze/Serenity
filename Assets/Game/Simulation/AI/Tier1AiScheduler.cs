@@ -628,6 +628,14 @@ namespace Game.Simulation.AI
             else
             {
                 Action completion = null;
+                Func<TimeSpan, bool> advanceWork = null;
+                if (job.Type == WorkJobType.Demolish)
+                {
+                    if (world.BuildingLifecycle == null || world.Buildings == null ||
+                        !world.Buildings.TryGet(job.Target.EntityId, out var target) || !target.IsOperational)
+                    { work.Fail(job.Id); return; }
+                    advanceWork = delta => world.BuildingLifecycle.AdvanceDemolition(job, delta, calendarTicks);
+                }
                 Game.Domain.Buildings.Building construction = null;
                 if (job.Type == WorkJobType.Build && world.Buildings != null &&
                     world.Buildings.TryGet(job.Target.EntityId, out var building))
@@ -640,7 +648,7 @@ namespace Game.Simulation.AI
                 entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
                     settings.MovementTimeout, completion, construction,
                     CharacterSkillRules.WorkRatePerThousand(character, skill),
-                    () => GainExperience(entry, character, skill));
+                    () => GainExperience(entry, character, skill), advanceWork);
             }
             entry.LastActionTicks = calendarTicks;
         }
@@ -662,6 +670,7 @@ namespace Game.Simulation.AI
         {
             switch (type)
             {
+                case WorkJobType.Demolish:
                 case WorkJobType.Build: return CharacterSkillRules.Construction;
                 case WorkJobType.Military:
                 case WorkJobType.Guard: return CharacterSkillRules.Combat;

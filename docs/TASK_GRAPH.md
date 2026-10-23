@@ -2,6 +2,13 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 shore/lifecycle feedback (2026-10-23): implementation DONE; user acceptance remains F1. Worker-driven
+demolition with saved progress, no age damage/brown damage tint, eleven validated fishing landing markers and
+snapping, cardinal palisade/path drag, single Garden choice, corrected outdoor model scales and deer locomotion.
+Focused EditMode 22/22; affected EditMode 41/41; full-scene PlayMode 1/1; actual Player bootstrap/landing smoke
+passed. Meeting Area's social/mood scenario remains unimplemented and is now explicitly labelled in the UI.
+No third-party dependencies added. Final rebuild evidence is in P109_BUILDINGS_IMPLEMENTATION.md.
+
 P10.9 Stone Age buildings plan (authorized 2026-10-21): B1-B3, C1-C4, D1-D2 and E1-E4 DONE; C5 DEFERRED by
 explicit user direction on 2026-10-22; the gameplay-feedback stabilization slice is DONE in code
 with final Player acceptance retained for F1. F1 is next and remains inside P10.9. Internal slices keep targeted

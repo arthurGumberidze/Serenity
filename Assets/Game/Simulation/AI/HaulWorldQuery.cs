@@ -312,6 +312,7 @@ namespace Game.Simulation.AI
         public ProductionService Production { get; }
         public ResearchService Research { get; }
         public BuildingRegistry Buildings { get; }
+        public Game.Simulation.Buildings.BuildingLifecycleService BuildingLifecycle { get; set; }
         public Action<InventoryOwner> ResourceDelivered { get; }
     }
 }

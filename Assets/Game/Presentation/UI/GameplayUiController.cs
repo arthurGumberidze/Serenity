@@ -1394,6 +1394,8 @@ namespace Game.Presentation.UI
             AddLine(mainPanel, T("ui.build.instructions"));
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
+                // Retain the legacy ID for existing scenes/saves, not as a second player option.
+                if (entry.DefinitionId == "primitive_crop_plot") continue;
                 var definition = entry.CreateDefinition();
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
                 var cost = definition.ConstructionCost.Count == 0 ? T("ui.build.no_cost") : F("ui.build.cost", string.Join(", ",
@@ -1402,6 +1404,18 @@ namespace Game.Presentation.UI
                 var reason = !available ? BuildingLockReason(definition.Id) : shortage;
                 var card = SerenityUiDesign.Card();
                 AddSection(card, Content("building", definition.Id.ToString()));
+                var explanation = definition.Id.ToString() switch
+                {
+                    "training_ground" => "Тренировка боевого навыка выбранных жителей.",
+                    "palisade" => "Защитная стена, перекрывающая проход. Для входа нужны ворота. Зажмите ЛКМ и тяните.",
+                    "meeting_area" => "Площадка для общих собраний. Сценарий собраний и бонус настроения пока не подключены.",
+                    "gathering_area" => "Обозначенная площадка для организации сбора дикорастущих ресурсов.",
+                    "primitive_garden" => "Зажмите ЛКМ и растяните огород: от 2×2 до 8×8 клеток.",
+                    "primitive_path" => "Зажмите ЛКМ и протяните тропу, до 32 клеток за раз.",
+                    "fishing_camp" => "Ставится у берегового столбика с рыбой. При наведении привязывается к площадке.",
+                    _ => null
+                };
+                if (explanation != null) AddMuted(card, explanation);
                 AddMuted(card, cost);
                 var button = ActionButton(Content("building", definition.Id.ToString()) + " · " + cost,
                     () => StartBuilding(definition.Id));
@@ -2318,13 +2332,22 @@ namespace Game.Presentation.UI
                         SetStatus(open ? "Ворота закрыты." : "Ворота открыты.");
                     })));
                 }
-                if (definition.Maintenance != null && definition.Maintenance.CanDemolish)
+                var demolition = context.BuildingLifecycle.DemolitionJob(building.Id);
+                if (demolition != null)
+                {
+                    AddLine(inspector, "Разборка: " + RussianTextCatalog.Percent((double)demolition.ProgressTicks /
+                        context.BuildingLifecycle.DemolitionRequiredTicks(building)));
+                    AddMuted(inspector, demolition.Status == WorkJobStatus.Active ? "Житель разбирает постройку." :
+                        "Ожидает свободного жителя и его подхода к зданию.");
+                    inspector.Add(ActionButton("Отменить разборку", () => TryCommand(() => context.Work.Cancel(demolition.Id))));
+                }
+                else if (definition.Maintenance != null && definition.Maintenance.CanDemolish)
                     inspector.Add(ActionButton("Демонтировать", () => TryCommand(() =>
                     {
                         var result = context.BuildingLifecycle.Demolish(building.Id,
                             context.Clock().State.CalendarTicks);
                         if (!result.Succeeded) throw new PlayerFacingException("Демонтаж недоступен: " + result.Failure);
-                        SetStatus("Здание демонтировано; пригодные материалы и содержимое склада возвращены.");
+                        SetStatus("Разборка назначена. Житель подойдёт и разберёт здание; материалы вернутся после завершения.");
                     })));
             }
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", building.Id));

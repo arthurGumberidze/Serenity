@@ -1208,3 +1208,28 @@ Settlement layout identity covers authored worksite/supply placement and stable 
 not include nested FBX mesh names because Unity's Editor and Player import paths may expose those names
 differently. Geometry/material validity is checked separately. Any authoring step that replaces shared starter
 prefabs must refresh the serialized settlement layout hash before validation and build.
+
+## D-173 Player feedback: explicit dismantling, no age damage and readable outdoor facilities (2026-10-23)
+
+Calendar age must never damage buildings, including older definitions with non-zero wear settings. Combat
+and fire remain the structural damage authorities. Friendly damaged buildings retain authored material colors;
+the integrity readout and fire effects communicate damage instead of a uniform brown material override.
+
+Demolition is an exclusive `WorkJobType.Demolish` in the existing WorkManager. Clicking queues work; a worker
+must travel to an exterior approach before accumulating skill-scaled work. Required work is half the authored
+construction work, with a ten-minute floor. Completion uses the existing exactly-once cargo/material return
+and occupancy release. Cancellation leaves the building intact. WorkOrder owns progress; the XML work codec
+reads an optional non-negative `progressTicks` field (missing means zero), and preserves it across reload.
+No parallel job queue or inventory is introduced.
+
+Palisade and path accept cardinal, straight held-LMB segments up to 32 cells; costs and construction time scale
+with cell count. Canonical PlacementCells drive occupancy, persistence and repeated visuals. Garden remains a
+single player menu option (2x2–8x8); the legacy crop ID is retained for existing authored scenes and saves.
+
+Fishing camps are shoreline outposts and no longer require the starter settlement's 128m territory. They still
+require dry, level unobstructed land, research and materials. Landing candidates derive from the canonical
+height sampler, then pass the real placement predicate before a cyan shore post/outline is shown. Placement
+snaps near these markers. The shoreline search accounts for the world's wide walkable bank, rather than
+requiring water within four metres. Outdoor facility meshes use human-scale height limits, not a 20cm zone
+collider height. Deer views switch between imported idle/walk clips, turn and follow sampled ground; they do
+not advance the population or inventory simulation independently.

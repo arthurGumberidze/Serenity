@@ -2,6 +2,16 @@
 
 ## Current scope — P10.9 Stone Age buildings F1, 2026-10-23
 
+Completed user-feedback repair before F1: worker-driven demolition, no age wear/brown damage tint, marked and
+snapped fishing landing sites, held-LMB palisade/path segments, one Garden menu choice, human-scale outdoor
+facility visuals and walking deer. Focused EditMode 22/22, affected EditMode 41/41 and full-scene PlayMode 1/1
+passed; actual Player bootstrap validates all eleven lake landings. Do not mark F1 complete. The Meeting Area
+social/mood behavior remains an explicit gap rather than a functioning passive effect. Final Player rebuild
+and exact commands are recorded in P109_BUILDINGS_IMPLEMENTATION.md; user visual acceptance remains open.
+Current Player: `C:\serenity_game\Builds\P109ShoreLifecycle\Serenity.exe` (0 errors / 27 warnings,
+GUID `cc026ce5123e4869aec37f24e2d1e20f`). Final native bootstrap/landing rerun passed; old builds remain intact.
+Asset links supplied by the user are an assessment request, not authorization to install new dependencies.
+
 The post-E visual/gameplay feedback repair is implemented before F1. Clan House construction buffers now
 accept every resource category present in their authored contract, so cured hides no longer leave progress
 at zero. Resource presenters preserve existing narrow colliders instead of adding broad invisible rock hit

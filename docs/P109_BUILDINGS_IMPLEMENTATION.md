@@ -373,3 +373,60 @@ cases at 3/4 and 1/1. The Windows build succeeded with 0 errors / 53 warnings, G
 
 C5 proves the complete New Game → construction → cooking → storage → eating → save/load route. It has
 not started.
+
+## Player shore/lifecycle feedback — 23 October 2026
+
+This supersedes the historical “Next stage” paragraph above: C5 remains user-deferred; current scope is the
+P10.9 feedback repair ahead of F1. See D-173 for mechanics and state ownership. No new external assets imported.
+
+Executed with Unity `C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe`:
+
+```powershell
+$unity = 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe'
+$out = 'C:\serenity_game\Artifacts\P109\shore-lifecycle-feedback'
+$env:SERENITY_SAVE_DIRECTORY = "$out\saves"
+& $unity -batchmode -nographics -projectPath C:\serenity_game -logFile "$out\authoring.log" -quit -executeMethod Game.Infrastructure.Editor.P109BaseBuildingFoundation.BuildFeedbackAssets
+& $unity -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ExtendedBuildingsTests;Game.Tests.Editor.P109CompactWorldTests;Game.Tests.Editor.BuildingPlacementTests;Game.Tests.Editor.ConstructionFundingTests;Game.Tests.Editor.P94StoneAgeSettlementTests' -testResults "$out\editmode.xml" -logFile "$out\editmode.log"
+& $unity -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.P94StoneAgeSettlementPlayModeTests.AuthoredSettlementSpawnsDistinctBuildingsAndStoneAgeWear' -testResults "$out\playmode.xml" -logFile "$out\playmode.log"
+& $unity -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.P109ExtendedBuildingsTests;Game.Tests.Editor.P109BuildingPlacementRulesTests;Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.WorkGroupAndJobTests;Game.Tests.BuildingFoundationTests;Game.Tests.BuildingDestructionFireCaptureTests' -testResults "$out\affected-editmode.xml" -logFile "$out\affected-editmode-2.log"
+& $unity -batchmode -nographics -projectPath C:\serenity_game -logFile "$out\build.log" -quit -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109ShoreLifecycle/Serenity.exe
+& $unity -batchmode -nographics -projectPath C:\serenity_game -logFile "$out\build-final.log" -quit -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/P109ShoreLifecycle/Serenity.exe
+$env:SERENITY_SAVE_DIRECTORY = "$out\player-saves"
+$env:SERENITY_SETTINGS_PATH = "$out\player-settings.json"
+Start-Process -FilePath C:\serenity_game\Builds\P109ShoreLifecycle\Serenity.exe -ArgumentList @('-p109FeedbackSmoke','-p109FeedbackScreenshot',"$out\player.png",'-screen-fullscreen','0','-screen-width','1280','-screen-height','720','-logFile',"$out\player.log") -WindowStyle Hidden -PassThru
+```
+
+The initial non-escalated authoring process did not start or write a log; the escalated run completed. Authoring
+generated the imported-model scale fixes and idle/walk controller successfully. EditMode `editmode.xml`: 22/22.
+Full-scene `playmode.xml`: 1/1, verifying GameplayUi, both starter residents and actual placement at every marked
+lake (not merely loading MainMenu). Expanded `affected-editmode.xml`: 41/41 across P109ExtendedBuildings (13),
+P109BuildingPlacementRules (6), P109ConstructionState (9) and WorkGroupAndJob (13). The other namespace filters
+in the recorded commands matched no fixtures; no extra passes are claimed for them. The first expanded attempt
+failed compilation because optional smoke capture referenced unavailable ScreenCapture; the harness was changed
+to the existing Texture2D/ReadPixels pattern before the successful run. The work regression explicitly proves
+walking produces zero dismantling progress, cancellation retains the building and sustained work removes it.
+
+First Windows build: 0 errors / 53 warnings, GUID `01e30bddbb55420a897823652219f53d`, fingerprint
+`9A644C2FB278A3499CC2A54BC6BDCDD5C57E018CEC5B7B0C7D521511D8219831`. Native smoke launched new game, logged
+`P109_FEEDBACK_SMOKE_PASSED: LocalGameplay, UI, starter residents, valid lake landings=11` and wrote `player.png`;
+the image was inspected and shows inhabitants and gameplay UI. Player shutdown reports two persistent native
+allocations; this is recorded, not treated as proof of leak-free teardown. Final rebuild follows only the honest
+Meeting Area tooltip change. Full native interaction/visual acceptance and F1 multi-settlement/tier coverage
+are not claimed. Protected baseline manifest `Artifacts/P109/compact-world/protected-before.json`: 44/44 match.
+
+Asset assessment: prefer Winter Environment 3.0 (Unity 6 URP template), Toby Foliage Engine Light (current
+Unity 6 URP-compatible release) and Lightning Bolt Effect (small presentation-only lightning candidate).
+JustCreate Low-Poly Nature is optional additional art, not required to fix existing building scale mistakes.
+HDRP Terrain Tessellation is incompatible with URP. RTS Starter Kit duplicates existing game authorities;
+Landscape Builder needs a separate world-generation integration decision. Legacy Tenkoku and Simple Day/Night
+are not remedies for the brown damage tint. The exact Simple Water Shader archive/author could not be verified;
+do not equate it with the similarly named Simple Water Shader URP without inspecting the package. These are
+download/evaluation recommendations only, not permission to import packages or replace simulation systems.
+
+Final build (`build-final.log`): Succeeded, 0 errors / 27 warnings; GUID
+`cc026ce5123e4869aec37f24e2d1e20f`, source fingerprint
+`C0BE7A75D122E59EFF7E55BF3E731AEE388AD8D861C5E4CD40BBC83F94055CB6`, UTC `2026-10-23T06:59:49Z`.
+The previous `Builds/P109VisualFeedback` Player is retained. Test-run temporary Resources JSON files were
+automatically removed by the test/build tooling and are not committed. The final smoke uses the same Player
+command above with output names `player-final.log` and `player-final.png`.
+The final rerun also passed: UI/residents and 11/11 landing placements; its gameplay image was inspected.

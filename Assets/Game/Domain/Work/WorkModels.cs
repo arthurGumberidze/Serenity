@@ -206,7 +206,7 @@ namespace Game.Domain.Work
     {
         Haul = 0, Move = 1, Gather = 2, Build = 3, Craft = 4, Farm = 5,
         Research = 6, Scout = 7, Military = 8, Care = 9,
-        Inspect = 10, Mine = 11, Chop = 12, Guard = 13
+        Inspect = 10, Mine = 11, Chop = 12, Guard = 13, Demolish = 14
     }
     public enum WorkQueuePlacement { RejectWhenBusy = 0, Front = 1, Tail = 2 }
     public enum WorkPriority { Low = 0, Normal = 1, High = 2, Urgent = 3, Immediate = 4 }
@@ -300,6 +300,17 @@ namespace Game.Domain.Work
         public long QueueOrder { get; private set; }
         public WorkJobStatus Status { get; private set; }
         public WorkClaimState ClaimState { get; private set; }
+        public long ProgressTicks { get; private set; }
+        public void RestoreProgress(long ticks)
+        {
+            if (ticks < 0) throw new ArgumentOutOfRangeException(nameof(ticks));
+            ProgressTicks = ticks;
+        }
+        public void AdvanceProgress(TimeSpan work)
+        {
+            if (work < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(work));
+            if (Status == WorkJobStatus.Active) ProgressTicks = checked(ProgressTicks + work.Ticks);
+        }
         public bool IsTerminal => Status == WorkJobStatus.Completed || Status == WorkJobStatus.Cancelled || Status == WorkJobStatus.Failed;
 
         public void SetPriority(WorkPriority priority)
@@ -374,11 +385,13 @@ namespace Game.Domain.Work
         public WorkOrderState(long id, WorkJobType type, WorkPriority priority, WorkTarget target,
             WorkTarget? destination, StableEntityId? assigneeId, WorkGroupId? groupId,
             ResourceId? resourceId, ResourceQuantity quantity, bool exclusiveTarget,
-            WorkJobStatus status, WorkClaimState claimState, long queueOrder = 0)
+            WorkJobStatus status, WorkClaimState claimState, long queueOrder = 0, long progressTicks = 0)
         {
             Id = id; Type = type; Priority = priority; Target = target; Destination = destination;
             AssigneeId = assigneeId; GroupId = groupId; ResourceId = resourceId; Quantity = quantity;
             ExclusiveTarget = exclusiveTarget; Status = status; ClaimState = claimState; QueueOrder = queueOrder;
+            if (progressTicks < 0) throw new ArgumentOutOfRangeException(nameof(progressTicks));
+            ProgressTicks = progressTicks;
         }
         public long Id { get; }
         public WorkJobType Type { get; }
@@ -393,6 +406,7 @@ namespace Game.Domain.Work
         public WorkJobStatus Status { get; }
         public WorkClaimState ClaimState { get; }
         public long QueueOrder { get; }
+        public long ProgressTicks { get; }
     }
 
     public sealed class WorkSaveState

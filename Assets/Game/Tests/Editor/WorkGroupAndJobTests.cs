@@ -16,6 +16,7 @@ using Game.Simulation.Resources;
 using Game.Simulation.Time;
 using Game.Simulation.Tiers;
 using Game.Simulation.Work;
+using Game.Simulation.Buildings;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -296,13 +297,14 @@ namespace Game.Tests
             var work = new WorkManager(characters);
             var claims = new HaulClaimRegistry();
             var world = new Tier1AiWorld(new HaulWorldQuery(inventories, piles, buildings, claims), claims,
-                new ResourceTransferService(inventories));
+                new ResourceTransferService(inventories), buildings: buildings);
             var registry = new Tier1AiAgentRegistry();
             var settings = new Tier1AiSettings(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1),
                 TimeSpan.FromSeconds(30), Math.Max(agentCount, 1), Math.Max(agentCount, 1),
                 Math.Max(agentCount, 1), 100, 2.5f, 4, 0.15d, 0d, 0d, 360d);
             var scheduler = new Tier1AiScheduler(characters, registry, world, settings, work);
             var fixture = new Fixture(resources, inventories, pile, storage, characters, claims, work, scheduler);
+            fixture.World = world;
             for (var i = 0; i < agentCount; i++)
             {
                 var character = CreateCharacter("Agent" + i);
@@ -317,6 +319,41 @@ namespace Game.Tests
                 fixture.Movements.Add(movement);
             }
             return fixture;
+        }
+
+        [Test]
+        public void DemolitionWaitsForArrivalCanBeCancelledAndRequiresSustainedWork()
+        {
+            var fixture = CreateFixture(1, 1, 40, 1d);
+            var definition = new BuildingDefinition(new BuildingDefinitionId("test_hut"), "Hut", BuildingCategory.Shelter,
+                BuildingEra.StoneAge, "", "", null,
+                new ConstructionSpec(Array.Empty<ResourceAmount>(), TimeSpan.FromMinutes(20)),
+                new PlacementSpec(new BuildingFootprint(1, 1)), maintenance:
+                new MaintenanceSpec(0, 0, null, TimeSpan.FromMinutes(1)));
+            var buildings = fixture.World.Buildings;
+            var building = Building.CreateNew(definition, new GridCoordinate(4, 4), BuildingOrientation.North,
+                new Game.Domain.Combat.CombatSideId("player"));
+            building.MarkCompleted(); buildings.Add(building);
+            var grid = new BuildingOccupancyGrid();
+            var lifecycle = new BuildingLifecycleService(buildings, _ => definition,
+                new BuildingDamageService(buildings, new[] { definition }), fixture.Inventories,
+                new WorldPileService(fixture.Resources, fixture.Inventories), grid);
+            fixture.World.BuildingLifecycle = lifecycle;
+            lifecycle.ConfigureWork(fixture.Work, _ => new WorldPosition(4, 0, 3));
+            Assert.That(lifecycle.Demolish(building.Id, 0).Succeeded, Is.True);
+            fixture.AdvanceSeconds(2);
+            var job = lifecycle.DemolitionJob(building.Id);
+            fixture.AdvanceSeconds(5);
+            Assert.That(job.ProgressTicks, Is.Zero, "Walking is not dismantling work.");
+            fixture.Movements[0].Arrive(); fixture.AdvanceSeconds(2);
+            Assert.That(job.ProgressTicks, Is.GreaterThan(0));
+            Assert.That(buildings.TryGet(building.Id, out _), Is.True);
+            fixture.Work.Cancel(job.Id); fixture.AdvanceSeconds(2);
+            Assert.That(buildings.TryGet(building.Id, out _), Is.True, "Cancellation keeps the building.");
+            Assert.That(lifecycle.Demolish(building.Id, 0).Succeeded, Is.True);
+            fixture.AdvanceSeconds(2); fixture.Movements[0].Arrive(); fixture.AdvanceSeconds(2);
+            fixture.AdvanceSeconds(601);
+            Assert.That(buildings.TryGet(building.Id, out _), Is.False);
         }
 
         private static Character CreateCharacter(string name) => Character.CreateNew(new CharacterCreationData(
@@ -349,6 +386,7 @@ namespace Game.Tests
             public HaulClaimRegistry Claims { get; }
             public WorkManager Work { get; }
             public Tier1AiScheduler Scheduler { get; }
+            public Tier1AiWorld World { get; set; }
             public ResourceId Wood => new ResourceId("wood_log");
             public List<Character> Characters { get; } = new List<Character>();
             public List<Tier1AiAgentState> Agents { get; } = new List<Tier1AiAgentState>();

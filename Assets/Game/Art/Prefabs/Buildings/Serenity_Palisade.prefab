@@ -76,7 +76,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6379318517668075373}
+  - {fileID: 8396822621772847802}
   m_Father: {fileID: 4156315631074175912}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2294974369194653682
@@ -182,6 +182,38 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &5442812423020838970
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8396822621772847802}
+  m_Layer: 0
+  m_Name: Segment cell template
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &8396822621772847802
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5442812423020838970}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6379318517668075373}
+  m_Father: {fileID: 2004519138895009137}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6808985207252248693
 GameObject:
   m_ObjectHideFlags: 0
@@ -193,6 +225,7 @@ GameObject:
   - component: {fileID: 4156315631074175912}
   - component: {fileID: 3474921139669195631}
   - component: {fileID: 5765756516710935939}
+  - component: {fileID: 2530281747402260067}
   m_Layer: 0
   m_Name: Serenity_Palisade
   m_TagString: Untagged
@@ -250,37 +283,51 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2.8, z: 1}
   m_Center: {x: 0, y: 1.4, z: 0}
+--- !u!114 &2530281747402260067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6808985207252248693}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b292c448ce1337498f634b945f683e5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Buildings.BuildingZoneVisual
+  cellTemplate: {fileID: 5442812423020838970}
+  maximumVisualCells: 32
 --- !u!1001 &5061681736699433985
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 2004519138895009137}
+    m_TransformParent: {fileID: 8396822621772847802}
     m_Modifications:
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.475
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.475
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.475
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.0000011466443
+      value: 0.000001206994
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.047500014
+      value: 0.05000007
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.000000028312206
+      value: 0.000000029802322
       objectReference: {fileID: 0}
     - target: {fileID: 2213889598468129644, guid: 50d315b9a535cba43a1bf6f3ee62ae6f, type: 3}
       propertyPath: m_LocalRotation.w

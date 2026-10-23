@@ -19,11 +19,12 @@ namespace Game.Simulation.AI
         private readonly Game.Domain.Buildings.Building construction;
         private readonly int workRatePerThousand;
         private readonly Action onWorkExperience;
+        private readonly Func<TimeSpan, bool> advanceWork;
 
         public ManualDirectActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null,
             Game.Domain.Buildings.Building construction = null, int workRatePerThousand = 1000,
-            Action onWorkExperience = null)
+            Action onWorkExperience = null, Func<TimeSpan, bool> advanceWork = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
@@ -35,6 +36,7 @@ namespace Game.Simulation.AI
             if (workRatePerThousand <= 0) throw new ArgumentOutOfRangeException(nameof(workRatePerThousand));
             this.workRatePerThousand = workRatePerThousand;
             this.onWorkExperience = onWorkExperience;
+            this.advanceWork = advanceWork;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
             movement.MoveTo(job.Target.Position, 0.9f);
@@ -69,7 +71,11 @@ namespace Game.Simulation.AI
                 agent.SetAction(Kind, AiActionPhase.Working);
             }
             workElapsed += simulationDelta;
-            if (construction != null && construction.ConstructionRequiredTicks > 0)
+            if (advanceWork != null)
+            {
+                if (!advanceWork(TimeSpan.FromTicks(checked(simulationDelta.Ticks * workRatePerThousand / 1000L)))) return;
+            }
+            else if (construction != null && construction.ConstructionRequiredTicks > 0)
             {
                 construction.AdvanceConstruction(TimeSpan.FromTicks(checked(
                     simulationDelta.Ticks * workRatePerThousand / 1000L)));

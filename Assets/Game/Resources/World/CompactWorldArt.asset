@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7a9218baba51e04db3d108218e90e96, type: 3}
-  m_Name: CompactWorldArt
+  m_Name: 
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.CompactWorldArtCatalog
   HuntingDeer: {fileID: 5161562144378933552, guid: 5a886efd813d9bb488b6dd699aee4f1c, type: 3}
   StoneOutcrop: {fileID: 5355182246183666131, guid: 69190533c4b57dd42a0450f2bd12ca99, type: 3}

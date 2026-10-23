@@ -38,8 +38,11 @@ namespace Game.Infrastructure
             public Vector3 Origin;
             public float Phase;
             public TextMesh HealthLabel;
+            public Animator Animator;
         }
         private readonly List<AnimalView> animals = new List<AnimalView>();
+        private LocalSceneCompositionRoot session;
+        private float animalTime;
 
         public TiledWorldPopulationPlan Plan { get; private set; }
         public int ActiveTileViewCount => tileViews.Count;
@@ -60,6 +63,7 @@ namespace Game.Infrastructure
             worldPiles = pileService ?? throw new ArgumentNullException(nameof(pileService));
             inventories = inventoryRegistry ?? throw new ArgumentNullException(nameof(inventoryRegistry));
             seed = worldSeed;
+            session = FindAnyObjectByType<LocalSceneCompositionRoot>();
             art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
@@ -214,13 +218,16 @@ namespace Game.Infrastructure
                 Transform = view.transform,
                 Origin = view.transform.position,
                 Phase = stableIndex * 0.73f,
+                Animator = view.GetComponentInChildren<Animator>(true),
                 HealthLabel = label
             });
         }
 
         private void Update()
         {
-            var now = Time.time;
+            var delta = session?.Clock?.State.IsPaused == true ? 0f : Time.deltaTime;
+            animalTime += delta;
+            var now = animalTime;
             var camera = Camera.main;
             for (var index = animals.Count - 1; index >= 0; index--)
             {
@@ -228,8 +235,22 @@ namespace Game.Infrastructure
                 if (animal.Transform == null) { animals.RemoveAt(index); continue; }
                 var offset = new Vector3(Mathf.Sin(now * 0.32f + animal.Phase), 0f,
                     Mathf.Cos(now * 0.27f + animal.Phase)) * 2.4f;
-                animal.Transform.position = Vector3.Lerp(animal.Transform.position, animal.Origin + offset,
-                    Time.deltaTime * 0.8f);
+                var previous = animal.Transform.position;
+                var next = Vector3.MoveTowards(previous, animal.Origin + offset, delta * .85f);
+                if (terrainWorld.HeightSampler.IsBuildable(next.x, next.z))
+                    next.y = terrainWorld.HeightSampler.SampleHeight(next.x, next.z) + .1f;
+                else next = previous;
+                var direction = next - previous; direction.y = 0f;
+                animal.Transform.position = next;
+                if (direction.sqrMagnitude > .000001f)
+                    animal.Transform.rotation = Quaternion.RotateTowards(animal.Transform.rotation,
+                        Quaternion.LookRotation(direction), delta * 150f);
+                if (animal.Animator != null)
+                {
+                    var speed = delta > 0f ? direction.magnitude / delta : 0f;
+                    animal.Animator.SetBool("Moving", speed > .03f);
+                    animal.Animator.speed = delta <= 0f ? 0f : speed > .03f ? Mathf.Clamp(speed / .85f, .2f, 1.2f) : 1f;
+                }
                 var hp = 120;
                 var task = production.ActiveTasks.Where(x => x.SiteId == animal.SiteId &&
                         x.RecipeId.ToString() == "hunt_animal")

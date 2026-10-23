@@ -1,5 +1,30 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-23 shore/lifecycle player feedback
+
+The new feedback slice replaces instant demolition with worker travel and skill-scaled dismantling work,
+including cancellation, visible progress and persisted work ticks. Buildings no longer take calendar-age
+damage; damage no longer paints friendly models uniformly brown. Palisades and paths use held-LMB straight
+segments up to 32 cells, with cell-scaled costs/work. The menu exposes one draggable Garden (2x2–8x8), retaining
+the legacy crop definition only for compatibility. Meeting/training/gathering models have human-scale height
+limits instead of the incorrect 20cm limit. Deer switch imported idle/walk animation, face movement and follow
+ground height; paused games stop their presentation movement.
+
+Fishing camps are dry shoreline outposts, no longer restricted to the starter territory. Cyan shore posts and
+4x3 outlines are created only after canonical terrain and real physics/placement checks; placement snaps within
+nine metres. Full-scene PlayMode and the actual Windows Player verify all eleven lake markers allow placement.
+No new vendor package was imported. Training raises combat skill and palisades block passage. Meeting Area's
+social scenario/mood effect is not connected; the UI now explicitly states that limitation rather than promising
+a passive bonus. The existence of an unused morale coefficient is not evidence that the effect works.
+
+Verification: initial focused EditMode 22/22; expanded affected EditMode 41/41, including worker arrival,
+cancellation and work-progress XML round-trip; full-scene PlayMode 1/1 including UI, starter residents and all
+lake landing checks. Native Player smoke passed with 11 valid landings and its captured gameplay image was
+inspected. The final Windows build at `Builds/P109ShoreLifecycle/Serenity.exe` succeeds with 0 errors / 27
+warnings, GUID `cc026ce5123e4869aec37f24e2d1e20f`; commands are in `P109_BUILDINGS_IMPLEMENTATION.md`.
+All 44 protected baseline files match. F1 remains open for
+broader multi-settlement/tier acceptance and the user's gameplay/visual review; this is not P10.10 completion.
+
 ## Working checkpoint — 2026-10-22 Stone Age buildings E1-E4
 
 E1-E4 are complete. The building catalog now contains fourteen additional playable definitions and

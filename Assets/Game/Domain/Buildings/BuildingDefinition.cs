@@ -92,5 +92,16 @@ namespace Game.Domain.Buildings
         public int FireDamagePerThousand { get; }
         public int CombatDamagePerThousand { get; }
         public bool Capturable { get; }
+
+        public BuildingDefinition ForSegmentLength(int cellCount)
+        {
+            if (Placement.SpatialForm != BuildingSpatialForm.Segment || cellCount <= 1) return this;
+            return new BuildingDefinition(Id, DisplayName, Category, Era, Description, IconKey, RequiredTechnologies,
+                new ConstructionSpec(Construction.Cost.Select(x => new ResourceAmount(x.ResourceId,
+                    new ResourceQuantity(checked(x.Quantity.Units * cellCount)))),
+                    TimeSpan.FromTicks(checked(Construction.WorkRequiredTicks * cellCount)), Construction.StageCount),
+                Placement, Housing, Storage, Workplace, Production, Maintenance, Upgrades,
+                MaxIntegrity, FireDamagePerThousand, CombatDamagePerThousand, Capturable);
+        }
     }
 }

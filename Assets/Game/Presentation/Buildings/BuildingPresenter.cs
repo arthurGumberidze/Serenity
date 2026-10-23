@@ -65,11 +65,8 @@ namespace Game.Presentation.Buildings
             RefreshConstruction();
             RefreshCampfire();
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
-            var hasTint = building.IsDestroyed || building.StructuralStatus == BuildingStructuralStatus.Critical ||
-                building.StructuralStatus == BuildingStructuralStatus.Damaged || building.OwnerSideId.ToString() == "enemy";
+            var hasTint = building.IsDestroyed || building.OwnerSideId.ToString() == "enemy";
             var color = building.IsDestroyed ? new Color(0.18f, 0.16f, 0.15f) :
-                building.StructuralStatus == BuildingStructuralStatus.Critical ? new Color(0.48f, 0.22f, 0.12f) :
-                building.StructuralStatus == BuildingStructuralStatus.Damaged ? new Color(0.62f, 0.42f, 0.18f) :
                 building.OwnerSideId.ToString() == "enemy" ? new Color(0.65f, 0.24f, 0.22f) : Color.white;
             foreach (var renderer in GetComponentsInChildren<Renderer>(true))
             {

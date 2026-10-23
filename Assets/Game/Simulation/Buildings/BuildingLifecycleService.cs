@@ -7,6 +7,9 @@ using Game.Domain.Resources;
 using Game.Domain.World;
 using Game.Simulation.Production;
 using Game.Simulation.Resources;
+using Game.Domain.AI;
+using Game.Domain.Work;
+using Game.Simulation.Work;
 
 namespace Game.Simulation.Buildings
 {
@@ -35,7 +38,29 @@ namespace Game.Simulation.Buildings
         private readonly WorldPileService piles;
         private readonly BuildingOccupancyGrid occupancy;
         private readonly ProductionService production;
-        private long lastWearTick;
+        private WorkManager work;
+        private Func<Building, WorldPosition> approachPosition;
+
+        public void ConfigureWork(WorkManager manager, Func<Building, WorldPosition> approach)
+        { work = manager ?? throw new ArgumentNullException(nameof(manager)); approachPosition = approach; }
+
+        public WorkOrder DemolitionJob(StableEntityId id) => work?.Jobs.FirstOrDefault(x =>
+            x.Type == WorkJobType.Demolish && x.Target.EntityId == id && !x.IsTerminal);
+
+        public long DemolitionRequiredTicks(Building building) =>
+            Math.Max(TimeSpan.FromMinutes(10).Ticks, definitions(building.DefinitionId)
+                .ForSegmentLength(building.PlacementCells.Count).Construction.WorkRequiredTicks / 2);
+
+        public bool AdvanceDemolition(WorkOrder job, TimeSpan delta, long calendarTick)
+        {
+            if (job == null || job.Type != WorkJobType.Demolish || job.Status != WorkJobStatus.Active ||
+                !job.AssigneeId.HasValue || DemolitionJob(job.Target.EntityId) != job) return false;
+            if (!buildings.TryGet(job.Target.EntityId, out var building) || !building.IsOperational)
+            { work.Fail(job.Id); return false; }
+            job.AdvanceProgress(delta);
+            if (job.ProgressTicks < DemolitionRequiredTicks(building)) return false;
+            return CompleteDemolition(building.Id, calendarTick).Succeeded;
+        }
 
         private readonly struct Deduction
         {
@@ -66,23 +91,8 @@ namespace Game.Simulation.Buildings
         public int AdvanceWearTo(long targetCalendarTick)
         {
             if (targetCalendarTick < 0) throw new ArgumentOutOfRangeException(nameof(targetCalendarTick));
-            var changes = 0;
-            foreach (var building in buildings.All.Where(x => x.IsOperational).OrderBy(x => x.Id).ToArray())
-            {
-                var spec = definitions(building.DefinitionId).Maintenance;
-                if (spec == null || spec.WearIntervalTicks <= 0 || spec.WearPerInterval <= 0) continue;
-                var first = checked((lastWearTick / spec.WearIntervalTicks + 1L) * spec.WearIntervalTicks);
-                for (var tick = first; tick <= targetCalendarTick && !building.IsDestroyed;
-                     tick = checked(tick + spec.WearIntervalTicks))
-                {
-                    var eventId = OperationId(building.Id, "wear", tick);
-                    var result = damage.ApplyDamage(building.Id, eventId, spec.WearPerInterval,
-                        BuildingDamageType.Generic, tick);
-                    if (result.Succeeded && result.Applied > 0) changes++;
-                }
-            }
-            lastWearTick = targetCalendarTick;
-            return changes;
+            // Calendar age never damages structures, including definitions from older saves.
+            return 0;
         }
 
         public BuildingLifecycleResult Repair(StableEntityId buildingId, StableEntityId operationId,
@@ -129,6 +139,18 @@ namespace Game.Simulation.Buildings
         {
             if (!buildings.TryGet(buildingId, out var building)) return Fail(BuildingLifecycleFailure.MissingBuilding);
             if (!building.IsOperational) return Fail(BuildingLifecycleFailure.InactiveBuilding);
+            if (definitions(building.DefinitionId).Maintenance?.CanDemolish != true || work == null || approachPosition == null)
+                return Fail(BuildingLifecycleFailure.Unsupported);
+            if (DemolitionJob(buildingId) != null) return Fail(BuildingLifecycleFailure.DuplicateOperation);
+            work.CreateDirectJob(WorkJobType.Demolish, null,
+                WorkTarget.ForEntity(WorkTargetKind.Building, buildingId, approachPosition(building)), WorkPriority.High);
+            return new BuildingLifecycleResult(BuildingLifecycleFailure.None);
+        }
+
+        private BuildingLifecycleResult CompleteDemolition(StableEntityId buildingId, long calendarTick)
+        {
+            if (!buildings.TryGet(buildingId, out var building)) return Fail(BuildingLifecycleFailure.MissingBuilding);
+            if (!building.IsOperational) return Fail(BuildingLifecycleFailure.InactiveBuilding);
             var definition = definitions(building.DefinitionId);
             if (definition.Maintenance == null || !definition.Maintenance.CanDemolish)
                 return Fail(BuildingLifecycleFailure.Unsupported);
@@ -139,7 +161,7 @@ namespace Game.Simulation.Buildings
                 piles.SpillStorage(building.Id, building.Coordinate);
                 inventories.Remove(storageOwner, storage);
             }
-            foreach (var amount in definition.Construction.Cost)
+            foreach (var amount in definition.ForSegmentLength(building.PlacementCells.Count).Construction.Cost)
             {
                 var returned = amount.Quantity.Units * definition.Maintenance.DemolitionReturnPerThousand / 1000L;
                 if (returned > 0) piles.Create(amount.ResourceId, new ResourceQuantity(returned), building.Coordinate);

@@ -9,6 +9,8 @@ using Game.Domain.Health;
 using Game.Domain.Resources;
 using Game.Domain.Production;
 using Game.Domain.World;
+using Game.Domain.Work;
+using Game.Simulation.Work;
 using Game.Presentation.Buildings;
 using Game.Presentation.Production;
 using Game.Simulation.Buildings;
@@ -59,7 +61,8 @@ namespace Game.Tests.Editor
                 var finalStage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
                     .OrderByDescending(x => x.RequiredStage).First();
                 Assert.That(finalStage.GetComponentsInChildren<Renderer>(true), Is.Not.Empty, id);
-                Assert.That(finalStage.transform.Find("Finished authored model"), Is.Not.Null, id);
+                Assert.That(finalStage.GetComponentsInChildren<Transform>(true)
+                    .Any(x => x.name == "Finished authored model"), Is.True, id);
             }
             Assert.That(catalog.ResolvePrefab(new BuildingDefinitionId("primitive_garden"))
                 .GetComponent<BuildingZoneVisual>(), Is.Not.Null);
@@ -187,8 +190,10 @@ namespace Game.Tests.Editor
             var lifecycle = new BuildingLifecycleService(registry, id => definitions[id], damage, inventories, piles,
                 occupancy);
 
-            Assert.That(lifecycle.AdvanceWearTo(TimeSpan.FromHours(24).Ticks), Is.EqualTo(1));
             Assert.That(lifecycle.AdvanceWearTo(TimeSpan.FromHours(24).Ticks), Is.EqualTo(0));
+            Assert.That(lifecycle.AdvanceWearTo(TimeSpan.FromHours(24).Ticks), Is.EqualTo(0));
+            Assert.That(building.CurrentIntegrity, Is.EqualTo(1000));
+            damage.ApplyDamage(building.Id, Id(98), 5, BuildingDamageType.Generic, 1);
             Assert.That(building.CurrentIntegrity, Is.EqualTo(995));
             var repairId = Id(100);
             Assert.That(lifecycle.Repair(building.Id, repairId, TimeSpan.FromMinutes(30), 2,
@@ -203,11 +208,89 @@ namespace Game.Tests.Editor
             Assert.That(building.Id, Is.EqualTo(stableId));
             Assert.That(building.DefinitionId, Is.EqualTo(upgraded.Id));
             Assert.That(inventories.Get(funds.InventoryOwner).GetAmount(stone).Units, Is.EqualTo(0));
+            var people = new CharacterRegistry(); var worker = Person(240, "Builder"); people.Add(worker);
+            var work = new WorkManager(people);
+            lifecycle.ConfigureWork(work, _ => new WorldPosition(0, 0, -2));
             Assert.That(lifecycle.Demolish(building.Id, 5).Succeeded, Is.True);
+            var job = lifecycle.DemolitionJob(building.Id);
+            Assert.That(registry.TryGet(stableId, out _), Is.True, "Request must not remove the building.");
+            Assert.That(lifecycle.AdvanceDemolition(job, TimeSpan.FromHours(1), 5), Is.False, "No worker, no work.");
+            Assert.That(lifecycle.Demolish(building.Id, 5).Failure, Is.EqualTo(BuildingLifecycleFailure.DuplicateOperation));
+            work.Assign(job.Id, worker.Id); work.Start(job.Id);
+            Assert.That(lifecycle.AdvanceDemolition(job, TimeSpan.FromMinutes(5), 6), Is.False);
+            var saved = work.CaptureState();
+            var codec = typeof(Game.Infrastructure.SaveXmlCodec);
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+            var xml = codec.GetMethod("SerializeWork", flags).Invoke(null, new object[] { saved, true });
+            var decoded = (WorkSaveState)codec.GetMethod("DeserializeWork", flags).Invoke(null, new[] { xml, (object)true });
+            work.RestoreState(decoded);
+            job = lifecycle.DemolitionJob(building.Id);
+            Assert.That(job.ProgressTicks, Is.EqualTo(TimeSpan.FromMinutes(5).Ticks));
+            Assert.That(lifecycle.AdvanceDemolition(job, TimeSpan.FromMinutes(5), 7), Is.True);
+            Assert.That(lifecycle.AdvanceDemolition(job, TimeSpan.FromMinutes(5), 8), Is.False);
             Assert.That(registry.TryGet(stableId, out _), Is.False);
             Assert.That(occupancy.IsOccupied(new GridCoordinate(0, 0)), Is.False);
             Assert.That(inventories.All.Sum(x => x.GetAmount(stone).Units), Is.EqualTo(2), "Stored cargo must be spilled.");
             Assert.That(inventories.All.Sum(x => x.GetAmount(wood).Units), Is.EqualTo(28), "Half of upgrade target construction cost is returned once.");
+        }
+
+        [TestCase(20261021L)]
+        [TestCase(166496L)]
+        public void EveryLakeHasDryLevelLandingCandidates(long seed)
+        {
+            var world = Game.Infrastructure.TiledWorldDefinitionLoader.LoadReference();
+            var heights = new TiledWorldHeightSampler(world, seed);
+            foreach (var lake in world.Zones.Where(x => x.Uses.HasFlag(WorldZoneUse.Fishing)))
+            {
+                var candidates = FishingLandingPlanner.Candidates(heights, lake).Take(3).ToArray();
+                Assert.That(candidates, Is.Not.Empty, lake.Id);
+                foreach (var cell in candidates)
+                {
+                    Assert.That(FishingLandingPlanner.IsLevelDryFootprint(heights, cell), Is.True, lake.Id);
+                    Assert.That(FishingLandingPlanner.IsNearShore(heights, cell.X + 1.5f, cell.Z + 1f), Is.True, lake.Id);
+                }
+            }
+        }
+
+        [TestCase(40, 5, 32)]
+        [TestCase(-8, 1, 9)]
+        [TestCase(0, -12, 13)]
+        public void DragSegmentsAreBoundedConnectedAndCostEveryCell(int x, int z, int expected)
+        {
+            var cells = BuildingPlacementController.CreateSegmentCells(default, new GridCoordinate(x, z));
+            Assert.That(cells.Count, Is.EqualTo(expected));
+            for (var i = 1; i < cells.Count; i++)
+                Assert.That(Math.Abs(cells[i].X - cells[i-1].X) + Math.Abs(cells[i].Z - cells[i-1].Z), Is.EqualTo(1));
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var wall = catalog.ResolveDefinition(new BuildingDefinitionId("palisade"));
+            Assert.That(wall.ForSegmentLength(cells.Count).Construction.Cost.Sum(c => c.Quantity.Units),
+                Is.EqualTo(wall.Construction.Cost.Sum(c => c.Quantity.Units) * expected));
+            Assert.That(wall.ForSegmentLength(cells.Count).Construction.WorkRequiredTicks,
+                Is.EqualTo(wall.Construction.WorkRequiredTicks * expected));
+        }
+
+        [Test]
+        public void OutdoorFacilitiesKeepHumanScaleAndBuildingsNeverAge()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            foreach (var entry in catalog.Entries)
+                Assert.That(entry.CreateDefinition().Maintenance?.WearPerInterval ?? 0, Is.Zero, entry.DefinitionId);
+            foreach (var id in new[] { "meeting_area", "training_ground", "gathering_area" })
+            {
+                var prefab = catalog.ResolvePrefab(new BuildingDefinitionId(id));
+                var stage = prefab.GetComponentsInChildren<BuildingConstructionStageVisual>(true)
+                    .OrderByDescending(x => x.RequiredStage).First();
+                var renderers = stage.GetComponentsInChildren<Renderer>(true);
+                var bounds = renderers[0].bounds;
+                foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                Assert.That(Mathf.Max(bounds.size.x, bounds.size.z), Is.GreaterThan(1.5f), id);
+                Assert.That(bounds.size.y, Is.GreaterThan(.45f), id);
+            }
+            var deer = UnityEngine.Resources.Load<Game.Presentation.Environment.CompactWorldArtCatalog>("World/CompactWorldArt")
+                .HuntingDeer.GetComponentInChildren<Animator>(true);
+            Assert.That(deer.runtimeAnimatorController.animationClips.Any(c => c.name.Contains("walk")), Is.True);
         }
 
         private static BuildingDefinition Definition(string id, int housing = 0, int workers = 0,

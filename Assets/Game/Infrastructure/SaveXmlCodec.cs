@@ -1545,6 +1545,7 @@ namespace Game.Infrastructure
                 new XElement("quantity", job.Quantity.Units), new XElement("exclusive", job.ExclusiveTarget),
                  new XElement("status", (int)job.Status), new XElement("claim", (int)job.ClaimState));
                 if (includeContextOrders) item.Add(new XElement("queueOrder", job.QueueOrder));
+                if (job.ProgressTicks > 0) item.Add(new XElement("progressTicks", job.ProgressTicks));
                 return item;
             })));
             return element;
@@ -1570,11 +1571,13 @@ namespace Game.Infrastructure
             });
             var jobs = Items(element.Element("jobs"), "job", value =>
             {
-                RequireFields(value, hasContextOrders
+                var jobFields = hasContextOrders
                     ? new[] { "id", "type", "priority", "target", "hasDestination", "destination",
                         "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim", "queueOrder" }
                     : new[] { "id", "type", "priority", "target", "hasDestination", "destination",
-                        "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim" });
+                        "assigneeId", "groupId", "resourceId", "quantity", "exclusive", "status", "claim" };
+                RequireFields(value, value.Element("progressTicks") == null ? jobFields :
+                    jobFields.Concat(new[] { "progressTicks" }).ToArray());
                 var hasDestination = XmlConvert.ToBoolean(Value(value, "hasDestination"));
                 var destinationElement = value.Element("destination");
                 if (!hasDestination && destinationElement.HasElements) throw new FormatException("Unexpected work destination.");
@@ -1588,7 +1591,8 @@ namespace Game.Infrastructure
                     string.IsNullOrEmpty(resourceText) ? (ResourceId?)null : new ResourceId(resourceText),
                     new ResourceQuantity(Long(value, "quantity")), XmlConvert.ToBoolean(Value(value, "exclusive")),
                     (WorkJobStatus)Int(value, "status"), (WorkClaimState)Int(value, "claim"),
-                    hasContextOrders ? Long(value, "queueOrder") : Long(value, "id"));
+                    hasContextOrders ? Long(value, "queueOrder") : Long(value, "id"),
+                    value.Element("progressTicks") == null ? 0 : Long(value, "progressTicks"));
             });
             return new WorkSaveState(Long(element, "nextJobId"), groups, jobs,
                 hasContextOrders ? Long(element, "nextQueueOrder") : 1,

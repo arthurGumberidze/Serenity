@@ -27,7 +27,7 @@ namespace Game.Presentation.Buildings
             while (instances.Count < ordered.Length)
             {
                 var instance = Instantiate(cellTemplate, cellTemplate.transform.parent);
-                instance.name = "Garden cell visual";
+                instance.name = "Placement cell visual";
                 instances.Add(instance);
             }
             var centerX = (ordered.Min(x => x.X) + ordered.Max(x => x.X)) * .5f;
@@ -37,8 +37,12 @@ namespace Game.Presentation.Buildings
                 var active = i < ordered.Length;
                 instances[i].SetActive(active);
                 if (!active) continue;
+                var offset = new Vector3((ordered[i].X - centerX) * gridSize, 0f, (ordered[i].Z - centerZ) * gridSize);
                 instances[i].transform.localPosition = cellTemplate.transform.localPosition +
-                    new Vector3((ordered[i].X - centerX) * gridSize, 0f, (ordered[i].Z - centerZ) * gridSize);
+                    Quaternion.Inverse(transform.rotation) * offset;
+                if (maximumVisualCells == 32 && ordered.Length > 1)
+                    instances[i].transform.rotation = Quaternion.Euler(0f,
+                        ordered[0].X == ordered[ordered.Length - 1].X ? 90f : 0f, 0f);
             }
             var box = GetComponent<BoxCollider>();
             if (box == null) return;

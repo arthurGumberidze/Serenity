@@ -38,6 +38,19 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi, Is.Not.Null);
             Assert.That(root.MaleDemoCharacter, Is.Not.Null);
             Assert.That(root.FemaleDemoCharacter, Is.Not.Null);
+            var landingMarkers = root.GetComponentsInChildren<Transform>(true)
+                .Where(x => x.name.StartsWith("Fishing landing ")).ToArray();
+            Assert.That(landingMarkers.Length, Is.EqualTo(root.WorldDefinition.Zones.Count(x =>
+                x.Uses.HasFlag(Game.Domain.World.WorldZoneUse.Fishing))), "Every lake needs a valid marked landing.");
+            root.Research.CompleteAllForDiagnostics();
+            foreach (var marker in landingMarkers)
+            {
+                var controller = root.BuildingPlacementController;
+                Assert.That(controller.TryStartPlacement(new BuildingDefinitionId("fishing_camp")), Is.True);
+                controller.TryMovePreviewToWorldPoint(marker.position);
+                Assert.That(controller.LastPlacementFailure, Is.EqualTo(Game.Simulation.Buildings.PlacementFailureReason.None), marker.name);
+                controller.CancelPlacement();
+            }
             foreach (var prefab in new[] { root.StoneAgeSettlement.ShelterPrefab,
                          root.StoneAgeSettlement.StoragePrefab, root.StoneAgeSettlement.CropPlotPrefab })
             {

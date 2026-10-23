@@ -58,6 +58,7 @@ namespace Game.Presentation.Buildings
         public BuildingDefinitionId? ActiveDefinitionId => activeDefinition?.Id;
         public BuildingPresenter LastPlacedPresenter { get; private set; }
         public float GridSize => gridSize;
+        public Func<Vector3, Vector3?> ShoreSnap { get; set; }
         public event Action<Building, BuildingPresenter> BuildingPlaced;
         public event Action BuildMenuRequested;
 
@@ -109,10 +110,15 @@ namespace Game.Presentation.Buildings
         public bool TryMovePreviewToWorldPoint(Vector3 worldPoint)
         {
             if (!IsActive) return false;
+            if (activeDefinition.Id == new BuildingDefinitionId("fishing_camp"))
+            {
+                var snapped = ShoreSnap?.Invoke(worldPoint);
+                if (snapped.HasValue) { worldPoint = snapped.Value; orientation = BuildingOrientation.North; }
+            }
             if (zoneDragActive)
             {
-                authoredPlacementCells = CreateRectangularZoneCells(zoneDragAnchor, WorldToCell(worldPoint),
-                    GardenMinimumSide, GardenMaximumSide);
+                authoredPlacementCells = IsDragSegment() ? CreateSegmentCells(zoneDragAnchor, WorldToCell(worldPoint)) :
+                    CreateRectangularZoneCells(zoneDragAnchor, WorldToCell(worldPoint), GardenMinimumSide, GardenMaximumSide);
                 return EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, worldPoint);
             }
             connectedWorldSurface ??= FindAnyObjectByType<P102WorldPlacementSurface>();
@@ -155,6 +161,7 @@ namespace Game.Presentation.Buildings
         public void RotatePreview()
         {
             if (!IsActive) return;
+            if (IsVariableGarden() || IsDragSegment()) return; // World-grid drag defines orientation.
             var center = previewObject != null ? previewObject.transform.position : spawner.GridToWorld(previewCoordinate);
             orientation = orientation.RotateClockwise();
             TryMovePreviewToWorldPoint(center);
@@ -301,13 +308,13 @@ namespace Game.Presentation.Buildings
         {
             if (inputSource != null && raycaster != null && raycaster.IsPointerBlockedByUi(inputSource.PointerPosition))
                 return;
-            if (IsVariableGarden() && raycaster != null && inputSource != null &&
+            if ((IsVariableGarden() || IsDragSegment()) && raycaster != null && inputSource != null &&
                 raycaster.TryGetGroundHit(inputSource.PointerPosition, out var hit))
             {
                 zoneDragAnchor = WorldToCell(hit.point);
                 zoneDragActive = true;
-                authoredPlacementCells = CreateRectangularZoneCells(zoneDragAnchor, zoneDragAnchor,
-                    GardenMinimumSide, GardenMaximumSide);
+                authoredPlacementCells = IsDragSegment() ? CreateSegmentCells(zoneDragAnchor, zoneDragAnchor) :
+                    CreateRectangularZoneCells(zoneDragAnchor, zoneDragAnchor, GardenMinimumSide, GardenMaximumSide);
                 EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, hit.point);
                 return;
             }
@@ -352,6 +359,25 @@ namespace Game.Presentation.Buildings
 
         private bool IsVariableGarden() => activeDefinition != null &&
             activeDefinition.Id == new BuildingDefinitionId("primitive_garden");
+
+        private bool IsDragSegment() => activeDefinition != null &&
+            (activeDefinition.Id == new BuildingDefinitionId("palisade") ||
+             activeDefinition.Id == new BuildingDefinitionId("primitive_path"));
+
+        public static IReadOnlyList<GridCoordinate> CreateSegmentCells(GridCoordinate anchor,
+            GridCoordinate pointer, int maximumCells = 32)
+        {
+            if (maximumCells < 1) throw new ArgumentOutOfRangeException(nameof(maximumCells));
+            var dx = pointer.X - anchor.X;
+            var dz = pointer.Z - anchor.Z;
+            var alongX = Math.Abs(dx) >= Math.Abs(dz);
+            var length = Math.Min(maximumCells, Math.Abs(alongX ? dx : dz) + 1);
+            var direction = Math.Sign(alongX ? dx : dz);
+            var cells = new List<GridCoordinate>(length);
+            for (var i = 0; i < length; i++) cells.Add(new GridCoordinate(
+                anchor.X + (alongX ? i * direction : 0), anchor.Z + (alongX ? 0 : i * direction), anchor.Level));
+            return cells;
+        }
 
         private GridCoordinate WorldToCell(Vector3 worldPoint) => new GridCoordinate(
             Mathf.RoundToInt((worldPoint.x - gridOrigin.x) / gridSize),

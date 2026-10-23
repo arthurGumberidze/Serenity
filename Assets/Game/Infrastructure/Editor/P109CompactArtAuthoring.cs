@@ -53,11 +53,22 @@ public static class P109CompactArtAuthoring
                 .OfType<AnimationClip>().Where(x => !x.name.StartsWith("__preview__")).ToArray();
             var idle = clips.FirstOrDefault(x => x.name.IndexOf("idle", StringComparison.OrdinalIgnoreCase) >= 0);
             if (idle == null) throw new InvalidOperationException("Deer idle animation missing");
+            var walk = clips.FirstOrDefault(x => x.name.IndexOf("walk", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (walk == null) throw new InvalidOperationException("Deer walk animation missing");
             var path = Output + "/DeerIdle.controller";
             var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(path) ??
                 AnimatorController.CreateAnimatorControllerAtPath(path);
-            if (controller.layers[0].stateMachine.states.Length == 0)
-                controller.layers[0].stateMachine.AddState("Idle").motion = idle;
+            var machine = controller.layers[0].stateMachine;
+            foreach (var state in machine.states) machine.RemoveState(state.state);
+            controller.parameters = new[] { new AnimatorControllerParameter { name = "Moving", type = AnimatorControllerParameterType.Bool } };
+            var idleState = machine.AddState("Idle"); idleState.motion = idle;
+            var walkState = machine.AddState("Walk"); walkState.motion = walk;
+            machine.defaultState = idleState;
+            var start = idleState.AddTransition(walkState); start.hasExitTime = false; start.duration = .12f;
+            start.AddCondition(AnimatorConditionMode.If, 0f, "Moving");
+            var stop = walkState.AddTransition(idleState); stop.hasExitTime = false; stop.duration = .12f;
+            stop.AddCondition(AnimatorConditionMode.IfNot, 0f, "Moving");
+            EditorUtility.SetDirty(controller);
             animator.runtimeAnimatorController = controller;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;

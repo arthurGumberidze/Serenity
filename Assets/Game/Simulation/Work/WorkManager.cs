@@ -271,6 +271,7 @@ namespace Game.Simulation.Work
                     saved.Destination, saved.AssigneeId, saved.GroupId, saved.ResourceId, saved.Quantity,
                     saved.ExclusiveTarget, restoredQueueOrder);
                 order.RestoreRuntime(saved.Status, saved.ClaimState);
+                order.RestoreProgress(saved.ProgressTicks);
                 jobs.Add(saved.Id, order);
                 if (saved.ExclusiveTarget && !order.IsTerminal)
                 {
@@ -318,7 +319,7 @@ namespace Game.Simulation.Work
 
         private static WorkOrderState Capture(WorkOrder job) => new WorkOrderState(job.Id.Value,
             job.Type, job.Priority, job.Target, job.Destination, job.AssigneeId, job.GroupId,
-            job.ResourceId, job.Quantity, job.ExclusiveTarget, job.Status, job.ClaimState, job.QueueOrder);
+            job.ResourceId, job.Quantity, job.ExclusiveTarget, job.Status, job.ClaimState, job.QueueOrder, job.ProgressTicks);
 
         private long AllocateQueueOrder(WorkQueuePlacement placement)
         {

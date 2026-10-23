@@ -45,6 +45,12 @@ namespace Game.Infrastructure.Editor
         private const string LocalGameplayScenePath = "Assets/Scenes/LocalGameplay.unity";
 
         [MenuItem("Serenity/P10.9/Build Five Base Buildings")]
+        public static void BuildFeedbackAssets()
+        {
+            P109CompactArtAuthoring.Generate();
+            Build();
+        }
+
         public static void Build()
         {
             EnsureBasePrefabs();
@@ -133,7 +139,7 @@ namespace Game.Infrastructure.Editor
                     "A sturdier timber and hide home.", "building_stone_age_hut", 80, 3,
                     new[] { Cost("wood_log", 12), Cost("plant_fiber", 6), Cost("hide", 2) },
                     "shelter_construction").ConfigureHousing(4)
-                    .ConfigureMaintenance(24, 8, new[] { Cost("wood_log", 2), Cost("plant_fiber", 1) }, 30)
+                    .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 2), Cost("plant_fiber", 1) }, 30)
                     .ConfigureUpgrades(new[] { Upgrade("clan_house", 100, Cost("wood_log", 16), Cost("stone", 8), Cost("cured_hide", 4)) }),
                 Entry("campfire", "Campfire", BuildingCategory.Food, 2, 2, Load<GameObject>(CampfirePath),
                     "A controlled fire and the settlement's first cooking place.", "building_campfire", 35, 2,
@@ -184,22 +190,22 @@ namespace Game.Infrastructure.Editor
                 Entry("clan_house", "Clan House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
                     "A large shared home with room for an extended clan.", "building_clan_house", 150, 4,
                     new[] { Cost("wood_log", 26), Cost("stone", 12), Cost("cured_hide", 6) }, "organized_labor")
-                    .ConfigureHousing(10).ConfigureMaintenance(24, 6,
+                    .ConfigureHousing(10).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 3), Cost("plant_fiber", 2) }, 50),
                 Entry("healer_hut", "Healer Hut", BuildingCategory.Medical, 4, 4, Load<GameObject>(HealerHutPath),
                     "A sheltered medical workplace for treating injuries and disease.", "building_healer_hut", 100, 3,
                     new[] { Cost("wood_log", 12), Cost("stone", 5), Cost("plant_fiber", 8) }, "organized_labor")
-                    .ConfigureHousing(2).ConfigureWorkplace(2).ConfigureMaintenance(24, 7,
+                    .ConfigureHousing(2).ConfigureWorkplace(2).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 2), Cost("plant_fiber", 2) }, 35),
                 Entry("shrine", "Shrine", BuildingCategory.Community, 3, 3, Load<GameObject>(ShrinePath),
                     "A maintained communal place that supports settlement morale.", "building_shrine", 65, 3,
                     new[] { Cost("stone", 10), Cost("wood_log", 4) }, "organized_labor")
-                    .ConfigureWorkplace(1).ConfigureMaintenance(24, 5, new[] { Cost("stone", 2) }, 25,
+                    .ConfigureWorkplace(1).ConfigureMaintenance(0, 0, new[] { Cost("stone", 2) }, 25,
                         new[] { Cost("plant_fiber", 1) }),
                 Entry("chief_hut", "Chief Hut", BuildingCategory.Community, 5, 4, Load<GameObject>(ChiefHutPath),
                     "The chief's residence and the settlement governance workplace.", "building_chief_hut", 130, 4,
                     new[] { Cost("wood_log", 20), Cost("stone", 8), Cost("cured_hide", 5) }, "organized_labor")
-                    .ConfigureHousing(4).ConfigureWorkplace(1).ConfigureMaintenance(24, 6,
+                    .ConfigureHousing(4).ConfigureWorkplace(1).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 3), Cost("cured_hide", 1) }, 45),
                 Zone("meeting_area", "Meeting Area", BuildingCategory.Community, Load<GameObject>(MeetingAreaPath),
                     "A marked area for settlement gatherings.", 35, Cost("wood_log", 3), Cost("stone", 2))
@@ -211,7 +217,7 @@ namespace Game.Infrastructure.Editor
                     "A shoreline base required for organized fishing.", "building_fishing_camp", 70, 3,
                     new[] { Cost("wood_log", 8), Cost("plant_fiber", 6) }, "gathering")
                     .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach |
-                        BuildingPlacementConstraint.OwnedTerritory | BuildingPlacementConstraint.Shoreline)
+                        BuildingPlacementConstraint.Shoreline)
                     .ConfigureWorkplace(4),
                 Zone("gathering_area", "Gathering Area", BuildingCategory.Production, Load<GameObject>(GatheringAreaPath),
                     "A managed zone over wild berry and fibre sources.", 30, Cost("wood_log", 2), Cost("plant_fiber", 2))
@@ -268,7 +274,7 @@ namespace Game.Infrastructure.Editor
                 .ConfigureMetadata(BuildingEra.StoneAge, description, icon, technologies)
                 .ConfigureConstruction(minutes, stages).ConfigureEconomy(cost)
                 .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach)
-                .ConfigureMaintenance(24, 5, new[] { Cost("wood_log", 1) }, 30);
+                .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 1) }, 30);
         }
 
         private static BuildingPresentationCatalog.Entry.CostEntry Cost(string id, long quantity) =>
@@ -294,7 +300,7 @@ namespace Game.Infrastructure.Editor
                 .ConfigureMetadata(BuildingEra.StoneAge, description, "building_" + id,
                     new[] { "organized_labor" }).ConfigureConstruction(minutes, 2).ConfigureEconomy(cost)
                 .ConfigurePlacement(BuildingSpatialForm.Segment, BuildingPlacementConstraint.OwnedTerritory)
-                .ConfigureMaintenance(24, 5, new[] { Cost("wood_log", 1) }, 20);
+                .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 1) }, 20);
 
         private static void BuildHut()
         {
@@ -496,10 +502,10 @@ namespace Game.Infrastructure.Editor
             BuildFacility(HealerHutPath, "Serenity Healer Hut", new Vector3(4f, 3.2f, 4f), FacilityKind.Healer);
             BuildFacility(ShrinePath, "Serenity Shrine", new Vector3(3f, 2.8f, 3f), FacilityKind.Shrine);
             BuildFacility(ChiefHutPath, "Serenity Chief Hut", new Vector3(5f, 3.8f, 4f), FacilityKind.Chief);
-            BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, .2f, 3f), FacilityKind.Meeting);
-            BuildFacility(TrainingGroundPath, "Serenity Training Ground", new Vector3(3f, .2f, 3f), FacilityKind.Training);
+            BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, 2.4f, 3f), FacilityKind.Meeting);
+            BuildFacility(TrainingGroundPath, "Serenity Training Ground", new Vector3(3f, 3f, 3f), FacilityKind.Training);
             BuildFacility(FishingCampPath, "Serenity Fishing Camp", new Vector3(4f, 2.8f, 3f), FacilityKind.Fishing);
-            BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, .2f, 3f), FacilityKind.Gathering);
+            BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, 2f, 3f), FacilityKind.Gathering);
             BuildFacility(PrimitiveGardenPath, "Serenity Primitive Garden", new Vector3(3f, .2f, 3f), FacilityKind.Garden);
             BuildFacility(WellPath, "Serenity Well", new Vector3(3f, 2.5f, 3f), FacilityKind.Well);
             BuildFacility(PalisadePath, "Serenity Palisade", new Vector3(1f, 2.8f, 1f), FacilityKind.Palisade);
@@ -520,7 +526,22 @@ namespace Game.Infrastructure.Editor
                 new Vector3(Mathf.Max(.85f, size.x * .9f), .08f, Mathf.Max(.85f, size.z * .9f)),
                 kind == FacilityKind.Path || kind == FacilityKind.Garden ? Soil : Stone);
             var finish = Stage(root.transform, "Stage 2 Finished", 2);
-            if (kind == FacilityKind.Garden)
+            if (kind == FacilityKind.Path || kind == FacilityKind.Palisade)
+            {
+                var template = new GameObject("Segment cell template");
+                template.transform.SetParent(finish, false);
+                if (kind == FacilityKind.Path)
+                {
+                    Part(PrimitiveType.Cube, "Packed earth path", template.transform, new Vector3(0f, .035f, 0f),
+                        new Vector3(1f, .07f, .85f), Soil);
+                    var road = AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), template.transform,
+                        new Vector3(.98f, .5f, .8f));
+                    road.transform.localPosition += Vector3.up * .07f;
+                }
+                else AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), template.transform, new Vector3(1f, 2.8f, 1f));
+                root.AddComponent<BuildingZoneVisual>().Configure(template, 32);
+            }
+            else if (kind == FacilityKind.Garden)
             {
                 var template = new GameObject("Garden cell template");
                 template.transform.SetParent(finish, false);
