@@ -1,5 +1,68 @@
 # PROJECT_STATE.md
 
+## WM14 checkpoint — 2026-10-24 optimization and profiling DONE
+
+WM14 adds a reproducible short D3D11 Editor profile for the existing U29 hybrid population and the inactive
+World Map V2 data path. The population gates preserve the authored 25/50/25 percent Tier1/Tier2/Tier3 mix:
+100 measured 58.05 average FPS / 24.89 ms p95, 300 measured 57.68 FPS / 21.99 ms p95, and 500 measured
+56.45 FPS / 29.56 ms p95. Main-thread averages were 17.18/17.20/17.66 ms. Each five-second sample retained
+exact canonical/presentation/entity counts, eight detailed Tier1 presenters, zero per-agent AI Updates and
+zero reserved-memory growth. Managed growth was 5.21/10.62/11.69 MB; Unity allocated-memory growth was
+259,463/40,275/15,326 bytes. The machine-readable evidence is `Artifacts/WM14/wm14-short-profile.json`.
+
+The asset-first world audit reused the four existing three-stage tree LOD prefabs and seven wildlife prefabs.
+The deterministic V2 plan remains 3,500 interactive trees, 9,000 decorative trees/shrubs, 26,500 details and
+119 wildlife (35/80/4 tiers). Twenty-four culling probes averaged 3.09 ms, p95 4.45 ms, and never exceeded the
+existing 650-collider cap. No billboard, authored tree collider, mass-vegetation Update, dependency or runtime
+density reduction was added. V2 remains inactive.
+
+Profiling exposed two harness/LOD regressions rather than a need to reduce content. The benchmark now
+suppresses the normal distance tier policy only while an explicitly authored diagnostic population runs, so
+the requested tiers cannot drift during measurement. Character visual distance uses horizontal world-plane
+distance, restoring the bounded eight detailed residents under the elevated tactical camera. The U29 Animator
+regression now matches D-157: detailed visible residents keep idle/work cycles, while lightweight residents
+retire their Animator. Normal gameplay tier policy remains enabled by default.
+
+Validation on Unity 6000.6.4f1: affected EditMode passed 33/33 (`U29PerformanceGateTests;
+WM05WorldMapVegetationTests;WM08WorldMapWildlifeTests`, 79.39 s); WM05/WM08 PlayMode passed 3/3 inside the
+affected run. That run also exposed the two corrected U29 cases; their exact rerun passed 2/2 (92.52 s).
+The final WM14 profile passed 1/1 (102.05 s). All commands set
+`SERENITY_SAVE_DIRECTORY=C:\serenity_game\Artifacts\WM14\Saves` and
+`SERENITY_WM14_OUTPUT_DIRECTORY=C:\serenity_game\Artifacts\WM14`. Exact Unity arguments were:
+
+```text
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter Game.Tests.Editor.U29PerformanceGateTests;Game.Tests.Editor.WM05WorldMapVegetationTests;Game.Tests.Editor.WM08WorldMapWildlifeTests -testResults C:\serenity_game\Artifacts\WM14\affected-editmode.xml -logFile C:\serenity_game\Artifacts\WM14\affected-editmode.log
+```
+
+Result: 33/33 passed.
+
+```text
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.U29PerformanceGatePlayModeTests;Game.Tests.PlayMode.WM05WorldMapVegetationPlayModeTests;Game.Tests.PlayMode.WM08WorldMapWildlifePlayModeTests -testResults C:\serenity_game\Artifacts\WM14\affected-playmode.xml -logFile C:\serenity_game\Artifacts\WM14\affected-playmode.log
+```
+
+Result: 20/22 diagnostic; both WM05/WM08 fixtures passed 3/3 and two U29 regressions were fixed.
+
+```text
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.LargeTierOneCrowdUsesBoundedNativeNavigationAndAnimationDetail;Game.Tests.PlayMode.U29PerformanceGatePlayModeTests.DetailedTierOnePresenterKeepsAnimatorLiveUntilLightweightLod -testResults C:\serenity_game\Artifacts\WM14\playmode-u29-regressions.xml -logFile C:\serenity_game\Artifacts\WM14\playmode-u29-regressions.log
+```
+
+Result: 2/2 passed.
+
+```text
+Unity.exe -batchmode -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter Game.Tests.PlayMode.WM14WorldMapPerformancePlayModeTests -testResults C:\serenity_game\Artifacts\WM14\playmode-profile-final-v2.xml -logFile C:\serenity_game\Artifacts\WM14\playmode-profile-final-v2.log
+```
+
+Result: 1/1 passed.
+
+One sandbox attempt hit the known `BuildReportRestService/HttpListener` crash before tests; the identical
+outside-sandbox run produced the accepted XML.
+
+Limitations are explicit: Render Thread and GPU Frame Time recorders were unavailable in batchmode Editor,
+working-set telemetry returned unavailable, and the five-second gates are smoke measurements rather than a
+long soak or Player/GPU qualification. No full U29 matrix, Windows Player build or visual route was run; those
+belong to WM15. The five inherited dirty materials, `New Unity Project/`, and the independently added WM15
+runner files/sections remain excluded from the WM14 commit.
+
 ## User-requested WM15 offline runner — 2026-10-24
 
 `Tools/Validation/Run-WM15.ps1` and its double-click `.cmd` launcher provide a sequential, offline night gate:

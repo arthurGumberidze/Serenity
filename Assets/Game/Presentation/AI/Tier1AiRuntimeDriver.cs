@@ -396,7 +396,7 @@ namespace Game.Presentation.AI
                     var movement = movements[index];
                     var presenter = movement.Presenter;
                     var distanceSquared = camera != null && presenter != null
-                        ? (presenter.transform.position - camera.transform.position).sqrMagnitude
+                        ? HorizontalDistanceSquared(presenter.transform.position, camera.transform.position)
                         : 0f;
                     movement.SetCrowdDetail(movement.Authority == Tier1MovementAuthority.DirectPlayer ||
                         presenter != null && presenter.IsSelected ||
@@ -412,7 +412,7 @@ namespace Game.Presentation.AI
                 var presenter = movement.Presenter;
                 if (presenter == null) continue;
                 var score = camera != null
-                    ? (presenter.transform.position - camera.transform.position).sqrMagnitude
+                    ? HorizontalDistanceSquared(presenter.transform.position, camera.transform.position)
                     : index * 100f;
                 if (movement.Authority == Tier1MovementAuthority.DirectPlayer) score = -200000f;
                 else if (presenter.IsSelected) score = -100000f + score;
@@ -436,6 +436,13 @@ namespace Game.Presentation.AI
             }
             for (var index = 0; index < movements.Count; index++)
                 movements[index].SetCrowdDetail(Array.IndexOf(detailWinners, movements[index]) >= 0);
+        }
+
+        private static float HorizontalDistanceSquared(Vector3 first, Vector3 second)
+        {
+            var x = first.x - second.x;
+            var z = first.z - second.z;
+            return x * x + z * z;
         }
 
         private void DrawLightweightPresenters()

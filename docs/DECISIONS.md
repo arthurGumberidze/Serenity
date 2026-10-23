@@ -15,6 +15,22 @@ gameplay authority is introduced. Save overrides are isolated and protected inpu
 and after. Automatic success is called AUTOMATED_PASS; user visual acceptance remains PENDING. Current Player
 evidence is labelled compact-world evidence because the proposed V2 profile is not activated by this tooling.
 
+## D-188 WM14 profiles authored scale before changing content (2026-10-24)
+
+WM14 keeps the existing tree/detail counts, terrain draw distances, 650 interactive-collider cap and wildlife
+tier budgets because captured 100/300/500 population evidence already meets the 30 FPS minimum with bounded
+memory. Content density is therefore not reduced to manufacture a faster benchmark. The reusable short profile
+records exact hybrid tier counts, frame percentiles, available CPU timing, memory deltas, scheduler work, tree
+LOD/collider facts and wildlife tiers in JSON. Its five-second Editor samples are a regression smoke, not a
+replacement for WM15 Player/GPU and visual acceptance.
+
+An explicitly authored benchmark population temporarily suppresses automatic camera-distance tier migration;
+the suppression defaults off and is restored on benchmark teardown. This isolates measurement intent without
+creating another simulation authority. Character visual LOD uses horizontal XZ distance because tactical-camera
+altitude is not world separation; the existing eight-presenter cap still bounds Animator/NavMesh cost. Detailed
+visible residents retain the D-157 idle/work animation behavior, while lightweight residents disable Animator
+evaluation. World Map V2 remains inactive and no package or asset is added.
+
 ## D-187 WM13 isolates World Map V2 persistence behind an inactive profile (2026-10-23)
 
 Save format v30 belongs only to the explicit `p109-world-map-v2-proposed` profile. The active compact-world

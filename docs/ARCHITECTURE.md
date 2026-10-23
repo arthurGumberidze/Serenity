@@ -1,5 +1,23 @@
 # Architecture — U01
 
+## WM14 performance measurement boundary (2026-10-24)
+
+The short-profile flow is `WM14 PlayMode fixture -> U29BenchmarkScenario -> existing Tier1 scheduler + Tier2
+runtime + Tier3 records -> JSON evidence`. An explicitly requested diagnostic population holds its authored
+tier mix by suppressing only the composition root's camera-distance tier-policy pass. The switch defaults off,
+is restored by the benchmark controller, and does not alter normal gameplay or canonical character state.
+
+Tier1 remains one scene-level driver with no per-character Update. At large crowds it selects at most eight
+detailed presenters by horizontal XZ camera distance; tactical-camera altitude is presentation geometry, not
+world separation. Other Tier1 residents use the existing instanced lightweight path, Tier2 stays in the
+existing ECS world and Tier3 stays object-free. Detailed visible residents keep live idle/work animation under
+D-157; lightweight residents disable their Animator.
+
+World-map profiling constructs immutable WM05 vegetation and WM08 wildlife plans without activating the V2
+composition. Existing assets and budgets remain the boundary: four three-stage tree LOD prefabs, Terrain tree
+and detail distances, bounded nearby collider selection and the 35/80/4 wildlife tier projection. The JSON is
+a short Editor regression artifact; WM15 still owns Player/GPU, broad integration and visual acceptance.
+
 ## WM13 World Map V2 save/version boundary (2026-10-23)
 
 The selection flow is `TiledWorldDefinition.GenerationId -> StartupSaveProfile`, which chooses directory,

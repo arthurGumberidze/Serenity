@@ -7,6 +7,15 @@ dry run planned 172 fixtures and 182 steps. WM14's work and stage status are unc
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM14 World Map V2 optimization and profiling (2026-10-24): DONE. Reproducible short D3D11 Editor gates at
+100/300/500 preserve exact 25/50/25 Tier mixes and measure 58.05/57.68/56.45 average FPS with p95
+24.89/21.99/29.56 ms, eight detailed Tier1 presenters, zero per-agent AI Updates and bounded memory. Existing
+tree LODs, terrain distances, the 650-collider proxy cap and wildlife tiers are sufficient; no density was
+arbitrarily reduced. Horizontal camera-plane LOD distance fixes the elevated-camera detail regression, and
+diagnostic-only tier-policy suppression keeps benchmark populations exact without changing normal gameplay.
+Affected EditMode passed 33/33, WM05/WM08 PlayMode passed 3/3, corrected U29 regressions passed 2/2 and the
+WM14 profile passed 1/1. V2 remains inactive; Player/GPU, broad regression and visual acceptance are WM15.
+
 WM13 World Map V2 version and saves (2026-10-23): DONE. The active compact-world branch remains on format
 v29, save generation `p109-stone-age-buildings-v1` and its existing directory. The proposed V2 branch has an
 explicit, inactive profile with isolated format v30, generation `p109-world-map-v2-proposed` and separate

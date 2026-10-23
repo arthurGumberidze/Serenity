@@ -130,6 +130,7 @@ namespace Game.Infrastructure.Performance
                 QualitySettings.vSyncCount = 0;
                 Application.targetFrameRate = U29BenchmarkConfig.TargetFrameRate;
                 Screen.SetResolution(config.width, config.height, false);
+                root.SetPerformanceTierPolicySuppressed(true);
                 scenario = U29BenchmarkScenario.Create(root, config);
                 cameraAnchor = root.CameraController.transform.position;
                 if (config.enableTierChurn) scenario.ExerciseTierChurn();
@@ -591,7 +592,11 @@ namespace Game.Infrastructure.Performance
             traceActive = false;
         }
 
-        private void OnDestroy() => DisposeRecorders();
+        private void OnDestroy()
+        {
+            if (root != null) root.SetPerformanceTierPolicySuppressed(false);
+            DisposeRecorders();
+        }
 
         private void DisposeRecorders()
         {

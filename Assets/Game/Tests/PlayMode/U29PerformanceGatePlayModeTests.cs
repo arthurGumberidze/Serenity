@@ -122,7 +122,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator MovingTierOnePresenterUsesContinuousAnimatorThenFreezesIdle()
+        public IEnumerator DetailedTierOnePresenterKeepsAnimatorLiveUntilLightweightLod()
         {
             var root = Root();
             var presenter = root.DemoPresenters[0];
@@ -140,7 +140,12 @@ namespace Game.Tests.PlayMode
                 "The locomotion-to-idle transition must be allowed to finish before animation is frozen.");
             yield return new WaitForSecondsRealtime(0.25f);
             presenter.RefreshAnimation(Time.unscaledTime);
-            Assert.That(presenter.Animator.enabled, Is.False);
+            Assert.That(presenter.Animator.enabled, Is.True,
+                "A visible detailed resident keeps idle/work cycles live after the P10.9 animation correction.");
+            presenter.SetAutomaticAnimationAllowed(false);
+            presenter.RefreshAnimation(Time.unscaledTime);
+            Assert.That(presenter.Animator.enabled, Is.False,
+                "A resident moved to lightweight LOD must not retain Animator cost.");
             root.AiRuntime.enabled = true;
         }
 

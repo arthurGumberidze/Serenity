@@ -240,7 +240,15 @@ namespace Game.Infrastructure
         private long tier3WorkerCacheRevision = -1;
         private long nextWeatherRosterRefreshTick;
         private float nextTierPolicyRefreshTime;
+        private bool performanceTierPolicySuppressed;
         private P104ResourceRespawnSurface resourceRespawnSurface;
+
+        /// <summary>
+        /// Keeps an explicitly authored performance population in its requested tiers while its schedulers run.
+        /// Normal gameplay never calls this diagnostic-only boundary and continues to evaluate camera distance.
+        /// </summary>
+        public void SetPerformanceTierPolicySuppressed(bool suppressed) =>
+            performanceTierPolicySuppressed = suppressed;
 
         public void Configure(LocalGameplayInputSource inputSource, RtsCameraController controller,
             WorldPointerRaycaster raycaster, SelectionProbe selection, CharacterPresentationCatalog catalog,
@@ -825,7 +833,7 @@ namespace Game.Infrastructure
             foreach (var buildingView in BuildingPresentations.All) buildingView.RefreshStructuralPresentation();
             WorldPopulation?.RefreshViews();
             WeatherPresentation.Refresh(targetCalendarTick);
-            if (Time.unscaledTime >= nextTierPolicyRefreshTime)
+            if (!performanceTierPolicySuppressed && Time.unscaledTime >= nextTierPolicyRefreshTime)
             {
                 var focus = cameraController.transform.position;
                 TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));

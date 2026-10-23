@@ -9,18 +9,17 @@ worker before using it, and do not run a second WM15/Editor concurrently. The WM
 matching-source offline evidence and investigate failed/incomplete checks, rather than duplicate a live run.
 This support deliverable does not advance the active WM task or grant visual acceptance.
 
-## Current scope — WM14 optimization and profiling, after WM13 completion on 2026-10-23
+## Current scope — WM15 final integration and visual acceptance, after WM14 completion on 2026-10-24
 
-WM13 is DONE. The active `p109-compact-world-v1` reference remains on its unchanged v29 generation and save
-directory. The inactive `p109-world-map-v2-proposed` profile owns isolated format v30 and a separate directory;
-its only new payload is canonical wildlife state. Wrong save/world generations are rejected before restore,
-and all 44 protected pre-task hashes still match.
+WM14 is DONE. Its short D3D11 Editor profile passes the 100/300/500 population gates, preserves exact hybrid
+tier counts and existing content density, and records bounded memory plus zero per-agent AI Updates. The active
+compact-world save/profile is unchanged and `p109-world-map-v2-proposed` remains inactive.
 
-The next unblocked world-map task is **WM14 — optimization and profiling**. Follow its scope and gates from
-`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: measure the existing LOD/culling/tier schedulers against 100/300/500
-population gates, memory and the 30 FPS minimum, then tune data-driven density or scheduling only from captured
-evidence. Do not start WM15, activate V2, add dependencies or change save compatibility without an explicit
-task. This WM13 chat stops after its commit and does not implement WM14.
+The next genuinely unblocked world-map task is **WM15 — final integration and visual acceptance**. Use the
+existing offline-runner support as tooling, but independently verify its matching-source evidence. WM15 owns
+broad EditMode/PlayMode regression, a fresh Windows build, Player/GPU performance evidence, the visible route,
+coordinate/image audit and user visual acceptance. Do not treat the runner's implementation or WM14's short
+Editor profile as completion of those gates. This WM14 chat stops after its commit and does not execute WM15.
 
 ## Design-only side deliverable — world map, 2026-10-23
 
