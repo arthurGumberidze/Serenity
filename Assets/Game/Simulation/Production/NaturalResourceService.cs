@@ -59,6 +59,7 @@ namespace Game.Simulation.Production
                     state = new NaturalNodeLifecycleState(id, state.Biome, calendarTick, state.RespawnAttempt);
                     states[id] = state;
                 }
+                if (!registration.Renewable) continue;
                 if (calendarTick - state.DepletedAtTick < respawnDelayTicks) continue;
                 var candidates = registration.RespawnCandidates;
                 var start = state.RespawnAttempt % candidates.Count;
@@ -92,7 +93,7 @@ namespace Game.Simulation.Production
                         nameof(restoredSites));
                 var current = registrations[id];
                 registrations[id] = new NaturalNodeRegistration(restored, current.Biome,
-                    current.RespawnCandidates);
+                    current.RespawnCandidates, current.Renewable);
             }
         }
 

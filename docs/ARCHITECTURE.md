@@ -1,5 +1,19 @@
 # Architecture — U01
 
+## WM06 World Map V2 natural-resource boundary (2026-10-23)
+
+The flow is `WorldMapResourceDefinition + WM02/WM03/WM04 samplers -> TiledWorldPopulationPlanner -> immutable
+TiledWorldPopulationPlan -> ProductionService/ResourceEcologyService -> optional prefab projection`. Typed
+resource/zone definitions and deterministic placement remain pure Domain state. Stable IDs exist before tiles
+or GameObjects load. Only visible nodes bind to canonical production/ecology sites; hidden deposits retain
+identity and unlock metadata without presentation or Stone Age work availability. WM07 owns fish populations.
+
+Production sites own remaining capacity and the existing save codec owns persistence. ResourceEcology owns
+renewal/depletion timing and now respects an explicit renewable flag; non-renewable nodes cannot respawn.
+Terrain, vegetation, resource prefabs and the V2 art catalog are disposable projections and never own mutable
+resource state. The planner's V2 branch is selected only by typed `MapData.Resources`; legacy definitions keep
+the previous compact-world branch, and no composition root activates the proposed generation.
+
 ## WM05 World Map V2 vegetation boundary (2026-10-23)
 
 The flow is `WorldMapVegetationDefinition + WM02/WM04 samplers -> WorldMapVegetationPlanner -> immutable

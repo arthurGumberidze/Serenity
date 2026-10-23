@@ -32,6 +32,7 @@ namespace Game.Infrastructure
         private TiledTerrainWorld terrainWorld;
         private long seed;
         private CompactWorldArtCatalog art;
+        private WorldMapResourceArtCatalog worldMapResourceArt;
         private sealed class AnimalView
         {
             public StableEntityId SiteId;
@@ -71,6 +72,7 @@ namespace Game.Infrastructure
             seed = worldSeed;
             session = FindAnyObjectByType<LocalSceneCompositionRoot>();
             art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
+            worldMapResourceArt = Resources.Load<WorldMapResourceArtCatalog>("World/WorldMapResourceArt");
             CreateForestAmbience();
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
@@ -102,8 +104,8 @@ namespace Game.Infrastructure
             RefreshViews();
         }
 
-        public StableEntityId ResourceId(TiledWorldResourceNode node) => DeterministicStableId.Create(seed,
-            "p109_world_source:" + terrainWorld.Definition.GenerationId, node.StableIndex);
+        public StableEntityId ResourceId(TiledWorldResourceNode node) =>
+            node.CreateStableId(seed, terrainWorld.Definition.GenerationId);
 
         public StableEntityId IndustrialId(TiledWorldIndustrialNode node) => DeterministicStableId.Create(seed,
             "p109_world_industry:" + terrainWorld.Definition.GenerationId, node.StableIndex);
@@ -112,6 +114,9 @@ namespace Game.Infrastructure
         {
             foreach (var node in Plan.Resources)
             {
+                // Hidden deposits already have deterministic plan identities, but are deliberately absent from
+                // ProductionService and presentation until a later technology-discovery workflow reveals them.
+                if (node.Hidden) continue;
                 var id = ResourceId(node);
                 if (!production.TryGetSite(id, out var site))
                 {
@@ -121,7 +126,8 @@ namespace Game.Infrastructure
                     production.AddSite(site);
                 }
                 ecology.Register(new NaturalNodeRegistration(site, node.Biome,
-                    node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position)));
+                    node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position),
+                    node.RenewalPolicy != "none"));
             }
             foreach (var node in Plan.Industry)
             {
@@ -137,7 +143,8 @@ namespace Game.Infrastructure
         {
             var root = new GameObject("P10.9 Population " + tile);
             root.transform.SetParent(transform, false);
-            foreach (var node in Plan.Resources.Where(value => value.Tile.Equals(tile))) CreateResourceView(node, root.transform);
+            foreach (var node in Plan.VisibleResources.Where(value => value.Tile.Equals(tile)))
+                CreateResourceView(node, root.transform);
             foreach (var node in Plan.Industry.Where(value => value.Tile.Equals(tile))) CreateIndustrialView(node, root.transform);
             CreateSettlementAndFieldViews(tile, root.transform);
             CreateWoodlandDetails(tile, root.transform);
@@ -162,8 +169,14 @@ namespace Game.Infrastructure
                 return;
             }
             GameObject view;
-            var reviewed = node.RecipeId == "hunt_animal" ? art?.HuntingDeer :
-                node.RecipeId == "gather_stone" ? art?.StoneOutcrop : null;
+            var reviewed = worldMapResourceArt?.PrefabFor(node.ResourceTypeId) ??
+                (node.RecipeId == "hunt_animal" ? art?.HuntingDeer :
+                node.RecipeId == "gather_stone" ? art?.StoneOutcrop : null);
+            if (terrainWorld.Definition.MapData != null && reviewed == null)
+            {
+                Debug.LogError("No audited World Map V2 resource prefab for " + node.ResourceTypeId);
+                return;
+            }
             if (reviewed != null)
             {
                 view = Instantiate(reviewed, parent);
@@ -472,6 +485,11 @@ namespace Game.Infrastructure
             if (id == "chop_wood" || id == "wood_log") return new Color(0.26f, 0.38f, 0.14f);
             if (id == "gather_berries" || id == "berries") return new Color(0.48f, 0.16f, 0.3f);
             if (id == "gather_fiber" || id == "plant_fiber") return new Color(0.36f, 0.58f, 0.18f);
+            if (id == "gather_mushrooms" || id == "mushrooms") return new Color(0.56f, 0.32f, 0.2f);
+            if (id == "gather_medicinal_plants" || id == "medicinal_plants") return new Color(0.42f, 0.62f, 0.3f);
+            if (id == "gather_branches" || id == "branches") return new Color(0.35f, 0.24f, 0.12f);
+            if (id == "gather_clay" || id == "clay") return new Color(0.52f, 0.31f, 0.2f);
+            if (id == "gather_flint" || id == "flint") return new Color(0.31f, 0.34f, 0.36f);
             if (id == "fish_water" || id == "fish") return new Color(0.12f, 0.55f, 0.72f);
             if (id == "hunt_animal" || id == "meat") return new Color(0.48f, 0.25f, 0.13f);
             if (id == "gather_gold" || id == "gold_ore") return new Color(0.82f, 0.62f, 0.16f);

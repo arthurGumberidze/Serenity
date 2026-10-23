@@ -1,5 +1,48 @@
 # PROJECT_STATE.md
 
+## WM06 checkpoint — 2026-10-23 World Map V2 natural resources DONE
+
+WM06 replaces the generic WM01 resource masks with immutable typed resource/zone contracts loaded from
+`WORLD_MAP_RESOURCES.json`. The V2 branch of `TiledWorldPopulationPlanner` now produces a deterministic plan
+from those canonical masks plus WM02 height/slope, WM03 water and WM04 biome paint. For seed `20261023` the
+plan contains **296 nodes: 277 visible resources and 19 hidden deposits**. All visible non-fish resource types
+occur in logical terrain/biome zones; `res_start_basics` guarantees at least 8 wood, 6 branches, 6 berries,
+5 stone and 4 medicinal-plant nodes. Fish remains owned by WM07 and is deliberately not instantiated here.
+
+Stable resource identity derives from generation ID, world seed, resource type, source zone, quantized global
+cell and deterministic ordinal, so tile streaming/read order cannot change IDs. The 19 hidden deposits are six
+each of copper, iron and gold plus one oil reservoir; they retain unlock metadata but have no visible Stone Age
+node or copper/oil extraction recipe. Visible nodes alone bind to the existing Production authority. Renewable
+policy is passed to `ResourceEcologyService`; non-renewable depletion remains depleted, while production and
+ecology snapshots continue to use the existing save codecs. Terrain, vegetation and prefabs remain disposable
+projections and own no depletion state.
+
+The asset-first audit reused ten existing project prefabs for wood, branches, berries, mushrooms, medicinal
+plants, plant fiber, stone, flint, clay and the future fish presentation. Sources are the already imported PNB,
+TerrainDemo, LowPolyNature, CompactWorld and LowPolyFarm content. The V2-only
+`WorldMapResourceArtCatalog` references them without importing or generating any model, texture, material,
+shader or package. Hidden deposits are not presented. The active `p109-compact-world-v1` loader, scene,
+generation and save path remain unchanged; `p109-world-map-v2-proposed` is still not activated.
+
+Exact Unity 6000.6.4f1 commands (executed through hidden `Start-Process` batchmode invocations):
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod WM06ResourceAssetAuthoring.Generate -quit -logFile 'C:\serenity_game\Artifacts\WM06\asset-authoring-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM06WorldMapResourcesTests' -testResults 'C:\serenity_game\Artifacts\WM06\editmode-wm06-r2.xml' -logFile 'C:\serenity_game\Artifacts\WM06\editmode-wm06-r2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM06WorldMapResourcePersistencePlayModeTests' -testResults 'C:\serenity_game\Artifacts\WM06\playmode-wm06.xml' -logFile 'C:\serenity_game\Artifacts\WM06\playmode-wm06.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.P109TiledWorldPopulationTests;Game.Tests.Editor.P104NaturalResourcesTests;Game.Tests.Editor.P109CompactWorldTests' -testResults 'C:\serenity_game\Artifacts\WM06\editmode-affected-final.xml' -logFile 'C:\serenity_game\Artifacts\WM06\editmode-affected-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.ResearchFrameworkTests' -testResults 'C:\serenity_game\Artifacts\WM06\editmode-wm06-research-final-r2.xml' -logFile 'C:\serenity_game\Artifacts\WM06\editmode-wm06-research-final-r2.log'
+```
+
+Results: focused WM06 EditMode **6/6**, focused Save/Load PlayMode **1/1**, affected EditMode **26/26**, and
+the final WM06/research integration rerun **18/18** passed. The PlayMode test depletes one canonical node,
+round-trips production and ecology state through `SaveSnapshot`/XML, and verifies the same stable ID, zero
+remaining capacity and depletion tick after restore. The first sandboxed authoring attempt crashed before
+compilation in Unity's internal `BuildReportRestService`/`HttpListener`; the required unsandboxed rerun and all
+reported tests completed successfully. No full suite, Player build, long profiler capture or visual acceptance
+was run by instruction. The inherited dirty materials and `New Unity Project/` remain user-owned and excluded.
+WM07 is next and unstarted.
+
 ## WM05 checkpoint — 2026-10-23 World Map V2 vegetation and LOD DONE
 
 WM05 replaces the generic WM01 vegetation masks with immutable typed classes, zones, clearings, distribution

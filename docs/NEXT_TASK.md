@@ -1,19 +1,18 @@
 # NEXT_TASK.md
 
-## Current scope — WM06 natural resources, after WM05 completion on 2026-10-23
+## Current scope — WM07 fish and water-body recovery, after WM06 completion on 2026-10-23
 
-WM05 is DONE. The typed vegetation contract and pure seeded planner now enforce density masks, global tree
-spacing and authored exclusions while producing 3,500 interactive trees, 9,000 decorative trees/shrubs and
-26,500 details. Audited existing art supplies mesh LODs; nearby colliders are centrally capped at 650 with no
-per-instance `Update`. Focused/affected tests pass. The active `p109-compact-world-v1` reference, scene and
-save paths remain unchanged, and `p109-world-map-v2-proposed` is still not activated.
+WM06 is DONE. Typed resource contracts and the pure seeded population planner now produce 277 visible resource
+nodes and 19 hidden deposits from canonical masks, terrain and biome affinity. The start guarantee, stable IDs,
+non-renewable depletion and focused Save/Load persistence pass. Audited existing prefabs provide presentation
+without owning gameplay state. The active `p109-compact-world-v1` reference, scene and save paths remain
+unchanged, and `p109-world-map-v2-proposed` is still not activated.
 
-The next unblocked world-map task is **WM06 — natural resources**. It may consume
-`WORLD_MAP_RESOURCES.json` through `TiledWorldPopulation`, Production and ResourceEcology to implement resource
-masks, the start guarantee, stable IDs and hidden deposits, with deterministic EditMode and focused Save/Load
-PlayMode verification. Depletion must remain canonical persistent Domain state rather than vegetation/Terrain
-state. It must not activate `p109-world-map-v2-proposed`, start WM07 or alter legacy save slots. This WM05 chat
-stops after its commit and does not implement WM06.
+The next unblocked world-map task is **WM07 — fish and water-body recovery**. It depends on WM03 and WM06 and
+must add the authored 24 fish populations, dry/reachable bank work points, carrying-capacity recovery and
+save/reload coverage through the existing Production/ResourceEcology authorities. It must not duplicate the
+WM06 resource planner, activate `p109-world-map-v2-proposed`, alter legacy save slots or start WM08. This WM06
+chat stops after its commit and does not implement WM07.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

@@ -148,6 +148,11 @@ namespace Game.Domain.Production
             var driedMeat = new ResourceId("dried_meat");
             var fish = new ResourceId("fish");
             var water = new ResourceId("water");
+            var branches = new ResourceId("branches");
+            var mushrooms = new ResourceId("mushrooms");
+            var medicinalPlants = new ResourceId("medicinal_plants");
+            var clay = new ResourceId("clay");
+            var flint = new ResourceId("flint");
             var recipes = new List<ProductionRecipe>
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
@@ -166,6 +171,29 @@ namespace Game.Domain.Production
                     new[] { new ResourceAmount(berries, new ResourceQuantity(6)) }, TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot,
                     weatherExposure: ProductionWeatherExposure.Outdoor)
             };
+            if (resources.Contains(branches))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_branches"), "Gather Branches", null,
+                    new[] { new ResourceAmount(branches, new ResourceQuantity(3)) }, TimeSpan.FromHours(3),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(mushrooms))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_mushrooms"), "Gather Mushrooms", null,
+                    new[] { new ResourceAmount(mushrooms, new ResourceQuantity(2)) }, TimeSpan.FromHours(3),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor,
+                    seasonalWildSource: true));
+            if (resources.Contains(medicinalPlants))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_medicinal_plants"),
+                    "Gather Medicinal Plants", null,
+                    new[] { new ResourceAmount(medicinalPlants, new ResourceQuantity(2)) }, TimeSpan.FromHours(4),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor,
+                    seasonalWildSource: true));
+            if (resources.Contains(clay))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_clay"), "Gather Clay", null,
+                    new[] { new ResourceAmount(clay, new ResourceQuantity(4)) }, TimeSpan.FromHours(7),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            if (resources.Contains(flint))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_flint"), "Gather Flint", null,
+                    new[] { new ResourceAmount(flint, new ResourceQuantity(2)) }, TimeSpan.FromHours(9),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
             if (resources.Contains(iron))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_iron"), "Gather Iron Ore", null,
                     new[] { new ResourceAmount(iron, new ResourceQuantity(3)) }, TimeSpan.FromHours(12), ProductionSiteKind.NaturalSource,

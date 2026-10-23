@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.AI;
+using Game.Domain.Campaign;
 using Game.Domain.Production;
 
 namespace Game.Domain.World
@@ -10,11 +11,15 @@ namespace Game.Domain.World
     {
         public TiledWorldResourceNode(int stableIndex, WorldTileId tile, string recipeId,
             NaturalResourceBiome biome, WorldPosition position, long capacity, string sourceZoneId,
-            WorldPosition? visualPosition = null)
+            WorldPosition? visualPosition = null, string resourceTypeId = "", bool hidden = false,
+            string unlockTechnologyId = "", string depletionPolicy = "", string renewalPolicy = "",
+            string stableKey = "")
         {
             if (stableIndex < 0) throw new ArgumentOutOfRangeException(nameof(stableIndex));
             if (string.IsNullOrWhiteSpace(recipeId)) throw new ArgumentException(nameof(recipeId));
             if (capacity < 20 || capacity > 50) throw new ArgumentOutOfRangeException(nameof(capacity));
+            if (hidden && string.IsNullOrWhiteSpace(unlockTechnologyId))
+                throw new ArgumentException("Hidden deposits require an unlock technology.", nameof(unlockTechnologyId));
             StableIndex = stableIndex;
             Tile = tile;
             RecipeId = recipeId;
@@ -23,6 +28,12 @@ namespace Game.Domain.World
             VisualPosition = visualPosition ?? position;
             Capacity = capacity;
             SourceZoneId = sourceZoneId ?? string.Empty;
+            ResourceTypeId = resourceTypeId ?? string.Empty;
+            Hidden = hidden;
+            UnlockTechnologyId = unlockTechnologyId ?? string.Empty;
+            DepletionPolicy = depletionPolicy ?? string.Empty;
+            RenewalPolicy = renewalPolicy ?? string.Empty;
+            StableKey = string.IsNullOrWhiteSpace(stableKey) ? "legacy:" + stableIndex : stableKey;
         }
 
         public int StableIndex { get; }
@@ -33,6 +44,17 @@ namespace Game.Domain.World
         public WorldPosition VisualPosition { get; }
         public long Capacity { get; }
         public string SourceZoneId { get; }
+        public string ResourceTypeId { get; }
+        public bool Hidden { get; }
+        public string UnlockTechnologyId { get; }
+        public string DepletionPolicy { get; }
+        public string RenewalPolicy { get; }
+        public string StableKey { get; }
+
+        public StableEntityId CreateStableId(long worldSeed, string generationId) =>
+            StableKey == "legacy:" + StableIndex
+                ? DeterministicStableId.Create(worldSeed, "p109_world_source:" + generationId, StableIndex)
+                : DeterministicStableId.Create(worldSeed, "world_resource:" + generationId + ":" + StableKey);
     }
 
     public sealed class TiledWorldIndustrialNode
@@ -75,6 +97,8 @@ namespace Game.Domain.World
 
         public IReadOnlyList<TiledWorldResourceNode> Resources { get; }
         public IReadOnlyList<TiledWorldIndustrialNode> Industry { get; }
+        public IReadOnlyList<TiledWorldResourceNode> VisibleResources => Resources.Where(value => !value.Hidden).ToArray();
+        public IReadOnlyList<TiledWorldResourceNode> HiddenDeposits => Resources.Where(value => value.Hidden).ToArray();
     }
 
     /// <summary>
@@ -86,6 +110,17 @@ namespace Game.Domain.World
         private readonly TiledWorldHeightSampler heights;
         private readonly long seed;
         private readonly List<WorldPosition> occupied = new List<WorldPosition>();
+        private readonly WorldMapTerrainPaintSampler paint;
+
+        private static readonly IReadOnlyDictionary<string, int> StartMinimums =
+            new Dictionary<string, int>(StringComparer.Ordinal)
+            {
+                ["wood"] = 8,
+                ["branches"] = 6,
+                ["berries"] = 6,
+                ["stone"] = 5,
+                ["medicinal_plants"] = 4
+            };
 
         public TiledWorldPopulationPlanner(TiledWorldDefinition worldDefinition,
             TiledWorldHeightSampler heightSampler, long worldSeed)
@@ -95,9 +130,18 @@ namespace Game.Domain.World
             if (!ReferenceEquals(definition, heights.Definition))
                 throw new ArgumentException("Population and height samplers must share one world definition.");
             seed = worldSeed;
+            if (definition.MapData?.Resources != null)
+                paint = new WorldMapTerrainPaintSampler(definition, heights);
         }
 
-        public TiledWorldPopulationPlan Create()
+        public static int StartGuarantee(string resourceTypeId) =>
+            StartMinimums.TryGetValue(resourceTypeId, out var value) ? value : 0;
+
+        public TiledWorldPopulationPlan Create() => definition.MapData?.Resources == null
+            ? CreateLegacy()
+            : CreateWorldMapV2();
+
+        private TiledWorldPopulationPlan CreateLegacy()
         {
             occupied.Clear();
             var resources = new List<TiledWorldResourceNode>();
@@ -147,6 +191,198 @@ namespace Game.Domain.World
                     AddIndustry(industry, ref nextIndustry, zone, "animal_hunting", "meat", 0);
             }
             return new TiledWorldPopulationPlan(resources, industry);
+        }
+
+        private TiledWorldPopulationPlan CreateWorldMapV2()
+        {
+            occupied.Clear();
+            var result = new List<TiledWorldResourceNode>();
+            var stableIndex = 0;
+            foreach (var zone in definition.MapData.Resources.Zones.OrderBy(value => value.Id, StringComparer.Ordinal))
+            foreach (var resourceId in zone.ResourceIds.OrderBy(value => value, StringComparer.Ordinal))
+            {
+                // WM07 owns the authored lake/river population sources and carrying-capacity recovery.
+                if (resourceId == "fish") continue;
+                var type = definition.MapData.Resources.Type(resourceId);
+                var count = zone.Id == "res_start_basics"
+                    ? StartGuarantee(resourceId)
+                    : CountForDensity(zone.Density);
+                for (var ordinal = 0; ordinal < count; ordinal++)
+                {
+                    if (!TryFindWorldMapPoint(zone, type, ordinal, out var design, out var position))
+                        throw new InvalidOperationException($"No valid {resourceId} placement in {zone.Id}/{ordinal}.");
+                    if (!definition.TryGetTile(position.X, position.Z, out var tile))
+                        throw new InvalidOperationException("Resource placement escaped the tiled world.");
+                    var quantizedX = (int)Math.Floor((design.X - definition.MapData.CoordinateTransform.DesignBounds.XMin) / 4f);
+                    var quantizedZ = (int)Math.Floor((design.Z - definition.MapData.CoordinateTransform.DesignBounds.ZMin) / 4f);
+                    var stableKey = definition.MapData.MapVersion + ":resource:" + resourceId + ":" + zone.Id +
+                                    ":" + quantizedX + ":" + quantizedZ + ":" + ordinal;
+                    var capacity = CapacityFor(type, zone, ordinal);
+                    result.Add(new TiledWorldResourceNode(stableIndex++, tile, RecipeFor(resourceId),
+                        BiomeFor(resourceId), position, capacity, zone.Id, null, resourceId, type.IsHidden,
+                        type.UnlockTechnologyId, type.DepletionPolicy, type.RenewalPolicy, stableKey));
+                    occupied.Add(position);
+                }
+            }
+
+            foreach (var pair in StartMinimums)
+                if (result.Count(value => value.SourceZoneId == "res_start_basics" &&
+                                          value.ResourceTypeId == pair.Key) < pair.Value)
+                    throw new InvalidOperationException("The authored start resource guarantee was not met: " + pair.Key);
+            return new TiledWorldPopulationPlan(result, Array.Empty<TiledWorldIndustrialNode>());
+        }
+
+        private bool TryFindWorldMapPoint(WorldMapResourceZone zone, WorldMapResourceType type, int ordinal,
+            out WorldMapPoint design, out WorldPosition position)
+        {
+            ShapeBounds(zone.Shape, out var xMin, out var xMax, out var zMin, out var zMax);
+            var salt = StableHash(zone.Id + ":" + type.Id);
+            var spacing = type.IsHidden ? 18f : IsLargeNode(type.Id) ? 9f : 5f;
+            for (var attempt = 0; attempt < 2048; attempt++)
+            {
+                var x = xMin + Unit(salt ^ ordinal * 733, attempt, 41) * (xMax - xMin);
+                var z = zMin + Unit(salt ^ ordinal * 977, attempt, 43) * (zMax - zMin);
+                design = new WorldMapPoint(x, z);
+                if (!zone.Shape.Contains(design)) continue;
+                var projected = definition.MapData.CoordinateTransform.ToUnity(design);
+                if (!AcceptWorldMapResource(zone, type.Id, design, projected.X, projected.Z) ||
+                    TooClose(projected.X, projected.Z, spacing)) continue;
+                position = new WorldPosition(projected.X, heights.SampleHeight(projected.X, projected.Z), projected.Z);
+                return true;
+            }
+            design = default;
+            position = default;
+            return false;
+        }
+
+        private bool AcceptWorldMapResource(WorldMapResourceZone zone, string resourceId, WorldMapPoint design,
+            float worldX, float worldZ)
+        {
+            if (!definition.ContainsClosed(worldX, worldZ) || heights.IsWater(worldX, worldZ) ||
+                !heights.IsBuildable(worldX, worldZ, MaximumSlope(resourceId))) return false;
+            if (zone.Id == "res_start_basics" && IsLargeNode(resourceId))
+            {
+                var start = definition.MapData.CoordinateTransform.ToDesign(definition.PlayerStart);
+                var dx = design.X - start.X;
+                var dz = design.Z - start.Z;
+                if (dx * dx + dz * dz < 58f * 58f) return false;
+            }
+            foreach (var poi in definition.MapData.PointsOfInterest)
+            {
+                var dx = design.X - poi.Position.X;
+                var dz = design.Z - poi.Position.Z;
+                var radius = poi.ProtectionRadiusMeters + 2f;
+                if (dx * dx + dz * dz < radius * radius) return false;
+            }
+            return PaintAffinity(resourceId, paint.SampleWeights(worldX, worldZ)) >= 0.07f;
+        }
+
+        private static float PaintAffinity(string resourceId, IReadOnlyList<float> weights)
+        {
+            var grass = weights[(int)WorldMapTerrainPaintLayer.Grass];
+            var forest = weights[(int)WorldMapTerrainPaintLayer.ForestMoss];
+            var rock = weights[(int)WorldMapTerrainPaintLayer.Rock];
+            var shore = weights[(int)WorldMapTerrainPaintLayer.Shore];
+            var soil = weights[(int)WorldMapTerrainPaintLayer.Soil];
+            var scrub = weights[(int)WorldMapTerrainPaintLayer.Scrub];
+            var wetland = weights[(int)WorldMapTerrainPaintLayer.Wetland];
+            switch (resourceId)
+            {
+                case "wood": case "branches": case "mushrooms": return forest + grass * 0.25f;
+                case "berries": return grass + forest * 0.65f + scrub * 0.35f;
+                case "medicinal_plants": return grass + scrub + wetland;
+                case "plant_fiber": return wetland + scrub + grass * 0.45f;
+                case "clay": return soil + shore + wetland * 0.55f;
+                case "stone": case "flint": case "copper_ore": case "iron_ore": case "gold_ore":
+                    return rock + scrub * 0.35f;
+                case "oil": return wetland + soil * 0.25f;
+                default: return 1f;
+            }
+        }
+
+        private static int CountForDensity(string density)
+        {
+            switch (density)
+            {
+                case "high": return 18;
+                case "medium_high": return 12;
+                case "medium": return 10;
+                case "hidden_gradient": return 6;
+                case "hidden_reservoir": return 1;
+                case "low_to_medium": return 5;
+                default: throw new InvalidOperationException("Unsupported resource density: " + density);
+            }
+        }
+
+        private long CapacityFor(WorldMapResourceType type, WorldMapResourceZone zone, int ordinal)
+        {
+            var minimum = type.IsHidden || type.Id == "clay" ? 40 : 24;
+            return minimum + (long)(Hash(StableHash(type.Id), StableHash(zone.Id), ordinal, 71) %
+                                     (ulong)(51 - minimum));
+        }
+
+        private static string RecipeFor(string resourceId)
+        {
+            switch (resourceId)
+            {
+                case "wood": return "chop_wood";
+                case "stone": return "gather_stone";
+                case "berries": return "gather_berries";
+                case "mushrooms": return "gather_mushrooms";
+                case "medicinal_plants": return "gather_medicinal_plants";
+                case "branches": return "gather_branches";
+                case "plant_fiber": return "gather_fiber";
+                case "clay": return "gather_clay";
+                case "flint": return "gather_flint";
+                case "copper_ore": return "gather_copper";
+                case "iron_ore": return "gather_iron";
+                case "gold_ore": return "gather_gold";
+                case "oil": return "extract_oil";
+                default: throw new InvalidOperationException("Unsupported WM06 resource: " + resourceId);
+            }
+        }
+
+        private static NaturalResourceBiome BiomeFor(string resourceId)
+        {
+            switch (resourceId)
+            {
+                case "wood": case "branches": case "mushrooms": return NaturalResourceBiome.Forest;
+                case "stone": case "flint": return NaturalResourceBiome.Rocky;
+                case "copper_ore": case "iron_ore": case "gold_ore": return NaturalResourceBiome.Mountain;
+                case "plant_fiber": case "clay": case "oil": return NaturalResourceBiome.Wetland;
+                default: return NaturalResourceBiome.Meadow;
+            }
+        }
+
+        private static float MaximumSlope(string resourceId)
+        {
+            switch (resourceId)
+            {
+                case "stone": case "flint": case "copper_ore": case "iron_ore": case "gold_ore": return 38f;
+                case "wood": case "branches": return 30f;
+                case "clay": case "oil": return 24f;
+                default: return 22f;
+            }
+        }
+
+        private static bool IsLargeNode(string resourceId) => resourceId == "wood" || resourceId == "stone" ||
+            resourceId == "flint" || resourceId.EndsWith("_ore", StringComparison.Ordinal) || resourceId == "oil";
+
+        private static void ShapeBounds(WorldMapShape shape, out float xMin, out float xMax,
+            out float zMin, out float zMax)
+        {
+            if (shape.Kind == WorldMapShapeKind.Polygon)
+            {
+                xMin = shape.Polygon.Points.Min(value => value.X);
+                xMax = shape.Polygon.Points.Max(value => value.X);
+                zMin = shape.Polygon.Points.Min(value => value.Z);
+                zMax = shape.Polygon.Points.Max(value => value.Z);
+                return;
+            }
+            xMin = shape.Center.X - shape.RadiusX;
+            xMax = shape.Center.X + shape.RadiusX;
+            zMin = shape.Center.Z - shape.RadiusZ;
+            zMax = shape.Center.Z + shape.RadiusZ;
         }
 
         private void AddTileResource(ICollection<TiledWorldResourceNode> target, ref int stableIndex,

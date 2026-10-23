@@ -53,7 +53,7 @@ namespace Game.Domain.Production
         private readonly WorldPosition[] respawnCandidates;
 
         public NaturalNodeRegistration(ProductionSite site, NaturalResourceBiome biome,
-            IEnumerable<WorldPosition> candidates)
+            IEnumerable<WorldPosition> candidates, bool renewable = true)
         {
             Site = site ?? throw new ArgumentNullException(nameof(site));
             if (site.Kind != ProductionSiteKind.NaturalSource)
@@ -64,10 +64,12 @@ namespace Game.Domain.Production
             respawnCandidates = (candidates ?? throw new ArgumentNullException(nameof(candidates))).Distinct().ToArray();
             if (respawnCandidates.Length == 0) throw new ArgumentException("At least one respawn candidate is required.", nameof(candidates));
             Biome = biome;
+            Renewable = renewable;
         }
 
         public ProductionSite Site { get; }
         public NaturalResourceBiome Biome { get; }
+        public bool Renewable { get; }
         public IReadOnlyList<WorldPosition> RespawnCandidates => Array.AsReadOnly(respawnCandidates);
     }
 

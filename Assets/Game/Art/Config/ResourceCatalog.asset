@@ -64,3 +64,24 @@ MonoBehaviour:
   - id: water
     displayName: Water
     category: 1
+  - id: branches
+    displayName: Branches
+    category: 0
+  - id: mushrooms
+    displayName: Mushrooms
+    category: 1
+  - id: medicinal_plants
+    displayName: Medicinal Plants
+    category: 2
+  - id: clay
+    displayName: Clay
+    category: 0
+  - id: flint
+    displayName: Flint
+    category: 0
+  - id: copper_ore
+    displayName: Copper Ore
+    category: 0
+  - id: oil
+    displayName: Oil
+    category: 2

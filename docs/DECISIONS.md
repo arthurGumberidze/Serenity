@@ -1379,3 +1379,19 @@ The modern strategy HUD is one UI Toolkit projection over the same services. Res
 notifications, priority controls and build categories own no simulation state. The icon atlas and footprint
 mesh are disposable presentation assets. One combined footprint mesh is required instead of a GameObject per
 cell, and the runtime atlas is sliced in memory rather than introducing 24 separate imported textures.
+
+## D-176 World-map resources share Production/Ecology authority and keep deposits latent (2026-10-23)
+
+`WORLD_MAP_RESOURCES.json` is parsed into immutable resource-type and zone contracts. The V2 population planner
+is the only placement authority: it combines those masks with canonical terrain, hydrology and biome samplers,
+then assigns a stable identity from generation, seed, type, zone, quantized global cell and ordinal. Tile load
+order, Terrain instances and prefab instances are excluded from identity.
+
+Only visible WM06 nodes are registered with `ProductionService` and `ResourceEcologyService`. Remaining amount
+and depletion persist through their existing snapshot/codecs; an explicit renewable policy prevents finite
+stone/deposits from respawning. Hidden copper, iron, gold and oil retain stable identity and technology metadata
+but have no presentation or early extraction recipe. Fish placement and recovery remain WM07-owned.
+
+Resource visuals reuse audited project prefabs through a V2-only ScriptableObject lookup. The catalog contains
+references, not canonical state, and missing V2 art is an error rather than permission to create a runtime
+primitive. The compact-world branch and active generation remain unchanged.

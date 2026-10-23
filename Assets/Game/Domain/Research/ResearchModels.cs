@@ -226,6 +226,12 @@ namespace Game.Domain.Research
                 stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_iron")));
             if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_gold")))
                 stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_gold")));
+            foreach (var id in new[] { "gather_clay", "gather_flint" })
+            {
+                var recipeId = new ProductionRecipeId(id);
+                if (production.All.Any(x => x.Id == recipeId))
+                    stoneToolUnlocks.Add(TechnologyUnlock.Recipe(recipeId));
+            }
             var gatheringUnlocks = new List<TechnologyUnlock>
             {
                 TechnologyUnlock.Recipe(new ProductionRecipeId("gather_berries")),
@@ -233,6 +239,12 @@ namespace Game.Domain.Research
             };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_water")))
                 gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
+            foreach (var id in new[] { "gather_branches", "gather_mushrooms", "gather_medicinal_plants" })
+            {
+                var recipeId = new ProductionRecipeId(id);
+                if (production.All.Any(x => x.Id == recipeId))
+                    gatheringUnlocks.Add(TechnologyUnlock.Recipe(recipeId));
+            }
             foreach (var id in new[] { "fishing_camp", "gathering_area" })
             {
                 var buildingId = new BuildingDefinitionId(id);

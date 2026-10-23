@@ -41,7 +41,14 @@ namespace Game.Infrastructure.Editor
                 new ResourceCatalogAsset.Entry().Configure("cooked_fish", "Cooked Fish", ResourceCategory.Food),
                 new ResourceCatalogAsset.Entry().Configure("cooked_berries", "Cooked Berries", ResourceCategory.Food),
                 new ResourceCatalogAsset.Entry().Configure("dried_meat", "Dried Meat", ResourceCategory.Food),
-                new ResourceCatalogAsset.Entry().Configure("water", "Water", ResourceCategory.Food)
+                new ResourceCatalogAsset.Entry().Configure("water", "Water", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("branches", "Branches", ResourceCategory.Construction),
+                new ResourceCatalogAsset.Entry().Configure("mushrooms", "Mushrooms", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("medicinal_plants", "Medicinal Plants", ResourceCategory.Other),
+                new ResourceCatalogAsset.Entry().Configure("clay", "Clay", ResourceCategory.Construction),
+                new ResourceCatalogAsset.Entry().Configure("flint", "Flint", ResourceCategory.Construction),
+                new ResourceCatalogAsset.Entry().Configure("copper_ore", "Copper Ore", ResourceCategory.Construction),
+                new ResourceCatalogAsset.Entry().Configure("oil", "Oil", ResourceCategory.Other)
             });
             EditorUtility.SetDirty(catalog);
             U08BuildingFoundation.RefreshCatalogAndPrefabs();

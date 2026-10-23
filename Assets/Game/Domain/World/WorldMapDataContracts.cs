@@ -466,6 +466,85 @@ namespace Game.Domain.World
         public WorldMapVegetationClass Class(string id) => Classes.Single(value => value.Id == id);
     }
 
+    /// <summary>Immutable authored resource metadata. Mutable stock remains in ProductionService.</summary>
+    public sealed class WorldMapResourceType
+    {
+        public WorldMapResourceType(string id, string era, bool visible, string depletionPolicy,
+            string renewalPolicy, string unlockTechnologyId)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(era))
+                throw new ArgumentException(nameof(id));
+            if (visible && string.IsNullOrWhiteSpace(depletionPolicy))
+                throw new ArgumentException("Visible resources require a depletion policy.", nameof(depletionPolicy));
+            if (!visible && string.IsNullOrWhiteSpace(unlockTechnologyId))
+                throw new ArgumentException("Hidden deposits require an unlock technology.", nameof(unlockTechnologyId));
+            Id = id;
+            Era = era;
+            Visible = visible;
+            DepletionPolicy = depletionPolicy ?? string.Empty;
+            RenewalPolicy = renewalPolicy ?? string.Empty;
+            UnlockTechnologyId = unlockTechnologyId ?? string.Empty;
+        }
+
+        public string Id { get; }
+        public string Era { get; }
+        public bool Visible { get; }
+        public bool IsHidden => !Visible;
+        public string DepletionPolicy { get; }
+        public string RenewalPolicy { get; }
+        public string UnlockTechnologyId { get; }
+    }
+
+    public sealed class WorldMapResourceZone
+    {
+        public WorldMapResourceZone(string id, WorldMapShape shape, IEnumerable<string> resourceIds,
+            string density, string access)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(density) ||
+                string.IsNullOrWhiteSpace(access)) throw new ArgumentException(nameof(id));
+            var values = (resourceIds ?? throw new ArgumentNullException(nameof(resourceIds))).ToArray();
+            if (values.Length == 0 || values.Any(string.IsNullOrWhiteSpace) ||
+                values.Distinct(StringComparer.Ordinal).Count() != values.Length)
+                throw new ArgumentException("Resource-zone references must be unique.", nameof(resourceIds));
+            Id = id;
+            Shape = shape ?? throw new ArgumentNullException(nameof(shape));
+            ResourceIds = Array.AsReadOnly(values);
+            Density = density;
+            Access = access;
+        }
+
+        public string Id { get; }
+        public WorldMapShape Shape { get; }
+        public IReadOnlyList<string> ResourceIds { get; }
+        public string Density { get; }
+        public string Access { get; }
+    }
+
+    /// <summary>Canonical WM06 masks and visibility policy; it contains no mutable depletion state.</summary>
+    public sealed class WorldMapResourceDefinition
+    {
+        public WorldMapResourceDefinition(IEnumerable<WorldMapResourceType> types,
+            IEnumerable<WorldMapResourceZone> zones)
+        {
+            var typeValues = (types ?? throw new ArgumentNullException(nameof(types))).ToArray();
+            var zoneValues = (zones ?? throw new ArgumentNullException(nameof(zones))).ToArray();
+            if (typeValues.Length == 0 || typeValues.Any(value => value == null) ||
+                typeValues.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != typeValues.Length)
+                throw new ArgumentException("Resource types require unique IDs.", nameof(types));
+            var known = new HashSet<string>(typeValues.Select(value => value.Id), StringComparer.Ordinal);
+            if (zoneValues.Length == 0 || zoneValues.Any(value => value == null) ||
+                zoneValues.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != zoneValues.Length ||
+                zoneValues.SelectMany(value => value.ResourceIds).Any(value => !known.Contains(value)))
+                throw new ArgumentException("Resource zones require unique IDs and known resources.", nameof(zones));
+            Types = Array.AsReadOnly(typeValues);
+            Zones = Array.AsReadOnly(zoneValues);
+        }
+
+        public IReadOnlyList<WorldMapResourceType> Types { get; }
+        public IReadOnlyList<WorldMapResourceZone> Zones { get; }
+        public WorldMapResourceType Type(string id) => Types.Single(value => value.Id == id);
+    }
+
     public readonly struct WorldMapSplinePoint
     {
         public WorldMapSplinePoint(WorldMapPoint position, float widthMeters)
@@ -912,7 +991,7 @@ namespace Game.Domain.World
         public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
             WorldMapHydrologyDefinition hydrology, WorldMapBiomeDefinition biomes,
-            WorldMapVegetationDefinition vegetation,
+            WorldMapVegetationDefinition vegetation, WorldMapResourceDefinition resources,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
@@ -929,6 +1008,7 @@ namespace Game.Domain.World
             Hydrology = hydrology ?? throw new ArgumentNullException(nameof(hydrology));
             Biomes = biomes ?? throw new ArgumentNullException(nameof(biomes));
             Vegetation = vegetation ?? throw new ArgumentNullException(nameof(vegetation));
+            Resources = resources ?? throw new ArgumentNullException(nameof(resources));
             Regions = Array.AsReadOnly(Biomes.Regions.Select(value => value.Polygon).ToArray());
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -951,6 +1031,7 @@ namespace Game.Domain.World
         public WorldMapHydrologyDefinition Hydrology { get; }
         public WorldMapBiomeDefinition Biomes { get; }
         public WorldMapVegetationDefinition Vegetation { get; }
+        public WorldMapResourceDefinition Resources { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

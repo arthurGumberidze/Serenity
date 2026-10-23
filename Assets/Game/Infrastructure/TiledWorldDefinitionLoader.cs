@@ -149,9 +149,10 @@ namespace Game.Infrastructure
                 ValidatePoiRules(poiRoot.Object("rules"));
 
                 var resources = roots["WORLD_MAP_RESOURCES.json"];
-                var resourceTypes = UniqueStrings(resources.Array("resourceTypes").Select(value => value.Object().String("id")),
-                    "resource type");
-                var resourceMasks = ParseResourceMasks(resources.Array("zones"), bounds, resourceTypes);
+                var resourceDefinition = ParseResourceDefinition(resources, bounds);
+                var resourceTypes = UniqueStrings(resourceDefinition.Types.Select(value => value.Id), "resource type");
+                var resourceMasks = resourceDefinition.Zones.Select(zone => new WorldMapMask(zone.Id, "resources",
+                    zone.Shape, zone.ResourceIds, zone.Density + ":" + zone.Access)).ToArray();
                 ValidateFishSources(resources, lakes, river.Spline);
                 ValidateRequiredTrueFlags(resources.Object("mutationAndSaveRules"), "resource mutation",
                     "stableEntityIdRequired", "depletedVisibleNodeMustDisappear", "remainingCapacitySaved",
@@ -185,7 +186,7 @@ namespace Game.Infrastructure
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
-                    biomes, vegetation, river.Spline, tributaries.Select(value => value.Spline),
+                    biomes, vegetation, resourceDefinition, river.Spline, tributaries.Select(value => value.Spline),
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
@@ -661,20 +662,29 @@ namespace Game.Infrastructure
         private static void ValidatePoiRules(Node rules) => ValidateRequiredTrueFlags(rules, "POI",
             "uniqueObjectsPersistByStableId", "noAutomaticConstructionClearance", "discoveryStateSaved");
 
-        private static IReadOnlyList<WorldMapMask> ParseResourceMasks(IReadOnlyList<Node> values,
-            WorldMapBounds bounds, ISet<string> resources)
+        private static WorldMapResourceDefinition ParseResourceDefinition(Node root, WorldMapBounds bounds)
         {
-            var result = values.Select(value =>
+            var types = root.Array("resourceTypes").Select(value =>
             {
-                var mask = value.Object();
-                var references = mask.StringArray("resources");
-                if (references.Any(reference => !resources.Contains(reference)))
-                    throw new InvalidDataException($"Resource mask {mask.String("id")} has an unknown resource.");
-                return new WorldMapMask(mask.String("id"), "resources", ParseShape(mask.Object("shape"), bounds,
-                        mask.String("id")), references, mask.String("density") + ":" + mask.String("access"));
+                var type = value.Object();
+                var visible = type.Bool("visible");
+                return new WorldMapResourceType(type.String("id"), type.String("era"), visible,
+                    type.Has("depletion") ? type.String("depletion") : string.Empty,
+                    type.Has("renewal") ? type.String("renewal") : string.Empty,
+                    type.Has("unlockTechnology") ? type.String("unlockTechnology") : string.Empty);
             }).ToArray();
-            UniqueStrings(result.Select(value => value.Id), "resource mask");
-            return result;
+            var known = UniqueStrings(types.Select(value => value.Id), "resource type");
+            var zones = root.Array("zones").Select(value =>
+            {
+                var zone = value.Object();
+                var references = zone.StringArray("resources");
+                if (references.Any(reference => !known.Contains(reference)))
+                    throw new InvalidDataException($"Resource mask {zone.String("id")} has an unknown resource.");
+                return new WorldMapResourceZone(zone.String("id"),
+                    ParseShape(zone.Object("shape"), bounds, zone.String("id")), references,
+                    zone.String("density"), zone.String("access"));
+            }).ToArray();
+            return new WorldMapResourceDefinition(types, zones);
         }
 
         private static IReadOnlyList<WorldMapMask> ParseWildlifeMasks(IReadOnlyList<Node> values,

@@ -2,13 +2,22 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM06 World Map V2 natural resources (2026-10-23): DONE. Typed resource types/zones now drive a pure seeded
+`TiledWorldPopulation` plan through canonical resource masks, terrain/biome affinity and authored exclusions.
+Seed `20261023` yields 277 visible nodes and 19 hidden deposits, preserves the complete start guarantee and
+stable IDs across tile order, and leaves fish to WM07. Visible nodes use the existing Production and
+ResourceEcology authorities; non-renewable depletion and save/load persist canonically. Ten audited existing
+prefabs supply V2 presentation with no imported dependency. Focused EditMode passed 6/6, Save/Load PlayMode
+1/1, affected EditMode 26/26 and final research integration 18/18. Legacy remains active and unchanged; WM07
+is next and has not started.
+
 WM05 World Map V2 vegetation and LOD (2026-10-23): DONE. Typed JSON vegetation classes/zones/clearings and a
 pure seeded planner produce 3,500 interactive trees, 9,000 decorative tree/shrub instances and 26,500 Terrain
 details at hash `5EE931B502E2D754`. Global Poisson spacing, water/slope/start/route/POI/build exclusions, stable
 IDs and density-priority overlap ownership are deterministic. Four approved-asset tree variants retain mesh
 LODs but remove colliders/billboards; one centralized selector caps disposable nearby collider proxies at 650
 with no per-instance `Update`. Focused EditMode passed 4/4; affected WM01–WM05 EditMode passed 23/23 and
-PlayMode 5/5. Legacy remains active and unchanged; WM06 is next and has not started.
+PlayMode 5/5. Legacy remained active and unchanged; WM06 followed this completed checkpoint.
 
 WM04 World Map V2 biomes and Terrain paint (2026-10-23): DONE. One immutable typed biome definition now owns
 the eight authored regions and ecotone contract. A pure deterministic sampler combines those masks with WM02
