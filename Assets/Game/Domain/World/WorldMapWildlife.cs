@@ -392,17 +392,44 @@ namespace Game.Domain.World
 
     public sealed class WildlifeWorldState
     {
-        public WildlifeWorldState(long lastDay, int nextBirthSequence, IEnumerable<WildlifeIndividualState> animals)
+        public WildlifeWorldState(long lastDay, int nextBirthSequence, IEnumerable<WildlifeIndividualState> animals,
+            IEnumerable<WildlifeHuntingPressureState> huntingPressures = null)
         {
             if (lastDay < 0 || nextBirthSequence < 0) throw new ArgumentOutOfRangeException(nameof(lastDay));
             LastDay = lastDay;
             NextBirthSequence = nextBirthSequence;
             Animals = Array.AsReadOnly((animals ?? throw new ArgumentNullException(nameof(animals)))
                 .OrderBy(value => value.Id).ToArray());
+            var pressureValues = (huntingPressures ?? Array.Empty<WildlifeHuntingPressureState>())
+                .OrderBy(value => value.SpeciesId, StringComparer.Ordinal)
+                .ThenBy(value => value.RegionId, StringComparer.Ordinal).ToArray();
+            if (pressureValues.Select(value => value.SpeciesId + ":" + value.RegionId)
+                .Distinct(StringComparer.Ordinal).Count() != pressureValues.Length)
+                throw new ArgumentException("Wildlife hunting-pressure identities must be unique.",
+                    nameof(huntingPressures));
+            HuntingPressures = Array.AsReadOnly(pressureValues);
         }
         public long LastDay { get; }
         public int NextBirthSequence { get; }
         public IReadOnlyList<WildlifeIndividualState> Animals { get; }
+        public IReadOnlyList<WildlifeHuntingPressureState> HuntingPressures { get; }
+    }
+
+    public sealed class WildlifeHuntingPressureState
+    {
+        public WildlifeHuntingPressureState(string speciesId, string regionId, int permille)
+        {
+            if (string.IsNullOrWhiteSpace(speciesId) || string.IsNullOrWhiteSpace(regionId))
+                throw new ArgumentException("Wildlife pressure requires species and region IDs.");
+            if (permille < 0 || permille > 1000) throw new ArgumentOutOfRangeException(nameof(permille));
+            SpeciesId = speciesId;
+            RegionId = regionId;
+            Permille = permille;
+        }
+
+        public string SpeciesId { get; }
+        public string RegionId { get; }
+        public int Permille { get; }
     }
 
     /// <summary>Single canonical mutable wildlife authority for Tier1, Tier2 and Tier3 projections.</summary>
@@ -468,7 +495,13 @@ namespace Game.Domain.World
             }
         }
 
-        public WildlifeWorldState CaptureState() => new WildlifeWorldState(LastDay, nextBirthSequence, Animals);
+        public WildlifeWorldState CaptureState() => new WildlifeWorldState(LastDay, nextBirthSequence, Animals,
+            pressure.Select(pair =>
+            {
+                var separator = pair.Key.IndexOf(':');
+                return new WildlifeHuntingPressureState(pair.Key.Substring(0, separator),
+                    pair.Key.Substring(separator + 1), pair.Value);
+            }));
 
         public void RestoreState(WildlifeWorldState state)
         {
@@ -484,11 +517,21 @@ namespace Game.Domain.World
                     plan.HabitatGraph.Node(value.HabitatNodeId).RegionId == capacity.RegionId) >
                     capacity.CarryingCapacity)
                     throw new InvalidOperationException("Restored wildlife exceeds carrying capacity.");
+            var restoredPressure = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var value in state.HuntingPressures)
+            {
+                plan.Definition.SpeciesById(value.SpeciesId);
+                if (!plan.Capacities.Any(capacity => capacity.SpeciesId == value.SpeciesId &&
+                    capacity.RegionId == value.RegionId))
+                    throw new InvalidOperationException("Restored wildlife pressure references an unknown habitat.");
+                restoredPressure.Add(value.SpeciesId + ":" + value.RegionId, value.Permille);
+            }
             animals.Clear();
             foreach (var pair in restored) animals.Add(pair.Key, pair.Value);
             LastDay = state.LastDay;
             nextBirthSequence = state.NextBirthSequence;
             pressure.Clear();
+            foreach (var pair in restoredPressure) pressure.Add(pair.Key, pair.Value);
         }
 
         private void Migrate()

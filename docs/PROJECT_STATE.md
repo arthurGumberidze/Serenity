@@ -1,5 +1,41 @@
 # PROJECT_STATE.md
 
+## WM13 checkpoint — 2026-10-23 World Map V2 version and saves DONE
+
+WM13 adds an explicit `StartupSaveProfile` boundary without activating the proposed world. The live
+`p109-compact-world-v1` composition and main menu still select save format v29, save generation
+`p109-stone-age-buildings-v1` and the existing `StoneAgeBuildingsV1/Saves` directory. A future explicit
+`p109-world-map-v2-proposed` composition selects isolated format v30 and `WorldMapV2Proposed/Saves`; unknown
+world generations fail closed instead of borrowing another profile.
+
+Existing canonical payloads continue to persist WM06 resource depletion/recovery, WM07 fish stock, WM11
+revealed cells and exactly-once POI event history, plus WM12 building/work/clearance state. Hidden deposits
+remain immutable undiscovered population-plan entries and are not promoted to a competing mutable authority.
+The only new v30 payload is WM08's canonical wildlife population, including lifecycle position/tier data and
+hunting pressure. `SaveCoordinator` validates save generation, connected-world generation and required
+wildlife payload before replacing the clock or restoring any service. Presentation reconciles from restored
+wildlife after load.
+
+Codec tests prove the complete V2 round trip and fail-closed wrong-generation behavior. A real file-store
+test writes the proposed slot into its separate directory and verifies the protected current-slot SHA-256 is
+unchanged. The repository protection manifest also matched all 44 pre-task hashes after implementation.
+No art, material, scene, package, external dependency, Player build or world activation was added.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testCategory 'WM13' -testResults 'C:\serenity_game\Artifacts\WM13\editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM13\editmode.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testCategory 'WM13' -testResults 'C:\serenity_game\Artifacts\WM13\playmode.xml' -logFile 'C:\serenity_game\Artifacts\WM13\playmode.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM13WorldMapSaveVersionTests;Game.Tests.Editor.PersistenceTests;Game.Tests.Editor.P109ConstructionStateTests;Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.WM07WorldMapFisheryTests;Game.Tests.Editor.WM08WorldMapWildlifeTests;Game.Tests.Editor.EventSystemTests;Game.Tests.Editor.P102ConnectedWorldTests;Game.Tests.Editor.P109ConstructionClearanceTests' -testResults 'C:\serenity_game\Artifacts\WM13\affected-editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM13\affected-editmode.log'
+git diff --check -- Assets/Game/Domain/SaveSnapshot.cs Assets/Game/Domain/World/WorldMapWildlife.cs Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs Assets/Game/Infrastructure/MainMenuController.cs Assets/Game/Infrastructure/P109TiledWorldPopulationPresenter.cs Assets/Game/Infrastructure/Persistence.Postgres/PostgresSaveStore.cs Assets/Game/Infrastructure/SaveXmlCodec.cs Assets/Game/Infrastructure/StartupSession.cs Assets/Game/Simulation/SaveCoordinator.cs Assets/Game/Tests/Editor/PersistenceTests.cs Assets/Game/Tests/Editor/WM13WorldMapSaveVersionTests.cs Assets/Game/Tests/Editor/WM13WorldMapSaveVersionTests.cs.meta Assets/Game/Tests/PlayMode/WM13WorldMapSavePlayModeTests.cs Assets/Game/Tests/PlayMode/WM13WorldMapSavePlayModeTests.cs.meta docs/ARCHITECTURE.md docs/DECISIONS.md docs/NEXT_TASK.md docs/PROJECT_STATE.md docs/TASK_GRAPH.md
+```
+
+Results: focused WM13 EditMode **3/3** in 37.61 s; focused PlayMode **1/1** in 19.59 s; affected
+WM06/WM07/WM08/WM11/WM12 and persistence EditMode **97/97** in 75.50 s. All touched assemblies compiled
+without C# errors. The first focused EditMode attempt exposed one missing test namespace import and did not
+reach test execution; the corrected command above produced the recorded 3/3 XML. WM14 is next and unstarted.
+The inherited five dirty materials and `New Unity Project/` remain user-owned and excluded.
+
 ## WM12 checkpoint — 2026-10-23 World Map V2 construction and clearance DONE
 
 WM12 retains the authored eight-zone buildability layer, 2 m authoring grid and exact clearable/hard blocker

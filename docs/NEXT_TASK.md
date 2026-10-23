@@ -1,19 +1,17 @@
 # NEXT_TASK.md
 
-## Current scope — WM13 world version and saves, after WM12 completion on 2026-10-23
+## Current scope — WM14 optimization and profiling, after WM13 completion on 2026-10-23
 
-WM12 is DONE. The proposed V2 buildability package now produces deterministic green/amber/red placement over
-the existing building surface, occupancy and clearance chain. Clearable natural sources use ordinary worker
-production, physical output/hauling and construction work; water, slope, restricted masks, protected POIs and
-impassable geometry fail closed. The active `p109-compact-world-v1` reference remains unchanged and
-`p109-world-map-v2-proposed` is still not activated.
+WM13 is DONE. The active `p109-compact-world-v1` reference remains on its unchanged v29 generation and save
+directory. The inactive `p109-world-map-v2-proposed` profile owns isolated format v30 and a separate directory;
+its only new payload is canonical wildlife state. Wrong save/world generations are rejected before restore,
+and all 44 protected pre-task hashes still match.
 
-The next unblocked world-map task is **WM13 — world version and saves**. Follow its scope and gates from
-`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: isolate the proposed generation/save path, persist only new
-canonical V2 states through the existing SaveCoordinator/SaveXmlCodec boundary, reject wrong-generation
-loads before rebind, and prove old compact-world saves remain untouched. Do not activate the V2 generation
-outside that explicit versioned path and do not start WM14/WM15. This WM12 chat stops after its commit and
-does not implement WM13.
+The next unblocked world-map task is **WM14 — optimization and profiling**. Follow its scope and gates from
+`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: measure the existing LOD/culling/tier schedulers against 100/300/500
+population gates, memory and the 30 FPS minimum, then tune data-driven density or scheduling only from captured
+evidence. Do not start WM15, activate V2, add dependencies or change save compatibility without an explicit
+task. This WM13 chat stops after its commit and does not implement WM14.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

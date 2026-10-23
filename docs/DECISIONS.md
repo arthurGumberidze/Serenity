@@ -1,5 +1,26 @@
 # DECISIONS.md
 
+## D-187 WM13 isolates World Map V2 persistence behind an inactive profile (2026-10-23)
+
+Save format v30 belongs only to the explicit `p109-world-map-v2-proposed` profile. The active compact-world
+profile deliberately remains v29 with save generation `p109-stone-age-buildings-v1` and the unchanged
+`StoneAgeBuildingsV1/Saves` path. The V2 profile uses its generation ID as the save-generation ID and writes
+under `WorldMapV2Proposed/Saves`. `LoadReference()` and the main menu still select the current profile, so
+declaring the V2 profile is not world activation. Unknown generation/profile combinations fail closed.
+
+The existing save authorities already cover mutable resource/fish stock and ecology baseline, buildings,
+work/clearance, revealed discovery cells and event history. Hidden deposits are immutable undiscovered plan
+entries until a later discovery feature creates a canonical mutation path; WM13 does not invent mutable
+shadow state for them. WM12 adds no mutable buildability state. Therefore v30 adds only the missing WM08
+`WildlifeWorldState`: individuals, lifecycle cursor/birth sequence and per-species/region hunting pressure.
+
+`SaveCoordinator` rejects a mismatched save generation, connected-world generation or missing V2 wildlife
+payload before clock replacement or service restoration. The XML codec remains strict and includes the new
+section only at v30; the opaque PostgreSQL store accepts the same version. Startup compatibility diagnostics
+show expected and actual generations. Separate-path SHA-256 tests and the protected repository manifest prove
+that V2 writes do not overwrite current saves. No visual asset or package is required for a persistence-only
+boundary.
+
 ## D-186 WM12 keeps buildability as policy over existing placement and work authorities (2026-10-23)
 
 `WorldMapBuildabilityDefinition` retains the authored V2 zone, slope, grid and blocker taxonomy, while one

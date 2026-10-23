@@ -52,8 +52,11 @@ namespace Game.Domain
         public const int BuildingPlacementVersion = 27;
         public const int BuildingProductionVersion = 28;
         public const int NeedsMoodVersion = 29;
+        public const int WorldMapV2Version = 30;
+        // The live compact/Stone Age generation deliberately remains on v29 until its own migration task.
         public const int CurrentVersion = NeedsMoodVersion;
         public const string StoneAgeBuildingSaveGenerationId = "p109-stone-age-buildings-v1";
+        public const string WorldMapV2SaveGenerationId = TiledWorldDefinition.ProposedWorldMapGenerationId;
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }
@@ -82,6 +85,7 @@ namespace Game.Domain
         public MilitaryCampaignSaveState MilitaryCampaign { get; }
         public DiagnosticSaveState Diagnostics { get; }
         public string SaveGenerationId { get; }
+        public WildlifeWorldState Wildlife { get; }
 
         public SaveSnapshot(int formatVersion, StableEntityId sessionId, GameTimeState time, int biologicalMultiplier,
             ProductionSaveState production = null, ResearchSaveState research = null,
@@ -94,7 +98,7 @@ namespace Game.Domain
             WorkSaveState work = null, ConnectedWorldSaveState connectedWorld = null,
             DomesticWorldSaveState domestic = null, CharacterRuntimeWorldSaveState characterRuntime = null,
             MilitaryCampaignSaveState militaryCampaign = null, DiagnosticSaveState diagnostics = null,
-            string saveGenerationId = null)
+            string saveGenerationId = null, WildlifeWorldState wildlife = null)
         {
             if (formatVersion != LegacyVersion && formatVersion != ProductionVersion &&
                 formatVersion != ResearchVersion && formatVersion != DynastyVersion && formatVersion != HealthVersion &&
@@ -111,7 +115,7 @@ namespace Game.Domain
                 formatVersion != BuildingConstructionVersion &&
                 formatVersion != BuildingPlacementVersion &&
                 formatVersion != BuildingProductionVersion &&
-                formatVersion != CurrentVersion)
+                formatVersion != CurrentVersion && formatVersion != WorldMapV2Version)
                 throw new NotSupportedException("Unsupported save format version: " + formatVersion);
             if (!sessionId.IsValid) throw new ArgumentException("Session ID must be valid.", nameof(sessionId));
             if (time == null) throw new ArgumentNullException(nameof(time));
@@ -144,6 +148,7 @@ namespace Game.Domain
             CharacterRuntime = characterRuntime;
             MilitaryCampaign = militaryCampaign;
             Diagnostics = diagnostics;
+            Wildlife = wildlife;
             SaveGenerationId = formatVersion >= BuildingConstructionVersion
                 ? (string.IsNullOrWhiteSpace(saveGenerationId) ? StoneAgeBuildingSaveGenerationId : saveGenerationId)
                 : saveGenerationId;

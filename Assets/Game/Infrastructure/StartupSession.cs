@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using Game.Presentation.Localization;
 using Game.Presentation.UI;
 using Game.Simulation;
@@ -9,6 +10,51 @@ using Game.Domain.World;
 
 namespace Game.Infrastructure
 {
+    /// <summary>Explicit save-directory and schema selection; defining a profile does not activate its world.</summary>
+    public sealed class StartupSaveProfile
+    {
+        private StartupSaveProfile(string worldGenerationId, string saveGenerationId, int formatVersion,
+            string directoryName)
+        {
+            WorldGenerationId = worldGenerationId;
+            SaveGenerationId = saveGenerationId;
+            FormatVersion = formatVersion;
+            DirectoryName = directoryName;
+        }
+
+        public static StartupSaveProfile Current { get; } = new StartupSaveProfile(
+            TiledWorldDefinition.ReferenceGenerationId, SaveSnapshot.StoneAgeBuildingSaveGenerationId,
+            SaveSnapshot.CurrentVersion, "StoneAgeBuildingsV1");
+
+        public static StartupSaveProfile WorldMapV2Proposed { get; } = new StartupSaveProfile(
+            TiledWorldDefinition.ProposedWorldMapGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
+            SaveSnapshot.WorldMapV2Version, "WorldMapV2Proposed");
+
+        public string WorldGenerationId { get; }
+        public string SaveGenerationId { get; }
+        public int FormatVersion { get; }
+        public string DirectoryName { get; }
+
+        public string ResolveDirectory(string persistentDataPath)
+        {
+            if (string.IsNullOrWhiteSpace(persistentDataPath))
+                throw new ArgumentException("Persistent-data root is required.", nameof(persistentDataPath));
+            return Path.Combine(persistentDataPath, "Serenity", "P109", DirectoryName, "Saves");
+        }
+
+        public static StartupSaveProfile ForWorld(TiledWorldDefinition definition)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (string.Equals(definition.GenerationId, Current.WorldGenerationId, StringComparison.Ordinal))
+                return Current;
+            if (string.Equals(definition.GenerationId, WorldMapV2Proposed.WorldGenerationId,
+                    StringComparison.Ordinal))
+                return WorldMapV2Proposed;
+            throw new NotSupportedException("No save profile exists for world generation '" +
+                definition.GenerationId + "'.");
+        }
+    }
+
     public sealed class StartupSaveCatalog
     {
         private readonly ISaveSlotCatalog catalog;
@@ -47,7 +93,16 @@ namespace Game.Infrastructure
                         slot.LastWriteUtc.ToLocalTime().ToString("g",
                             System.Globalization.CultureInfo.GetCultureInfo(RussianTextCatalog.Locale)));
                 if (slot.CheatsUsed) detail += " · коды использованы, достижения отключены";
-                if (!compatible && !slot.IsCorrupt) detail += " · архивный формат v" + (slot.FormatVersion ?? 0) + " (только чтение)";
+                if (!compatible && !slot.IsCorrupt)
+                {
+                    var wrongGeneration = slot.FormatVersion.GetValueOrDefault() >=
+                        SaveSnapshot.BuildingConstructionVersion &&
+                        !string.Equals(slot.WorldGenerationId, expectedWorldGenerationId, StringComparison.Ordinal);
+                    detail += wrongGeneration
+                        ? " · другое поколение мира '" + (slot.WorldGenerationId ?? "не указано") +
+                          "', ожидалось '" + expectedWorldGenerationId + "' (только чтение)"
+                        : " · архивный формат v" + (slot.FormatVersion ?? 0) + " (только чтение)";
+                }
                 result.Add(new GameplaySaveSlotInfo(index, RussianTextCatalog.Format("ui.save.slot", index),
                     true, slot.IsCorrupt, detail, compatible ? slot.WorldSeed : null, slot.CheatsUsed));
             }

@@ -167,6 +167,7 @@ namespace Game.Infrastructure
             foreach (var root in tileViews.Values) if (root != null) Destroy(root);
             tileViews.Clear();
             RefreshViews();
+            wildlifePresenter?.Reconcile();
         }
 
         public StableEntityId ResourceId(TiledWorldResourceNode node) =>

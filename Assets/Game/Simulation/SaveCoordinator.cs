@@ -54,6 +54,7 @@ namespace Game.Simulation
         private readonly SettlementFlagCaptureService settlementCapture;
         private readonly MilitaryAttackCommandService militaryAttack;
         private readonly DiagnosticService diagnostics;
+        private readonly WildlifePopulationService wildlife;
         private readonly string expectedWorldGenerationId;
         private readonly string expectedSaveGenerationId;
         public StableEntityId SessionId { get; private set; }
@@ -72,7 +73,7 @@ namespace Game.Simulation
             TierManager tierManager = null, MilitaryTrainingService militaryTrainingService = null,
             SettlementFlagCaptureService settlementCaptureService = null,
             MilitaryAttackCommandService militaryAttackService = null, DiagnosticService diagnosticService = null,
-            string requiredSaveGenerationId = null)
+            string requiredSaveGenerationId = null, WildlifePopulationService wildlifePopulationService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -100,20 +101,32 @@ namespace Game.Simulation
             settlementCapture = settlementCaptureService;
             militaryAttack = militaryAttackService;
             diagnostics = diagnosticService;
+            wildlife = wildlifePopulationService;
             expectedWorldGenerationId = connectedWorldService?.Layout.GenerationId ??
                 ConnectedWorldContract.GenerationId;
             expectedSaveGenerationId = requiredSaveGenerationId;
+            if (wildlife != null && !string.Equals(expectedSaveGenerationId,
+                    SaveSnapshot.WorldMapV2SaveGenerationId, StringComparison.Ordinal))
+                throw new ArgumentException("World Map V2 wildlife requires the isolated V2 save generation.",
+                    nameof(requiredSaveGenerationId));
+            if (string.Equals(expectedSaveGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
+                    StringComparison.Ordinal) &&
+                (wildlife == null || connectedWorld == null ||
+                 !string.Equals(expectedWorldGenerationId, TiledWorldDefinition.ProposedWorldMapGenerationId,
+                     StringComparison.Ordinal)))
+                throw new ArgumentException("World Map V2 saves require the matching world layout and wildlife authority.");
         }
         public SaveSnapshot Capture()
         {
-            var snapshot = new SaveSnapshot(SaveSnapshot.CurrentVersion, SessionId, Clock.State,
+            var version = wildlife == null ? SaveSnapshot.CurrentVersion : SaveSnapshot.WorldMapV2Version;
+            var snapshot = new SaveSnapshot(version, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
                 military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
                 appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
                 domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign(), diagnostics?.CaptureState(),
-                expectedSaveGenerationId);
+                expectedSaveGenerationId, wildlife?.CaptureState());
             CreateClock(snapshot); // Validate all mutable U03 state before exposing a checkpoint.
             return snapshot;
         }
@@ -124,12 +137,20 @@ namespace Game.Simulation
             if (!string.IsNullOrEmpty(expectedSaveGenerationId) &&
                 (snapshot.FormatVersion < SaveSnapshot.BuildingConstructionVersion ||
                  !string.Equals(snapshot.SaveGenerationId, expectedSaveGenerationId, StringComparison.Ordinal)))
-                throw new NotSupportedException("The save generation is incompatible with the active gameplay rules.");
+                throw new NotSupportedException("Save generation '" + (snapshot.SaveGenerationId ?? "<missing>") +
+                    "' does not match active generation '" + expectedSaveGenerationId + "'; no state was restored.");
             if (connectedWorld != null && (snapshot.FormatVersion < SaveSnapshot.ConnectedWorldVersion ||
                 snapshot.ConnectedWorld == null ||
                 !string.Equals(snapshot.ConnectedWorld.GenerationId, expectedWorldGenerationId,
                     StringComparison.Ordinal)))
-                throw new NotSupportedException("The save world generation is incompatible with the active gameplay world.");
+                throw new NotSupportedException("Save world generation '" +
+                    (snapshot.ConnectedWorld?.GenerationId ?? "<missing>") + "' does not match active world '" +
+                    expectedWorldGenerationId + "'; no state was restored.");
+            if (wildlife != null && (snapshot.FormatVersion < SaveSnapshot.WorldMapV2Version ||
+                snapshot.Wildlife == null))
+                throw new InvalidOperationException("World Map V2 save is missing canonical wildlife state; no state was restored.");
+            if (snapshot.Wildlife != null && wildlife == null)
+                throw new InvalidOperationException("This save contains wildlife state but no wildlife authority is attached.");
             if ((domestic != null || tiers != null) && snapshot.FormatVersion >= SaveSnapshot.DomesticVersion &&
                 (snapshot.Domestic == null || snapshot.CharacterRuntime == null))
                 throw new InvalidOperationException("P10.6 save is missing required domestic or runtime state.");
@@ -202,6 +223,7 @@ namespace Game.Simulation
             if (snapshot.ConnectedWorld != null && connectedWorld == null)
                 throw new InvalidOperationException("This save contains connected-world state but no connected-world service is attached.");
             if (snapshot.ConnectedWorld != null) connectedWorld.RestoreState(snapshot.ConnectedWorld);
+            if (snapshot.Wildlife != null) wildlife.RestoreState(snapshot.Wildlife);
             if (snapshot.CharacterRuntime != null && tiers == null)
                 throw new InvalidOperationException("This save contains character runtime state but no tier manager is attached.");
             if (snapshot.CharacterRuntime != null)

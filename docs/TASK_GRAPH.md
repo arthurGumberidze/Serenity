@@ -2,6 +2,15 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM13 World Map V2 version and saves (2026-10-23): DONE. The active compact-world branch remains on format
+v29, save generation `p109-stone-age-buildings-v1` and its existing directory. The proposed V2 branch has an
+explicit, inactive profile with isolated format v30, generation `p109-world-map-v2-proposed` and separate
+directory. Existing production, building/work, connected-world and event payloads remain authoritative; v30
+adds only canonical wildlife lifecycle and hunting-pressure state. Save and connected-world generations are
+validated before any runtime state changes. Focused EditMode passed 3/3, PlayMode passed 1/1, affected
+EditMode passed 97/97, and all 44 protected hashes matched. No activation, art or dependency was added. WM14
+is next and has not started.
+
 WM12 World Map V2 construction and clearance (2026-10-23): DONE. The immutable authored buildability policy
 now drives one deterministic green/amber/red evaluator over WM02 terrain, WM03 water, eight buildability
 masks and WM11 POI protection. WM10 first sites remain green; allowed natural source colliders are amber and

@@ -97,6 +97,8 @@ namespace Game.Infrastructure
                 root.Add(SerializeMilitaryCampaign(snapshot.MilitaryCampaign));
             if (snapshot.FormatVersion >= SaveSnapshot.DiagnosticVersion)
                 root.Add(SerializeDiagnostics(snapshot.Diagnostics));
+            if (snapshot.FormatVersion >= SaveSnapshot.WorldMapV2Version)
+                root.Add(SerializeWildlife(snapshot.Wildlife));
             using (var stream = new MemoryStream())
             {
                 new XDocument(root).Save(stream);
@@ -142,7 +144,8 @@ namespace Game.Infrastructure
                         version != SaveSnapshot.BuildingConstructionVersion &&
                         version != SaveSnapshot.BuildingPlacementVersion &&
                         version != SaveSnapshot.BuildingProductionVersion &&
-                        version != SaveSnapshot.CurrentVersion)
+                        version != SaveSnapshot.CurrentVersion &&
+                        version != SaveSnapshot.WorldMapV2Version)
                         throw new NotSupportedException("Unsupported save format version: " + version);
                     RequireFields(root, FieldsForVersion(version));
                     var production = version >= SaveSnapshot.ProductionVersion
@@ -192,13 +195,16 @@ namespace Game.Infrastructure
                         ? DeserializeMilitaryCampaign(root.Element("militaryCampaign")) : null;
                     var diagnostics = version >= SaveSnapshot.DiagnosticVersion
                         ? DeserializeDiagnostics(root.Element("diagnostics")) : null;
+                    var wildlife = version >= SaveSnapshot.WorldMapV2Version
+                        ? DeserializeWildlife(root.Element("wildlife")) : null;
                     var snapshot = new SaveSnapshot(version, StableEntityId.Parse(Value(root, "sessionId")),
                         new GameTimeState(Long(root, "calendarTicks"), Long(root, "biologicalTicks"),
                             Int(root, "speed"), XmlConvert.ToBoolean(Value(root, "paused"))),
                         Int(root, "biologicalMultiplier"), production, research, dynastyWorld, healthFamily, weather,
                         combat, military, playerControl, buildingWorld, globalMap, strategicAi, events, campaign,
                         appearance, work, connectedWorld, domestic, characterRuntime, militaryCampaign, diagnostics,
-                        version >= SaveSnapshot.BuildingConstructionVersion ? Value(root, "saveGenerationId") : null);
+                        version >= SaveSnapshot.BuildingConstructionVersion ? Value(root, "saveGenerationId") : null,
+                        wildlife);
                     SaveCoordinator.CreateClock(snapshot);
                     return snapshot;
                 }
@@ -1644,7 +1650,60 @@ namespace Game.Infrastructure
             if (version >= SaveSnapshot.MilitaryCampaignVersion) fields = fields.Concat(new[] { "militaryCampaign" });
             if (version >= SaveSnapshot.DiagnosticVersion) fields = fields.Concat(new[] { "diagnostics" });
             if (version >= SaveSnapshot.BuildingConstructionVersion) fields = fields.Concat(new[] { "saveGenerationId" });
+            if (version >= SaveSnapshot.WorldMapV2Version) fields = fields.Concat(new[] { "wildlife" });
             return fields.ToArray();
+        }
+
+        private static XElement SerializeWildlife(WildlifeWorldState state)
+        {
+            var element = new XElement("wildlife");
+            if (state == null) return element;
+            element.Add(new XElement("lastDay", state.LastDay),
+                new XElement("nextBirthSequence", state.NextBirthSequence),
+                new XElement("animals", state.Animals.Select(value => new XElement("animal",
+                    new XElement("id", value.Id.ToString()),
+                    new XElement("speciesId", value.SpeciesId),
+                    new XElement("sex", (int)value.Sex),
+                    new XElement("birthDay", value.BirthDay),
+                    new XElement("habitatNodeId", value.HabitatNodeId),
+                    new XElement("x", XmlConvert.ToString(value.Position.X)),
+                    new XElement("y", XmlConvert.ToString(value.Position.Y)),
+                    new XElement("z", XmlConvert.ToString(value.Position.Z)),
+                    new XElement("tier", (int)value.Tier)))),
+                new XElement("huntingPressures", state.HuntingPressures.Select(value =>
+                    new XElement("pressure", new XElement("speciesId", value.SpeciesId),
+                        new XElement("regionId", value.RegionId),
+                        new XElement("permille", value.Permille)))));
+            return element;
+        }
+
+        private static WildlifeWorldState DeserializeWildlife(XElement element)
+        {
+            if (element == null) throw new FormatException("Missing wildlife state.");
+            if (!element.HasElements)
+            {
+                if (!string.IsNullOrWhiteSpace(element.Value))
+                    throw new FormatException("Invalid empty wildlife state.");
+                return null;
+            }
+            RequireFields(element, new[] { "lastDay", "nextBirthSequence", "animals", "huntingPressures" });
+            var animals = Items(element.Element("animals"), "animal", item =>
+            {
+                RequireFields(item, new[] { "id", "speciesId", "sex", "birthDay", "habitatNodeId",
+                    "x", "y", "z", "tier" });
+                return new WildlifeIndividualState(StableEntityId.Parse(Value(item, "id")),
+                    Value(item, "speciesId"), (WildlifeSex)Int(item, "sex"), Long(item, "birthDay"),
+                    Value(item, "habitatNodeId"), new WorldPosition(Float(item, "x"), Float(item, "y"),
+                        Float(item, "z")), (CharacterSimulationTier)Int(item, "tier"));
+            });
+            var pressures = Items(element.Element("huntingPressures"), "pressure", item =>
+            {
+                RequireFields(item, new[] { "speciesId", "regionId", "permille" });
+                return new WildlifeHuntingPressureState(Value(item, "speciesId"), Value(item, "regionId"),
+                    Int(item, "permille"));
+            });
+            return new WildlifeWorldState(Long(element, "lastDay"), Int(element, "nextBirthSequence"),
+                animals, pressures);
         }
 
         private static XElement SerializeDiagnostics(DiagnosticSaveState state)

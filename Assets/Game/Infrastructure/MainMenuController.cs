@@ -88,11 +88,12 @@ namespace Game.Infrastructure
             if (actionAsset == null) throw new InvalidOperationException("Main menu input actions are required.");
             if (characterCatalog == null) throw new InvalidOperationException("P4 character presentation catalog is required.");
             appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
-            var saveDirectory = ResolveSaveDirectory();
+            var saveProfile = StartupSaveProfile.Current;
+            var saveDirectory = ResolveSaveDirectory(saveProfile);
             var legacyDirectory = ResolveLegacySaveDirectory();
             saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory),
                 string.Equals(saveDirectory, legacyDirectory, StringComparison.OrdinalIgnoreCase)
-                    ? null : new FileSaveStore(legacyDirectory), SaveSnapshot.StoneAgeBuildingSaveGenerationId);
+                    ? null : new FileSaveStore(legacyDirectory), saveProfile.SaveGenerationId);
             settingsStore = UserSettingsStore.CreateDefault();
             var loadedSettings = settingsStore.Load();
             settings = loadedSettings.Settings;
@@ -967,11 +968,11 @@ namespace Game.Infrastructure
             return string.Empty;
         }
 
-        private static string ResolveSaveDirectory()
+        private static string ResolveSaveDirectory(StartupSaveProfile profile)
         {
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "StoneAgeBuildingsV1", "Saves")
+                ? profile.ResolveDirectory(Application.persistentDataPath)
                 : configured;
         }
 

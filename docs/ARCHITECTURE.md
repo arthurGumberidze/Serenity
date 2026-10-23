@@ -1,5 +1,26 @@
 # Architecture — U01
 
+## WM13 World Map V2 save/version boundary (2026-10-23)
+
+The selection flow is `TiledWorldDefinition.GenerationId -> StartupSaveProfile`, which chooses directory,
+save generation and format version. The current reference maps to v29 and `StoneAgeBuildingsV1/Saves`; the
+proposed V2 maps to v30 and `WorldMapV2Proposed/Saves`. `LocalSceneCompositionRoot` still loads the reference
+definition, and the main menu explicitly uses the current profile. The V2 profile is therefore an isolated
+dormant route, not an activation switch.
+
+The v30 data flow is `SaveCoordinator -> existing canonical payloads + WildlifePopulationService.CaptureState
+-> SaveSnapshot -> SaveXmlCodec`. Production remains authoritative for visible resource and fish stock plus
+natural lifecycle. Connected-world cells and event history remain authoritative for exploration and POI
+exactly-once behavior. Building/work payloads remain authoritative for construction and clearance. Immutable
+hidden-deposit definitions and buildability policy are regenerated from the matching world definition and do
+not receive parallel mutable save collections.
+
+On load, `SaveCoordinator` validates save-generation identity, connected-world generation and the required
+wildlife section before replacing the clock or invoking any restore method. Wildlife validates species,
+habitat, identity and capacity before atomically replacing individuals and hunting pressure. The population
+presenter then reconciles disposable GameObjects/entities from that canonical state. The XML codec owns the
+strict v30 schema; file and PostgreSQL stores remain transport only.
+
 ## WM12 World Map V2 buildability/clearance boundary (2026-10-23)
 
 The authored flow is `WORLD_MAP_BUILDABILITY -> WorldMapBuildabilityDefinition ->
