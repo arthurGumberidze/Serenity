@@ -2,6 +2,12 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 world-map design package (2026-10-23): DONE as documentation only; overall P10.9 stays PARTIAL.
+'docs/world_map/' defines 'serenity-world-map-v1' with coordinated JSON, eight technical map layers,
+supplemental concept art, buildability/generation/implementation specifications and 15 gated follow-up tasks.
+The generator validation passes. No Unity scene/runtime/save was changed, and proposed generation
+'p109-world-map-v2-proposed' is not active. F1 remains the next unblocked scope.
+
 P10.9 notification/23102026 asset feedback (2026-10-23): DONE in implementation; final user acceptance remains
 F1. Clicking a notification focuses its target and removes the matching feed entry. Eleven local archives were
 audited and a code-free 217-asset subset supplies URP woodland details, day/night ambience, hunting feedback and

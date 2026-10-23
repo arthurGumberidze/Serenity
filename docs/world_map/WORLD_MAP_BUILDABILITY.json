@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "buildability",
+  "units": "meters",
+  "north": "+Z",
+  "zones": [
+    {
+      "id": "build_start_core",
+      "category": "ideal",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          185,
+          840
+        ],
+        "radius": [
+          78,
+          68
+        ]
+      },
+      "slopeMaxDegrees": 8,
+      "requiresClearing": false,
+      "purpose": [
+        "first_settlement"
+      ]
+    },
+    {
+      "id": "build_start_west_expansion",
+      "category": "ideal",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            55,
+            760
+          ],
+          [
+            145,
+            745
+          ],
+          [
+            190,
+            690
+          ],
+          [
+            120,
+            650
+          ],
+          [
+            35,
+            675
+          ]
+        ]
+      },
+      "slopeMaxDegrees": 12,
+      "requiresClearing": true,
+      "purpose": [
+        "housing",
+        "storage"
+      ]
+    },
+    {
+      "id": "build_start_east_expansion",
+      "category": "ideal",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            245,
+            855
+          ],
+          [
+            350,
+            825
+          ],
+          [
+            385,
+            760
+          ],
+          [
+            305,
+            715
+          ],
+          [
+            245,
+            750
+          ]
+        ]
+      },
+      "slopeMaxDegrees": 12,
+      "requiresClearing": true,
+      "purpose": [
+        "workshops",
+        "housing"
+      ]
+    },
+    {
+      "id": "build_south_meadow_settlement",
+      "category": "ideal",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          285,
+          175
+        ],
+        "radius": [
+          150,
+          105
+        ]
+      },
+      "slopeMaxDegrees": 10,
+      "requiresClearing": false,
+      "purpose": [
+        "future_settlement",
+        "farming"
+      ]
+    },
+    {
+      "id": "build_lake_district_clearings",
+      "category": "conditional",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          525,
+          310
+        ],
+        "radius": [
+          115,
+          75
+        ]
+      },
+      "slopeMaxDegrees": 16,
+      "requiresClearing": true,
+      "purpose": [
+        "fishing_support",
+        "small_outpost"
+      ]
+    },
+    {
+      "id": "build_east_highland_terraces",
+      "category": "conditional",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          880,
+          500
+        ],
+        "radius": [
+          75,
+          105
+        ]
+      },
+      "slopeMaxDegrees": 18,
+      "requiresClearing": true,
+      "purpose": [
+        "clay_outpost",
+        "watch_position"
+      ]
+    },
+    {
+      "id": "build_ridge_restricted",
+      "category": "restricted",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          850,
+          830
+        ],
+        "radius": [
+          155,
+          150
+        ]
+      },
+      "slopeMaxDegrees": 24,
+      "requiresClearing": true,
+      "purpose": [
+        "mining_only"
+      ]
+    },
+    {
+      "id": "build_marsh_restricted",
+      "category": "restricted",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            770,
+            175
+          ],
+          [
+            810,
+            350
+          ],
+          [
+            1000,
+            300
+          ],
+          [
+            1000,
+            0
+          ],
+          [
+            690,
+            0
+          ]
+        ]
+      },
+      "slopeMaxDegrees": 6,
+      "requiresClearing": false,
+      "purpose": [
+        "future_drainage_technology"
+      ]
+    }
+  ],
+  "hardNoBuild": [
+    {
+      "id": "no_build_water",
+      "sources": [
+        "WORLD_MAP_WATER.json#river",
+        "WORLD_MAP_WATER.json#lakes"
+      ],
+      "reason": "water"
+    },
+    {
+      "id": "no_build_unique_poi",
+      "sources": [
+        "WORLD_MAP_POI.json#points"
+      ],
+      "reason": "protected_unique_object"
+    },
+    {
+      "id": "no_build_cliffs",
+      "source": "WORLD_MAP_TERRAIN.json",
+      "predicate": "slope > 32 degrees"
+    }
+  ],
+  "clearable": [
+    "tree",
+    "bush",
+    "berry_bush",
+    "loose_stone",
+    "branches",
+    "plant_fiber"
+  ],
+  "unclearableWithoutSpecificTechnology": [
+    "water",
+    "cliff",
+    "unique_poi",
+    "cave_entrance",
+    "deep_marsh",
+    "ridge_monolith"
+  ],
+  "expansionDirections": [
+    {
+      "id": "expand_west",
+      "from": [
+        185,
+        840
+      ],
+      "to": [
+        95,
+        705
+      ],
+      "priority": 2
+    },
+    {
+      "id": "expand_east",
+      "from": [
+        185,
+        840
+      ],
+      "to": [
+        330,
+        765
+      ],
+      "priority": 1
+    },
+    {
+      "id": "expand_south",
+      "from": [
+        185,
+        840
+      ],
+      "to": [
+        245,
+        660
+      ],
+      "priority": 3
+    }
+  ],
+  "grid": {
+    "cellSizeMeters": 2,
+    "visualization": "editor_and_placement_only",
+    "natureMustNotFollowGrid": true
+  }
+}

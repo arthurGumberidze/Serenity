@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "roads_and_navigation",
+  "units": "meters",
+  "north": "+Z",
+  "routes": [
+    {
+      "id": "route_main_west_southeast",
+      "name": "Главная грунтовая тропа",
+      "kind": "main_primitive_trail",
+      "widthMeters": [
+        5,
+        8
+      ],
+      "points": [
+        [
+          0,
+          585
+        ],
+        [
+          110,
+          575
+        ],
+        [
+          225,
+          555
+        ],
+        [
+          345,
+          540
+        ],
+        [
+          465,
+          520
+        ],
+        [
+          575,
+          470
+        ],
+        [
+          680,
+          410
+        ],
+        [
+          790,
+          330
+        ],
+        [
+          900,
+          240
+        ],
+        [
+          1000,
+          170
+        ]
+      ]
+    },
+    {
+      "id": "path_start_north_forest",
+      "name": "Северная лесная тропа",
+      "kind": "footpath",
+      "widthMeters": [
+        1.5,
+        3
+      ],
+      "points": [
+        [
+          185,
+          840
+        ],
+        [
+          275,
+          820
+        ],
+        [
+          365,
+          790
+        ],
+        [
+          455,
+          760
+        ],
+        [
+          530,
+          755
+        ]
+      ]
+    },
+    {
+      "id": "path_start_west_lake",
+      "name": "Тропа к Западному озеру",
+      "kind": "footpath",
+      "widthMeters": [
+        1.5,
+        3
+      ],
+      "points": [
+        [
+          185,
+          840
+        ],
+        [
+          145,
+          745
+        ],
+        [
+          125,
+          640
+        ],
+        [
+          115,
+          545
+        ],
+        [
+          104,
+          488
+        ]
+      ]
+    },
+    {
+      "id": "path_ridge",
+      "name": "Подъём на хребет",
+      "kind": "mountain_path",
+      "widthMeters": [
+        1.5,
+        2.5
+      ],
+      "points": [
+        [
+          575,
+          470
+        ],
+        [
+          665,
+          560
+        ],
+        [
+          735,
+          650
+        ],
+        [
+          790,
+          735
+        ],
+        [
+          790,
+          810
+        ],
+        [
+          808,
+          837
+        ],
+        [
+          850,
+          875
+        ],
+        [
+          905,
+          860
+        ],
+        [
+          930,
+          815
+        ]
+      ]
+    },
+    {
+      "id": "path_south_meadow",
+      "name": "Южная охотничья тропа",
+      "kind": "footpath",
+      "widthMeters": [
+        1.5,
+        3
+      ],
+      "points": [
+        [
+          345,
+          540
+        ],
+        [
+          300,
+          430
+        ],
+        [
+          250,
+          320
+        ],
+        [
+          210,
+          225
+        ],
+        [
+          260,
+          120
+        ]
+      ]
+    },
+    {
+      "id": "path_lake_district",
+      "name": "Озёрная тропа",
+      "kind": "footpath",
+      "widthMeters": [
+        1.5,
+        3
+      ],
+      "points": [
+        [
+          575,
+          470
+        ],
+        [
+          640,
+          547
+        ],
+        [
+          705,
+          575
+        ],
+        [
+          770,
+          550
+        ],
+        [
+          782,
+          523
+        ],
+        [
+          735,
+          460
+        ],
+        [
+          680,
+          410
+        ],
+        [
+          650,
+          300
+        ],
+        [
+          686,
+          224
+        ]
+      ]
+    },
+    {
+      "id": "path_marsh_edge",
+      "name": "Кромка болота",
+      "kind": "raised_footpath",
+      "widthMeters": [
+        1.5,
+        2.5
+      ],
+      "points": [
+        [
+          790,
+          330
+        ],
+        [
+          850,
+          285
+        ],
+        [
+          900,
+          240
+        ],
+        [
+          890,
+          175
+        ],
+        [
+          860,
+          105
+        ]
+      ]
+    }
+  ],
+  "crossings": [
+    {
+      "id": "crossing_start_ford",
+      "name": "Северо-западный брод",
+      "position": [
+        145,
+        635
+      ],
+      "type": "ford",
+      "routeIds": [
+        "path_start_west_lake"
+      ]
+    },
+    {
+      "id": "crossing_main_bridge",
+      "name": "Центральная переправа",
+      "position": [
+        350,
+        542
+      ],
+      "type": "simple_wood_bridge",
+      "routeIds": [
+        "route_main_west_southeast"
+      ]
+    },
+    {
+      "id": "crossing_lake_footbridge",
+      "name": "Озёрный мосток",
+      "position": [
+        632,
+        385
+      ],
+      "type": "footbridge",
+      "routeIds": [
+        "path_lake_district"
+      ]
+    }
+  ],
+  "chokepoints": [
+    {
+      "id": "choke_ridge_pass",
+      "name": "Проход Хребта",
+      "position": [
+        770,
+        655
+      ],
+      "radiusMeters": 28
+    },
+    {
+      "id": "choke_marsh_causeway",
+      "name": "Сухая кромка болота",
+      "position": [
+        820,
+        315
+      ],
+      "radiusMeters": 24
+    },
+    {
+      "id": "choke_central_bridge",
+      "name": "Центральная переправа",
+      "position": [
+        350,
+        542
+      ],
+      "radiusMeters": 22
+    }
+  ],
+  "rules": {
+    "mainTrailSurface": "compacted_earth_and_gravel",
+    "avoidSlopeAboveDegrees": 22,
+    "footpathAvoidSlopeAboveDegrees": 30,
+    "riverCrossingRequiresAuthoredCrossing": true,
+    "futureBridgeSocketsUseStableIds": true
+  }
+}

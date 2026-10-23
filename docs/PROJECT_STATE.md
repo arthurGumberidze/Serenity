@@ -1,5 +1,29 @@
 # PROJECT_STATE.md
 
+## Design checkpoint — 2026-10-23 world-map package
+
+The user-requested 1000×1000 m world-map design is complete under 'docs/world_map/' as
+'serenity-world-map-v1'. It contains ten cross-referenced JSON layers, the coordinate transform from design
+X/Z 0…1000 to the current compact runtime origin (-570,-120), eight canonical technical PNG maps, one
+supplemental generated concept-art PNG, a contact sheet, implementation/generation/buildability specifications,
+15 follow-up Codex tasks, validation output and a SHA-256 manifest.
+
+The proposed future runtime generation is 'p109-world-map-v2-proposed': northwest start at design (185,840),
+eight natural regions, one northwest-to-southeast river, exactly four connected lakes, seven route splines,
+three crossings, nine POIs, map-wide wildlife suitability with four concentration areas, natural resource
+masks, buildability/clearance zones and a hidden future oil reservoir under the southeastern marsh. This is
+documentation only. 'P109TiledWorld.json', Unity scenes, runtime code, packages and saves were not changed;
+'p109-compact-world-v1' remains the live generation.
+
+Validation command:
+
+'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe docs\world_map\generate_world_map_package.py'
+
+Result: PASS — 11 JSON, 8 Markdown and 10 PNG files; consistent map version, four lakes, bounded coordinates,
+unique stable layer IDs, start inside Region A, connected river endpoints and complete technical image set.
+Unity tests/build were not run because this slice changes no Unity assets or runtime source. P10.9 F1 remains
+the next unblocked implementation/acceptance work; the map package does not activate WM01 or P10.10.
+
 ## Working checkpoint — 2026-10-23 reviewed 23102026 assets and notification dismissal
 
 Clicking a notification now removes the exact text/target pair before focusing its panel, character, building

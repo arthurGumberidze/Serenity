@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## D-175 World-map design uses a canonical 0…1000 grid and a versioned runtime projection (2026-10-23)
+
+The completed design package at 'docs/world_map/' is versioned as 'serenity-world-map-v1'. Authoring and
+documentation use X=0…1000 west-to-east and Z=0…1000 south-to-north. A single explicit transform preserves
+the current compact-world runtime origin: unityX=designX-570 and unityZ=designZ-120. Technical images are
+generated from the same in-memory data as the JSON layers; the separate image-generated illustration is
+labelled supplemental and never overrides coordinates.
+
+The future implementation is isolated as 'p109-world-map-v2-proposed'. It must not mutate or reuse
+'p109-compact-world-v1' saves. The northwestern start, eight regions, four connected lakes, river, routes,
+resources, wildlife habitats, POIs and buildability masks become runtime authority only after a separately
+authorized data-contract/implementation task. Existing TiledWorldDefinition, height/terrain projection,
+Production/ResourceEcology, building placement/clearance, tiering and SaveCoordinator remain the extension
+points; no parallel world, inventory, wildlife or save manager is authorized by the design.
+
 ## D-158 Compact world and reviewed art libraries (2026-10-21)
 
 The user supersedes the 12 km footprint with an exact 1000 x 1000 m new-game world.

@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "vegetation",
+  "units": "meters",
+  "north": "+Z",
+  "classes": [
+    {
+      "id": "dense_conifer",
+      "name": "Густой хвойный лес",
+      "interactiveTreesPerHa": [
+        70,
+        110
+      ],
+      "decorativeInstancesPerHa": [
+        140,
+        240
+      ],
+      "canopy": [
+        0.7,
+        0.9
+      ]
+    },
+    {
+      "id": "mixed_forest",
+      "name": "Смешанный лес",
+      "interactiveTreesPerHa": [
+        45,
+        80
+      ],
+      "decorativeInstancesPerHa": [
+        100,
+        180
+      ],
+      "canopy": [
+        0.5,
+        0.75
+      ]
+    },
+    {
+      "id": "deciduous_grove",
+      "name": "Лиственная роща",
+      "interactiveTreesPerHa": [
+        35,
+        65
+      ],
+      "decorativeInstancesPerHa": [
+        80,
+        150
+      ],
+      "canopy": [
+        0.45,
+        0.7
+      ]
+    },
+    {
+      "id": "open_woodland",
+      "name": "Редколесье",
+      "interactiveTreesPerHa": [
+        12,
+        32
+      ],
+      "decorativeInstancesPerHa": [
+        35,
+        80
+      ],
+      "canopy": [
+        0.15,
+        0.4
+      ]
+    },
+    {
+      "id": "meadow",
+      "name": "Луг",
+      "interactiveTreesPerHa": [
+        0,
+        8
+      ],
+      "decorativeInstancesPerHa": [
+        30,
+        90
+      ],
+      "canopy": [
+        0,
+        0.12
+      ]
+    },
+    {
+      "id": "marsh_vegetation",
+      "name": "Болотная растительность",
+      "interactiveTreesPerHa": [
+        2,
+        12
+      ],
+      "decorativeInstancesPerHa": [
+        120,
+        260
+      ],
+      "canopy": [
+        0.05,
+        0.2
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "veg_start_open",
+      "classId": "open_woodland",
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          185,
+          840
+        ],
+        "radius": [
+          120,
+          95
+        ]
+      },
+      "densityMultiplier": 0.55,
+      "clearings": [
+        [
+          185,
+          840,
+          72
+        ]
+      ]
+    },
+    {
+      "id": "veg_north_dense",
+      "classId": "dense_conifer",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            350,
+            980
+          ],
+          [
+            710,
+            980
+          ],
+          [
+            675,
+            735
+          ],
+          [
+            560,
+            665
+          ],
+          [
+            410,
+            720
+          ],
+          [
+            330,
+            840
+          ]
+        ]
+      },
+      "densityMultiplier": 1.0
+    },
+    {
+      "id": "veg_west_deciduous",
+      "classId": "deciduous_grove",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            20,
+            600
+          ],
+          [
+            280,
+            590
+          ],
+          [
+            405,
+            675
+          ],
+          [
+            545,
+            625
+          ],
+          [
+            510,
+            510
+          ],
+          [
+            390,
+            420
+          ],
+          [
+            260,
+            350
+          ],
+          [
+            20,
+            380
+          ]
+        ]
+      },
+      "densityMultiplier": 0.9
+    },
+    {
+      "id": "veg_south_meadow",
+      "classId": "meadow",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            20,
+            340
+          ],
+          [
+            290,
+            315
+          ],
+          [
+            455,
+            375
+          ],
+          [
+            480,
+            285
+          ],
+          [
+            455,
+            20
+          ],
+          [
+            20,
+            20
+          ]
+        ]
+      },
+      "densityMultiplier": 0.85
+    },
+    {
+      "id": "veg_lake_forest",
+      "classId": "mixed_forest",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            450,
+            390
+          ],
+          [
+            555,
+            480
+          ],
+          [
+            680,
+            460
+          ],
+          [
+            780,
+            350
+          ],
+          [
+            735,
+            200
+          ],
+          [
+            680,
+            30
+          ],
+          [
+            500,
+            30
+          ],
+          [
+            520,
+            290
+          ]
+        ]
+      },
+      "densityMultiplier": 0.78
+    },
+    {
+      "id": "veg_east_open",
+      "classId": "open_woodland",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            700,
+            700
+          ],
+          [
+            825,
+            610
+          ],
+          [
+            980,
+            635
+          ],
+          [
+            980,
+            320
+          ],
+          [
+            815,
+            375
+          ],
+          [
+            700,
+            490
+          ],
+          [
+            590,
+            510
+          ],
+          [
+            620,
+            635
+          ]
+        ]
+      },
+      "densityMultiplier": 0.72
+    },
+    {
+      "id": "veg_marsh",
+      "classId": "marsh_vegetation",
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            770,
+            175
+          ],
+          [
+            810,
+            340
+          ],
+          [
+            980,
+            285
+          ],
+          [
+            980,
+            20
+          ],
+          [
+            705,
+            20
+          ]
+        ]
+      },
+      "densityMultiplier": 1.0
+    }
+  ],
+  "distribution": {
+    "method": "seeded_poisson_disc_plus_density_masks",
+    "minimumInteractiveTreeSpacingMeters": [
+      4.5,
+      8
+    ],
+    "startClearingExclusionRadiusMeters": 58,
+    "routeClearanceMeters": {
+      "mainTrail": 5,
+      "footpath": 2
+    },
+    "shoreReedBandMeters": [
+      2,
+      12
+    ]
+  },
+  "performanceBudget": {
+    "canonicalInteractiveTrees": [
+      3500,
+      6000
+    ],
+    "decorativeTreeAndShrubInstances": [
+      9000,
+      17000
+    ],
+    "activeTreeCollidersWithinCameraBudget": [
+      300,
+      650
+    ],
+    "interactiveBushesAndHerbs": [
+      800,
+      1500
+    ],
+    "decorativeGroundInstances": [
+      18000,
+      35000
+    ],
+    "verification": [
+      "GPU frame time",
+      "CPU culling time",
+      "draw calls",
+      "visible triangles",
+      "memory",
+      "NavMesh rebuild cost"
+    ]
+  }
+}

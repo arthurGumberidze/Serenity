@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "points_of_interest",
+  "units": "meters",
+  "north": "+Z",
+  "points": [
+    {
+      "id": "poi_sacred_grove",
+      "name": "Священная роща",
+      "position": [
+        530,
+        755
+      ],
+      "regionId": "region_b_north_forest",
+      "purpose": [
+        "culture",
+        "event",
+        "medicinal_plants"
+      ],
+      "protectionRadiusMeters": 32
+    },
+    {
+      "id": "poi_stone_circle",
+      "name": "Древний круг камней",
+      "position": [
+        155,
+        365
+      ],
+      "regionId": "region_d_west_grove",
+      "purpose": [
+        "discovery",
+        "culture"
+      ],
+      "protectionRadiusMeters": 24
+    },
+    {
+      "id": "poi_abandoned_camp",
+      "name": "Заброшенная стоянка",
+      "position": [
+        300,
+        730
+      ],
+      "regionId": "region_a_start_valley",
+      "purpose": [
+        "discovery",
+        "small_loot"
+      ],
+      "protectionRadiusMeters": 18
+    },
+    {
+      "id": "poi_ancient_ruins",
+      "name": "Древние каменные остатки",
+      "position": [
+        635,
+        410
+      ],
+      "regionId": "region_f_lake_district",
+      "purpose": [
+        "discovery",
+        "future_archaeology"
+      ],
+      "protectionRadiusMeters": 28
+    },
+    {
+      "id": "poi_overlook",
+      "name": "Обзорная высота",
+      "position": [
+        895,
+        650
+      ],
+      "regionId": "region_c_stone_ridge",
+      "purpose": [
+        "scouting",
+        "strategic_advantage"
+      ],
+      "protectionRadiusMeters": 22
+    },
+    {
+      "id": "poi_rock_spire",
+      "name": "Каменный клык",
+      "position": [
+        780,
+        870
+      ],
+      "regionId": "region_c_stone_ridge",
+      "purpose": [
+        "landmark",
+        "navigation"
+      ],
+      "protectionRadiusMeters": 20
+    },
+    {
+      "id": "poi_cave",
+      "name": "Малая пещера",
+      "position": [
+        930,
+        815
+      ],
+      "regionId": "region_c_stone_ridge",
+      "purpose": [
+        "exploration",
+        "shelter",
+        "minerals"
+      ],
+      "protectionRadiusMeters": 26
+    },
+    {
+      "id": "poi_giant_tree",
+      "name": "Старое великое дерево",
+      "position": [
+        330,
+        480
+      ],
+      "regionId": "region_d_west_grove",
+      "purpose": [
+        "landmark",
+        "culture"
+      ],
+      "protectionRadiusMeters": 22
+    },
+    {
+      "id": "poi_secluded_glade",
+      "name": "Уединённая поляна",
+      "position": [
+        520,
+        680
+      ],
+      "regionId": "region_b_north_forest",
+      "purpose": [
+        "foraging",
+        "temporary_camp"
+      ],
+      "protectionRadiusMeters": 30
+    }
+  ],
+  "rules": {
+    "uniqueObjectsPersistByStableId": true,
+    "noAutomaticConstructionClearance": true,
+    "discoveryStateSaved": true
+  }
+}

@@ -1,0 +1,448 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "biomes_and_regions",
+  "units": "meters",
+  "north": "+Z",
+  "regions": [
+    {
+      "id": "region_a_start_valley",
+      "code": "A",
+      "name": "Стартовая долина",
+      "nameEn": "Start Valley",
+      "polygon": [
+        [
+          0,
+          620
+        ],
+        [
+          0,
+          1000
+        ],
+        [
+          360,
+          1000
+        ],
+        [
+          330,
+          830
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          300,
+          610
+        ]
+      ],
+      "elevationMeters": [
+        12,
+        28
+      ],
+      "biomes": [
+        "mixed_open_forest",
+        "meadow_clearings",
+        "riparian"
+      ],
+      "soil": [
+        "loam",
+        "sandy_loam"
+      ],
+      "gameplay": [
+        "player_start",
+        "early_building",
+        "basic_resources",
+        "river_access"
+      ]
+    },
+    {
+      "id": "region_b_north_forest",
+      "code": "B",
+      "name": "Северный лес",
+      "nameEn": "North Forest",
+      "polygon": [
+        [
+          360,
+          1000
+        ],
+        [
+          720,
+          1000
+        ],
+        [
+          690,
+          720
+        ],
+        [
+          600,
+          650
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          330,
+          830
+        ]
+      ],
+      "elevationMeters": [
+        20,
+        48
+      ],
+      "biomes": [
+        "dense_conifer_forest",
+        "mixed_forest",
+        "ravines"
+      ],
+      "soil": [
+        "podzol",
+        "forest_loam"
+      ],
+      "gameplay": [
+        "timber",
+        "mushrooms",
+        "berries",
+        "northern_hunt"
+      ]
+    },
+    {
+      "id": "region_c_stone_ridge",
+      "code": "C",
+      "name": "Каменный хребет",
+      "nameEn": "Stone Ridge",
+      "polygon": [
+        [
+          720,
+          1000
+        ],
+        [
+          1000,
+          1000
+        ],
+        [
+          1000,
+          650
+        ],
+        [
+          830,
+          620
+        ],
+        [
+          690,
+          720
+        ]
+      ],
+      "elevationMeters": [
+        38,
+        82
+      ],
+      "biomes": [
+        "rocky_highland",
+        "sparse_conifer",
+        "alpine_scrub"
+      ],
+      "soil": [
+        "rock",
+        "thin_gravel"
+      ],
+      "gameplay": [
+        "stone",
+        "hidden_minerals",
+        "cave",
+        "mountain_lake"
+      ]
+    },
+    {
+      "id": "region_d_west_grove",
+      "code": "D",
+      "name": "Западная роща",
+      "nameEn": "West Grove",
+      "polygon": [
+        [
+          0,
+          620
+        ],
+        [
+          300,
+          610
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          600,
+          650
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          420,
+          400
+        ],
+        [
+          300,
+          330
+        ],
+        [
+          0,
+          360
+        ]
+      ],
+      "elevationMeters": [
+        14,
+        34
+      ],
+      "biomes": [
+        "deciduous_grove",
+        "small_clearings",
+        "lake_shore"
+      ],
+      "soil": [
+        "brown_forest_soil",
+        "loam"
+      ],
+      "gameplay": [
+        "hardwood",
+        "western_lake",
+        "stone_circle",
+        "foraging"
+      ]
+    },
+    {
+      "id": "region_e_south_meadows",
+      "code": "E",
+      "name": "Южные луга",
+      "nameEn": "South Meadows",
+      "polygon": [
+        [
+          0,
+          360
+        ],
+        [
+          300,
+          330
+        ],
+        [
+          420,
+          400
+        ],
+        [
+          500,
+          300
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "elevationMeters": [
+        11,
+        30
+      ],
+      "biomes": [
+        "open_meadow",
+        "wooded_islets",
+        "shrubland"
+      ],
+      "soil": [
+        "fertile_loam",
+        "alluvial_loam"
+      ],
+      "gameplay": [
+        "high_game_density",
+        "future_farming",
+        "settlement_expansion"
+      ]
+    },
+    {
+      "id": "region_f_lake_district",
+      "code": "F",
+      "name": "Озёрный край",
+      "nameEn": "Lake District",
+      "polygon": [
+        [
+          420,
+          400
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          690,
+          480
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          760,
+          180
+        ],
+        [
+          690,
+          0
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          500,
+          300
+        ]
+      ],
+      "elevationMeters": [
+        8,
+        34
+      ],
+      "biomes": [
+        "lake_forest",
+        "reed_shore",
+        "wet_meadow"
+      ],
+      "soil": [
+        "alluvium",
+        "peaty_loam"
+      ],
+      "gameplay": [
+        "fishing",
+        "clay",
+        "reed_fiber",
+        "southern_lake"
+      ]
+    },
+    {
+      "id": "region_g_east_highlands",
+      "code": "G",
+      "name": "Восточные возвышенности",
+      "nameEn": "East Highlands",
+      "polygon": [
+        [
+          690,
+          720
+        ],
+        [
+          830,
+          620
+        ],
+        [
+          1000,
+          650
+        ],
+        [
+          1000,
+          300
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          690,
+          480
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          600,
+          650
+        ]
+      ],
+      "elevationMeters": [
+        26,
+        62
+      ],
+      "biomes": [
+        "rolling_mixed_forest",
+        "clay_banks",
+        "rock_passes"
+      ],
+      "soil": [
+        "clay",
+        "stony_loam"
+      ],
+      "gameplay": [
+        "clay",
+        "stone",
+        "central_east_lake",
+        "chokepoints"
+      ]
+    },
+    {
+      "id": "region_h_south_marsh",
+      "code": "H",
+      "name": "Южное болото",
+      "nameEn": "South Marsh",
+      "polygon": [
+        [
+          760,
+          180
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          1000,
+          300
+        ],
+        [
+          1000,
+          0
+        ],
+        [
+          690,
+          0
+        ]
+      ],
+      "elevationMeters": [
+        6,
+        18
+      ],
+      "biomes": [
+        "marsh",
+        "wet_scrub",
+        "reed_channels"
+      ],
+      "soil": [
+        "peat",
+        "waterlogged_clay"
+      ],
+      "gameplay": [
+        "limited_stone_age_value",
+        "medicinal_plants",
+        "future_oil"
+      ]
+    }
+  ],
+  "transitionRules": {
+    "minimumBlendWidthMeters": 24,
+    "preferredBlendWidthMeters": [
+      35,
+      70
+    ],
+    "noRectangularVisualEdges": true,
+    "ecotoneLayers": [
+      "ground_material",
+      "canopy_density",
+      "understory",
+      "small_props"
+    ]
+  }
+}

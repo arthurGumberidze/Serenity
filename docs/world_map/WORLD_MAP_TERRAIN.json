@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "terrain",
+  "units": "meters",
+  "north": "+Z",
+  "heightRangeMeters": [
+    4,
+    96
+  ],
+  "waterLevelReferenceMeters": 8,
+  "walkableLandTypicalMeters": [
+    11,
+    62
+  ],
+  "ridgePeakMeters": 82,
+  "heightmap": {
+    "worldResolution": 1025,
+    "tileResolution": 257,
+    "tiles": [
+      4,
+      4
+    ],
+    "sharedBorderSamples": true
+  },
+  "heightAnchors": [
+    {
+      "id": "height_start_plateau",
+      "position": [
+        185,
+        840
+      ],
+      "heightMeters": 18,
+      "radiusMeters": 95,
+      "mode": "flatten_blend"
+    },
+    {
+      "id": "height_north_hills",
+      "position": [
+        520,
+        850
+      ],
+      "heightMeters": 42,
+      "radiusMeters": 180,
+      "mode": "raise"
+    },
+    {
+      "id": "height_ridge_peak",
+      "position": [
+        860,
+        880
+      ],
+      "heightMeters": 82,
+      "radiusMeters": 170,
+      "mode": "raise"
+    },
+    {
+      "id": "height_ridge_pass",
+      "position": [
+        770,
+        655
+      ],
+      "heightMeters": 38,
+      "radiusMeters": 60,
+      "mode": "lower_pass"
+    },
+    {
+      "id": "height_west_grove",
+      "position": [
+        190,
+        470
+      ],
+      "heightMeters": 22,
+      "radiusMeters": 150,
+      "mode": "rolling"
+    },
+    {
+      "id": "height_south_meadow",
+      "position": [
+        230,
+        180
+      ],
+      "heightMeters": 17,
+      "radiusMeters": 220,
+      "mode": "gentle"
+    },
+    {
+      "id": "height_east_highland",
+      "position": [
+        880,
+        500
+      ],
+      "heightMeters": 52,
+      "radiusMeters": 160,
+      "mode": "raise"
+    },
+    {
+      "id": "height_marsh_basin",
+      "position": [
+        885,
+        125
+      ],
+      "heightMeters": 9,
+      "radiusMeters": 150,
+      "mode": "lower"
+    }
+  ],
+  "noise": [
+    {
+      "id": "macro",
+      "wavelengthMeters": [
+        220,
+        360
+      ],
+      "amplitudeMeters": [
+        5,
+        12
+      ],
+      "weight": 0.52
+    },
+    {
+      "id": "meso",
+      "wavelengthMeters": [
+        70,
+        140
+      ],
+      "amplitudeMeters": [
+        1.5,
+        4.5
+      ],
+      "weight": 0.32
+    },
+    {
+      "id": "detail",
+      "wavelengthMeters": [
+        18,
+        45
+      ],
+      "amplitudeMeters": [
+        0.2,
+        1.2
+      ],
+      "weight": 0.16
+    }
+  ],
+  "manualMasks": [
+    {
+      "id": "mask_start_plateau",
+      "operation": "flatten_blend",
+      "center": [
+        185,
+        840
+      ],
+      "radiusMeters": 90,
+      "targetHeightMeters": 18,
+      "maximumSlopeDegrees": 8
+    },
+    {
+      "id": "mask_river_valley",
+      "operation": "carve_spline",
+      "source": "WORLD_MAP_WATER.json#river_main",
+      "bankBlendMeters": [
+        14,
+        28
+      ]
+    },
+    {
+      "id": "mask_lake_basins",
+      "operation": "carve_polygons",
+      "source": "WORLD_MAP_WATER.json#lakes",
+      "bankBlendMeters": [
+        10,
+        22
+      ]
+    },
+    {
+      "id": "mask_ridge",
+      "operation": "ridge_spline_plus_erosion",
+      "points": [
+        [
+          735,
+          670
+        ],
+        [
+          790,
+          770
+        ],
+        [
+          860,
+          880
+        ],
+        [
+          970,
+          920
+        ]
+      ],
+      "talusAngleDegrees": [
+        26,
+        36
+      ]
+    },
+    {
+      "id": "mask_marsh_basin",
+      "operation": "flatten_low",
+      "center": [
+        885,
+        125
+      ],
+      "radiusMeters": 155,
+      "targetHeightMeters": [
+        8.5,
+        13
+      ]
+    }
+  ],
+  "slopeTargets": {
+    "buildablePercentMinimum": 38,
+    "slopeUnder12DegreesPercent": [
+      45,
+      58
+    ],
+    "slopeOver32DegreesPercentMaximum": 9
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "manifest",
+  "units": "meters",
+  "north": "+Z",
+  "generator": "generate_world_map_package.py",
+  "files": [
+    {
+      "path": "generate_world_map_package.py",
+      "bytes": 95700,
+      "sha256": "cd89a77f9c3f593d6c07e91964e9784b993bf0e77083a9f2f2794aee91cabe18"
+    },
+    {
+      "path": "images/world_map_buildability.png",
+      "bytes": 95011,
+      "sha256": "9b8924ab9762eee8cc68d7b16812c126bab754ba47028b43a89735537938b806"
+    },
+    {
+      "path": "images/world_map_concept_art.png",
+      "bytes": 4260309,
+      "sha256": "5f5c607eed766803399513bf73be857eaf91da042048f730c248dab9a434ca8d"
+    },
+    {
+      "path": "images/world_map_contact_sheet.png",
+      "bytes": 834304,
+      "sha256": "3e22259de647f553e1b6cf5e130f9ddf2053a9700264472d03cf3a2f07892fd0"
+    },
+    {
+      "path": "images/world_map_height.png",
+      "bytes": 266516,
+      "sha256": "d9211c537d3fadcfb68f532a2d6c3d96de57ca4bff6def412451d4e3b0babd51"
+    },
+    {
+      "path": "images/world_map_overview.png",
+      "bytes": 157658,
+      "sha256": "b72d1e516381dac0d14e3e230e0fcfe89fbd379933bd110a378dd6106339901b"
+    },
+    {
+      "path": "images/world_map_regions.png",
+      "bytes": 81418,
+      "sha256": "79809fdff72140e37089cd77a21a20c35b111d6d5fca4d331027a462d8c8ba9e"
+    },
+    {
+      "path": "images/world_map_resources.png",
+      "bytes": 105324,
+      "sha256": "ad8213facabc163cb17bc3afc1b0d73c994e23e6324be05248584541386e023b"
+    },
+    {
+      "path": "images/world_map_roads.png",
+      "bytes": 94779,
+      "sha256": "56bd175fb416cc6d01a2f12cee7eaba37af3bede409ff944a0a339446bbb1444"
+    },
+    {
+      "path": "images/world_map_vegetation.png",
+      "bytes": 93932,
+      "sha256": "c0f4b6080e03fe56da5cda2d6388362dac928f19864204bd8845ce72f3694da4"
+    },
+    {
+      "path": "images/world_map_wildlife.png",
+      "bytes": 100730,
+      "sha256": "9e6d99426b4e1f4a96e3d5052a8af391d8f19059fc13a32e56879fee7135feaf"
+    },
+    {
+      "path": "README.md",
+      "bytes": 777,
+      "sha256": "009df2d8589866291b2d836afe7f32a4825b7434ec40d5cb67df49e9bad494f4"
+    },
+    {
+      "path": "WORLD_MAP_BIOMES.json",
+      "bytes": 7683,
+      "sha256": "d51b243a75922d99bf7f3e28205eba131d5444205599bb4becf94c78df301c42"
+    },
+    {
+      "path": "WORLD_MAP_BUILDABILITY.json",
+      "bytes": 5601,
+      "sha256": "6e1129c4a3b3db114be9260db731506fdd2e85c35bf566b1b5d5475b67fb35dc"
+    },
+    {
+      "path": "WORLD_MAP_BUILDABILITY.md",
+      "bytes": 2884,
+      "sha256": "623b4eb7c8e3382ad231d2426b53dca51177d79fd8c95c5dd30deedfe3f7100b"
+    },
+    {
+      "path": "WORLD_MAP_CODEX_TASKS.md",
+      "bytes": 8557,
+      "sha256": "f49fc34c1cde2dd91b649974520dc6c9a5b76c013732225dc1ce987985e06bb8"
+    },
+    {
+      "path": "WORLD_MAP_COORDINATES.json",
+      "bytes": 15820,
+      "sha256": "5834a1ef85704ebaf7ffe2d283be43f6ffdfe4d1e78da2e11e7ee6dbe9655da5"
+    },
+    {
+      "path": "WORLD_MAP_GENERATION.md",
+      "bytes": 3652,
+      "sha256": "09e0c497b8c6f0dd2fc192443d4575b7b2c97abc31e0fe1311a46770ee900857"
+    },
+    {
+      "path": "WORLD_MAP_IMPLEMENTATION_PLAN.md",
+      "bytes": 4723,
+      "sha256": "bb4bec386a5745ca73755433567396e92c89732c33159a9058e725772bf63d8b"
+    },
+    {
+      "path": "WORLD_MAP_MASTER_SPEC.md",
+      "bytes": 8816,
+      "sha256": "86ae667571f797dc81b21f78e64f4c76b5690d4ea858c56e5213e638122d1bad"
+    },
+    {
+      "path": "WORLD_MAP_OVERVIEW.md",
+      "bytes": 5947,
+      "sha256": "99dc91bb19af27054d519da293a339eff8175a3a5590881c578ee977ca2f0917"
+    },
+    {
+      "path": "WORLD_MAP_POI.json",
+      "bytes": 3282,
+      "sha256": "d86188b3318281b4bdc07810be881fc6e955ad82354a0e5b1c164bb7abd33965"
+    },
+    {
+      "path": "WORLD_MAP_RESOURCES.json",
+      "bytes": 10320,
+      "sha256": "200262b4923cd032d5b346ac0ab523dea16d16d9dee9ad1e52003a1848bc9c24"
+    },
+    {
+      "path": "WORLD_MAP_ROADS.json",
+      "bytes": 6071,
+      "sha256": "f8d970c8844311d79f0b2142a1d5ded7eaff362bfe6ea5dd60be88932a716b4b"
+    },
+    {
+      "path": "WORLD_MAP_TERRAIN.json",
+      "bytes": 4158,
+      "sha256": "a970ff4ac2b77d27f8415eda86bc61a5da3add1dd8a60415335ebdd5fce6c4d9"
+    },
+    {
+      "path": "WORLD_MAP_VALIDATION_REPORT.md",
+      "bytes": 733,
+      "sha256": "a8c9df2ec5ae2df7093ff170725b55a5d1b0c3ed8b2b251c28b4f96981207aa5"
+    },
+    {
+      "path": "WORLD_MAP_VEGETATION.json",
+      "bytes": 7079,
+      "sha256": "014930c21c35e1671b3fd80606c17f69ac2e933e20da31bc10a883a35eecdbae"
+    },
+    {
+      "path": "WORLD_MAP_WATER.json",
+      "bytes": 8139,
+      "sha256": "845730b17c7ebf758df1458eb60bfeab29e9468a3a054b3e70d01c1b8207c979"
+    },
+    {
+      "path": "WORLD_MAP_WILDLIFE.json",
+      "bytes": 5067,
+      "sha256": "728440c3cef77a064f7ddd483907217d797a1b42fe0783f37f3eeffe872fb034"
+    }
+  ]
+}
