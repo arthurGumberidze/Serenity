@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+User-requested support deliverable (2026-10-24): resilient WM15 offline runner DONE. This is runner tooling,
+not completion of WM15. The final game test/build/performance/visual gates remain pending. The runner passed
+81 fault-injection assertions in Windows PowerShell and 62 in PowerShell 7, including repeated continuation after independent failures; its real-project
+dry run planned 172 fixtures and 182 steps. WM14's work and stage status are unchanged by this deliverable.
+
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
 WM13 World Map V2 version and saves (2026-10-23): DONE. The active compact-world branch remains on format

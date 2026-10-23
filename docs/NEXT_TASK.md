@@ -1,5 +1,14 @@
 # NEXT_TASK.md
 
+## User-requested offline validation tooling — 2026-10-24
+
+The requested runner is ready at `Tools/Validation/Run-WM15-Night.cmd`; command-line entry is
+`Tools/Validation/Run-WM15.ps1`. Usage, limitations and verification are recorded in
+`docs/world_map/WM15_OFFLINE_RUNNER.md`. It has not started the real overnight gate. Finish the active WM14
+worker before using it, and do not run a second WM15/Editor concurrently. The WM15 worker should consume
+matching-source offline evidence and investigate failed/incomplete checks, rather than duplicate a live run.
+This support deliverable does not advance the active WM task or grant visual acceptance.
+
 ## Current scope — WM14 optimization and profiling, after WM13 completion on 2026-10-23
 
 WM13 is DONE. The active `p109-compact-world-v1` reference remains on its unchanged v29 generation and save

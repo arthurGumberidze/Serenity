@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## WM15 runner decision — independent evidence and bounded process ownership (2026-10-24)
+
+The user requested an unattended local runner that continues after failures and reports concise progress.
+Each test fixture is an independent Unity invocation with a timeout and durable result; assertion failures,
+malformed/missing XML and crashes cannot stop later fixtures. Only missing-XML infrastructure failures are
+retried. Build-dependent Player checks are explicitly BLOCKED if a fresh provenanced build is unavailable.
+Process termination traverses only descendants of the process created by the runner, using a native snapshot
+and creation-time checks; it does not terminate another Editor or an unrelated Player. A named project mutex
+prevents duplicate runners, and a held UnityLockfile blocks launch without closing the existing Editor.
+
+This reuses the existing build, U31 smoke and U29 performance authorities. No art, new Unity package or second
+gameplay authority is introduced. Save overrides are isolated and protected inputs are SHA-256 checked before
+and after. Automatic success is called AUTOMATED_PASS; user visual acceptance remains PENDING. Current Player
+evidence is labelled compact-world evidence because the proposed V2 profile is not activated by this tooling.
+
 ## D-187 WM13 isolates World Map V2 persistence behind an inactive profile (2026-10-23)
 
 Save format v30 belongs only to the explicit `p109-world-map-v2-proposed` profile. The active compact-world

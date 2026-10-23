@@ -1,5 +1,23 @@
 # PROJECT_STATE.md
 
+## User-requested WM15 offline runner — 2026-10-24
+
+`Tools/Validation/Run-WM15.ps1` and its double-click `.cmd` launcher provide a sequential, offline night gate:
+per-fixture EditMode/PlayMode, fresh Windows build/provenance, isolated Player save/load smoke, rendered
+100/300/500 performance matrices and protected-input/HEAD checks. Errors are retained per step and do not
+abort independent checks. Timeouts terminate only launched process trees. Progress, an incremental journal,
+JSON status and a readable report are written under a unique `Artifacts/WM15/night-*` directory.
+
+Runner verification: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+Tools/Validation/Test-WM15Runner.ps1 -Repeats 3` passed **81 assertions**, including three repeated fault
+matrices, native quoting, timeouts/descendants, an unrelated-process survival check, missing/busy Editor,
+bad/missing/empty NUnit XML, skipped tests, failed build, later performance gates, report-reader locks,
+orphaned wrappers and report preservation. The final runner also passed **62 assertions** under PowerShell 7
+with two repeated fault matrices. An earlier two-round revision passed 56 assertions. `Run-WM15.ps1 -DryRun` discovered **172 test fixtures /
+182 planned steps**; the `.cmd -DryRun` entry also returned exit 0. PowerShell syntax parsing passed for all three scripts/modules. These checks use fake
+executables and do not launch real Unity or claim the actual WM15 game gate. See
+`docs/world_map/WM15_OFFLINE_RUNNER.md`. WM14 remains the active worker; user visual acceptance is pending.
+
 ## WM13 checkpoint — 2026-10-23 World Map V2 version and saves DONE
 
 WM13 adds an explicit `StartupSaveProfile` boundary without activating the proposed world. The live
