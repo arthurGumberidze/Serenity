@@ -267,23 +267,167 @@ namespace Game.Domain.World
         public float MaximumWidthMeters { get; }
     }
 
+    public enum WorldMapWaterLevelPolicyKind
+    {
+        Reference,
+        Fixed,
+        LinearDrainage
+    }
+
+    /// <summary>Immutable vertical policy used by terrain carving and every water projection.</summary>
+    public sealed class WorldMapWaterLevelPolicy
+    {
+        public WorldMapWaterLevelPolicy(WorldMapWaterLevelPolicyKind kind, float upstreamMeters,
+            float downstreamMeters)
+        {
+            if (!WorldMapPoint.IsFinite(upstreamMeters) || !WorldMapPoint.IsFinite(downstreamMeters) ||
+                kind != WorldMapWaterLevelPolicyKind.LinearDrainage &&
+                Math.Abs(upstreamMeters - downstreamMeters) > 0.0001f || downstreamMeters > upstreamMeters)
+                throw new ArgumentOutOfRangeException(nameof(downstreamMeters));
+            Kind = kind;
+            UpstreamMeters = upstreamMeters;
+            DownstreamMeters = downstreamMeters;
+        }
+
+        public WorldMapWaterLevelPolicyKind Kind { get; }
+        public float UpstreamMeters { get; }
+        public float DownstreamMeters { get; }
+        public float Sample(float normalizedDistance)
+        {
+            normalizedDistance = Math.Max(0f, Math.Min(1f, normalizedDistance));
+            return UpstreamMeters + (DownstreamMeters - UpstreamMeters) * normalizedDistance;
+        }
+    }
+
+    public sealed class WorldMapWaterCourse
+    {
+        public WorldMapWaterCourse(WorldMapSpline spline, float minimumDepthMeters, float maximumDepthMeters,
+            float minimumBankBlendMeters, float maximumBankBlendMeters, IEnumerable<string> connections,
+            WorldMapWaterLevelPolicy surfaceLevelPolicy)
+        {
+            if (!WorldMapPoint.IsFinite(minimumDepthMeters) || !WorldMapPoint.IsFinite(maximumDepthMeters) ||
+                minimumDepthMeters <= 0f || maximumDepthMeters < minimumDepthMeters ||
+                !WorldMapPoint.IsFinite(minimumBankBlendMeters) ||
+                !WorldMapPoint.IsFinite(maximumBankBlendMeters) || minimumBankBlendMeters <= 0f ||
+                maximumBankBlendMeters < minimumBankBlendMeters)
+                throw new ArgumentOutOfRangeException(nameof(maximumDepthMeters));
+            var connectionIds = (connections ?? throw new ArgumentNullException(nameof(connections))).ToArray();
+            if (connectionIds.Any(string.IsNullOrWhiteSpace) || connectionIds.Distinct(StringComparer.Ordinal).Count() !=
+                connectionIds.Length)
+                throw new ArgumentException("Water-course connections require unique stable IDs.", nameof(connections));
+            Spline = spline ?? throw new ArgumentNullException(nameof(spline));
+            MinimumDepthMeters = minimumDepthMeters;
+            MaximumDepthMeters = maximumDepthMeters;
+            MinimumBankBlendMeters = minimumBankBlendMeters;
+            MaximumBankBlendMeters = maximumBankBlendMeters;
+            Connections = Array.AsReadOnly(connectionIds);
+            SurfaceLevelPolicy = surfaceLevelPolicy ?? throw new ArgumentNullException(nameof(surfaceLevelPolicy));
+        }
+
+        public string Id => Spline.Id;
+        public WorldMapSpline Spline { get; }
+        public float MinimumDepthMeters { get; }
+        public float MaximumDepthMeters { get; }
+        public float MinimumBankBlendMeters { get; }
+        public float MaximumBankBlendMeters { get; }
+        public IReadOnlyList<string> Connections { get; }
+        public WorldMapWaterLevelPolicy SurfaceLevelPolicy { get; }
+    }
+
     public sealed class WorldMapWaterBody
     {
-        public WorldMapWaterBody(string id, WorldMapPolygon shoreline, float surfaceY,
-            IEnumerable<WorldMapPoint> fishingLandings)
+        public WorldMapWaterBody(string id, WorldMapPoint center, WorldMapPolygon shoreline, float surfaceY,
+            float maximumDepthMeters, float minimumBankBlendMeters, float maximumBankBlendMeters,
+            string shoreKind, IEnumerable<WorldMapPoint> fishingLandings)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
-            if (!WorldMapPoint.IsFinite(surfaceY)) throw new ArgumentOutOfRangeException(nameof(surfaceY));
+            if (!WorldMapPoint.IsFinite(surfaceY) || !WorldMapPoint.IsFinite(maximumDepthMeters) ||
+                maximumDepthMeters <= 0f || !WorldMapPoint.IsFinite(minimumBankBlendMeters) ||
+                !WorldMapPoint.IsFinite(maximumBankBlendMeters) || minimumBankBlendMeters <= 0f ||
+                maximumBankBlendMeters < minimumBankBlendMeters || string.IsNullOrWhiteSpace(shoreKind))
+                throw new ArgumentOutOfRangeException(nameof(surfaceY));
             Id = id;
+            Center = center;
             Shoreline = shoreline ?? throw new ArgumentNullException(nameof(shoreline));
             SurfaceY = surfaceY;
+            MaximumDepthMeters = maximumDepthMeters;
+            MinimumBankBlendMeters = minimumBankBlendMeters;
+            MaximumBankBlendMeters = maximumBankBlendMeters;
+            ShoreKind = shoreKind;
+            SurfaceLevelPolicy = new WorldMapWaterLevelPolicy(WorldMapWaterLevelPolicyKind.Fixed,
+                surfaceY, surfaceY);
             FishingLandings = Array.AsReadOnly((fishingLandings ??
                 throw new ArgumentNullException(nameof(fishingLandings))).ToArray());
         }
         public string Id { get; }
+        public WorldMapPoint Center { get; }
         public WorldMapPolygon Shoreline { get; }
         public float SurfaceY { get; }
+        public float MaximumDepthMeters { get; }
+        public float MinimumBankBlendMeters { get; }
+        public float MaximumBankBlendMeters { get; }
+        public string ShoreKind { get; }
+        public WorldMapWaterLevelPolicy SurfaceLevelPolicy { get; }
         public IReadOnlyList<WorldMapPoint> FishingLandings { get; }
+    }
+
+    /// <summary>Canonical immutable hydrology graph; runtime services only evaluate this data.</summary>
+    public sealed class WorldMapHydrologyDefinition
+    {
+        public WorldMapHydrologyDefinition(float referenceWaterLevelMeters, WorldMapWaterCourse mainRiver,
+            IEnumerable<WorldMapWaterCourse> tributaries, IEnumerable<WorldMapWaterBody> lakes)
+        {
+            if (!WorldMapPoint.IsFinite(referenceWaterLevelMeters))
+                throw new ArgumentOutOfRangeException(nameof(referenceWaterLevelMeters));
+            ReferenceWaterLevelMeters = referenceWaterLevelMeters;
+            MainRiver = mainRiver ?? throw new ArgumentNullException(nameof(mainRiver));
+            Tributaries = ReadOnly(tributaries, nameof(tributaries), value => value.Id);
+            Lakes = ReadOnly(lakes, nameof(lakes), value => value.Id);
+            if (Lakes.Count != 4) throw new ArgumentException("World Map V2 requires exactly four lakes.", nameof(lakes));
+            ValidateDrainage();
+        }
+
+        public float ReferenceWaterLevelMeters { get; }
+        public WorldMapWaterCourse MainRiver { get; }
+        public IReadOnlyList<WorldMapWaterCourse> Tributaries { get; }
+        public IReadOnlyList<WorldMapWaterBody> Lakes { get; }
+
+        private void ValidateDrainage()
+        {
+            var waterIds = new HashSet<string>(Lakes.Select(value => value.Id), StringComparer.Ordinal)
+                { MainRiver.Id };
+            var adjacency = waterIds.ToDictionary(value => value,
+                _ => new HashSet<string>(StringComparer.Ordinal), StringComparer.Ordinal);
+            foreach (var tributary in Tributaries)
+            {
+                if (tributary.Connections.Count != 2 || tributary.Connections.Any(value => !waterIds.Contains(value)))
+                    throw new ArgumentException($"Tributary {tributary.Id} must connect two canonical water bodies.");
+                var from = tributary.Connections[0];
+                var to = tributary.Connections[1];
+                adjacency[from].Add(to);
+            }
+            foreach (var lake in Lakes)
+            {
+                var visited = new HashSet<string>(StringComparer.Ordinal) { lake.Id };
+                var pending = new Queue<string>();
+                pending.Enqueue(lake.Id);
+                while (pending.Count > 0)
+                    foreach (var next in adjacency[pending.Dequeue()])
+                        if (visited.Add(next)) pending.Enqueue(next);
+                if (!visited.Contains(MainRiver.Id))
+                    throw new ArgumentException($"Lake {lake.Id} has no surface drainage path to {MainRiver.Id}.");
+            }
+        }
+
+        private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values, string parameter,
+            Func<T, string> identity) where T : class
+        {
+            var array = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (array.Any(value => value == null) || array.Select(identity).Distinct(StringComparer.Ordinal).Count() !=
+                array.Length)
+                throw new ArgumentException("Hydrology definitions require unique stable IDs.", parameter);
+            return Array.AsReadOnly(array);
+        }
     }
 
     public sealed class WorldMapPointOfInterest
@@ -523,6 +667,7 @@ namespace Game.Domain.World
     {
         public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
+            WorldMapHydrologyDefinition hydrology,
             IEnumerable<WorldMapPolygon> regions,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
@@ -537,6 +682,7 @@ namespace Game.Domain.World
             GenerationId = generationId;
             CoordinateTransform = coordinateTransform ?? throw new ArgumentNullException(nameof(coordinateTransform));
             Terrain = terrain ?? throw new ArgumentNullException(nameof(terrain));
+            Hydrology = hydrology ?? throw new ArgumentNullException(nameof(hydrology));
             Regions = ReadOnly(regions, nameof(regions));
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -556,6 +702,7 @@ namespace Game.Domain.World
         public string GenerationId { get; }
         public WorldMapCoordinateTransform CoordinateTransform { get; }
         public WorldMapTerrainDefinition Terrain { get; }
+        public WorldMapHydrologyDefinition Hydrology { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

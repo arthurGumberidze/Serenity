@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM03 World Map V2 hydrology (2026-10-23): DONE. The canonical water package now produces one immutable
+hydrology graph consumed by `TiledWorldHeightSampler` and `TiledTerrainWorld`: per-point main-river widths,
+interpolated tributary widths, spatially validated connections, monotonic level policies, four polygonal lake
+basins with authored depths/8/8/17/36 m surfaces, bounded dry banks and connected drainage to `river_main`.
+The proposed local/strategic water meshes use those same shapes and levels. Affected EditMode passed 25/25,
+focused WM03 passed 5/5 and short PlayMode bank checks passed 1/1. The legacy generation remains unchanged;
+WM04 is next and has not started.
+
 WM02 World Map V2 terrain generator (2026-10-23): DONE. `TiledWorldHeightSampler` now has an isolated
 data-driven branch for WM01 `MapData`: deterministic macro/meso/detail octaves, eight authored anchors,
 ridge/erosion, marsh, pass and plateau masks, plus a pure slope-budget histogram. `TiledTerrainWorld` consumes

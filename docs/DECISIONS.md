@@ -1,5 +1,29 @@
 # DECISIONS.md
 
+## D-178 WM03 hydrology is an immutable graph evaluated by the shared terrain authority (2026-10-23)
+
+`WorldMapHydrologyDefinition` is definition data over the canonical `WORLD_MAP_WATER.json`, not mutable world
+state or a second water manager. Its main river and tributaries retain width-bearing splines, depth/bank ranges,
+stable connections and explicit surface-level policies. Main-river level follows the terrain reference, lakes
+use their fixed authored surface, and each tributary linearly descends between its connected water objects.
+The loader fails closed if a tributary runs uphill, its endpoint does not spatially meet the named water body,
+or any of the exactly four lakes lacks a graph path to the main river.
+
+`TiledWorldHeightSampler` remains the single pure height/water/buildability evaluator. It carves channels and
+polygonal basins, raises only the bounded bank band needed to remain dry, and reapplies water interiors after
+late terrain masks so a pass cannot fill a stream. `TiledTerrainWorld` is still disposable presentation: the
+legacy branch retains the old constant-level mesh, while only definitions carrying V2 `MapData` project the
+canonical varying-width courses and 8/17/36 m surfaces. No scene, activation path, save schema or legacy
+`p109-compact-world-v1` behavior changes in WM03.
+
+The loaded-asset audit found multiple water presentations: PNB Meadow Forest lake/river materials and normal
+maps, Synty and Slavic modular river pieces, TerrainDemo water, Low Poly Nature water and project-owned older
+shore meshes. Their prefab geometry is fixed and cannot express the canonical polygon shorelines, continuous
+widths and multi-level drainage without becoming the map shape authority. WM03 reuses the existing
+`StarterWater` adapter plus the admitted PNB `_DistortionMap` already exposed as
+`StarterNatureCatalog.WaterRipples`; only mesh topology is generated from canonical hydrology data. This keeps
+imported visual detail without adding a new shader, material, texture, package or competing water system.
+
 ## D-177 WM02 applies authored relief through the existing global height sampler (2026-10-23)
 
 `TiledWorldHeightSampler` remains the sole pure height/buildability authority. A definition with WM01

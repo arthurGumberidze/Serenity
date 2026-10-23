@@ -267,6 +267,7 @@ namespace Game.Infrastructure
 
         private GameObject CreateLocalWater(WorldTileId id, Transform parent, TerrainData data)
         {
+            if (Definition.MapData != null) return CreateAuthoredLocalWater(id, parent, data);
             var resolution = data.heightmapResolution - 1;
             var heights = data.GetHeights(0, 0, resolution + 1, resolution + 1);
             var vertices = new List<Vector3>();
@@ -296,6 +297,47 @@ namespace Game.Infrastructure
             var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
             if (nature != null && nature.WaterRipples != null)
                 localWaterMaterial.SetTexture("_Ripples", nature.WaterRipples);
+            water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
+            return water;
+        }
+
+        private GameObject CreateAuthoredLocalWater(WorldTileId id, Transform parent, TerrainData data)
+        {
+            var resolution = data.heightmapResolution - 1;
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var colors = new List<Color>();
+            var tileOrigin = Definition.TileOrigin(id);
+            var step = Definition.TileSizeMeters / resolution;
+            for (var z = 0; z < resolution; z++)
+            for (var x = 0; x < resolution; x++)
+            {
+                var worldX = tileOrigin.X + (x + 0.5f) * step;
+                var worldZ = tileOrigin.Z + (z + 0.5f) * step;
+                if (!HeightSampler.TrySampleWaterSurface(worldX, worldZ, out var surface)) continue;
+                var localX = x * step;
+                var localZ = z * step;
+                var start = vertices.Count;
+                vertices.Add(new Vector3(localX, surface + 0.025f, localZ));
+                vertices.Add(new Vector3(localX, surface + 0.025f, localZ + step));
+                vertices.Add(new Vector3(localX + step, surface + 0.025f, localZ));
+                vertices.Add(new Vector3(localX + step, surface + 0.025f, localZ + step));
+                var terrain = HeightSampler.SampleHeight(worldX, worldZ);
+                var depth = Mathf.Clamp01((surface - terrain) / 7.5f);
+                for (var color = 0; color < 4; color++) colors.Add(new Color(depth, 0f, 0f, 1f));
+                triangles.Add(start); triangles.Add(start + 1); triangles.Add(start + 2);
+                triangles.Add(start + 2); triangles.Add(start + 1); triangles.Add(start + 3);
+            }
+            if (vertices.Count == 0) return null;
+            var water = new GameObject("World Map V2 Local Water " + id);
+            water.transform.SetParent(parent, false);
+            var mesh = new Mesh { name = "World Map V2 Local Water Mesh " + id,
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(vertices); mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            water.AddComponent<MeshFilter>().sharedMesh = mesh;
+            localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
+                { name = "Starter shoreline water" };
             water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
             return water;
         }
@@ -517,6 +559,7 @@ namespace Game.Infrastructure
 
         private Mesh BuildOverviewWaterMesh()
         {
+            if (Definition.MapData != null) return BuildAuthoredOverviewWaterMesh();
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
             for (var i = 1; i < Definition.River.Count; i++)
@@ -555,6 +598,70 @@ namespace Game.Infrastructure
                 }
             }
             var mesh = new Mesh { name = "P10.9 Strategic Water" };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private Mesh BuildAuthoredOverviewWaterMesh()
+        {
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var hydrology = Definition.MapData.Hydrology;
+            var transform = Definition.MapData.CoordinateTransform;
+            foreach (var course in new[] { hydrology.MainRiver }.Concat(hydrology.Tributaries))
+            {
+                var points = course.Spline.Points;
+                var totalLength = 0f;
+                for (var i = 1; i < points.Count; i++)
+                    totalLength += Vector2.Distance(new Vector2(points[i - 1].Position.X, points[i - 1].Position.Z),
+                        new Vector2(points[i].Position.X, points[i].Position.Z));
+                var traversed = 0f;
+                for (var i = 1; i < points.Count; i++)
+                {
+                    var a = points[i - 1];
+                    var b = points[i];
+                    var delta = new Vector2(b.Position.X - a.Position.X, b.Position.Z - a.Position.Z);
+                    var length = Mathf.Max(0.001f, delta.magnitude);
+                    var normal = new Vector2(-delta.y, delta.x) / length;
+                    var progressA = totalLength <= 0f ? 0f : traversed / totalLength;
+                    var progressB = totalLength <= 0f ? 1f : (traversed + length) / totalLength;
+                    var aWorld = transform.ToUnity(a.Position);
+                    var bWorld = transform.ToUnity(b.Position);
+                    var start = vertices.Count;
+                    vertices.Add(new Vector3(aWorld.X + normal.x * a.WidthMeters * 0.5f,
+                        course.SurfaceLevelPolicy.Sample(progressA), aWorld.Z + normal.y * a.WidthMeters * 0.5f));
+                    vertices.Add(new Vector3(aWorld.X - normal.x * a.WidthMeters * 0.5f,
+                        course.SurfaceLevelPolicy.Sample(progressA), aWorld.Z - normal.y * a.WidthMeters * 0.5f));
+                    vertices.Add(new Vector3(bWorld.X + normal.x * b.WidthMeters * 0.5f,
+                        course.SurfaceLevelPolicy.Sample(progressB), bWorld.Z + normal.y * b.WidthMeters * 0.5f));
+                    vertices.Add(new Vector3(bWorld.X - normal.x * b.WidthMeters * 0.5f,
+                        course.SurfaceLevelPolicy.Sample(progressB), bWorld.Z - normal.y * b.WidthMeters * 0.5f));
+                    triangles.Add(start); triangles.Add(start + 2); triangles.Add(start + 1);
+                    triangles.Add(start + 1); triangles.Add(start + 2); triangles.Add(start + 3);
+                    traversed += length;
+                }
+            }
+            foreach (var lake in hydrology.Lakes)
+            {
+                var centerWorld = transform.ToUnity(lake.Center);
+                var center = vertices.Count;
+                vertices.Add(new Vector3(centerWorld.X, lake.SurfaceY, centerWorld.Z));
+                foreach (var point in lake.Shoreline.Points)
+                {
+                    var world = transform.ToUnity(point);
+                    vertices.Add(new Vector3(world.X, lake.SurfaceY, world.Z));
+                }
+                for (var i = 0; i < lake.Shoreline.Points.Count; i++)
+                {
+                    triangles.Add(center);
+                    triangles.Add(center + 1 + i);
+                    triangles.Add(center + 1 + (i + 1) % lake.Shoreline.Points.Count);
+                }
+            }
+            var mesh = new Mesh { name = "World Map V2 Strategic Water" };
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();

@@ -1,16 +1,17 @@
 # NEXT_TASK.md
 
-## Current scope — WM03 hydrology, after WM02 completion on 2026-10-23
+## Current scope — WM04 biomes and Terrain paint, after WM03 completion on 2026-10-23
 
-WM02 is DONE. The proposed map's existing `TiledWorldHeightSampler` branch now consumes typed noise octaves,
-height anchors, ridge/marsh/pass/plateau masks and slope targets. Shared 257×257 Terrain borders are
-bit-identical, and the final slope histogram meets the authored budget without height clamps. The active
-`p109-compact-world-v1` reference, scene and save paths remain unchanged.
+WM03 is DONE. The proposed map's canonical water graph now drives the existing `TiledWorldHeightSampler` and
+`TiledTerrainWorld`: variable-width main river and tributaries, four polygonal basins, deterministic reference/
+fixed/linear surface levels, bounded dry banks and validated drainage. Focused and affected EditMode plus the
+short PlayMode bank check pass. The active `p109-compact-world-v1` reference, scene and save paths remain
+unchanged.
 
-The next unblocked world-map task is **WM03 — hydrology**. It may extend the same sampler/Terrain projection
-with authored river widths, tributaries, four lake basins, distinct surface-level policy, dry banks and
-connected drainage. It must not redo WM02, activate `p109-world-map-v2-proposed`, start WM04 or alter legacy
-save slots. This WM02 chat stops after its commit and does not implement WM03.
+The next unblocked world-map task is **WM04 — biomes and Terrain paint**. It may blend the eight authored region,
+ecotone and soil masks through the existing Terrain paint projection while preserving the WM02 relief and WM03
+water geometry. It must not activate `p109-world-map-v2-proposed`, start WM05 or alter legacy save slots. This
+WM03 chat stops after its commit and does not implement WM04.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

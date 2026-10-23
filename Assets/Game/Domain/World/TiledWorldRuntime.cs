@@ -19,12 +19,14 @@ namespace Game.Domain.World
         private readonly TiledWorldDefinition definition;
         private readonly long seed;
         private readonly WorldMapTerrainDefinition authoredTerrain;
+        private readonly WorldMapHydrologyDefinition authoredHydrology;
 
         public TiledWorldHeightSampler(TiledWorldDefinition worldDefinition, long worldSeed)
         {
             definition = worldDefinition ?? throw new ArgumentNullException(nameof(worldDefinition));
             seed = worldSeed;
             authoredTerrain = definition.MapData?.Terrain;
+            authoredHydrology = definition.MapData?.Hydrology;
         }
 
         public TiledWorldDefinition Definition => definition;
@@ -147,6 +149,8 @@ namespace Game.Domain.World
                 }
             }
 
+            height = ApplyAuthoredHydrology(height, design);
+
             // Passes and plateaus are last so the authored traversable surfaces cannot be overwritten by a ridge.
             foreach (var anchor in authoredTerrain.Anchors)
             {
@@ -162,6 +166,9 @@ namespace Game.Domain.World
                 var influence = ShapeInfluence(mask.Shape, design, 0.55f);
                 height = Lerp(height, mask.MinimumValue, influence);
             }
+
+            // A late pass may shape adjacent traversable ground, but it may never fill a canonical water channel.
+            height = ReapplyAuthoredWaterInterior(height, design);
 
             return Math.Max(authoredTerrain.MinimumHeightMeters,
                 Math.Min(authoredTerrain.MaximumHeightMeters, height));
@@ -223,6 +230,7 @@ namespace Game.Domain.World
         public bool IsWater(float worldX, float worldZ)
         {
             if (!definition.ContainsClosed(worldX, worldZ)) return false;
+            if (authoredHydrology != null) return TrySampleWaterSurface(worldX, worldZ, out _);
             if (DistanceToRiver(worldX, worldZ) <= RiverHalfWidthMeters) return true;
             return definition.Zones.Any(zone => zone.Uses.HasFlag(WorldZoneUse.Fishing) &&
                                                 NormalizedDistance(zone, worldX, worldZ) <= 1f);
@@ -238,8 +246,54 @@ namespace Game.Domain.World
             return SampleSlopeDegrees(worldX, worldZ) <= maximumSlopeDegrees;
         }
 
+        public bool TrySampleWaterSurface(float worldX, float worldZ, out float surfaceY)
+        {
+            surfaceY = 0f;
+            if (!definition.ContainsClosed(worldX, worldZ)) return false;
+            if (authoredHydrology == null)
+            {
+                if (!IsLegacyWater(worldX, worldZ)) return false;
+                surfaceY = WaterLevelMeters;
+                return true;
+            }
+
+            var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                if (!lake.Shoreline.Contains(point)) continue;
+                surfaceY = lake.SurfaceLevelPolicy.Sample(0f);
+                return true;
+            }
+
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point, course.Spline);
+                if (sample.Distance > sample.WidthMeters * 0.5f) continue;
+                surfaceY = course.SurfaceLevelPolicy.Sample(sample.Progress);
+                return true;
+            }
+            return false;
+        }
+
+        public float WaterSurfaceLevel(string waterId, float normalizedDistance = 0f)
+        {
+            if (authoredHydrology == null) return WaterLevelMeters;
+            if (waterId == authoredHydrology.MainRiver.Id)
+                return authoredHydrology.MainRiver.SurfaceLevelPolicy.Sample(normalizedDistance);
+            var tributary = authoredHydrology.Tributaries.FirstOrDefault(value => value.Id == waterId);
+            if (tributary != null) return tributary.SurfaceLevelPolicy.Sample(normalizedDistance);
+            var lake = authoredHydrology.Lakes.FirstOrDefault(value => value.Id == waterId);
+            if (lake != null) return lake.SurfaceLevelPolicy.Sample(normalizedDistance);
+            throw new ArgumentException("Unknown canonical water ID.", nameof(waterId));
+        }
+
         public float DistanceToRiver(float worldX, float worldZ)
         {
+            if (authoredHydrology != null)
+            {
+                var design = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
+                return SampleSpline(design, authoredHydrology.MainRiver.Spline).Distance;
+            }
             var best = float.MaxValue;
             for (var i = 1; i < definition.River.Count; i++)
             {
@@ -255,6 +309,166 @@ namespace Game.Domain.World
                 best = Math.Min(best, (float)Math.Sqrt(dx * dx + dz * dz));
             }
             return best;
+        }
+
+        private bool IsLegacyWater(float worldX, float worldZ)
+        {
+            if (DistanceToRiver(worldX, worldZ) <= RiverHalfWidthMeters) return true;
+            return definition.Zones.Any(zone => zone.Uses.HasFlag(WorldZoneUse.Fishing) &&
+                                                NormalizedDistance(zone, worldX, worldZ) <= 1f);
+        }
+
+        private float ApplyAuthoredHydrology(float height, WorldMapPoint point)
+        {
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                var edgeDistance = DistanceToPolygon(point, lake.Shoreline);
+                if (lake.Shoreline.Contains(point))
+                {
+                    var depthFactor = Smooth01(Math.Min(1f, edgeDistance / Math.Max(8f,
+                        lake.MaximumDepthMeters * 4f)));
+                    var depth = Lerp(0.35f, lake.MaximumDepthMeters, depthFactor);
+                    height = Math.Min(height, lake.SurfaceY - depth);
+                }
+                else if (edgeDistance < lake.MaximumBankBlendMeters)
+                    height = RaiseDryBank(height, lake.SurfaceY, edgeDistance,
+                        lake.MinimumBankBlendMeters, lake.MaximumBankBlendMeters);
+            }
+
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point, course.Spline);
+                var halfWidth = sample.WidthMeters * 0.5f;
+                var surface = course.SurfaceLevelPolicy.Sample(sample.Progress);
+                if (sample.Distance <= halfWidth)
+                {
+                    var channel = 1f - sample.Distance / Math.Max(0.001f, halfWidth);
+                    var depth = Lerp(course.MinimumDepthMeters, course.MaximumDepthMeters, Smooth01(channel));
+                    height = Math.Min(height, surface - depth);
+                }
+                else
+                {
+                    var bankDistance = sample.Distance - halfWidth;
+                    if (bankDistance < course.MaximumBankBlendMeters)
+                        height = RaiseDryBank(height, surface, bankDistance,
+                            course.MinimumBankBlendMeters, course.MaximumBankBlendMeters);
+                }
+            }
+            return height;
+        }
+
+        private float ReapplyAuthoredWaterInterior(float height, WorldMapPoint point)
+        {
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                if (!lake.Shoreline.Contains(point)) continue;
+                var edgeDistance = DistanceToPolygon(point, lake.Shoreline);
+                var depthFactor = Smooth01(Math.Min(1f, edgeDistance /
+                    Math.Max(8f, lake.MaximumDepthMeters * 4f)));
+                height = Math.Min(height, lake.SurfaceY -
+                    Lerp(0.35f, lake.MaximumDepthMeters, depthFactor));
+            }
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point, course.Spline);
+                var halfWidth = sample.WidthMeters * 0.5f;
+                if (sample.Distance > halfWidth) continue;
+                var channel = 1f - sample.Distance / Math.Max(0.001f, halfWidth);
+                var surface = course.SurfaceLevelPolicy.Sample(sample.Progress);
+                height = Math.Min(height, surface - Lerp(course.MinimumDepthMeters,
+                    course.MaximumDepthMeters, Smooth01(channel)));
+            }
+            return height;
+        }
+
+        private IEnumerable<WorldMapWaterCourse> EnumerateWaterCourses()
+        {
+            yield return authoredHydrology.MainRiver;
+            foreach (var tributary in authoredHydrology.Tributaries) yield return tributary;
+        }
+
+        private static float RaiseDryBank(float height, float surface, float distance,
+            float minimumBlend, float maximumBlend)
+        {
+            var dryTarget = surface + 1.1f + Math.Min(2.4f, distance * 0.12f);
+            var inner = distance <= minimumBlend ? 1f :
+                Smooth01(1f - (distance - minimumBlend) /
+                    Math.Max(0.001f, maximumBlend - minimumBlend));
+            return Math.Max(height, Lerp(height, dryTarget, inner));
+        }
+
+        private readonly struct SplineSample
+        {
+            public SplineSample(float distance, float progress, float widthMeters)
+            {
+                Distance = distance;
+                Progress = progress;
+                WidthMeters = widthMeters;
+            }
+            public float Distance { get; }
+            public float Progress { get; }
+            public float WidthMeters { get; }
+        }
+
+        private static SplineSample SampleSpline(WorldMapPoint point, WorldMapSpline spline)
+        {
+            var totalLength = 0f;
+            for (var index = 1; index < spline.Points.Count; index++)
+                totalLength += Distance(spline.Points[index - 1].Position, spline.Points[index].Position);
+            var bestSquared = float.MaxValue;
+            var bestProgress = 0f;
+            var bestWidth = spline.Points[0].WidthMeters;
+            var traversed = 0f;
+            for (var index = 1; index < spline.Points.Count; index++)
+            {
+                var a = spline.Points[index - 1];
+                var b = spline.Points[index];
+                var abX = b.Position.X - a.Position.X;
+                var abZ = b.Position.Z - a.Position.Z;
+                var lengthSquared = abX * abX + abZ * abZ;
+                var length = (float)Math.Sqrt(lengthSquared);
+                var t = lengthSquared <= 0f ? 0f :
+                    ((point.X - a.Position.X) * abX + (point.Z - a.Position.Z) * abZ) / lengthSquared;
+                t = Math.Max(0f, Math.Min(1f, t));
+                var dx = point.X - (a.Position.X + abX * t);
+                var dz = point.Z - (a.Position.Z + abZ * t);
+                var squared = dx * dx + dz * dz;
+                if (squared < bestSquared)
+                {
+                    bestSquared = squared;
+                    bestProgress = totalLength <= 0f ? 0f : (traversed + length * t) / totalLength;
+                    bestWidth = Lerp(a.WidthMeters, b.WidthMeters, t);
+                }
+                traversed += length;
+            }
+            return new SplineSample((float)Math.Sqrt(bestSquared), bestProgress, bestWidth);
+        }
+
+        private static float DistanceToPolygon(WorldMapPoint point, WorldMapPolygon polygon)
+        {
+            var best = float.MaxValue;
+            for (var index = 0; index < polygon.Points.Count; index++)
+            {
+                var a = polygon.Points[index];
+                var b = polygon.Points[(index + 1) % polygon.Points.Count];
+                var abX = b.X - a.X;
+                var abZ = b.Z - a.Z;
+                var lengthSquared = abX * abX + abZ * abZ;
+                var t = lengthSquared <= 0f ? 0f :
+                    ((point.X - a.X) * abX + (point.Z - a.Z) * abZ) / lengthSquared;
+                t = Math.Max(0f, Math.Min(1f, t));
+                var dx = point.X - (a.X + abX * t);
+                var dz = point.Z - (a.Z + abZ * t);
+                best = Math.Min(best, (float)Math.Sqrt(dx * dx + dz * dz));
+            }
+            return best;
+        }
+
+        private static float Distance(WorldMapPoint a, WorldMapPoint b)
+        {
+            var dx = b.X - a.X;
+            var dz = b.Z - a.Z;
+            return (float)Math.Sqrt(dx * dx + dz * dz);
         }
 
         public float[,] CreateNormalizedHeights(WorldTileId tile, int resolution)

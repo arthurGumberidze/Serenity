@@ -1,5 +1,45 @@
 # PROJECT_STATE.md
 
+## WM03 checkpoint — 2026-10-23 World Map V2 hydrology DONE
+
+WM03 extends the WM01 water contracts and the WM02 `TiledWorldHeightSampler`; it does not create a second
+terrain or water authority. The immutable hydrology graph retains every authored main-river point width,
+interpolates each tributary's canonical width range, validates both spatial endpoints and a drainage path from
+all four lakes to `river_main`, and assigns an explicit surface policy to every object: reference level for the
+main river, fixed authored levels for lakes and monotonic linear drainage for tributaries. The four polygonal
+lake basins use their authored 8/8/17/36 m surfaces and maximum depths. Exactly four lakes are accepted.
+
+The global sampler now carves variable-width channels and polygon basins, raises only the bounded authored bank
+blend to keep shore land dry, and reapplies the water interior after pass/plateau shaping so the mountain pass
+cannot fill `stream_mountain`. `IsWater`, buildability and water-surface queries read the same geometry.
+`TiledTerrainWorld` keeps its legacy projection unchanged, while its proposed-map branch builds per-level local
+water cells and a strategic mesh from the canonical river, tributaries and lake polygons. The active
+`p109-compact-world-v1`, `LocalSceneCompositionRoot`, scenes and save paths remain unchanged; WM04 was not begun.
+
+Existing-asset audit was completed before closing the stage. The project already contains PNB Meadow Forest
+lake/river materials and normals, Synty/Slavic modular river planes, TerrainDemo water, Low Poly Nature water
+and older Serenity water/shore meshes. Fixed vendor planes and modular river pieces cannot follow the canonical
+polygons, continuously varying widths or 36→17→8 m drainage without becoming an alternate geometry authority.
+WM03 therefore keeps the existing `StarterWater` projection adapter and reuses the already admitted PNB Meadow
+Forest `_DistortionMap` through `StarterNatureCatalog.WaterRipples`; it creates only the canonical data-driven
+mesh topology. No substitute texture/material pack, new external dependency or new water shader was added.
+
+Lightweight verification on Unity 6000.6.4f1:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\WM03\Saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM03WorldMapHydrologyTests;Game.Tests.Editor.WM02WorldMapTerrainGeneratorTests;Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.P109TiledWorldRuntimeTests;Game.Tests.Editor.P109CompactWorldTests' -testResults 'C:\serenity_game\Artifacts\WM03\editmode-affected-final2.xml' -logFile 'C:\serenity_game\Artifacts\WM03\editmode-affected-final2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM03WorldMapHydrologyPlayModeTests' -testResults 'C:\serenity_game\Artifacts\WM03\playmode-final.xml' -logFile 'C:\serenity_game\Artifacts\WM03\playmode-final.log'
+```
+
+Results: affected EditMode 25/25 passed and the short PlayMode bank check 1/1 passed. The focused WM03-only
+rerun passed 5/5. All 15 authored fishing landings are dry and at least 0.75 m above their lake surface;
+course centre samples are below their deterministic surface and the `TiledTerrainWorld` strategic projection
+contains the distinct 8, 17 and 36 m levels. The post-hydrology 129×129 terrain audit remains within the WM02
+budget: 53.41% ≤12°, 74.76% ≤18°, 4.62% >32°, height 4.00–82.68 m and 1.60% at a height clamp. No broad
+suite, Windows build, profiling or full visual acceptance was run; those remain deferred to WM15. The five
+inherited dirty materials and `New Unity Project/` remain user-owned and excluded. WM04 is next and unstarted.
+
 ## WM02 checkpoint — 2026-10-23 World Map V2 terrain generator DONE
 
 WM02 extends the existing `TiledWorldHeightSampler` rather than introducing another terrain authority. The

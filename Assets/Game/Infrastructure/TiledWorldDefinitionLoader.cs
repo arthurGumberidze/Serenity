@@ -125,10 +125,15 @@ namespace Game.Infrastructure
                 var heightMasks = terrainDefinition.HeightMasks;
 
                 var water = roots["WORLD_MAP_WATER.json"];
-                var river = ParseRiver(water.Object("river"), bounds);
-                var lakes = ParseLakes(water.Array("lakes"), bounds);
+                var lakeMask = heightMasks.Single(value => value.Operation == "carve_polygons");
+                var river = ParseRiver(water.Object("river"), bounds, terrainDefinition.WaterLevelMeters);
+                var lakes = ParseLakes(water.Array("lakes"), bounds,
+                    lakeMask.MinimumValue, lakeMask.MaximumValue);
                 var waterIds = new HashSet<string>(lakes.Select(value => value.Id), StringComparer.Ordinal) { river.Id };
-                var tributaries = ParseTributaries(water.Array("tributaries"), bounds, waterIds);
+                var tributaries = ParseTributaries(water.Array("tributaries"), bounds, waterIds,
+                    river, lakes);
+                var hydrology = new WorldMapHydrologyDefinition(terrainDefinition.WaterLevelMeters,
+                    river, tributaries, lakes);
                 ValidateWaterIndex(coordinates.Object("waterIndex"), river, lakes);
                 ValidateWaterRules(water);
 
@@ -147,7 +152,7 @@ namespace Game.Infrastructure
                 var resourceTypes = UniqueStrings(resources.Array("resourceTypes").Select(value => value.Object().String("id")),
                     "resource type");
                 var resourceMasks = ParseResourceMasks(resources.Array("zones"), bounds, resourceTypes);
-                ValidateFishSources(resources, lakes, river);
+                ValidateFishSources(resources, lakes, river.Spline);
                 ValidateRequiredTrueFlags(resources.Object("mutationAndSaveRules"), "resource mutation",
                     "stableEntityIdRequired", "depletedVisibleNodeMustDisappear", "remainingCapacitySaved",
                     "regrowthUsesCanonicalState", "buildingClearanceUsesNormalWorkAndHauling",
@@ -161,7 +166,8 @@ namespace Game.Infrastructure
                 var buildability = roots["WORLD_MAP_BUILDABILITY.json"];
                 var buildabilityMasks = ParseBuildabilityMasks(buildability.Array("zones"), bounds);
                 ValidateBuildabilityRules(buildability, bounds);
-                ValidateGlobalIds(regions, river, tributaries, lakes, routes, crossings, poi, resourceMasks,
+                ValidateGlobalIds(regions, river.Spline, tributaries.Select(value => value.Spline).ToArray(),
+                    lakes, routes, crossings, poi, resourceMasks,
                     wildlifeMasks, buildabilityMasks, vegetationMasks, heightMasks, resourceTypes, species);
 
                 var playerStartData = coordinates.Object("playerStart");
@@ -176,11 +182,11 @@ namespace Game.Infrastructure
                     throw new InvalidDataException("Player start must be contained by its referenced region.");
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
-                    TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition,
-                    regions, river, tributaries,
+                    TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
+                    regions, river.Spline, tributaries.Select(value => value.Spline),
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
-                var unityRiver = river.Points.Select(point => transform.ToUnity(point.Position));
+                var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
                 return new TiledWorldDefinition(mapData.GenerationId, columns, rows, tileSize,
                     runtimeOrigin.X, runtimeOrigin.Z, Array.Empty<WorldZoneDefinition>(), unityRiver,
                     runtimeStart, mapData);
@@ -400,7 +406,8 @@ namespace Game.Infrastructure
             }
         }
 
-        private static WorldMapSpline ParseRiver(Node data, WorldMapBounds bounds)
+        private static WorldMapWaterCourse ParseRiver(Node data, WorldMapBounds bounds,
+            float referenceWaterLevelMeters)
         {
             var points = data.Array("centerline").Select(value =>
             {
@@ -411,10 +418,15 @@ namespace Game.Infrastructure
             var river = new WorldMapSpline(data.String("id"), points, bounds);
             if (!TouchesBoundary(river.Points.First().Position, bounds) || !TouchesBoundary(river.Points.Last().Position, bounds))
                 throw new InvalidDataException("The main river must connect two map boundaries.");
-            return river;
+            var depth = data.NumberArray("depthMeters", 2);
+            var bank = data.NumberArray("bankBlendMeters", 2);
+            return new WorldMapWaterCourse(river, depth[0], depth[1], bank[0], bank[1],
+                Array.Empty<string>(), new WorldMapWaterLevelPolicy(WorldMapWaterLevelPolicyKind.Reference,
+                    referenceWaterLevelMeters, referenceWaterLevelMeters));
         }
 
-        private static IReadOnlyList<WorldMapWaterBody> ParseLakes(IReadOnlyList<Node> values, WorldMapBounds bounds)
+        private static IReadOnlyList<WorldMapWaterBody> ParseLakes(IReadOnlyList<Node> values,
+            WorldMapBounds bounds, float minimumBankBlendMeters, float maximumBankBlendMeters)
         {
             var result = values.Select(value =>
             {
@@ -424,40 +436,113 @@ namespace Game.Infrastructure
                 var landings = lake.Points("fishingLandings").ToArray();
                 if (landings.Length < 3 || landings.Any(point => !bounds.Contains(point) || polygon.Contains(point)))
                     throw new InvalidDataException($"Fishing landings for {id} must be dry, bounded authored points.");
-                return new WorldMapWaterBody(id, polygon, lake.Float("surfaceY"), landings);
+                var center = lake.Point2("center");
+                if (!polygon.Contains(center)) throw new InvalidDataException($"Lake center for {id} must be inside its shoreline.");
+                return new WorldMapWaterBody(id, center, polygon, lake.Float("surfaceY"),
+                    lake.Float("maxDepthMeters"), minimumBankBlendMeters, maximumBankBlendMeters,
+                    lake.String("shore"), landings);
             }).ToArray();
             if (result.Length != 4) throw new InvalidDataException("The V2 contract requires exactly four lakes.");
             UniqueStrings(result.Select(value => value.Id), "lake");
             return result;
         }
 
-        private static IReadOnlyList<WorldMapSpline> ParseTributaries(IReadOnlyList<Node> values,
-            WorldMapBounds bounds, ISet<string> waterIds)
+        private static IReadOnlyList<WorldMapWaterCourse> ParseTributaries(IReadOnlyList<Node> values,
+            WorldMapBounds bounds, ISet<string> waterIds, WorldMapWaterCourse river,
+            IReadOnlyList<WorldMapWaterBody> lakes)
         {
-            var result = new List<WorldMapSpline>();
+            var result = new List<WorldMapWaterCourse>();
             foreach (var value in values)
             {
                 var stream = value.Object();
                 var widths = stream.NumberArray("widthMeters", 2);
                 if (widths[0] <= 0 || widths[1] < widths[0]) throw new InvalidDataException("Invalid stream width range.");
-                foreach (var connection in stream.StringArray("connects"))
+                var connections = stream.StringArray("connects");
+                if (connections.Count != 2) throw new InvalidDataException("A tributary must have two water connections.");
+                foreach (var connection in connections)
                     if (!waterIds.Contains(connection)) throw new InvalidDataException($"Unknown water connection {connection}.");
-                var points = stream.Points("points").Select(point =>
-                    new WorldMapSplinePoint(point, (widths[0] + widths[1]) * 0.5f));
-                result.Add(new WorldMapSpline(stream.String("id"), points, bounds, widths[0], widths[1]));
+                var positions = stream.Points("points");
+                var points = positions.Select((point, index) => new WorldMapSplinePoint(point,
+                    widths[0] + (widths[1] - widths[0]) * index / Math.Max(1f, positions.Count - 1f)));
+                var spline = new WorldMapSpline(stream.String("id"), points, bounds, widths[0], widths[1]);
+                var upstream = WaterLevel(connections[0], river, lakes);
+                var downstream = WaterLevel(connections[1], river, lakes);
+                if (downstream > upstream + 0.001f)
+                    throw new InvalidDataException($"Tributary {spline.Id} flows uphill.");
+                ValidateConnectionPoint(spline.Points.First().Position, connections[0], river, lakes,
+                    spline.MaximumWidthMeters);
+                ValidateConnectionPoint(spline.Points.Last().Position, connections[1], river, lakes,
+                    spline.MaximumWidthMeters);
+                var maximumDepth = Math.Max(0.45f, spline.MaximumWidthMeters * 0.28f);
+                result.Add(new WorldMapWaterCourse(spline, Math.Min(0.35f, maximumDepth), maximumDepth,
+                    Math.Max(4f, spline.MinimumWidthMeters), Math.Max(8f, spline.MaximumWidthMeters * 2f),
+                    connections, new WorldMapWaterLevelPolicy(WorldMapWaterLevelPolicyKind.LinearDrainage,
+                        upstream, downstream)));
             }
             UniqueStrings(result.Select(value => value.Id), "tributary");
             return result;
         }
 
-        private static void ValidateWaterIndex(Node index, WorldMapSpline river,
+        private static float WaterLevel(string id, WorldMapWaterCourse river,
+            IReadOnlyList<WorldMapWaterBody> lakes) => id == river.Id
+            ? river.SurfaceLevelPolicy.Sample(0f)
+            : lakes.Single(value => value.Id == id).SurfaceY;
+
+        private static void ValidateConnectionPoint(WorldMapPoint point, string id, WorldMapWaterCourse river,
+            IReadOnlyList<WorldMapWaterBody> lakes, float toleranceMeters)
+        {
+            if (id == river.Id)
+            {
+                if (DistanceToSpline(point, river.Spline) <= river.Spline.MaximumWidthMeters * 0.5f + toleranceMeters)
+                    return;
+            }
+            else
+            {
+                var lake = lakes.Single(value => value.Id == id);
+                if (lake.Shoreline.Contains(point) || DistanceToPolygon(point, lake.Shoreline) <= toleranceMeters)
+                    return;
+            }
+            throw new InvalidDataException($"Water connection {id} is not spatially joined to its tributary.");
+        }
+
+        private static float DistanceToSpline(WorldMapPoint point, WorldMapSpline spline)
+        {
+            var best = float.MaxValue;
+            for (var index = 1; index < spline.Points.Count; index++)
+                best = Math.Min(best, DistanceToSegment(point, spline.Points[index - 1].Position,
+                    spline.Points[index].Position));
+            return best;
+        }
+
+        private static float DistanceToPolygon(WorldMapPoint point, WorldMapPolygon polygon)
+        {
+            var best = float.MaxValue;
+            for (var index = 0; index < polygon.Points.Count; index++)
+                best = Math.Min(best, DistanceToSegment(point, polygon.Points[index],
+                    polygon.Points[(index + 1) % polygon.Points.Count]));
+            return best;
+        }
+
+        private static float DistanceToSegment(WorldMapPoint point, WorldMapPoint a, WorldMapPoint b)
+        {
+            var dx = b.X - a.X;
+            var dz = b.Z - a.Z;
+            var lengthSquared = dx * dx + dz * dz;
+            var t = lengthSquared <= 0f ? 0f : ((point.X - a.X) * dx + (point.Z - a.Z) * dz) / lengthSquared;
+            t = Math.Max(0f, Math.Min(1f, t));
+            var offsetX = point.X - (a.X + dx * t);
+            var offsetZ = point.Z - (a.Z + dz * t);
+            return (float)Math.Sqrt(offsetX * offsetX + offsetZ * offsetZ);
+        }
+
+        private static void ValidateWaterIndex(Node index, WorldMapWaterCourse river,
             IReadOnlyList<WorldMapWaterBody> lakes)
         {
             if (index.String("riverId") != river.Id ||
                 !SetEquals(index.StringArray("lakeIds"), lakes.Select(value => value.Id)))
                 throw new InvalidDataException("Coordinate water index does not match water definitions.");
             var indexedPoints = index.Points("riverCenterline");
-            if (!SamePoints(indexedPoints, river.Points.Select(value => value.Position).ToArray()))
+            if (!SamePoints(indexedPoints, river.Spline.Points.Select(value => value.Position).ToArray()))
                 throw new InvalidDataException("Coordinate river index does not match the water spline.");
         }
 
