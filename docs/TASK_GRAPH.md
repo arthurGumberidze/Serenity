@@ -2,6 +2,16 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM08 World Map V2 species ecology (2026-10-23): DONE. Typed authored wildlife data drives one pure seeded
+habitat/population plan and one canonical mutable population service for deer, boar, hare, fox, wolf, bear and
+waterfowl. Food/rest/water/shelter nodes connect all eight regions; suitable-biome capacities are map-wide and
+concentration zones only multiply density. Seed `20261023` starts 119 stable animals within authored ranges.
+Hunting pressure drives adjacent migration, reproduction stays within carrying capacity, and the existing
+clock advances the service. Tier1 GameObjects, Tier2 entities in the existing ECS World and object-free Tier3
+preserve identity with 35/80/4 projections and no parallel manager or per-animal Update. Seven audited existing
+prefabs provide presentation; no art or dependency was added. Affected EditMode passed 13/13 and short PlayMode
+passed 1/1. V2 remains inactive and legacy unchanged; WM09 is next and has not started.
+
 WM07 World Map V2 fish and water-body recovery (2026-10-23): DONE. The proposed plan contains exactly 24
 stable populations: 16 lake sources at capacity 48 and eight river sources at capacity 42. Every production
 point is dry/buildable with a local dry approach, while its disposable fish visual remains over WM03 water.

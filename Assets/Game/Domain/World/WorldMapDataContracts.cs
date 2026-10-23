@@ -1053,6 +1053,7 @@ namespace Game.Domain.World
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
             WorldMapHydrologyDefinition hydrology, WorldMapBiomeDefinition biomes,
             WorldMapVegetationDefinition vegetation, WorldMapResourceDefinition resources,
+            WorldMapWildlifeDefinition wildlife,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
@@ -1070,6 +1071,7 @@ namespace Game.Domain.World
             Biomes = biomes ?? throw new ArgumentNullException(nameof(biomes));
             Vegetation = vegetation ?? throw new ArgumentNullException(nameof(vegetation));
             Resources = resources ?? throw new ArgumentNullException(nameof(resources));
+            Wildlife = wildlife ?? throw new ArgumentNullException(nameof(wildlife));
             Regions = Array.AsReadOnly(Biomes.Regions.Select(value => value.Polygon).ToArray());
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -1093,6 +1095,7 @@ namespace Game.Domain.World
         public WorldMapBiomeDefinition Biomes { get; }
         public WorldMapVegetationDefinition Vegetation { get; }
         public WorldMapResourceDefinition Resources { get; }
+        public WorldMapWildlifeDefinition Wildlife { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

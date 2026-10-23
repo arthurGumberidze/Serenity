@@ -1,5 +1,26 @@
 # DECISIONS.md
 
+## D-182 WM08 keeps one canonical wildlife population across all simulation tiers (2026-10-23)
+
+`WorldMapWildlifeDefinition` is immutable authored data loaded from the canonical package. A pure seeded
+`WorldMapWildlifePlanner` derives a connected food/rest/water/shelter graph, region carrying capacities and
+initial individuals. Species suitability comes from each definition's `suitableBiomes`; one shared alias table
+reconciles regional package vocabulary without hard-coding species rules. Zone multipliers weight allocation
+but do not exclude compatible regions. Small populations may use the high side of their authored range when
+necessary to put at least one individual in every compatible starting habitat.
+
+`WildlifePopulationService` is the sole mutable wildlife authority. It owns identity, sex, birth day, habitat,
+position and current simulation tier, and performs daily adjacent migration, bounded reproduction and hunting-
+pressure decay. Tier1 presentation and Tier2 ECS entities are projections reconciled from that state; Tier2 is
+materialized in the already existing `Tier2Runtime.World`, and Tier3 deliberately owns no Unity object. Tier
+changes never mint an identity. State capture/restore is a Domain boundary for later WM13 persistence work;
+WM08 does not introduce a parallel save payload or activate the proposed generation.
+
+The asset catalog references existing project content. Exact deer, boar and waterfowl models are used; absent
+hare/fox/wolf/bear runtime models use scaled kitty/dog/boar visual fallbacks without changing canonical species.
+The exact Toon Farm duck is static because its imported Animator has no controller; the other entries retain
+their imported animation controllers. This preserves asset-first scope without importing or generating art.
+
 ## D-181 WM07 models fish as canonical production sites with calendar-based carrying-capacity recovery (2026-10-23)
 
 The 24 authored fish sources are immutable `WorldMapFishPopulationDefinition` values connected to the WM03

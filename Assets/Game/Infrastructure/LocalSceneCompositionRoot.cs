@@ -494,6 +494,7 @@ namespace Game.Infrastructure
             HealthFamilyDebug.Initialize(HealthFamily, Characters, Succession.Family, selectionProbe, Clock,
                 pointerRaycaster);
             Tier2Runtime = new Tier2Runtime("Serenity Local Tier 2");
+            WorldPopulation.InitializeWildlifeTiers(Tier2Runtime, Clock.State.CalendarTicks);
             Tier3Characters = new Tier3CharacterRegistry();
             OffCameraSimulation = new OffCameraSimulationService(
                 OffCameraSimulationSettings.ForWorld(worldSeed));
@@ -743,6 +744,7 @@ namespace Game.Infrastructure
                 BuildingLifecycle.BuildingChanged -= OnBuildingChanged;
                 BuildingLifecycle.BuildingDemolished -= OnBuildingDemolished;
             }
+            WorldPopulation?.ShutdownWildlife();
             Tier2Runtime?.Dispose();
         }
 
@@ -767,6 +769,7 @@ namespace Game.Infrastructure
             var targetCalendarTick = Clock.State.CalendarTicks;
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
             Tier2Runtime.Step(advance, Weather.GetMovementModifierForInterval(startCalendarTick, targetCalendarTick));
+            WorldPopulation?.AdvanceWildlifeTo(targetCalendarTick);
             PerformanceBenchmark?.RecordTier2Allocation();
             Tier3Adapter.AdvanceAllToCurrent();
             Tier2Runtime.AdvanceResearch(Research, targetCalendarTick);

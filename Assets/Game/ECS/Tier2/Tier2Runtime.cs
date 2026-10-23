@@ -20,6 +20,7 @@ namespace Game.ECS.Tier2
 
         public World World { get; }
         public Tier2Materializer Materializer { get; }
+        public Tier2WildlifeMaterializer Wildlife { get; }
         public int LastScheduledEntityCount => simulationSystem.LastScheduledEntityCount;
 
         public Tier2Runtime(string worldName = "Serenity Tier 2")
@@ -28,6 +29,7 @@ namespace Game.ECS.Tier2
             stepEntity = World.EntityManager.CreateEntity(typeof(Tier2SimulationStep));
             simulationSystem = World.GetOrCreateSystemManaged<Tier2SimulationSystem>();
             Materializer = new Tier2Materializer(World);
+            Wildlife = new Tier2WildlifeMaterializer(World);
         }
 
         public void Step(GameTimeAdvance advance, int movementPerThousand = 1000)
@@ -94,6 +96,7 @@ namespace Game.ECS.Tier2
         {
             if (disposed) return;
             disposed = true;
+            Wildlife.Clear();
             if (World.IsCreated) World.Dispose();
         }
 

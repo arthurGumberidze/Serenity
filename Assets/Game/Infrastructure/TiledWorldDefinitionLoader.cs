@@ -160,9 +160,10 @@ namespace Game.Infrastructure
                     "noAutomaticDeletionForUniqueOrUnclearableObjects");
 
                 var wildlife = roots["WORLD_MAP_WILDLIFE.json"];
-                var species = UniqueStrings(wildlife.Array("species").Select(value => value.Object().String("id")), "species");
+                var speciesDefinitions = ParseWildlifeSpecies(wildlife.Array("species"));
+                var species = UniqueStrings(speciesDefinitions.Select(value => value.Id), "species");
                 var wildlifeMasks = ParseWildlifeMasks(wildlife.Array("concentrationZones"), bounds, species);
-                ValidateWildlifeSimulation(wildlife.Object("simulation"));
+                var wildlifeDefinition = ParseWildlifeDefinition(wildlife, speciesDefinitions, wildlifeMasks);
                 var vegetation = ParseVegetationDefinition(roots["WORLD_MAP_VEGETATION.json"], bounds);
                 var vegetationMasks = vegetation.Zones.Select(zone => new WorldMapMask(zone.Id, "vegetation",
                     zone.Shape, new[] { zone.ClassId }, "density", zone.DensityMultiplier)).ToArray();
@@ -186,7 +187,8 @@ namespace Game.Infrastructure
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
-                    biomes, vegetation, resourceDefinition, river.Spline, tributaries.Select(value => value.Spline),
+                    biomes, vegetation, resourceDefinition, wildlifeDefinition, river.Spline,
+                    tributaries.Select(value => value.Spline),
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
@@ -733,6 +735,49 @@ namespace Game.Infrastructure
                     mask.String("id")), references, "concentration", mask.Float("multiplier"));
             }).ToArray();
             UniqueStrings(result.Select(value => value.Id), "wildlife mask");
+            return result;
+        }
+
+        private static IReadOnlyList<WorldMapWildlifeSpeciesDefinition> ParseWildlifeSpecies(
+            IReadOnlyList<Node> values)
+        {
+            var result = values.Select(value =>
+            {
+                var species = value.Object();
+                var target = species.NumberArray("targetPopulation", 2);
+                var group = species.NumberArray("groupSize", 2);
+                return new WorldMapWildlifeSpeciesDefinition(species.String("id"), species.String("name"),
+                    species.StringArray("suitableBiomes"),
+                    new WorldMapIntRange(Whole(target[0], "targetPopulation"), Whole(target[1], "targetPopulation")),
+                    new WorldMapIntRange(Whole(group[0], "groupSize"), Whole(group[1], "groupSize")),
+                    species.String("activity"));
+            }).ToArray();
+            UniqueStrings(result.Select(value => value.Id), "species");
+            return result;
+        }
+
+        private static WorldMapWildlifeDefinition ParseWildlifeDefinition(Node root,
+            IEnumerable<WorldMapWildlifeSpeciesDefinition> species, IEnumerable<WorldMapMask> zones)
+        {
+            var simulation = root.Object("simulation");
+            var canonical = simulation.NumberArray("canonicalPopulationTarget", 2);
+            var tier1 = simulation.NumberArray("tier1VisibleCap", 2);
+            var tier2 = simulation.NumberArray("tier2ActiveCap", 2);
+            ValidateWildlifeSimulation(simulation);
+            return new WorldMapWildlifeDefinition(species, zones, root.String("globalRule"),
+                simulation.String("movement"), simulation.String("migration"),
+                simulation.String("reproduction"), simulation.String("huntingPressure"),
+                simulation.Bool("timeOfDay"),
+                new WorldMapIntRange(Whole(canonical[0], "canonicalPopulationTarget"),
+                    Whole(canonical[1], "canonicalPopulationTarget")),
+                new WorldMapIntRange(Whole(tier1[0], "tier1VisibleCap"), Whole(tier1[1], "tier1VisibleCap")),
+                new WorldMapIntRange(Whole(tier2[0], "tier2ActiveCap"), Whole(tier2[1], "tier2ActiveCap")));
+        }
+
+        private static int Whole(float value, string name)
+        {
+            var result = (int)value;
+            if (result != value) throw new InvalidDataException(name + " values must be whole numbers.");
             return result;
         }
 

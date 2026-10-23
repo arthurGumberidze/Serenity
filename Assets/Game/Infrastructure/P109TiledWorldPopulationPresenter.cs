@@ -33,6 +33,8 @@ namespace Game.Infrastructure
         private long seed;
         private CompactWorldArtCatalog art;
         private WorldMapResourceArtCatalog worldMapResourceArt;
+        private WildlifePopulationService wildlifePopulation;
+        private WorldMapWildlifePresenter wildlifePresenter;
         private sealed class AnimalView
         {
             public StableEntityId SiteId;
@@ -57,6 +59,8 @@ namespace Game.Infrastructure
             root.GetComponentsInChildren<ProductionSourcePresenter>(true).Length);
         public int ActiveIndustrialViewCount => tileViews.Values.Sum(root =>
             root.GetComponentsInChildren<WorldResourcePilePresenter>(true).Length);
+        public WildlifePopulationService WildlifePopulation => wildlifePopulation;
+        public WorldMapWildlifePresenter WildlifePresenter => wildlifePresenter;
 
         public void Initialize(TiledTerrainWorld world, ProductionService productionService,
             ResourceEcologyService ecologyService, IndustrialExtractionService industryService,
@@ -76,6 +80,9 @@ namespace Game.Infrastructure
             CreateForestAmbience();
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
+            if (world.Definition.MapData?.Wildlife != null)
+                wildlifePopulation = new WildlifePopulationService(
+                    new WorldMapWildlifePlanner(world.Definition, world.HeightSampler, worldSeed).Create(), worldSeed);
             RegisterCanonicalPopulation();
             terrainWorld.VisualTilesChanged += RefreshViews;
             RefreshViews();
@@ -95,6 +102,38 @@ namespace Game.Infrastructure
                 if (!tileViews.ContainsKey(tile)) tileViews.Add(tile, CreateTileView(tile));
             foreach (var presenter in tileViews.Values.SelectMany(root =>
                          root.GetComponentsInChildren<ProductionSourcePresenter>(true))) presenter.Refresh();
+            if (wildlifePresenter != null) wildlifePresenter.Rebalance(WildlifeFocus());
+        }
+
+        public void InitializeWildlifeTiers(Game.ECS.Tier2.Tier2Runtime tier2Runtime, long calendarTicks)
+        {
+            if (wildlifePopulation == null) return;
+            if (wildlifePresenter != null) throw new InvalidOperationException("Wildlife tiers are already initialized.");
+            var catalog = Resources.Load<WorldMapWildlifeArtCatalog>("World/WorldMapWildlifeArt");
+            if (catalog == null) throw new InvalidOperationException("World Map V2 wildlife art catalog is missing.");
+            wildlifePresenter = gameObject.AddComponent<WorldMapWildlifePresenter>();
+            wildlifePresenter.Initialize(wildlifePopulation, tier2Runtime, catalog, WildlifeFocus());
+            wildlifePresenter.AdvanceTo(calendarTicks);
+        }
+
+        public void AdvanceWildlifeTo(long calendarTicks)
+        {
+            wildlifePresenter?.AdvanceTo(calendarTicks);
+        }
+
+        public void ShutdownWildlife()
+        {
+            wildlifePresenter?.Shutdown();
+            wildlifePresenter = null;
+        }
+
+        private WorldPosition WildlifeFocus()
+        {
+            var camera = Camera.main;
+            if (camera == null) return terrainWorld.Definition.PlayerStart;
+            var position = camera.transform.position;
+            return new WorldPosition(position.x, terrainWorld.HeightSampler.SampleHeight(position.x, position.z),
+                position.z);
         }
 
         public void RebindAfterLoad()
@@ -532,6 +571,7 @@ namespace Game.Infrastructure
 
         private void OnDestroy()
         {
+            ShutdownWildlife();
             if (terrainWorld != null) terrainWorld.VisualTilesChanged -= RefreshViews;
             animals.Clear();
         }

@@ -1,6 +1,7 @@
 using System;
 using Game.Domain;
 using Game.Domain.Characters;
+using Game.Domain.World;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -81,5 +82,13 @@ namespace Game.ECS.Tier2
         public long BiologicalDeltaTicks;
         public int MovementPerThousand;
         public uint Sequence;
+    }
+
+    /// <summary>Tag/state for World Map V2 wildlife in the existing Tier2 ECS World.</summary>
+    public struct Tier2WildlifeState : IComponentData
+    {
+        public int SpeciesHash;
+        public WildlifeSex Sex;
+        public long BirthDay;
     }
 }

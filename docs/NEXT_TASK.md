@@ -1,17 +1,18 @@
 # NEXT_TASK.md
 
-## Current scope — WM08 wildlife populations and migration, after WM07 completion on 2026-10-23
+## Current scope — WM09 roads and navigation, after WM08 completion on 2026-10-23
 
-WM07 is DONE. The proposed V2 plan now contains exactly 16 lake and eight river fish populations, dry/reachable
-bank production points, separate over-water visuals, authored carrying capacities, bounded daily recovery and
-save/reload idempotence through the existing Production/ResourceEcology authorities. The active
-`p109-compact-world-v1` reference, scene, save paths and fish behavior remain unchanged;
-`p109-world-map-v2-proposed` is still not activated.
+WM08 is DONE. The proposed V2 plan now has one typed, seeded species ecology authority across a connected
+habitat graph, map-wide suitable-biome capacity, density-only concentration zones, migration, reproduction and
+stable Tier1/Tier2/Tier3 transitions. Seven audited existing prefabs supply disposable presentation. The active
+`p109-compact-world-v1` reference and animal behavior remain unchanged; `p109-world-map-v2-proposed` is still
+not activated.
 
-The next unblocked world-map task is **WM08 — wildlife populations and migration**. Follow its scope and gates
-from `docs/world_map/WORLD_MAP_CODEX_TASKS.md` and the canonical wildlife package. Reuse the existing simulation
-authorities, keep state stable across streaming/save/load, audit project assets before creating or importing
-art, and do not activate V2 or start WM09. This WM07 chat stops after its commit and does not implement WM08.
+The next unblocked world-map task is **WM09 — roads and navigation**. Follow its scope and gates from
+`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: use the seven authored routes, crossings, passes and navigation links;
+prove all regions reachable without water traversal or clipping. Audit existing route assets first, reuse the
+current navigation authority, and do not activate V2 or start WM10. This WM08 chat stops after its commit and
+does not implement WM09.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

@@ -1,5 +1,47 @@
 # PROJECT_STATE.md
 
+## WM08 checkpoint — 2026-10-23 World Map V2 species ecology DONE
+
+WM08 adds one deterministic wildlife authority for the seven authored species: deer, boar, hare, fox, wolf,
+bear and waterfowl. The typed V2 contract now carries species ranges, group sizes, activity, suitable biomes,
+concentration zones and tier budgets from `WORLD_MAP_WILDLIFE.json`. A pure seeded planner builds food, rest,
+water and shelter nodes for all eight regions, joins them into one habitat graph and creates carrying capacity,
+initial populations and stable identities. Seed `20261023` produces 119 animals inside the authored 88–148
+canonical range: every compatible region starts populated, including all four bear habitats. Compatibility is
+driven by authored `suitableBiomes`; a shared semantic alias map only reconciles the package's regional biome
+labels. Concentration zones change allocation weight and never act as exclusive spawn masks.
+
+`WildlifePopulationService` is the sole mutable population authority for migration under hunting pressure,
+bounded reproduction and tier state. Tier1 GameObjects and Tier2 Entities are disposable projections over that
+same state; Tier2 wildlife uses the existing `Tier2Runtime.World`, while Tier3 has no scene object. The authored
+maximum budgets yield 35 Tier1, 80 Tier2 and four Tier3 animals. Tier changes and state round trips retain every
+`StableEntityId` without duplicate or lost canonical entries. Simulation advances from the existing clock path;
+there is no parallel NPC/wildlife manager, per-animal `Update`, new save codec or ScriptableObject mutable state.
+`p109-world-map-v2-proposed` remains inactive and the legacy compact-world animal path is unchanged.
+
+The asset-first audit found exact imported deer, boar and duck prefabs. No exact runtime hare, fox, wolf or bear
+model exists, so the catalog uses the existing animated kitty, dog and boar prefabs as scale-adjusted disposable
+fallbacks while canonical species state remains distinct. The Toon Farm duck is the exact waterfowl visual but
+its imported Animator has no controller; the other six entries require their imported controllers. All entries
+retain existing meshes/materials. No model, texture, material, animation, package or external dependency was
+created or imported.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod WM08WildlifeAssetAuthoring.Generate -quit -logFile 'C:\serenity_game\Artifacts\WM08\asset-authoring-r9.log'
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','EditMode','-testFilter','Game.Tests.Editor.WM08WorldMapWildlifeTests;Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.Tier2EcsTests;Game.Tests.Editor.P109TiledWorldPopulationTests','-testResults','C:\serenity_game\Artifacts\WM08\editmode-affected-final2.xml','-logFile','C:\serenity_game\Artifacts\WM08\editmode-affected-final2.log'); $p=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -PassThru -WindowStyle Hidden; while(-not $p.HasExited){Start-Sleep -Seconds 1; $p.Refresh()}
+$unityArgs=@('-batchmode','-nographics','-projectPath','C:\serenity_game','-runTests','-testPlatform','PlayMode','-testFilter','Game.Tests.PlayMode.WM08WorldMapWildlifePlayModeTests','-testResults','C:\serenity_game\Artifacts\WM08\playmode-wm08-final.xml','-logFile','C:\serenity_game\Artifacts\WM08\playmode-wm08-final.log'); $p=Start-Process -FilePath 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -ArgumentList $unityArgs -PassThru -WindowStyle Hidden; while(-not $p.HasExited){Start-Sleep -Seconds 1; $p.Refresh()}
+git diff --check
+```
+
+Results: asset authoring/compilation **PASS** with seven audited entries; final affected EditMode **13/13**;
+short tier-transition PlayMode **1/1**. Earlier red/green authoring runs exposed and corrected missing namespace
+imports plus the static duck-controller exception; preliminary simulation runs exposed and corrected the
+migration fixture and small-population habitat allocation. No broad suite, Player build, profiler capture or
+visual acceptance was run by instruction. The inherited five dirty materials and `New Unity Project/` remain
+user-owned and excluded. WM09 is next and unstarted.
+
 ## WM07 checkpoint — 2026-10-23 World Map V2 fish and water-body recovery DONE
 
 WM07 loads the 16 authored lake populations and eight authored river populations as one immutable fishery
