@@ -2,6 +2,13 @@
 
 ## Current scope — P10.9 Stone Age buildings F1, 2026-10-23
 
+The user-requested `Assets/23102026` slice is complete before F1. Notifications dismiss their exact feed entry
+after click. All eleven local archives were audited; only 217 reviewed nature/audio/lightning assets were
+imported and connected through existing presentation adapters. No vendor C#, demo scene, Package Manager or
+competing terrain/gameplay system was admitted. Focused EditMode and PlayMode both pass 6/6; the Windows build
+at `Builds/P109Assets23102026/Serenity.exe` succeeds with 0 errors / 27 warnings, GUID
+`c4cf71172408462d9635033be0b9da68`. See `P109_ASSETS_23102026_AUDIT.md`. F1 remains the next unblocked scope.
+
 Completed user-feedback repair before F1: worker-driven demolition, no age wear/brown damage tint, marked and
 snapped fishing landing sites, held-LMB palisade/path segments, one Garden menu choice, human-scale outdoor
 facility visuals and walking deer. Focused EditMode 22/22, affected EditMode 41/41 and full-scene PlayMode 1/1

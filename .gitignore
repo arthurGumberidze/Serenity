@@ -35,6 +35,8 @@
 # User-downloaded source archives stay local; reviewed imported assets are versioned separately.
 /Assets/*.unitypackage
 /Assets/*.unitypackage.meta
+/Assets/23102026/
+/Assets/23102026.meta
 .env
 .env.*
 *.local.config

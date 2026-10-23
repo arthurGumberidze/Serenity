@@ -13,7 +13,14 @@ namespace Game.Tests.Editor
             var art = UnityEngine.Resources.Load<Game.Presentation.Environment.CompactWorldArtCatalog>("World/CompactWorldArt");
             Assert.That(art, Is.Not.Null);
             Assert.That(art.FishPattern, Is.Not.Null);
-            foreach (var prefab in new[] { art.HuntingDeer, art.StoneOutcrop, art.FieldFence })
+            Assert.That(art.LightningTexture, Is.Not.Null);
+            Assert.That(art.ForestAmbientDay, Is.Not.Null);
+            Assert.That(art.ForestAmbientNight, Is.Not.Null);
+            Assert.That(art.HuntingBow, Is.Not.Null);
+            Assert.That(art.HuntingArrow, Is.Not.Null);
+            Assert.That(art.WoodlandDetails, Has.Length.EqualTo(3));
+            foreach (var prefab in new[] { art.HuntingDeer, art.StoneOutcrop, art.FieldFence }
+                         .Concat(art.WoodlandDetails))
             {
                 Assert.That(prefab, Is.Not.Null);
                 Assert.That(prefab.GetComponentsInChildren<UnityEngine.MonoBehaviour>(true), Is.Empty);

@@ -17,15 +17,38 @@ public static class P109CompactArtAuthoring
         catalog.HuntingDeer = Prepare("Assets/ithappy/Animals_FREE/Prefabs/Deer_001.prefab", "HuntingDeer", 1.8f);
         catalog.StoneOutcrop = Prepare("Assets/Polytope Studio/Lowpoly_Environments/Sources/Meshes/Rocks/PT_Ore_Rock_01.fbx", "StoneOutcrop", 1.6f);
         catalog.FieldFence = Prepare("Assets/Toon Farm Pack/Prefabs/Props/Fence Kits/TFP_Fence_04A_Module_1.prefab", "FieldFence", 1.2f);
+        catalog.WoodlandDetails = new[]
+        {
+            Prepare("Assets/3D Low Poly Nature Pack -assets model/Prefabs/Models/FallenLog_01.001.prefab",
+                "WoodlandFallenLog", 0.65f),
+            Prepare("Assets/3D Low Poly Nature Pack -assets model/Prefabs/Models/Mushroom_Red_01.001.prefab",
+                "WoodlandMushroom", 0.32f),
+            Prepare("Assets/3D Low Poly Nature Pack -assets model/Prefabs/Models/Cattail.001.prefab",
+                "WoodlandCattail", 0.9f)
+        };
         catalog.FishPattern = AssetDatabase.LoadAssetAtPath<Texture>(
             "Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Textures/Fish_01.png");
         if (catalog.FishPattern == null) throw new InvalidOperationException("Reviewed Synty fish art missing");
+        catalog.LightningTexture = Require<Texture2D>("Assets/LightningBolt/Textures/LightningBoltTexture.png");
+        catalog.ForestAmbientDay = Require<AudioClip>(
+            "Assets/Medieval Action - FX Pack 2.0/Forest ambient (loop).wav");
+        catalog.ForestAmbientNight = Require<AudioClip>(
+            "Assets/Medieval Action - FX Pack 2.0/Forest at night (loop).wav");
+        catalog.HuntingBow = Require<AudioClip>("Assets/Medieval Action - FX Pack 2.0/Bow.wav");
+        catalog.HuntingArrow = Require<AudioClip>("Assets/Medieval Action - FX Pack 2.0/Arrow 1.wav");
         const string target = "Assets/Game/Resources/World/CompactWorldArt.asset";
         var existing = AssetDatabase.LoadAssetAtPath<CompactWorldArtCatalog>(target);
         if (existing == null) AssetDatabase.CreateAsset(catalog, target);
         else { EditorUtility.CopySerialized(catalog, existing); EditorUtility.SetDirty(existing); }
         AssetDatabase.SaveAssets();
         Debug.Log("P109_COMPACT_ART_READY: deer, selectable outcrop, field fences, fish pattern");
+    }
+
+    private static T Require<T>(string path) where T : UnityEngine.Object
+    {
+        var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+        if (asset == null) throw new InvalidOperationException("Missing reviewed art: " + path);
+        return asset;
     }
 
     private static GameObject Prepare(string source, string name, float height)

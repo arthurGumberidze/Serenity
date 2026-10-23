@@ -39,6 +39,7 @@ namespace Game.Tests.PlayMode
             presentation.Refresh(TimeSpan.FromDays(20).Ticks);
             yield return null;
             Assert.That(weather.GetWeatherForDay(20).AbsoluteDay, Is.EqualTo(20));
+            Assert.That(presentation.IsLightningReady, Is.True);
             Assert.That(root.GetComponents<MonoBehaviour>().Length, Is.EqualTo(1));
             UnityEngine.Object.Destroy(root);
         }

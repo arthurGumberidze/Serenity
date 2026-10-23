@@ -1233,3 +1233,18 @@ snaps near these markers. The shoreline search accounts for the world's wide wal
 requiring water within four metres. Outdoor facility meshes use human-scale height limits, not a 20cm zone
 collider height. Deer views switch between imported idle/walk clips, turn and follow sampled ground; they do
 not advance the population or inventory simulation independently.
+
+## D-174 Downloaded art remains a presentation library, never a second authority (2026-10-23)
+
+The user authorized review and selective integration of `Assets/23102026`. Admission is path-scoped and inert:
+vendor C#/DLLs, demo scenes, ProjectSettings and package-manager payloads are excluded. MicroVerse and Toby are
+not installed because their terrain/vegetation controllers would compete with `TiledTerrainWorld`, weather and
+season presentation. Modern Miami/industrial content is out of era. Bear, dogs and knights stay deferred until
+canonical species, ownership, loot and era definitions exist. Winter art is deferred because the supplied
+package includes URP 14 pipeline content while this project is pinned to URP 17.6.
+
+`CompactWorldArtCatalog` may reference reviewed disposable art, textures and audio only. Woodland props have no
+collider, stable ID or save state. Ambient clips read the canonical clock, hunting clips read the existing work
+task, and lightning reads the existing `WeatherService`; none can mutate simulation. Notification dismissal
+removes text and target from parallel bounded lists in one callback before performing focus, preserving their
+index invariant.

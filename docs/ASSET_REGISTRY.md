@@ -6,6 +6,20 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 
 ## Approved runtime packages
 
+### REVIEWED-23102026-PRESENTATION
+
+- Name: reviewed Low Poly Nature, Lightning Bolt textures and Medieval Action sound subset
+- Type/category: nature props, weather texture and environmental/hunting audio
+- Source: user-supplied local Unity packages in `Assets/23102026`; exact store entitlement proof is not stored in Git
+- License: user-authorized project use; `LICENSE_REVIEW_REQUIRED` before external redistribution if purchase records are unavailable
+- Date acquired/imported: 2026-10-23
+- Imported path: `Assets/3D Low Poly Nature Pack -assets model`, `Assets/LightningBolt/Textures`, `Assets/Medieval Action - FX Pack 2.0`
+- Import scope: 207 nature files, four lightning textures and six audio clips; no vendor C#, DLL, demo scene, ProjectSettings or Package Manager content
+- Runtime use: project-owned woodland-detail prefabs, day/night ambience, bow/arrow work feedback and heavy-rain lightning texture
+- Stable-content rule: all imported content is disposable Presentation; canonical time, weather, work, animal HP, inventory and save state remain in Serenity services
+- Size/performance: source archives remain ignored; three small collider-free details per reviewed catalog are streamed with visual tiles, one global ambience source and one shared storm line renderer
+- Visual grade/status: C/B after URP normalization, `APPROVED_RUNTIME` for the selected subset only; the other audited archives remain deferred or rejected in `P109_ASSETS_23102026_AUDIT.md`
+
 ### UMA-3.1F3
 
 - Name: UMA 3 (Unity Multipurpose Avatar), release 3.1f3

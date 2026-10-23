@@ -430,3 +430,29 @@ The previous `Builds/P109VisualFeedback` Player is retained. Test-run temporary 
 automatically removed by the test/build tooling and are not committed. The final smoke uses the same Player
 command above with output names `player-final.log` and `player-final.png`.
 The final rerun also passed: UI/residents and 11/11 landing placements; its gameplay image was inspected.
+
+## Notification dismissal and reviewed 23102026 assets — 23 October 2026
+
+Notification activation now removes the same-index message and target before focusing the event. The local
+asset audit covers all eleven archives; `docs/P109_ASSETS_23102026_AUDIT.md` records every accept/defer/reject
+decision. A prepared package admitted 217 inert files and excluded vendor code, demos and settings. Low Poly
+Nature materials were normalized to URP; project-owned wrappers connect three small woodland details, day/night
+ambience, hunting work sounds and heavy-rain lightning to existing presentation controllers.
+
+Commands (Unity `C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe`):
+
+```powershell
+$taskPython = 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+& $taskPython Tools/Prepare-23102026-Content.py
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -executeMethod P109Assets23102026Import.Import -logFile Artifacts/P109/assets-23102026-import/import.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -quit -executeMethod P109CompactArtAuthoring.Generate -logFile Artifacts/P109/assets-23102026/authoring-2.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter Game.Tests.Editor.P109CompactWorldTests -testResults Artifacts/P109/assets-23102026/editmode.xml -logFile Artifacts/P109/assets-23102026/editmode.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WeatherPlayModeTests;Game.Tests.PlayMode.EventSystemPlayModeTests' -testResults Artifacts/P109/assets-23102026/playmode-final.xml -logFile Artifacts/P109/assets-23102026/playmode-final.log
+Unity.exe -batchmode -nographics -projectPath C:\serenity_game -quit -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath C:\serenity_game\Builds\P109Assets23102026\Serenity.exe -logFile Artifacts/P109/assets-23102026/build-final2.log
+```
+
+Results: EditMode 6/6; PlayMode 6/6; Windows Development build succeeded with 0 errors / 27 warnings,
+GUID `c4cf71172408462d9635033be0b9da68`, fingerprint
+`950F9E54DE535B63644B18885730B5C180AEFDA81A53E5F4D078748F11DA1750`. The first build attempt remained in
+the provenance scan because the new 10.98 GiB raw archive folder was untracked under `Assets`; only that exact
+build process tree was stopped, the raw folder was added to `.gitignore`, and the final build passed.

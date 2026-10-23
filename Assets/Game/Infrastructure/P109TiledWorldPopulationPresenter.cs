@@ -7,6 +7,7 @@ using Game.Domain.Buildings;
 using Game.Domain.Campaign;
 using Game.Domain.Production;
 using Game.Domain.Resources;
+using Game.Domain.Time;
 using Game.Domain.World;
 using Game.Presentation.Environment;
 using Game.Presentation.Production;
@@ -39,10 +40,15 @@ namespace Game.Infrastructure
             public float Phase;
             public TextMesh HealthLabel;
             public Animator Animator;
+            public AudioSource Audio;
+            public StableEntityId? AudibleTaskId;
+            public long LastAudibleWorkTicks;
+            public float NextHuntSoundTime;
         }
         private readonly List<AnimalView> animals = new List<AnimalView>();
         private LocalSceneCompositionRoot session;
         private float animalTime;
+        private AudioSource forestAmbience;
 
         public TiledWorldPopulationPlan Plan { get; private set; }
         public int ActiveTileViewCount => tileViews.Count;
@@ -65,6 +71,7 @@ namespace Game.Infrastructure
             seed = worldSeed;
             session = FindAnyObjectByType<LocalSceneCompositionRoot>();
             art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
+            CreateForestAmbience();
             IndexTemplates(authoredBiome);
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
             RegisterCanonicalPopulation();
@@ -133,6 +140,7 @@ namespace Game.Infrastructure
             foreach (var node in Plan.Resources.Where(value => value.Tile.Equals(tile))) CreateResourceView(node, root.transform);
             foreach (var node in Plan.Industry.Where(value => value.Tile.Equals(tile))) CreateIndustrialView(node, root.transform);
             CreateSettlementAndFieldViews(tile, root.transform);
+            CreateWoodlandDetails(tile, root.transform);
             return root;
         }
 
@@ -219,7 +227,8 @@ namespace Game.Infrastructure
                 Origin = view.transform.position,
                 Phase = stableIndex * 0.73f,
                 Animator = view.GetComponentInChildren<Animator>(true),
-                HealthLabel = label
+                HealthLabel = label,
+                Audio = ConfigureHuntingAudio(view)
             });
         }
 
@@ -229,6 +238,7 @@ namespace Game.Infrastructure
             animalTime += delta;
             var now = animalTime;
             var camera = Camera.main;
+            RefreshForestAmbience();
             for (var index = animals.Count - 1; index >= 0; index--)
             {
                 var animal = animals[index];
@@ -258,12 +268,98 @@ namespace Game.Infrastructure
                 if (task != null && task.RequiredWorkTicks > 0)
                     hp = Mathf.Clamp(Mathf.CeilToInt(120f * (1f -
                         task.AccumulatedWorkTicks / (float)task.RequiredWorkTicks)), 0, 120);
+                if (task == null)
+                {
+                    animal.AudibleTaskId = null;
+                    animal.LastAudibleWorkTicks = 0;
+                }
+                else if (!animal.AudibleTaskId.HasValue || animal.AudibleTaskId.Value != task.Id)
+                {
+                    animal.AudibleTaskId = task.Id;
+                    animal.LastAudibleWorkTicks = 0;
+                }
+                if (task != null && task.AccumulatedWorkTicks > animal.LastAudibleWorkTicks &&
+                    Time.unscaledTime >= animal.NextHuntSoundTime)
+                {
+                    var clip = animal.LastAudibleWorkTicks == 0 ? art?.HuntingBow : art?.HuntingArrow;
+                    if (clip != null && animal.Audio != null) animal.Audio.PlayOneShot(clip, 0.58f);
+                    animal.LastAudibleWorkTicks = task.AccumulatedWorkTicks;
+                    animal.NextHuntSoundTime = Time.unscaledTime + 1.15f;
+                }
                 if (animal.HealthLabel != null)
                 {
                     animal.HealthLabel.text = $"HP {hp}/120";
                     if (camera != null) animal.HealthLabel.transform.rotation = camera.transform.rotation;
                 }
             }
+        }
+
+        private void CreateForestAmbience()
+        {
+            if (art?.ForestAmbientDay == null) return;
+            forestAmbience = gameObject.AddComponent<AudioSource>();
+            forestAmbience.loop = true;
+            forestAmbience.playOnAwake = false;
+            forestAmbience.spatialBlend = 0f;
+            forestAmbience.volume = 0.11f;
+            forestAmbience.clip = art.ForestAmbientDay;
+            forestAmbience.Play();
+        }
+
+        private void RefreshForestAmbience()
+        {
+            if (forestAmbience == null || session?.Clock == null || art == null) return;
+            var hour = GameCalendar.HourOfDay(session.Clock.State.CalendarTicks);
+            var desired = hour >= 21 || hour < 5 ? art.ForestAmbientNight : art.ForestAmbientDay;
+            if (desired == null || forestAmbience.clip == desired) return;
+            forestAmbience.Stop();
+            forestAmbience.clip = desired;
+            forestAmbience.Play();
+        }
+
+        private AudioSource ConfigureHuntingAudio(GameObject view)
+        {
+            if (art?.HuntingBow == null && art?.HuntingArrow == null) return null;
+            var source = view.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 1f;
+            source.minDistance = 3f;
+            source.maxDistance = 34f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            return source;
+        }
+
+        private void CreateWoodlandDetails(WorldTileId tile, Transform parent)
+        {
+            var details = art?.WoodlandDetails;
+            if (details == null || details.Length == 0) return;
+            foreach (var zone in terrainWorld.Definition.Zones.Where(value =>
+                         value.Uses.HasFlag(WorldZoneUse.Forest)))
+            {
+                if (!terrainWorld.Definition.TryGetTile(zone.Center.X, zone.Center.Z, out var centerTile) ||
+                    !centerTile.Equals(tile)) continue;
+                for (var index = 0; index < 7; index++)
+                {
+                    var prefab = details[(StableDetailHash(zone.Id) + index * 17) % details.Length];
+                    if (prefab == null) continue;
+                    var angle = (index * 137f + tile.X * 19f + tile.Z * 31f) * Mathf.Deg2Rad;
+                    var radius = Mathf.Lerp(0.38f, 0.78f, (index + 1f) / 8f);
+                    var x = zone.Center.X + Mathf.Cos(angle) * zone.RadiusX * radius;
+                    var z = zone.Center.Z + Mathf.Sin(angle) * zone.RadiusZ * radius;
+                    if (!terrainWorld.HeightSampler.IsBuildable(x, z)) continue;
+                    var detail = Instantiate(prefab, parent);
+                    detail.name = "Woodland detail " + zone.Id + " " + index;
+                    detail.transform.position = new Vector3(x, terrainWorld.HeightSampler.SampleHeight(x, z), z);
+                    detail.transform.rotation = Quaternion.Euler(0f, index * 73f, 0f);
+                }
+            }
+        }
+
+        private static int StableDetailHash(string value)
+        {
+            var hash = 17;
+            foreach (var character in value) hash = unchecked(hash * 31 + character);
+            return hash & int.MaxValue;
         }
 
         private static void ExpandAuthoredFormation(GameObject root, int stableIndex)

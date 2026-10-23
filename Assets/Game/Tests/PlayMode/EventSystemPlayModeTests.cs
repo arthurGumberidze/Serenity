@@ -76,6 +76,11 @@ namespace Game.Tests.PlayMode
             root.GameplayUi.RefreshNow();
             Assert.That(root.GameplayUi.Notifications.Any(x => x.Contains("событ", StringComparison.OrdinalIgnoreCase) ||
                 x.Contains("заверш", StringComparison.OrdinalIgnoreCase)), Is.True);
+            var notificationCount = root.GameplayUi.Notifications.Count;
+            var notificationButton = root.GameplayUi.RootVisual.Q("notifications").Query<Button>().ToList().FirstOrDefault();
+            Assert.That(notificationButton, Is.Not.Null);
+            Submit(notificationButton);
+            Assert.That(root.GameplayUi.Notifications.Count, Is.EqualTo(notificationCount - 1));
             yield return null;
         }
 

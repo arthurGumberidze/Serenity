@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## Working checkpoint — 2026-10-23 reviewed 23102026 assets and notification dismissal
+
+Clicking a notification now removes the exact text/target pair before focusing its panel, character, building
+or world position, so the bounded feed and clickable target list cannot drift. The event PlayMode regression
+proves the feed count decreases after the actual UI Toolkit button callback.
+
+All eleven downloaded archives in `Assets/23102026` were inventoried. A reviewed 217-file subset was imported:
+207 assets from Low Poly Nature, four lightning textures and six forest/hunting clips. No vendor scripts,
+demo scenes, project settings or package-manager content were admitted. Seventy-one materials were converted
+to URP. Project-owned wrappers add deterministic collider-free woodland details; day/night forest ambience and
+hunting sounds project existing clock/work state; heavy-rain lightning projects the existing WeatherService.
+The 10.98 GiB source archive folder remains local and ignored. Full decisions are in
+`P109_ASSETS_23102026_AUDIT.md`; bear/dogs/knights require future gameplay definitions, while MicroVerse/Toby
+would duplicate existing authorities and Winter carries an old URP 14 template.
+
+Verification: focused EditMode 6/6 and affected PlayMode 6/6. Windows Development build succeeded at
+`Builds/P109Assets23102026/Serenity.exe` with 0 errors / 27 warnings, GUID
+`c4cf71172408462d9635033be0b9da68` and fingerprint
+`950F9E54DE535B63644B18885730B5C180AEFDA81A53E5F4D078748F11DA1750`. F1 remains open for broad
+multi-settlement/tier and user-visible final acceptance.
+
 ## Working checkpoint — 2026-10-23 shore/lifecycle player feedback
 
 The new feedback slice replaces instant demolition with worker travel and skill-scaled dismantling work,

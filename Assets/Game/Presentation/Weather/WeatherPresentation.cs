@@ -21,6 +21,11 @@ namespace Game.Presentation.Weather
         private AudioSource rainAudio;
         private Material rainMaterial;
         private AudioClip rainClip;
+        private LineRenderer lightning;
+        private Light lightningFlash;
+        private Material lightningMaterial;
+        private float lightningVisibleUntil;
+        private long lastLightningMinute = long.MinValue;
         private P5InhabitableRegionPresentation region;
         private P95NaturalAtmosphereProfile atmosphereProfile;
         private Material runtimeSkybox;
@@ -36,6 +41,7 @@ namespace Game.Presentation.Weather
         public ParticleSystem SnowParticles => snowParticles;
         public AudioSource RainAudio => rainAudio;
         public bool IsSnowing { get; private set; }
+        public bool IsLightningReady => lightning != null && lightning.sharedMaterial != null;
 
         public void Initialize(WeatherService service, Material particleMaterial = null,
             P5InhabitableRegionPresentation inhabitableRegion = null,
@@ -55,6 +61,7 @@ namespace Game.Presentation.Weather
             sun = FindDirectionalLight();
             CreateRainPresentation();
             CreateSnowPresentation();
+            CreateLightningPresentation();
         }
 
         public void Refresh(long calendarTick)
@@ -125,6 +132,18 @@ namespace Game.Presentation.Weather
                 rainAudio.volume = state.Type == WeatherType.HeavyRain ? 0.24f : 0.14f;
                 if (IsRaining && !rainAudio.isPlaying) rainAudio.Play();
                 else if (!IsRaining && rainAudio.isPlaying) rainAudio.Stop();
+            }
+            var storming = state.Type == WeatherType.HeavyRain;
+            var minute = calendarTick / TimeSpan.TicksPerMinute;
+            if (storming && (lastLightningMinute == long.MinValue || minute - lastLightningMinute >= 7))
+            {
+                TriggerLightning(minute);
+                lastLightningMinute = minute;
+            }
+            else if (!storming)
+            {
+                lastLightningMinute = long.MinValue;
+                HideLightning();
             }
             region?.ApplySeason(state.Season, state.Snowing);
             ApplyWater(CurrentVisualState);
@@ -231,6 +250,86 @@ namespace Game.Presentation.Weather
             snowObject.SetActive(false);
         }
 
+        private void CreateLightningPresentation()
+        {
+            if (lightning != null) return;
+            var lightningObject = new GameObject("P10.9 Storm Lightning");
+            lightningObject.transform.SetParent(transform, false);
+            lightning = lightningObject.AddComponent<LineRenderer>();
+            lightning.useWorldSpace = true;
+            lightning.alignment = LineAlignment.View;
+            lightning.textureMode = LineTextureMode.Tile;
+            lightning.widthCurve = new AnimationCurve(new Keyframe(0f, 0.16f), new Keyframe(0.75f, 0.09f),
+                new Keyframe(1f, 0.025f));
+            lightning.numCornerVertices = 2;
+            lightning.numCapVertices = 2;
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+            if (shader == null) throw new InvalidOperationException("A lightning shader is required.");
+            lightningMaterial = new Material(shader) { name = "P10.9 Runtime Lightning" };
+            var art = UnityEngine.Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
+            var texture = art != null ? art.LightningTexture : null;
+            if (lightningMaterial.HasProperty("_BaseMap")) lightningMaterial.SetTexture("_BaseMap", texture);
+            if (lightningMaterial.HasProperty("_MainTex")) lightningMaterial.SetTexture("_MainTex", texture);
+            if (lightningMaterial.HasProperty("_BaseColor"))
+                lightningMaterial.SetColor("_BaseColor", new Color(0.72f, 0.86f, 1f, 0.95f));
+            if (lightningMaterial.HasProperty("_Color"))
+                lightningMaterial.SetColor("_Color", new Color(0.72f, 0.86f, 1f, 0.95f));
+            if (lightningMaterial.HasProperty("_Surface")) lightningMaterial.SetFloat("_Surface", 1f);
+            if (lightningMaterial.HasProperty("_Blend")) lightningMaterial.SetFloat("_Blend", 2f);
+            if (lightningMaterial.HasProperty("_SrcBlend"))
+                lightningMaterial.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            if (lightningMaterial.HasProperty("_DstBlend"))
+                lightningMaterial.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+            if (lightningMaterial.HasProperty("_ZWrite")) lightningMaterial.SetFloat("_ZWrite", 0f);
+            lightningMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            lightningMaterial.SetOverrideTag("RenderType", "Transparent");
+            lightningMaterial.renderQueue = 3100;
+            lightning.sharedMaterial = lightningMaterial;
+            lightningFlash = lightningObject.AddComponent<Light>();
+            lightningFlash.type = LightType.Point;
+            lightningFlash.color = new Color(0.72f, 0.84f, 1f);
+            lightningFlash.range = 70f;
+            lightningFlash.intensity = 2.8f;
+            lightningFlash.shadows = LightShadows.None;
+            lightningObject.SetActive(false);
+        }
+
+        private void TriggerLightning(long minute)
+        {
+            if (lightning == null || Camera.main == null) return;
+            var random = new System.Random(unchecked((int)(minute ^ 0x51A7B01L)));
+            var camera = Camera.main;
+            var focus = camera.transform.position + camera.transform.forward * 18f;
+            var end = new Vector3(focus.x + (float)(random.NextDouble() * 24d - 12d), focus.y,
+                focus.z + (float)(random.NextDouble() * 24d - 12d));
+            if (Physics.Raycast(new Vector3(end.x, camera.transform.position.y + 120f, end.z), Vector3.down,
+                    out var hit, 300f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) end = hit.point;
+            else end.y = Mathf.Max(0f, focus.y - 20f);
+            var start = end + new Vector3((float)(random.NextDouble() * 16d - 8d), 42f,
+                (float)(random.NextDouble() * 16d - 8d));
+            const int points = 13;
+            lightning.positionCount = points;
+            for (var index = 0; index < points; index++)
+            {
+                var t = index / (points - 1f);
+                var point = Vector3.Lerp(start, end, t);
+                if (index > 0 && index < points - 1)
+                    point += new Vector3((float)(random.NextDouble() * 3d - 1.5d), 0f,
+                        (float)(random.NextDouble() * 3d - 1.5d)) * (1f - t * 0.65f);
+                lightning.SetPosition(index, point);
+            }
+            lightning.gameObject.SetActive(true);
+            lightningFlash.transform.position = end + Vector3.up * 8f;
+            lightningFlash.enabled = true;
+            lightningVisibleUntil = Time.unscaledTime + 0.16f;
+        }
+
+        private void HideLightning()
+        {
+            if (lightning != null) lightning.gameObject.SetActive(false);
+            if (lightningFlash != null) lightningFlash.enabled = false;
+        }
+
         private static AudioClip CreateRainLoop()
         {
             const int sampleRate = 22050;
@@ -251,6 +350,8 @@ namespace Game.Presentation.Weather
 
         private void LateUpdate()
         {
+            if (lightning != null && lightning.gameObject.activeSelf && Time.unscaledTime >= lightningVisibleUntil)
+                HideLightning();
             if (UnityEngine.Camera.main == null) return;
             var precipitationPosition = UnityEngine.Camera.main.transform.position + Vector3.up * 13f;
             if (IsRaining && rainParticles != null) rainParticles.transform.position = precipitationPosition;
@@ -261,6 +362,7 @@ namespace Game.Presentation.Weather
         {
             if (ownsRainMaterial && rainMaterial != null) Destroy(rainMaterial);
             if (rainClip != null) Destroy(rainClip);
+            if (lightningMaterial != null) Destroy(lightningMaterial);
             if (runtimeSkybox != null)
             {
                 if (RenderSettings.skybox == runtimeSkybox) RenderSettings.skybox = originalSkybox;

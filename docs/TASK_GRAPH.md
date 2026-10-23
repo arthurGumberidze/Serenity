@@ -2,6 +2,12 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+P10.9 notification/23102026 asset feedback (2026-10-23): DONE in implementation; final user acceptance remains
+F1. Clicking a notification focuses its target and removes the matching feed entry. Eleven local archives were
+audited and a code-free 217-asset subset supplies URP woodland details, day/night ambience, hunting feedback and
+heavy-rain lightning through existing clock/work/weather projections. EditMode 6/6 and PlayMode 6/6 passed;
+Windows build succeeded with 0 errors / 27 warnings, GUID `c4cf71172408462d9635033be0b9da68`.
+
 P10.9 shore/lifecycle feedback (2026-10-23): implementation DONE; user acceptance remains F1. Worker-driven
 demolition with saved progress, no age damage/brown damage tint, eleven validated fishing landing markers and
 snapping, cardinal palisade/path drag, single Garden choice, corrected outdoor model scales and deer locomotion.

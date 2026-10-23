@@ -2380,7 +2380,7 @@ namespace Game.Presentation.UI
             for (var index = notificationFeed.Count - 1; index >= Math.Max(0, notificationFeed.Count - 2); index--)
             {
                 var captured = index;
-                var button = ActionButton(notificationFeed[index], () => FocusNotification(notificationTargets[captured]));
+                var button = ActionButton(notificationFeed[index], () => ActivateNotification(captured));
                 button.tooltip = "Перейти к событию";
                 notifications.Add(button);
             }
@@ -2816,6 +2816,16 @@ namespace Game.Presentation.UI
                 notificationTargets.RemoveAt(0);
             }
             notificationVersion++;
+        }
+
+        private void ActivateNotification(int index)
+        {
+            if (index < 0 || index >= notificationFeed.Count || index >= notificationTargets.Count) return;
+            var target = notificationTargets[index];
+            notificationFeed.RemoveAt(index);
+            notificationTargets.RemoveAt(index);
+            notificationVersion++;
+            FocusNotification(target);
         }
 
         private void FocusNotification(NotificationTarget target)

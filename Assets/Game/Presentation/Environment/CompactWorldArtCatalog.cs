@@ -8,6 +8,12 @@ namespace Game.Presentation.Environment
         public GameObject HuntingDeer;
         public GameObject StoneOutcrop;
         public GameObject FieldFence;
+        public GameObject[] WoodlandDetails;
         public Texture FishPattern;
+        public Texture2D LightningTexture;
+        public AudioClip ForestAmbientDay;
+        public AudioClip ForestAmbientNight;
+        public AudioClip HuntingBow;
+        public AudioClip HuntingArrow;
     }
 }
