@@ -1,5 +1,19 @@
 # Architecture — U01
 
+## WM05 World Map V2 vegetation boundary (2026-10-23)
+
+The flow is `WorldMapVegetationDefinition + WM02/WM04 samplers -> WorldMapVegetationPlanner -> immutable
+WorldMapVegetationPlan -> WorldMapVegetationTerrainProjector / centralized collider proxies`. Definition and
+planning remain pure Domain data; stable identity and tile assignment exist before any Terrain is loaded.
+Terrain trees/details, LODGroups and capsule proxies are disposable Presentation/Infrastructure projections.
+No Terrain tree, prefab, collider or ScriptableObject owns depletion, save state or resource authority.
+
+The planner partitions overlapping zones deterministically, enforces global interactive spacing and all
+authored exclusion corridors, and normalizes relative densities into the JSON performance ranges. Terrain
+projection uses audited catalog arrays only. A scene-level refresh selects the closest interactive IDs inside
+the visible tile set and camera radius, capped at 650; mass vegetation has no `Update`. Definitions without
+V2 `MapData` retain the existing compact-world path, so this boundary cannot activate a generation.
+
 ## WM04 World Map V2 biome-paint boundary (2026-10-23)
 
 `WorldMapBiomeDefinition` is immutable Domain configuration for authored region polygons, biome/soil tags and

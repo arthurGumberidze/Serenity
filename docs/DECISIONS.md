@@ -1,5 +1,26 @@
 # DECISIONS.md
 
+## D-180 WM05 separates deterministic vegetation identity from streamed Terrain presentation (2026-10-23)
+
+`WorldMapVegetationDefinition` is immutable definition data parsed from the authored JSON. A pure
+`WorldMapVegetationPlanner` combines class densities, zone multipliers, clearings, route/POI/build exclusions,
+WM02 height/water and WM04 biome suitability. Overlapping masks are partitioned by density priority before
+the authored relative targets are normalized into the global performance ranges. A final avalanche separates
+salted deterministic coordinate streams; global spatial hashing enforces the 4.5–8 m interactive-tree spacing.
+Stable IDs are independent of Unity objects and tile load/read order.
+
+The plan is canonical immutable runtime data but not resource ecology: later WM06 may bind depletion state to
+interactive stable IDs without making Terrain instances authoritative. `WorldMapVegetationTerrainProjector`
+maps trees/shrubs to Terrain tree instances and ground/low props to Terrain details. `TiledTerrainWorld` owns
+only disposable streamed presentation and centrally selected nearby capsule proxies, capped by the authored
+650 limit; strategic mode selects none. No mass object owns an `Update`.
+
+The asset-first audit selected the already approved PNB Meadow Forest source. Four project-owned prefab
+variants retain three mesh LODs and existing stable materials, remove source colliders and remove billboard/card
+LOD; existing shrubs and details are referenced directly. This is preferable to packs whose mass prefabs lack
+LOD or retain per-instance colliders. No external content or package was added. WM05 neither activates the
+proposed generation nor changes compact-world presentation/save authority.
+
 ## D-179 WM04 owns biome intent in Domain data and projects one deterministic Terrain mask (2026-10-23)
 
 `WorldMapBiomeDefinition` is the single immutable authority for the eight authored region polygons, their

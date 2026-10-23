@@ -162,7 +162,9 @@ namespace Game.Infrastructure
                 var species = UniqueStrings(wildlife.Array("species").Select(value => value.Object().String("id")), "species");
                 var wildlifeMasks = ParseWildlifeMasks(wildlife.Array("concentrationZones"), bounds, species);
                 ValidateWildlifeSimulation(wildlife.Object("simulation"));
-                var vegetationMasks = ParseVegetationMasks(roots["WORLD_MAP_VEGETATION.json"], bounds);
+                var vegetation = ParseVegetationDefinition(roots["WORLD_MAP_VEGETATION.json"], bounds);
+                var vegetationMasks = vegetation.Zones.Select(zone => new WorldMapMask(zone.Id, "vegetation",
+                    zone.Shape, new[] { zone.ClassId }, "density", zone.DensityMultiplier)).ToArray();
                 var buildability = roots["WORLD_MAP_BUILDABILITY.json"];
                 var buildabilityMasks = ParseBuildabilityMasks(buildability.Array("zones"), bounds);
                 ValidateBuildabilityRules(buildability, bounds);
@@ -183,7 +185,7 @@ namespace Game.Infrastructure
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
-                    biomes, river.Spline, tributaries.Select(value => value.Spline),
+                    biomes, vegetation, river.Spline, tributaries.Select(value => value.Spline),
                     lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
@@ -567,7 +569,8 @@ namespace Game.Infrastructure
                 if (width[0] <= 0 || width[1] < width[0]) throw new InvalidDataException("Invalid route width range.");
                 var points = route.Points("points").Select(point =>
                     new WorldMapSplinePoint(point, (width[0] + width[1]) * 0.5f));
-                return new WorldMapSpline(route.String("id"), points, bounds, width[0], width[1]);
+                return new WorldMapSpline(route.String("id"), points, bounds, width[0], width[1],
+                    route.String("kind"));
             }).ToArray();
             UniqueStrings(result.Select(value => value.Id), "route");
             return result;
@@ -701,51 +704,66 @@ namespace Game.Infrastructure
             if (!simulation.Bool("timeOfDay")) throw new InvalidDataException("Wildlife time-of-day contract is required.");
         }
 
-        private static IReadOnlyList<WorldMapMask> ParseVegetationMasks(Node vegetation,
+        private static WorldMapVegetationDefinition ParseVegetationDefinition(Node vegetation,
             WorldMapBounds bounds)
         {
-            var classIds = new List<string>();
-            foreach (var value in vegetation.Array("classes"))
+            var classes = vegetation.Array("classes").Select(value =>
             {
                 var definition = value.Object();
-                classIds.Add(definition.String("id"));
                 var interactive = definition.NumberArray("interactiveTreesPerHa", 2);
                 var decorative = definition.NumberArray("decorativeInstancesPerHa", 2);
                 var canopy = definition.NumberArray("canopy", 2);
-                if (interactive[0] < 0f || interactive[1] < interactive[0] || decorative[0] < 0f ||
-                    decorative[1] < decorative[0] || canopy[0] < 0f || canopy[1] > 1f || canopy[1] < canopy[0])
-                    throw new InvalidDataException("Vegetation class ranges are invalid.");
-            }
-            var classes = UniqueStrings(classIds, "vegetation class");
-            var result = vegetation.Array("zones").Select(value =>
+                return new WorldMapVegetationClass(definition.String("id"),
+                    new WorldMapRange(interactive[0], interactive[1]),
+                    new WorldMapRange(decorative[0], decorative[1]),
+                    new WorldMapRange(canopy[0], canopy[1]));
+            }).ToArray();
+            var classIds = UniqueStrings(classes.Select(value => value.Id), "vegetation class");
+            var zones = vegetation.Array("zones").Select(value =>
             {
                 var zone = value.Object();
                 var classId = zone.String("classId");
-                if (!classes.Contains(classId)) throw new InvalidDataException("Vegetation zone has an unknown class.");
+                if (!classIds.Contains(classId)) throw new InvalidDataException("Vegetation zone has an unknown class.");
+                var clearings = new List<WorldMapVegetationClearing>();
                 if (zone.Has("clearings"))
                     foreach (var clearing in zone.Array("clearings"))
                     {
                         var values = clearing.NumberArray(null, 3);
                         if (!bounds.Contains(new WorldMapPoint(values[0], values[1])) || values[2] <= 0f)
                             throw new InvalidDataException("Vegetation clearing is invalid.");
+                        clearings.Add(new WorldMapVegetationClearing(
+                            new WorldMapPoint(values[0], values[1]), values[2]));
                     }
-                return new WorldMapMask(zone.String("id"), "vegetation",
-                    ParseShape(zone.Object("shape"), bounds, zone.String("id")), new[] { classId },
-                    "density", zone.Float("densityMultiplier"));
+                return new WorldMapVegetationZone(zone.String("id"), classId,
+                    ParseShape(zone.Object("shape"), bounds, zone.String("id")),
+                    zone.Float("densityMultiplier"), clearings);
             }).ToArray();
-            UniqueStrings(result.Select(value => value.Id), "vegetation mask");
+            UniqueStrings(zones.Select(value => value.Id), "vegetation mask");
 
             var distribution = vegetation.Object("distribution");
             var treeSpacing = distribution.NumberArray("minimumInteractiveTreeSpacingMeters", 2);
             var reedBand = distribution.NumberArray("shoreReedBandMeters", 2);
             var routeClearance = distribution.Object("routeClearanceMeters");
-            if (distribution.String("method") != "seeded_poisson_disc_plus_density_masks" ||
-                treeSpacing[0] <= 0f || treeSpacing[1] < treeSpacing[0] ||
-                distribution.Float("startClearingExclusionRadiusMeters") <= 0f || reedBand[0] < 0f ||
-                reedBand[1] < reedBand[0] || routeClearance.Float("mainTrail") <= 0f ||
-                routeClearance.Float("footpath") <= 0f)
-                throw new InvalidDataException("Vegetation distribution contract is invalid.");
-            return result;
+            var distributionDefinition = new WorldMapVegetationDistribution(distribution.String("method"),
+                new WorldMapRange(treeSpacing[0], treeSpacing[1]),
+                distribution.Float("startClearingExclusionRadiusMeters"),
+                routeClearance.Float("mainTrail"), routeClearance.Float("footpath"),
+                new WorldMapRange(reedBand[0], reedBand[1]));
+
+            var budget = vegetation.Object("performanceBudget");
+            var definitionBudget = new WorldMapVegetationBudget(
+                ParseRange(budget, "canonicalInteractiveTrees"),
+                ParseRange(budget, "decorativeTreeAndShrubInstances"),
+                ParseRange(budget, "activeTreeCollidersWithinCameraBudget"),
+                ParseRange(budget, "interactiveBushesAndHerbs"),
+                ParseRange(budget, "decorativeGroundInstances"));
+            return new WorldMapVegetationDefinition(classes, zones, distributionDefinition, definitionBudget);
+        }
+
+        private static WorldMapRange ParseRange(Node node, string property)
+        {
+            var values = node.NumberArray(property, 2);
+            return new WorldMapRange(values[0], values[1]);
         }
 
         private static IReadOnlyList<WorldMapMask> ParseBuildabilityMasks(IReadOnlyList<Node> values,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.AI;
 using Game.Domain.World;
+using Game.Presentation.Environment;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -21,9 +22,13 @@ namespace Game.Infrastructure
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
         private readonly List<GameObject> linkObjects = new List<GameObject>();
+        private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationColliders =
+            new Dictionary<Game.Domain.StableEntityId, GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
         private WorldMapTerrainPaintSampler terrainPaintSampler;
+        private StarterNatureCatalog natureCatalog;
+        private WorldMapVegetationPlan vegetationPlan;
         private Material sourceTerrainMaterial;
         private Func<WorldPosition> cameraFocusProvider;
         private Func<IEnumerable<WorldPosition>> physicalPositionProvider;
@@ -36,6 +41,7 @@ namespace Game.Infrastructure
         private Texture2D overviewGroundTexture;
         private Material localWaterMaterial;
         private bool strategicMode;
+        private WorldPosition lastCameraFocus;
 
         private sealed class LoadedTile
         {
@@ -58,6 +64,8 @@ namespace Game.Infrastructure
         public IReadOnlyList<WorldTileId> VisualTiles => visual.OrderBy(value => value).ToArray();
         public bool StrategicOverviewVisible => strategicOverview != null && strategicOverview.activeSelf;
         public bool StrategicGroundTextureReady => overviewGroundTexture != null;
+        public WorldMapVegetationPlan VegetationPlan => vegetationPlan;
+        public int ActiveVegetationColliderCount => vegetationColliders.Count;
         public Texture2D StrategicGroundTexture => overviewGroundTexture;
         public NavMeshSurface PrimaryNavigationSurface
         {
@@ -88,18 +96,27 @@ namespace Game.Infrastructure
                 var legacyCollider = legacyTerrain.GetComponent<TerrainCollider>();
                 if (legacyCollider != null) legacyCollider.enabled = false;
             }
-            var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
+            natureCatalog = Resources.Load<StarterNatureCatalog>("World/StarterNature");
             if (definition.MapData != null)
             {
-                if (nature == null || nature.WorldMapGroundLayers == null ||
-                    nature.WorldMapGroundLayers.Length != WorldMapTerrainPaintSampler.LayerCount ||
-                    nature.WorldMapGroundLayers.Any(value => value == null))
+                if (natureCatalog == null || natureCatalog.WorldMapGroundLayers == null ||
+                    natureCatalog.WorldMapGroundLayers.Length != WorldMapTerrainPaintSampler.LayerCount ||
+                    natureCatalog.WorldMapGroundLayers.Any(value => value == null))
                     throw new InvalidOperationException("World Map V2 requires its seven admitted Terrain layers.");
-                sourceLayers = nature.WorldMapGroundLayers;
+                if (natureCatalog.WorldMapTrees == null || natureCatalog.WorldMapTrees.Length == 0 ||
+                    natureCatalog.WorldMapTrees.Any(value => value == null) ||
+                    natureCatalog.WorldMapShrubs == null || natureCatalog.WorldMapShrubs.Length == 0 ||
+                    natureCatalog.WorldMapShrubs.Any(value => value == null) ||
+                    natureCatalog.WorldMapGroundCover == null || natureCatalog.WorldMapGroundCover.Length == 0 ||
+                    natureCatalog.WorldMapGroundCover.Any(value => value == null))
+                    throw new InvalidOperationException("World Map V2 requires its audited vegetation catalog.");
+                sourceLayers = natureCatalog.WorldMapGroundLayers;
                 terrainPaintSampler = new WorldMapTerrainPaintSampler(definition, heightSampler);
+                vegetationPlan = new WorldMapVegetationPlanner(definition, heightSampler,
+                    heightSampler.WorldSeed).Create();
             }
-            else if (nature != null && nature.GroundLayers != null && nature.GroundLayers.Length > 0)
-                sourceLayers = nature.GroundLayers;
+            else if (natureCatalog != null && natureCatalog.GroundLayers != null && natureCatalog.GroundLayers.Length > 0)
+                sourceLayers = natureCatalog.GroundLayers;
             BuildStrategicOverview();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
@@ -119,9 +136,10 @@ namespace Game.Infrastructure
             IEnumerable<Tuple<WorldPosition, WorldPosition>> navigationRoutes)
         {
             if (Definition == null) throw new InvalidOperationException("The tiled world is not initialized.");
+            lastCameraFocus = cameraFocus;
             // Sixteen small tiles fit the compact world. Retain its entire terrain so a
             // maximum-zoom view cannot expose a streaming edge or lose command collision.
-            var plan = Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000
+            var plan = Definition.MapData == null && Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000
                 ? new TiledWorldStreamingPlan(Definition.Tiles, Definition.Tiles)
                 : planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
                     navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
@@ -160,6 +178,7 @@ namespace Game.Infrastructure
             if (strategicOverview != null) strategicOverview.SetActive(active);
             foreach (var pair in loaded)
                 pair.Value.Terrain.drawHeightmap = !active && visual.Contains(pair.Key);
+            RefreshVegetationColliders(lastCameraFocus);
             VisualTilesChanged?.Invoke();
             if (!active && cameraFocusProvider != null) RefreshFromProviders();
         }
@@ -209,6 +228,7 @@ namespace Game.Infrastructure
             }
             ConnectTerrainNeighbours();
             if (navigationEnabled && added) RebuildLinks();
+            RefreshVegetationColliders(lastCameraFocus);
             VisualTilesChanged?.Invoke();
         }
 
@@ -227,6 +247,7 @@ namespace Game.Infrastructure
             };
             data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, heightmapResolution));
             if (sourceLayers.Length > 0) data.SetAlphamaps(0, 0, CreateTerrainPaint(id, data));
+            if (vegetationPlan != null) ApplyVegetation(data, id);
             var root = Terrain.CreateTerrainGameObject(data);
             root.name = "P10.9 Terrain " + id;
             root.transform.SetParent(transform, true);
@@ -238,6 +259,14 @@ namespace Game.Infrastructure
             terrain.drawInstanced = true;
             terrain.heightmapPixelError = 3f;
             terrain.basemapDistance = 1400f;
+            if (vegetationPlan != null)
+            {
+                terrain.treeDistance = 320f;
+                terrain.treeBillboardDistance = 320f;
+                terrain.treeCrossFadeLength = 18f;
+                terrain.detailObjectDistance = 90f;
+                terrain.detailObjectDensity = 1f;
+            }
             if (sourceTerrainMaterial != null) terrain.materialTemplate = sourceTerrainMaterial;
             var collider = root.GetComponent<TerrainCollider>();
             if (collider == null) collider = root.AddComponent<TerrainCollider>();
@@ -245,6 +274,39 @@ namespace Game.Infrastructure
             var water = CreateLocalWater(id, root.transform, data);
             return new LoadedTile { Id = id, Root = root, Terrain = terrain, Data = data, Collider = collider,
                 WaterRoot = water };
+        }
+
+        private void ApplyVegetation(TerrainData data, WorldTileId tile)
+        {
+            WorldMapVegetationTerrainProjector.Apply(data, tile, Definition, vegetationPlan, natureCatalog);
+        }
+
+        private void RefreshVegetationColliders(WorldPosition cameraFocus)
+        {
+            if (vegetationPlan == null) return;
+            var desired = strategicMode
+                ? Array.Empty<WorldMapVegetationInstance>()
+                : vegetationPlan.SelectInteractiveColliders(visual, cameraFocus, 225f,
+                    (int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
+            var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
+            foreach (var id in vegetationColliders.Keys.Where(value => !ids.Contains(value)).ToArray())
+            {
+                Destroy(vegetationColliders[id]);
+                vegetationColliders.Remove(id);
+            }
+            foreach (var value in desired)
+            {
+                if (vegetationColliders.ContainsKey(value.StableId)) continue;
+                var root = new GameObject();
+                root.transform.SetParent(transform, false);
+                root.transform.position = new Vector3(value.Position.X, value.Position.Y, value.Position.Z);
+                root.AddComponent<WorldMapVegetationColliderProxy>().Bind(value.StableId);
+                var collider = root.AddComponent<CapsuleCollider>();
+                collider.radius = 0.46f * value.UniformScale;
+                collider.height = 7.2f * value.UniformScale;
+                collider.center = Vector3.up * collider.height * 0.5f;
+                vegetationColliders.Add(value.StableId, root);
+            }
         }
 
         private float[,,] CreateTerrainPaint(WorldTileId id, TerrainData data)
@@ -731,6 +793,7 @@ namespace Game.Infrastructure
             if (overviewWaterMaterial != null) Destroy(overviewWaterMaterial);
             if (overviewGroundTexture != null) Destroy(overviewGroundTexture);
             if (localWaterMaterial != null) Destroy(localWaterMaterial);
+            vegetationColliders.Clear();
         }
     }
 }

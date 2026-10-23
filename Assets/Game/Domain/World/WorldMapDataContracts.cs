@@ -318,6 +318,154 @@ namespace Game.Domain.World
         }
     }
 
+    public readonly struct WorldMapRange
+    {
+        public WorldMapRange(float minimum, float maximum)
+        {
+            if (!WorldMapPoint.IsFinite(minimum) || !WorldMapPoint.IsFinite(maximum) ||
+                minimum < 0f || maximum < minimum)
+                throw new ArgumentOutOfRangeException(nameof(maximum));
+            Minimum = minimum;
+            Maximum = maximum;
+        }
+
+        public float Minimum { get; }
+        public float Maximum { get; }
+        public float Lerp(float value) => Minimum + (Maximum - Minimum) * Math.Max(0f, Math.Min(1f, value));
+        public bool Contains(float value) => value >= Minimum && value <= Maximum;
+    }
+
+    public sealed class WorldMapVegetationClass
+    {
+        public WorldMapVegetationClass(string id, WorldMapRange interactiveTreesPerHectare,
+            WorldMapRange decorativeInstancesPerHectare, WorldMapRange canopy)
+        {
+            if (string.IsNullOrWhiteSpace(id) || canopy.Maximum > 1f)
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            InteractiveTreesPerHectare = interactiveTreesPerHectare;
+            DecorativeInstancesPerHectare = decorativeInstancesPerHectare;
+            Canopy = canopy;
+        }
+
+        public string Id { get; }
+        public WorldMapRange InteractiveTreesPerHectare { get; }
+        public WorldMapRange DecorativeInstancesPerHectare { get; }
+        public WorldMapRange Canopy { get; }
+    }
+
+    public readonly struct WorldMapVegetationClearing
+    {
+        public WorldMapVegetationClearing(WorldMapPoint center, float radiusMeters)
+        {
+            if (!WorldMapPoint.IsFinite(radiusMeters) || radiusMeters <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(radiusMeters));
+            Center = center;
+            RadiusMeters = radiusMeters;
+        }
+
+        public WorldMapPoint Center { get; }
+        public float RadiusMeters { get; }
+    }
+
+    public sealed class WorldMapVegetationZone
+    {
+        public WorldMapVegetationZone(string id, string classId, WorldMapShape shape,
+            float densityMultiplier, IEnumerable<WorldMapVegetationClearing> clearings)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(classId) ||
+                !WorldMapPoint.IsFinite(densityMultiplier) || densityMultiplier <= 0f)
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            ClassId = classId;
+            Shape = shape ?? throw new ArgumentNullException(nameof(shape));
+            DensityMultiplier = densityMultiplier;
+            Clearings = Array.AsReadOnly((clearings ??
+                throw new ArgumentNullException(nameof(clearings))).ToArray());
+        }
+
+        public string Id { get; }
+        public string ClassId { get; }
+        public WorldMapShape Shape { get; }
+        public float DensityMultiplier { get; }
+        public IReadOnlyList<WorldMapVegetationClearing> Clearings { get; }
+    }
+
+    public sealed class WorldMapVegetationDistribution
+    {
+        public WorldMapVegetationDistribution(string method, WorldMapRange interactiveTreeSpacingMeters,
+            float startClearingExclusionRadiusMeters, float mainTrailClearanceMeters,
+            float footpathClearanceMeters, WorldMapRange shoreReedBandMeters)
+        {
+            if (method != "seeded_poisson_disc_plus_density_masks" ||
+                interactiveTreeSpacingMeters.Minimum <= 0f || startClearingExclusionRadiusMeters <= 0f ||
+                mainTrailClearanceMeters <= 0f || footpathClearanceMeters <= 0f)
+                throw new ArgumentException(nameof(method));
+            Method = method;
+            InteractiveTreeSpacingMeters = interactiveTreeSpacingMeters;
+            StartClearingExclusionRadiusMeters = startClearingExclusionRadiusMeters;
+            MainTrailClearanceMeters = mainTrailClearanceMeters;
+            FootpathClearanceMeters = footpathClearanceMeters;
+            ShoreReedBandMeters = shoreReedBandMeters;
+        }
+
+        public string Method { get; }
+        public WorldMapRange InteractiveTreeSpacingMeters { get; }
+        public float StartClearingExclusionRadiusMeters { get; }
+        public float MainTrailClearanceMeters { get; }
+        public float FootpathClearanceMeters { get; }
+        public WorldMapRange ShoreReedBandMeters { get; }
+    }
+
+    public sealed class WorldMapVegetationBudget
+    {
+        public WorldMapVegetationBudget(WorldMapRange interactiveTrees, WorldMapRange decorativeTreesAndShrubs,
+            WorldMapRange activeTreeColliders, WorldMapRange interactiveBushesAndHerbs,
+            WorldMapRange decorativeGroundInstances)
+        {
+            InteractiveTrees = interactiveTrees;
+            DecorativeTreesAndShrubs = decorativeTreesAndShrubs;
+            ActiveTreeColliders = activeTreeColliders;
+            InteractiveBushesAndHerbs = interactiveBushesAndHerbs;
+            DecorativeGroundInstances = decorativeGroundInstances;
+        }
+
+        public WorldMapRange InteractiveTrees { get; }
+        public WorldMapRange DecorativeTreesAndShrubs { get; }
+        public WorldMapRange ActiveTreeColliders { get; }
+        public WorldMapRange InteractiveBushesAndHerbs { get; }
+        public WorldMapRange DecorativeGroundInstances { get; }
+    }
+
+    /// <summary>Immutable, data-driven vegetation intent. Mutable depletion remains a later resource concern.</summary>
+    public sealed class WorldMapVegetationDefinition
+    {
+        public WorldMapVegetationDefinition(IEnumerable<WorldMapVegetationClass> classes,
+            IEnumerable<WorldMapVegetationZone> zones, WorldMapVegetationDistribution distribution,
+            WorldMapVegetationBudget budget)
+        {
+            var classArray = (classes ?? throw new ArgumentNullException(nameof(classes))).ToArray();
+            var zoneArray = (zones ?? throw new ArgumentNullException(nameof(zones))).ToArray();
+            if (classArray.Length == 0 || classArray.Any(value => value == null) ||
+                classArray.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != classArray.Length)
+                throw new ArgumentException("Vegetation classes require unique IDs.", nameof(classes));
+            if (zoneArray.Length == 0 || zoneArray.Any(value => value == null) ||
+                zoneArray.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != zoneArray.Length ||
+                zoneArray.Any(value => classArray.All(candidate => candidate.Id != value.ClassId)))
+                throw new ArgumentException("Vegetation zones require unique IDs and known classes.", nameof(zones));
+            Classes = Array.AsReadOnly(classArray);
+            Zones = Array.AsReadOnly(zoneArray);
+            Distribution = distribution ?? throw new ArgumentNullException(nameof(distribution));
+            Budget = budget ?? throw new ArgumentNullException(nameof(budget));
+        }
+
+        public IReadOnlyList<WorldMapVegetationClass> Classes { get; }
+        public IReadOnlyList<WorldMapVegetationZone> Zones { get; }
+        public WorldMapVegetationDistribution Distribution { get; }
+        public WorldMapVegetationBudget Budget { get; }
+        public WorldMapVegetationClass Class(string id) => Classes.Single(value => value.Id == id);
+    }
+
     public readonly struct WorldMapSplinePoint
     {
         public WorldMapSplinePoint(WorldMapPoint position, float widthMeters)
@@ -334,7 +482,7 @@ namespace Game.Domain.World
     public sealed class WorldMapSpline
     {
         public WorldMapSpline(string id, IEnumerable<WorldMapSplinePoint> points, WorldMapBounds bounds,
-            float minimumWidthMeters = 0f, float maximumWidthMeters = 0f)
+            float minimumWidthMeters = 0f, float maximumWidthMeters = 0f, string kind = "")
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
             var values = (points ?? throw new ArgumentNullException(nameof(points))).ToArray();
@@ -354,11 +502,13 @@ namespace Game.Domain.World
             Points = Array.AsReadOnly(values);
             MinimumWidthMeters = minimumWidthMeters;
             MaximumWidthMeters = maximumWidthMeters;
+            Kind = kind ?? string.Empty;
         }
         public string Id { get; }
         public IReadOnlyList<WorldMapSplinePoint> Points { get; }
         public float MinimumWidthMeters { get; }
         public float MaximumWidthMeters { get; }
+        public string Kind { get; }
     }
 
     public enum WorldMapWaterLevelPolicyKind
@@ -762,6 +912,7 @@ namespace Game.Domain.World
         public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
             WorldMapHydrologyDefinition hydrology, WorldMapBiomeDefinition biomes,
+            WorldMapVegetationDefinition vegetation,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
@@ -777,6 +928,7 @@ namespace Game.Domain.World
             Terrain = terrain ?? throw new ArgumentNullException(nameof(terrain));
             Hydrology = hydrology ?? throw new ArgumentNullException(nameof(hydrology));
             Biomes = biomes ?? throw new ArgumentNullException(nameof(biomes));
+            Vegetation = vegetation ?? throw new ArgumentNullException(nameof(vegetation));
             Regions = Array.AsReadOnly(Biomes.Regions.Select(value => value.Polygon).ToArray());
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -798,6 +950,7 @@ namespace Game.Domain.World
         public WorldMapTerrainDefinition Terrain { get; }
         public WorldMapHydrologyDefinition Hydrology { get; }
         public WorldMapBiomeDefinition Biomes { get; }
+        public WorldMapVegetationDefinition Vegetation { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM05 World Map V2 vegetation and LOD (2026-10-23): DONE. Typed JSON vegetation classes/zones/clearings and a
+pure seeded planner produce 3,500 interactive trees, 9,000 decorative tree/shrub instances and 26,500 Terrain
+details at hash `5EE931B502E2D754`. Global Poisson spacing, water/slope/start/route/POI/build exclusions, stable
+IDs and density-priority overlap ownership are deterministic. Four approved-asset tree variants retain mesh
+LODs but remove colliders/billboards; one centralized selector caps disposable nearby collider proxies at 650
+with no per-instance `Update`. Focused EditMode passed 4/4; affected WM01–WM05 EditMode passed 23/23 and
+PlayMode 5/5. Legacy remains active and unchanged; WM06 is next and has not started.
+
 WM04 World Map V2 biomes and Terrain paint (2026-10-23): DONE. One immutable typed biome definition now owns
 the eight authored regions and ecotone contract. A pure deterministic sampler combines those masks with WM02
 height/slope and WM03 water distance into seven normalized Terrain roles; global edge-aligned sampling makes

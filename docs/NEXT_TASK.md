@@ -1,18 +1,19 @@
 # NEXT_TASK.md
 
-## Current scope — WM05 vegetation and LOD, after WM04 completion on 2026-10-23
+## Current scope — WM06 natural resources, after WM05 completion on 2026-10-23
 
-WM04 is DONE. One typed biome definition and one pure deterministic paint sampler now blend the eight authored
-regions with WM02 height/slope and WM03 water distance into seven V2-only Terrain roles. Existing official
-TerrainDemo layers are reused, all shared tile borders match, and focused/affected tests pass. The active
-`p109-compact-world-v1` reference, scene, legacy paint and save paths remain unchanged.
+WM05 is DONE. The typed vegetation contract and pure seeded planner now enforce density masks, global tree
+spacing and authored exclusions while producing 3,500 interactive trees, 9,000 decorative trees/shrubs and
+26,500 details. Audited existing art supplies mesh LODs; nearby colliders are centrally capped at 650 with no
+per-instance `Update`. Focused/affected tests pass. The active `p109-compact-world-v1` reference, scene and
+save paths remain unchanged, and `p109-world-map-v2-proposed` is still not activated.
 
-The next unblocked world-map task is **WM05 — vegetation and LOD**. It may implement seeded distribution,
-interactive/decorative separation and collider culling from `WORLD_MAP_VEGETATION.json` through the existing
-`StarterNatureCatalog` and environment LOD boundaries. It must keep the start clearing open, stay within the
-authored density budgets, use no per-instance `Update`, and verify determinism plus focused profiler gates. It
-must not activate `p109-world-map-v2-proposed`, start WM06 or alter legacy save slots. This WM04 chat stops
-after its commit and does not implement WM05.
+The next unblocked world-map task is **WM06 — natural resources**. It may consume
+`WORLD_MAP_RESOURCES.json` through `TiledWorldPopulation`, Production and ResourceEcology to implement resource
+masks, the start guarantee, stable IDs and hidden deposits, with deterministic EditMode and focused Save/Load
+PlayMode verification. Depletion must remain canonical persistent Domain state rather than vegetation/Terrain
+state. It must not activate `p109-world-map-v2-proposed`, start WM07 or alter legacy save slots. This WM05 chat
+stops after its commit and does not implement WM06.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

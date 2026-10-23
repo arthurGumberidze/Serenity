@@ -1,5 +1,46 @@
 # PROJECT_STATE.md
 
+## WM05 checkpoint — 2026-10-23 World Map V2 vegetation and LOD DONE
+
+WM05 replaces the generic WM01 vegetation masks with immutable typed classes, zones, clearings, distribution
+rules and performance ranges from `WORLD_MAP_VEGETATION.json`. `WorldMapVegetationPlanner` is a pure seeded
+Domain planner over those contracts plus the WM02 height and WM04 paint samplers. Overlapping zones have one
+density-priority owner, interactive trees use a global spatial hash with the authored 4.5–8 m spacing, and
+all instances exclude water, excessive tree slope, the 58/72 m start clearings, route widths plus 5/2 m
+clearance, POI protection and ideal/conditional build masks. Stable IDs derive only from map version, seed,
+zone, kind and quantized placement identity; tile read/load order cannot change them.
+
+The seed `20261023` plan contains exactly **3,500 interactive trees, 9,000 decorative tree/shrub instances and
+26,500 ground-detail instances**, inside all three authored performance ranges. Its golden plan hash is
+`5EE931B502E2D754`; the focused test records 13,780 ms for the first cold Domain plan. Terrain projection uses
+7 tree/shrub prototypes and 6 detail prototypes. `TiledTerrainWorld` streams V2 tiles, uses 320 m tree and
+90 m detail draw ranges, and centrally selects at most 650 nearby collider proxies within 225 m; neither mass
+vegetation nor a proxy has an `Update`. These projections own no resource/depletion or save state.
+
+The asset-first audit examined 2,248 existing nature prefab/model candidates. The selected source is the
+already approved Polygon Nature Biomes Meadow Forest set because its trees include three usable mesh LODs;
+four project-owned V2 prefab variants retain those mesh LODs and stable existing materials while stripping
+source colliders and the billboard/card stage. Three existing shrubs, four ground-cover meshes and two small
+props complete the catalog. Rocks/branches are Terrain details rather than tree prototypes. No model, texture,
+material, shader, package or external dependency was imported. The active `p109-compact-world-v1` catalog,
+scene, generation and save paths remain unchanged; `p109-world-map-v2-proposed` is still not activated.
+
+Exact Unity 6000.6.4f1 commands:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -executeMethod WM05VegetationAssetAuthoring.Generate -quit -logFile 'C:\serenity_game\Artifacts\WM05\asset-authoring-final.log'
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\WM05\Saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM05WorldMapVegetationTests' -testResults 'C:\serenity_game\Artifacts\WM05\editmode-wm05-budget-final.xml' -logFile 'C:\serenity_game\Artifacts\WM05\editmode-wm05-budget-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testCategory 'WM01|WM02|WM03|WM04|WM05' -testResults 'C:\serenity_game\Artifacts\WM05\affected-editmode-final.xml' -logFile 'C:\serenity_game\Artifacts\WM05\affected-editmode-final.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testCategory 'WM01|WM02|WM03|WM04|WM05' -testResults 'C:\serenity_game\Artifacts\WM05\affected-playmode-final.xml' -logFile 'C:\serenity_game\Artifacts\WM05\affected-playmode-final.log'
+```
+
+Results: focused WM05 EditMode **4/4**, affected WM01–WM05 EditMode **23/23**, and affected PlayMode
+**5/5** passed. PlayMode verifies the asset LOD/collider policy, Terrain tree/detail projection, bounded V2
+streaming sets and stable nearby-collider selection. `git diff --check` passed. Per the user instruction, no full
+suite, Windows build, long profiler capture or visual acceptance was run; WM14/WM15 retain those gates. The
+inherited dirty materials and `New Unity Project/` remain user-owned and excluded. WM06 is next and unstarted.
+
 ## WM04 checkpoint — 2026-10-23 World Map V2 biomes and Terrain paint DONE
 
 WM04 adds one immutable `WorldMapBiomeDefinition` over `WORLD_MAP_BIOMES.json`: eight authored region

@@ -34,6 +34,23 @@ MonoBehaviour:
   - {fileID: 8574412962073106934, guid: ffb94bff813c3c041b5c22cc023fb25e, type: 2}
   - {fileID: 8574412962073106934, guid: 795e383430200a14bb52726e97a0e7f4, type: 2}
   - {fileID: 8574412962073106934, guid: b5fcb6edb24b4544dbcf0dad9462ee5b, type: 2}
+  WorldMapTrees:
+  - {fileID: 968435789156905502, guid: d0f76394dfcddfa43a8e0a9d1890fb4e, type: 3}
+  - {fileID: 8703698520076799588, guid: 5c79b7622939a424891a0a8712986692, type: 3}
+  - {fileID: 1782001496417691841, guid: 730c96507c5288246bb19604e9e9043d, type: 3}
+  - {fileID: 3838864317641260365, guid: 0d7f485a1253d234fa8991bf8f40f431, type: 3}
+  WorldMapShrubs:
+  - {fileID: 5580235122429883281, guid: e527460148bf17741a2c17dffc4fb54a, type: 3}
+  - {fileID: 6906830690193866741, guid: 3595ba075729fec458abd9577f51845e, type: 3}
+  - {fileID: 1583897355313174661, guid: 09593cef97621c0418f070d7c9fa3091, type: 3}
+  WorldMapGroundCover:
+  - {fileID: 4121712711864935042, guid: 1374e3840cba075419212b4498eec948, type: 3}
+  - {fileID: 1308460091865946998, guid: 3984a631ca556554dae517b429770171, type: 3}
+  - {fileID: 6741950074395184577, guid: a1c8b732aaba82b4aa5ce99cd756d345, type: 3}
+  - {fileID: 8567074628543705154, guid: c2997bb6f6d25bb418a808309627e831, type: 3}
+  WorldMapSmallProps:
+  - {fileID: 2404807638410859368, guid: 5fc130c65f02ac04bbfb350fbe21d3cc, type: 3}
+  - {fileID: 8596010870747751422, guid: f3f0fef6f816f4641856a0db4dfbb905, type: 3}
   WaterRipples: {fileID: 2800000, guid: a4b970a3609f4f94ea150a6f10e8e540, type: 3}
   MinimumTreeHeight: 9
   MaximumTreeHeight: 13
