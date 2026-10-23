@@ -60,12 +60,14 @@ namespace Game.Simulation.Buildings
         private readonly Func<Building, WorldPosition> buildTarget;
         private readonly float gridSize;
         private readonly WorldPosition gridOrigin;
+        private readonly Func<ProductionSite, bool> clearablePolicy;
 
         public ConstructionClearanceCoordinator(BuildingRegistry buildingRegistry, ProductionService productionService,
             WorkManager workManager, ConstructionFundingService constructionFunding,
             Func<BuildingDefinitionId, BuildingDefinition> resolveDefinition,
             Func<IEnumerable<InventoryOwner>> fundingSourceProvider, Func<Building, WorldPosition> buildTargetProvider,
-            float buildingGridSize, WorldPosition buildingGridOrigin)
+            float buildingGridSize, WorldPosition buildingGridOrigin,
+            Func<ProductionSite, bool> isClearablePolicy = null)
         {
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
             production = productionService ?? throw new ArgumentNullException(nameof(productionService));
@@ -77,6 +79,7 @@ namespace Game.Simulation.Buildings
             if (buildingGridSize <= 0f) throw new ArgumentOutOfRangeException(nameof(buildingGridSize));
             gridSize = buildingGridSize;
             gridOrigin = buildingGridOrigin;
+            clearablePolicy = isClearablePolicy ?? IsLegacyClearable;
         }
 
         public int ActiveSiteCount => plans.Count;
@@ -87,8 +90,15 @@ namespace Game.Simulation.Buildings
             if (building == null) throw new ArgumentNullException(nameof(building));
             if (building.IsOperational) return;
             var sources = (sourceIds ?? Array.Empty<StableEntityId>()).Where(x => x.IsValid).Distinct().ToArray();
-            var plan = new Plan { Total = sources.Length, Priority = priority };
-            foreach (var source in sources) plan.Sources.Add(source);
+            var plan = new Plan { Priority = priority };
+            foreach (var source in sources)
+            {
+                if (!production.TryGetSite(source, out var site) || site.IsDepleted) continue;
+                if (!clearablePolicy(site))
+                    throw new InvalidOperationException("Construction clearance cannot remove a hard blocker.");
+                plan.Sources.Add(source);
+            }
+            plan.Total = plan.Sources.Count;
             plans[building.Id] = plan;
             AdvancePlan(building, plan);
         }
@@ -190,7 +200,7 @@ namespace Game.Simulation.Buildings
             if (cells.Count == 0) cells.UnionWith(definitionResolver(building.DefinitionId).Footprint
                 .EnumerateCells(building.Coordinate, building.Orientation));
             foreach (var site in production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource &&
-                                                              !x.IsDepleted && IsClearable(x)))
+                                                              !x.IsDepleted && clearablePolicy(x)))
             {
                 var cell = new GridCoordinate(
                     (int)Math.Round((site.Position.X - gridOrigin.X) / gridSize),
@@ -233,8 +243,9 @@ namespace Game.Simulation.Buildings
             return WorkJobType.Gather;
         }
 
-        private static bool IsClearable(ProductionSite site)
+        private static bool IsLegacyClearable(ProductionSite site)
         {
+            if (site == null || site.Kind != ProductionSiteKind.NaturalSource || site.IsDepleted) return false;
             var recipe = site.RecipeId.ToString();
             return recipe != "fish_water" && recipe != "hunt_animal";
         }

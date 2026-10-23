@@ -1,18 +1,19 @@
 # NEXT_TASK.md
 
-## Current scope — WM12 construction and clearance, after WM11 completion on 2026-10-23
+## Current scope — WM13 world version and saves, after WM12 completion on 2026-10-23
 
-WM11 is DONE. The proposed V2 plan now owns exactly nine stable POIs at authored coordinates, dry approaches
-from the WM09 road network, streamed existing-asset presentation, discovery through saved connected-world
-cells, exactly-once player events through saved event history, and permanent circular no-auto-clear
-protection. The active `p109-compact-world-v1` reference remains unchanged;
+WM12 is DONE. The proposed V2 buildability package now produces deterministic green/amber/red placement over
+the existing building surface, occupancy and clearance chain. Clearable natural sources use ordinary worker
+production, physical output/hauling and construction work; water, slope, restricted masks, protected POIs and
+impassable geometry fail closed. The active `p109-compact-world-v1` reference remains unchanged and
 `p109-world-map-v2-proposed` is still not activated.
 
-The next unblocked world-map task is **WM12 — construction and clearance**. Follow its scope and gates from
-`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: map authored buildability/terrain/blocker masks into green, amber
-and red placement verdicts, route clearable blockers through existing worker/clearance authorities, and keep
-hard blockers rejected. Audit current `BuildingPlacement`, P102 placement and clearance adapters first. Do
-not activate V2 or start WM13. This WM11 chat stops after its commit and does not implement WM12.
+The next unblocked world-map task is **WM13 — world version and saves**. Follow its scope and gates from
+`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: isolate the proposed generation/save path, persist only new
+canonical V2 states through the existing SaveCoordinator/SaveXmlCodec boundary, reject wrong-generation
+loads before rebind, and prove old compact-world saves remain untouched. Do not activate the V2 generation
+outside that explicit versioned path and do not start WM14/WM15. This WM12 chat stops after its commit and
+does not implement WM13.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

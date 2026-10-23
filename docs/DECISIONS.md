@@ -1,5 +1,28 @@
 # DECISIONS.md
 
+## D-186 WM12 keeps buildability as policy over existing placement and work authorities (2026-10-23)
+
+`WorldMapBuildabilityDefinition` retains the authored V2 zone, slope, grid and blocker taxonomy, while one
+pure `WorldMapBuildabilityEvaluator` combines it with the shared height/hydrology and POI contracts. Matching
+restricted masks are hard red for ordinary construction; overlapping allowed masks use their point-local
+strictest slope ceiling, and ordinary land outside a named mask uses the specified 18-degree limit. Exact
+POI circle-versus-cell checks are data-derived, so protection does not depend on a streamed collider being
+loaded. Unknown physical blockers fail closed. A mask marked `requiresClearing` does not fabricate an amber
+result: amber exists only when a real bound, non-depleted canonical source is present.
+
+`BuildingPlacementService` remains the occupancy/grid/territory authority and `P102WorldPlacementSurface`
+remains its physical adapter. The adapter never clears a source during preview or confirm. It passes only
+stable source IDs to the existing construction transaction, and `ConstructionClearanceCoordinator` creates
+normal exclusive Chop/Mine/Gather work. Depletion stays in `ProductionService`; output and construction
+materials continue through physical inventory/haul paths before Build begins. The coordinator repeats the
+authored allow-list check on registration and load derivation, making a bypass attempt a fail-closed error.
+
+WM12 adds no mutable buildability state or save field. Existing construction buildings, buffers, work orders,
+resource sites and occupancy remain canonical, so current save/load reconstruction is sufficient. The policy
+is selected only when `TiledWorldDefinition.MapData.Buildability` exists; the active compact generation has no
+such data and keeps its legacy behavior. Existing work indicators, staged building visuals, stone axe and
+tree/rock presenters are sufficient; no art, material, VFX or package was added.
+
 ## D-185 WM11 derives discovery from existing revealed cells and event history (2026-10-23)
 
 `WorldMapPoiPlanner` is the sole immutable POI projection. It preserves the nine authored coordinates,

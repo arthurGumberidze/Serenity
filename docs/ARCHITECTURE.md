@@ -1,5 +1,27 @@
 # Architecture — U01
 
+## WM12 World Map V2 buildability/clearance boundary (2026-10-23)
+
+The authored flow is `WORLD_MAP_BUILDABILITY -> WorldMapBuildabilityDefinition ->
+WorldMapBuildabilityEvaluator -> P102WorldPlacementSurface -> BuildingPlacementController`. The immutable
+definition retains the eight zones, per-zone slope ceilings, 2 m authoring grid and exact clearable/hard
+blocker taxonomy. The pure evaluator combines those masks with the existing WM02 height, WM03 hydrology and
+WM11 POI definitions. It returns green for immediately valid ground, amber only when every physical blocker
+is an authored clearable natural source, and red for water/shoreline, excessive slope, restricted ridge or
+marsh masks, protected POI footprints, unknown colliders and other permanent geometry.
+
+`BuildingPlacementService` remains the sole grid/bounds/occupancy/territory authority. The world-surface
+adapter contributes one fail-closed terrain/blocker result before the existing confirm transaction; it does
+not reserve cells or delete colliders. Amber confirmation preserves the source `StableEntityId` values and
+`ConstructionClearanceCoordinator` creates the existing exclusive Chop/Mine/Gather jobs. Only after the
+canonical `ProductionSite` is depleted do the existing construction-buffer haul and Build jobs begin.
+Cancellation and load rebind retain their previous derivation, and the coordinator independently applies the
+same authored recipe policy so a hard source cannot be registered through another caller.
+
+The compact-world branch has no `MapData.Buildability` and retains its previous placement/clearance behavior.
+No composition root selects `p109-world-map-v2-proposed`; WM13 still owns generation/save activation. Work
+markers, construction stages, worker tools and natural-source prefabs remain disposable existing presentation.
+
 ## WM11 World Map V2 POI/exploration boundary (2026-10-23)
 
 The flow is `WORLD_MAP_POI -> WorldMapPointOfInterest -> WorldMapPoiPlanner -> immutable WorldMapPoiPlan ->

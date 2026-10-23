@@ -9,6 +9,7 @@ using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Domain.Work;
 using Game.Domain.World;
+using Game.Infrastructure;
 using Game.Presentation.Environment;
 using Game.Simulation.AI;
 using Game.Simulation.Buildings;
@@ -23,7 +24,7 @@ namespace Game.Tests.Editor
     {
         private static readonly ResourceId Wood = new ResourceId("wood_log");
 
-        [Test]
+        [Test, Category("WM12")]
         public void PlacementEvaluationDistinguishesFreeClearanceAndBlockedSites()
         {
             var blocker = Id(1);
@@ -70,7 +71,7 @@ namespace Game.Tests.Editor
             Assert.That(status.BuildScheduled, Is.False);
         }
 
-        [Test]
+        [Test, Category("WM12")]
         public void BlockedSiteClearsBeforeLogisticsAndBuild()
         {
             var fixture = CreateFixture(withBlocker: true);
@@ -87,6 +88,21 @@ namespace Game.Tests.Editor
 
             Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Haul && !x.IsTerminal), Is.True);
             Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Build && !x.IsTerminal), Is.True);
+        }
+
+        [Test, Category("WM12")]
+        public void AuthoredPolicyRejectsNonClearableSourceWithoutCreatingWorkOrChangingStock()
+        {
+            var policy = TiledWorldDefinitionLoader.LoadProposedWorldMap().MapData.Buildability;
+            var fixture = CreateFixture(withBlocker: true, blockerRecipe: "gather_medicinal_plants",
+                clearancePolicy: site => policy.IsClearableRecipe(site.RecipeId.ToString()));
+
+            Assert.Throws<InvalidOperationException>(() => fixture.Clearance.Register(fixture.Building,
+                new[] { fixture.Blocker.Id }, WorkPriority.Urgent));
+
+            Assert.That(fixture.Work.Jobs, Is.Empty);
+            Assert.That(fixture.Blocker.RemainingAmount, Is.EqualTo(1));
+            Assert.That(fixture.Clearance.ActiveSiteCount, Is.Zero);
         }
 
         [Test]
@@ -134,7 +150,8 @@ namespace Game.Tests.Editor
             Assert.That(status.Remaining, Is.EqualTo(1));
         }
 
-        private static Fixture CreateFixture(bool withBlocker = false, long fundingUnits = 20)
+        private static Fixture CreateFixture(bool withBlocker = false, long fundingUnits = 20,
+            string blockerRecipe = "chop_wood", Func<ProductionSite, bool> clearancePolicy = null)
         {
             var resources = new ResourceCatalog(new[]
             {
@@ -158,7 +175,7 @@ namespace Game.Tests.Editor
                 new StorageService(inventories, resources)) { RequiresWorker = true };
             funding.ConfigureLogistics(sites, work, piles, new SettlementId(Id(30)), new HaulClaimRegistry());
 
-            var recipe = new ProductionRecipe(new ProductionRecipeId("chop_wood"), "Chop wood", null,
+            var recipe = new ProductionRecipe(new ProductionRecipeId(blockerRecipe), "Clear blocker", null,
                 new[] { new ResourceAmount(Wood, new ResourceQuantity(1)) }, TimeSpan.FromHours(1),
                 ProductionSiteKind.NaturalSource, harvestEntireSource: true);
             var production = new ProductionService(new ProductionCatalog(new[] { recipe }, resources), resources,
@@ -169,7 +186,7 @@ namespace Game.Tests.Editor
             if (withBlocker)
             {
                 blocker = ProductionSite.Restore(new ProductionSiteState(Id(40),
-                    new ProductionRecipeId("chop_wood"), ProductionSiteKind.NaturalSource,
+                    new ProductionRecipeId(blockerRecipe), ProductionSiteKind.NaturalSource,
                     new WorldPosition(0, 0, 0), 1, 1, CropPlotPhase.Unplanted, 0, 0));
                 production.AddSite(blocker);
             }
@@ -177,7 +194,7 @@ namespace Game.Tests.Editor
             var clearance = new ConstructionClearanceCoordinator(buildings, production, work, funding,
                 _ => definition, () => new[] { pile.InventoryOwner },
                 value => new WorldPosition(value.Coordinate.X, 0, value.Coordinate.Z),
-                1f, new WorldPosition(0, 0, 0));
+                1f, new WorldPosition(0, 0, 0), clearancePolicy);
             return new Fixture(building, blocker, work, clearance);
         }
 

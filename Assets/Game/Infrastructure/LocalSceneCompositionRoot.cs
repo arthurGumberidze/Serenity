@@ -514,7 +514,10 @@ namespace Game.Infrastructure
             DirectWorkCommands.EnsureRoleGroups();
             ConstructionClearance = new ConstructionClearanceCoordinator(Buildings, Production, Work, Construction,
                 id => buildingCatalog.ResolveDefinition(id), FundingSources, ConstructionWorkTarget,
-                buildingGridSize, new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
+                buildingGridSize, new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z),
+                WorldDefinition.MapData?.Buildability == null ? null : site =>
+                    site != null && site.Kind == ProductionSiteKind.NaturalSource && !site.IsDepleted &&
+                    WorldDefinition.MapData.Buildability.IsClearableRecipe(site.RecipeId.ToString()));
             buildingPlacementController.ConfigureClearance(ConstructionClearance);
             ContextCommands = new ContextCommandService(Work, AiScheduler);
             if (StoneAgeSettlement != null)

@@ -1,5 +1,46 @@
 # PROJECT_STATE.md
 
+## WM12 checkpoint — 2026-10-23 World Map V2 construction and clearance DONE
+
+WM12 retains the authored eight-zone buildability layer, 2 m authoring grid and exact clearable/hard blocker
+sets as immutable Domain configuration. One pure deterministic evaluator combines those masks with WM02
+height/slope, WM03 water and WM11 POI footprints. Ordinary land uses an 18-degree limit; a matching authored
+zone applies its stricter local limit, while restricted ridge/marsh masks, water/shoreline, excessive slope
+and exact POI protection are hard red. The four WM10 first-building sites remain green under the 8-degree
+`build_start_core` rule. Unknown physical geometry also fails closed.
+
+The existing placement chain remains authoritative. `P102WorldPlacementSurface` projects the Domain result
+into the existing green/amber/red preview and combines it with actual colliders. Amber is emitted only for a
+bound, live source whose recipe maps to the authored clearable taxonomy; preview does not mutate stock.
+Confirmation retains stable source IDs and `ConstructionClearanceCoordinator` creates the existing exclusive
+Chop/Mine/Gather jobs. Existing production depletion, physical output/inventory movement, construction-buffer
+hauling and Build work remain the only mutation path. The coordinator repeats the allow-list check, so direct
+registration of herbs, water, POI or another hard source cannot create a clearance job. Load rebind, cancel,
+placement cells, occupancy and snapshot-v27 construction state remain on their prior authorities.
+
+The asset-first audit reused `Serenity_P94_WorkIndicator`, staged building prefab visuals,
+`Serenity_StoneAxe`, existing tree/rock/resource presenters and their current materials. No suitable dedicated
+stump/debris set is admitted, but none is required for this policy integration; no handmade art, material,
+VFX, package or external dependency was added. `p109-world-map-v2-proposed` remains inactive. The active
+`p109-compact-world-v1` has no V2 policy and retains its legacy placement/clearance path.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testCategory 'WM12' -testResults 'C:\serenity_game\Artifacts\WM12\editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM12\editmode.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testCategory 'WM12' -testResults 'C:\serenity_game\Artifacts\WM12\playmode.xml' -logFile 'C:\serenity_game\Artifacts\WM12\playmode.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.WM02WorldMapTerrainGeneratorTests;Game.Tests.Editor.WM03WorldMapHydrologyTests;Game.Tests.Editor.WM10WorldMapStartTerritoryTests;Game.Tests.Editor.WM11WorldMapPoiExplorationTests;Game.Tests.Editor.P102ConnectedWorldTests;Game.Tests.Editor.P109ConstructionClearanceTests;Game.Tests.Editor.P109BuildingPlacementRulesTests;Game.Tests.Editor.P109ConstructionStateTests' -testResults 'C:\serenity_game\Artifacts\WM12\affected-editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM12\affected-editmode.log'
+git diff --check -- Assets/Game/Domain/World/WorldMapBuildability.cs Assets/Game/Domain/World/WorldMapDataContracts.cs Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs Assets/Game/Infrastructure/TiledWorldDefinitionLoader.cs Assets/Game/Presentation/Environment/P102WorldPlacementSurface.cs Assets/Game/Simulation/Buildings/ConstructionClearanceCoordinator.cs Assets/Game/Tests/Editor/P109ConstructionClearanceTests.cs Assets/Game/Tests/Editor/WM12WorldMapBuildabilityTests.cs Assets/Game/Tests/PlayMode/WM12WorldMapBuildabilityPlayModeTests.cs docs/ARCHITECTURE.md docs/DECISIONS.md docs/NEXT_TASK.md docs/PROJECT_STATE.md docs/TASK_GRAPH.md
+```
+
+Results: focused WM12 EditMode **9/9** in 2.73 s; focused physical surface PlayMode **1/1** in 1.98 s;
+affected loader/terrain/hydrology/start/POI/placement/clearance/construction-state EditMode **49/49** in
+115.61 s. Every affected assembly compiled without C# errors. The first sandboxed EditMode launch crashed
+before test execution in Unity's `BuildReportRestService` local `HttpListener`; the identical approved
+outside-sandbox rerun produced the recorded 9/9 XML. No full suite, Player build, long profiling or broad
+visual pass was run; those remain deferred to WM15. The inherited five dirty materials and `New Unity
+Project/` remain user-owned and excluded. WM13 is next and unstarted.
+
 ## WM11 checkpoint — 2026-10-23 World Map V2 POI and exploration DONE
 
 WM11 loads and plans exactly nine canonical POIs at their authored coordinates and protection radii. Each
@@ -36,8 +77,8 @@ focused discovery/event/save-load PlayMode **1/1** in 5.22 s; affected WM01/WM09
 **33/33** in 3.17 s. Touched assemblies compiled without C# errors. A third-party UMA startup window required
 a temporary batchmode-only guard in ignored `Library/PackageCache`; that guard was removed after validation
 and no package source or tracked setting changed. No broad suite, Player build, profiler capture, visual
-acceptance, V2 activation or WM12 work was run by instruction. The inherited five dirty materials and
-`New Unity Project/` remain user-owned and excluded. WM12 is next and unstarted.
+acceptance, V2 activation or WM12 work was run in that checkpoint. The inherited five dirty materials and
+`New Unity Project/` remained user-owned and excluded. WM12 followed in the next checkpoint.
 
 ## WM10 checkpoint — 2026-10-23 World Map V2 start territory DONE
 

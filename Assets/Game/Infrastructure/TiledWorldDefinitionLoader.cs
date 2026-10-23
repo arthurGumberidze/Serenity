@@ -169,7 +169,7 @@ namespace Game.Infrastructure
                     zone.Shape, new[] { zone.ClassId }, "density", zone.DensityMultiplier)).ToArray();
                 var buildability = roots["WORLD_MAP_BUILDABILITY.json"];
                 var buildabilityMasks = ParseBuildabilityMasks(buildability.Array("zones"), bounds);
-                ValidateBuildabilityRules(buildability, bounds);
+                var buildabilityDefinition = ParseBuildabilityDefinition(buildability, buildabilityMasks, bounds);
 
                 var playerStartData = coordinates.Object("playerStart");
                 var designStart = playerStartData.Point2("designPosition");
@@ -191,7 +191,7 @@ namespace Game.Infrastructure
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
                     biomes, vegetation, resourceDefinition, wildlifeDefinition, startTerritory, river.Spline,
                     tributaries.Select(value => value.Spline),
-                    lakes, roadDefinition, poi, resourceMasks, wildlifeMasks, buildabilityMasks,
+                    lakes, roadDefinition, poi, resourceMasks, wildlifeMasks, buildabilityDefinition,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
                 return new TiledWorldDefinition(mapData.GenerationId, columns, rows, tileSize,
@@ -873,7 +873,8 @@ namespace Game.Infrastructure
             return result;
         }
 
-        private static void ValidateBuildabilityRules(Node buildability, WorldMapBounds bounds)
+        private static WorldMapBuildabilityDefinition ParseBuildabilityDefinition(Node buildability,
+            IReadOnlyList<WorldMapMask> masks, WorldMapBounds bounds)
         {
             var restrictionIds = new List<string>();
             foreach (var value in buildability.Array("hardNoBuild"))
@@ -904,6 +905,7 @@ namespace Game.Infrastructure
             var grid = buildability.Object("grid");
             if (grid.Float("cellSizeMeters") <= 0f || !grid.Bool("natureMustNotFollowGrid"))
                 throw new InvalidDataException("Buildability grid contract is invalid.");
+            return new WorldMapBuildabilityDefinition(masks, clearable, hard, grid.Float("cellSizeMeters"));
         }
 
         private static WorldMapStartTerritoryDefinition ParseStartTerritory(Node playerStart,

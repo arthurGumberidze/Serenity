@@ -965,6 +965,73 @@ namespace Game.Domain.World
         public bool RequiresClearing { get; }
     }
 
+    /// <summary>
+    /// Immutable WM12 construction policy. It retains the authored blocker taxonomy instead of
+    /// allowing presentation colliders to decide which natural resources may be removed.
+    /// </summary>
+    public sealed class WorldMapBuildabilityDefinition
+    {
+        public const float OrdinaryBuildingMaximumSlopeDegrees = 18f;
+
+        public WorldMapBuildabilityDefinition(IEnumerable<WorldMapMask> zones,
+            IEnumerable<string> clearableBlockerKinds, IEnumerable<string> hardBlockerKinds,
+            float gridCellSizeMeters)
+        {
+            var zoneValues = (zones ?? throw new ArgumentNullException(nameof(zones))).ToArray();
+            if (zoneValues.Length == 0 || zoneValues.Any(value => value == null) ||
+                zoneValues.Select(value => value.Id).Distinct(StringComparer.Ordinal).Count() != zoneValues.Length ||
+                zoneValues.Any(value => value.Layer != "buildability"))
+                throw new ArgumentException("Buildability zones require unique IDs and the buildability layer.",
+                    nameof(zones));
+            var clearable = Strings(clearableBlockerKinds, nameof(clearableBlockerKinds));
+            var hard = Strings(hardBlockerKinds, nameof(hardBlockerKinds));
+            if (clearable.Intersect(hard, StringComparer.Ordinal).Any())
+                throw new ArgumentException("Clearable and hard blocker kinds must not overlap.");
+            if (!WorldMapPoint.IsFinite(gridCellSizeMeters) || gridCellSizeMeters <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(gridCellSizeMeters));
+            Zones = Array.AsReadOnly(zoneValues);
+            ClearableBlockerKinds = Array.AsReadOnly(clearable);
+            HardBlockerKinds = Array.AsReadOnly(hard);
+            GridCellSizeMeters = gridCellSizeMeters;
+        }
+
+        public IReadOnlyList<WorldMapMask> Zones { get; }
+        public IReadOnlyList<string> ClearableBlockerKinds { get; }
+        public IReadOnlyList<string> HardBlockerKinds { get; }
+        public float GridCellSizeMeters { get; }
+
+        public bool IsClearableBlocker(string kind) =>
+            !string.IsNullOrWhiteSpace(kind) && ClearableBlockerKinds.Contains(kind, StringComparer.Ordinal);
+
+        public bool IsHardBlocker(string kind) =>
+            !string.IsNullOrWhiteSpace(kind) && HardBlockerKinds.Contains(kind, StringComparer.Ordinal);
+
+        public bool IsClearableRecipe(string recipeId) => IsClearableBlocker(BlockerKindForRecipe(recipeId));
+
+        public static string BlockerKindForRecipe(string recipeId)
+        {
+            switch (recipeId)
+            {
+                case "chop_wood": return "tree";
+                case "gather_berries": return "berry_bush";
+                case "gather_stone": return "loose_stone";
+                case "gather_branches": return "branches";
+                case "gather_fiber": return "plant_fiber";
+                case "fish_water": return "water";
+                default: return string.Empty;
+            }
+        }
+
+        private static string[] Strings(IEnumerable<string> values, string parameter)
+        {
+            var result = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (result.Length == 0 || result.Any(string.IsNullOrWhiteSpace) ||
+                result.Distinct(StringComparer.Ordinal).Count() != result.Length)
+                throw new ArgumentException("Buildability blocker kinds must be non-empty and unique.", parameter);
+            return result;
+        }
+    }
+
     public sealed class WorldMapExpansionDirection
     {
         public WorldMapExpansionDirection(string id, WorldMapPoint from, WorldMapPoint to, int priority)
@@ -1217,7 +1284,7 @@ namespace Game.Domain.World
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             WorldMapRoadDefinition roads, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapMask> resourceMasks,
-            IEnumerable<WorldMapMask> wildlifeMasks, IEnumerable<WorldMapMask> buildabilityMasks,
+            IEnumerable<WorldMapMask> wildlifeMasks, WorldMapBuildabilityDefinition buildability,
             IEnumerable<WorldMapMask> vegetationMasks, IEnumerable<WorldMapHeightMask> heightMasks)
         {
             if (schemaVersion <= 0 || string.IsNullOrWhiteSpace(mapVersion) || string.IsNullOrWhiteSpace(generationId))
@@ -1243,7 +1310,8 @@ namespace Game.Domain.World
             Crossings = Roads.Crossings;
             ResourceMasks = ReadOnly(resourceMasks, nameof(resourceMasks));
             WildlifeMasks = ReadOnly(wildlifeMasks, nameof(wildlifeMasks));
-            BuildabilityMasks = ReadOnly(buildabilityMasks, nameof(buildabilityMasks));
+            Buildability = buildability ?? throw new ArgumentNullException(nameof(buildability));
+            BuildabilityMasks = Buildability.Zones;
             VegetationMasks = ReadOnly(vegetationMasks, nameof(vegetationMasks));
             HeightMasks = ReadOnly(heightMasks, nameof(heightMasks));
         }
@@ -1269,6 +1337,7 @@ namespace Game.Domain.World
         public IReadOnlyList<WorldMapCrossing> Crossings { get; }
         public IReadOnlyList<WorldMapMask> ResourceMasks { get; }
         public IReadOnlyList<WorldMapMask> WildlifeMasks { get; }
+        public WorldMapBuildabilityDefinition Buildability { get; }
         public IReadOnlyList<WorldMapMask> BuildabilityMasks { get; }
         public IReadOnlyList<WorldMapMask> VegetationMasks { get; }
         public IReadOnlyList<WorldMapHeightMask> HeightMasks { get; }

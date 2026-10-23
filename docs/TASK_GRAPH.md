@@ -2,6 +2,16 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM12 World Map V2 construction and clearance (2026-10-23): DONE. The immutable authored buildability policy
+now drives one deterministic green/amber/red evaluator over WM02 terrain, WM03 water, eight buildability
+masks and WM11 POI protection. WM10 first sites remain green; allowed natural source colliders are amber and
+retain stable IDs; water, excessive slope, restricted ridge/marsh zones, POIs, unknown sources and impassable
+geometry are red. Amber confirmation reuses existing exclusive worker production jobs, physical resource
+output/hauling and construction-buffer/build work; the coordinator independently rejects hard sources and
+reconstructs only allowed blockers on load. Focused EditMode passed 9/9, PlayMode passed 1/1 and affected
+EditMode passed 49/49. No art/dependency/save schema was added, V2 remains inactive and compact-world behavior
+is unchanged. WM13 is next and has not started.
+
 WM11 World Map V2 POI and exploration (2026-10-23): DONE. Exactly nine authored points retain exact
 coordinates, regions and protection radii, receive deterministic stable IDs, and have dry slope-bounded
 last-mile approaches to the reachable WM09 road network. Connected-world revealed cells remain the sole
@@ -9,7 +19,7 @@ discovery state; nine explicit player events use existing active/history save st
 load. Streamed POI presentation reuses audited existing prefabs, while exact circular protection is a hard
 placement blocker with no automatic clearance. Focused EditMode passed 4/4, PlayMode save/load passed 1/1
 and affected EditMode passed 33/33. No dependency was added, V2 remains inactive and legacy unchanged; WM12
-is next and has not started.
+followed this completed checkpoint.
 
 WM10 World Map V2 start territory (2026-10-23): DONE. The typed canonical NW start produces one deterministic
 population-owned plan at runtime `(-385,720)`: a 145 m prepared clearing, 135 m reveal radius, two starter
