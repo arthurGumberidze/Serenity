@@ -99,7 +99,8 @@ namespace Game.Simulation.Resources
         public ConstructionEvaluation TryConfirm(BuildingDefinition definition, GridCoordinate coordinate,
             BuildingOrientation orientation, IEnumerable<InventoryOwner> fundingSources, out Building building,
             Action<Building> afterPlacement = null, Game.Domain.Combat.CombatSideId ownerSideId = default,
-            StableEntityId? stableId = null, IEnumerable<GridCoordinate> authoredCells = null)
+            StableEntityId? stableId = null, IEnumerable<GridCoordinate> authoredCells = null,
+            bool deferLogistics = false)
         {
             building = null;
             var result = Evaluate(definition, coordinate, orientation, fundingSources, authoredCells);
@@ -125,20 +126,8 @@ namespace Game.Simulation.Resources
                 attachedStorage = storage.Attach(candidate, definition);
                 if (physicalLogistics)
                 {
-                    foreach (var deduction in deductions)
-                    {
-                        haulClaims?.ReleaseReservedAtSource(deduction.Source.Owner, deduction.Id,
-                            deduction.Quantity.Units);
-                        var remaining = deduction.Quantity.Units;
-                        while (remaining > 0)
-                        {
-                            var quantity = new ResourceQuantity(Math.Min(DeliveryBatchUnits, remaining));
-                            var order = work.CreateHaulJob(null, deduction.Source.Owner,
-                                candidate.ConstructionBufferOwner, deduction.Id, quantity, WorkPriority.High);
-                            deliveryJobs.Add(order.Id);
-                            remaining -= quantity.Units;
-                        }
-                    }
+                    if (!deferLogistics)
+                        CreateDeliveryJobs(candidate, deductions, WorkPriority.High, deliveryJobs);
                 }
                 else
                 {
@@ -188,6 +177,41 @@ namespace Game.Simulation.Resources
                 inventories.Remove(storageOwner, attachedStorage);
             placement.Rollback(building, definition);
             return true;
+        }
+
+        public bool TryScheduleDeliveries(Building building, BuildingDefinition definition,
+            IEnumerable<InventoryOwner> fundingSources, WorkPriority priority)
+        {
+            if (building == null) throw new ArgumentNullException(nameof(building));
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (building.IsOperational || sites == null || work == null || piles == null || !settlementId.IsValid)
+                return false;
+            if (work.Jobs.Any(x => !x.IsTerminal && x.Type == WorkJobType.Haul && x.Destination.HasValue &&
+                                   x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
+                                   x.Destination.Value.EntityId == building.Id)) return true;
+            var result = Plan(definition, fundingSources, out var deductions, out _);
+            if (result != ConstructionFailureReason.None) return false;
+            CreateDeliveryJobs(building, deductions, priority, null);
+            return true;
+        }
+
+        private void CreateDeliveryJobs(Building building, IEnumerable<Deduction> deductions,
+            WorkPriority priority, ICollection<JobId> created)
+        {
+            foreach (var deduction in deductions)
+            {
+                haulClaims?.ReleaseReservedAtSource(deduction.Source.Owner, deduction.Id,
+                    deduction.Quantity.Units);
+                var remaining = deduction.Quantity.Units;
+                while (remaining > 0)
+                {
+                    var quantity = new ResourceQuantity(Math.Min(DeliveryBatchUnits, remaining));
+                    var order = work.CreateHaulJob(null, deduction.Source.Owner,
+                        building.ConstructionBufferOwner, deduction.Id, quantity, priority);
+                    created?.Add(order.Id);
+                    remaining -= quantity.Units;
+                }
+            }
         }
 
         private ConstructionFailureReason Plan(BuildingDefinition definition, IEnumerable<InventoryOwner> fundingSources,

@@ -138,6 +138,7 @@ namespace Game.Infrastructure
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
         public DirectWorkCommandService DirectWorkCommands { get; private set; }
+        public ConstructionClearanceCoordinator ConstructionClearance { get; private set; }
         public ContextCommandService ContextCommands { get; private set; }
         public WorkDebugOverlay WorkDebug { get; private set; }
         public ManualMoveCommandService ManualMoveCommands { get; private set; }
@@ -510,6 +511,10 @@ namespace Game.Infrastructure
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
             DirectWorkCommands.EnsureRoleGroups();
+            ConstructionClearance = new ConstructionClearanceCoordinator(Buildings, Production, Work, Construction,
+                id => buildingCatalog.ResolveDefinition(id), FundingSources, ConstructionWorkTarget,
+                buildingGridSize, new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z));
+            buildingPlacementController.ConfigureClearance(ConstructionClearance);
             ContextCommands = new ContextCommandService(Work, AiScheduler);
             if (StoneAgeSettlement != null)
             {
@@ -676,7 +681,7 @@ namespace Game.Infrastructure
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
                     () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray(),
                     position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
-                    BuildingLifecycle, BuildingPathing, Facilities),
+                     BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance),
                 pointerRaycaster, input);
             ManualMoveInput.EnableContextMenus();
 
@@ -756,6 +761,7 @@ namespace Game.Infrastructure
             if (ConnectedWorld != null)
                 foreach (var presenter in demoPresenters.Where(x => x != null && x.gameObject.activeInHierarchy))
                     ConnectedWorld.ReportPhysicalPresence(presenter.transform.position.x, presenter.transform.position.z);
+            ConstructionClearance?.Advance();
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
             var targetCalendarTick = Clock.State.CalendarTicks;
@@ -991,6 +997,7 @@ namespace Game.Infrastructure
             RebindRegionResourcePresenters();
             foreach (var building in Buildings.All)
                 ConstructionSites.RebindRestored(building);
+            ConstructionClearance?.RebindAfterLoad(Buildings.All);
             BuildingPathing.RebindAfterLoad();
             RegisterStarterTrees();
             foreach (var view in productionPresenters)
@@ -1198,14 +1205,8 @@ namespace Game.Infrastructure
         private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
         {
             if (building != null && !building.IsOperational && Work != null)
-            {
-                var bounds = new Bounds(presenter.transform.position, Vector3.one);
-                foreach (var collider in presenter.GetComponentsInChildren<Collider>()) bounds.Encapsulate(collider.bounds);
-                var target = ProjectToGameplayGround(new Vector3(bounds.center.x, 0f, bounds.min.z - 1.2f));
-                Work.CreateDirectJob(WorkJobType.Build, null,
-                    WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
-                        new WorldPosition(target.x, target.y, target.z)), WorkPriority.Normal);
-            }
+                ConstructionClearance?.Register(building,
+                    buildingPlacementController.LastPlacedClearanceSourceIds, WorkPriority.Normal);
             if (building != null && (building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
                                      building.DefinitionId == new BuildingDefinitionId("primitive_garden")))
                 RegisterCropPlot(building, presenter);
@@ -1214,6 +1215,24 @@ namespace Game.Infrastructure
                 BuildingPathing.Reconcile(building);
                 RegisterBuildingWorkplace(building, presenter);
             }
+        }
+
+        private WorldPosition ConstructionWorkTarget(Building building)
+        {
+            if (building == null) throw new ArgumentNullException(nameof(building));
+            if (BuildingPresentations.TryGet(building.Id, out var presenter) && presenter != null)
+            {
+                var bounds = new Bounds(presenter.transform.position, Vector3.one);
+                foreach (var collider in presenter.GetComponentsInChildren<Collider>()) bounds.Encapsulate(collider.bounds);
+                var target = ProjectToGameplayGround(new Vector3(bounds.center.x, 0f, bounds.min.z - 1.2f));
+                return new WorldPosition(target.x, target.y, target.z);
+            }
+            var cells = building.PlacementCells;
+            var x = cells.Count > 0 ? cells.Average(c => c.X) : building.Coordinate.X;
+            var z = (cells.Count > 0 ? cells.Min(c => c.Z) : building.Coordinate.Z) - 1.5f;
+            var wx = buildingGridOrigin.x + (float)x * buildingGridSize;
+            var wz = buildingGridOrigin.z + (float)z * buildingGridSize;
+            return new WorldPosition(wx, WorldHeight.SampleHeight(wx, wz), wz);
         }
 
         private void OnBuildingChanged(Building building)

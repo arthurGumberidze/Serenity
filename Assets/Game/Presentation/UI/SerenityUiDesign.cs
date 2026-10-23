@@ -10,17 +10,17 @@ namespace Game.Presentation.UI
     /// </summary>
     public static class SerenityUiDesign
     {
-        public static readonly Color Canvas = Hex("111710");
-        public static readonly Color Surface = Hex("1B2419", 0.97f);
-        public static readonly Color SurfaceRaised = Hex("253020", 0.98f);
-        public static readonly Color SurfaceSoft = Hex("303A28", 0.96f);
-        public static readonly Color Accent = Hex("C99B4A");
-        public static readonly Color AccentBright = Hex("E1BC72");
-        public static readonly Color Text = Hex("F3EAD8");
-        public static readonly Color TextMuted = Hex("B9B5A5");
-        public static readonly Color Success = Hex("82AE78");
-        public static readonly Color Warning = Hex("E2B85F");
-        public static readonly Color Danger = Hex("D77B68");
+        public static readonly Color Canvas = Hex("111820");
+        public static readonly Color Surface = Hex("1D242B", 0.94f);
+        public static readonly Color SurfaceRaised = Hex("29333D", 0.97f);
+        public static readonly Color SurfaceSoft = Hex("33414B", 0.94f);
+        public static readonly Color Accent = Hex("D5A66B");
+        public static readonly Color AccentBright = Hex("E8C58E");
+        public static readonly Color Text = Hex("F1EEE8");
+        public static readonly Color TextMuted = Hex("AAB4BE");
+        public static readonly Color Success = Hex("65B89A");
+        public static readonly Color Warning = Hex("E4AA60");
+        public static readonly Color Danger = Hex("CF6B69");
 
         public const string RootClass = "serenity-root";
         public const string SurfaceClass = "serenity-surface";

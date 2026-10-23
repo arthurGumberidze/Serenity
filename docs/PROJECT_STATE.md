@@ -24,6 +24,26 @@ unique stable layer IDs, start inside Region A, connected river endpoints and co
 Unity tests/build were not run because this slice changes no Unity assets or runtime source. P10.9 F1 remains
 the next unblocked implementation/acceptance work; the map package does not activate WM01 or P10.10.
 
+## Working checkpoint — 2026-10-23 modern HUD and construction-site clearance
+
+The user-requested screenshot 1–4 interface/building slice is implemented. The LocalGameplay HUD now uses a
+compact graphite/slate/copper strategy layout with a primary-resource top strip, resident cards, collapsible
+icon navigation, bottom construction categories, contextual inspector, severity notifications and placement
+status. A Serenity-owned 24-icon atlas generated specifically for this project is included without adding a
+runtime package.
+
+Building placement now distinguishes free (green), clearable (amber) and blocked (red with reason) footprints.
+Amber confirmation stores stable production-source IDs and queues ordinary exclusive clearance jobs; existing
+construction haul/build jobs begin automatically only after the blockers are depleted. Priority, cancellation
+and load rebind use existing work, production, inventory, building and save authorities.
+
+Compilation is green. Focused clearance EditMode passed 7/7, affected construction/resource EditMode 39/39,
+HUD PlayMode 6/6 and placement PlayMode 6/6. A Windows Development Player built successfully at
+'Builds/P109ModernHud/Serenity.exe' (final GUID '4f189179f177444e81554cac81185dd8',
+0 errors / 27 warnings) and its D3D11 native smoke passed LocalGameplay/UI/residents plus 11/11 fishing
+landings. Final rerun/build evidence and the manual route are in 'P109_MODERN_HUD_CLEARANCE.md'. Overall
+P10.9 remains PARTIAL until user visual acceptance and the remaining F1 multi-settlement/tier matrix.
+
 ## Working checkpoint — 2026-10-23 reviewed 23102026 assets and notification dismissal
 
 Clicking a notification now removes the exact text/target pair before focusing its panel, character, building

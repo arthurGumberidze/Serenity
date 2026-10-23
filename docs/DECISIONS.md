@@ -1263,3 +1263,22 @@ collider, stable ID or save state. Ambient clips read the canonical clock, hunti
 task, and lightning reads the existing `WeatherService`; none can mutate simulation. Notification dismissal
 removes text and target from parallel bounded lists in one callback before performing focus, preserving their
 index invariant.
+
+## D-175 Construction clearance is derivable orchestration, and the HUD remains a projection (2026-10-23)
+
+Natural colliders under a requested footprint do not become a second occupancy grid. The physical placement
+surface classifies only bound, non-depleted natural production sites as clearable and returns their stable
+entity IDs. Free, clearable and forbidden are presentation states over the existing canonical
+placement/funding result; a forbidden result always carries a concrete surface or occupancy reason.
+
+Confirming a clearable site creates the canonical unfinished building and construction buffer but defers
+delivery creation. ConstructionClearanceCoordinator then creates normal exclusive Chop/Mine/Gather jobs
+through WorkManager. Once every referenced source is canonically depleted, the existing funding service
+creates ordinary haul orders and the coordinator creates one ordinary build order. It never directly removes
+resources, completes production, advances construction or moves a character. On load its plan is reconstructed
+from unfinished building cells, open work orders and natural-site positions, so no new save payload is needed.
+
+The modern strategy HUD is one UI Toolkit projection over the same services. Resident cards, resource totals,
+notifications, priority controls and build categories own no simulation state. The icon atlas and footprint
+mesh are disposable presentation assets. One combined footprint mesh is required instead of a GameObject per
+cell, and the runtime atlas is sliced in memory rather than introducing 24 separate imported textures.

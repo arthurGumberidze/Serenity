@@ -63,6 +63,12 @@ namespace Game.Presentation.UI
         private VisualElement root;
         private VisualElement topBar;
         private VisualElement navigation;
+        private VisualElement resourceStrip;
+        private VisualElement resourceDrawer;
+        private VisualElement residentStrip;
+        private VisualElement bottomDock;
+        private Label populationLabel;
+        private Label placementFeedback;
         private ScrollView mainPanel;
         private ScrollView inspector;
         private VisualElement notifications;
@@ -120,12 +126,27 @@ namespace Game.Presentation.UI
         private ulong knownOccupationEventSequence;
         private int knownAdultCount;
         private bool suppressNotificationCaptureOnce;
+        private bool navigationExpanded;
+        private bool resourcesExpanded;
+        private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
         private ContextCommandTarget? activeContextTarget;
         private StableEntityId[] activeContextSelectionIds = Array.Empty<StableEntityId>();
         private int lastUiPointerFrame = -2;
         private readonly Dictionary<ContextActionKind, ContextActionAvailability> contextActionStates =
             new Dictionary<ContextActionKind, ContextActionAvailability>();
         private readonly FirstHourOnboardingProgress onboarding = new FirstHourOnboardingProgress();
+
+        private enum BuildPaletteCategory
+        {
+            All = 0,
+            Resources = 1,
+            Production = 2,
+            Housing = 3,
+            Food = 4,
+            Storage = 5,
+            Defense = 6,
+            Infrastructure = 7
+        }
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -182,7 +203,8 @@ namespace Game.Presentation.UI
             var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
                 Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
-                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint)) return true;
+                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint) ||
+                Blocks(resourceDrawer, panelPoint) || Blocks(residentStrip, panelPoint) || Blocks(bottomDock, panelPoint)) return true;
             return Blocks(modal, panelPoint);
         }
 
@@ -196,6 +218,7 @@ namespace Game.Presentation.UI
             activePanel = activePanel == panel ? GameplayPanel.None : panel;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
             RefreshNavigationSelection();
+            ApplyPanelLayout();
             RefreshNow();
         }
 
@@ -221,6 +244,8 @@ namespace Game.Presentation.UI
             if (context == null || root == null) return;
             ObserveOnboardingSignals();
             RefreshHud();
+            RefreshResidentStrip();
+            RefreshPlacementFeedback();
             RefreshOnboarding();
             CaptureNotifications();
             RefreshNotifications();
@@ -812,21 +837,52 @@ namespace Game.Presentation.UI
         {
             topBar = Panel("top-hud");
             topBar.style.position = Position.Absolute;
-            topBar.style.left = 10; topBar.style.right = 10; topBar.style.top = 10; topBar.style.height = 68;
+            topBar.style.left = 10; topBar.style.right = 10; topBar.style.top = 8; topBar.style.height = 58;
             topBar.style.flexDirection = FlexDirection.Row;
             topBar.style.alignItems = Align.Center;
-            topBar.style.paddingLeft = 10; topBar.style.paddingRight = 10;
+            topBar.style.paddingLeft = 8; topBar.style.paddingRight = 8;
             SerenityUiDesign.StyleSurface(topBar, true);
+            topBar.AddToClassList("serenity-top-hud");
             topBar.pickingMode = PickingMode.Position;
-            resourcesLabel = HudLabel(350);
-            dateLabel = HudLabel(175);
-            weatherLabel = HudLabel(210);
-            modeLabel = HudLabel(112);
-            alertLabel = HudLabel(105);
-            topBar.Add(resourcesLabel);
-            topBar.Add(dateLabel);
-            topBar.Add(weatherLabel);
-            topBar.Add(modeLabel);
+
+            resourceStrip = new VisualElement { name = "resource-strip" };
+            resourceStrip.AddToClassList("serenity-resource-strip");
+            resourceStrip.style.flexDirection = FlexDirection.Row;
+            resourceStrip.style.alignItems = Align.Center;
+            populationLabel = new Label { name = "population-label" };
+            populationLabel.AddToClassList("serenity-population-chip");
+            resourceStrip.Add(SerenityIconLibrary.Image("population", "Жители поселения"));
+            resourceStrip.Add(populationLabel);
+            resourcesLabel = populationLabel;
+            AddPrimaryResourceChip("wood_log", "wood_log", "Древесина");
+            AddPrimaryResourceChip("stone", "stone", "Камень");
+            AddPrimaryResourceChip("water", "water", "Вода");
+            AddPrimaryResourceChip("meat", "meat", "Мясо");
+            AddPrimaryResourceChip("fish", "fish", "Рыба");
+            var resourceToggle = ActionButton("▾", ToggleResourceDrawer, "resource-drawer-toggle");
+            resourceToggle.AddToClassList("serenity-compact-button");
+            resourceToggle.tooltip = "Все ресурсы и резервы";
+            resourceStrip.Add(resourceToggle);
+            topBar.Add(resourceStrip);
+
+            var timeCluster = new VisualElement { name = "time-cluster" };
+            timeCluster.AddToClassList("serenity-time-cluster");
+            timeCluster.style.flexDirection = FlexDirection.Row;
+            timeCluster.style.alignItems = Align.Center;
+            dateLabel = HudLabel(156);
+            weatherLabel = HudLabel(205);
+            modeLabel = HudLabel(118);
+            modeLabel.style.whiteSpace = WhiteSpace.NoWrap;
+            modeLabel.style.fontSize = 13;
+            timeCluster.Add(dateLabel);
+            timeCluster.Add(weatherLabel);
+            timeCluster.Add(modeLabel);
+            topBar.Add(timeCluster);
+
+            alertLabel = HudLabel(66);
+            alertLabel.name = "alert-count";
+            alertLabel.tooltip = "Непрочитанные уведомления";
+            topBar.Add(SerenityIconLibrary.Image("alerts", "Уведомления"));
             topBar.Add(alertLabel);
             var pause = ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button");
             pause.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
@@ -838,36 +894,64 @@ namespace Game.Presentation.UI
                 speedButton.AddToClassList("serenity-time-button");
                 topBar.Add(speedButton);
             }
+            var settings = ActionButton(string.Empty, OpenSettings, "settings-button");
+            SerenityIconLibrary.Apply(settings, "settings", "Настройки интерфейса");
+            topBar.Add(settings);
             root.Add(topBar);
+
+            resourceDrawer = Panel("resource-drawer");
+            resourceDrawer.AddToClassList("serenity-resource-drawer");
+            resourceDrawer.style.position = Position.Absolute;
+            resourceDrawer.style.left = 10; resourceDrawer.style.top = 72; resourceDrawer.style.width = 510;
+            resourceDrawer.style.maxHeight = 310;
+            resourceDrawer.style.display = DisplayStyle.None;
+            resourceDrawer.pickingMode = PickingMode.Position;
+            root.Add(resourceDrawer);
+
+            residentStrip = new VisualElement { name = "resident-strip" };
+            residentStrip.AddToClassList("serenity-resident-strip");
+            residentStrip.style.position = Position.Absolute;
+            residentStrip.style.left = 78; residentStrip.style.right = 376; residentStrip.style.top = 72;
+            residentStrip.style.height = 62;
+            residentStrip.style.flexDirection = FlexDirection.Row;
+            residentStrip.pickingMode = PickingMode.Position;
+            root.Add(residentStrip);
 
             navigation = Panel("navigation");
             navigation.style.position = Position.Absolute;
-            navigation.style.left = 10; navigation.style.top = 88; navigation.style.bottom = 58; navigation.style.width = 166;
+            navigation.style.left = 10; navigation.style.top = 72; navigation.style.bottom = 52; navigation.style.width = 58;
             navigation.style.paddingTop = 8; navigation.style.paddingLeft = 7; navigation.style.paddingRight = 7;
             SerenityUiDesign.StyleSurface(navigation);
+            navigation.AddToClassList("serenity-navigation-rail");
             navigation.pickingMode = PickingMode.Position;
+            var navigationToggle = ActionButton("☰", ToggleNavigation, "navigation-toggle");
+            navigationToggle.tooltip = "Развернуть меню";
+            navigationToggle.AddToClassList("serenity-nav-toggle");
+            navigation.Add(navigationToggle);
             onboardingToggleButton = ActionButton(T("ui.onboarding.hide"),
                 () => SetOnboardingVisible(!onboarding.Visible), "onboarding-toggle");
+            onboardingToggleButton.userData = T("ui.onboarding.hide");
+            onboardingToggleButton.tooltip = "Обучение первого часа";
             navigation.Add(onboardingToggleButton);
-            AddNavigation(T("ui.nav.build"), GameplayPanel.Build);
-            AddNavigation(T("ui.nav.settlement"), GameplayPanel.Economy);
-            AddNavigation(T("ui.nav.research"), GameplayPanel.Research);
-            AddNavigation(T("ui.nav.work"), GameplayPanel.Work);
-            AddNavigation(T("ui.nav.dynasty"), GameplayPanel.Dynasty);
-            AddNavigation("Дом и семья", GameplayPanel.Domestic);
-            AddNavigation(T("ui.nav.military"), GameplayPanel.Military);
-            AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad);
-            AddNavigation("Коды", GameplayPanel.Codes);
-            AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global);
-            if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events);
+            AddNavigation(T("ui.nav.build"), GameplayPanel.Build, "build");
+            AddNavigation(T("ui.nav.settlement"), GameplayPanel.Economy, "settlement");
+            AddNavigation(T("ui.nav.research"), GameplayPanel.Research, "research");
+            AddNavigation(T("ui.nav.work"), GameplayPanel.Work, "work");
+            AddNavigation(T("ui.nav.dynasty"), GameplayPanel.Dynasty, "dynasty");
+            AddNavigation("Дом и семья", GameplayPanel.Domestic, "domestic");
+            AddNavigation(T("ui.nav.military"), GameplayPanel.Military, "military");
+            AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad, "save");
+            AddNavigation("Коды", GameplayPanel.Codes, "settings");
+            AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global, "world");
+            if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events, "events");
             root.Add(navigation);
 
             var onboardingScroll = new ScrollView(ScrollViewMode.Vertical) { name = "onboarding-card" };
             onboardingScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             onboardingCard = onboardingScroll;
             onboardingCard.style.position = Position.Absolute;
-            onboardingCard.style.right = 10; onboardingCard.style.top = 226; onboardingCard.style.width = 354;
-            onboardingCard.style.maxHeight = 246;
+            onboardingCard.style.right = 10; onboardingCard.style.top = 274; onboardingCard.style.width = 354;
+            onboardingCard.style.maxHeight = 230;
             onboardingCard.style.paddingLeft = 14; onboardingCard.style.paddingRight = 14;
             onboardingCard.style.paddingTop = 12; onboardingCard.style.paddingBottom = 12;
             SerenityUiDesign.StyleCard(onboardingCard);
@@ -878,7 +962,7 @@ namespace Game.Presentation.UI
             StylePanel(mainPanel);
             mainPanel.AddToClassList("serenity-main-panel");
             mainPanel.style.position = Position.Absolute;
-            mainPanel.style.left = 186; mainPanel.style.top = 88; mainPanel.style.bottom = 58; mainPanel.style.width = 486;
+            mainPanel.style.left = 78; mainPanel.style.top = 142; mainPanel.style.bottom = 130; mainPanel.style.width = 480;
             mainPanel.style.display = DisplayStyle.None;
             mainPanel.pickingMode = PickingMode.Position;
             root.Add(mainPanel);
@@ -887,21 +971,53 @@ namespace Game.Presentation.UI
             StylePanel(inspector);
             inspector.AddToClassList("serenity-inspector");
             inspector.style.position = Position.Absolute;
-            inspector.style.right = 10; inspector.style.top = 482; inspector.style.bottom = 58; inspector.style.width = 354;
+            inspector.style.right = 10; inspector.style.top = 274; inspector.style.bottom = 52; inspector.style.width = 354;
+            inspector.style.display = DisplayStyle.None;
             inspector.pickingMode = PickingMode.Position;
             root.Add(inspector);
 
             notifications = Panel("notifications");
             notifications.style.position = Position.Absolute;
-            notifications.style.right = 10; notifications.style.top = 88; notifications.style.width = 354;
-            notifications.style.maxHeight = 126; notifications.style.paddingLeft = 10; notifications.style.paddingRight = 10;
+            notifications.style.right = 10; notifications.style.top = 72; notifications.style.width = 354;
+            notifications.style.maxHeight = 194; notifications.style.paddingLeft = 10; notifications.style.paddingRight = 10;
             notifications.AddToClassList("serenity-notifications");
             notifications.pickingMode = PickingMode.Position;
             root.Add(notifications);
 
+            placementFeedback = new Label { name = "placement-feedback" };
+            placementFeedback.AddToClassList("serenity-placement-feedback");
+            placementFeedback.style.position = Position.Absolute;
+            placementFeedback.style.left = new Length(31, LengthUnit.Percent);
+            placementFeedback.style.right = new Length(31, LengthUnit.Percent);
+            placementFeedback.style.bottom = 130;
+            placementFeedback.style.display = DisplayStyle.None;
+            placementFeedback.pickingMode = PickingMode.Ignore;
+            root.Add(placementFeedback);
+
+            bottomDock = Panel("bottom-build-dock");
+            bottomDock.AddToClassList("serenity-bottom-dock");
+            bottomDock.style.position = Position.Absolute;
+            bottomDock.style.left = new Length(19, LengthUnit.Percent);
+            bottomDock.style.right = new Length(19, LengthUnit.Percent);
+            bottomDock.style.bottom = 48;
+            bottomDock.style.height = 76;
+            bottomDock.style.flexDirection = FlexDirection.Row;
+            bottomDock.style.justifyContent = Justify.Center;
+            bottomDock.style.alignItems = Align.Center;
+            bottomDock.pickingMode = PickingMode.Position;
+            AddBuildCategory("Все", BuildPaletteCategory.All, "build");
+            AddBuildCategory("Ресурсы", BuildPaletteCategory.Resources, "gather");
+            AddBuildCategory("Производство", BuildPaletteCategory.Production, "production");
+            AddBuildCategory("Жильё", BuildPaletteCategory.Housing, "housing");
+            AddBuildCategory("Еда", BuildPaletteCategory.Food, "food");
+            AddBuildCategory("Склады", BuildPaletteCategory.Storage, "storage");
+            AddBuildCategory("Защита", BuildPaletteCategory.Defense, "defense");
+            AddBuildCategory("Инфраструктура", BuildPaletteCategory.Infrastructure, "settlement");
+            root.Add(bottomDock);
+
             statusBar = Panel("status-bar");
             statusBar.style.position = Position.Absolute;
-            statusBar.style.left = 10; statusBar.style.right = 10; statusBar.style.bottom = 8; statusBar.style.height = 42;
+            statusBar.style.left = 10; statusBar.style.right = 10; statusBar.style.bottom = 6; statusBar.style.height = 36;
             SerenityUiDesign.StyleSurface(statusBar, true);
             statusBar.style.flexDirection = FlexDirection.Row;
             statusBar.style.alignItems = Align.Center;
@@ -1003,6 +1119,7 @@ namespace Game.Presentation.UI
         {
             if (onboardingCard == null || onboardingToggleButton == null) return;
             onboardingToggleButton.text = T(onboarding.Visible ? "ui.onboarding.hide" : "ui.onboarding.show");
+            RefreshNavigationAppearance();
             onboardingCard.style.display = onboarding.Visible ? DisplayStyle.Flex : DisplayStyle.None;
             if (!onboarding.Visible) return;
 
@@ -1115,8 +1232,16 @@ namespace Game.Presentation.UI
         {
             var clock = context.Clock();
             var alive = PlayerAliveCount();
-            resourcesLabel.text = F("ui.hud.population", alive) + "   " + string.Join("   ", context.Resources.All
-                .Select(x => Content("resource", x.Id.ToString()) + " " + TotalResource(x.Id)));
+            populationLabel.text = F("ui.hud.population", alive);
+            foreach (var definition in context.Resources.All)
+            {
+                var label = resourceStrip.Q<Label>("resource-primary-" + definition.Id);
+                if (label == null) continue;
+                label.text = TotalResource(definition.Id).ToString("N0");
+                label.tooltip = Content("resource", definition.Id.ToString()) + ": всего " +
+                                TotalResource(definition.Id).ToString("N0");
+            }
+            RefreshResourceDrawer();
             var ticks = clock.State.CalendarTicks;
             dateLabel.text = F("ui.hud.date", GameCalendar.Year(ticks), GameCalendar.DayOfYear(ticks),
                 GameCalendar.HourOfDay(ticks).ToString("00"), GameCalendar.MinuteOfHour(ticks).ToString("00"));
@@ -1139,6 +1264,78 @@ namespace Game.Presentation.UI
                 mainPanel.style.display = DisplayStyle.None;
             }
             RefreshNavigationSelection();
+        }
+
+        private void RefreshResourceDrawer()
+        {
+            if (resourceDrawer == null) return;
+            resourceDrawer.style.display = resourcesExpanded ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!resourcesExpanded) return;
+            resourceDrawer.Clear();
+            AddSection(resourceDrawer, "Ресурсы поселения");
+            foreach (var definition in context.Resources.All.OrderBy(x => x.Id))
+            {
+                var total = TotalResource(definition.Id);
+                var reserved = context.Work.Jobs.Where(x => !x.IsTerminal && x.ResourceId == definition.Id &&
+                    x.ClaimState == WorkClaimState.Reserved).Sum(x => x.Quantity.Units);
+                var row = Row();
+                row.Add(SerenityIconLibrary.Image(PrimaryResourceIcon(definition.Id.ToString()),
+                    Content("resource", definition.Id.ToString())));
+                var line = new Label(Content("resource", definition.Id.ToString()) + "   " + total.ToString("N0") +
+                                     "   доступно " + Math.Max(0, total - reserved).ToString("N0") +
+                                     "   зарезервировано " + reserved.ToString("N0"));
+                line.AddToClassList("serenity-resource-line");
+                row.Add(line);
+                resourceDrawer.Add(row);
+            }
+        }
+
+        private void RefreshResidentStrip()
+        {
+            if (residentStrip == null) return;
+            residentStrip.Clear();
+            foreach (var person in PlayerCharacterIds().Select(id => context.Characters.TryGet(id, out var value) ? value : null)
+                         .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(12))
+            {
+                var captured = person.Id;
+                var status = context.Work.TryGetAssigned(person.Id, out var job) ? E(job.Type) :
+                    context.AiAgents.TryGet(person.Id, out var agent) ? E(agent.CurrentAction) : "ожидает";
+                var card = ActionButton(RussianTextCatalog.PersonName(person.Name.DisplayName) + "\n" + status,
+                    () => SelectResident(captured), "resident-" + person.Id);
+                card.AddToClassList("serenity-resident-card");
+                card.tooltip = RussianTextCatalog.PersonName(person.Name.DisplayName) + " · " + status +
+                               "\nЛКМ — выбрать; повторный клик — переместить камеру";
+                SerenityIconLibrary.Apply(card, "population", card.tooltip);
+                SerenityUiDesign.SetSelected(card, context.Selection.SelectedCharacterId == person.Id);
+                residentStrip.Add(card);
+            }
+        }
+
+        private void RefreshPlacementFeedback()
+        {
+            if (placementFeedback == null) return;
+            var active = context.BuildingPlacement.IsActive;
+            placementFeedback.style.display = active ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!active) return;
+            placementFeedback.RemoveFromClassList("is-free");
+            placementFeedback.RemoveFromClassList("requires-clearance");
+            placementFeedback.RemoveFromClassList("is-blocked");
+            switch (context.BuildingPlacement.VisualState)
+            {
+                case Game.Presentation.Buildings.BuildingPlacementVisualState.Free:
+                    placementFeedback.text = "Свободная площадка · можно строить";
+                    placementFeedback.AddToClassList("is-free");
+                    break;
+                case Game.Presentation.Buildings.BuildingPlacementVisualState.RequiresClearance:
+                    placementFeedback.text = "Нужна расчистка · жители сначала уберут " +
+                                             context.BuildingPlacement.PreviewClearanceSourceIds.Count + " объектов";
+                    placementFeedback.AddToClassList("requires-clearance");
+                    break;
+                default:
+                    placementFeedback.text = "Строительство невозможно · " + PlacementFailureText();
+                    placementFeedback.AddToClassList("is-blocked");
+                    break;
+            }
         }
 
         private void RefreshPanel()
@@ -1390,19 +1587,21 @@ namespace Game.Presentation.UI
 
         private void DrawBuildPanel()
         {
-            AddTitle(mainPanel, T("ui.build.title"));
+            AddTitle(mainPanel, T("ui.build.title") + " · " + BuildCategoryLabel(buildCategory));
             AddLine(mainPanel, T("ui.build.instructions"));
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
                 // Retain the legacy ID for existing scenes/saves, not as a second player option.
                 if (entry.DefinitionId == "primitive_crop_plot") continue;
                 var definition = entry.CreateDefinition();
+                if (!MatchesBuildCategory(definition, buildCategory)) continue;
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
                 var cost = definition.ConstructionCost.Count == 0 ? T("ui.build.no_cost") : F("ui.build.cost", string.Join(", ",
                     definition.ConstructionCost.Select(x => Content("resource", x.ResourceId.ToString()) + " " + x.Quantity.Units)));
                 var shortage = BuildingResourceShortage(definition);
                 var reason = !available ? BuildingLockReason(definition.Id) : shortage;
                 var card = SerenityUiDesign.Card();
+                card.AddToClassList("serenity-build-card");
                 AddSection(card, Content("building", definition.Id.ToString()));
                 var explanation = definition.Id.ToString() switch
                 {
@@ -1986,6 +2185,9 @@ namespace Game.Presentation.UI
                                context.Selection.SelectedBuildingPresenter != null ||
                                context.Selection.SelectedWorldResourcePilePresenter != null ||
                                context.Selection.SelectedProductionSourcePresenter != null;
+            inspector.style.display = hasSelection && context.GlobalMap.Mode == GameWorldMode.Local
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
             if (!hasSelection && emptyInspectorRendered) return;
             emptyInspectorRendered = !hasSelection;
             inspector.Clear();
@@ -2204,6 +2406,32 @@ namespace Game.Presentation.UI
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
             if (!building.IsOperational && building.ConstructionRequiredTicks > 0)
                 AddLine(inspector, $"Строительство: {building.ConstructionProgress:P0} · требуется работа строителя");
+            if (!building.IsOperational && context.ConstructionClearance != null &&
+                context.ConstructionClearance.TryGetStatus(building.Id, out var clearanceStatus))
+            {
+                if (clearanceStatus.IsClearing)
+                {
+                    AddLine(inspector, $"Расчистка площадки: {clearanceStatus.Completed}/{clearanceStatus.Total}");
+                    AddMuted(inspector, "Жители уберут деревья, кусты и камни обычными заданиями, затем автоматически доставят материалы и начнут стройку.");
+                }
+                else if (!clearanceStatus.DeliveriesScheduled)
+                    AddMuted(inspector, "Площадка свободна. Ожидаются доступные строительные материалы.");
+                else if (!clearanceStatus.BuildScheduled)
+                    AddMuted(inspector, "Материалы назначены к доставке. Строитель будет вызван автоматически.");
+                var priorityRow = Row();
+                foreach (var value in new[] { WorkPriority.Low, WorkPriority.Normal, WorkPriority.High, WorkPriority.Urgent })
+                {
+                    var captured = value;
+                    var priority = ActionButton(E(value), () => TryCommand(() =>
+                    {
+                        if (!context.ConstructionClearance.SetPriority(building.Id, captured))
+                            throw new PlayerFacingException("Приоритет этой стройки изменить нельзя.");
+                    }), "construction-priority-" + value.ToString().ToLowerInvariant());
+                    SerenityUiDesign.SetSelected(priority, clearanceStatus.Priority == value);
+                    priorityRow.Add(priority);
+                }
+                inspector.Add(priorityRow);
+            }
             AddLine(inspector, F("ui.building.integrity", building.CurrentIntegrity, building.MaxIntegrity, E(building.StructuralStatus)));
             AddLine(inspector, F("ui.building.fire", E(building.FireStatus)) + (building.FireStatus == BuildingFireStatus.Burning
                 ? F("ui.building.fire_intensity", building.FireIntensity) : string.Empty));
@@ -2382,6 +2610,14 @@ namespace Game.Presentation.UI
                 var captured = index;
                 var button = ActionButton(notificationFeed[index], () => ActivateNotification(captured));
                 button.tooltip = "Перейти к событию";
+                button.AddToClassList("serenity-notification");
+                var lower = notificationFeed[index].ToLowerInvariant();
+                button.AddToClassList(lower.Contains("травм") || lower.Contains("болез") || lower.Contains("смерт") ||
+                                      lower.Contains("атак") || lower.Contains("пожар")
+                    ? "is-danger"
+                    : lower.Contains("не хват") || lower.Contains("голод") || lower.Contains("предуп")
+                        ? "is-warning"
+                        : "is-info");
                 notifications.Add(button);
             }
         }
@@ -2710,7 +2946,14 @@ namespace Game.Presentation.UI
                     return context.BuildingPlacement.IsActive
                         ? BuildingResourceShortage(context.BuildingCatalog.ResolveDefinition(context.BuildingPlacement.ActiveDefinitionId.Value))
                         : T("ui.build.insufficient_resources_generic");
-                default: return T("ui.build.invalid_place");
+                case Game.Simulation.Resources.ConstructionFailureReason.InvalidPlacement:
+                    return string.IsNullOrWhiteSpace(context.BuildingPlacement.SurfaceBlockedReason)
+                        ? T("ui.build.invalid_place")
+                        : context.BuildingPlacement.SurfaceBlockedReason;
+                default:
+                    return !string.IsNullOrWhiteSpace(context.BuildingPlacement.SurfaceBlockedReason)
+                        ? context.BuildingPlacement.SurfaceBlockedReason
+                        : T("ui.build.invalid_place");
             }
         }
 
@@ -2883,10 +3126,166 @@ namespace Game.Presentation.UI
             return hash;
         }
 
-        private void AddNavigation(string label, GameplayPanel panel)
+        private void AddPrimaryResourceChip(string resourceId, string iconKey, string tooltip)
+        {
+            var chip = new VisualElement { name = "resource-primary-chip-" + resourceId };
+            chip.AddToClassList("serenity-resource-chip");
+            chip.tooltip = tooltip;
+            chip.style.flexDirection = FlexDirection.Row;
+            chip.style.alignItems = Align.Center;
+            chip.Add(SerenityIconLibrary.Image(iconKey, tooltip));
+            var value = new Label("0") { name = "resource-primary-" + resourceId };
+            value.AddToClassList("serenity-resource-value");
+            chip.Add(value);
+            resourceStrip.Add(chip);
+        }
+
+        private void ToggleResourceDrawer()
+        {
+            resourcesExpanded = !resourcesExpanded;
+            RefreshResourceDrawer();
+        }
+
+        private void ToggleNavigation()
+        {
+            navigationExpanded = !navigationExpanded;
+            RefreshNavigationAppearance();
+            ApplyResponsiveLayout();
+        }
+
+        private void RefreshNavigationAppearance()
+        {
+            if (navigation == null) return;
+            navigation.EnableInClassList("is-expanded", navigationExpanded);
+            var toggle = navigation.Q<Button>("navigation-toggle");
+            if (toggle != null)
+            {
+                toggle.text = navigationExpanded ? "‹" : "☰";
+                toggle.tooltip = navigationExpanded ? "Свернуть меню" : "Развернуть меню";
+            }
+            foreach (var button in navigation.Query<Button>(className: "serenity-nav-button").ToList())
+                button.text = navigationExpanded ? button.userData as string ?? button.tooltip : string.Empty;
+            if (onboardingToggleButton != null)
+                onboardingToggleButton.text = navigationExpanded
+                    ? T(onboarding.Visible ? "ui.onboarding.hide" : "ui.onboarding.show")
+                    : "?";
+        }
+
+        private void AddBuildCategory(string label, BuildPaletteCategory category, string icon)
+        {
+            var captured = category;
+            var button = ActionButton(string.Empty, () => OpenBuildCategory(captured),
+                "build-category-" + category.ToString().ToLowerInvariant());
+            button.AddToClassList("serenity-build-category");
+            SerenityIconLibrary.Apply(button, icon, label);
+            bottomDock.Add(button);
+        }
+
+        private void OpenBuildCategory(BuildPaletteCategory category)
+        {
+            buildCategory = category;
+            activePanel = GameplayPanel.Build;
+            mainPanel.style.display = DisplayStyle.Flex;
+            RefreshNavigationSelection();
+            ApplyPanelLayout();
+            RefreshNow();
+        }
+
+        private void SelectResident(StableEntityId id)
+        {
+            var wasSelected = context.Selection.SelectedCharacterId == id;
+            context.Selection.SelectCharacterIds(new[] { id });
+            if (wasSelected && context.Presentations.TryGet(id, out var presenter) && presenter != null)
+                context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
+                    presenter.transform.position.z));
+            RefreshNow();
+        }
+
+        private void OpenSettings()
+        {
+            modal.Clear();
+            modal.style.display = DisplayStyle.Flex;
+            AddTitle(modal, "Настройки интерфейса");
+            AddLine(modal, "Масштаб интерфейса");
+            var scale = Row();
+            foreach (var value in new[] { 1f, 1.15f, 1.25f, 1.4f })
+            {
+                var captured = value;
+                scale.Add(ActionButton(Mathf.RoundToInt(value * 100f) + "%", () =>
+                {
+                    SetUiScale(captured);
+                    ApplyResponsiveLayout();
+                }));
+            }
+            modal.Add(scale);
+            modal.Add(ActionButton("Закрыть", CloseModal, "settings-close"));
+        }
+
+        private static string PrimaryResourceIcon(string id)
+        {
+            if (id.Contains("wood") || id.Contains("log")) return "wood_log";
+            if (id.Contains("stone") || id.Contains("ore")) return "stone";
+            if (id.Contains("water")) return "water";
+            if (id.Contains("fish")) return "fish";
+            if (id.Contains("meat") || id.Contains("food") || id.Contains("berry")) return "meat";
+            return "storage";
+        }
+
+        private static string BuildCategoryLabel(BuildPaletteCategory category)
+        {
+            return category switch
+            {
+                BuildPaletteCategory.Resources => "Ресурсы",
+                BuildPaletteCategory.Production => "Производство",
+                BuildPaletteCategory.Housing => "Жильё",
+                BuildPaletteCategory.Food => "Еда",
+                BuildPaletteCategory.Storage => "Склады",
+                BuildPaletteCategory.Defense => "Защита",
+                BuildPaletteCategory.Infrastructure => "Инфраструктура",
+                _ => "Все"
+            };
+        }
+
+        private static bool MatchesBuildCategory(BuildingDefinition definition, BuildPaletteCategory category)
+        {
+            if (category == BuildPaletteCategory.All) return true;
+            var id = definition.Id.ToString().ToLowerInvariant();
+            bool Has(params string[] words) => words.Any(id.Contains);
+            return category switch
+            {
+                BuildPaletteCategory.Resources => Has("gather", "wood", "quarry", "mine", "fishing"),
+                BuildPaletteCategory.Production => Has("workshop", "kiln", "forge", "smith", "campfire", "production"),
+                BuildPaletteCategory.Housing => Has("shelter", "hut", "house", "hall", "home"),
+                BuildPaletteCategory.Food => Has("garden", "farm", "crop", "fishing", "kitchen", "campfire"),
+                BuildPaletteCategory.Storage => Has("storage", "basket", "warehouse", "stockpile"),
+                BuildPaletteCategory.Defense => Has("palisade", "gate", "tower", "barracks", "training"),
+                BuildPaletteCategory.Infrastructure => Has("path", "road", "meeting", "well", "bridge", "dock", "assembly"),
+                _ => true
+            };
+        }
+
+        private void ApplyPanelLayout()
+        {
+            if (mainPanel == null) return;
+            var build = activePanel == GameplayPanel.Build;
+            mainPanel.EnableInClassList("is-build-palette", build);
+            mainPanel.style.left = navigationExpanded ? 190 : 78;
+            mainPanel.style.top = build ? StyleKeyword.Auto : 142;
+            mainPanel.style.bottom = build ? 130 : 52;
+            mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
+            mainPanel.style.width = build ? StyleKeyword.Auto : 480;
+            mainPanel.style.right = build ? 374 : StyleKeyword.Auto;
+            mainPanel.contentContainer.style.flexDirection = build ? FlexDirection.Row : FlexDirection.Column;
+            mainPanel.contentContainer.style.flexWrap = build ? Wrap.Wrap : Wrap.NoWrap;
+        }
+
+        private void AddNavigation(string label, GameplayPanel panel, string icon = null)
         {
             var button = ActionButton(label, () => SetPanel(panel), "nav-" + panel.ToString().ToLowerInvariant());
             SerenityUiDesign.StyleButton(button, navigation: true);
+            button.userData = label;
+            button.tooltip = label;
+            SerenityIconLibrary.Apply(button, icon ?? "settings", label);
             navigation.Add(button);
         }
 
@@ -2909,18 +3308,21 @@ namespace Game.Presentation.UI
             var compact = !float.IsNaN(width) && width > 0f && width < 1380f;
             root.EnableInClassList("serenity-compact", compact);
             if (topBar == null) return;
-            resourcesLabel.style.width = compact ? 286 : 350;
-            dateLabel.style.width = compact ? 145 : 175;
-            weatherLabel.style.width = compact ? 172 : 210;
-            modeLabel.style.width = compact ? 92 : 112;
-            alertLabel.style.width = compact ? 86 : 105;
-            navigation.style.width = compact ? 150 : 166;
-            mainPanel.style.left = compact ? 170 : 186;
-            mainPanel.style.width = compact ? 430 : 486;
+            resourceStrip.style.maxWidth = compact ? 515 : 650;
+            dateLabel.style.width = compact ? 126 : 156;
+            weatherLabel.style.width = compact ? 155 : 205;
+            modeLabel.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
+            alertLabel.style.width = compact ? 46 : 66;
+            navigation.style.width = navigationExpanded ? (compact ? 164 : 180) : 58;
+            residentStrip.style.left = navigationExpanded ? (compact ? 174 : 190) : 78;
+            residentStrip.style.right = compact ? 334 : 376;
+            bottomDock.style.left = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
+            bottomDock.style.right = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
             inspector.style.width = compact ? 322 : 354;
             notifications.style.width = compact ? 322 : 354;
             onboardingCard.style.width = compact ? 322 : 354;
-            inspector.style.top = onboarding.Visible ? 482 : 226;
+            inspector.style.top = onboarding.Visible ? 512 : 274;
+            ApplyPanelLayout();
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
             {
@@ -2929,9 +3331,18 @@ namespace Game.Presentation.UI
                 mainPanel.style.left = 146;
                 mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 156f);
             }
-            inspector.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            var hasSelection = context != null && (context.Selection.SelectedCharacterIds.Count > 0 ||
+                context.Selection.SelectedBuildingPresenter != null ||
+                context.Selection.SelectedWorldResourcePilePresenter != null ||
+                context.Selection.SelectedProductionSourcePresenter != null);
+            inspector.style.display = strategic || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
             notifications.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
             onboardingCard.style.display = !strategic && onboarding.Visible ? DisplayStyle.Flex : DisplayStyle.None;
+            residentStrip.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            bottomDock.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            placementFeedback.style.display = !strategic && context.BuildingPlacement.IsActive
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
         }
 
         private static bool Blocks(VisualElement element, Vector2 point) => element != null &&

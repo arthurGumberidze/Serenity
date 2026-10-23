@@ -449,3 +449,310 @@
     white-space: normal;
     -unity-text-align: middle-center;
 }
+
+/*
+ * P10.9 modern strategy HUD. These late overrides intentionally keep the stable UXML names
+ * and interaction contracts while replacing the former moss-heavy presentation.
+ */
+.serenity-gameplay {
+    color: rgb(241, 238, 232);
+}
+
+.serenity-gameplay .serenity-surface,
+.serenity-gameplay .serenity-card,
+.serenity-gameplay .serenity-button,
+.serenity-gameplay .serenity-foldout > .unity-foldout__toggle {
+    background-color: rgba(29, 36, 43, 0.96);
+    border-left-color: rgba(213, 166, 107, 0.46);
+    border-right-color: rgba(213, 166, 107, 0.3);
+    border-top-color: rgba(213, 166, 107, 0.3);
+    border-bottom-color: rgba(213, 166, 107, 0.3);
+}
+
+.serenity-gameplay .serenity-surface-raised {
+    background-color: rgba(41, 51, 61, 0.97);
+}
+
+.serenity-gameplay .serenity-button:hover {
+    color: rgb(255, 250, 242);
+    background-color: rgb(51, 65, 75);
+    border-left-color: rgb(232, 197, 142);
+    border-right-color: rgb(232, 197, 142);
+    border-top-color: rgb(232, 197, 142);
+    border-bottom-color: rgb(232, 197, 142);
+}
+
+.serenity-gameplay .serenity-button-primary,
+.serenity-gameplay .serenity-time-button.is-selected,
+.serenity-gameplay #pause-button.is-selected {
+    color: rgb(23, 28, 33);
+    background-color: rgb(213, 166, 107);
+}
+
+.serenity-top-hud {
+    background-color: rgba(20, 27, 33, 0.95);
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(213, 166, 107, 0.72);
+}
+
+.serenity-resource-strip {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.serenity-population-chip {
+    color: rgb(241, 238, 232);
+    -unity-font-style: bold;
+    margin-right: 9px;
+    min-width: 74px;
+}
+
+.serenity-icon {
+    width: 25px;
+    height: 25px;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.serenity-resource-chip {
+    min-height: 38px;
+    min-width: 63px;
+    padding-left: 5px;
+    padding-right: 7px;
+    margin-right: 3px;
+    background-color: rgba(41, 51, 61, 0.7);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(213, 166, 107, 0.4);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.serenity-resource-value {
+    color: rgb(241, 238, 232);
+    -unity-font-style: bold;
+}
+
+.serenity-time-cluster {
+    background-color: rgba(15, 21, 27, 0.58);
+    padding-left: 5px;
+    padding-right: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.serenity-resource-drawer {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 8px;
+    padding-bottom: 10px;
+    background-color: rgba(20, 27, 33, 0.98);
+    border-left-width: 2px;
+    border-left-color: rgb(213, 166, 107);
+}
+
+.serenity-resource-line {
+    flex-grow: 1;
+    color: rgb(218, 222, 224);
+    margin-left: 7px;
+    white-space: normal;
+}
+
+.serenity-resident-strip {
+    padding-left: 3px;
+    padding-right: 3px;
+    overflow: hidden;
+}
+
+.serenity-resident-card {
+    width: 92px;
+    height: 58px;
+    min-height: 58px;
+    margin-right: 4px;
+    padding-left: 32px;
+    padding-right: 4px;
+    font-size: 10px;
+    -unity-text-align: middle-left;
+    white-space: normal;
+    background-color: rgba(29, 36, 43, 0.92);
+    background-size: 27px 27px;
+    background-position: 3px 50%;
+    background-repeat: no-repeat;
+}
+
+.serenity-resident-card.is-selected {
+    background-color: rgba(66, 76, 85, 0.98);
+    border-bottom-width: 2px;
+    border-bottom-color: rgb(232, 197, 142);
+}
+
+.serenity-navigation-rail {
+    background-color: rgba(20, 27, 33, 0.96);
+    overflow: hidden;
+}
+
+.serenity-nav-toggle {
+    min-height: 36px;
+    font-size: 19px;
+    background-color: rgba(51, 65, 75, 0.9);
+}
+
+.serenity-gameplay .serenity-nav-button {
+    min-height: 44px;
+    padding-left: 4px;
+    padding-right: 4px;
+    background-size: 31px 31px;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    background-color: rgba(29, 36, 43, 0.76);
+}
+
+.serenity-gameplay .serenity-navigation-rail.is-expanded .serenity-nav-button {
+    padding-left: 40px;
+    background-size: 30px 30px;
+    background-position: 5px 50%;
+}
+
+.serenity-gameplay .serenity-nav-button.is-selected {
+    color: rgb(255, 250, 242);
+    background-color: rgb(51, 65, 75);
+    border-left-color: rgb(232, 197, 142);
+}
+
+.serenity-icon-button {
+    min-width: 38px;
+    min-height: 38px;
+    background-size: 27px 27px;
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+}
+
+.serenity-compact-button {
+    min-width: 30px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.serenity-bottom-dock {
+    background-color: rgba(20, 27, 33, 0.96);
+    border-top-width: 2px;
+    border-top-color: rgba(213, 166, 107, 0.72);
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+
+.serenity-build-category {
+    width: 62px;
+    height: 62px;
+    margin-left: 3px;
+    margin-right: 3px;
+    background-size: 43px 43px;
+    background-position: 50% 42%;
+    background-repeat: no-repeat;
+    background-color: rgba(41, 51, 61, 0.92);
+}
+
+.serenity-build-category:hover {
+    background-color: rgb(63, 76, 86);
+}
+
+.serenity-main-panel.is-build-palette {
+    background-color: rgba(20, 27, 33, 0.97);
+    border-top-width: 2px;
+    border-top-color: rgb(213, 166, 107);
+}
+
+.serenity-main-panel.is-build-palette .serenity-title,
+.serenity-main-panel.is-build-palette .serenity-body {
+    width: 100%;
+}
+
+.serenity-build-card {
+    width: 260px;
+    min-height: 172px;
+    margin-left: 4px;
+    margin-right: 4px;
+    background-color: rgba(41, 51, 61, 0.91);
+}
+
+.serenity-inspector,
+.serenity-notifications {
+    background-color: rgba(20, 27, 33, 0.96);
+}
+
+.serenity-notification {
+    min-height: 44px;
+    -unity-text-align: middle-left;
+    border-left-width: 4px;
+}
+
+.serenity-notification.is-info {
+    border-left-color: rgb(101, 184, 154);
+}
+
+.serenity-notification.is-warning {
+    border-left-color: rgb(228, 170, 96);
+}
+
+.serenity-notification.is-danger {
+    border-left-color: rgb(207, 107, 105);
+}
+
+.serenity-placement-feedback {
+    min-height: 38px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    color: rgb(245, 245, 242);
+    background-color: rgba(20, 27, 33, 0.96);
+    border-left-width: 4px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.serenity-placement-feedback.is-free {
+    border-left-color: rgb(72, 216, 143);
+}
+
+.serenity-placement-feedback.requires-clearance {
+    border-left-color: rgb(236, 167, 64);
+}
+
+.serenity-placement-feedback.is-blocked {
+    border-left-color: rgb(222, 82, 78);
+}
+
+.serenity-compact .serenity-resource-chip {
+    min-width: 51px;
+    padding-left: 2px;
+    padding-right: 3px;
+}
+
+.serenity-compact .serenity-resource-chip .serenity-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.serenity-compact .serenity-resident-card {
+    width: 78px;
+}
+
+.serenity-gameplay .serenity-resident-card.serenity-icon-button {
+    width: 102px;
+    padding-left: 34px;
+    background-size: 27px 27px;
+    background-position: 4px 50%;
+    -unity-text-align: middle-left;
+}
+
+.serenity-compact .serenity-resident-card.serenity-icon-button {
+    width: 84px;
+    padding-left: 29px;
+    background-size: 23px 23px;
+    background-position: 3px 50%;
+}

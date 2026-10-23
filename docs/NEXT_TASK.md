@@ -7,6 +7,16 @@
 The active task is unchanged: complete P10.9 F1 below. Do not start map implementation from the generated
 WORLD_MAP_CODEX_TASKS.md without a later explicit task assignment.
 
+## Current scope — P10.9 F1 after modern HUD/site-clearance implementation, 2026-10-23
+
+The screenshot 1–4 request is implemented and built at 'Builds/P109ModernHud/Serenity.exe'. The next unblocked
+work remains the rest of F1: user visual acceptance followed by the multi-settlement/tier isolation and final
+broader regression matrix. Do not start P10.10, the deferred performance benchmark, a dependency download or
+an old-save migration. See 'P109_MODERN_HUD_CLEARANCE.md' for the exact Player route and evidence.
+
+The five inherited dirty materials and 'New Unity Project/' remain user-owned and excluded from the task
+commit. The generated Serenity icon atlas is project content; no Asset Store dependency was added.
+
 ## Current scope — P10.9 Stone Age buildings F1, 2026-10-23
 
 The user-requested `Assets/23102026` slice is complete before F1. Notifications dismiss their exact feed entry

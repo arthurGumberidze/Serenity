@@ -1,4 +1,5 @@
 using System;
+using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Presentation.Input;
 using Game.Presentation.Interaction;
@@ -6,6 +7,7 @@ using Game.Simulation.Buildings;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Game.Presentation.Environment;
@@ -22,6 +24,7 @@ namespace Game.Presentation.Buildings
         [SerializeField, Min(0.1f)] private float gridSize = 1f;
         [SerializeField] private Vector3 gridOrigin;
         [SerializeField] private Color validColor = new Color(0.25f, 1f, 0.35f, 0.65f);
+        [SerializeField] private Color clearanceColor = new Color(1f, 0.62f, 0.12f, 0.7f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.2f, 0.2f, 0.65f);
         [SerializeField] private bool completeImmediately = true;
 
@@ -29,6 +32,7 @@ namespace Game.Presentation.Buildings
         private BuildingPresentationSpawner spawner;
         private LocalInteractionMode interactionMode;
         private ConstructionFundingService construction;
+        private ConstructionClearanceCoordinator clearance;
         private Func<IEnumerable<InventoryOwner>> fundingSources;
         private BuildingDefinition activeDefinition;
         private BuildingOrientation orientation;
@@ -36,11 +40,13 @@ namespace Game.Presentation.Buildings
         private PlacementEvaluation previewEvaluation;
         private ConstructionEvaluation constructionEvaluation;
         private GameObject previewObject;
+        private BuildingGridPreview gridPreview;
         private Renderer[] previewRenderers = Array.Empty<Renderer>();
         private MaterialPropertyBlock propertyBlock;
         private bool subscribed;
         private bool exitModeAtEndOfFrame;
         private P102WorldPlacementSurface connectedWorldSurface;
+        private PlacementSurfaceEvaluation surfaceEvaluation;
         private IReadOnlyList<GridCoordinate> authoredPlacementCells = Array.Empty<GridCoordinate>();
         private GridCoordinate zoneDragAnchor;
         private bool zoneDragActive;
@@ -58,6 +64,16 @@ namespace Game.Presentation.Buildings
         public BuildingDefinitionId? ActiveDefinitionId => activeDefinition?.Id;
         public BuildingPresenter LastPlacedPresenter { get; private set; }
         public float GridSize => gridSize;
+        public BuildingPlacementVisualState VisualState => !IsPreviewValid
+            ? BuildingPlacementVisualState.Blocked
+            : surfaceEvaluation.RequiresClearance
+                ? BuildingPlacementVisualState.RequiresClearance
+                : BuildingPlacementVisualState.Free;
+        public IReadOnlyList<StableEntityId> PreviewClearanceSourceIds =>
+            surfaceEvaluation.ClearableSources ?? Array.Empty<StableEntityId>();
+        public string SurfaceBlockedReason => surfaceEvaluation.BlockedReason;
+        public IReadOnlyList<StableEntityId> LastPlacedClearanceSourceIds { get; private set; } =
+            Array.Empty<StableEntityId>();
         public Func<Vector3, Vector3?> ShoreSnap { get; set; }
         public event Action<Building, BuildingPresenter> BuildingPlaced;
         public event Action BuildMenuRequested;
@@ -83,6 +99,9 @@ namespace Game.Presentation.Buildings
             fundingSources = fundingSourceProvider;
             Subscribe();
         }
+
+        public void ConfigureClearance(ConstructionClearanceCoordinator coordinator) =>
+            clearance = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
 
         public void StartPlacement(BuildingDefinitionId definitionId)
         {
@@ -137,12 +156,15 @@ namespace Game.Presentation.Buildings
             previewCoordinate = coordinate;
             var request = new BuildingPlacementRequest(activeDefinition, coordinate, orientation, null, authoredCells);
             previewEvaluation = placementService.Evaluate(request);
-            if (previewEvaluation.IsValid && connectedWorldSurface != null && !connectedWorldSurface.IsSuitable(terrainPoint))
-                previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
-                    previewEvaluation.Cells);
             constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
                 coordinate, orientation, fundingSources(), authoredCells);
             if (construction != null) previewEvaluation = constructionEvaluation.Placement;
+            surfaceEvaluation = connectedWorldSurface == null
+                ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
+                : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin);
+            if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
+                previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
+                    previewEvaluation.Cells, previewEvaluation.ApproachCells);
             LastConstructionFailure = constructionEvaluation.Failure;
             if (previewObject != null)
             {
@@ -153,7 +175,10 @@ namespace Game.Presentation.Buildings
                 previewObject.GetComponent<BuildingZoneVisual>()?.Render(
                     authoredCells.Count > 0 ? authoredCells : previewEvaluation.Cells, gridSize);
                 previewRenderers = previewObject.GetComponentsInChildren<Renderer>(true);
-                ApplyPreviewColor(IsPreviewValid ? validColor : invalidColor);
+                var state = VisualState;
+                ApplyPreviewColor(state == BuildingPlacementVisualState.Free ? validColor :
+                    state == BuildingPlacementVisualState.RequiresClearance ? clearanceColor : invalidColor);
+                gridPreview?.Render(previewEvaluation.Cells, state);
             }
             return IsPreviewValid;
         }
@@ -180,9 +205,10 @@ namespace Game.Presentation.Buildings
             if (construction != null)
             {
                 BuildingPresenter staged = null;
+                var clearanceSources = PreviewClearanceSourceIds.ToArray();
                 var result = construction.TryConfirm(activeDefinition, previewCoordinate, orientation,
                     fundingSources(), out building, candidate => staged = spawner.Spawn(candidate),
-                    authoredCells: cells);
+                    authoredCells: cells, deferLogistics: clearanceSources.Length > 0);
                 LastConstructionFailure = result.Failure;
                 if (!result.IsValid)
                 {
@@ -191,6 +217,7 @@ namespace Game.Presentation.Buildings
                     return null;
                 }
                 LastPlacedPresenter = staged;
+                LastPlacedClearanceSourceIds = clearanceSources;
             }
             else
             {
@@ -198,13 +225,16 @@ namespace Game.Presentation.Buildings
                     previewCoordinate, orientation, authoredCells: cells));
                 if (completeImmediately) building.MarkCompleted();
                 LastPlacedPresenter = spawner.Spawn(building);
+                LastPlacedClearanceSourceIds = Array.Empty<StableEntityId>();
             }
             DestroyPreview();
             activeDefinition = null;
             previewEvaluation = default;
             constructionEvaluation = default;
+            surfaceEvaluation = default;
             authoredPlacementCells = Array.Empty<GridCoordinate>();
             zoneDragActive = false;
+            surfaceEvaluation = default;
             exitModeAtEndOfFrame = true;
             BuildingPlaced?.Invoke(building, LastPlacedPresenter);
             return building;
@@ -227,6 +257,7 @@ namespace Game.Presentation.Buildings
             EnsureInitialized();
             if (building == null || building.IsOperational || construction == null) return false;
             var definition = catalog.ResolveDefinition(building.DefinitionId);
+            clearance?.Cancel(building.Id);
             if (!construction.Cancel(building, definition)) return false;
             if (spawner.TryGetPresenter(building.Id, out var presenter)) spawner.Despawn(presenter);
             return true;
@@ -242,6 +273,7 @@ namespace Game.Presentation.Buildings
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.OutsideBuildableBounds,
                     Array.Empty<GridCoordinate>());
                 ApplyPreviewColor(invalidColor);
+                gridPreview?.Render(Array.Empty<GridCoordinate>(), BuildingPlacementVisualState.Blocked);
             }
             if (zoneDragActive && Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
             {
@@ -264,13 +296,15 @@ namespace Game.Presentation.Buildings
             Unsubscribe();
             BuildingPlaced = null;
             BuildMenuRequested = null;
-            if (previewObject != null) Destroy(previewObject);
+            DestroyPreview();
         }
 
         private void DestroyPreview()
         {
             if (previewObject != null) Destroy(previewObject);
+            if (gridPreview != null) Destroy(gridPreview.gameObject);
             previewObject = null;
+            gridPreview = null;
             previewRenderers = Array.Empty<Renderer>();
         }
 
@@ -332,6 +366,10 @@ namespace Game.Presentation.Buildings
             SetLayerRecursively(previewObject, LayerMask.NameToLayer("Ignore Raycast"));
             previewRenderers = previewObject.GetComponentsInChildren<Renderer>(true);
             propertyBlock ??= new MaterialPropertyBlock();
+            var gridObject = new GameObject("Building footprint preview");
+            SetLayerRecursively(gridObject, LayerMask.NameToLayer("Ignore Raycast"));
+            gridPreview = gridObject.AddComponent<BuildingGridPreview>();
+            gridPreview.Initialize(gridSize, spawner.GridToWorld);
             TryMovePreviewToWorldPoint(gridOrigin);
         }
 

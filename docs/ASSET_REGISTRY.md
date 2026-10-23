@@ -6,6 +6,18 @@ Status vocabulary: `APPROVED_RUNTIME`, `APPROVED_REFERENCE`, `PLACEHOLDER_ONLY`,
 
 ## Approved runtime packages
 
+### SERENITY-MODERN-HUD-ATLAS
+
+- Name: Serenity Modern HUD 24-icon atlas
+- Type/category: project-specific UI icons
+- Source: generated specifically for Serenity with OpenAI built-in image generation on 2026-10-23; no external download or Asset Store package
+- License/provenance: user-directed project output under the applicable OpenAI service terms; no third-party attribution embedded
+- Imported path: 'Assets/Game/Presentation/UI/Resources/UI/SerenityIconAtlas.png'
+- Runtime use: population/resources, navigation and construction categories; sliced in memory by the project-owned SerenityIconLibrary
+- Stable-content rule: disposable Presentation only; labels, resources, residents, orders and building state remain canonical C# service state
+- Size/performance: one 1536×1024 RGBA atlas, 6×4 fixed grid, reused sprites; no one-texture-per-button duplication
+- Visual grade/status: B, 'APPROVED_RUNTIME'
+
 ### REVIEWED-23102026-PRESENTATION
 
 - Name: reviewed Low Poly Nature, Lightning Bolt textures and Medieval Action sound subset

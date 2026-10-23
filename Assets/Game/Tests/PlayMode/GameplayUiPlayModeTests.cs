@@ -58,7 +58,12 @@ namespace Game.Tests.PlayMode
             Assert.That(Object.FindObjectsByType<StrategicAiDebugOverlay>(FindObjectsInactive.Include)
                 .Single().enabled, Is.False);
             Assert.That(ui.RootVisual.Q("top-hud"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("resource-strip"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("resident-strip"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("bottom-build-dock"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("placement-feedback"), Is.Not.Null);
             Assert.That(ui.RootVisual.Q("selection-inspector"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("selection-inspector").resolvedStyle.display, Is.EqualTo(DisplayStyle.None));
             Assert.That(ui.RootVisual.Q("notifications"), Is.Not.Null);
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(new Vector2(20, 20)), Is.True);
             yield return null;
@@ -94,6 +99,8 @@ namespace Game.Tests.PlayMode
 
             root.SelectionProbe.SelectCharacters(new[] { presenter });
             root.GameplayUi.RefreshNow();
+            Assert.That(root.GameplayUi.RootVisual.Q("selection-inspector").resolvedStyle.display,
+                Is.EqualTo(DisplayStyle.Flex));
             var inspectorText = string.Join("\n", root.GameplayUi.RootVisual.Q("selection-inspector")
                 .Query<Label>().ToList().Select(x => x.text));
             Assert.That(inspectorText, Does.Contain(RussianTextCatalog.PersonName(root.MaleDemoCharacter.Name.DisplayName)));

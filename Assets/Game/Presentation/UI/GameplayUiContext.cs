@@ -141,7 +141,8 @@ namespace Game.Presentation.UI
             EventService events, CampaignProgressService campaign, Action<long> startNewGame,
             Action requestMainMenu, Func<IReadOnlyList<StableEntityId>> playerCharacterIds,
             Action<WorldPosition> focusWorld, BuildingLifecycleService buildingLifecycle,
-            BuildingPathingService buildingPathing, SettlementFacilityService facilities = null)
+            BuildingPathingService buildingPathing, SettlementFacilityService facilities = null,
+            ConstructionClearanceCoordinator constructionClearance = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
@@ -198,6 +199,7 @@ namespace Game.Presentation.UI
             BuildingLifecycle = buildingLifecycle;
             BuildingPathing = buildingPathing;
             Facilities = facilities;
+            ConstructionClearance = constructionClearance;
         }
 
         public Func<GameClock> Clock { get; }
@@ -255,5 +257,6 @@ namespace Game.Presentation.UI
         public BuildingLifecycleService BuildingLifecycle { get; }
         public BuildingPathingService BuildingPathing { get; }
         public SettlementFacilityService Facilities { get; }
+        public ConstructionClearanceCoordinator ConstructionClearance { get; }
     }
 }
