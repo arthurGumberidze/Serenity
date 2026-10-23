@@ -51,6 +51,13 @@ MonoBehaviour:
   WorldMapSmallProps:
   - {fileID: 2404807638410859368, guid: 5fc130c65f02ac04bbfb350fbe21d3cc, type: 3}
   - {fileID: 8596010870747751422, guid: f3f0fef6f816f4641856a0db4dfbb905, type: 3}
+  WorldMapRoadMaterial: {fileID: 2100000, guid: 4a8a2ffc8e2cac0469f345b5e2c8b587, type: 2}
+  WorldMapBridge: {fileID: 8717858708914275200, guid: 5f65c00cc3a462845922182b4a0afbd9, type: 3}
+  WorldMapFootbridge: {fileID: 6527803766729376061, guid: 1bb6ebdae52e65548ad7282208fffa55, type: 3}
+  WorldMapFordMarker: {fileID: 5186471484873504225, guid: 0bbbb685d41781e4ab8fc3679910c138, type: 3}
+  WorldMapPassStep: {fileID: 5186471484873504225, guid: 0bbbb685d41781e4ab8fc3679910c138, type: 3}
+  WorldMapSign: {fileID: 6733198611354249176, guid: 58271a31bbb3d8941a392b907e9cbc5a, type: 3}
+  WorldMapFence: {fileID: 9114655718920951484, guid: 503b60469f63ae643aaa426845540f8a, type: 3}
   WaterRipples: {fileID: 2800000, guid: a4b970a3609f4f94ea150a6f10e8e540, type: 3}
   MinimumTreeHeight: 9
   MaximumTreeHeight: 13

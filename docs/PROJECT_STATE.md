@@ -1,5 +1,45 @@
 # PROJECT_STATE.md
 
+## WM09 checkpoint — 2026-10-23 World Map V2 roads and navigation DONE
+
+WM09 loads the canonical road layer as one immutable `WorldMapRoadDefinition`: exactly seven named routes,
+three crossings, three chokepoints and the authored slope/water rules. A pure deterministic
+`WorldMapRoadNetworkPlanner` densifies the splines, projects them through the shared WM02/WM03 height and
+water authority, moves incidental shoreline samples onto a dry four-metre bank clearance and grades the
+physical road profile to the authored 22-degree main-trail / 30-degree path limits. Its reachability matrix
+connects all eight regions from the player-start region and its stable crossing/link IDs are deterministic.
+
+`TiledTerrainWorld` remains disposable presentation and the existing per-tile `NavMeshSurface` remains the
+navigation authority. Seven reused-earth-material route renderers now have narrow collider ribbons collected
+by those surfaces. Ribbon triangles are emitted over water only when both ends belong to the same authored
+crossing, so contradictory decorative spline/water overlaps cannot become hidden fourth crossings. The three
+crossings and ridge/marsh chokepoints use explicit existing `NavMeshLink`s. V2 water is a Not Walkable
+collider source. The road profile, links and water exclusions add no mutable simulation state, save payload,
+per-agent update or alternate navigation manager.
+
+The asset-first audit reused `P5_RouteEarth`, PNB Meadow Forest's wooden bridge/sign/fence, PNB Tropical
+Jungle's rope footbridge and Toon Farm stone steps for ford/pass markers. Imported decorative `MeshCollider`s
+are disabled on instantiated props because the bridge collision mesh is not readable by runtime NavMesh
+baking; the authored ribbon/link remains the physical source. No model, texture, material, package or
+external dependency was added. `p109-world-map-v2-proposed` remains inactive and the live
+`p109-compact-world-v1` loader, scene and behavior are unchanged.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM09WorldMapRoadNavigationTests' -testResults 'C:\serenity_game\Artifacts\WM09\editmode-wm09-r20.xml' -logFile 'C:\serenity_game\Artifacts\WM09\editmode-wm09-r20.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM09WorldMapRoadNavigationPlayModeTests' -testResults 'C:\serenity_game\Artifacts\WM09\playmode-wm09-r2.xml' -logFile 'C:\serenity_game\Artifacts\WM09\playmode-wm09-r2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.WM02WorldMapTerrainGeneratorTests;Game.Tests.Editor.WM03WorldMapHydrologyTests;Game.Tests.Editor.WM09WorldMapRoadNavigationTests;Game.Tests.Editor.P109TiledWorldRuntimeTests' -testResults 'C:\serenity_game\Artifacts\WM09\affected-editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM09\affected-editmode.log'
+git diff --check -- Assets/Game/Domain/World/WorldMapDataContracts.cs Assets/Game/Domain/World/WorldMapRoadNavigation.cs Assets/Game/Infrastructure/TiledTerrainWorld.cs Assets/Game/Infrastructure/TiledWorldDefinitionLoader.cs Assets/Game/Presentation/Environment/StarterNatureCatalog.cs Assets/Game/Resources/World/StarterNature.asset Assets/Game/Tests/Editor/WM09WorldMapRoadNavigationTests.cs Assets/Game/Tests/PlayMode/WM09WorldMapRoadNavigationPlayModeTests.cs docs/PROJECT_STATE.md docs/TASK_GRAPH.md docs/NEXT_TASK.md docs/DECISIONS.md docs/ARCHITECTURE.md
+```
+
+Results: focused WM09 EditMode **3/3** in 1.85 s; affected WM01/WM02/WM03/WM09/P109 runtime EditMode
+**22/22** in 75.77 s; short real NavMesh Player route across the north-west ford PlayMode **1/1** in
+128.96 s with `PathComplete`. The first PlayMode bake correctly exposed the unreadable vendor bridge collision
+mesh; the final run passed after presentation-only imported mesh colliders were excluded. No broad suite,
+Player build, profiler capture, visual acceptance or V2 activation was run by instruction. The inherited five
+dirty materials and `New Unity Project/` remain user-owned and excluded. WM10 is next and unstarted.
+
 ## WM08 checkpoint — 2026-10-23 World Map V2 species ecology DONE
 
 WM08 adds one deterministic wildlife authority for the seven authored species: deer, boar, hare, fox, wolf,

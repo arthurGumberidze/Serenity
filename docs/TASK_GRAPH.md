@@ -2,6 +2,15 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM09 World Map V2 roads and navigation (2026-10-23): DONE. One pure deterministic plan projects exactly seven
+authored routes, three crossings and the ridge/marsh/central chokepoints onto the shared WM02/WM03 surface.
+All eight regions are present in the start-region reachability matrix; road grades stay within 22/30 degrees.
+Seven physical route ribbons feed the existing per-tile NavMesh surfaces, water is Not Walkable, and only the
+three authored crossing spans plus authored pass/causeway links can bridge excluded geometry. Existing road,
+bridge, rope-bridge, stone, sign and fence assets are reused with no dependency. Focused EditMode passed 3/3,
+affected EditMode passed 22/22 and the real north-west-ford Player route passed PlayMode 1/1 with a complete
+NavMesh path. V2 remains inactive and legacy unchanged; WM10 is next and has not started.
+
 WM08 World Map V2 species ecology (2026-10-23): DONE. Typed authored wildlife data drives one pure seeded
 habitat/population plan and one canonical mutable population service for deer, boar, hare, fox, wolf, bear and
 waterfowl. Food/rest/water/shelter nodes connect all eight regions; suitable-biome capacities are map-wide and

@@ -141,7 +141,7 @@ namespace Game.Infrastructure
                 var routes = ParseRoutes(roads.Array("routes"), bounds);
                 ValidateRouteIndex(coordinates.Array("routeIndex"), routes, bounds);
                 var crossings = ParseCrossings(roads.Array("crossings"), bounds, routes);
-                ValidateRoadRules(roads, bounds);
+                var roadDefinition = ParseRoadDefinition(roads, bounds, routes, crossings);
 
                 var poiRoot = roots["WORLD_MAP_POI.json"];
                 var poi = ParsePointsOfInterest(poiRoot.Array("points"), bounds, regions);
@@ -189,7 +189,7 @@ namespace Game.Infrastructure
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
                     biomes, vegetation, resourceDefinition, wildlifeDefinition, river.Spline,
                     tributaries.Select(value => value.Spline),
-                    lakes, routes, poi, crossings, resourceMasks, wildlifeMasks, buildabilityMasks,
+                    lakes, roadDefinition, poi, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
                 var unityRiver = river.Spline.Points.Select(point => transform.ToUnity(point.Position));
                 return new TiledWorldDefinition(mapData.GenerationId, columns, rows, tileSize,
@@ -614,23 +614,26 @@ namespace Game.Infrastructure
             return result;
         }
 
-        private static void ValidateRoadRules(Node roads, WorldMapBounds bounds)
+        private static WorldMapRoadDefinition ParseRoadDefinition(Node roads, WorldMapBounds bounds,
+            IReadOnlyList<WorldMapSpline> routes, IReadOnlyList<WorldMapCrossing> crossings)
         {
-            var ids = new List<string>();
-            foreach (var value in roads.Array("chokepoints"))
+            var chokepoints = roads.Array("chokepoints").Select(value =>
             {
                 var choke = value.Object();
-                ids.Add(choke.String("id"));
-                if (!bounds.Contains(choke.Point2("position")) || choke.Float("radiusMeters") <= 0f)
+                var position = choke.Point2("position");
+                var radius = choke.Float("radiusMeters");
+                if (!bounds.Contains(position) || radius <= 0f)
                     throw new InvalidDataException("Road chokepoint is invalid.");
-            }
-            UniqueStrings(ids, "chokepoint");
-            var rules = roads.Object("rules");
-            if (rules.Float("avoidSlopeAboveDegrees") <= 0f ||
-                rules.Float("footpathAvoidSlopeAboveDegrees") < rules.Float("avoidSlopeAboveDegrees") ||
-                !rules.Bool("riverCrossingRequiresAuthoredCrossing") ||
-                !rules.Bool("futureBridgeSocketsUseStableIds"))
-                throw new InvalidDataException("Road navigation rules are invalid.");
+                return new WorldMapRoadChokepoint(choke.String("id"), position, radius);
+            }).ToArray();
+            UniqueStrings(chokepoints.Select(value => value.Id), "chokepoint");
+            var ruleData = roads.Object("rules");
+            var rules = new WorldMapRoadRules(ruleData.String("mainTrailSurface"),
+                ruleData.Float("avoidSlopeAboveDegrees"),
+                ruleData.Float("footpathAvoidSlopeAboveDegrees"),
+                ruleData.Bool("riverCrossingRequiresAuthoredCrossing"),
+                ruleData.Bool("futureBridgeSocketsUseStableIds"));
+            return new WorldMapRoadDefinition(routes, crossings, chokepoints, rules);
         }
 
         private static IReadOnlyList<WorldMapPointOfInterest> ParsePointsOfInterest(IReadOnlyList<Node> values,

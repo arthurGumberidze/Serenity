@@ -22,11 +22,13 @@ namespace Game.Infrastructure
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
         private readonly List<GameObject> linkObjects = new List<GameObject>();
+        private readonly List<Mesh> roadMeshes = new List<Mesh>();
         private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationColliders =
             new Dictionary<Game.Domain.StableEntityId, GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
         private WorldMapTerrainPaintSampler terrainPaintSampler;
+        private WorldMapRoadNetworkPlan roadNetworkPlan;
         private StarterNatureCatalog natureCatalog;
         private WorldMapVegetationPlan vegetationPlan;
         private Material sourceTerrainMaterial;
@@ -42,6 +44,7 @@ namespace Game.Infrastructure
         private Material localWaterMaterial;
         private bool strategicMode;
         private WorldPosition lastCameraFocus;
+        private GameObject roadPresentationRoot;
 
         private sealed class LoadedTile
         {
@@ -65,6 +68,8 @@ namespace Game.Infrastructure
         public bool StrategicOverviewVisible => strategicOverview != null && strategicOverview.activeSelf;
         public bool StrategicGroundTextureReady => overviewGroundTexture != null;
         public WorldMapVegetationPlan VegetationPlan => vegetationPlan;
+        public WorldMapRoadNetworkPlan RoadNetworkPlan => roadNetworkPlan;
+        public GameObject RoadPresentationRoot => roadPresentationRoot;
         public int ActiveVegetationColliderCount => vegetationColliders.Count;
         public Texture2D StrategicGroundTexture => overviewGroundTexture;
         public NavMeshSurface PrimaryNavigationSurface
@@ -114,10 +119,13 @@ namespace Game.Infrastructure
                 terrainPaintSampler = new WorldMapTerrainPaintSampler(definition, heightSampler);
                 vegetationPlan = new WorldMapVegetationPlanner(definition, heightSampler,
                     heightSampler.WorldSeed).Create();
+                ValidateRoadAssets();
+                roadNetworkPlan = new WorldMapRoadNetworkPlanner(definition, heightSampler).Create();
             }
             else if (natureCatalog != null && natureCatalog.GroundLayers != null && natureCatalog.GroundLayers.Length > 0)
                 sourceLayers = natureCatalog.GroundLayers;
             BuildStrategicOverview();
+            if (roadNetworkPlan != null) BuildRoadPresentation();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
         }
@@ -223,7 +231,12 @@ namespace Game.Infrastructure
                 var visible = !strategicMode && visual.Contains(pair.Key);
                 pair.Value.Terrain.drawHeightmap = visible;
                 pair.Value.Terrain.drawTreesAndFoliage = visible;
-                if (pair.Value.WaterRoot != null) pair.Value.WaterRoot.SetActive(visible);
+                if (pair.Value.WaterRoot != null)
+                {
+                    pair.Value.WaterRoot.SetActive(true);
+                    var renderer = pair.Value.WaterRoot.GetComponent<MeshRenderer>();
+                    if (renderer != null) renderer.enabled = visible;
+                }
                 pair.Value.Collider.enabled = true;
             }
             ConnectTerrainNeighbours();
@@ -413,6 +426,11 @@ namespace Game.Infrastructure
             localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
                 { name = "Starter shoreline water" };
             water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
+            var waterCollider = water.AddComponent<MeshCollider>();
+            waterCollider.sharedMesh = mesh;
+            var modifier = water.AddComponent<NavMeshModifier>();
+            modifier.overrideArea = true;
+            modifier.area = NavMesh.GetAreaFromName("Not Walkable");
             return water;
         }
 
@@ -464,6 +482,28 @@ namespace Game.Infrastructure
                 AddLinks(tile, new WorldTileId(tile.Id.X + 1, tile.Id.Z), true);
                 AddLinks(tile, new WorldTileId(tile.Id.X, tile.Id.Z + 1), false);
             }
+            AddAuthoredLinks();
+        }
+
+        private void AddAuthoredLinks()
+        {
+            if (roadNetworkPlan == null || loaded.Values.All(value => value.Navigation == null)) return;
+            var agentType = loaded.Values.Select(value => value.Navigation).First(value => value != null).agentTypeID;
+            foreach (var definition in roadNetworkPlan.Links)
+            {
+                if (!Definition.TryGetTile(definition.Start.X, definition.Start.Z, out var startTile) ||
+                    !Definition.TryGetTile(definition.End.X, definition.End.Z, out var endTile) ||
+                    !loaded.ContainsKey(startTile) || !loaded.ContainsKey(endTile)) continue;
+                var linkObject = new GameObject("World Map V2 NavLink " + definition.Id);
+                linkObject.transform.SetParent(transform, false);
+                var link = linkObject.AddComponent<NavMeshLink>();
+                link.agentTypeID = agentType;
+                link.startPoint = new Vector3(definition.Start.X, definition.Start.Y, definition.Start.Z);
+                link.endPoint = new Vector3(definition.End.X, definition.End.Y, definition.End.Z);
+                link.width = Mathf.Max(1f, definition.WidthMeters * 0.8f);
+                link.bidirectional = true;
+                linkObjects.Add(linkObject);
+            }
         }
 
         private void AddLinks(LoadedTile from, WorldTileId toId, bool eastWest)
@@ -503,6 +543,191 @@ namespace Game.Infrastructure
                 loaded.TryGetValue(new WorldTileId(pair.Key.X, pair.Key.Z - 1), out var bottom);
                 pair.Value.Terrain.SetNeighbors(left?.Terrain, top?.Terrain, right?.Terrain, bottom?.Terrain);
             }
+        }
+
+        private void ValidateRoadAssets()
+        {
+            if (natureCatalog.WorldMapRoadMaterial == null || natureCatalog.WorldMapBridge == null ||
+                natureCatalog.WorldMapFootbridge == null || natureCatalog.WorldMapFordMarker == null ||
+                natureCatalog.WorldMapPassStep == null || natureCatalog.WorldMapSign == null ||
+                natureCatalog.WorldMapFence == null)
+                throw new InvalidOperationException("World Map V2 requires its audited road and crossing assets.");
+        }
+
+        private void BuildRoadPresentation()
+        {
+            roadPresentationRoot = new GameObject("World Map V2 Roads And Navigation");
+            roadPresentationRoot.transform.SetParent(transform, false);
+            foreach (var route in roadNetworkPlan.Routes)
+            {
+                var routeObject = new GameObject("World Map V2 Route " + route.Id);
+                routeObject.transform.SetParent(roadPresentationRoot.transform, false);
+                routeObject.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
+                var line = routeObject.AddComponent<LineRenderer>();
+                line.useWorldSpace = true;
+                line.alignment = LineAlignment.TransformZ;
+                line.textureMode = LineTextureMode.Tile;
+                line.sharedMaterial = natureCatalog.WorldMapRoadMaterial;
+                line.positionCount = route.Samples.Count;
+                line.SetPositions(route.Samples.Select(value => new Vector3(value.Position.X,
+                    value.Position.Y, value.Position.Z)).ToArray());
+                line.widthMultiplier = 1f;
+                line.widthCurve = new AnimationCurve(route.Samples.Select((value, index) =>
+                    new Keyframe(index / (float)(route.Samples.Count - 1), value.WidthMeters)).ToArray());
+                line.numCornerVertices = 2;
+                line.numCapVertices = 2;
+                line.generateLightingData = true;
+                line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                line.receiveShadows = false;
+                var navigationRibbon = new GameObject("Navigation Ribbon");
+                navigationRibbon.transform.SetParent(routeObject.transform, false);
+                navigationRibbon.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                var ribbonMesh = BuildRoadRibbon(route);
+                roadMeshes.Add(ribbonMesh);
+                navigationRibbon.AddComponent<MeshFilter>().sharedMesh = ribbonMesh;
+                navigationRibbon.AddComponent<MeshCollider>().sharedMesh = ribbonMesh;
+                var modifier = navigationRibbon.AddComponent<NavMeshModifier>();
+                modifier.overrideArea = true;
+                modifier.area = NavMesh.GetAreaFromName("Walkable");
+            }
+
+            foreach (var crossing in roadNetworkPlan.Crossings) BuildCrossingPresentation(crossing);
+            foreach (var link in roadNetworkPlan.Links.Where(value =>
+                         value.Id.StartsWith("chokepoint:", StringComparison.Ordinal)))
+                BuildChokepointPresentation(link);
+        }
+
+        private Mesh BuildRoadRibbon(WorldMapRoadRoutePlan route)
+        {
+            var vertices = new Vector3[route.Samples.Count * 2];
+            var triangles = new List<int>((route.Samples.Count - 1) * 6);
+            for (var index = 0; index < route.Samples.Count; index++)
+            {
+                var previous = route.Samples[Mathf.Max(0, index - 1)].Position;
+                var next = route.Samples[Mathf.Min(route.Samples.Count - 1, index + 1)].Position;
+                var forward = new Vector3(next.X - previous.X, 0f, next.Z - previous.Z);
+                if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+                var right = Vector3.Cross(Vector3.up, forward.normalized);
+                var center = new Vector3(route.Samples[index].Position.X,
+                    route.Samples[index].Position.Y + 0.025f, route.Samples[index].Position.Z);
+                var halfWidth = Mathf.Max(0.55f, route.Samples[index].WidthMeters * 0.5f);
+                vertices[index * 2] = center - right * halfWidth;
+                vertices[index * 2 + 1] = center + right * halfWidth;
+                if (index + 1 >= route.Samples.Count || !RoadSegmentIsNavigable(route.Samples[index],
+                        route.Samples[index + 1])) continue;
+                var left = index * 2;
+                triangles.Add(left);
+                triangles.Add(left + 2);
+                triangles.Add(left + 3);
+                triangles.Add(left);
+                triangles.Add(left + 3);
+                triangles.Add(left + 1);
+            }
+            var mesh = new Mesh { name = "World Map V2 Navigation Ribbon " + route.Id };
+            mesh.vertices = vertices;
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private bool RoadSegmentIsNavigable(WorldMapRoadSample a, WorldMapRoadSample b)
+        {
+            if (a.CrossingId.Length > 0 && a.CrossingId == b.CrossingId) return true;
+            var dx = b.Position.X - a.Position.X;
+            var dz = b.Position.Z - a.Position.Z;
+            var steps = Mathf.Max(1, Mathf.CeilToInt(Mathf.Sqrt(dx * dx + dz * dz) / 0.5f));
+            for (var step = 1; step < steps; step++)
+            {
+                var t = step / (float)steps;
+                if (HeightSampler.IsWater(a.Position.X + dx * t, a.Position.Z + dz * t)) return false;
+            }
+            return true;
+        }
+
+        private void BuildCrossingPresentation(WorldMapCrossingPlan crossing)
+        {
+            var root = new GameObject("World Map V2 Crossing " + crossing.Definition.Id);
+            root.transform.SetParent(roadPresentationRoot.transform, false);
+            var link = crossing.Link;
+            var start = new Vector3(link.Start.X, link.Start.Y, link.Start.Z);
+            var end = new Vector3(link.End.X, link.End.Y, link.End.Z);
+            var forward = end - start;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
+            root.transform.position = Vector3.Lerp(start, end, 0.5f);
+            root.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            if (crossing.Definition.Kind == "ford")
+            {
+                for (var index = 1; index <= 5; index++)
+                {
+                    var marker = Instantiate(natureCatalog.WorldMapFordMarker, root.transform);
+                    marker.name = "Ford stone " + index;
+                    DisableImportedMeshColliders(marker);
+                    marker.transform.position = Vector3.Lerp(start, end, index / 6f) + Vector3.up * 0.02f;
+                    marker.transform.rotation = root.transform.rotation;
+                    marker.transform.localScale *= 0.65f;
+                }
+                return;
+            }
+            var prefab = crossing.Definition.Kind == "footbridge"
+                ? natureCatalog.WorldMapFootbridge : natureCatalog.WorldMapBridge;
+            var instance = Instantiate(prefab, root.transform);
+            instance.name = crossing.Definition.Kind;
+            DisableImportedMeshColliders(instance);
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            FitHorizontalSpan(instance, Mathf.Max(3f, Vector3.Distance(start, end)));
+        }
+
+        private void BuildChokepointPresentation(WorldMapNavigationLinkPlan link)
+        {
+            var root = new GameObject("World Map V2 Chokepoint " + link.Id.Substring("chokepoint:".Length));
+            root.transform.SetParent(roadPresentationRoot.transform, false);
+            var start = new Vector3(link.Start.X, link.Start.Y, link.Start.Z);
+            var end = new Vector3(link.End.X, link.End.Y, link.End.Z);
+            var forward = end - start;
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
+            root.transform.position = Vector3.Lerp(start, end, 0.5f);
+            root.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            var step = Instantiate(natureCatalog.WorldMapPassStep, root.transform);
+            step.name = link.Kind + " step";
+            DisableImportedMeshColliders(step);
+            step.transform.localPosition = Vector3.zero;
+            step.transform.localRotation = Quaternion.identity;
+            step.transform.localScale *= link.Kind == "causeway" ? 1.4f : 1f;
+            var sign = Instantiate(natureCatalog.WorldMapSign, root.transform);
+            sign.name = link.Kind + " sign";
+            DisableImportedMeshColliders(sign);
+            sign.transform.localPosition = new Vector3(link.WidthMeters + 1.5f, 0f, 0f);
+            if (link.Kind != "causeway") return;
+            for (var side = -1; side <= 1; side += 2)
+            {
+                var fence = Instantiate(natureCatalog.WorldMapFence, root.transform);
+                fence.name = "Causeway fence " + side;
+                DisableImportedMeshColliders(fence);
+                fence.transform.localPosition = new Vector3(side * (link.WidthMeters * 0.5f + 0.8f), 0f, 0f);
+                fence.transform.localRotation = Quaternion.identity;
+            }
+        }
+
+        private static void FitHorizontalSpan(GameObject instance, float desiredLength)
+        {
+            var renderers = instance.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++) bounds.Encapsulate(renderers[index].bounds);
+            var sourceLength = Mathf.Max(bounds.size.x, bounds.size.z);
+            if (sourceLength <= 0.01f) return;
+            var scale = Mathf.Clamp(desiredLength / sourceLength, 0.25f, 4f);
+            instance.transform.localScale *= scale;
+        }
+
+        private static void DisableImportedMeshColliders(GameObject instance)
+        {
+            foreach (var collider in instance.GetComponentsInChildren<MeshCollider>(true))
+                collider.enabled = false;
         }
 
         private void BuildStrategicOverview()
@@ -793,6 +1018,8 @@ namespace Game.Infrastructure
             if (overviewWaterMaterial != null) Destroy(overviewWaterMaterial);
             if (overviewGroundTexture != null) Destroy(overviewGroundTexture);
             if (localWaterMaterial != null) Destroy(localWaterMaterial);
+            foreach (var mesh in roadMeshes) if (mesh != null) Destroy(mesh);
+            roadMeshes.Clear();
             vegetationColliders.Clear();
         }
     }

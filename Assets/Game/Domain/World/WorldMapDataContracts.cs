@@ -856,6 +856,83 @@ namespace Game.Domain.World
         public IReadOnlyList<string> RouteIds { get; }
     }
 
+    public sealed class WorldMapRoadChokepoint
+    {
+        public WorldMapRoadChokepoint(string id, WorldMapPoint position, float radiusMeters)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
+            if (!WorldMapPoint.IsFinite(radiusMeters) || radiusMeters <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(radiusMeters));
+            Id = id;
+            Position = position;
+            RadiusMeters = radiusMeters;
+        }
+
+        public string Id { get; }
+        public WorldMapPoint Position { get; }
+        public float RadiusMeters { get; }
+    }
+
+    public sealed class WorldMapRoadRules
+    {
+        public WorldMapRoadRules(string mainTrailSurface, float mainTrailMaximumSlopeDegrees,
+            float footpathMaximumSlopeDegrees, bool crossingRequiresAuthoredId,
+            bool bridgeSocketsUseStableIds)
+        {
+            if (string.IsNullOrWhiteSpace(mainTrailSurface) ||
+                !WorldMapPoint.IsFinite(mainTrailMaximumSlopeDegrees) || mainTrailMaximumSlopeDegrees <= 0f ||
+                !WorldMapPoint.IsFinite(footpathMaximumSlopeDegrees) ||
+                footpathMaximumSlopeDegrees < mainTrailMaximumSlopeDegrees ||
+                !crossingRequiresAuthoredId || !bridgeSocketsUseStableIds)
+                throw new ArgumentException(nameof(mainTrailSurface));
+            MainTrailSurface = mainTrailSurface;
+            MainTrailMaximumSlopeDegrees = mainTrailMaximumSlopeDegrees;
+            FootpathMaximumSlopeDegrees = footpathMaximumSlopeDegrees;
+            CrossingRequiresAuthoredId = crossingRequiresAuthoredId;
+            BridgeSocketsUseStableIds = bridgeSocketsUseStableIds;
+        }
+
+        public string MainTrailSurface { get; }
+        public float MainTrailMaximumSlopeDegrees { get; }
+        public float FootpathMaximumSlopeDegrees { get; }
+        public bool CrossingRequiresAuthoredId { get; }
+        public bool BridgeSocketsUseStableIds { get; }
+    }
+
+    /// <summary>Immutable authored road/navigation authority from WORLD_MAP_ROADS.json.</summary>
+    public sealed class WorldMapRoadDefinition
+    {
+        public WorldMapRoadDefinition(IEnumerable<WorldMapSpline> routes,
+            IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapRoadChokepoint> chokepoints,
+            WorldMapRoadRules rules)
+        {
+            Routes = ReadOnly(routes, nameof(routes), value => value.Id);
+            Crossings = ReadOnly(crossings, nameof(crossings), value => value.Id);
+            Chokepoints = ReadOnly(chokepoints, nameof(chokepoints), value => value.Id);
+            Rules = rules ?? throw new ArgumentNullException(nameof(rules));
+            if (Routes.Count != 7 || Crossings.Count != 3)
+                throw new ArgumentException("The authored road network requires seven routes and three crossings.");
+            var routeIds = new HashSet<string>(Routes.Select(value => value.Id), StringComparer.Ordinal);
+            if (Crossings.SelectMany(value => value.RouteIds).Any(value => !routeIds.Contains(value)))
+                throw new ArgumentException("A crossing references an unknown route.", nameof(crossings));
+        }
+
+        public IReadOnlyList<WorldMapSpline> Routes { get; }
+        public IReadOnlyList<WorldMapCrossing> Crossings { get; }
+        public IReadOnlyList<WorldMapRoadChokepoint> Chokepoints { get; }
+        public WorldMapRoadRules Rules { get; }
+
+        private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values, string parameter,
+            Func<T, string> identity) where T : class
+        {
+            var array = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (array.Length == 0 || array.Any(value => value == null) ||
+                array.Select(identity).Distinct(StringComparer.Ordinal).Count() != array.Length)
+                throw new ArgumentException("Road definitions require unique stable IDs.", parameter);
+            return Array.AsReadOnly(array);
+        }
+    }
+
     public sealed class WorldMapMask
     {
         public WorldMapMask(string id, string layer, WorldMapShape shape, IEnumerable<string> references,
@@ -1055,8 +1132,8 @@ namespace Game.Domain.World
             WorldMapVegetationDefinition vegetation, WorldMapResourceDefinition resources,
             WorldMapWildlifeDefinition wildlife,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
-            IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
-            IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
+            WorldMapRoadDefinition roads, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
+            IEnumerable<WorldMapMask> resourceMasks,
             IEnumerable<WorldMapMask> wildlifeMasks, IEnumerable<WorldMapMask> buildabilityMasks,
             IEnumerable<WorldMapMask> vegetationMasks, IEnumerable<WorldMapHeightMask> heightMasks)
         {
@@ -1076,9 +1153,10 @@ namespace Game.Domain.World
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
             Lakes = ReadOnly(lakes, nameof(lakes));
-            Routes = ReadOnly(routes, nameof(routes));
+            Roads = roads ?? throw new ArgumentNullException(nameof(roads));
+            Routes = Roads.Routes;
             PointsOfInterest = ReadOnly(pointsOfInterest, nameof(pointsOfInterest));
-            Crossings = ReadOnly(crossings, nameof(crossings));
+            Crossings = Roads.Crossings;
             ResourceMasks = ReadOnly(resourceMasks, nameof(resourceMasks));
             WildlifeMasks = ReadOnly(wildlifeMasks, nameof(wildlifeMasks));
             BuildabilityMasks = ReadOnly(buildabilityMasks, nameof(buildabilityMasks));
@@ -1096,6 +1174,7 @@ namespace Game.Domain.World
         public WorldMapVegetationDefinition Vegetation { get; }
         public WorldMapResourceDefinition Resources { get; }
         public WorldMapWildlifeDefinition Wildlife { get; }
+        public WorldMapRoadDefinition Roads { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }
         public IReadOnlyList<WorldMapSpline> Tributaries { get; }

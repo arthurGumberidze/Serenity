@@ -1,5 +1,19 @@
 # Architecture — U01
 
+## WM09 World Map V2 road/navigation boundary (2026-10-23)
+
+The flow is `WORLD_MAP_ROADS -> WorldMapRoadDefinition -> WorldMapRoadNetworkPlanner -> route ribbon/link plan
+-> TiledTerrainWorld -> existing tiled NavMeshSurface`. Authored JSON owns route/crossing/chokepoint identity
+and rules. The pure plan owns deterministic samples, dry-bank projection, grade-limited height, reachability
+and links. Line renderers, generated ribbon meshes, reused props and `NavMeshLink` components are disposable
+Unity projections and own no simulation or save state.
+
+NavMesh surfaces continue to collect physics geometry per loaded tile. Generated ribbons provide walkable road
+tops; water meshes override to Not Walkable. A ribbon can span water only inside a shared authored crossing ID,
+and explicit links handle the three crossings plus ridge/marsh transitions. Imported prop mesh colliders are
+presentation-only and disabled before baking. Definitions without V2 `MapData` never construct this plan, so
+the compact-world branch and active generation remain unchanged.
+
 ## WM07 World Map V2 fishery boundary (2026-10-23)
 
 The flow is `WORLD_MAP_RESOURCES/WATER -> WorldMapFisheryDefinition + WM03 hydrology ->

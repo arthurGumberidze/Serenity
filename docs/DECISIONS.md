@@ -1,5 +1,25 @@
 # DECISIONS.md
 
+## D-183 WM09 derives walkable road geometry without creating a second navigation authority (2026-10-23)
+
+`WorldMapRoadDefinition` is immutable authored data and `WorldMapRoadNetworkPlanner` is the pure deterministic
+projection authority. It densifies all seven canonical splines against the shared height/water sampler, moves
+incidental water samples to a dry bank clearance, clamps the physical longitudinal profile to the authored
+road/path grades and derives the eight-region reachability matrix plus crossing/chokepoint link plans. These
+values are neither mutable simulation nor save state.
+
+The existing per-tile `NavMeshSurface` remains authoritative. V2 route renderers receive narrow generated
+collider ribbons as bake input; a ribbon segment is omitted whenever its interior touches water and it is not
+inside one authored crossing span. Exactly three crossing links plus the non-duplicate ridge-pass and marsh-
+causeway links bridge constrained geometry. This reconciles canonical road splines that touch/cut WM03 water
+without inventing a fourth crossing or making decorative meshes authoritative. V2 water itself is a Not
+Walkable collider source.
+
+Presentation reuses existing imported assets and the established earth-route material. Imported decorative
+mesh colliders are disabled on instantiated bridge/ford/pass props because at least one vendor collision mesh
+is not readable by runtime NavMesh building; route ribbons and links own physical navigation instead. No
+package import, activation switch, compact-world mutation or alternate pathfinding manager is introduced.
+
 ## D-182 WM08 keeps one canonical wildlife population across all simulation tiers (2026-10-23)
 
 `WorldMapWildlifeDefinition` is immutable authored data loaded from the canonical package. A pure seeded

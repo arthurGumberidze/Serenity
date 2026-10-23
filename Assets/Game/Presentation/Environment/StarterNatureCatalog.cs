@@ -13,6 +13,13 @@ namespace Game.Presentation.Environment
         public GameObject[] WorldMapShrubs;
         public GameObject[] WorldMapGroundCover;
         public GameObject[] WorldMapSmallProps;
+        public Material WorldMapRoadMaterial;
+        public GameObject WorldMapBridge;
+        public GameObject WorldMapFootbridge;
+        public GameObject WorldMapFordMarker;
+        public GameObject WorldMapPassStep;
+        public GameObject WorldMapSign;
+        public GameObject WorldMapFence;
         public Texture WaterRipples;
         public float MinimumTreeHeight = 9f;
         public float MaximumTreeHeight = 13f;
