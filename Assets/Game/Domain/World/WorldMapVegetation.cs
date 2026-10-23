@@ -289,6 +289,7 @@ namespace Game.Domain.World
                 if (Distance(design, clearing.Center) < clearing.RadiusMeters) return true;
             var start = world.MapData.CoordinateTransform.ToDesign(world.PlayerStart);
             if (Distance(design, start) < definition.Distribution.StartClearingExclusionRadiusMeters) return true;
+            if (world.MapData.StartTerritory.IsPrepared(design)) return true;
             foreach (var route in world.MapData.Routes)
             {
                 var clearance = route.Kind == "main_primitive_trail"

@@ -1,5 +1,20 @@
 # Architecture — U01
 
+## WM10 World Map V2 start-territory boundary (2026-10-23)
+
+The flow is `playerStart/build_start_core/expansionDirections -> WorldMapStartTerritoryDefinition ->
+TiledWorldPopulationPlanner -> WorldMapStartTerritoryPlan -> optional NewGameBootstrapResult`. Authored JSON
+owns geometry and priorities; the pure plan owns deterministic object IDs, first-site coordinates, resident
+spawns, starting-resource references and the existing WM09 river-route reference. It is immutable derived data,
+not canonical mutable settlement or save state.
+
+WM05 vegetation and WM06 resource planners consume the same prepared-space contract before creating stable
+placements. Resource corridors add a two-metre blocker margin. Buildings, resource prefabs, terrain and
+resident GameObjects remain disposable projections owned by their existing systems. River reachability stays
+on `TiledTerrainWorld` and its per-tile `NavMeshSurface`; WM10 only verifies the existing route and crossing.
+The optional New Game parameter is null for current composition, so `LoadReference()` and the active compact
+world cannot acquire V2 start behavior implicitly.
+
 ## WM09 World Map V2 road/navigation boundary (2026-10-23)
 
 The flow is `WORLD_MAP_ROADS -> WorldMapRoadDefinition -> WorldMapRoadNetworkPlanner -> route ribbon/link plan

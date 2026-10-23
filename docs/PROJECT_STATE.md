@@ -1,5 +1,43 @@
 # PROJECT_STATE.md
 
+## WM10 checkpoint — 2026-10-23 World Map V2 start territory DONE
+
+WM10 parses the canonical north-west start as one immutable `WorldMapStartTerritoryDefinition` and derives one
+seeded `WorldMapStartTerritoryPlan` through the existing V2 population planner. The plan uses design position
+`(185,840)` / runtime `(-385,720)`, the authored 145 m clearing and 135 m reveal radius, two existing starter
+objects, four clear first-building sites, ten resident spawn points, the complete starting resource guarantee
+and three prioritized 8 m expansion corridors. All first footprints plus their one-metre perimeter are dry,
+inside the ideal uncleared `build_start_core`, at no more than 8 degrees slope and 0.75 m local height delta.
+Resources and WM05 vegetation are excluded from prepared territory; resources retain a further 2 m corridor
+safety buffer. Corridor terrain follows the already accepted WM09 footpath maximum of 30 degrees.
+
+`NewGameBootstrap` accepts the existing population plan as an optional input and exposes its immutable start
+plan while retaining the original overload behavior. It does not create a second settlement, building,
+inventory, character or navigation authority. The river contract reuses `path_start_west_lake` and
+`crossing_start_ford`; the real tiled NavMesh produces complete paths from the start to the dry river access
+and across the ford. The asset-first audit reused the current building presentation catalog, all five required
+resource prefabs and the existing World Map nature catalogs. No art, package or external dependency was added.
+`p109-world-map-v2-proposed` remains inactive; `LoadReference()`, the live scene and
+`p109-compact-world-v1` remain unchanged.
+
+Exact final validation commands on Unity 6000.6.4f1:
+
+```powershell
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM10WorldMapStartTerritoryTests' -testResults 'C:\serenity_game\Artifacts\WM10\editmode.xml' -logFile 'C:\serenity_game\Artifacts\WM10\editmode-r3.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM10WorldMapStartTerritoryPlayModeTests' -testResults 'C:\serenity_game\Artifacts\WM10\playmode-r2.xml' -logFile 'C:\serenity_game\Artifacts\WM10\playmode-r2.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.WM10WorldMapStartTerritoryTests' -testResults 'C:\serenity_game\Artifacts\WM10\editmode-wm06-wm10.xml' -logFile 'C:\serenity_game\Artifacts\WM10\editmode-wm06-wm10.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.WM05WorldMapVegetationTests;Game.Tests.Editor.WM06WorldMapResourcesTests;Game.Tests.Editor.WM09WorldMapRoadNavigationTests;Game.Tests.Editor.WM10WorldMapStartTerritoryTests' -testResults 'C:\serenity_game\Artifacts\WM10\affected-editmode-final.xml' -logFile 'C:\serenity_game\Artifacts\WM10\affected-editmode-final.log'
+git diff --check -- Assets/Game/Domain/World/TiledWorldPopulation.cs Assets/Game/Domain/World/WorldMapDataContracts.cs Assets/Game/Domain/World/WorldMapStartTerritory.cs Assets/Game/Domain/World/WorldMapVegetation.cs Assets/Game/Infrastructure/TiledWorldDefinitionLoader.cs Assets/Game/Simulation/Campaign/NewGameBootstrap.cs Assets/Game/Tests/Editor/WM10WorldMapStartTerritoryTests.cs Assets/Game/Tests/PlayMode/WM10WorldMapStartTerritoryPlayModeTests.cs docs/PROJECT_STATE.md docs/TASK_GRAPH.md docs/NEXT_TASK.md docs/DECISIONS.md docs/ARCHITECTURE.md
+```
+
+Results: focused WM10 EditMode **3/3** in 5.48 s; WM06/WM10 seed regression **9/9** in 12.62 s;
+affected WM01/WM05/WM06/WM09/WM10 EditMode **21/21** in 93.49 s; real first-start/NavMesh PlayMode
+**1/1** in 182.67 s. A preliminary PlayMode run reached the default 180 s test timeout without an assertion
+failure; the final test uses a 360 s timeout, consistent with the inherited WM09 terrain/NavMesh smoke cost.
+No broad suite, Player build, profiler capture, visual acceptance, V2 activation or WM11 implementation was
+run by instruction. The inherited five dirty materials and `New Unity Project/` remain user-owned and
+excluded. WM11 is next and unstarted.
+
 ## WM09 checkpoint — 2026-10-23 World Map V2 roads and navigation DONE
 
 WM09 loads the canonical road layer as one immutable `WorldMapRoadDefinition`: exactly seven named routes,

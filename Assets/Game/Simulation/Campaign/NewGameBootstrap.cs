@@ -6,6 +6,7 @@ using Game.Domain;
 using Game.Domain.Campaign;
 using Game.Domain.Characters;
 using Game.Domain.Dynasties;
+using Game.Domain.World;
 using Game.Simulation.Characters;
 
 namespace Game.Simulation.Campaign
@@ -15,6 +16,15 @@ namespace Game.Simulation.Campaign
         public NewGameBootstrapResult(NewGameConfiguration configuration, IEnumerable<CharacterState> playerCharacters,
             DynastyStateSnapshot dynasty, StableEntityId monarchId, StableEntityId spouseId,
             StableEntityId firstHeirId, StableEntityId secondHeirId, AppearanceWorldSaveState appearances)
+            : this(configuration, playerCharacters, dynasty, monarchId, spouseId, firstHeirId, secondHeirId,
+                appearances, null)
+        {
+        }
+
+        public NewGameBootstrapResult(NewGameConfiguration configuration, IEnumerable<CharacterState> playerCharacters,
+            DynastyStateSnapshot dynasty, StableEntityId monarchId, StableEntityId spouseId,
+            StableEntityId firstHeirId, StableEntityId secondHeirId, AppearanceWorldSaveState appearances,
+            WorldMapStartTerritoryPlan startTerritory)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             var characters = (playerCharacters ?? throw new ArgumentNullException(nameof(playerCharacters))).ToArray();
@@ -31,6 +41,9 @@ namespace Game.Simulation.Campaign
             Appearances = appearances ?? throw new ArgumentNullException(nameof(appearances));
             if (appearances.Characters.Count != 10 || appearances.Characters.Select(x => x.CharacterId).Distinct().Count() != 10)
                 throw new ArgumentException("Every starting Character requires one appearance.", nameof(appearances));
+            if (startTerritory != null && startTerritory.WorldSeed != configuration.WorldSeed)
+                throw new ArgumentException("Start territory and New Game must share one world seed.", nameof(startTerritory));
+            StartTerritory = startTerritory;
         }
 
         public NewGameConfiguration Configuration { get; }
@@ -41,6 +54,7 @@ namespace Game.Simulation.Campaign
         public StableEntityId FirstHeirId { get; }
         public StableEntityId SecondHeirId { get; }
         public AppearanceWorldSaveState Appearances { get; }
+        public WorldMapStartTerritoryPlan StartTerritory { get; }
     }
 
     public static class NewGameBootstrap
@@ -49,7 +63,7 @@ namespace Game.Simulation.Campaign
             { "Aren", "Mira", "Cale", "Doran", "Pela", "Neris", "Tarin", "Elda", "Rovan", "Sela" };
 
         public static NewGameBootstrapResult Create(NewGameConfiguration configuration,
-            AppearanceDefinitionCatalog appearanceCatalog = null)
+            AppearanceDefinitionCatalog appearanceCatalog = null, TiledWorldPopulationPlan populationPlan = null)
         {
             if (configuration == null) throw new ArgumentNullException(nameof(configuration));
             appearanceCatalog = appearanceCatalog ?? StoneAgeAppearanceProfiles.CreateCatalog();
@@ -113,7 +127,7 @@ namespace Game.Simulation.Campaign
                 appearances.Add(generated);
             }
             return new NewGameBootstrapResult(configuration, values, dynasty, ids[0], ids[1], ids[2], ids[3],
-                new AppearanceWorldSaveState(appearances));
+                new AppearanceWorldSaveState(appearances), populationPlan?.StartTerritory);
         }
 
         private static ParentLink Parent(StableEntityId id, ParentRole role) =>

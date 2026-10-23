@@ -1,18 +1,17 @@
 # NEXT_TASK.md
 
-## Current scope — WM10 start territory, after WM09 completion on 2026-10-23
+## Current scope — WM11 POI and exploration, after WM10 completion on 2026-10-23
 
-WM09 is DONE. The proposed V2 plan now has exactly seven route presentations, three authored crossings,
-ridge/marsh chokepoint links, slope-limited physical ribbons and an eight-region reachability matrix over the
-existing tiled NavMesh authority. Water geometry is excluded from navigation outside authored crossing spans.
-The active `p109-compact-world-v1` reference remains unchanged; `p109-world-map-v2-proposed` is still not
-activated.
+WM10 is DONE. The proposed V2 population plan now owns the deterministic NW start territory, starter objects,
+ten resident spawn points, blocker-free first-building sites, starting resources and three prepared expansion
+corridors. The existing WM09 NavMesh route reaches the river and crosses the authored ford. The active
+`p109-compact-world-v1` reference remains unchanged; `p109-world-map-v2-proposed` is still not activated.
 
-The next unblocked world-map task is **WM10 — start territory**. Follow its scope and gates from
-`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: NW start, clearing, starting basics and expansion corridors; prove
-the first construction sites are not blocked and the river is reachable through the WM09 network. Audit
-existing bootstrap/population assets and adapters first. Do not activate V2 or start WM11. This WM09 chat stops
-after its commit and does not implement WM10.
+The next unblocked world-map task is **WM11 — POI and exploration**. Follow its scope and gates from
+`docs/world_map/WORLD_MAP_CODEX_TASKS.md`: connect all nine authored POIs to existing discovery/event and
+presentation adapters, preserve protection/no-auto-clear behavior, and persist discovery through the proper
+save authority. Audit existing POI/discovery assets and adapters first. Do not activate V2 or start WM12. This
+WM10 chat stops after its commit and does not implement WM11.
 
 ## Design-only side deliverable — world map, 2026-10-23
 

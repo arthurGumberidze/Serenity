@@ -93,7 +93,7 @@ namespace Game.Domain.World
     public sealed class TiledWorldPopulationPlan
     {
         public TiledWorldPopulationPlan(IEnumerable<TiledWorldResourceNode> resources,
-            IEnumerable<TiledWorldIndustrialNode> industry)
+            IEnumerable<TiledWorldIndustrialNode> industry, WorldMapStartTerritoryPlan startTerritory = null)
         {
             Resources = Array.AsReadOnly((resources ?? throw new ArgumentNullException(nameof(resources)))
                 .OrderBy(value => value.StableIndex).ToArray());
@@ -102,12 +102,14 @@ namespace Game.Domain.World
             if (Resources.Select(value => value.StableIndex).Distinct().Count() != Resources.Count ||
                 Industry.Select(value => value.StableIndex).Distinct().Count() != Industry.Count)
                 throw new ArgumentException("Population indices must be unique.");
+            StartTerritory = startTerritory;
         }
 
         public IReadOnlyList<TiledWorldResourceNode> Resources { get; }
         public IReadOnlyList<TiledWorldIndustrialNode> Industry { get; }
         public IReadOnlyList<TiledWorldResourceNode> VisibleResources => Resources.Where(value => !value.Hidden).ToArray();
         public IReadOnlyList<TiledWorldResourceNode> HiddenDeposits => Resources.Where(value => value.Hidden).ToArray();
+        public WorldMapStartTerritoryPlan StartTerritory { get; }
     }
 
     /// <summary>
@@ -239,7 +241,8 @@ namespace Game.Domain.World
                                           value.ResourceTypeId == pair.Key) < pair.Value)
                     throw new InvalidOperationException("The authored start resource guarantee was not met: " + pair.Key);
             AddWorldMapFishPopulations(result, ref stableIndex);
-            return new TiledWorldPopulationPlan(result, Array.Empty<TiledWorldIndustrialNode>());
+            var startTerritory = new WorldMapStartTerritoryPlanner(definition, heights, seed).Create(result);
+            return new TiledWorldPopulationPlan(result, Array.Empty<TiledWorldIndustrialNode>(), startTerritory);
         }
 
         private void AddWorldMapFishPopulations(ICollection<TiledWorldResourceNode> target, ref int stableIndex)
@@ -429,6 +432,10 @@ namespace Game.Domain.World
         {
             if (!definition.ContainsClosed(worldX, worldZ) || heights.IsWater(worldX, worldZ) ||
                 !heights.IsBuildable(worldX, worldZ, MaximumSlope(resourceId))) return false;
+            if (definition.MapData.StartTerritory.IsPrepared(design,
+                    WorldMapStartTerritoryDefinition.ResourceCorridorClearanceMeters)) return false;
+            foreach (var route in definition.MapData.Routes)
+                if (DistanceToSpline(design, route) < route.MaximumWidthMeters * 0.5f + 2f) return false;
             if (zone.Id == "res_start_basics" && IsLargeNode(resourceId))
             {
                 var start = definition.MapData.CoordinateTransform.ToDesign(definition.PlayerStart);
@@ -552,6 +559,30 @@ namespace Game.Domain.World
             xMax = shape.Center.X + shape.RadiusX;
             zMin = shape.Center.Z - shape.RadiusZ;
             zMax = shape.Center.Z + shape.RadiusZ;
+        }
+
+        private static float DistanceToSpline(WorldMapPoint point, WorldMapSpline spline)
+        {
+            var result = float.MaxValue;
+            for (var index = 1; index < spline.Points.Count; index++)
+                result = Math.Min(result, DistanceToSegment(point, spline.Points[index - 1].Position,
+                    spline.Points[index].Position));
+            return result;
+        }
+
+        private static float DistanceToSegment(WorldMapPoint point, WorldMapPoint start, WorldMapPoint end)
+        {
+            var dx = end.X - start.X;
+            var dz = end.Z - start.Z;
+            var lengthSquared = dx * dx + dz * dz;
+            var progress = lengthSquared <= 0f ? 0f :
+                ((point.X - start.X) * dx + (point.Z - start.Z) * dz) / lengthSquared;
+            progress = Math.Max(0f, Math.Min(1f, progress));
+            var x = start.X + dx * progress;
+            var z = start.Z + dz * progress;
+            dx = point.X - x;
+            dz = point.Z - z;
+            return (float)Math.Sqrt(dx * dx + dz * dz);
         }
 
         private void AddTileResource(ICollection<TiledWorldResourceNode> target, ref int stableIndex,

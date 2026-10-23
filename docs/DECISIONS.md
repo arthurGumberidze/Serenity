@@ -1,5 +1,24 @@
 # DECISIONS.md
 
+## D-184 WM10 extends the population/New Game plan without creating a settlement authority (2026-10-23)
+
+The authored player-start metadata, `build_start_core` and three expansion directions load into immutable
+`WorldMapStartTerritoryDefinition`. `WorldMapStartTerritoryPlanner` is a pure seeded derivation owned by the
+existing `TiledWorldPopulationPlan`; it validates dry/slope/height/buildability footprints, stable starter
+object identity, ten resident positions, the complete start-resource guarantee and ordered corridors. The
+core uses the authored 8-degree construction limit. Expansion corridors use the already accepted 30-degree
+WM09 footpath limit because they express future access, not immediately placeable building foundations.
+
+Prepared territory is one shared exclusion contract for WM05 vegetation and WM06 resources. Resource nodes
+also keep a two-metre safety buffer around the 8 m corridors so a valid seeded plan cannot later fail its
+blocker audit. The start-to-river contract references the existing WM09 route/crossing and existing tiled
+NavMesh; WM10 introduces no navigation manager, mutable settlement state or save payload.
+
+`NewGameBootstrap.Create` optionally receives the population plan and publishes the same immutable territory
+beside its existing ten characters. Calls without that input retain the exact legacy result. All starter
+buildings, resource visuals and nature coverage reuse current catalogs, and no composition root selects the
+proposed generation. Activation and persistence remain later gated work.
+
 ## D-183 WM09 derives walkable road geometry without creating a second navigation authority (2026-10-23)
 
 `WorldMapRoadDefinition` is immutable authored data and `WorldMapRoadNetworkPlanner` is the pure deterministic

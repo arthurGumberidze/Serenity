@@ -170,9 +170,6 @@ namespace Game.Infrastructure
                 var buildability = roots["WORLD_MAP_BUILDABILITY.json"];
                 var buildabilityMasks = ParseBuildabilityMasks(buildability.Array("zones"), bounds);
                 ValidateBuildabilityRules(buildability, bounds);
-                ValidateGlobalIds(regions, river.Spline, tributaries.Select(value => value.Spline).ToArray(),
-                    lakes, routes, crossings, poi, resourceMasks,
-                    wildlifeMasks, buildabilityMasks, vegetationMasks, heightMasks, resourceTypes, species);
 
                 var playerStartData = coordinates.Object("playerStart");
                 var designStart = playerStartData.Point2("designPosition");
@@ -184,10 +181,15 @@ namespace Game.Infrastructure
                 var startRegion = regions.SingleOrDefault(value => value.Id == startRegionId);
                 if (startRegion == null || !startRegion.Contains(designStart))
                     throw new InvalidDataException("Player start must be contained by its referenced region.");
+                var startTerritory = ParseStartTerritory(playerStartData, buildability, buildabilityMasks,
+                    designStart, startRegionId, bounds);
+                ValidateGlobalIds(regions, river.Spline, tributaries.Select(value => value.Spline).ToArray(),
+                    lakes, routes, crossings, poi, resourceMasks,
+                    wildlifeMasks, buildabilityMasks, vegetationMasks, heightMasks, resourceTypes, species);
 
                 var mapData = new WorldMapDataDefinition(1, MapVersion,
                     TiledWorldDefinition.ProposedWorldMapGenerationId, transform, terrainDefinition, hydrology,
-                    biomes, vegetation, resourceDefinition, wildlifeDefinition, river.Spline,
+                    biomes, vegetation, resourceDefinition, wildlifeDefinition, startTerritory, river.Spline,
                     tributaries.Select(value => value.Spline),
                     lakes, roadDefinition, poi, resourceMasks, wildlifeMasks, buildabilityMasks,
                     vegetationMasks, heightMasks);
@@ -902,6 +904,29 @@ namespace Game.Infrastructure
             var grid = buildability.Object("grid");
             if (grid.Float("cellSizeMeters") <= 0f || !grid.Bool("natureMustNotFollowGrid"))
                 throw new InvalidDataException("Buildability grid contract is invalid.");
+        }
+
+        private static WorldMapStartTerritoryDefinition ParseStartTerritory(Node playerStart,
+            Node buildability, IReadOnlyList<WorldMapMask> masks, WorldMapPoint designStart,
+            string regionId, WorldMapBounds bounds)
+        {
+            var core = masks.SingleOrDefault(value => value.Id == "build_start_core");
+            if (core == null || core.Category != "ideal" || core.RequiresClearing ||
+                core.SlopeMaxDegrees > 8f || !core.Shape.Contains(designStart))
+                throw new InvalidDataException("The WM10 start core must be an uncleared ideal <=8 degree zone.");
+            var directions = buildability.Array("expansionDirections").Select(value =>
+            {
+                var direction = value.Object();
+                var from = direction.Point2("from");
+                var to = direction.Point2("to");
+                if (!bounds.Contains(from) || !bounds.Contains(to))
+                    throw new InvalidDataException("Expansion direction escaped design bounds.");
+                return new WorldMapExpansionDirection(direction.String("id"), from, to,
+                    direction.Int("priority"));
+            }).ToArray();
+            return new WorldMapStartTerritoryDefinition(playerStart.String("id"), designStart,
+                playerStart.Float("clearingDiameterMeters"), playerStart.Float("initialRevealRadiusMeters"),
+                regionId, core, directions);
         }
 
         private static WorldMapShape ParseShape(Node shape, WorldMapBounds bounds, string id)

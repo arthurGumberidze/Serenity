@@ -963,6 +963,87 @@ namespace Game.Domain.World
         public bool RequiresClearing { get; }
     }
 
+    public sealed class WorldMapExpansionDirection
+    {
+        public WorldMapExpansionDirection(string id, WorldMapPoint from, WorldMapPoint to, int priority)
+        {
+            if (string.IsNullOrWhiteSpace(id) || priority <= 0 || from.Equals(to))
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            From = from;
+            To = to;
+            Priority = priority;
+        }
+
+        public string Id { get; }
+        public WorldMapPoint From { get; }
+        public WorldMapPoint To { get; }
+        public int Priority { get; }
+
+        public float DistanceTo(WorldMapPoint point)
+        {
+            var dx = To.X - From.X;
+            var dz = To.Z - From.Z;
+            var lengthSquared = dx * dx + dz * dz;
+            var progress = lengthSquared <= 0f ? 0f :
+                ((point.X - From.X) * dx + (point.Z - From.Z) * dz) / lengthSquared;
+            progress = Math.Max(0f, Math.Min(1f, progress));
+            var x = From.X + dx * progress;
+            var z = From.Z + dz * progress;
+            dx = point.X - x;
+            dz = point.Z - z;
+            return (float)Math.Sqrt(dx * dx + dz * dz);
+        }
+    }
+
+    /// <summary>Immutable authored WM10 start and expansion contract.</summary>
+    public sealed class WorldMapStartTerritoryDefinition
+    {
+        public const float PreparedCorridorHalfWidthMeters = 4f;
+        public const float ResourceCorridorClearanceMeters = 2f;
+
+        public WorldMapStartTerritoryDefinition(string id, WorldMapPoint designPosition,
+            float clearingDiameterMeters, float initialRevealRadiusMeters, string regionId,
+            WorldMapMask coreBuildability, IEnumerable<WorldMapExpansionDirection> expansionDirections)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(regionId) ||
+                !WorldMapPoint.IsFinite(clearingDiameterMeters) || clearingDiameterMeters <= 0f ||
+                !WorldMapPoint.IsFinite(initialRevealRadiusMeters) || initialRevealRadiusMeters <= 0f)
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            DesignPosition = designPosition;
+            ClearingDiameterMeters = clearingDiameterMeters;
+            InitialRevealRadiusMeters = initialRevealRadiusMeters;
+            RegionId = regionId;
+            CoreBuildability = coreBuildability ?? throw new ArgumentNullException(nameof(coreBuildability));
+            var directions = (expansionDirections ?? throw new ArgumentNullException(nameof(expansionDirections)))
+                .OrderBy(value => value.Priority).ThenBy(value => value.Id, StringComparer.Ordinal).ToArray();
+            if (directions.Length != 3 || directions.Select(value => value.Id)
+                    .Distinct(StringComparer.Ordinal).Count() != directions.Length ||
+                directions.Select(value => value.Priority).Distinct().Count() != directions.Length ||
+                directions.Any(value => !value.From.Equals(designPosition)))
+                throw new ArgumentException("The start requires three uniquely prioritized authored expansion directions.",
+                    nameof(expansionDirections));
+            ExpansionDirections = Array.AsReadOnly(directions);
+        }
+
+        public string Id { get; }
+        public WorldMapPoint DesignPosition { get; }
+        public float ClearingDiameterMeters { get; }
+        public float ClearingRadiusMeters => ClearingDiameterMeters * 0.5f;
+        public float InitialRevealRadiusMeters { get; }
+        public string RegionId { get; }
+        public WorldMapMask CoreBuildability { get; }
+        public IReadOnlyList<WorldMapExpansionDirection> ExpansionDirections { get; }
+
+        public bool IsPrepared(WorldMapPoint point, float corridorClearanceMeters = 0f)
+        {
+            if (corridorClearanceMeters < 0f) throw new ArgumentOutOfRangeException(nameof(corridorClearanceMeters));
+            return CoreBuildability.Shape.Contains(point) || ExpansionDirections.Any(value =>
+                value.DistanceTo(point) <= PreparedCorridorHalfWidthMeters + corridorClearanceMeters);
+        }
+    }
+
     public sealed class WorldMapHeightMask
     {
         public WorldMapHeightMask(string id, string operation, WorldMapShape shape, WorldMapSpline spline,
@@ -1130,7 +1211,7 @@ namespace Game.Domain.World
             WorldMapCoordinateTransform coordinateTransform, WorldMapTerrainDefinition terrain,
             WorldMapHydrologyDefinition hydrology, WorldMapBiomeDefinition biomes,
             WorldMapVegetationDefinition vegetation, WorldMapResourceDefinition resources,
-            WorldMapWildlifeDefinition wildlife,
+            WorldMapWildlifeDefinition wildlife, WorldMapStartTerritoryDefinition startTerritory,
             WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
             WorldMapRoadDefinition roads, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
             IEnumerable<WorldMapMask> resourceMasks,
@@ -1149,6 +1230,7 @@ namespace Game.Domain.World
             Vegetation = vegetation ?? throw new ArgumentNullException(nameof(vegetation));
             Resources = resources ?? throw new ArgumentNullException(nameof(resources));
             Wildlife = wildlife ?? throw new ArgumentNullException(nameof(wildlife));
+            StartTerritory = startTerritory ?? throw new ArgumentNullException(nameof(startTerritory));
             Regions = Array.AsReadOnly(Biomes.Regions.Select(value => value.Polygon).ToArray());
             River = river ?? throw new ArgumentNullException(nameof(river));
             Tributaries = ReadOnly(tributaries, nameof(tributaries));
@@ -1174,6 +1256,7 @@ namespace Game.Domain.World
         public WorldMapVegetationDefinition Vegetation { get; }
         public WorldMapResourceDefinition Resources { get; }
         public WorldMapWildlifeDefinition Wildlife { get; }
+        public WorldMapStartTerritoryDefinition StartTerritory { get; }
         public WorldMapRoadDefinition Roads { get; }
         public IReadOnlyList<WorldMapPolygon> Regions { get; }
         public WorldMapSpline River { get; }

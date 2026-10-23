@@ -2,6 +2,16 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM10 World Map V2 start territory (2026-10-23): DONE. The typed canonical NW start produces one deterministic
+population-owned plan at runtime `(-385,720)`: a 145 m prepared clearing, 135 m reveal radius, two starter
+objects, four blocker-free first construction sites, ten resident spawns, the full five-type starting resource
+guarantee and east/west/south expansion corridors. Prepared space excludes vegetation and resources; resource
+placement includes a 2 m corridor safety margin. `NewGameBootstrap` optionally consumes this plan without
+changing legacy startup. The existing WM09 road/NavMesh authority provides complete paths to the river and
+across `crossing_start_ford`. Existing building, resource and nature assets cover the plan; no dependency was
+added. Focused EditMode passed 3/3, affected EditMode passed 21/21 and the PlayMode first-start/NavMesh smoke
+passed 1/1. V2 remains inactive and legacy unchanged; WM11 is next and has not started.
+
 WM09 World Map V2 roads and navigation (2026-10-23): DONE. One pure deterministic plan projects exactly seven
 authored routes, three crossings and the ridge/marsh/central chokepoints onto the shared WM02/WM03 surface.
 All eight regions are present in the start-region reachability matrix; road grades stay within 22/30 degrees.
