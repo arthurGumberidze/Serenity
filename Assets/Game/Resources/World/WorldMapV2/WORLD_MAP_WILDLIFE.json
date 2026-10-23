@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "wildlife",
+  "units": "meters",
+  "north": "+Z",
+  "species": [
+    {
+      "id": "deer",
+      "name": "Олень",
+      "suitableBiomes": [
+        "open_meadow",
+        "open_woodland",
+        "mixed_forest_edge"
+      ],
+      "targetPopulation": [
+        28,
+        42
+      ],
+      "groupSize": [
+        2,
+        7
+      ],
+      "activity": "dawn_dusk"
+    },
+    {
+      "id": "boar",
+      "name": "Кабан",
+      "suitableBiomes": [
+        "mixed_forest",
+        "deciduous_grove",
+        "shrubland"
+      ],
+      "targetPopulation": [
+        16,
+        26
+      ],
+      "groupSize": [
+        1,
+        4
+      ],
+      "activity": "dusk_night"
+    },
+    {
+      "id": "hare",
+      "name": "Заяц",
+      "suitableBiomes": [
+        "open_meadow",
+        "open_woodland"
+      ],
+      "targetPopulation": [
+        18,
+        32
+      ],
+      "groupSize": [
+        1,
+        3
+      ],
+      "activity": "dawn_dusk"
+    },
+    {
+      "id": "fox",
+      "name": "Лиса",
+      "suitableBiomes": [
+        "mixed_forest_edge",
+        "open_meadow"
+      ],
+      "targetPopulation": [
+        5,
+        9
+      ],
+      "groupSize": [
+        1,
+        2
+      ],
+      "activity": "dusk_night"
+    },
+    {
+      "id": "wolf",
+      "name": "Волк",
+      "suitableBiomes": [
+        "dense_conifer_forest",
+        "rocky_highland"
+      ],
+      "targetPopulation": [
+        5,
+        9
+      ],
+      "groupSize": [
+        2,
+        5
+      ],
+      "activity": "night"
+    },
+    {
+      "id": "bear",
+      "name": "Медведь",
+      "suitableBiomes": [
+        "remote_mixed_forest",
+        "rocky_highland"
+      ],
+      "targetPopulation": [
+        2,
+        4
+      ],
+      "groupSize": [
+        1,
+        1
+      ],
+      "activity": "day_dusk"
+    },
+    {
+      "id": "waterfowl",
+      "name": "Водоплавающие птицы",
+      "suitableBiomes": [
+        "lake_shore",
+        "riparian",
+        "marsh"
+      ],
+      "targetPopulation": [
+        14,
+        26
+      ],
+      "groupSize": [
+        2,
+        8
+      ],
+      "activity": "day"
+    }
+  ],
+  "concentrationZones": [
+    {
+      "id": "hunt_south_meadows",
+      "name": "Южные луга",
+      "species": [
+        "deer",
+        "hare",
+        "fox"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          250,
+          185
+        ],
+        "radius": [
+          220,
+          145
+        ]
+      },
+      "multiplier": 1.8
+    },
+    {
+      "id": "hunt_north_forest",
+      "name": "Северный лес",
+      "species": [
+        "deer",
+        "boar",
+        "wolf",
+        "bear"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          520,
+          835
+        ],
+        "radius": [
+          185,
+          135
+        ]
+      },
+      "multiplier": 1.55
+    },
+    {
+      "id": "hunt_west_clearings",
+      "name": "Поляны Западной рощи",
+      "species": [
+        "deer",
+        "boar",
+        "hare"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          285,
+          445
+        ],
+        "radius": [
+          110,
+          80
+        ]
+      },
+      "multiplier": 1.45
+    },
+    {
+      "id": "hunt_east_passes",
+      "name": "Восточные проходы",
+      "species": [
+        "deer",
+        "wolf",
+        "fox"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          860,
+          475
+        ],
+        "radius": [
+          95,
+          135
+        ]
+      },
+      "multiplier": 1.35
+    }
+  ],
+  "globalRule": "Животные могут появляться во всех подходящих биомах; зоны лишь повышают вероятность и carrying capacity.",
+  "simulation": {
+    "movement": "habitat_graph_between_feeding_rest_water_nodes",
+    "migration": "season_and_pressure_weighted",
+    "reproduction": "population_tick_with_carrying_capacity",
+    "huntingPressure": "reduces_local_population_and_increases_avoidance",
+    "predatorPrey": "future_aggregate_tick",
+    "timeOfDay": true,
+    "canonicalPopulationTarget": [
+      88,
+      148
+    ],
+    "tier1VisibleCap": [
+      20,
+      35
+    ],
+    "tier2ActiveCap": [
+      40,
+      80
+    ]
+  },
+  "currentProjectGap": "Текущая версия представляет охоту ресурсными узлами hunt_animal; видовая мобильная экология ещё не является канонической системой."
+}

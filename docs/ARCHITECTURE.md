@@ -1,5 +1,20 @@
 # Architecture — U01
 
+## WM01 World Map V2 data boundary (2026-10-23)
+
+`Game.Domain.World.WorldMapDataDefinition` is the immutable contract for the proposed map's authoring data.
+It owns pure value objects for coordinates/bounds, polygons, shape masks, width-bearing splines, water bodies,
+POIs, crossings and height/vegetation/resource/wildlife/buildability masks. The reversible
+`WorldMapCoordinateTransform` is the only design-space to Unity-space authority. These definitions contain no
+Terrain, GameObject, ScriptableObject or mutable save state.
+
+`Game.Infrastructure.TiledWorldDefinitionLoader` has two explicit paths. `LoadReference()` retains the active
+`p109-compact-world-v1` JSON contract. `LoadProposedWorldMap()` reads the eleven V2 TextAssets from
+`Resources/World/WorldMapV2`, performs strict syntax/schema/version/geometry/reference validation, and only
+then constructs a `TiledWorldDefinition` carrying optional `MapData`. No composition root calls the proposed
+loader in WM01. Later stages may consume the validated contracts but must keep Terrain and presentation
+disposable and must not reuse compact-world save slots.
+
 ## Active compact-world override (2026-10-21)
 
 The new-game reference is now 4 x 4 Terrain tiles of 250 m, exactly 1 km square (D-158).

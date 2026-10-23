@@ -1,0 +1,973 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "coordinate_index",
+  "units": "meters",
+  "north": "+Z",
+  "designCoordinateSystem": {
+    "x": "west_to_east_0_to_1000",
+    "z": "south_to_north_0_to_1000",
+    "y": "surface_height_meters",
+    "origin": [
+      0,
+      0,
+      0
+    ],
+    "bounds": {
+      "xMin": 0,
+      "xMax": 1000,
+      "zMin": 0,
+      "zMax": 1000,
+      "areaSquareMeters": 1000000
+    }
+  },
+  "unityProjection": {
+    "currentCompactRuntimeOrigin": [
+      -570.0,
+      0,
+      -120.0
+    ],
+    "formula": {
+      "unityX": "designX - 570",
+      "unityZ": "designZ - 120",
+      "designX": "unityX + 570",
+      "designZ": "unityZ + 120"
+    },
+    "note": "Проектная сетка 0..1000 удобна для документации; будущий импорт сохраняет текущий runtime origin."
+  },
+  "tiling": {
+    "columns": 4,
+    "rows": 4,
+    "tileSizeMeters": 250,
+    "tiles": [
+      {
+        "id": "tile_0_0",
+        "index": [
+          0,
+          0
+        ],
+        "designBounds": {
+          "xMin": 0,
+          "xMaxExclusive": 250,
+          "zMin": 0,
+          "zMaxExclusive": 250
+        },
+        "runtimeOrigin": [
+          -570.0,
+          0,
+          -120.0
+        ]
+      },
+      {
+        "id": "tile_1_0",
+        "index": [
+          1,
+          0
+        ],
+        "designBounds": {
+          "xMin": 250,
+          "xMaxExclusive": 500,
+          "zMin": 0,
+          "zMaxExclusive": 250
+        },
+        "runtimeOrigin": [
+          -320.0,
+          0,
+          -120.0
+        ]
+      },
+      {
+        "id": "tile_2_0",
+        "index": [
+          2,
+          0
+        ],
+        "designBounds": {
+          "xMin": 500,
+          "xMaxExclusive": 750,
+          "zMin": 0,
+          "zMaxExclusive": 250
+        },
+        "runtimeOrigin": [
+          -70.0,
+          0,
+          -120.0
+        ]
+      },
+      {
+        "id": "tile_3_0",
+        "index": [
+          3,
+          0
+        ],
+        "designBounds": {
+          "xMin": 750,
+          "xMaxExclusive": 1000,
+          "zMin": 0,
+          "zMaxExclusive": 250
+        },
+        "runtimeOrigin": [
+          180.0,
+          0,
+          -120.0
+        ]
+      },
+      {
+        "id": "tile_0_1",
+        "index": [
+          0,
+          1
+        ],
+        "designBounds": {
+          "xMin": 0,
+          "xMaxExclusive": 250,
+          "zMin": 250,
+          "zMaxExclusive": 500
+        },
+        "runtimeOrigin": [
+          -570.0,
+          0,
+          130.0
+        ]
+      },
+      {
+        "id": "tile_1_1",
+        "index": [
+          1,
+          1
+        ],
+        "designBounds": {
+          "xMin": 250,
+          "xMaxExclusive": 500,
+          "zMin": 250,
+          "zMaxExclusive": 500
+        },
+        "runtimeOrigin": [
+          -320.0,
+          0,
+          130.0
+        ]
+      },
+      {
+        "id": "tile_2_1",
+        "index": [
+          2,
+          1
+        ],
+        "designBounds": {
+          "xMin": 500,
+          "xMaxExclusive": 750,
+          "zMin": 250,
+          "zMaxExclusive": 500
+        },
+        "runtimeOrigin": [
+          -70.0,
+          0,
+          130.0
+        ]
+      },
+      {
+        "id": "tile_3_1",
+        "index": [
+          3,
+          1
+        ],
+        "designBounds": {
+          "xMin": 750,
+          "xMaxExclusive": 1000,
+          "zMin": 250,
+          "zMaxExclusive": 500
+        },
+        "runtimeOrigin": [
+          180.0,
+          0,
+          130.0
+        ]
+      },
+      {
+        "id": "tile_0_2",
+        "index": [
+          0,
+          2
+        ],
+        "designBounds": {
+          "xMin": 0,
+          "xMaxExclusive": 250,
+          "zMin": 500,
+          "zMaxExclusive": 750
+        },
+        "runtimeOrigin": [
+          -570.0,
+          0,
+          380.0
+        ]
+      },
+      {
+        "id": "tile_1_2",
+        "index": [
+          1,
+          2
+        ],
+        "designBounds": {
+          "xMin": 250,
+          "xMaxExclusive": 500,
+          "zMin": 500,
+          "zMaxExclusive": 750
+        },
+        "runtimeOrigin": [
+          -320.0,
+          0,
+          380.0
+        ]
+      },
+      {
+        "id": "tile_2_2",
+        "index": [
+          2,
+          2
+        ],
+        "designBounds": {
+          "xMin": 500,
+          "xMaxExclusive": 750,
+          "zMin": 500,
+          "zMaxExclusive": 750
+        },
+        "runtimeOrigin": [
+          -70.0,
+          0,
+          380.0
+        ]
+      },
+      {
+        "id": "tile_3_2",
+        "index": [
+          3,
+          2
+        ],
+        "designBounds": {
+          "xMin": 750,
+          "xMaxExclusive": 1000,
+          "zMin": 500,
+          "zMaxExclusive": 750
+        },
+        "runtimeOrigin": [
+          180.0,
+          0,
+          380.0
+        ]
+      },
+      {
+        "id": "tile_0_3",
+        "index": [
+          0,
+          3
+        ],
+        "designBounds": {
+          "xMin": 0,
+          "xMaxExclusive": 250,
+          "zMin": 750,
+          "zMaxExclusive": 1000
+        },
+        "runtimeOrigin": [
+          -570.0,
+          0,
+          630.0
+        ]
+      },
+      {
+        "id": "tile_1_3",
+        "index": [
+          1,
+          3
+        ],
+        "designBounds": {
+          "xMin": 250,
+          "xMaxExclusive": 500,
+          "zMin": 750,
+          "zMaxExclusive": 1000
+        },
+        "runtimeOrigin": [
+          -320.0,
+          0,
+          630.0
+        ]
+      },
+      {
+        "id": "tile_2_3",
+        "index": [
+          2,
+          3
+        ],
+        "designBounds": {
+          "xMin": 500,
+          "xMaxExclusive": 750,
+          "zMin": 750,
+          "zMaxExclusive": 1000
+        },
+        "runtimeOrigin": [
+          -70.0,
+          0,
+          630.0
+        ]
+      },
+      {
+        "id": "tile_3_3",
+        "index": [
+          3,
+          3
+        ],
+        "designBounds": {
+          "xMin": 750,
+          "xMaxExclusive": 1000,
+          "zMin": 750,
+          "zMaxExclusive": 1000
+        },
+        "runtimeOrigin": [
+          180.0,
+          0,
+          630.0
+        ]
+      }
+    ]
+  },
+  "playerStart": {
+    "id": "player_start_northwest",
+    "designPosition": [
+      185,
+      840
+    ],
+    "runtimePosition": [
+      -385.0,
+      0,
+      720.0
+    ],
+    "clearingDiameterMeters": 145,
+    "initialRevealRadiusMeters": 135,
+    "regionId": "region_a_start_valley"
+  },
+  "regionPolygons": [
+    {
+      "id": "region_a_start_valley",
+      "code": "A",
+      "polygon": [
+        [
+          0,
+          620
+        ],
+        [
+          0,
+          1000
+        ],
+        [
+          360,
+          1000
+        ],
+        [
+          330,
+          830
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          300,
+          610
+        ]
+      ]
+    },
+    {
+      "id": "region_b_north_forest",
+      "code": "B",
+      "polygon": [
+        [
+          360,
+          1000
+        ],
+        [
+          720,
+          1000
+        ],
+        [
+          690,
+          720
+        ],
+        [
+          600,
+          650
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          330,
+          830
+        ]
+      ]
+    },
+    {
+      "id": "region_c_stone_ridge",
+      "code": "C",
+      "polygon": [
+        [
+          720,
+          1000
+        ],
+        [
+          1000,
+          1000
+        ],
+        [
+          1000,
+          650
+        ],
+        [
+          830,
+          620
+        ],
+        [
+          690,
+          720
+        ]
+      ]
+    },
+    {
+      "id": "region_d_west_grove",
+      "code": "D",
+      "polygon": [
+        [
+          0,
+          620
+        ],
+        [
+          300,
+          610
+        ],
+        [
+          420,
+          700
+        ],
+        [
+          600,
+          650
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          420,
+          400
+        ],
+        [
+          300,
+          330
+        ],
+        [
+          0,
+          360
+        ]
+      ]
+    },
+    {
+      "id": "region_e_south_meadows",
+      "code": "E",
+      "polygon": [
+        [
+          0,
+          360
+        ],
+        [
+          300,
+          330
+        ],
+        [
+          420,
+          400
+        ],
+        [
+          500,
+          300
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "region_f_lake_district",
+      "code": "F",
+      "polygon": [
+        [
+          420,
+          400
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          690,
+          480
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          760,
+          180
+        ],
+        [
+          690,
+          0
+        ],
+        [
+          480,
+          0
+        ],
+        [
+          500,
+          300
+        ]
+      ]
+    },
+    {
+      "id": "region_g_east_highlands",
+      "code": "G",
+      "polygon": [
+        [
+          690,
+          720
+        ],
+        [
+          830,
+          620
+        ],
+        [
+          1000,
+          650
+        ],
+        [
+          1000,
+          300
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          690,
+          480
+        ],
+        [
+          560,
+          500
+        ],
+        [
+          600,
+          650
+        ]
+      ]
+    },
+    {
+      "id": "region_h_south_marsh",
+      "code": "H",
+      "polygon": [
+        [
+          760,
+          180
+        ],
+        [
+          800,
+          360
+        ],
+        [
+          1000,
+          300
+        ],
+        [
+          1000,
+          0
+        ],
+        [
+          690,
+          0
+        ]
+      ]
+    }
+  ],
+  "waterIndex": {
+    "riverId": "river_main",
+    "riverCenterline": [
+      [
+        0,
+        770
+      ],
+      [
+        80,
+        700
+      ],
+      [
+        155,
+        625
+      ],
+      [
+        250,
+        590
+      ],
+      [
+        360,
+        545
+      ],
+      [
+        450,
+        475
+      ],
+      [
+        510,
+        390
+      ],
+      [
+        600,
+        340
+      ],
+      [
+        700,
+        305
+      ],
+      [
+        790,
+        235
+      ],
+      [
+        875,
+        190
+      ],
+      [
+        1000,
+        140
+      ]
+    ],
+    "lakeIds": [
+      "lake_south_forest",
+      "lake_west_grove",
+      "lake_mountain",
+      "lake_central_east"
+    ]
+  },
+  "routeIndex": [
+    {
+      "id": "route_main_west_southeast",
+      "points": [
+        [
+          0,
+          585
+        ],
+        [
+          110,
+          575
+        ],
+        [
+          225,
+          555
+        ],
+        [
+          345,
+          540
+        ],
+        [
+          465,
+          520
+        ],
+        [
+          575,
+          470
+        ],
+        [
+          680,
+          410
+        ],
+        [
+          790,
+          330
+        ],
+        [
+          900,
+          240
+        ],
+        [
+          1000,
+          170
+        ]
+      ]
+    },
+    {
+      "id": "path_start_north_forest",
+      "points": [
+        [
+          185,
+          840
+        ],
+        [
+          275,
+          820
+        ],
+        [
+          365,
+          790
+        ],
+        [
+          455,
+          760
+        ],
+        [
+          530,
+          755
+        ]
+      ]
+    },
+    {
+      "id": "path_start_west_lake",
+      "points": [
+        [
+          185,
+          840
+        ],
+        [
+          145,
+          745
+        ],
+        [
+          125,
+          640
+        ],
+        [
+          115,
+          545
+        ],
+        [
+          104,
+          488
+        ]
+      ]
+    },
+    {
+      "id": "path_ridge",
+      "points": [
+        [
+          575,
+          470
+        ],
+        [
+          665,
+          560
+        ],
+        [
+          735,
+          650
+        ],
+        [
+          790,
+          735
+        ],
+        [
+          790,
+          810
+        ],
+        [
+          808,
+          837
+        ],
+        [
+          850,
+          875
+        ],
+        [
+          905,
+          860
+        ],
+        [
+          930,
+          815
+        ]
+      ]
+    },
+    {
+      "id": "path_south_meadow",
+      "points": [
+        [
+          345,
+          540
+        ],
+        [
+          300,
+          430
+        ],
+        [
+          250,
+          320
+        ],
+        [
+          210,
+          225
+        ],
+        [
+          260,
+          120
+        ]
+      ]
+    },
+    {
+      "id": "path_lake_district",
+      "points": [
+        [
+          575,
+          470
+        ],
+        [
+          640,
+          547
+        ],
+        [
+          705,
+          575
+        ],
+        [
+          770,
+          550
+        ],
+        [
+          782,
+          523
+        ],
+        [
+          735,
+          460
+        ],
+        [
+          680,
+          410
+        ],
+        [
+          650,
+          300
+        ],
+        [
+          686,
+          224
+        ]
+      ]
+    },
+    {
+      "id": "path_marsh_edge",
+      "points": [
+        [
+          790,
+          330
+        ],
+        [
+          850,
+          285
+        ],
+        [
+          900,
+          240
+        ],
+        [
+          890,
+          175
+        ],
+        [
+          860,
+          105
+        ]
+      ]
+    }
+  ],
+  "poiIndex": [
+    {
+      "id": "poi_sacred_grove",
+      "position": [
+        530,
+        755
+      ]
+    },
+    {
+      "id": "poi_stone_circle",
+      "position": [
+        155,
+        365
+      ]
+    },
+    {
+      "id": "poi_abandoned_camp",
+      "position": [
+        300,
+        730
+      ]
+    },
+    {
+      "id": "poi_ancient_ruins",
+      "position": [
+        635,
+        410
+      ]
+    },
+    {
+      "id": "poi_overlook",
+      "position": [
+        895,
+        650
+      ]
+    },
+    {
+      "id": "poi_rock_spire",
+      "position": [
+        780,
+        870
+      ]
+    },
+    {
+      "id": "poi_cave",
+      "position": [
+        930,
+        815
+      ]
+    },
+    {
+      "id": "poi_giant_tree",
+      "position": [
+        330,
+        480
+      ]
+    },
+    {
+      "id": "poi_secluded_glade",
+      "position": [
+        520,
+        680
+      ]
+    }
+  ],
+  "canonicalFiles": [
+    "WORLD_MAP_BIOMES.json",
+    "WORLD_MAP_TERRAIN.json",
+    "WORLD_MAP_WATER.json",
+    "WORLD_MAP_VEGETATION.json",
+    "WORLD_MAP_RESOURCES.json",
+    "WORLD_MAP_WILDLIFE.json",
+    "WORLD_MAP_ROADS.json",
+    "WORLD_MAP_POI.json",
+    "WORLD_MAP_BUILDABILITY.json"
+  ]
+}

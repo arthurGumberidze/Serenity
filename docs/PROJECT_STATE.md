@@ -1,5 +1,37 @@
 # PROJECT_STATE.md
 
+## WM01 checkpoint — 2026-10-23 world-map data contracts DONE
+
+WM01 adds immutable, engine-free contracts for design-space points/bounds, simple polygons, ellipse/ring
+shapes, width-bearing splines, water bodies and dry fishing landings, POIs, authored crossings, height masks,
+and vegetation/resource/wildlife/buildability masks. `WorldMapCoordinateTransform` owns the reversible
+design `(0..1000, 0..1000)` to Unity `(-570..430, -120..880)` translation. The isolated package version is
+`serenity-world-map-v1` / schema 1 / generation `p109-world-map-v2-proposed`.
+
+`TiledWorldDefinitionLoader.LoadProposedWorldMap()` loads the eleven canonical JSON documents copied verbatim
+under `Assets/Game/Resources/World/WorldMapV2`. Its dependency-free strict JSON reader rejects malformed JSON
+and duplicate properties. Package validation fails closed on missing layers, header/version drift, manifest
+coverage, coordinate/tiling/transform mismatch, duplicate stable IDs, out-of-bounds or self-intersecting
+geometry, invalid ranges, broken region/water/route/resource/species references and inconsistent coordinate
+indexes. Terrain/vegetation structures are validated deeply enough to hand typed height and vegetation masks
+to WM02/WM05. The existing `LoadReference()` path still requires `p109-compact-world-v1`; the V2 loader is not
+called by `LocalSceneCompositionRoot`, no scene/Terrain/save path changed, and `MapData` is null for legacy.
+
+Lightweight verification on Unity 6000.6.4f1:
+
+```powershell
+$env:SERENITY_SAVE_DIRECTORY='C:\serenity_game\Artifacts\WM01\Saves'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform EditMode -testFilter 'Game.Tests.Editor.WM01WorldMapDataContractTests;Game.Tests.Editor.P109TiledWorldDefinitionTests;Game.Tests.Editor.P109CompactWorldTests' -testResults 'C:\serenity_game\Artifacts\WM01\editmode-final3.xml' -logFile 'C:\serenity_game\Artifacts\WM01\editmode-final3.log'
+& 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe' -batchmode -nographics -projectPath 'C:\serenity_game' -runTests -testPlatform PlayMode -testFilter 'Game.Tests.PlayMode.WM01WorldMapPackageSmokeTests' -testResults 'C:\serenity_game\Artifacts\WM01\playmode-final2.xml' -logFile 'C:\serenity_game\Artifacts\WM01\playmode-final2.log'
+```
+
+Results: EditMode 19/19 passed; PlayMode smoke 1/1 passed; affected assemblies compiled. One intermediate
+compile after adding height contracts exposed an `internal` finite-number helper across the Domain/
+Infrastructure boundary (`CS0117`); it was made a public value-object predicate and the final run above is
+green. No broad suite or Windows build was run, as explicitly deferred to WM15. The five inherited dirty
+materials and `New Unity Project/` remain user-owned and excluded. WM02 is the next unblocked stage; it has not
+started.
+
 ## Design checkpoint — 2026-10-23 world-map package
 
 The user-requested 1000×1000 m world-map design is complete under 'docs/world_map/' as

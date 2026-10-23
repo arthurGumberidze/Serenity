@@ -1,0 +1,493 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "water",
+  "units": "meters",
+  "north": "+Z",
+  "river": {
+    "id": "river_main",
+    "name": "Главная река",
+    "flow": "northwest_to_southeast",
+    "centerline": [
+      {
+        "x": 0,
+        "z": 770,
+        "widthMeters": 18
+      },
+      {
+        "x": 80,
+        "z": 700,
+        "widthMeters": 20
+      },
+      {
+        "x": 155,
+        "z": 625,
+        "widthMeters": 18
+      },
+      {
+        "x": 250,
+        "z": 590,
+        "widthMeters": 22
+      },
+      {
+        "x": 360,
+        "z": 545,
+        "widthMeters": 24
+      },
+      {
+        "x": 450,
+        "z": 475,
+        "widthMeters": 22
+      },
+      {
+        "x": 510,
+        "z": 390,
+        "widthMeters": 24
+      },
+      {
+        "x": 600,
+        "z": 340,
+        "widthMeters": 26
+      },
+      {
+        "x": 700,
+        "z": 305,
+        "widthMeters": 24
+      },
+      {
+        "x": 790,
+        "z": 235,
+        "widthMeters": 26
+      },
+      {
+        "x": 875,
+        "z": 190,
+        "widthMeters": 24
+      },
+      {
+        "x": 1000,
+        "z": 140,
+        "widthMeters": 28
+      }
+    ],
+    "depthMeters": [
+      0.4,
+      3.2
+    ],
+    "bankBlendMeters": [
+      14,
+      28
+    ],
+    "navigability": "not_boat_authorized_in_stone_age_design"
+  },
+  "tributaries": [
+    {
+      "id": "stream_west_lake_outlet",
+      "name": "Ручей Западного озера",
+      "points": [
+        [
+          205,
+          465
+        ],
+        [
+          230,
+          510
+        ],
+        [
+          265,
+          555
+        ],
+        [
+          300,
+          570
+        ]
+      ],
+      "widthMeters": [
+        3,
+        5
+      ],
+      "connects": [
+        "lake_west_grove",
+        "river_main"
+      ]
+    },
+    {
+      "id": "stream_mountain",
+      "name": "Горный ручей",
+      "points": [
+        [
+          850,
+          765
+        ],
+        [
+          820,
+          710
+        ],
+        [
+          775,
+          650
+        ],
+        [
+          735,
+          575
+        ],
+        [
+          705,
+          530
+        ]
+      ],
+      "widthMeters": [
+        3,
+        6
+      ],
+      "connects": [
+        "lake_mountain",
+        "lake_central_east"
+      ]
+    },
+    {
+      "id": "stream_central_outlet",
+      "name": "Восточный сток",
+      "points": [
+        [
+          680,
+          475
+        ],
+        [
+          655,
+          430
+        ],
+        [
+          625,
+          385
+        ],
+        [
+          600,
+          340
+        ]
+      ],
+      "widthMeters": [
+        4,
+        7
+      ],
+      "connects": [
+        "lake_central_east",
+        "river_main"
+      ]
+    },
+    {
+      "id": "stream_south_lake",
+      "name": "Южный проток",
+      "points": [
+        [
+          620,
+          240
+        ],
+        [
+          650,
+          270
+        ],
+        [
+          675,
+          290
+        ],
+        [
+          700,
+          305
+        ]
+      ],
+      "widthMeters": [
+        4,
+        7
+      ],
+      "connects": [
+        "lake_south_forest",
+        "river_main"
+      ]
+    }
+  ],
+  "lakes": [
+    {
+      "id": "lake_south_forest",
+      "name": "Большое Южное лесное озеро",
+      "center": [
+        600,
+        175
+      ],
+      "polygon": [
+        [
+          510,
+          160
+        ],
+        [
+          525,
+          205
+        ],
+        [
+          565,
+          238
+        ],
+        [
+          620,
+          240
+        ],
+        [
+          675,
+          218
+        ],
+        [
+          695,
+          180
+        ],
+        [
+          680,
+          135
+        ],
+        [
+          635,
+          110
+        ],
+        [
+          575,
+          108
+        ],
+        [
+          530,
+          125
+        ]
+      ],
+      "surfaceY": 8.0,
+      "maxDepthMeters": 7.5,
+      "shore": "rock_reed_mixed",
+      "fishCapacityIndex": 1.0,
+      "fishingLandings": [
+        [
+          514,
+          209
+        ],
+        [
+          686,
+          224
+        ],
+        [
+          691,
+          129
+        ],
+        [
+          520,
+          118
+        ]
+      ]
+    },
+    {
+      "id": "lake_west_grove",
+      "name": "Западное озеро",
+      "center": [
+        165,
+        455
+      ],
+      "polygon": [
+        [
+          105,
+          450
+        ],
+        [
+          115,
+          482
+        ],
+        [
+          145,
+          505
+        ],
+        [
+          185,
+          500
+        ],
+        [
+          218,
+          475
+        ],
+        [
+          225,
+          442
+        ],
+        [
+          200,
+          418
+        ],
+        [
+          158,
+          410
+        ],
+        [
+          120,
+          425
+        ]
+      ],
+      "surfaceY": 8.0,
+      "maxDepthMeters": 4.5,
+      "shore": "deciduous_soft_bank",
+      "fishCapacityIndex": 0.7,
+      "fishingLandings": [
+        [
+          104,
+          488
+        ],
+        [
+          230,
+          479
+        ],
+        [
+          210,
+          409
+        ],
+        [
+          110,
+          416
+        ]
+      ]
+    },
+    {
+      "id": "lake_mountain",
+      "name": "Горное озеро",
+      "center": [
+        855,
+        805
+      ],
+      "polygon": [
+        [
+          802,
+          798
+        ],
+        [
+          818,
+          830
+        ],
+        [
+          852,
+          845
+        ],
+        [
+          892,
+          835
+        ],
+        [
+          910,
+          808
+        ],
+        [
+          895,
+          780
+        ],
+        [
+          860,
+          768
+        ],
+        [
+          825,
+          775
+        ]
+      ],
+      "surfaceY": 36.0,
+      "maxDepthMeters": 6.0,
+      "shore": "rocky_steep_north",
+      "fishCapacityIndex": 0.55,
+      "fishingLandings": [
+        [
+          808,
+          837
+        ],
+        [
+          905,
+          772
+        ],
+        [
+          815,
+          767
+        ]
+      ]
+    },
+    {
+      "id": "lake_central_east",
+      "name": "Центрально-восточное лесное озеро",
+      "center": [
+        705,
+        505
+      ],
+      "polygon": [
+        [
+          635,
+          505
+        ],
+        [
+          650,
+          540
+        ],
+        [
+          690,
+          557
+        ],
+        [
+          738,
+          548
+        ],
+        [
+          770,
+          520
+        ],
+        [
+          760,
+          485
+        ],
+        [
+          728,
+          462
+        ],
+        [
+          680,
+          465
+        ],
+        [
+          650,
+          480
+        ]
+      ],
+      "surfaceY": 17.0,
+      "maxDepthMeters": 5.5,
+      "shore": "forest_reed_mixed",
+      "fishCapacityIndex": 0.85,
+      "fishingLandings": [
+        [
+          640,
+          547
+        ],
+        [
+          782,
+          523
+        ],
+        [
+          734,
+          451
+        ],
+        [
+          638,
+          476
+        ]
+      ]
+    }
+  ],
+  "fishPopulation": {
+    "schoolCountPerLake": 4,
+    "riverSchoolCount": 8,
+    "totalInitialSchoolCount": 24,
+    "model": "logistic_growth_with_harvest_pressure",
+    "minimumBankWorkPointOffsetMeters": 12
+  },
+  "hydrologyValidation": {
+    "allLakesConnectedBySurfaceDrainage": true,
+    "riverTouchesNorthwestAndSoutheastBorders": true
+  }
+}

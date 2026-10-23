@@ -1,5 +1,21 @@
 # DECISIONS.md
 
+## D-176 WM01 loads World Map V2 through a separate fail-closed contract path (2026-10-23)
+
+The current compact world remains the only active reference: `LoadReference()` still accepts only
+`p109-compact-world-v1`. WM01 introduces `LoadProposedWorldMap()` for the isolated
+`p109-world-map-v2-proposed` package and does not connect it to scene composition, Terrain generation or save
+selection. `TiledWorldDefinition` receives optional immutable `WorldMapDataDefinition`; it is null for legacy
+and its generation must equal the enclosing tiled definition when present.
+
+Authored JSON stays canonical and is copied verbatim into a dedicated Resources folder. Infrastructure owns a
+small dependency-free strict JSON reader because Unity `JsonUtility` cannot faithfully bind the package's
+nested coordinate arrays and a new package dependency is not justified. Domain owns only immutable geometry,
+transform and mask values. The loader validates every common header and manifest entry, then validates typed
+geometry, layer indexes and cross-references before constructing a definition. Invalid packages never return a
+partial runtime object. Height and vegetation masks are included now because WM02 and WM05 depend on those
+contracts; applying them to Terrain or population remains outside WM01.
+
 ## D-175 World-map design uses a canonical 0…1000 grid and a versioned runtime projection (2026-10-23)
 
 The completed design package at 'docs/world_map/' is versioned as 'serenity-world-map-v1'. Authoring and

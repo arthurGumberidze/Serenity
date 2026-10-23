@@ -1,0 +1,455 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Game.Domain.AI;
+
+namespace Game.Domain.World
+{
+    public readonly struct WorldMapPoint : IEquatable<WorldMapPoint>
+    {
+        public WorldMapPoint(float x, float z)
+        {
+            if (!IsFinite(x) || !IsFinite(z)) throw new ArgumentOutOfRangeException(nameof(x));
+            X = x;
+            Z = z;
+        }
+
+        public float X { get; }
+        public float Z { get; }
+        public bool Equals(WorldMapPoint other) => X.Equals(other.X) && Z.Equals(other.Z);
+        public override bool Equals(object obj) => obj is WorldMapPoint other && Equals(other);
+        public override int GetHashCode() => unchecked(X.GetHashCode() * 397 ^ Z.GetHashCode());
+        public override string ToString() => $"({X:0.###}, {Z:0.###})";
+        public static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    public readonly struct WorldMapBounds
+    {
+        public WorldMapBounds(float xMin, float xMax, float zMin, float zMax)
+        {
+            if (!WorldMapPoint.IsFinite(xMin) || !WorldMapPoint.IsFinite(xMax) ||
+                !WorldMapPoint.IsFinite(zMin) || !WorldMapPoint.IsFinite(zMax) || xMax <= xMin || zMax <= zMin)
+                throw new ArgumentOutOfRangeException(nameof(xMax));
+            XMin = xMin;
+            XMax = xMax;
+            ZMin = zMin;
+            ZMax = zMax;
+        }
+
+        public float XMin { get; }
+        public float XMax { get; }
+        public float ZMin { get; }
+        public float ZMax { get; }
+        public float Width => XMax - XMin;
+        public float Depth => ZMax - ZMin;
+        public bool Contains(WorldMapPoint point) => point.X >= XMin && point.X <= XMax &&
+                                                     point.Z >= ZMin && point.Z <= ZMax;
+    }
+
+    /// <summary>Pure design-space to Unity-space translation. It never mutates authored coordinates.</summary>
+    public sealed class WorldMapCoordinateTransform
+    {
+        public WorldMapCoordinateTransform(WorldMapBounds designBounds, float unityOffsetX, float unityOffsetZ)
+        {
+            if (!WorldMapPoint.IsFinite(unityOffsetX) || !WorldMapPoint.IsFinite(unityOffsetZ))
+                throw new ArgumentOutOfRangeException(nameof(unityOffsetX));
+            DesignBounds = designBounds;
+            UnityOffsetX = unityOffsetX;
+            UnityOffsetZ = unityOffsetZ;
+        }
+
+        public WorldMapBounds DesignBounds { get; }
+        public float UnityOffsetX { get; }
+        public float UnityOffsetZ { get; }
+
+        public WorldPosition ToUnity(WorldMapPoint designPoint, float y = 0f)
+        {
+            if (!DesignBounds.Contains(designPoint) || !WorldMapPoint.IsFinite(y))
+                throw new ArgumentOutOfRangeException(nameof(designPoint));
+            return new WorldPosition(designPoint.X + UnityOffsetX, y, designPoint.Z + UnityOffsetZ);
+        }
+
+        public WorldMapPoint ToDesign(WorldPosition unityPoint)
+        {
+            var result = new WorldMapPoint(unityPoint.X - UnityOffsetX, unityPoint.Z - UnityOffsetZ);
+            if (!DesignBounds.Contains(result)) throw new ArgumentOutOfRangeException(nameof(unityPoint));
+            return result;
+        }
+    }
+
+    public sealed class WorldMapPolygon
+    {
+        private const float Epsilon = 0.0001f;
+
+        public WorldMapPolygon(string id, IEnumerable<WorldMapPoint> points, WorldMapBounds bounds)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
+            var values = (points ?? throw new ArgumentNullException(nameof(points))).ToArray();
+            if (values.Length < 3 || values.Any(point => !bounds.Contains(point)))
+                throw new ArgumentException("A polygon needs at least three in-bounds points.", nameof(points));
+            for (var i = 0; i < values.Length; i++)
+                if (values[i].Equals(values[(i + 1) % values.Length]))
+                    throw new ArgumentException("Polygon edges must have non-zero length.", nameof(points));
+            if (Math.Abs(SignedArea(values)) <= Epsilon)
+                throw new ArgumentException("Polygon area must be non-zero.", nameof(points));
+            ValidateSimple(values);
+            Id = id;
+            Points = Array.AsReadOnly(values);
+        }
+
+        public string Id { get; }
+        public IReadOnlyList<WorldMapPoint> Points { get; }
+
+        public bool Contains(WorldMapPoint point)
+        {
+            var inside = false;
+            for (var i = 0; i < Points.Count; i++)
+            {
+                var a = Points[i];
+                var b = Points[(i + Points.Count - 1) % Points.Count];
+                if (OnSegment(a, b, point)) return true;
+                if ((a.Z > point.Z) != (b.Z > point.Z) &&
+                    point.X < (b.X - a.X) * (point.Z - a.Z) / (b.Z - a.Z) + a.X)
+                    inside = !inside;
+            }
+            return inside;
+        }
+
+        private static double SignedArea(IReadOnlyList<WorldMapPoint> points)
+        {
+            double area = 0;
+            for (var i = 0; i < points.Count; i++)
+            {
+                var next = points[(i + 1) % points.Count];
+                area += (double)points[i].X * next.Z - (double)next.X * points[i].Z;
+            }
+            return area * 0.5;
+        }
+
+        private static void ValidateSimple(IReadOnlyList<WorldMapPoint> points)
+        {
+            for (var i = 0; i < points.Count; i++)
+            for (var j = i + 1; j < points.Count; j++)
+            {
+                var iNext = (i + 1) % points.Count;
+                var jNext = (j + 1) % points.Count;
+                if (i == j || iNext == j || jNext == i) continue;
+                if (SegmentsIntersect(points[i], points[iNext], points[j], points[jNext]))
+                    throw new ArgumentException("Polygon must not self-intersect.", nameof(points));
+            }
+        }
+
+        private static bool SegmentsIntersect(WorldMapPoint a, WorldMapPoint b, WorldMapPoint c, WorldMapPoint d)
+        {
+            var abC = Cross(a, b, c);
+            var abD = Cross(a, b, d);
+            var cdA = Cross(c, d, a);
+            var cdB = Cross(c, d, b);
+            if (((abC > Epsilon && abD < -Epsilon) || (abC < -Epsilon && abD > Epsilon)) &&
+                ((cdA > Epsilon && cdB < -Epsilon) || (cdA < -Epsilon && cdB > Epsilon))) return true;
+            return Math.Abs(abC) <= Epsilon && OnSegment(a, b, c) ||
+                   Math.Abs(abD) <= Epsilon && OnSegment(a, b, d) ||
+                   Math.Abs(cdA) <= Epsilon && OnSegment(c, d, a) ||
+                   Math.Abs(cdB) <= Epsilon && OnSegment(c, d, b);
+        }
+
+        private static float Cross(WorldMapPoint a, WorldMapPoint b, WorldMapPoint c) =>
+            (b.X - a.X) * (c.Z - a.Z) - (b.Z - a.Z) * (c.X - a.X);
+
+        private static bool OnSegment(WorldMapPoint a, WorldMapPoint b, WorldMapPoint point) =>
+            Math.Abs(Cross(a, b, point)) <= Epsilon && point.X >= Math.Min(a.X, b.X) - Epsilon &&
+            point.X <= Math.Max(a.X, b.X) + Epsilon && point.Z >= Math.Min(a.Z, b.Z) - Epsilon &&
+            point.Z <= Math.Max(a.Z, b.Z) + Epsilon;
+    }
+
+    public enum WorldMapShapeKind { Polygon, Ellipse, Ring }
+
+    public sealed class WorldMapShape
+    {
+        private WorldMapShape(WorldMapShapeKind kind, WorldMapPolygon polygon, WorldMapPoint center,
+            float radiusX, float radiusZ, float innerRadius)
+        {
+            Kind = kind;
+            Polygon = polygon;
+            Center = center;
+            RadiusX = radiusX;
+            RadiusZ = radiusZ;
+            InnerRadius = innerRadius;
+        }
+
+        public WorldMapShapeKind Kind { get; }
+        public WorldMapPolygon Polygon { get; }
+        public WorldMapPoint Center { get; }
+        public float RadiusX { get; }
+        public float RadiusZ { get; }
+        public float InnerRadius { get; }
+
+        public static WorldMapShape FromPolygon(WorldMapPolygon polygon) =>
+            new WorldMapShape(WorldMapShapeKind.Polygon, polygon ?? throw new ArgumentNullException(nameof(polygon)),
+                default, 0f, 0f, 0f);
+
+        public static WorldMapShape Ellipse(WorldMapPoint center, float radiusX, float radiusZ,
+            WorldMapBounds bounds)
+        {
+            ValidateEllipse(center, radiusX, radiusZ, bounds);
+            return new WorldMapShape(WorldMapShapeKind.Ellipse, null, center, radiusX, radiusZ, 0f);
+        }
+
+        public static WorldMapShape Ring(WorldMapPoint center, float innerRadius, float outerRadius,
+            WorldMapBounds bounds)
+        {
+            ValidateEllipse(center, outerRadius, outerRadius, bounds);
+            if (!WorldMapPoint.IsFinite(innerRadius) || innerRadius < 0f || innerRadius >= outerRadius)
+                throw new ArgumentOutOfRangeException(nameof(innerRadius));
+            return new WorldMapShape(WorldMapShapeKind.Ring, null, center, outerRadius, outerRadius, innerRadius);
+        }
+
+        public bool Contains(WorldMapPoint point)
+        {
+            if (Kind == WorldMapShapeKind.Polygon) return Polygon.Contains(point);
+            var dx = (point.X - Center.X) / RadiusX;
+            var dz = (point.Z - Center.Z) / RadiusZ;
+            var distance = dx * dx + dz * dz;
+            if (Kind == WorldMapShapeKind.Ellipse) return distance <= 1f;
+            var inner = InnerRadius / RadiusX;
+            return distance <= 1f && distance >= inner * inner;
+        }
+
+        private static void ValidateEllipse(WorldMapPoint center, float radiusX, float radiusZ,
+            WorldMapBounds bounds)
+        {
+            if (!WorldMapPoint.IsFinite(radiusX) || !WorldMapPoint.IsFinite(radiusZ) ||
+                radiusX <= 0f || radiusZ <= 0f || !bounds.Contains(center))
+                throw new ArgumentOutOfRangeException(nameof(radiusX));
+        }
+    }
+
+    public readonly struct WorldMapSplinePoint
+    {
+        public WorldMapSplinePoint(WorldMapPoint position, float widthMeters)
+        {
+            if (!WorldMapPoint.IsFinite(widthMeters) || widthMeters <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(widthMeters));
+            Position = position;
+            WidthMeters = widthMeters;
+        }
+        public WorldMapPoint Position { get; }
+        public float WidthMeters { get; }
+    }
+
+    public sealed class WorldMapSpline
+    {
+        public WorldMapSpline(string id, IEnumerable<WorldMapSplinePoint> points, WorldMapBounds bounds,
+            float minimumWidthMeters = 0f, float maximumWidthMeters = 0f)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
+            var values = (points ?? throw new ArgumentNullException(nameof(points))).ToArray();
+            if (values.Length < 2 || values.Any(point => !bounds.Contains(point.Position)))
+                throw new ArgumentException("A spline needs at least two in-bounds points.", nameof(points));
+            for (var i = 1; i < values.Length; i++)
+                if (values[i - 1].Position.Equals(values[i].Position))
+                    throw new ArgumentException("Spline segments must have non-zero length.", nameof(points));
+            var pointMinimum = values.Min(point => point.WidthMeters);
+            var pointMaximum = values.Max(point => point.WidthMeters);
+            minimumWidthMeters = minimumWidthMeters > 0f ? minimumWidthMeters : pointMinimum;
+            maximumWidthMeters = maximumWidthMeters > 0f ? maximumWidthMeters : pointMaximum;
+            if (!WorldMapPoint.IsFinite(minimumWidthMeters) || !WorldMapPoint.IsFinite(maximumWidthMeters) ||
+                minimumWidthMeters <= 0f || maximumWidthMeters < minimumWidthMeters)
+                throw new ArgumentOutOfRangeException(nameof(minimumWidthMeters));
+            Id = id;
+            Points = Array.AsReadOnly(values);
+            MinimumWidthMeters = minimumWidthMeters;
+            MaximumWidthMeters = maximumWidthMeters;
+        }
+        public string Id { get; }
+        public IReadOnlyList<WorldMapSplinePoint> Points { get; }
+        public float MinimumWidthMeters { get; }
+        public float MaximumWidthMeters { get; }
+    }
+
+    public sealed class WorldMapWaterBody
+    {
+        public WorldMapWaterBody(string id, WorldMapPolygon shoreline, float surfaceY,
+            IEnumerable<WorldMapPoint> fishingLandings)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
+            if (!WorldMapPoint.IsFinite(surfaceY)) throw new ArgumentOutOfRangeException(nameof(surfaceY));
+            Id = id;
+            Shoreline = shoreline ?? throw new ArgumentNullException(nameof(shoreline));
+            SurfaceY = surfaceY;
+            FishingLandings = Array.AsReadOnly((fishingLandings ??
+                throw new ArgumentNullException(nameof(fishingLandings))).ToArray());
+        }
+        public string Id { get; }
+        public WorldMapPolygon Shoreline { get; }
+        public float SurfaceY { get; }
+        public IReadOnlyList<WorldMapPoint> FishingLandings { get; }
+    }
+
+    public sealed class WorldMapPointOfInterest
+    {
+        public WorldMapPointOfInterest(string id, WorldMapPoint position, string regionId,
+            float protectionRadiusMeters, IEnumerable<string> purposes)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(regionId))
+                throw new ArgumentException(nameof(id));
+            if (!WorldMapPoint.IsFinite(protectionRadiusMeters) || protectionRadiusMeters <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(protectionRadiusMeters));
+            Id = id;
+            Position = position;
+            RegionId = regionId;
+            ProtectionRadiusMeters = protectionRadiusMeters;
+            Purposes = Array.AsReadOnly((purposes ?? throw new ArgumentNullException(nameof(purposes))).ToArray());
+        }
+        public string Id { get; }
+        public WorldMapPoint Position { get; }
+        public string RegionId { get; }
+        public float ProtectionRadiusMeters { get; }
+        public IReadOnlyList<string> Purposes { get; }
+    }
+
+    public sealed class WorldMapCrossing
+    {
+        public WorldMapCrossing(string id, WorldMapPoint position, string kind, IEnumerable<string> routeIds)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(kind))
+                throw new ArgumentException(nameof(id));
+            var routes = (routeIds ?? throw new ArgumentNullException(nameof(routeIds))).ToArray();
+            if (routes.Length == 0 || routes.Any(string.IsNullOrWhiteSpace))
+                throw new ArgumentException(nameof(routeIds));
+            Id = id;
+            Position = position;
+            Kind = kind;
+            RouteIds = Array.AsReadOnly(routes);
+        }
+        public string Id { get; }
+        public WorldMapPoint Position { get; }
+        public string Kind { get; }
+        public IReadOnlyList<string> RouteIds { get; }
+    }
+
+    public sealed class WorldMapMask
+    {
+        public WorldMapMask(string id, string layer, WorldMapShape shape, IEnumerable<string> references,
+            string category, float multiplier = 1f, float slopeMaxDegrees = 0f, bool requiresClearing = false)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(layer) ||
+                string.IsNullOrWhiteSpace(category) || !WorldMapPoint.IsFinite(multiplier) || multiplier <= 0f ||
+                !WorldMapPoint.IsFinite(slopeMaxDegrees) || slopeMaxDegrees < 0f || slopeMaxDegrees > 90f)
+                throw new ArgumentException(nameof(id));
+            var values = (references ?? throw new ArgumentNullException(nameof(references))).ToArray();
+            if (values.Length == 0 || values.Any(string.IsNullOrWhiteSpace)) throw new ArgumentException(nameof(references));
+            Id = id;
+            Layer = layer;
+            Shape = shape ?? throw new ArgumentNullException(nameof(shape));
+            References = Array.AsReadOnly(values);
+            Category = category;
+            Multiplier = multiplier;
+            SlopeMaxDegrees = slopeMaxDegrees;
+            RequiresClearing = requiresClearing;
+        }
+        public string Id { get; }
+        public string Layer { get; }
+        public WorldMapShape Shape { get; }
+        public IReadOnlyList<string> References { get; }
+        public string Category { get; }
+        public float Multiplier { get; }
+        public float SlopeMaxDegrees { get; }
+        public bool RequiresClearing { get; }
+    }
+
+    public sealed class WorldMapHeightMask
+    {
+        public WorldMapHeightMask(string id, string operation, WorldMapShape shape, WorldMapSpline spline,
+            string source, float minimumValue, float maximumValue)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(operation) ||
+                !WorldMapPoint.IsFinite(minimumValue) || !WorldMapPoint.IsFinite(maximumValue) ||
+                maximumValue < minimumValue || shape == null && spline == null && string.IsNullOrWhiteSpace(source))
+                throw new ArgumentException(nameof(id));
+            Id = id;
+            Operation = operation;
+            Shape = shape;
+            Spline = spline;
+            Source = source ?? string.Empty;
+            MinimumValue = minimumValue;
+            MaximumValue = maximumValue;
+        }
+        public string Id { get; }
+        public string Operation { get; }
+        public WorldMapShape Shape { get; }
+        public WorldMapSpline Spline { get; }
+        public string Source { get; }
+        public float MinimumValue { get; }
+        public float MaximumValue { get; }
+    }
+
+    /// <summary>Immutable WM01 package. Later stages consume these contracts; none is mutable save-state.</summary>
+    public sealed class WorldMapDataDefinition
+    {
+        public WorldMapDataDefinition(int schemaVersion, string mapVersion, string generationId,
+            WorldMapCoordinateTransform coordinateTransform, IEnumerable<WorldMapPolygon> regions,
+            WorldMapSpline river, IEnumerable<WorldMapSpline> tributaries, IEnumerable<WorldMapWaterBody> lakes,
+            IEnumerable<WorldMapSpline> routes, IEnumerable<WorldMapPointOfInterest> pointsOfInterest,
+            IEnumerable<WorldMapCrossing> crossings, IEnumerable<WorldMapMask> resourceMasks,
+            IEnumerable<WorldMapMask> wildlifeMasks, IEnumerable<WorldMapMask> buildabilityMasks,
+            IEnumerable<WorldMapMask> vegetationMasks, IEnumerable<WorldMapHeightMask> heightMasks)
+        {
+            if (schemaVersion <= 0 || string.IsNullOrWhiteSpace(mapVersion) || string.IsNullOrWhiteSpace(generationId))
+                throw new ArgumentException(nameof(schemaVersion));
+            SchemaVersion = schemaVersion;
+            MapVersion = mapVersion;
+            GenerationId = generationId;
+            CoordinateTransform = coordinateTransform ?? throw new ArgumentNullException(nameof(coordinateTransform));
+            Regions = ReadOnly(regions, nameof(regions));
+            River = river ?? throw new ArgumentNullException(nameof(river));
+            Tributaries = ReadOnly(tributaries, nameof(tributaries));
+            Lakes = ReadOnly(lakes, nameof(lakes));
+            Routes = ReadOnly(routes, nameof(routes));
+            PointsOfInterest = ReadOnly(pointsOfInterest, nameof(pointsOfInterest));
+            Crossings = ReadOnly(crossings, nameof(crossings));
+            ResourceMasks = ReadOnly(resourceMasks, nameof(resourceMasks));
+            WildlifeMasks = ReadOnly(wildlifeMasks, nameof(wildlifeMasks));
+            BuildabilityMasks = ReadOnly(buildabilityMasks, nameof(buildabilityMasks));
+            VegetationMasks = ReadOnly(vegetationMasks, nameof(vegetationMasks));
+            HeightMasks = ReadOnly(heightMasks, nameof(heightMasks));
+        }
+
+        public int SchemaVersion { get; }
+        public string MapVersion { get; }
+        public string GenerationId { get; }
+        public WorldMapCoordinateTransform CoordinateTransform { get; }
+        public IReadOnlyList<WorldMapPolygon> Regions { get; }
+        public WorldMapSpline River { get; }
+        public IReadOnlyList<WorldMapSpline> Tributaries { get; }
+        public IReadOnlyList<WorldMapWaterBody> Lakes { get; }
+        public IReadOnlyList<WorldMapSpline> Routes { get; }
+        public IReadOnlyList<WorldMapPointOfInterest> PointsOfInterest { get; }
+        public IReadOnlyList<WorldMapCrossing> Crossings { get; }
+        public IReadOnlyList<WorldMapMask> ResourceMasks { get; }
+        public IReadOnlyList<WorldMapMask> WildlifeMasks { get; }
+        public IReadOnlyList<WorldMapMask> BuildabilityMasks { get; }
+        public IReadOnlyList<WorldMapMask> VegetationMasks { get; }
+        public IReadOnlyList<WorldMapHeightMask> HeightMasks { get; }
+
+        private static IReadOnlyList<T> ReadOnly<T>(IEnumerable<T> values, string parameter) where T : class
+        {
+            var array = (values ?? throw new ArgumentNullException(parameter)).ToArray();
+            if (array.Any(value => value == null) || array.Select(Identity).Distinct(StringComparer.Ordinal).Count() != array.Length)
+                throw new ArgumentException("Definitions require unique stable IDs.", parameter);
+            return Array.AsReadOnly(array);
+        }
+
+        private static string Identity<T>(T value)
+        {
+            if (value is WorldMapPolygon polygon) return polygon.Id;
+            if (value is WorldMapSpline spline) return spline.Id;
+            if (value is WorldMapWaterBody water) return water.Id;
+            if (value is WorldMapPointOfInterest poi) return poi.Id;
+            if (value is WorldMapCrossing crossing) return crossing.Id;
+            if (value is WorldMapMask mask) return mask.Id;
+            if (value is WorldMapHeightMask heightMask) return heightMask.Id;
+            throw new InvalidOperationException(typeof(T).FullName);
+        }
+    }
+}

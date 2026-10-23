@@ -1,5 +1,17 @@
 # NEXT_TASK.md
 
+## Current scope — WM02 terrain generator, after WM01 completion on 2026-10-23
+
+WM01 is DONE. The eleven `serenity-world-map-v1` JSON documents now load through a separate strict contract
+path for generation `p109-world-map-v2-proposed`; malformed geometry, versions, IDs and references fail
+closed. The existing `p109-compact-world-v1` reference, scene, Terrain and save paths remain active and
+unchanged.
+
+The next unblocked world-map task is **WM02 — terrain generator**. It may consume the WM01 height-mask and
+coordinate contracts to extend `TiledWorldHeightSampler`/Terrain authoring with shared-border deterministic
+samples, authored anchors, ridge/pass/plateau masks and slope-budget checks. Do not start WM03 or switch the
+working map as part of WM02. This WM01 chat must stop after its commit and does not implement WM02.
+
 ## Design-only side deliverable — world map, 2026-10-23
 
 'docs/world_map/' now contains the validated 'serenity-world-map-v1' design package. It proposes

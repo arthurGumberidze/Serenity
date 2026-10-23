@@ -2,6 +2,14 @@
 
 Statuses: TODO / IN_PROGRESS / PARTIAL / DONE / BLOCKED
 
+WM01 world-map data contracts (2026-10-23): DONE. Immutable Domain contracts and a separate strict package
+loader cover schema/generation identity, design-to-Unity transform, polygons, width-bearing splines, river,
+tributaries, four lakes and landings, POIs, crossings, height/vegetation/resource/wildlife/buildability masks,
+manifest coverage and cross-layer IDs/references. All eleven JSON files are packaged as Resources and load
+without activating `p109-world-map-v2-proposed`; `p109-compact-world-v1` remains the live reference. Focused
+EditMode passed 19/19 and the side-by-side PlayMode smoke passed 1/1. No broad suite or Windows build was run
+by WM01 scope. WM02 is the next unblocked world-map stage and has not started.
+
 P10.9 world-map design package (2026-10-23): DONE as documentation only; overall P10.9 stays PARTIAL.
 'docs/world_map/' defines 'serenity-world-map-v1' with coordinated JSON, eight technical map layers,
 supplemental concept art, buildability/generation/implementation specifications and 15 gated follow-up tasks.

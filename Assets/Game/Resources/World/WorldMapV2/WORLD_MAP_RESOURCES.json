@@ -1,0 +1,483 @@
+{
+  "schemaVersion": 1,
+  "mapVersion": "serenity-world-map-v1",
+  "implementationGenerationId": "p109-world-map-v2-proposed",
+  "status": "design_only_not_activated",
+  "date": "2026-10-23",
+  "layer": "resources",
+  "units": "meters",
+  "north": "+Z",
+  "resourceTypes": [
+    {
+      "id": "wood",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "node_disappears",
+      "renewal": "sapling_regrowth"
+    },
+    {
+      "id": "stone",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "node_disappears",
+      "renewal": "none"
+    },
+    {
+      "id": "berries",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "seasonal_empty",
+      "renewal": "seasonal_regrowth"
+    },
+    {
+      "id": "mushrooms",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "seasonal_empty",
+      "renewal": "seasonal_regrowth"
+    },
+    {
+      "id": "medicinal_plants",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "picked",
+      "renewal": "seasonal_regrowth"
+    },
+    {
+      "id": "branches",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "picked",
+      "renewal": "forest_litter_tick"
+    },
+    {
+      "id": "plant_fiber",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "picked",
+      "renewal": "seasonal_regrowth"
+    },
+    {
+      "id": "clay",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "pit_state",
+      "renewal": "none"
+    },
+    {
+      "id": "fish",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "population",
+      "renewal": "carrying_capacity_growth"
+    },
+    {
+      "id": "flint",
+      "era": "stone_age",
+      "visible": true,
+      "depletion": "node_disappears",
+      "renewal": "none"
+    },
+    {
+      "id": "copper_ore",
+      "era": "future",
+      "visible": false,
+      "unlockTechnology": "prospecting_copper"
+    },
+    {
+      "id": "iron_ore",
+      "era": "future",
+      "visible": false,
+      "unlockTechnology": "prospecting_iron"
+    },
+    {
+      "id": "gold_ore",
+      "era": "future",
+      "visible": false,
+      "unlockTechnology": "prospecting_gold"
+    },
+    {
+      "id": "oil",
+      "era": "future",
+      "visible": false,
+      "unlockTechnology": "oil_extraction"
+    }
+  ],
+  "zones": [
+    {
+      "id": "res_start_basics",
+      "resources": [
+        "wood",
+        "branches",
+        "berries",
+        "stone",
+        "medicinal_plants"
+      ],
+      "shape": {
+        "type": "ring",
+        "center": [
+          185,
+          840
+        ],
+        "innerRadius": 35,
+        "outerRadius": 125
+      },
+      "density": "low_to_medium",
+      "access": "immediate"
+    },
+    {
+      "id": "res_north_forest",
+      "resources": [
+        "wood",
+        "branches",
+        "mushrooms",
+        "berries",
+        "medicinal_plants"
+      ],
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            360,
+            980
+          ],
+          [
+            700,
+            980
+          ],
+          [
+            680,
+            740
+          ],
+          [
+            575,
+            670
+          ],
+          [
+            430,
+            715
+          ],
+          [
+            345,
+            835
+          ]
+        ]
+      },
+      "density": "high",
+      "access": "forest_paths"
+    },
+    {
+      "id": "res_west_grove",
+      "resources": [
+        "wood",
+        "branches",
+        "berries",
+        "mushrooms"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          230,
+          500
+        ],
+        "radius": [
+          180,
+          125
+        ]
+      },
+      "density": "medium_high",
+      "access": "footpaths"
+    },
+    {
+      "id": "res_ridge_stone",
+      "resources": [
+        "stone",
+        "flint"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          835,
+          820
+        ],
+        "radius": [
+          150,
+          135
+        ]
+      },
+      "density": "high",
+      "access": "ridge_path"
+    },
+    {
+      "id": "res_east_clay",
+      "resources": [
+        "clay",
+        "stone"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          880,
+          455
+        ],
+        "radius": [
+          95,
+          150
+        ]
+      },
+      "density": "medium_high",
+      "access": "main_route"
+    },
+    {
+      "id": "res_south_fiber",
+      "resources": [
+        "plant_fiber",
+        "medicinal_plants",
+        "berries"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          300,
+          190
+        ],
+        "radius": [
+          210,
+          135
+        ]
+      },
+      "density": "medium",
+      "access": "open"
+    },
+    {
+      "id": "res_marsh_plants",
+      "resources": [
+        "plant_fiber",
+        "medicinal_plants"
+      ],
+      "shape": {
+        "type": "polygon",
+        "points": [
+          [
+            780,
+            165
+          ],
+          [
+            820,
+            325
+          ],
+          [
+            980,
+            280
+          ],
+          [
+            980,
+            25
+          ],
+          [
+            710,
+            25
+          ]
+        ]
+      },
+      "density": "medium",
+      "access": "restricted"
+    },
+    {
+      "id": "res_hidden_ridge_minerals",
+      "resources": [
+        "copper_ore",
+        "iron_ore",
+        "gold_ore"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          865,
+          835
+        ],
+        "radius": [
+          120,
+          105
+        ]
+      },
+      "density": "hidden_gradient",
+      "access": "technology_locked"
+    },
+    {
+      "id": "res_hidden_marsh_oil",
+      "resources": [
+        "oil"
+      ],
+      "shape": {
+        "type": "ellipse",
+        "center": [
+          885,
+          125
+        ],
+        "radius": [
+          88,
+          72
+        ]
+      },
+      "density": "hidden_reservoir",
+      "access": "technology_locked"
+    }
+  ],
+  "fishSources": [
+    {
+      "id": "fish_lake_south_forest_0",
+      "lakeId": "lake_south_forest",
+      "schoolOrdinal": 0,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_south_forest_1",
+      "lakeId": "lake_south_forest",
+      "schoolOrdinal": 1,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_south_forest_2",
+      "lakeId": "lake_south_forest",
+      "schoolOrdinal": 2,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_south_forest_3",
+      "lakeId": "lake_south_forest",
+      "schoolOrdinal": 3,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_west_grove_0",
+      "lakeId": "lake_west_grove",
+      "schoolOrdinal": 0,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_west_grove_1",
+      "lakeId": "lake_west_grove",
+      "schoolOrdinal": 1,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_west_grove_2",
+      "lakeId": "lake_west_grove",
+      "schoolOrdinal": 2,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_west_grove_3",
+      "lakeId": "lake_west_grove",
+      "schoolOrdinal": 3,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_mountain_0",
+      "lakeId": "lake_mountain",
+      "schoolOrdinal": 0,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_mountain_1",
+      "lakeId": "lake_mountain",
+      "schoolOrdinal": 1,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_mountain_2",
+      "lakeId": "lake_mountain",
+      "schoolOrdinal": 2,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_mountain_3",
+      "lakeId": "lake_mountain",
+      "schoolOrdinal": 3,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_central_east_0",
+      "lakeId": "lake_central_east",
+      "schoolOrdinal": 0,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_central_east_1",
+      "lakeId": "lake_central_east",
+      "schoolOrdinal": 1,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_central_east_2",
+      "lakeId": "lake_central_east",
+      "schoolOrdinal": 2,
+      "initialCapacityUnits": 48
+    },
+    {
+      "id": "fish_lake_central_east_3",
+      "lakeId": "lake_central_east",
+      "schoolOrdinal": 3,
+      "initialCapacityUnits": 48
+    }
+  ],
+  "riverFishSources": [
+    {
+      "id": "fish_river_0",
+      "riverId": "river_main",
+      "schoolOrdinal": 0,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_1",
+      "riverId": "river_main",
+      "schoolOrdinal": 1,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_2",
+      "riverId": "river_main",
+      "schoolOrdinal": 2,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_3",
+      "riverId": "river_main",
+      "schoolOrdinal": 3,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_4",
+      "riverId": "river_main",
+      "schoolOrdinal": 4,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_5",
+      "riverId": "river_main",
+      "schoolOrdinal": 5,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_6",
+      "riverId": "river_main",
+      "schoolOrdinal": 6,
+      "initialCapacityUnits": 42
+    },
+    {
+      "id": "fish_river_7",
+      "riverId": "river_main",
+      "schoolOrdinal": 7,
+      "initialCapacityUnits": 42
+    }
+  ],
+  "mutationAndSaveRules": {
+    "stableEntityIdRequired": true,
+    "depletedVisibleNodeMustDisappear": true,
+    "remainingCapacitySaved": true,
+    "regrowthUsesCanonicalState": true,
+    "buildingClearanceUsesNormalWorkAndHauling": true,
+    "noAutomaticDeletionForUniqueOrUnclearableObjects": true
+  }
+}
