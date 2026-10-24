@@ -1,5 +1,17 @@
 # PROJECT_STATE.md
 
+## WM15 follow-up source changes — IN_PROGRESS, UNVERIFIED (2026-10-24)
+
+The user requested work to continue but explicitly prohibited tests and rebuilding while reporting more bugs.
+Current edits connect quarry extraction and warehouse haul to actual resident work orders; bind batched forest
+trees to saved production sources and selection; replace V2 fish particles with stock-backed 3D schools;
+correct UMA atlas/color binding and role/cap fallback behavior; and reject foreign-resident commands.
+No Unity invocation, compilation, tests, Player run or rebuild has been performed for these edits.
+The previous build-l/route-h results do not validate this source revision. The distributed Player is unchanged.
+Hare/fox/wolf art replacement is still pending a usable source/approval; no suitable models were found in the
+checked local asset files and three relevant package inventories. See `docs/world_map/WM15_FOLLOWUP_SOURCE_REPAIR.md`.
+
+
 ## WM15 user feedback repair — active (2026-10-24)
 
 The user's video and screenshots reject visual acceptance of the activation build. Active work is the

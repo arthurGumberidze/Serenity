@@ -45,14 +45,16 @@ namespace Game.Simulation.Work
         private readonly Tier1AiAgentRegistry agents;
         private readonly Tier1AiScheduler scheduler;
         private readonly WorkManager work;
+        private readonly Func<StableEntityId, bool> canCommand;
 
         public DirectWorkCommandService(CharacterRegistry characters, Tier1AiAgentRegistry agents,
-            Tier1AiScheduler scheduler, WorkManager work)
+            Tier1AiScheduler scheduler, WorkManager work, Func<StableEntityId, bool> commandPermission = null)
         {
             this.characters = characters ?? throw new ArgumentNullException(nameof(characters));
             this.agents = agents ?? throw new ArgumentNullException(nameof(agents));
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             this.work = work ?? throw new ArgumentNullException(nameof(work));
+            canCommand = commandPermission ?? (_ => true);
         }
 
         public static WorkGroupRole RoleFor(WorkJobType type)
@@ -131,7 +133,7 @@ namespace Game.Simulation.Work
         private bool AssignBest(WorkOrder job, bool allowSafeInterruption)
         {
             if (!job.GroupId.HasValue || !work.Groups.TryGet(job.GroupId.Value, out var group)) return false;
-            var candidates = group.Members.Select(id => Diagnose(id, group.Role, job.Target.Position))
+            var candidates = group.Members.Where(canCommand).Select(id => Diagnose(id, group.Role, job.Target.Position))
                 .Where(x => allowSafeInterruption
                     ? scheduler.CanInterruptForDirectWork(x.CharacterId)
                     : x.Available)
@@ -150,6 +152,8 @@ namespace Game.Simulation.Work
 
         private WorkCandidateDiagnostic Diagnose(StableEntityId id, WorkGroupRole role, WorldPosition target)
         {
+            if (!canCommand(id))
+                return new WorkCandidateDiagnostic(id, 0, double.MaxValue, false, "чужое поселение");
             if (!characters.TryGet(id, out var character) || character.LifeState != CharacterLifeState.Alive)
                 return new WorkCandidateDiagnostic(id, 0, double.MaxValue, false, "недоступен");
             var distance = agents.TryGet(id, out var agent) ? agent.Position.DistanceSquared(target) : double.MaxValue;

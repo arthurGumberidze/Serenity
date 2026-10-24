@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+WM15 follow-up feedback (2026-10-24): **IN_PROGRESS / source edits only**. Quarry work/haul, forest-tree
+interaction, visible stock-backed fish, UMA consistency and foreign-estate command isolation are being repaired.
+User explicitly forbids tests and rebuilding for now. No execution evidence for this follow-up; old build-l and
+route-h apply only to the preceding commit. Animal model replacement awaits appropriate approved art.
+See `docs/world_map/WM15_FOLLOWUP_SOURCE_REPAIR.md`; do not advance WM15 to DONE.
+
+
 WM15 user feedback repair (2026-10-24): **IN_PROGRESS — acceptance remains open**. The rejected activation
 build is superseded by `Builds/WorldMapV2Feedback/Serenity.exe`. Repairs cover full terrain retention,
 batched vegetation, actual local water, wildlife selection/separation, POI localization/colliders, restored

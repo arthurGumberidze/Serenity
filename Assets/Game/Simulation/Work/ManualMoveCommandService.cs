@@ -57,12 +57,14 @@ namespace Game.Simulation.Work
 
         private readonly WorkManager work;
         private readonly ICharacterTierLookup tiers;
+        private readonly Func<StableEntityId, bool> canCommand;
         private readonly float formationSpacing;
         private readonly Action<IReadOnlyList<StableEntityId>, WorldPosition> prepareNavigation;
 
         public ManualMoveCommandService(WorkManager workManager, ICharacterTierLookup tierLookup,
             float spacing = DefaultFormationSpacing,
-            Action<IReadOnlyList<StableEntityId>, WorldPosition> navigationPreparation = null)
+            Action<IReadOnlyList<StableEntityId>, WorldPosition> navigationPreparation = null,
+            Func<StableEntityId, bool> commandPermission = null)
         {
             work = workManager ?? throw new ArgumentNullException(nameof(workManager));
             tiers = tierLookup ?? throw new ArgumentNullException(nameof(tierLookup));
@@ -70,6 +72,7 @@ namespace Game.Simulation.Work
                 throw new ArgumentOutOfRangeException(nameof(spacing));
             formationSpacing = spacing;
             prepareNavigation = navigationPreparation;
+            canCommand = commandPermission ?? (_ => true);
         }
 
         public ManualMoveCommandResult IssueForGroup(WorkGroupId groupId, WorldPosition target,
@@ -89,6 +92,11 @@ namespace Game.Simulation.Work
             var available = new List<StableEntityId>();
             foreach (var id in ordered)
             {
+                if (!canCommand(id))
+                {
+                    statuses[id] = ManualMoveCommandStatus.Rejected;
+                    continue;
+                }
                 if (!tiers.TryGetTier(id, out var tier) || tier != CharacterSimulationTier.Tier1)
                 {
                     statuses[id] = ManualMoveCommandStatus.TierUnavailable;

@@ -38,11 +38,14 @@ namespace Game.Simulation.Work
     {
         private readonly WorkManager work;
         private readonly Tier1AiScheduler scheduler;
+        private readonly Func<StableEntityId, bool> canCommand;
 
-        public ContextCommandService(WorkManager workManager, Tier1AiScheduler aiScheduler)
+        public ContextCommandService(WorkManager workManager, Tier1AiScheduler aiScheduler,
+            Func<StableEntityId, bool> commandPermission = null)
         {
             work = workManager ?? throw new ArgumentNullException(nameof(workManager));
             scheduler = aiScheduler ?? throw new ArgumentNullException(nameof(aiScheduler));
+            canCommand = commandPermission ?? (_ => true);
         }
 
         public ContextCommandResult Issue(IEnumerable<StableEntityId> characterIds, ContextActionKind action,
@@ -64,6 +67,13 @@ namespace Game.Simulation.Work
             for (var index = 0; index < ordered.Length; index++)
             {
                 var id = ordered[index];
+                // Reject before interrupting a resident's existing activity or touching their queue.
+                if (!canCommand(id))
+                {
+                    entries.Add(new ContextCommandEntry(id,
+                        new ContextActionAvailability(false, ContextUnavailableReason.WrongRole)));
+                    continue;
+                }
                 var availability = ContextActionRules.Evaluate(action, target, factsProvider(id), !append);
                 if (!availability.Enabled)
                 {

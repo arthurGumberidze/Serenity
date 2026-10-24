@@ -20,6 +20,8 @@ namespace Game.Infrastructure
             public bool Ground;
             public Vector3 Center;
             public Matrix4x4[] Matrices;
+            public Matrix4x4[] OriginalMatrices;
+            public StableEntityId[] Ids;
         }
         private readonly List<Batch> batches = new List<Batch>();
         private readonly Dictionary<Material, Material> materials = new Dictionary<Material, Material>();
@@ -28,6 +30,16 @@ namespace Game.Infrastructure
         public int LastDrawnInstances { get; private set; }
         public double LastSubmissionMilliseconds { get; private set; }
         public bool DiagnosticDisableProbes { get; set; }
+        private readonly HashSet<StableEntityId> hidden = new HashSet<StableEntityId>();
+
+        public void SetHidden(IEnumerable<StableEntityId> ids)
+        {
+            var next = new HashSet<StableEntityId>(ids);
+            if (hidden.SetEquals(next)) return;
+            hidden.Clear(); hidden.UnionWith(next);
+            foreach (var batch in batches)
+                batch.Matrices = batch.OriginalMatrices.Where((_, index) => !hidden.Contains(batch.Ids[index])).ToArray();
+        }
 
         public void Initialize(WorldMapVegetationPlan plan, StarterNatureCatalog catalog)
         {
@@ -71,7 +83,9 @@ namespace Game.Infrastructure
                                 Lod = level, Ground = group.Key.Ground,
                                 Center = new Vector3(group.Key.X * 64f + 32f,
                                     instances.Average(v => v.Position.Y), group.Key.Z * 64f + 32f),
-                                Matrices = matrices.Skip(offset).Take(1023).ToArray() });
+                                Matrices = matrices.Skip(offset).Take(1023).ToArray(),
+                                OriginalMatrices = matrices.Skip(offset).Take(1023).ToArray(),
+                                Ids = instances.Skip(offset).Take(1023).Select(value => value.StableId).ToArray() });
                     }
                 }
             }
@@ -86,6 +100,7 @@ namespace Game.Infrastructure
             LastDrawnInstances = 0;
             foreach (var batch in batches)
             {
+                if (batch.Matrices.Length == 0) continue;
                 var distance = Vector3.Distance(camera.transform.position, batch.Center);
                 if (distance > (batch.Ground ? 170f : 1100f)) continue;
                 if (!GeometryUtility.TestPlanesAABB(planes, new Bounds(batch.Center, new Vector3(110f, 100f, 110f)))) continue;
@@ -101,10 +116,14 @@ namespace Game.Infrastructure
                 1000d / System.Diagnostics.Stopwatch.Frequency;
         }
 
-        private static GameObject Prefab(WorldMapVegetationInstance value, StarterNatureCatalog catalog)
+        public static bool IsTree(WorldMapVegetationInstance value) =>
+            value.Kind == WorldMapVegetationKind.InteractiveTree ||
+            (value.Kind == WorldMapVegetationKind.DecorativeTreeOrShrub && Index(value.StableId, 100) < 60);
+
+        public static GameObject Prefab(WorldMapVegetationInstance value, StarterNatureCatalog catalog)
         {
             var prefabs = value.Kind == WorldMapVegetationKind.GroundCover ? catalog.WorldMapGroundCover :
-                value.Kind == WorldMapVegetationKind.InteractiveTree || Index(value.StableId, 100) < 60
+                IsTree(value)
                     ? catalog.WorldMapTrees : catalog.WorldMapShrubs;
             return prefabs[Index(value.StableId, prefabs.Length)];
         }

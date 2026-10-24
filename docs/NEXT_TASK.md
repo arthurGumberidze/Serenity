@@ -1,5 +1,19 @@
 # NEXT_TASK.md
 
+## WM15 follow-up source repair — active, no execution (2026-10-24)
+
+User explicitly requests continuing fixes while collecting further bugs, **without running tests or rebuilding**.
+This instruction overrides the validation timing below; do not launch Unity, Player, batchmode, suites or a build.
+Current scope: quarry worker extraction/haul, selectable forest trees, lake fish presentation, consistent UMA
+characters/editor, command isolation from other estates, and replacement hare/fox/wolf art.
+Source changes are recorded in `docs/world_map/WM15_FOLLOWUP_SOURCE_REPAIR.md`; they are uncompiled and untested.
+The existing WorldMapV2Feedback Player is unchanged and does not contain this follow-up.
+Three species still need suitable approved art. An asynchronous question asks for local paths or authorization
+to select new Asset Store models (paid purchases require separate approval). No new dependency was downloaded.
+Continue remaining content/new user bugs; runtime checks and a fresh build wait for the user's instruction.
+WM15 remains IN_PROGRESS, not DONE. Protect the seven inherited materials and `New Unity Project/`.
+
+
 ## WM15 user feedback repair — active (2026-10-24)
 
 Latest user steering: settlement-first NPC strategy. No automatic opening raid: develop agriculture and barracks,

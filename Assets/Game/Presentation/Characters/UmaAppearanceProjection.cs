@@ -57,6 +57,8 @@ namespace Game.Presentation.Characters
         private Coroutine generation;
         private AppearanceState appearance;
         private string expectedWardrobeRecipe;
+        public bool IsGenerating { get; private set; }
+        public string GenerationFailure { get; private set; }
 
         public AppearanceState Appearance => appearance;
         public bool UsesUma { get; private set; }
@@ -102,19 +104,27 @@ namespace Game.Presentation.Characters
 
         private IEnumerator Generate()
         {
+            IsGenerating = true;
             UsesUma = false;
             StoneAgeWardrobeApplied = false;
             WardrobeFallbackUsed = false;
-            SetFallbackVisible(true);
-            if (avatar == null) yield break;
+            GenerationFailure = null;
+            SetFallbackVisible(false);
+            if (avatar == null)
+            {
+                GenerationFailure = "Не найден компонент модели персонажа";
+                IsGenerating = false;
+                yield break;
+            }
             var watch = Stopwatch.StartNew();
             Exception failure = null;
             try { ProjectState(); }
             catch (Exception exception) { failure = exception is TargetInvocationException tie ? tie.InnerException ?? tie : exception; }
             GenerationCount++;
-            var deadline = Time.realtimeSinceStartup + 8f;
+            var deadline = Time.realtimeSinceStartup + 30f;
             while (failure == null && Time.realtimeSinceStartup < deadline)
             {
+                RestoreGeneratedMaterialBindings();
                 var generated = umaInstance.GetComponentsInChildren<SkinnedMeshRenderer>(true)
                     .Where(renderer => renderer.sharedMesh != null && renderer.sharedMesh.vertexCount > 0).ToArray();
                 var materialsReady = generated.Length > 0 && generated.All(renderer =>
@@ -148,10 +158,12 @@ namespace Game.Presentation.Characters
             if (!UsesUma)
             {
                 umaInstance.SetActive(false);
-                SetFallbackVisible(true);
-                Debug.LogWarning("P84_UMA_FALLBACK " + (failure?.Message ?? "generation timeout"));
+                GenerationFailure = failure?.Message ?? "Не удалось подготовить модель персонажа";
+                SetFallbackVisible(false);
+                Debug.LogWarning("P84_UMA_GENERATION_FAILED " + GenerationFailure);
             }
             generation = null;
+            IsGenerating = false;
         }
 
         private static bool PrepareGeneratedMaterial(Material material)
@@ -168,6 +180,52 @@ namespace Game.Presentation.Characters
             }
             var color = material.GetColor("_BaseColor");
             return material.GetTexture("_BaseMap") != null || color.r < .92f || color.g < .92f || color.b < .92f;
+        }
+
+        private static object Member(object owner, string name)
+        {
+            if (owner == null) return null;
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            return owner.GetType().GetField(name, flags)?.GetValue(owner) ??
+                owner.GetType().GetProperty(name, flags)?.GetValue(owner);
+        }
+
+        private void RestoreGeneratedMaterialBindings()
+        {
+            // Work with UMA's actual generated atlas/channel associations; never borrow another
+            // character's texture or replace the user's body with the role-preview mesh.
+            var data = umaInstance.GetComponentsInChildren<MonoBehaviour>(true)
+                .FirstOrDefault(value => value != null && value.GetType().FullName == "UMA.UMAData");
+            var generated = Member(Member(data, "generatedMaterials"), "materials") as IEnumerable;
+            if (generated == null) return;
+            foreach (var entry in generated)
+            {
+                var material = Member(entry, "material") as Material;
+                if (material == null || !material.HasProperty("_BaseMap")) continue;
+                var definition = Member(entry, "umaMaterial");
+                var channels = (Member(definition, "channels") as IEnumerable)?.Cast<object>().ToArray();
+                var atlases = Member(entry, "resultingAtlasList") as Texture[];
+                if (channels != null && atlases != null)
+                    for (var i = 0; i < Math.Min(channels.Length, atlases.Length); i++)
+                    {
+                        var property = Member(channels[i], "materialPropertyName") as string;
+                        if ((property == "_BaseMap" || property == "_MainTex") && atlases[i] != null &&
+                            material.GetTexture("_BaseMap") == null)
+                            material.SetTexture("_BaseMap", atlases[i]);
+                    }
+                // The admitted alpha/hair definition still names Standard's _Color. URP Lit
+                // reads _BaseColor, so an untextured color-only hair slot otherwise stays white.
+                var parameters = Member(definition, "shaderParms") as IEnumerable;
+                if (parameters == null || !material.HasProperty("_BaseColor")) continue;
+                foreach (var parameter in parameters)
+                {
+                    if ((Member(parameter, "ParameterName") as string) != "_Color") continue;
+                    var name = Member(parameter, "ColorName") as string;
+                    if (name == "Hair") material.SetColor("_BaseColor", HairColors[appearance.HairColorId.Value]);
+                    else if (name == "Skin") material.SetColor("_BaseColor", SkinColors[appearance.SkinId.Value]);
+                    else if (name == "Eyes") material.SetColor("_BaseColor", EyeColors[appearance.EyeColorId.Value]);
+                }
+            }
         }
 
         private void ProjectState()

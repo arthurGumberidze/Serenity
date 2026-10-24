@@ -16,6 +16,7 @@ namespace Game.Simulation.AI
         private readonly Action onCompleted;
         private TimeSpan elapsed;
         private TimeSpan workElapsed;
+        private WorldPosition lastProgressPosition;
         private readonly Game.Domain.Buildings.Building construction;
         private readonly int workRatePerThousand;
         private readonly Action onWorkExperience;
@@ -37,6 +38,7 @@ namespace Game.Simulation.AI
             this.workRatePerThousand = workRatePerThousand;
             this.onWorkExperience = onWorkExperience;
             this.advanceWork = advanceWork;
+            lastProgressPosition = movement.CurrentPosition;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
             movement.MoveTo(job.Target.Position, 0.9f);
@@ -54,6 +56,13 @@ namespace Game.Simulation.AI
             if (IsFinished) return;
             agent.UpdatePosition(movement.CurrentPosition);
             elapsed += simulationDelta;
+            if (agent.Phase == AiActionPhase.MoveToTarget &&
+                movement.CurrentPosition.DistanceSquared(lastProgressPosition) >= 0.25f)
+            {
+                // This is a stall timeout, not a maximum distance to an industrial worksite.
+                lastProgressPosition = movement.CurrentPosition;
+                elapsed = TimeSpan.Zero;
+            }
             if (job.Status == WorkJobStatus.Cancelled) { Cancel(); return; }
             if (!movement.IsAvailable || movement.State == MovementState.Failed ||
                 (agent.Phase == AiActionPhase.MoveToTarget && elapsed >= timeout) || construction?.IsDestroyed == true)

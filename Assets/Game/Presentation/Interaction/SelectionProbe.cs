@@ -30,20 +30,27 @@ namespace Game.Presentation.Interaction
         private bool dragSelecting;
         private float nextSelectionRebindTime;
         private const float DragThreshold = 8f;
+        private Func<StableEntityId, bool> canCommand = _ => true;
+
+        public void ConfigureCommandPermission(Func<StableEntityId, bool> permission) =>
+            canCommand = permission ?? throw new ArgumentNullException(nameof(permission));
 
         public SelectableMarker Selected { get; private set; }
         public CharacterPresenter SelectedCharacterPresenter { get; private set; }
-        public IReadOnlyList<CharacterPresenter> SelectedCharacterPresenters => selectedCharacters;
-        public IReadOnlyList<StableEntityId> SelectedCharacterIds => selectedCharacterIds
+        public IReadOnlyList<CharacterPresenter> SelectedCharacterPresenters => selectedCharacters
+            .Where(value => value != null && value.IsBound && canCommand(value.CharacterId)).ToArray();
+        public IReadOnlyList<StableEntityId> SelectedCharacterIds => selectedCharacterIds.Where(canCommand)
             .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
         public WorldResourcePilePresenter SelectedWorldResourcePilePresenter { get; private set; }
         public BuildingPresenter SelectedBuildingPresenter { get; private set; }
         public ProductionSourcePresenter SelectedProductionSourcePresenter { get; private set; }
         public WorldMapWildlifeView SelectedWildlife { get; private set; }
         public StableWorldHitProxy HoveredProxy => hoveredProxy;
-        public StableEntityId? SelectedCharacterId => SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
+        public StableEntityId? InspectedCharacterId => SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
             ? SelectedCharacterPresenter.CharacterId
             : selectedCharacterIds.OrderBy(x => x.ToString(), StringComparer.Ordinal).Cast<StableEntityId?>().LastOrDefault();
+        public StableEntityId? SelectedCharacterId => InspectedCharacterId.HasValue && canCommand(InspectedCharacterId.Value)
+            ? InspectedCharacterId : null;
 
         public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
             LocalInteractionMode mode = null)
@@ -153,7 +160,7 @@ namespace Game.Presentation.Interaction
             if (presenters == null) throw new ArgumentNullException(nameof(presenters));
             ClearCharacterSelection();
             ClearNonCharacterSelection();
-            foreach (var presenter in presenters.Where(x => x != null && x.IsBound)
+            foreach (var presenter in presenters.Where(x => x != null && x.IsBound && canCommand(x.CharacterId))
                          .OrderBy(x => x.CharacterId.ToString(), StringComparer.Ordinal))
             {
                 if (selectedCharacters.Contains(presenter)) continue;
@@ -169,7 +176,7 @@ namespace Game.Presentation.Interaction
             if (characterIds == null) throw new ArgumentNullException(nameof(characterIds));
             ClearCharacterSelection();
             ClearNonCharacterSelection();
-            foreach (var id in characterIds.OrderBy(x => x.ToString(), StringComparer.Ordinal))
+            foreach (var id in characterIds.Where(canCommand).OrderBy(x => x.ToString(), StringComparer.Ordinal))
                 selectedCharacterIds.Add(id);
             RefreshSelectedPresentations();
         }
@@ -178,7 +185,7 @@ namespace Game.Presentation.Interaction
         {
             if (raycaster == null || raycaster.WorldCamera == null) return 0;
             var candidates = FindObjectsByType<CharacterPresenter>(FindObjectsInactive.Exclude)
-                .Where(x => x != null && x.IsBound)
+                .Where(x => x != null && x.IsBound && canCommand(x.CharacterId))
                 .Where(x =>
                 {
                     var point = raycaster.WorldCamera.WorldToScreenPoint(x.transform.position + Vector3.up);

@@ -32,6 +32,7 @@ namespace Game.Infrastructure
             public Transform[] Tails;
             public Vector3 Center;
             public float Radius;
+            public StableEntityId SourceId;
         }
         public int FishSchoolCount => schools.Count(x => x.Parent != null);
 
@@ -56,7 +57,7 @@ namespace Game.Infrastructure
                 if (root.WorldPiles.All.Any(x => x.Id == view.PileId)) views[view.PileId] = view;
         }
 
-        public void CreateFish(Transform parent, Vector3 center, float radius = 2.8f)
+        public void CreateFish(Transform parent, Vector3 center, float radius = 2.8f, StableEntityId sourceId = default)
         {
             var fish = new Transform[10];
             var tails = new Transform[fish.Length];
@@ -81,7 +82,8 @@ namespace Game.Infrastructure
                 ripple.SetPosition(i, new Vector3(Mathf.Sin(angle) * radius * 1.15f, 0.02f,
                     Mathf.Cos(angle) * radius * 1.15f));
             }
-            var school = new FishSchool { Parent = parent, Fish = fish, Tails = tails, Center = center, Radius = radius };
+            var school = new FishSchool { Parent = parent, Fish = fish, Tails = tails, Center = center, Radius = radius,
+                SourceId = sourceId };
             schools.Add(school);
             RefreshFish(school);
         }
@@ -131,8 +133,13 @@ namespace Game.Infrastructure
 
         private void RefreshFish(FishSchool school)
         {
+            var count = school.Fish.Length;
+            if (school.SourceId.IsValid && root.Production.TryGetSite(school.SourceId, out var site))
+                count = (int)Math.Min(count, site.RemainingAmount);
             for (var i = 0; i < school.Fish.Length; i++)
             {
+                school.Fish[i].gameObject.SetActive(i < count);
+                if (i >= count) continue;
                 // Fixed phase separation prevents different speeds bunching all fish together.
                 var phase = fishTime * 0.3f + i * Mathf.PI * 2 / school.Fish.Length;
                 var jumpPhase = Mathf.Repeat(fishTime + i * 3.1f, 32f);

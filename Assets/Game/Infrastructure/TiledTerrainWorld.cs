@@ -45,6 +45,20 @@ namespace Game.Infrastructure
         private bool strategicMode;
         private WorldPosition lastCameraFocus;
         private GameObject roadPresentationRoot;
+        private Func<WorldMapVegetationInstance, Game.Domain.Production.ProductionSite> treeResource;
+        private Func<IEnumerable<Game.Domain.StableEntityId>> depletedTrees;
+        private WorldMapVegetationInstance[] selectableTrees = Array.Empty<WorldMapVegetationInstance>();
+        private readonly Dictionary<GameObject, Bounds> treeBounds = new Dictionary<GameObject, Bounds>();
+
+        public void ConfigureTreeResources(
+            Func<WorldMapVegetationInstance, Game.Domain.Production.ProductionSite> resolve,
+            Func<IEnumerable<Game.Domain.StableEntityId>> depleted)
+        {
+            treeResource = resolve;
+            depletedTrees = depleted;
+            RefreshVegetationColliders(lastCameraFocus);
+            RefreshVegetationViews(lastCameraFocus);
+        }
 
         private sealed class LoadedTile
         {
@@ -128,6 +142,7 @@ namespace Game.Infrastructure
                 sourceLayers = natureCatalog.GroundLayers;
             if (vegetationPlan != null)
             {
+                selectableTrees = vegetationPlan.Instances.Where(WorldMapVegetationRenderer.IsTree).ToArray();
                 vegetationRenderer = gameObject.AddComponent<WorldMapVegetationRenderer>();
                 vegetationRenderer.Initialize(vegetationPlan, natureCatalog);
             }
@@ -309,8 +324,10 @@ namespace Game.Infrastructure
             if (vegetationPlan == null) return;
             var desired = strategicMode
                 ? Array.Empty<WorldMapVegetationInstance>()
-                : vegetationPlan.SelectInteractiveColliders(visual, cameraFocus, 225f,
-                    (int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
+                : selectableTrees.Where(value => visual.Contains(value.Tile) &&
+                        TreeDistanceSquared(value.Position, cameraFocus) <= 225f * 225f)
+                    .OrderBy(value => TreeDistanceSquared(value.Position, cameraFocus)).ThenBy(value => value.StableId)
+                    .Take((int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
             var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
             foreach (var id in vegetationColliders.Keys.Where(value => !ids.Contains(value)).ToArray())
             {
@@ -319,15 +336,37 @@ namespace Game.Infrastructure
             }
             foreach (var value in desired)
             {
-                if (vegetationColliders.ContainsKey(value.StableId)) continue;
+                var site = treeResource?.Invoke(value);
+                if (vegetationColliders.TryGetValue(value.StableId, out var existing))
+                {
+                    if (site != null)
+                    {
+                        var presenter = existing.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>() ??
+                            existing.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                        if (presenter.Site != site) presenter.Bind(site, Color.white, true);
+                        presenter.Refresh();
+                        existing.SetActive(!site.IsDepleted);
+                    }
+                    continue;
+                }
+                if (site?.IsDepleted == true) continue;
                 var root = new GameObject();
                 root.transform.SetParent(transform, false);
                 root.transform.position = new Vector3(value.Position.X, value.Position.Y, value.Position.Z);
+                root.transform.rotation = Quaternion.Euler(0f, value.RotationDegrees, 0f);
                 root.AddComponent<WorldMapVegetationColliderProxy>().Bind(value.StableId);
                 var collider = root.AddComponent<CapsuleCollider>();
                 collider.radius = 0.46f * value.UniformScale;
                 collider.height = 7.2f * value.UniformScale;
                 collider.center = Vector3.up * collider.height * 0.5f;
+                // Batched trees have no Renderer on their collider object. Add a canopy pick volume explicitly.
+                var crown = root.AddComponent<BoxCollider>();
+                crown.isTrigger = true;
+                var bounds = TreeBounds(value);
+                crown.center = bounds.center * value.UniformScale;
+                crown.size = bounds.size * value.UniformScale;
+                if (site != null)
+                    root.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>().Bind(site, Color.white, true);
                 vegetationColliders.Add(value.StableId, root);
             }
         }
@@ -335,6 +374,33 @@ namespace Game.Infrastructure
         private void RefreshVegetationViews(WorldPosition cameraFocus)
         {
             if (vegetationRenderer != null) vegetationRenderer.enabled = !strategicMode;
+            if (vegetationRenderer != null && depletedTrees != null) vegetationRenderer.SetHidden(depletedTrees());
+        }
+
+        private Bounds TreeBounds(WorldMapVegetationInstance tree)
+        {
+            var prefab = WorldMapVegetationRenderer.Prefab(tree, natureCatalog);
+            if (treeBounds.TryGetValue(prefab, out var cached)) return cached;
+            var bounds = new Bounds(Vector3.up * 3.6f, new Vector3(1f, 7.2f, 1f));
+            foreach (var filter in prefab.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null) continue;
+                var source = filter.sharedMesh.bounds;
+                var matrix = Matrix4x4.Scale(prefab.transform.localScale) * prefab.transform.worldToLocalMatrix *
+                    filter.transform.localToWorldMatrix;
+                for (var i = 0; i < 8; i++)
+                    bounds.Encapsulate(matrix.MultiplyPoint3x4(source.center + Vector3.Scale(source.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1))));
+            }
+            treeBounds.Add(prefab, bounds);
+            return bounds;
+        }
+
+        private static float TreeDistanceSquared(WorldPosition left, WorldPosition right)
+        {
+            var x = left.X - right.X;
+            var z = left.Z - right.Z;
+            return x * x + z * z;
         }
 
         private void ApplyTerrainPaint(WorldTileId id, TerrainData data)

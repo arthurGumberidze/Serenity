@@ -182,6 +182,7 @@ namespace Game.Simulation.AI
         private readonly HaulClaim claim;
         private readonly UtilityActionKind kind;
         private TimeSpan phaseElapsed;
+        private WorldPosition lastProgressPosition;
 
         public HaulActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement, Tier1AiWorld world,
             Tier1AiSettings settings, HaulJobCandidate job, HaulClaim claim,
@@ -196,6 +197,7 @@ namespace Game.Simulation.AI
             this.job = job;
             this.claim = claim;
             this.kind = kind;
+            lastProgressPosition = movement.CurrentPosition;
             SetPhase(AiActionPhase.MoveToSource);
             movement.MoveTo(job.SourcePosition, 0.85f);
         }
@@ -223,6 +225,12 @@ namespace Game.Simulation.AI
             if (IsFinished) return;
             agent.UpdatePosition(movement.CurrentPosition);
             phaseElapsed += simulationDelta;
+            if ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.MoveToDestination) &&
+                movement.CurrentPosition.DistanceSquared(lastProgressPosition) >= 0.25f)
+            {
+                lastProgressPosition = movement.CurrentPosition;
+                phaseElapsed = TimeSpan.Zero;
+            }
             if (!IsValid || movement.State == MovementState.Failed ||
                 ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.MoveToDestination) &&
                  phaseElapsed >= settings.MovementTimeout))

@@ -60,11 +60,12 @@ namespace Game.Simulation.Control
         private readonly MilitaryUnitService military;
         private readonly MilitarySideId playerMilitarySide;
         private readonly Tier1AiScheduler scheduler;
+        private readonly Func<StableEntityId, bool> canCommand;
 
         public PlayerControlService(CharacterRegistry characterRegistry,
             ICharacterCapabilityProvider capabilityProvider, TierManager tierManager, DynastyState dynastyState,
             MilitaryUnitService militaryUnitService, Tier1AiScheduler aiScheduler,
-            MilitarySideId? controlledMilitarySide = null)
+            MilitarySideId? controlledMilitarySide = null, Func<StableEntityId, bool> commandPermission = null)
         {
             characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             capabilities = capabilityProvider ?? throw new ArgumentNullException(nameof(capabilityProvider));
@@ -74,6 +75,7 @@ namespace Game.Simulation.Control
             military = militaryUnitService;
             scheduler = aiScheduler ?? throw new ArgumentNullException(nameof(aiScheduler));
             playerMilitarySide = controlledMilitarySide ?? new MilitarySideId("player");
+            canCommand = commandPermission ?? (_ => true);
         }
 
         public PlayerControlState State { get; } = new PlayerControlState();
@@ -90,7 +92,7 @@ namespace Game.Simulation.Control
             if (!capability.IsAdult) return new DirectControlEligibility(DirectControlEligibilityFailure.Child);
             if (capability.IsIncapacitated || capability.MovementPerThousand <= 0)
                 return new DirectControlEligibility(DirectControlEligibilityFailure.Incapacitated);
-            if (!IsPlayerControlledRole(characterId))
+            if (!canCommand(characterId) || !IsPlayerControlledRole(characterId))
                 return new DirectControlEligibility(DirectControlEligibilityFailure.NotPlayerControlledRole);
             if (!tiers.TryGetTier(characterId, out _))
                 return new DirectControlEligibility(DirectControlEligibilityFailure.NotManaged);
@@ -140,6 +142,11 @@ namespace Game.Simulation.Control
         {
             if (State.Mode != PlayerControlMode.ThirdPerson) return true;
             var id = State.ControlledCharacterId.Value;
+            if (!canCommand(id))
+            {
+                ExitThirdPerson(PlayerControlExitReason.InvalidAfterLoad);
+                return false;
+            }
             if (!characters.TryGet(id, out var character) || character.LifeState != CharacterLifeState.Alive)
             {
                 ExitThirdPerson(PlayerControlExitReason.Died);

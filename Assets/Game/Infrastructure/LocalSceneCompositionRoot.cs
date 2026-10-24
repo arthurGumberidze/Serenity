@@ -152,6 +152,7 @@ namespace Game.Infrastructure
         public ProductionService Production { get; private set; }
         public ResourceEcologyService ResourceEcology { get; private set; }
         public IndustrialExtractionService Industry { get; private set; }
+        private IndustrialWorkCoordinator industrialWork;
         public ProductionCatalog ProductionRecipes { get; private set; }
         public TechnologyCatalog Technologies { get; private set; }
         public ResearchService Research { get; private set; }
@@ -533,7 +534,7 @@ namespace Game.Infrastructure
                     new CharacterRuntimeState(playerCharacters[i].Id, StartingResidentWorldPosition(i,
                             new WorldPosition(-6 + i * 1.5f, 0, 4)),
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
-            DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
+            DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work, CanCommandResident);
             DirectWorkCommands.EnsureRoleGroups();
             ConstructionClearance = new ConstructionClearanceCoordinator(Buildings, Production, Work, Construction,
                 id => buildingCatalog.ResolveDefinition(id), FundingSources, ConstructionWorkTarget,
@@ -542,7 +543,15 @@ namespace Game.Infrastructure
                     site != null && site.Kind == ProductionSiteKind.NaturalSource && !site.IsDepleted &&
                     WorldDefinition.MapData.Buildability.IsClearableRecipe(site.RecipeId.ToString()));
             buildingPlacementController.ConfigureClearance(ConstructionClearance);
-            ContextCommands = new ContextCommandService(Work, AiScheduler);
+            ContextCommands = new ContextCommandService(Work, AiScheduler, CanCommandResident);
+            selectionProbe.ConfigureCommandPermission(CanCommandResident);
+            industrialWork = new IndustrialWorkCoordinator(Industry, Inventories, Work,
+                () => Characters.GetAll().Where(value => CanCommandResident(value.Id) &&
+                    HealthFamily.GetCapabilities(value.Id).CanPerformOrdinaryWork).Select(value => value.Id),
+                id => AiAgents.TryGet(id, out _) && AiScheduler.CanInterruptForDirectWork(id),
+                id => AiAgents.TryGet(id, out var agent) ? agent.Position : default,
+                id => Buildings.TryGet(id, out var storage) && storage.IsOperational &&
+                    storage.OwnerSideId == new CombatSideId("player"));
             if (StoneAgeSettlement != null && WorldDefinition.MapData == null)
             {
                 WorkOrderIndicators = gameObject.AddComponent<P94WorkOrderIndicatorSystem>();
@@ -557,17 +566,17 @@ namespace Game.Infrastructure
                 worldSeed, Tiers);
             AiRuntime.SetCombatActivityProvider(characterId => Combat.TryGetCombatant(characterId, out _));
             foreach (var character in playerCharacters) Combat.RegisterSide(character.Id, new CombatSideId("player"));
-            CombatCommands = new CombatCommandService(Combat);
+            CombatCommands = new CombatCommandService(Combat, CanCommandResident);
             HealthFamily.ChildBorn += OnChildBorn;
             ManualMoveCommands = new ManualMoveCommandService(Work, Tiers,
-                ManualMoveCommandService.DefaultFormationSpacing, PrepareNavigationForManualMove);
+                ManualMoveCommandService.DefaultFormationSpacing, PrepareNavigationForManualMove, CanCommandResident);
             MilitaryUnits = new MilitaryUnitService(Characters, HealthFamily);
             MilitaryRepresentations = new MilitaryUnitRepresentationService(MilitaryUnits, Tiers, Combat,
                 Characters, HealthFamily);
             MilitaryCommands = new MilitaryUnitCommandService(MilitaryUnits, ManualMoveCommands);
             MilitaryCombat = new MilitaryUnitCombatService(MilitaryUnits, Combat);
             PlayerControl = new PlayerControlService(Characters, HealthFamily, Tiers, Dynasty, MilitaryUnits,
-                AiScheduler, new MilitarySideId("player"));
+                AiScheduler, new MilitarySideId("player"), CanCommandResident);
             Battles = new BattleResolutionService(Characters, Combat, MilitaryUnits, MilitaryRepresentations,
                 MilitaryCombat, PlayerControl);
             GlobalMap = new GlobalMapService(StarterGlobalMap.CreateTiled(WorldDefinition,
@@ -634,7 +643,7 @@ namespace Game.Infrastructure
             MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
                 MilitaryUnits, Appearances, worldSeed);
             MilitaryAttack = new MilitaryAttackCommandService(Characters, Buildings, MilitaryUnits,
-                MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed);
+                MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed, CanCommandResident);
             SettlementCapture = new SettlementFlagCaptureService(worldSeed, GlobalMap, Buildings, BuildingDamage,
                 Characters, MilitaryUnits);
             Diagnostics = new DiagnosticService(worldSeed, Research, Resources, Inventories, Buildings,
@@ -719,7 +728,7 @@ namespace Game.Infrastructure
                     GlobalMapBridge.RequestEnterGlobal, GlobalMapBridge.RequestEnterLocation,
                     GlobalMapBridge.RequestEnterBattle, GlobalMapBridge.SetDeveloperUiVisible, legacyOverlays,
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
-                    () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray(),
+                    () => Characters.GetAll().Where(x => CanCommandResident(x.Id)).Select(x => x.Id).ToArray(),
                     position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
                      BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi),
                 pointerRaycaster, input);
@@ -812,6 +821,7 @@ namespace Game.Infrastructure
                     ConnectedWorld.ReportPhysicalPresence(presenter.transform.position.x, presenter.transform.position.z);
             WorldPopulation?.AdvancePoiExploration(targetCalendarTick);
             ConstructionClearance?.Advance();
+            industrialWork?.Advance(targetCalendarTick);
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
@@ -992,6 +1002,9 @@ namespace Game.Infrastructure
 
         private void OnChildBorn(Character child)
         {
+            // A child's allegiance follows their parents, never the currently viewed estate.
+            if (child.Parents.Any(parent => CanCommandResident(parent.ParentId)))
+                Combat.RegisterSide(child.Id, new CombatSideId("player"));
             Appearances.GetOrCreate(child);
             var state = new CharacterRuntimeState(child.Id, default, default, false, "local",
                 lastSimulationCalendarTick: Clock.State.CalendarTicks,
@@ -1001,6 +1014,15 @@ namespace Game.Infrastructure
             SynchronizeStarterSettlement();
         }
 
+        public bool CanCommandResident(StableEntityId id)
+        {
+            if (!id.IsValid || Characters == null || !Characters.TryGet(id, out _)) return false;
+            var memberships = GlobalMap?.Settlements.Where(value => value.ResidentCharacterIds.Contains(id)).ToArray();
+            if (memberships != null && memberships.Length > 0)
+                return memberships.All(value => value.OwnerSideId == new CombatSideId("player"));
+            return Combat != null && Combat.TryGetSide(id, out var side) && side == new CombatSideId("player");
+        }
+
         public void SynchronizeStarterSettlement()
         {
             if (GlobalMap == null) return;
@@ -1008,7 +1030,7 @@ namespace Game.Infrastructure
             GlobalMap.SynchronizeSettlement(StarterSettlementId,
                 new WorldLocationId("starter_settlement"), current?.OwnerSideId ?? new CombatSideId("player"),
                 Buildings.All.Where(x => current == null || x.OwnerSideId == current.OwnerSideId).Select(x => x.Id),
-                Characters.GetAll().Where(x => StarterEnemyAi == null || !StarterEnemyAi.Residents.Contains(x.Id))
+                Characters.GetAll().Where(x => CanCommandResident(x.Id))
                     .Select(x => x.Id));
         }
 

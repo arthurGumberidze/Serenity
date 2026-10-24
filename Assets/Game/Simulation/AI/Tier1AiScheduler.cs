@@ -605,6 +605,22 @@ namespace Game.Simulation.AI
                     entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
                 }
             }
+            else if (job.Type == WorkJobType.Mine && job.Target.Kind == WorkTargetKind.WorldPile &&
+                     world.Production?.Industry != null &&
+                     world.Production.Industry.TryGetZone(job.Target.EntityId, out var industrialZone))
+            {
+                if (!industrialZone.FacilityBuilt || industrialZone.Remaining <= 0 || !entry.Movement.IsAvailable)
+                { work.Fail(job.Id); return; }
+                var worked = TimeSpan.Zero;
+                entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
+                    settings.MovementTimeout, advanceWork: delta =>
+                    {
+                        // Only elapsed work after arriving at the quarry contributes to extraction.
+                        var result = world.Production.Industry.Advance(industrialZone.Id, 1, delta);
+                        worked += delta;
+                        return !result.Succeeded || result.Cycles > 0 || worked >= TimeSpan.FromHours(1);
+                    });
+            }
             else if (job.Type == WorkJobType.Gather || job.Type == WorkJobType.Mine ||
                      job.Type == WorkJobType.Chop || job.Type == WorkJobType.Farm ||
                      job.Type == WorkJobType.Craft)

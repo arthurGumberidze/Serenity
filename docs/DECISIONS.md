@@ -1712,3 +1712,25 @@ Generated UMA atlases can populate legacy _MainTex while an admitted URP materia
 texture when present; keep a valid fallback visible until generated materials are ready. Audit visible runtime
 renderers plus all source flora materials, rather than diagnosing intentionally hidden construction buffers as
 white scenery. The first Player audit after this change must remain explicit evidence.
+
+## D-196 — Source-only user feedback repair and shared worker authority (2026-10-24)
+
+The user explicitly suspends tests and rebuilding while continuing to report bugs. Implement source changes,
+record them as unverified and keep WM15 IN_PROGRESS; prior test/build evidence does not validate these edits.
+
+Industrial extraction now uses ordinary saved resident jobs and the existing industrial output inventory.
+Only arrived workers contribute elapsed work; warehouse delivery uses physical haul reservations/transfers.
+Do not simulate a day's production from a UI button. Finite forest tree stock uses existing Production identities
+and saves; batched rendering is a projection of that depletion. Avoid camera-dependent ecology registrations,
+because the ecology restore contract requires a stable registration set. Visible fish represent existing stock.
+
+Inspection and command authority are separate. Resolve commands from canonical settlement ownership/allegiance,
+never from the currently viewed map location or a blacklist of one enemy faction. Read-only foreign inspection
+must not populate the single-resident command selection used by training and research.
+
+The user rejected toon characters/editor output. This supersedes D-195's visible toon fallback: UMA remains the
+body projection regardless of profession, generated atlas and legacy shader-color bindings are repaired, and
+generation failure is reported explicitly instead of displaying a different character. The avatar cap follows
+the 32-character detailed tier; the separate eight-view animation budget remains. Added generation/memory cost
+and actual visual results remain unverified until the user permits execution. Appropriate hare/fox/wolf assets
+are still required; no new Asset Store dependency is authorized by this decision.

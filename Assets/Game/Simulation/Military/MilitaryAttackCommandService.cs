@@ -36,6 +36,7 @@ namespace Game.Simulation.Military
         private readonly BuildingDamageService buildingDamage;
         private readonly Tier1AiAgentRegistry agents;
         private readonly long worldSeed;
+        private readonly Func<StableEntityId, bool> canCommand;
         private SettlementFlagCaptureService settlementCapture;
         private readonly List<MilitaryAttackOrderState> orders = new List<MilitaryAttackOrderState>();
         private ulong sequence;
@@ -43,7 +44,8 @@ namespace Game.Simulation.Military
         public MilitaryAttackCommandService(CharacterRegistry characterRegistry, BuildingRegistry buildingRegistry,
             MilitaryUnitService militaryUnits, MilitaryUnitCommandService movementCommands,
             MilitaryUnitCombatService combatService, BuildingDamageService damageService,
-            Tier1AiAgentRegistry agentRegistry, MilitaryTrainingService trainingService, long seed)
+            Tier1AiAgentRegistry agentRegistry, MilitaryTrainingService trainingService, long seed,
+            Func<StableEntityId, bool> commandPermission = null)
         {
             characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
@@ -54,6 +56,7 @@ namespace Game.Simulation.Military
             buildingDamage = damageService ?? throw new ArgumentNullException(nameof(damageService));
             agents = agentRegistry ?? throw new ArgumentNullException(nameof(agentRegistry));
             worldSeed = seed;
+            canCommand = commandPermission ?? (_ => true);
         }
 
         public IReadOnlyList<MilitaryAttackOrderState> Orders => orders.OrderBy(x => x.Sequence).ToArray();
@@ -71,6 +74,8 @@ namespace Game.Simulation.Military
             MilitaryDirectTarget target, bool physicalPath = true)
         {
             var ids = (attackerIds ?? Enumerable.Empty<StableEntityId>()).Where(x => x.IsValid).Distinct().ToArray();
+            if (ids.Any(id => !canCommand(id)))
+                return new MilitaryAttackAvailability(false, MilitaryAttackDisabledReason.MixedOrWrongSide);
             var memberships = ids.Select(id => units.TryGetForMember(id, out var unit) ? unit : null).ToArray();
             var allMilitary = ids.Length > 0 && ids.All(id =>
                 training.GetRank(id).HasValue && units.TryGetForMember(id, out var memberUnit) &&

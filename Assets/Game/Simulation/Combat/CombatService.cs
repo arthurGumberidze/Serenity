@@ -945,8 +945,12 @@ namespace Game.Simulation.Combat
     public sealed class CombatCommandService
     {
         private readonly CombatService combat;
-        public CombatCommandService(CombatService combatService) =>
+        private readonly Func<StableEntityId, bool> canCommand;
+        public CombatCommandService(CombatService combatService, Func<StableEntityId, bool> commandPermission = null)
+        {
             combat = combatService ?? throw new ArgumentNullException(nameof(combatService));
+            canCommand = commandPermission ?? (_ => true);
+        }
 
         public CombatCommandResult IssueAttack(IEnumerable<StableEntityId> selectedIds, StableEntityId targetId,
             long calendarTick, StableEntityId? encounterId = null)
@@ -954,6 +958,7 @@ namespace Game.Simulation.Combat
             var selected = (selectedIds ?? Array.Empty<StableEntityId>()).Where(x => x.IsValid).Distinct()
                 .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
             if (selected.Length == 0 || !targetId.IsValid) return new CombatCommandResult(CombatCommandStatus.InvalidSelection, null, 0);
+            if (selected.Any(id => !canCommand(id))) return new CombatCommandResult(CombatCommandStatus.InvalidSelection, null, 0);
             if (!combat.TryGetSide(selected[0], out var attackerSide) || !combat.TryGetSide(targetId, out var targetSide) || attackerSide == targetSide)
                 return new CombatCommandResult(CombatCommandStatus.NotHostile, null, 0);
             if (selected.Any(x => !combat.TryGetSide(x, out var side) || side != attackerSide || !combat.IsEligible(x)) ||

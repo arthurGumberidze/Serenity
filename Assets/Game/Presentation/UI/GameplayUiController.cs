@@ -636,7 +636,7 @@ namespace Game.Presentation.UI
             var interruptible = !busy || context.AiScheduler.CanInterruptForDirectWork(id);
             var withinDistance = !context.AiAgents.TryGet(id, out var distanceAgent) ||
                 DistanceSquared(distanceAgent.Position, target.Position) <= 250f * 250f;
-            var correctRole = HasContextRole(id, action);
+            var correctRole = context.PlayerCharacterIds().Contains(id) && HasContextRole(id, action);
             return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
                 exists && capabilities.IsAdult, correctRole,
                 exists && targetStatusValid && (action == ContextActionKind.Move || action == ContextActionKind.Inspect ||
@@ -682,6 +682,8 @@ namespace Game.Presentation.UI
         private InventoryOwner? FindHaulDestination()
         {
             var inventory = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
+                    context.Buildings.TryGet(x.Owner.Id, out var building) && building.IsOperational &&
+                    building.OwnerSideId.Value == "player" &&
                     x.TotalUnits < x.Capacity).OrderBy(x => x.Owner.Id).FirstOrDefault();
             return inventory?.Owner;
         }
@@ -2234,7 +2236,7 @@ namespace Game.Presentation.UI
 
         private void RefreshInspector()
         {
-            var hasSelection = context.Selection.SelectedCharacterIds.Count > 0 ||
+            var hasSelection = context.Selection.InspectedCharacterId.HasValue ||
                                context.Selection.SelectedBuildingPresenter != null ||
                                context.Selection.SelectedWorldResourcePilePresenter != null ||
                                context.Selection.SelectedProductionSourcePresenter != null ||
@@ -2260,9 +2262,9 @@ namespace Game.Presentation.UI
                 AddMuted(inspector, T("ui.selection.many_help"));
                 return;
             }
-            if (context.Selection.SelectedCharacterId.HasValue)
+            if (context.Selection.InspectedCharacterId.HasValue)
             {
-                DrawCharacterInspector(context.Selection.SelectedCharacterId.Value);
+                DrawCharacterInspector(context.Selection.InspectedCharacterId.Value);
                 return;
             }
             var buildingPresenter = context.Selection.SelectedBuildingPresenter;
@@ -2333,8 +2335,12 @@ namespace Game.Presentation.UI
                 inspector.Add(ActionButton("Построить объект добычи", () => TryCommand(() =>
                 {
                     var storage = context.Inventories.All.FirstOrDefault(x =>
-                        x.Owner.Kind == InventoryOwnerKind.BuildingStorage);
+                        x.Owner.Kind == InventoryOwnerKind.BuildingStorage &&
+                        context.Buildings.TryGet(x.Owner.Id, out var building) && building.IsOperational &&
+                        building.OwnerSideId.Value == "player");
                     var funding = context.Inventories.All.FirstOrDefault(x =>
+                        (context.PlayerCharacterIds().Contains(x.Owner.Id) ||
+                            (storage != null && x.Owner.Equals(storage.Owner))) &&
                         definition.ConstructionCost.All(cost => x.CanRemove(cost.ResourceId, cost.Quantity)));
                     var failure = industry.BuildFacility(zone.Id,
                         funding != null ? funding.Owner : new InventoryOwner(InventoryOwnerKind.WorldPile, zone.Id),
@@ -2349,10 +2355,10 @@ namespace Game.Presentation.UI
             }
 
             AddLine(inspector, zone.Remaining > 0 ? "Объект работает" : "Месторождение истощено");
-            var shifts = Row();
-            shifts.Add(ActionButton("Смена: 1 рабочий", () => RunIndustrialShift(zone.Id, 1)));
-            shifts.Add(ActionButton("Смена: 7 рабочих", () => RunIndustrialShift(zone.Id, 7)));
-            inspector.Add(shifts);
+            var quarryJobs = context.Work.Jobs.Where(job => !job.IsTerminal && job.Target.EntityId == zone.Id).ToArray();
+            AddLine(inspector, $"Добыча: {quarryJobs.Count(job => job.Type == WorkJobType.Mine)}/{definition.WorkerCapacity} · " +
+                $"Доставка: {quarryJobs.Count(job => job.Type == WorkJobType.Haul)}");
+            AddMuted(inspector, "Свободные жители приходят на добычу и доставляют камень на склад. Полный склад приостанавливает добычу.");
             if (definition.FacilityKind == IndustrialFacilityKind.Mine && definition.RestorativeUnitsPerDay > 0)
             {
                 if (zone.RestorativeInstalled) AddMuted(inspector, "Восстановительный блок активен");
@@ -2369,14 +2375,6 @@ namespace Game.Presentation.UI
             DrawDirectPriority();
             inspector.Add(ActionButton("Перенести продукцию", () => TryCommand(() => IssueSelectedPileHaul(pile))));
         }
-
-        private void RunIndustrialShift(StableEntityId zoneId, int workers) => TryCommand(() =>
-        {
-            var result = context.Production.Industry.Advance(zoneId, workers, TimeSpan.FromDays(1));
-            if (!result.Succeeded) throw new PlayerFacingException("Добыча недоступна: " + result.Failure);
-            AddNotification($"Завершена смена: {workers}; циклов {result.Cycles}; восстановлено {result.Restored}");
-            RefreshNow();
-        });
 
         private void DrawCharacterInspector(StableEntityId id)
         {
@@ -2429,6 +2427,11 @@ namespace Game.Presentation.UI
                     .Reverse().Take(3).ToArray();
                 AddLine(inspector, F("ui.character.events", eventHistory.Length == 0 ? T("common.none") : string.Join(", ",
                     eventHistory.Select(x => EventTitle(x.DefinitionId, context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Id)))));
+            }
+            if (!context.PlayerCharacterIds().Contains(id))
+            {
+                AddMuted(inspector, "Житель другого поселения. Доступен только осмотр.");
+                return;
             }
             var eligibility = context.PlayerControl.Evaluate(id);
             var actions = Row();
@@ -2970,7 +2973,7 @@ namespace Game.Presentation.UI
         private IReadOnlyList<StableEntityId> PlayerCharacterIds()
         {
             var configured = context.PlayerCharacterIds();
-            return configured.Count > 0 ? configured : context.Characters.GetAll().Select(x => x.Id).ToArray();
+            return configured;
         }
 
         private int PlayerAliveCount() => PlayerCharacterIds().Count(id =>
@@ -3181,7 +3184,7 @@ namespace Game.Presentation.UI
                        unchecked((ulong)context.Selection.SelectedCharacterIds.Count << 20) ^
                        unchecked((ulong)context.Buildings.All.Sum(x => x.History.Count) << 24) ^
                        unchecked((ulong)context.Work.JobCount << 32);
-            if (context.Selection.SelectedCharacterId.HasValue) hash ^= unchecked((ulong)context.Selection.SelectedCharacterId.Value.GetHashCode());
+            if (context.Selection.InspectedCharacterId.HasValue) hash ^= unchecked((ulong)context.Selection.InspectedCharacterId.Value.GetHashCode());
             if (context.Selection.SelectedBuildingPresenter != null) hash ^= unchecked((ulong)context.Selection.SelectedBuildingPresenter.BuildingId.GetHashCode());
             if (context.Selection.SelectedProductionSourcePresenter != null)
                 hash ^= unchecked((ulong)context.Selection.SelectedProductionSourcePresenter.Site.Id.GetHashCode());
@@ -3394,7 +3397,7 @@ namespace Game.Presentation.UI
                 mainPanel.style.left = 146;
                 mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 156f);
             }
-            var hasSelection = context != null && (context.Selection.SelectedCharacterIds.Count > 0 ||
+            var hasSelection = context != null && (context.Selection.InspectedCharacterId.HasValue ||
                 context.Selection.SelectedBuildingPresenter != null ||
                 context.Selection.SelectedWorldResourcePilePresenter != null ||
                 context.Selection.SelectedProductionSourcePresenter != null);

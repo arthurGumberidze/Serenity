@@ -9,7 +9,9 @@ namespace Game.Presentation.Characters
 {
     public sealed class CharacterPresentationSpawner
     {
-        public const int MaximumDetailedUmaProjections = 8;
+        // Match the maximum detailed simulation tier, not the eight animated views per frame.
+        // Limiting avatar identity to the animation budget made residents 9+ permanently use toon bodies.
+        public const int MaximumDetailedUmaProjections = 32;
         private readonly CharacterPresentationCatalog catalog;
         private readonly CharacterPresentationRegistry registry;
         private readonly CharacterAppearanceService appearances;
@@ -40,16 +42,17 @@ namespace Game.Presentation.Characters
             var presenter = instance.GetComponent<CharacterPresenter>();
             try
             {
-                // UMA generation is bounded to the same eight detailed Tier 1 views used by the crowd renderer.
-                // This gives nearby key/family NPCs coherent Human 3.0 art without starting a coroutine per mass NPC.
-                if (catalog.TryResolveRoleVisual(character.Sex, requested.ClothingId, out var roleVisual))
-                {
-                    ProjectRoleVisual(instance, presenter, roleVisual);
-                }
-                else if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
+                // Clothing is canonical appearance data; a profession must not replace the person's body style.
+                // The existing crowd renderer still limits simultaneous high-detail animation to eight views.
+                if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
                 {
                     detailedUmaCharacters.Add(character.Id);
                     instance.AddComponent<UmaAppearanceProjection>().Configure(catalog.UmaAvatarPrefab, requested);
+                }
+                else if (catalog.UmaAvatarPrefab == null &&
+                         catalog.TryResolveRoleVisual(character.Sex, requested.ClothingId, out var roleVisual))
+                {
+                    ProjectRoleVisual(instance, presenter, roleVisual);
                 }
                 presenter.Bind(character, registry, requested);
                 presenter.ConfigureWorkTool(catalog.WorkAxe);

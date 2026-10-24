@@ -61,6 +61,7 @@ namespace Game.Infrastructure
         private RenderTexture previewTexture;
         private GameObject previewRoot;
         private GameObject previewCharacter;
+        private Label previewStatus;
         private Camera previewCamera;
         private float previewYaw = 165f;
         // UMA 3.0 bodies are taller than the legacy fallback wrappers. Start far enough away to keep
@@ -136,6 +137,13 @@ namespace Game.Infrastructure
 
         private void Update()
         {
+            if (previewStatus != null && previewCharacter != null)
+            {
+                var appearance = previewCharacter.GetComponent<UmaAppearanceProjection>();
+                var message = appearance == null ? "Модель персонажа недоступна" :
+                    appearance.GenerationFailure ?? (appearance.UsesUma ? string.Empty : "Подготовка внешности…");
+                if (previewStatus.text != message) previewStatus.text = message;
+            }
             var keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame) return;
             if (modal.style.display != DisplayStyle.None) CloseModal();
@@ -220,6 +228,8 @@ namespace Game.Infrastructure
             previewImage.style.height = 348;
             previewImage.AddToClassList("serenity-preview");
             previewCard.Add(previewImage);
+            previewStatus = new Label("Подготовка внешности…") { name = "ruler-preview-status" };
+            previewCard.Add(previewStatus);
             var previewControls = ButtonRow();
             previewControls.Add(ActionButton("↶", () => RotatePreview(-20f), "preview-rotate-left"));
             previewControls.Add(ActionButton("↷", () => RotatePreview(20f), "preview-rotate-right"));
@@ -710,6 +720,12 @@ namespace Game.Infrastructure
         private void RebuildPreviewCharacter(AppearanceProfileDefinition profile)
         {
             if (previewRoot == null) return;
+            var existing = previewCharacter != null ? previewCharacter.GetComponent<UmaAppearanceProjection>() : null;
+            if (existing != null && characterCatalog.UmaAvatarPrefab != null)
+            {
+                existing.Apply(rulerDraft.Appearance);
+                return;
+            }
             if (previewCharacter != null) Destroy(previewCharacter);
             var appearance = rulerDraft.Appearance;
             var prefab = characterCatalog.Resolve(profile.Sex, appearance, out _);

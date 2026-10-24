@@ -106,6 +106,24 @@ namespace Game.Infrastructure
                 wildlifePopulation = new WildlifePopulationService(
                     new WorldMapWildlifePlanner(world.Definition, world.HeightSampler, worldSeed).Create(), worldSeed);
             RegisterCanonicalPopulation();
+            if (terrainWorld.VegetationPlan != null)
+            {
+                var treeIds = new HashSet<StableEntityId>(terrainWorld.VegetationPlan.Instances
+                    .Where(WorldMapVegetationRenderer.IsTree).Select(value => value.StableId));
+                terrainWorld.ConfigureTreeResources(value =>
+                {
+                    if (!production.TryGetSite(value.StableId, out var site))
+                    {
+                        site = ProductionSite.Restore(new ProductionSiteState(value.StableId,
+                            new ProductionRecipeId("chop_wood"), ProductionSiteKind.NaturalSource,
+                            value.Position, 20, 20, CropPlotPhase.Unplanted, 0, 0));
+                        production.AddSite(site);
+                        // Finite forest trees persist in Production. Do not add camera-dependent ecology
+                        // registrations: their registration set must be identical before restoring a save.
+                    }
+                    return site;
+                }, () => production.Sites.Where(site => site.IsDepleted && treeIds.Contains(site.Id)).Select(site => site.Id));
+            }
             terrainWorld.VisualTilesChanged += RefreshViews;
             RefreshViews();
         }
@@ -254,36 +272,12 @@ namespace Game.Infrastructure
             if (!production.TryGetSite(ResourceId(node), out var site)) return;
             if (node.RecipeId == "fish_water")
             {
-                if (terrainWorld.Definition.MapData != null)
-                {
-                    var fishPrefab = worldMapResourceArt?.PrefabFor("fish");
-                    if (fishPrefab == null)
-                    {
-                        Debug.LogError("No audited World Map V2 resource prefab for fish");
-                        return;
-                    }
-                    var fishView = WorldMapScenery.Instantiate(fishPrefab, parent);
-                    fishView.name = "World Map fish population " + node.SourceZoneId + " " + node.StableIndex;
-                    fishView.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y,
-                        node.VisualPosition.Z);
-                    Collider collider = null;
-                    // Unity's missing-component proxy is not a CLR null, so ?? can retain an unusable collider.
-                    if (collider == null) collider = fishView.AddComponent<BoxCollider>();
-                    collider.isTrigger = true;
-                    if (collider is BoxCollider box)
-                    {
-                        box.center = Vector3.up * 0.25f;
-                        box.size = new Vector3(4f, 1.5f, 4f);
-                    }
-                    fishView.AddComponent<ProductionSourcePresenter>().Bind(site, Color.white, true);
-                    return;
-                }
                 var school = new GameObject("Fishing school " + node.SourceZoneId + " " + node.StableIndex);
                 school.transform.SetParent(parent, false);
                 school.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y, node.VisualPosition.Z);
-                var lake = terrainWorld.Definition.Zones.Single(x => x.Id == node.SourceZoneId);
-                var radius = Mathf.Min(2.8f, Mathf.Min(lake.RadiusX, lake.RadiusZ) * 0.17f);
-                GetComponent<WorksitePresentation>().CreateFish(school.transform, school.transform.position, radius);
+                var lake = terrainWorld.Definition.Zones.FirstOrDefault(x => x.Id == node.SourceZoneId);
+                var radius = lake == null ? 2.8f : Mathf.Min(2.8f, Mathf.Min(lake.RadiusX, lake.RadiusZ) * 0.17f);
+                GetComponent<WorksitePresentation>().CreateFish(school.transform, school.transform.position, radius, site.Id);
                 var hit = school.AddComponent<BoxCollider>();
                 hit.isTrigger = true;
                 hit.size = new Vector3(radius * 2.6f, 1.6f, radius * 2.6f);
