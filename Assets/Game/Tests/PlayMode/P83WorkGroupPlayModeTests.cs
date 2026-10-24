@@ -76,14 +76,17 @@ namespace Game.Tests.PlayMode
             var timeout = Time.realtimeSinceStartup + 15f;
             while (!root.GlobalMapBridge.IsGlobalSceneLoaded && Time.realtimeSinceStartup < timeout) yield return null;
             yield return null;
-            var controller = Object.FindAnyObjectByType<GlobalMapPresentationController>();
-            var marker = controller.GetComponentsInChildren<GlobalMapPresentationController.GlobalResourceMarker>(true)
-                .OrderBy(x => x.ResourceId).First();
-            controller.SelectResourceMarker(marker);
+            var controller = root.GetComponent<P102StrategicWorldView>();
+            Assert.That(controller.IsActive, Is.True);
+            var site = root.Production.Sites.Where(x => !x.IsDepleted &&
+                x.RecipeId.ToString() == "gather_berries" &&
+                root.ConnectedWorld.IsRevealed(x.Position.X, x.Position.Z)).OrderBy(x => x.Id).First();
+            controller.SelectResource(site.Id);
             var order = controller.IssueSelectedResourceWork();
 
             Assert.That(order.Type, Is.EqualTo(WorkJobType.Gather));
-            Assert.That(marker.SiteIds, Does.Contain(order.Target.EntityId));
+            Assert.That(order.Target.EntityId, Is.EqualTo(site.Id));
+            Assert.That(controller.SelectedResourceId, Is.EqualTo(site.Id));
             Assert.That(root.Work.Get(order.Id), Is.SameAs(order));
         }
 

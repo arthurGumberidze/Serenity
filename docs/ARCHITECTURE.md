@@ -1,5 +1,24 @@
 # Architecture — U01
 
+## WM15 repair boundaries (2026-10-24)
+
+Strategic resource actions use `P102StrategicWorldView -> DirectWorkCommandService` and the
+same production site StableEntityId as the local view. Selection never starts work by itself.
+Manual movement accepts the active tiled TerrainCollider as ground. Explicit research
+assignments are honored by the existing Tier1 scheduler even under the NeedsOnly policy.
+Starter outcrops register finite ecology records through the existing registration API;
+this adds no save format or parallel mutable authority.
+
+Validation keeps assertion verdicts separate from owned-process cleanup. The restricted
+repair plan reads original NUnit fullnames and cannot fall back to a full fixture or suite.
+Render isolation is available only in diagnostic smoke runs; mandatory performance gates
+reject it. An unsupported thread allocation counter is marked unavailable, with -1 values.
+
+Compact-world tree projection now reuses the catalog's reviewed mesh-only LOD variants of
+the same models. LOD0 bounds still normalize the disposable view; canonical source roots
+and physical trunk dimensions do not change. Tiled terrain compacts zero-weight paint
+channels per tile without merging positive weights. Neither path activates the V2 world.
+
 ## WM14 performance measurement boundary (2026-10-24)
 
 The short-profile flow is `WM14 PlayMode fixture -> U29BenchmarkScenario -> existing Tier1 scheduler + Tier2

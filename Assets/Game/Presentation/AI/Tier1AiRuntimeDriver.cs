@@ -119,7 +119,11 @@ namespace Game.Presentation.AI
                 movements.RemoveAt(i);
                 staleRegistrationRemoved = true;
             }
-            if (staleRegistrationRemoved) scheduler.Unregister(character.Id);
+            if (staleRegistrationRemoved)
+            {
+                scheduler.Unregister(character.Id);
+                agentStates.Remove(character.Id);
+            }
             var movement = new NavMeshMovementDriver(presenter, scheduler.Settings.MovementSpeed);
             var position = movement.CurrentPosition;
             var state = new Tier1AiAgentState(character.Id, position, needs);

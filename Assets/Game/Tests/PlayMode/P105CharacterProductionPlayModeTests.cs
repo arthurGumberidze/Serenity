@@ -73,7 +73,8 @@ namespace Game.Tests.PlayMode
             var camera = Camera.main;
             var oldPosition = camera.transform.position;
             var oldRotation = camera.transform.rotation;
-            camera.transform.position += Vector3.up * 180f + Vector3.forward * 180f;
+            camera.transform.position += Vector3.up * 180f + Vector3.forward *
+                (Game.Presentation.AI.Tier1AiRuntimeDriver.SmallCrowdDetailedDistance * 2f);
             camera.transform.rotation = Quaternion.Euler(68f, 137f, 0f);
             RefreshCrowdLodNow(root);
             Assert.That(root.DemoPresenters.Any(x => x.UsesLightweightVisual), Is.True);

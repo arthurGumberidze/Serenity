@@ -187,7 +187,7 @@ namespace Game.Tests.PlayMode
             root.SelectionProbe.SelectCharacters(root.DemoPresenters);
             var group = root.WorkDebug.CreateGroupFromSelection("Scouts");
             var start = root.DemoPresenters.ToDictionary(x => x.CharacterId, x => x.transform.position);
-            var destination = root.RealisticGameplayRegion.ProjectToGround(new Vector3(12f, 0f, 4f));
+            var destination = root.TiledWorld.ProjectToGround(new Vector3(12f, 0f, 4f));
             var jobs = root.WorkDebug.AssignCurrentGroupMove(
                 new WorldPosition(destination.x, destination.y, destination.z), WorkPriority.Urgent);
             Assert.That(jobs.Count, Is.EqualTo(2));
@@ -215,36 +215,36 @@ namespace Game.Tests.PlayMode
 
             yield return ClickScreenPoint(screenPoint, MouseButton.Right);
 
-            var result = root.ManualMoveInput.LastResult;
+            var result = root.GameplayUi.LastContextCommandResult;
             Assert.That(result, Is.Not.Null);
-            Assert.That(result.CreatedCount, Is.EqualTo(2));
-            Assert.That(result.Jobs.All(x => x.Type == WorkJobType.Move &&
+            Assert.That(result.Orders.Count, Is.EqualTo(2));
+            Assert.That(result.Orders.All(x => x.Type == WorkJobType.Move &&
                 x.Status == WorkJobStatus.Assigned), Is.True);
-            Assert.That(result.Jobs.Select(x => x.Target.Position).Distinct().Count(), Is.EqualTo(2),
+            Assert.That(result.Orders.Select(x => x.Target.Position).Distinct().Count(), Is.EqualTo(2),
                 "Formation slots must not stack agents on one destination.");
             var commandCenter = new Vector3(
-                result.Jobs.Average(x => x.Target.Position.X),
-                result.Jobs.Average(x => x.Target.Position.Y),
-                result.Jobs.Average(x => x.Target.Position.Z));
+                result.Orders.Average(x => x.Target.Position.X),
+                result.Orders.Average(x => x.Target.Position.Y),
+                result.Orders.Average(x => x.Target.Position.Z));
             Assert.That(Vector3.Distance(clickedTarget, commandCenter), Is.LessThan(0.5f),
                 $"Pointer raycast produced {commandCenter} for requested ground point {clickedTarget}.");
             root.AiRuntime.SetPaused(false);
 
             var timeout = Time.realtimeSinceStartup + 15f;
             var arrivalPositions = new System.Collections.Generic.Dictionary<Game.Domain.StableEntityId, Vector3>();
-            while (Time.realtimeSinceStartup < timeout && result.Jobs.Any(x => !x.IsTerminal))
+            while (Time.realtimeSinceStartup < timeout && result.Orders.Any(x => !x.IsTerminal))
             {
-                foreach (var job in result.Jobs.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
+                foreach (var job in result.Orders.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
                     if (!arrivalPositions.ContainsKey(job.AssigneeId.Value))
                         arrivalPositions.Add(job.AssigneeId.Value,
                             root.DemoPresenters.Single(x => x.CharacterId == job.AssigneeId.Value).transform.position);
                 yield return null;
             }
-            foreach (var job in result.Jobs.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
+            foreach (var job in result.Orders.Where(x => x.IsTerminal && x.AssigneeId.HasValue))
                 if (!arrivalPositions.ContainsKey(job.AssigneeId.Value))
                     arrivalPositions.Add(job.AssigneeId.Value,
                         root.DemoPresenters.Single(x => x.CharacterId == job.AssigneeId.Value).transform.position);
-            Assert.That(result.Jobs.All(x => x.Status == WorkJobStatus.Completed), Is.True);
+            Assert.That(result.Orders.All(x => x.Status == WorkJobStatus.Completed), Is.True);
             Assert.That(root.DemoPresenters.Any(presenter =>
                 Vector3.Distance(start[presenter.CharacterId], presenter.transform.position) > 2f), Is.True,
                 "The formation command must cause meaningful group movement even when one member starts near a slot.");
@@ -338,7 +338,8 @@ namespace Game.Tests.PlayMode
             root.AiRuntime.SetPaused(true);
             root.SelectionProbe.SelectCharacters(root.DemoPresenters);
             root.WorkDebug.CreateGroupFromSelection("Haulers");
-            var pile = root.DemoPilePresenters.OrderBy(x => x.PileId.ToString()).First();
+            var pile = root.DemoPilePresenters.Where(x => x.ResourceId == new ResourceId("wood_log") &&
+                x.Quantity.Units >= 2).OrderBy(x => x.PileId.ToString()).First();
             var source = new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId);
             var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage, root.DemoStorageBuilding.Id);
             var resourceId = pile.ResourceId;
@@ -401,7 +402,8 @@ namespace Game.Tests.PlayMode
                     Mathf.Lerp(24f, Mathf.Max(24f, Screen.height - 24f), y / (samples - 1f)));
                 if (root.PointerRaycaster.IsPointerBlockedByUi(point)) continue;
                 if (!root.PointerRaycaster.TryGetWorldHit(point, out var hit) ||
-                    hit.collider.GetComponentInParent<BuildableGround>() == null) continue;
+                    (hit.collider.GetComponentInParent<BuildableGround>() == null &&
+                     !(hit.collider is TerrainCollider))) continue;
                 var distance = (point - center).sqrMagnitude;
                 if (distance >= bestDistance) continue;
                 bestPoint = point;

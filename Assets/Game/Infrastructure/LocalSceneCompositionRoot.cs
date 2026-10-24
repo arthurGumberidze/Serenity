@@ -1466,6 +1466,8 @@ namespace Game.Infrastructure
                 var presenter = rock.AddComponent<ProductionSourcePresenter>();
                 presenter.Bind(site, Color.white, true);
                 productionPresenters.Add(presenter);
+                ResourceEcology.Register(new NaturalNodeRegistration(site, BiomeForRecipe(recipe),
+                    RespawnCandidates(site.Position), renewable: false));
             }
         }
 
@@ -1594,6 +1596,8 @@ namespace Game.Infrastructure
 
         private WorldPosition CameraStreamingFocus()
         {
+            // During scene unload the camera may be destroyed before strategic-view OnDisable.
+            if (cameraController == null) return WorldDefinition.PlayerStart;
             var focus = cameraController.transform.position;
             return new WorldPosition(focus.x, focus.y, focus.z);
         }

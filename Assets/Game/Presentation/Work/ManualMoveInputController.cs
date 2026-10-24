@@ -64,13 +64,16 @@ namespace Game.Presentation.Work
 
         private void OnSecondaryClicked()
         {
+            if (buildingPlacement.WasCancelledThisFrame) return;
             if (buildingPlacement.IsActive)
             {
                 buildingPlacement.CancelPlacement();
                 return;
             }
 
-            if (ContextMenusEnabled) return;
+            // Selected residents use the modern context path. The developer group's unselected
+            // roster still uses the explicit physical-only group command and its tier verdicts.
+            if (ContextMenusEnabled && selection.SelectedCharacterIds.Count > 0) return;
 
             if (!raycaster.TryGetWorldHit(input.PointerPosition, out var hit)) return;
 
@@ -82,7 +85,8 @@ namespace Game.Presentation.Work
                     calendarTickProvider == null ? 0L : calendarTickProvider());
                 return;
             }
-            if (hit.collider.GetComponentInParent<BuildableGround>() == null) return;
+            if (hit.collider.GetComponentInParent<BuildableGround>() == null &&
+                !(hit.collider is TerrainCollider)) return;
 
             var target = new WorldPosition(hit.point.x, hit.point.y, hit.point.z);
             if (selectedIds.Count > 0)

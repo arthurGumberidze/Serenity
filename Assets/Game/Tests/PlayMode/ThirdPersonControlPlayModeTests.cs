@@ -179,7 +179,7 @@ namespace Game.Tests.PlayMode
         {
             var character = root.MaleDemoCharacter;
             var characterBefore = character.CaptureState();
-            var inventory = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, character.Id));
+            var inventory = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.CarryLoad, character.Id));
             var inventoryBefore = inventory.CaptureState();
             var group = root.Work.CreateGroup("control-preservation", new[] { character.Id });
             var order = root.Work.CreateMoveJob(character.Id, new WorldPosition(4f, 0f, 4f),

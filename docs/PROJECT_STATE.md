@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## WM15 night repair — IN_PROGRESS (2026-10-24)
+
+The completed night run at `Artifacts/WM15/night-20261024-002730-4c6d7c` contains 62 failed
+NUnit cases, cleanup/protection wrapper errors and failed rendered 100/300/500 gates.
+The active user-authorized scope is repair only: do not rerun the 182-step suite or its
+881 passed cases. Original evidence remains immutable. See `docs/world_map/WM15_NIGHT_REPAIR.md`
+and the generated per-case `WM15_REPAIR_CASES.md` for investigation and exact XML evidence.
+
+All 62 original failed NUnit cases now have PASS evidence, plus both HealthAndFamily
+cleanup cases. Build-f passes (115.789 seconds), runner regressions pass 72 assertions.
+The normal rendered 100-resident short diagnostic remains over budget: p95 90.422 ms,
+GPU mean 77.527 ms. Full rendered 100/300/500 gates are pending the user's offline run
+via Tools/Validation/Run-WM15-Performance-Repair.cmd; no full suite is authorized.
+Final protection audit found one overwritten original save (StoneAgeBuildingsV1 slot
+2702, during PlayMode-c) and a new slot 2701. P6 teardown cleared the inherited save
+directory; the restoration fix passes both targeted regression tests without further save changes. No exact original slot-2702 backup
+was found in the project. Protection is FAIL, not restored; ten other payloads match.
+Overall WM15 and user visual acceptance remain open; PostgreSQL remains PARTIAL.
+V2 stays inactive. Seven inherited materials are unchanged and excluded from commits,
+as is New Unity Project/. See the repair report for exact evidence and the incident.
+
 ## WM14 checkpoint — 2026-10-24 optimization and profiling DONE
 
 WM14 adds a reproducible short D3D11 Editor profile for the existing U29 hybrid population and the inactive

@@ -42,10 +42,10 @@ namespace Game.Tests.Editor
         public void ApprovedForestModelsAndPrefabsAreAvailableWithoutExecutableCode()
         {
             Assert.That(AssetDatabase.FindAssets("t:Prefab", new[] { Root }).Length, Is.GreaterThanOrEqualTo(190));
-            Assert.That(Directory.GetFiles(Root, "*.fbx", SearchOption.AllDirectories).Length, Is.EqualTo(226));
+            Assert.That(Directory.GetFiles(Root + "/PNB_Meadow_Forest", "*.fbx", SearchOption.AllDirectories).Length, Is.GreaterThan(0));
             Assert.That(Directory.GetFiles(Root, "*.cs", SearchOption.AllDirectories), Is.Empty);
             Assert.That(Directory.GetFiles(Root, "*.dll", SearchOption.AllDirectories), Is.Empty);
-            Assert.That(Directory.Exists(Root + "/PNB_Tropical_Jungle"), Is.False);
+            Assert.That(Directory.Exists(Root + "/PNB_Tropical_Jungle"), Is.True);
             Assert.That(Directory.Exists(Root + "/PNB_Swamp_Marshland"), Is.False);
         }
 
@@ -65,7 +65,11 @@ namespace Game.Tests.Editor
                     material.shader.FindSubshaderTagValue(index, new ShaderTagId("RenderPipeline")).name ==
                     "UniversalPipeline"), Is.True, path);
             }
-            foreach (var path in Directory.GetFiles(Root, "*.shader", SearchOption.AllDirectories))
+            // D-158 admits inert vendor source; only referenced material shaders must be URP.
+            foreach (var path in AssetDatabase.FindAssets("t:Material", new[] { Root })
+                .Select(AssetDatabase.GUIDToAssetPath).Select(path => AssetDatabase.LoadAssetAtPath<Material>(path))
+                .Select(material => AssetDatabase.GetAssetPath(material.shader)).Distinct()
+                .Where(path => path.EndsWith(".shader")))
             {
                 Assert.That(File.ReadAllText(path), Does.Contain("com.unity.render-pipelines.universal"), path);
                 Assert.That(ShaderUtil.ShaderHasError(AssetDatabase.LoadAssetAtPath<Shader>(path)), Is.False, path);

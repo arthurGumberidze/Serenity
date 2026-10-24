@@ -23,11 +23,13 @@ namespace Game.Tests.PlayMode
     public sealed class P6FirstHourPlayModeTests
     {
         private string saveDirectory;
+        private string previousSaveDirectory;
 
         [UnitySetUp]
         public IEnumerator LoadLocalScene()
         {
             saveDirectory = Path.Combine(Path.GetTempPath(), "serenity-p6-play-" + Guid.NewGuid().ToString("N"));
+            previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             Screen.SetResolution(1600, 900, false);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
@@ -40,7 +42,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             if (root != null) Object.Destroy(root.gameObject);
             yield return null;
-            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", null);
+            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", previousSaveDirectory);
             if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
         }
 

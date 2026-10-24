@@ -6,6 +6,9 @@ using Game.Presentation.Localization;
 using Game.Simulation.World;
 using Game.Simulation.Production;
 using Game.Domain.Resources;
+using Game.Domain;
+using Game.Domain.Work;
+using Game.Simulation.Work;
 using UnityEngine;
 using Unity.Cinemachine;
 
@@ -28,6 +31,9 @@ namespace Game.Presentation.World
         public static Rect MapViewport => new Rect(0.32f, 0.075f, 0.675f, 0.80f);
         private GUIStyle labelStyle;
         private ProductionService production;
+        private DirectWorkCommandService directWork;
+        private StableEntityId? selectedResource;
+        private string resourceCommandMessage;
         private TiledWorldDefinition tiledWorld;
         private GlobalMapService globalMap;
         private Action<bool> setStrategicOverview;
@@ -39,6 +45,28 @@ namespace Game.Presentation.World
         private static readonly string[] ResourceNames =
         { "Брёвна", "Камень", "Волокно", "Шкуры", "Ягоды", "Железо", "Золото", "Мясо", "Рыба" };
         public bool IsActive { get; private set; }
+        public StableEntityId? SelectedResourceId => selectedResource;
+
+        public void ConfigureResourceCommands(DirectWorkCommandService commands) =>
+            directWork = commands ?? throw new ArgumentNullException(nameof(commands));
+
+        public void SelectResource(StableEntityId id)
+        {
+            if (!IsActive || !production.TryGetSite(id, out var site) ||
+                !discovery.IsRevealed(site.Position.X, site.Position.Z))
+                throw new InvalidOperationException("Only a revealed canonical map source can be selected.");
+            selectedResource = id;
+            resourceCommandMessage = null;
+        }
+
+        public WorkOrder IssueSelectedResourceWork()
+        {
+            if (!IsActive || directWork == null || !selectedResource.HasValue ||
+                !production.TryGetSite(selectedResource.Value, out var site) || site.IsDepleted)
+                throw new InvalidOperationException("Select an available resource source first.");
+            return directWork.Issue(WorkJobType.Gather,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite, site.Id, site.Position), WorkPriority.Normal);
+        }
 
         public void Initialize(Camera camera, P102ConnectedWorldPresentation presentation, ConnectedWorldService service,
             ProductionService productionService = null)
@@ -250,6 +278,16 @@ namespace Game.Presentation.World
                 GUI.color = old;
             }
             if (resourceFilter < 0) return;
+            if (selectedResource.HasValue && directWork != null)
+            {
+                if (GUI.Button(new Rect(12f, 164f, 160f, 28f), "Собирать выбранное"))
+                {
+                    try { IssueSelectedResourceWork(); resourceCommandMessage = "Задание создано."; }
+                    catch (InvalidOperationException) { resourceCommandMessage = "Источник или работники недоступны."; }
+                }
+                if (!string.IsNullOrEmpty(resourceCommandMessage))
+                    GUI.Label(new Rect(12f, 196f, 330f, 36f), resourceCommandMessage);
+            }
             var selected = new ResourceId(ResourceIds[resourceFilter]);
             foreach (var site in production.Sites)
             {
@@ -259,7 +297,8 @@ namespace Game.Presentation.World
                 var point = ToMapPoint(new Vector3(site.Position.X, site.Position.Y, site.Position.Z));
                 if (point.z <= 0f) continue;
                 var text = site.IsDepleted ? "×" : site.RemainingAmount.ToString();
-                GUI.Box(new Rect(point.x - 18f, point.y - 18f, 36f, 30f), text, labelStyle);
+                if (GUI.Button(new Rect(point.x - 18f, point.y - 18f, 36f, 30f), text, labelStyle))
+                    SelectResource(site.Id);
             }
             if (production.Industry == null) return;
             foreach (var zone in production.Industry.Zones)

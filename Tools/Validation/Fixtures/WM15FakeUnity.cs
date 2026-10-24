@@ -49,6 +49,10 @@ internal static class WM15FakeUnity
         var log = Value(args, "-logFile");
         if (log != null) Write(log, "Fixture Unity/Player log.\n");
         var mode = Environment.GetEnvironmentVariable("WM15_FIXTURE_MODE") ?? "mixed";
+        var project = Value(args, "-projectPath");
+        if (project != null && (mode == "generated-report" || mode == "save-change" || mode == "save-added"))
+            Write(Path.Combine(project, "protected-user-saves",
+                mode == "generated-report" ? "TestResults.xml" : mode == "save-added" ? "new-save.xml" : "example.xml"), "changed by fixture");
         if (Value(args, "-executeMethod") == "U00Build.WindowsDevelopment")
         {
             if (mode == "build-fail") return 9;
@@ -74,7 +78,7 @@ internal static class WM15FakeUnity
         var xml = Value(args, "-testResults");
         if (xml == null) return 0;
         var filter = Value(args, "-testFilter") ?? "";
-        if (mode == "healthy") filter = "Good";
+        if (mode == "healthy" || mode == "generated-report" || mode == "save-change" || mode == "save-added") filter = "Good";
         if (filter.Contains("Crash")) return 7;
         if (filter.Contains("Hang")) { Thread.Sleep(60000); return 0; }
         if (filter.Contains("Missing")) return 0;

@@ -14,11 +14,13 @@ param(
     [switch]$ContinueOnFailure,
     [switch]$DetailedDiagnostics,
     [switch]$CaptureTrace,
+    [ValidateSet('basemap','shadows','foliage','characters')][string]$RenderDiagnostic,
     [bool]$MaintainPlayerForeground = $true
 )
 
 $ErrorActionPreference = 'Stop'
 if ($CaptureTrace -and (-not $Smoke -or -not $DetailedDiagnostics)) { throw 'Native trace is diagnostic-only; use Smoke and DetailedDiagnostics.' }
+if ($RenderDiagnostic -and (-not $Smoke -or -not $DetailedDiagnostics)) { throw 'Render isolation is diagnostic-only; use Smoke and DetailedDiagnostics.' }
 $PlayerPath = (Resolve-Path -LiteralPath $PlayerPath).Path
 $repo = (Resolve-Path -LiteralPath (Split-Path $PSScriptRoot -Parent)).Path
 if ([string]::IsNullOrWhiteSpace($BaseCommit)) {
@@ -54,7 +56,11 @@ function Get-TierMix([int]$Population) {
 }
 
 function Get-FileSha256([string]$Path) {
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    # Do not depend on a host-specific PowerShell module auto-load across 5.1/7 child processes.
+    $stream = [IO.File]::OpenRead($Path)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return ([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '').ToLowerInvariant() }
+    finally { $sha.Dispose(); $stream.Dispose() }
 }
 
 function Test-MonotonicGrowth([long[]]$Values, [long]$Limit) {
@@ -170,6 +176,7 @@ foreach ($population in $Populations) {
         if ($Smoke) { $arguments += '-u29Smoke' }
         if ($DetailedDiagnostics) { $arguments += '-u29Diagnostics' }
         if ($CaptureTrace) { $arguments += '-u29Trace' }
+        if ($RenderDiagnostic) { $arguments += @('-u29RenderDiagnostic', $RenderDiagnostic) }
         $startedUtc = [DateTime]::UtcNow
         $process = Start-Process -FilePath $PlayerPath -ArgumentList $arguments -PassThru
         Write-Output "U29 Player population=$population repeat=$repeat PID=$($process.Id)"

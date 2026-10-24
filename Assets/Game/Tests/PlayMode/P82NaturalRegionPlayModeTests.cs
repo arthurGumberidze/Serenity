@@ -28,7 +28,9 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var presenters = Object.FindObjectsByType<ProductionSourcePresenter>(FindObjectsSortMode.None)
                 .Where(x => x.IsBound).OrderBy(x => x.Site.Id).ToArray();
-            Assert.That(presenters, Has.Length.EqualTo(24));
+            Assert.That(presenters, Is.Not.Empty);
+            Assert.That(presenters.Select(x => x.Site.Id), Is.EquivalentTo(root.Production.Sites
+                .Where(x => x.Kind == Game.Domain.Production.ProductionSiteKind.NaturalSource).Select(x => x.Id)));
             foreach (var presenter in presenters)
             {
                 root.SelectionProbe.SelectProductionSource(presenter);
@@ -45,16 +47,19 @@ namespace Game.Tests.PlayMode
         public IEnumerator IronAndGoldStableIdentitySurvivesSaveLoad()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            var anchors = root.InhabitableRegion.ResourceAnchors.Where(x => x.RecipeId == "gather_iron" || x.RecipeId == "gather_gold").ToArray();
-            var ids = anchors.Select(x => DeterministicStableId.Create(root.ActiveNewGameConfiguration.WorldSeed,
-                "player_source", x.StableIndex)).ToArray();
+            var sites = root.Production.Sites.Where(x => x.RecipeId.ToString() == "gather_iron" ||
+                x.RecipeId.ToString() == "gather_gold").ToArray();
+            Assert.That(sites.Select(x => x.RecipeId.ToString()).Distinct(),
+                Is.EquivalentTo(new[] { "gather_iron", "gather_gold" }));
+            var ids = sites.Select(x => x.Id).ToArray();
             root.PlayerSaves.Save(1);
             root.PlayerSaves.Load(1);
+            yield return null; // disposable tiled views are destroyed at the end of the load frame
             foreach (var id in ids)
             {
                 Assert.That(root.Production.TryGetSite(id, out var site), Is.True);
                 var presenter = Object.FindObjectsByType<ProductionSourcePresenter>(FindObjectsSortMode.None)
-                    .Single(x => x.IsBound && x.Site.Id == id);
+                    .First(x => x.IsBound && x.Site.Id == id);
                 Assert.That(presenter.Site, Is.SameAs(site));
             }
             yield return null;

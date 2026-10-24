@@ -26,11 +26,13 @@ namespace Game.Tests.PlayMode
     public sealed class U31GpuPlayModeTests
     {
         private string saveDirectory;
+        private string previousSaveDirectory;
 
         [UnitySetUp]
         public IEnumerator LoadScene()
         {
             saveDirectory = Path.Combine(Path.GetTempPath(), "serenity-u31-gpu-" + Guid.NewGuid().ToString("N"));
+            previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             Screen.SetResolution(1600, 900, false);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
@@ -43,7 +45,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             if (root != null) Object.Destroy(root.gameObject);
             yield return null;
-            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", null);
+            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", previousSaveDirectory);
             if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
         }
 
@@ -88,6 +90,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root.ThirdPersonControl.LastAttackStatus, Is.EqualTo(ManualCombatAttackStatus.Invalid));
             Submit(root.GameplayUi.RootVisual.Q<Button>("pause-button"));
 
+            // Input spans rendered frames; hold simulation time fixed while testing cooldown.
+            root.AiRuntime.enabled = false;
             var before = root.Combat.Encounters.Single(x => x.BattleId == battleId).AttackHistory
                 .Count(x => x.AttackerId == attacker);
             yield return AttackWithMouse(root);
@@ -95,12 +99,14 @@ namespace Game.Tests.PlayMode
             var after = root.Combat.Encounters.Single(x => x.BattleId == battleId).AttackHistory
                 .Count(x => x.AttackerId == attacker);
             Assert.That(after, Is.EqualTo(before + 1));
+            yield return new WaitForSecondsRealtime(0.5f); // permit the presentation swing debounce
             yield return AttackWithMouse(root);
             Assert.That(root.ThirdPersonControl.LastAttackStatus, Is.EqualTo(ManualCombatAttackStatus.Cooldown));
             Assert.That(root.Combat.Encounters.Single(x => x.BattleId == battleId).AttackHistory
                 .Count(x => x.AttackerId == attacker), Is.EqualTo(after));
             Assert.That(root.MilitaryUnits.Get(playerUnitId).CaptainId.Value, Is.EqualTo(attacker));
 
+            root.AiRuntime.enabled = true;
             root.ThirdPersonControl.Exit();
             root.MilitaryUnits.SetAbstractLocation(battle.SideAUnitId.Value, "enemy_settlement");
             root.MilitaryUnits.SetAbstractLocation(battle.SideBUnitId.Value, "enemy_settlement");
@@ -118,7 +124,7 @@ namespace Game.Tests.PlayMode
             root.GameplayUi.RefreshNow();
             Assert.That(root.CampaignProgress.State.MilitaryVictory, Is.True);
             Assert.That(string.Join("\n", root.GameplayUi.RootVisual.Query<Label>().ToList().Select(x => x.text)),
-                Does.Contain("Military victory"));
+                Does.Contain(Game.Presentation.Localization.RussianTextCatalog.Get("ui.game_over.victory")));
 
             var beforeContinuation = root.Clock.State.CalendarTicks;
             Submit(root.GameplayUi.RootVisual.Q<Button>("speed-10"));

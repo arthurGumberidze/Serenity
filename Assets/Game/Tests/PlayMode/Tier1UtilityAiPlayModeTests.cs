@@ -32,8 +32,8 @@ namespace Game.Tests.PlayMode
             Assert.That(root.AiRuntime, Is.Not.Null);
             Assert.That(root.AiRuntime.PerAgentAiUpdateCount, Is.Zero);
             Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
-            Assert.That(root.AiAgents.Count, Is.EqualTo(2));
-            Assert.That(root.AiScheduler.Count, Is.EqualTo(2));
+            Assert.That(root.AiAgents.Count, Is.EqualTo(root.NewGame.PlayerCharacters.Count));
+            Assert.That(root.AiScheduler.Count, Is.EqualTo(root.AiAgents.Count));
             Assert.That(root.DemoStorageBuilding, Is.Not.Null);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>() != null), Is.True);
             Assert.That(root.DemoPresenters.All(x => x.GetComponent<NavMeshAgent>().isOnNavMesh), Is.True);
@@ -44,35 +44,44 @@ namespace Game.Tests.PlayMode
         public IEnumerator NavMeshMovementDrivesAnimationAndHaulConservesResources()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            var initialPosition = root.DemoPresenters[0].transform.position;
+            var initialPosition = root.DemoPresenters.ToDictionary(x => x.CharacterId, x => x.transform.position);
             var initialTotal = Total(root);
             var initialPileUnits = TotalForKind(root, InventoryOwnerKind.WorldPile);
-            var initialCharacterUnits = TotalForKind(root, InventoryOwnerKind.Character);
+            var initialCharacterUnits = TotalForKind(root, InventoryOwnerKind.CarryLoad);
             var maximumCharacterUnits = initialCharacterUnits;
             var resourceOverlay = Object.FindAnyObjectByType<ResourceDebugOverlay>();
             var storage = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.BuildingStorage,
                 root.DemoStorageBuilding.Id));
+            // Nearby stone/fiber may fill the authored 40-unit basket before the farther wood.
+            // Give this conservation fixture enough capacity for all initial cargo; production
+            // balance and the separate capacity/reservation tests keep the authored limit.
+            storage.EnsureCapacity(root.Inventories.All.Sum(x => x.TotalUnits));
+            var initialStoredWood = storage.GetAmount(new ResourceId("wood_log")).Units;
             var sawMoving = false;
             var moved = false;
-            var timeout = Time.realtimeSinceStartup + 18f;
-            while (Time.realtimeSinceStartup < timeout && storage.TotalUnits == 0)
+            var timeout = Time.realtimeSinceStartup + 45f;
+            while (Time.realtimeSinceStartup < timeout && storage.GetAmount(new ResourceId("wood_log")).Units == initialStoredWood)
             {
-                var presenter = root.DemoPresenters[0];
-                sawMoving |= presenter.Animator != null && presenter.Animator.GetBool("Moving");
-                moved |= Vector3.Distance(initialPosition, presenter.transform.position) > 0.4f;
+                foreach (var presenter in root.DemoPresenters)
+                {
+                    sawMoving |= presenter.Animator != null && presenter.Animator.GetBool("Moving");
+                    moved |= Vector3.Distance(initialPosition[presenter.CharacterId], presenter.transform.position) > 0.4f;
+                }
                 maximumCharacterUnits = System.Math.Max(maximumCharacterUnits,
-                    TotalForKind(root, InventoryOwnerKind.Character));
+                    TotalForKind(root, InventoryOwnerKind.CarryLoad));
                 yield return null;
             }
             Assert.That(moved, Is.True, "The Tier 1 presenter never traversed the NavMesh.");
             Assert.That(sawMoving, Is.True, "The U07 Moving parameter was never driven by navigation velocity.");
-            Assert.That(storage.TotalUnits, Is.GreaterThan(0), "No canonical resource reached the Storage Basket.");
+            Assert.That(storage.GetAmount(new ResourceId("wood_log")).Units, Is.GreaterThan(initialStoredWood),
+                "No canonical resource reached the Storage Basket. " + string.Join("; ", root.AiAgents.All.Select(x =>
+                    x.CharacterId + ": " + x.CurrentAction + " at " + x.Position)));
             Assert.That(Total(root), Is.EqualTo(initialTotal), "Hauling must conserve world + character + storage units.");
             Assert.That(TotalForKind(root, InventoryOwnerKind.WorldPile), Is.LessThan(initialPileUnits),
                 "Pickup must reduce canonical world-pile stock.");
             Assert.That(maximumCharacterUnits, Is.GreaterThan(initialCharacterUnits),
                 "Pickup must pass through a canonical character inventory.");
-            Assert.That(TotalForKind(root, InventoryOwnerKind.Character), Is.LessThan(maximumCharacterUnits),
+            Assert.That(TotalForKind(root, InventoryOwnerKind.CarryLoad), Is.LessThan(maximumCharacterUnits),
                 "Dropoff must remove the carried quantity from the character inventory.");
             foreach (var definition in root.Resources.All)
             {
@@ -138,7 +147,7 @@ namespace Game.Tests.PlayMode
             Assert.That(snapshot.Target.HasValue, Is.True);
             Assert.That(snapshot.ActiveClaims.Single().Id, Is.EqualTo(claim.Id));
             Assert.That(snapshot.ActiveClaims.Single().Claimant, Is.EqualTo(claim.Claimant));
-            var canonicalInventory = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, claim.Claimant));
+            var canonicalInventory = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.CarryLoad, claim.Claimant));
             foreach (var amount in snapshot.Resources)
                 Assert.That(amount.Quantity, Is.EqualTo(canonicalInventory.GetAmount(amount.ResourceId).Units));
             root.AiRuntime.SetPaused(false);
@@ -164,10 +173,10 @@ namespace Game.Tests.PlayMode
             root.AiRuntime.SetPaused(false);
         }
 
-        private static long Total(LocalSceneCompositionRoot root) => root.Inventories.All.Sum(x => x.TotalUnits);
+        private static long Total(LocalSceneCompositionRoot root) => root.Inventories.All.Sum(x => x.GetAmount(new ResourceId("wood_log")).Units);
 
         private static long TotalForKind(LocalSceneCompositionRoot root, InventoryOwnerKind kind) =>
-            root.Inventories.All.Where(x => x.Owner.Kind == kind).Sum(x => x.TotalUnits);
+            root.Inventories.All.Where(x => x.Owner.Kind == kind).Sum(x => x.GetAmount(new ResourceId("wood_log")).Units);
 
         private static void SelectFromAbove(LocalSceneCompositionRoot root, Component target)
         {

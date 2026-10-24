@@ -99,7 +99,7 @@ namespace Game.Presentation.Environment
             (values ?? Enumerable.Empty<GameObject>()).Where(x => x != null).ToArray();
 
         private static bool ValidShaders(IEnumerable<GameObject> roots) => roots
-            .SelectMany(x => x.GetComponentsInChildren<Renderer>(true)).All(renderer =>
+            .SelectMany(x => x.GetComponentsInChildren<Renderer>(true)).Where(renderer => renderer.enabled).All(renderer =>
                 renderer.sharedMaterials.Length > 0 && renderer.sharedMaterials.All(material =>
                     material != null && material.shader != null &&
                     !string.Equals(material.shader.name, "Hidden/InternalErrorShader", StringComparison.Ordinal)));

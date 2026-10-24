@@ -46,6 +46,7 @@ namespace Game.Infrastructure.Performance
         public bool enableSaveObservation = true;
         public bool detailedDiagnostics;
         public bool captureProfilerTrace;
+        public string renderDiagnostic;
 
         public static bool IsRequested(string[] args) =>
             args != null && args.Any(x => string.Equals(x, "-u29Benchmark", StringComparison.OrdinalIgnoreCase));
@@ -75,6 +76,7 @@ namespace Game.Infrastructure.Performance
                 mandatoryGate = !HasArg(args, "-u29Smoke"),
                 detailedDiagnostics = HasArg(args, "-u29Diagnostics"),
                 captureProfilerTrace = HasArg(args, "-u29Trace"),
+                renderDiagnostic = HasArg(args, "-u29RenderDiagnostic") ? StringArg(args, "-u29RenderDiagnostic") : null,
                 enableTierChurn = !HasArg(args, "-u29DisableTierChurn"),
                 enableSaveObservation = !HasArg(args, "-u29DisableSaveObservation")
             };
@@ -104,6 +106,9 @@ namespace Game.Infrastructure.Performance
                 throw new InvalidOperationException("The U29 mandatory gate retains its fixed 1600x900 contract.");
             if (captureProfilerTrace && (mandatoryGate || !detailedDiagnostics))
                 throw new InvalidOperationException("Profiler trace requires diagnostic smoke mode, never the acceptance gate.");
+            if (!string.IsNullOrEmpty(renderDiagnostic) && (mandatoryGate || !detailedDiagnostics ||
+                !new[] { "basemap", "shadows", "foliage", "characters" }.Contains(renderDiagnostic)))
+                throw new InvalidOperationException("Render isolation is restricted to explicit diagnostic smoke runs.");
             if (mandatoryGate && (warmupSeconds < MandatoryWarmupSeconds ||
                                   measurementSeconds < MandatoryMeasurementSeconds ||
                                   repeatCount < MandatoryRepeatCount))
@@ -242,6 +247,7 @@ namespace Game.Infrastructure.Performance
     [Serializable]
     public sealed class U29AllocationBreakdown
     {
+        public bool threadCounterAvailable;
         public long simulationSamples;
         public long tier1RuntimeSamples;
         public double tier1SchedulerBytesPerSample;

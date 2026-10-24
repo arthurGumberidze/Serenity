@@ -430,6 +430,7 @@ namespace Game.Presentation.UI
 
         private void OnSecondaryClicked()
         {
+            if (context.BuildingPlacement.WasCancelledThisFrame) return;
             if (DeveloperUiVisible || IsTextInputFocused() || context.BuildingPlacement.IsActive) return;
             if (context.Selection.SelectedCharacterIds.Count == 0)
             {
@@ -510,6 +511,8 @@ namespace Game.Presentation.UI
             contextMenu.style.display = DisplayStyle.Flex;
         }
 
+        public ContextCommandResult LastContextCommandResult { get; private set; }
+
         public ContextCommandResult ExecuteContextAction(ContextActionKind action, bool append)
         {
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
@@ -522,6 +525,7 @@ namespace Game.Presentation.UI
             var result = context.ContextCommands.Issue(roster, action, target,
                 append, id => BuildContextFacts(id, action, target), source, destination,
                 action == ContextActionKind.Haul ? new ResourceQuantity(1) : default);
+            LastContextCommandResult = result;
             var delayed = result.Entries.Count(x => x.Order != null && x.Availability.Delayed);
             SetStatus(ContextActionName(action) + ": приказов " + result.Orders.Count +
                 (delayed > 0 ? ", с задержкой " + delayed : string.Empty));
@@ -1096,7 +1100,7 @@ namespace Game.Presentation.UI
                                                           x.IsOperational && context.Inventories.TryGet(
                                                               new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
             var researchStarted = context.Research.ActiveProject != null || context.Research.CompletedTechnologies.Any(x =>
-                x.ToString() != "basic_survival" && x.ToString() != "gathering");
+                !context.Research.Catalog.Get(x).StartingKnowledge);
             var dangerHandled = (context.Events?.History.Count ?? 0) > 0 ||
                                 context.Health.Conditions.Any(x => x.State != HealthConditionState.Recovered) ||
                                 context.Battles.Battles.Any(x => x.BattleHistory.Count > 0);

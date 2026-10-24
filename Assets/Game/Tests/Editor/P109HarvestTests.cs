@@ -27,6 +27,10 @@ namespace Game.Tests.Editor
             var storage = Building.CreateNew(new BuildingDefinitionId("storage_basket"), new GridCoordinate(0, 0), BuildingOrientation.North);
             storage.MarkCompleted();
             buildings.Add(storage);
+            // D-169: fishing is unlocked by an operational fishing camp, including exact-site work.
+            var camp = Building.CreateNew(new BuildingDefinitionId("fishing_camp"), new GridCoordinate(10, 12), BuildingOrientation.North);
+            camp.MarkCompleted();
+            buildings.Add(camp);
             inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, storage.Id), resources, 2));
             var piles = new WorldPileService(resources, inventories);
             var production = new ProductionService(ProductionCatalog.CreatePlayablePatch(resources), resources,
@@ -54,6 +58,7 @@ namespace Game.Tests.Editor
                 fish, claim.Quantity), Is.EqualTo(TransferFailureReason.None));
             Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(6));
         }
+
 
         [Test]
         public void HarvestLeavesGroundPileAndHaulReservesOnlyStorageSpace()

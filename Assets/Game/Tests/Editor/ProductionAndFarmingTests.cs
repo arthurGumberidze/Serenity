@@ -162,9 +162,10 @@ namespace Game.Tests.Editor
             var second = fixture.AddWorker(102);
             fixture.AddNatural("gather_fiber", 13, 1);
             Assert.That(fixture.Production.TryReserve(first, default, out var firstJob), Is.True);
-            Assert.That(fixture.Production.TryReserve(second, default, out var secondJob), Is.True);
+            // D-167 reserves remaining portions before work, rather than accepting doomed work.
+            Assert.That(fixture.Production.TryReserve(second, default, out _), Is.False);
             Assert.That(fixture.Production.AdvanceTask(firstJob.Task.Id, TimeSpan.FromHours(6)).Completed, Is.True);
-            Assert.That(fixture.Production.AdvanceTask(secondJob.Task.Id, TimeSpan.FromHours(6)).Completed, Is.False);
+            Assert.That(fixture.Production.TryReserve(second, default, out _), Is.False);
             Assert.That(fixture.Production.GetProducedTotal(fixture.Fiber), Is.EqualTo(4));
         }
 

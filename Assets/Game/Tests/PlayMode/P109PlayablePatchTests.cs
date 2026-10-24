@@ -33,6 +33,9 @@ namespace Game.Tests.PlayMode
             var pond = Object.FindObjectsByType<ProductionSourcePresenter>().First(x =>
                 x.GetComponentsInChildren<Transform>().Any(t => t.name == "Swimming fish 0"));
             Assert.That(pond.Site.RecipeId.ToString(), Is.EqualTo("fish_water"));
+            Assert.That(root.Production.IsRecipeAvailable(pond.Site.RecipeId), Is.False,
+                "Fishing requires an operational camp (D-169).");
+            AddFishingCamp(root);
             Assert.That(root.Production.IsRecipeAvailable(pond.Site.RecipeId), Is.True);
             var presenter = root.DemoPresenters[0];
             var animator = presenter.Animator;
@@ -109,6 +112,7 @@ namespace Game.Tests.PlayMode
             yield return SceneManager.LoadSceneAsync("LocalGameplay");
             yield return null;
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            AddFishingCamp(root);
             var source = Object.FindObjectsByType<ProductionSourcePresenter>()
                 .Where(x => x.IsBound && x.Site.RecipeId.ToString() == "fish_water")
                 .OrderBy(x => (x.transform.position - root.DemoPresenters[0].transform.position).sqrMagnitude).First();
@@ -133,6 +137,15 @@ namespace Game.Tests.PlayMode
             Assert.That(root.Production.GetProducedTotal(fish), Is.GreaterThan(before));
             Assert.That(root.WorldPiles.All.Any(x => x.ResourceId == fish &&
                 root.Inventories.Get(x.InventoryOwner).GetAmount(fish).IsPositive), Is.True);
+        }
+
+        private static void AddFishingCamp(LocalSceneCompositionRoot root)
+        {
+            var camp = Game.Domain.Buildings.Building.CreateNew(
+                new Game.Domain.Buildings.BuildingDefinitionId("fishing_camp"),
+                new Game.Domain.Buildings.GridCoordinate(10, 12), Game.Domain.Buildings.BuildingOrientation.North);
+            camp.MarkCompleted();
+            root.Buildings.Add(camp);
         }
 
         [UnityTest]

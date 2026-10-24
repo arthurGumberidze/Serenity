@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.Resources;
@@ -35,20 +36,21 @@ namespace Game.Tests.PlayMode
             var before = character.CaptureState();
             Assert.That(root.CharacterPresentations.TryGet(id, out var originalPresenter), Is.True);
             var originalPresentationName = originalPresenter.gameObject.name;
-            var inventoryOwner = new InventoryOwner(InventoryOwnerKind.Character, id);
+            var inventoryOwner = new InventoryOwner(InventoryOwnerKind.CarryLoad, id);
             var inventory = root.Inventories.Get(inventoryOwner);
             var wood = new ResourceId("wood_log");
             var beforeWood = inventory.GetAmount(wood).Units;
             if (inventory.Capacity - inventory.TotalUnits >= 2)
                 Assert.That(inventory.TryAdd(wood, new ResourceQuantity(2)), Is.True);
             var carriedWood = inventory.GetAmount(wood).Units;
+            var totalWood = root.Inventories.All.Sum(x => x.GetAmount(wood).Units);
             var group = root.Work.CreateGroup("U13 continuity", new[] { id });
             var job = root.Work.CreateMoveJob(id, new WorldPosition(0f, 0f, 8f), WorkPriority.Urgent, group.Id);
             for (var i = 0; i < 4 && job.Status != WorkJobStatus.Active; i++)
                 root.AiScheduler.Advance(new GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
             Assert.That(job.Status, Is.EqualTo(WorkJobStatus.Active));
             Assert.That(root.AiRuntime.TryGetMovement(id, out var movement), Is.True);
-            Assert.That(movement.Agent.Warp(new Vector3(7f, 0f, 4f)), Is.True);
+            Assert.That(movement.Agent.Warp(new Vector3(7f, root.WorldHeight.SampleHeight(7f, 4f), 4f)), Is.True);
             var expectedPosition = movement.CurrentPosition;
 
             Assert.That(root.Tiers.GetTier(id), Is.EqualTo(CharacterSimulationTier.Tier1));
@@ -75,7 +77,9 @@ namespace Game.Tests.PlayMode
             Assert.That(restoredPresenter.transform.position.x, Is.EqualTo(expectedPosition.X).Within(0.05f));
             Assert.That(restoredPresenter.transform.position.z, Is.EqualTo(expectedPosition.Z).Within(0.05f));
             Assert.That(root.Inventories.Get(inventoryOwner), Is.SameAs(inventory));
-            Assert.That(inventory.GetAmount(wood).Units, Is.EqualTo(carriedWood));
+            Assert.That(inventory.GetAmount(wood).Units, Is.Zero,
+                "Temporary transport loads return to world piles when work/tier representation ends.");
+            Assert.That(root.Inventories.All.Sum(x => x.GetAmount(wood).Units), Is.EqualTo(totalWood));
             Assert.That(carriedWood, Is.GreaterThanOrEqualTo(beforeWood));
             Assert.That(root.Work.Groups.TryGetForMember(id, out var restoredGroup), Is.True);
             Assert.That(restoredGroup, Is.SameAs(group));
@@ -92,8 +96,8 @@ namespace Game.Tests.PlayMode
             var initialTier3Count = root.Tier3Characters.Count;
             var initialTier1Count = root.CharacterPresentations.Count;
             Assert.That(root.Characters.Count - root.StarterEnemyAi.Residents.Count, Is.EqualTo(10));
-            Assert.That(initialTier1Count, Is.EqualTo(2),
-                "New Game starts with two nearby Tier 1 presenters and keeps the remaining residents aggregated.");
+            Assert.That(initialTier1Count, Is.EqualTo(root.NewGame.PlayerCharacters.Count),
+                "The compact starter settlement keeps its ten nearby residents physical.");
             Assert.That(root.Tiers.Transition(id, CharacterSimulationTier.Tier1).Changed, Is.False);
             Assert.That(root.CharacterPresentations.Count, Is.EqualTo(initialTier1Count));
             root.Tiers.Transition(id, CharacterSimulationTier.Tier2);

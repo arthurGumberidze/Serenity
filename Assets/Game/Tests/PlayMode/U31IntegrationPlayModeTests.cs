@@ -27,11 +27,13 @@ namespace Game.Tests.PlayMode
     public sealed class U31IntegrationPlayModeTests
     {
         private string saveDirectory;
+        private string previousSaveDirectory;
 
         [UnitySetUp]
         public IEnumerator LoadScene()
         {
             saveDirectory = Path.Combine(Path.GetTempPath(), "serenity-u31-play-" + Guid.NewGuid().ToString("N"));
+            previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             Screen.SetResolution(1600, 900, false);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
@@ -44,7 +46,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             if (root != null) Object.Destroy(root.gameObject);
             yield return null;
-            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", null);
+            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", previousSaveDirectory);
             if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
         }
 
@@ -119,6 +121,9 @@ namespace Game.Tests.PlayMode
             var productionWorker = root.FemaleDemoCharacter.Id == root.DemoPresenters[0].CharacterId
                 ? root.MaleDemoCharacter.Id
                 : root.FemaleDemoCharacter.Id;
+            var researcher = root.DemoPresenters[0].CharacterId;
+            // Large calendar jumps exercise aggregate work; physical navigation needs rendered time.
+            root.Tiers.Transition(researcher, CharacterSimulationTier.Tier3);
             root.Tiers.Transition(productionWorker, CharacterSimulationTier.Tier3);
             Assert.That(root.Production.TryReserve(productionWorker, default, out var productionJob), Is.True,
                 "A canonical aggregate worker must accept the UI-requested production target.");
@@ -132,6 +137,7 @@ namespace Game.Tests.PlayMode
                 AdvanceSixGameHours(root);
 
             Assert.That(root.Research.IsCompleted(new TechnologyId("shelter_construction")), Is.True);
+            root.Tiers.Transition(researcher, CharacterSimulationTier.Tier1);
             Assert.That(root.Resources.All.Sum(definition => root.Production.GetProducedTotal(definition.Id)),
                 Is.GreaterThan(producedBefore));
             Assert.That(root.Buildings.All.Count(x => x.OwnerSideId == root.StarterEnemyAi.Strategic.SideId),
@@ -156,6 +162,10 @@ namespace Game.Tests.PlayMode
             ui.SetPanel(GameplayPanel.Military);
             Submit(ButtonWithText(ui, "Create player unit from selected"));
             var playerUnit = root.MilitaryUnits.Units.Single(x => x.OwnerSideId.Value == "player");
+            Assert.That(root.MilitaryUnits.LoadInitialSupply(playerUnit.Id, root.Inventories,
+                root.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.WorldPile ||
+                    x.Owner.Kind == InventoryOwnerKind.BuildingStorage).Select(x => x.Owner)), Is.GreaterThan(0));
+            playerUnit = root.MilitaryUnits.Get(playerUnit.Id);
             Assert.That(playerUnit.Supply.Initialized, Is.True);
             Assert.That(playerUnit.Supply.Get(berries), Is.GreaterThan(0));
             Submit(ButtonWithText(ui, "Aggregate"));
@@ -244,7 +254,8 @@ namespace Game.Tests.PlayMode
         private static Button RowButton(GameplayUiController ui, string label, string button)
         {
             foreach (var element in ui.RootVisual.Q("main-panel").Children())
-                if (element.Query<Label>().ToList().Any(x => x.text.Contains(label)))
+                if (element.Query<Label>().ToList().Any(x => x.text.Contains(label)) &&
+                    element.Query<Button>().ToList().Any(x => x.text == button))
                     return element.Query<Button>().ToList().First(x => x.text == button);
             throw new AssertionException("UI row was not found: " + label);
         }

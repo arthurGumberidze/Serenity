@@ -68,6 +68,14 @@ namespace Game.Tests.PlayMode
             foreach (var formation in root.PopulatedBiomeWorld.ResourceFormations)
             {
                 var presenter = formation.ClickableRoot.GetComponent<ProductionSourcePresenter>();
+                var position = formation.ClickableRoot.position;
+                if (!root.WorldDefinition.TryGetTile(position.x, position.z, out _) ||
+                    root.WorldHeight.IsWater(position.x, position.z))
+                {
+                    Assert.That(formation.ClickableRoot.gameObject.activeSelf, Is.False);
+                    Assert.That(presenter, Is.Null);
+                    continue;
+                }
                 Assert.That(presenter, Is.Not.Null, formation.StableIndex.ToString());
                 root.SelectionProbe.SelectProductionSource(presenter);
                 Assert.That(root.SelectionProbe.SelectedProductionSourcePresenter, Is.SameAs(presenter));

@@ -48,6 +48,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
             foreach (var order in root.Work.Jobs.Where(x => !x.IsTerminal).ToArray()) root.Work.Cancel(order.Id);
             var presenters = Object.FindObjectsByType<CharacterPresenter>(FindObjectsInactive.Exclude)
                 .Where(x => x.IsBound).OrderBy(x => x.CharacterId).ToArray();
@@ -60,15 +61,17 @@ namespace Game.Tests.PlayMode
             Assert.That(root.SelectionProbe.SelectWithinScreenRect(box), Is.GreaterThanOrEqualTo(2));
             Assert.That(root.SelectionProbe.SelectedCharacterIds.Count, Is.GreaterThanOrEqualTo(2));
 
-            root.SelectionProbe.SelectCharacters(new[] { presenters[0] });
-            var selectedId = presenters[0].CharacterId;
-            var anchor = root.InhabitableRegion.PlayerTerritoryAnchor.position;
+            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
+            var selectedId = root.DemoPresenters[0].CharacterId;
+            var anchor = root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position);
             var firstTarget = new ContextCommandTarget(ContextTargetKind.Ground,
                 new WorldPosition(anchor.x + 1f, anchor.y, anchor.z + 1f));
             root.GameplayUi.OpenContextMenu(firstTarget, new Vector2(Screen.width - 2f, 2f));
             yield return null;
-            Assert.That(root.GameplayUi.ContextActionStates.Count, Is.EqualTo(9));
-            Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True);
+            Assert.That(root.GameplayUi.ContextActionStates.Keys,
+                Is.EquivalentTo(System.Enum.GetValues(typeof(ContextActionKind))));
+            Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True,
+                root.GameplayUi.ContextActionStates[ContextActionKind.Move].Reason.ToString());
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Inspect].Reason,
                 Is.EqualTo(ContextUnavailableReason.WrongTargetType));
             // A normal Player click can be observed by SelectionProbe in the same frame that UI Toolkit

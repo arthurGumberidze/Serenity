@@ -57,7 +57,7 @@ namespace Game.Tests.PlayMode
         {
             var trees = root.PopulatedBiomeWorld.CanopyTrees.Concat(root.PopulatedBiomeWorld.BaseRegion.Trees);
             foreach (var tree in trees)
-            foreach (var group in tree.GetComponentsInChildren<LODGroup>(true))
+            foreach (var group in tree.GetComponentsInChildren<LODGroup>(true).Where(x => x.enabled))
             {
                 var lods = group.GetLODs();
                 Assert.That(lods, Is.Not.Empty, tree.name);
@@ -67,6 +67,9 @@ namespace Game.Tests.PlayMode
                 Assert.That(lods.Last().screenRelativeTransitionHeight,
                     Is.EqualTo(StableEnvironmentLodController.MinimumLastLodHeight).Within(0.0001f));
             }
+            Assert.That(trees.Where(x => x.activeInHierarchy).SelectMany(x =>
+                x.GetComponentsInChildren<Renderer>()).Any(x => x.enabled), Is.True,
+                "The replacement forest must still render even when retired LOD groups are disabled.");
             yield return null;
         }
 
@@ -75,24 +78,26 @@ namespace Game.Tests.PlayMode
         {
             var trees = root.PopulatedBiomeWorld.CanopyTrees.Concat(root.PopulatedBiomeWorld.BaseRegion.Trees);
             foreach (var tree in trees)
+            {
+                if (!root.WorldDefinition.TryGetTile(tree.transform.position.x, tree.transform.position.z, out _))
+                {
+                    Assert.That(tree.activeSelf, Is.False, tree.name);
+                    continue;
+                }
                 Assert.That(tree.transform.position.y,
                     Is.EqualTo(root.WorldHeight.SampleHeight(tree.transform.position.x, tree.transform.position.z))
                         .Within(0.1f), tree.name);
+            }
             yield return null;
         }
 
         [UnityTest]
         public IEnumerator AuthoredTreesHideWhenTheirTerrainTileIsNotDrawn()
         {
-            var tree = root.PopulatedBiomeWorld.CanopyTrees.First();
-            var origin = tree.transform.position;
-            root.TiledWorld.RefreshNow(new WorldPosition(root.WorldDefinition.Origin.X + 10f, 0f,
-                root.WorldDefinition.Origin.Z + 10f), System.Array.Empty<WorldPosition>(),
-                System.Array.Empty<System.Tuple<WorldPosition, WorldPosition>>());
+            var tree = root.PopulatedBiomeWorld.CanopyTrees.First(x => x.activeSelf);
+            root.TiledWorld.SetStrategicMode(true);
             Assert.That(tree.activeSelf, Is.False);
-            root.TiledWorld.RefreshNow(new WorldPosition(origin.x, origin.y, origin.z),
-                System.Array.Empty<WorldPosition>(),
-                System.Array.Empty<System.Tuple<WorldPosition, WorldPosition>>());
+            root.TiledWorld.SetStrategicMode(false);
             Assert.That(tree.activeSelf, Is.True);
             yield return null;
         }

@@ -5,6 +5,8 @@ param(
     [string]$EditorPath = 'C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe',
     [string]$RunDirectory,
     [string]$ProtectedSaveDirectory,
+    [string]$RepairFrom,
+    [ValidateSet('Tests','Performance','Protection')][string]$RepairStage = 'Tests',
     [ValidateRange(1, 7200)][int]$TestTimeoutSeconds = 1200,
     [ValidateRange(1, 14400)][int]$BuildTimeoutSeconds = 3600,
     [ValidateRange(1, 3600)][int]$PlayerTimeoutSeconds = 300,
@@ -54,6 +56,7 @@ $buildPassed = $false
 $unityReady = $false
 $sourceCommit = ''
 $exitCode = 2
+$cleanupIssues = [Collections.Generic.List[object]]::new()
 
 function Write-ProgressLine([string]$Message) {
     $line = '[{0}] [{1}/{2}] {3}' -f (Get-Date -Format 'HH:mm:ss'), $index, $steps.Count, $Message
@@ -97,7 +100,7 @@ function Save-Report([string]$State) {
     Write-Wm15Text $reportPath ($lines -join [Environment]::NewLine)
     Write-Wm15Json (Join-Path $RunDirectory 'results.json') ([ordered]@{
         state = $State; sourceCommit = $sourceCommit; manualAcceptance = 'PENDING'
-        steps = @($results.ToArray()); runnerError = $fatal
+        steps = @($results.ToArray()); runnerError = $fatal; cleanupIssues = @($cleanupIssues.ToArray())
     })
 }
 
@@ -114,9 +117,14 @@ function Invoke-Child([string]$Executable, [string[]]$Arguments, [int]$Timeout, 
         Write-ProgressLine ("RUN {0} +{1:mm\:ss} PID={2}" -f $currentName, [TimeSpan]::FromSeconds($seconds), $pidValue)
         Save-Status 'RUNNING'
     }
-    Invoke-Wm15Process -FilePath $Executable -Arguments $Arguments -WorkingDirectory $ProjectPath `
+    $child = Invoke-Wm15Process -FilePath $Executable -Arguments $Arguments -WorkingDirectory $ProjectPath `
         -OutputPrefix $Prefix -TimeoutSeconds $effectiveTimeout -ProgressSeconds $ProgressSeconds `
         -OnProgress $progress -Environment $Environment -Visible:$Visible
+    Write-Wm15Json ($Prefix + '.process.json') $child
+    if ($child.Cleanup.Diagnostics.Count -gt 0 -or -not $child.Cleanup.Complete) {
+        $cleanupIssues.Add([pscustomobject]@{step=$currentName; evidence=($Prefix + '.process.json'); cleanup=$child.Cleanup})
+    }
+    return $child
 }
 
 function Get-Protection {
@@ -139,7 +147,9 @@ function Get-Protection {
     # Existing real saves are read only and fingerprinted; children get an isolated save-directory override.
     $saveRoot = $ProtectedSaveDirectory
     if (Test-Path -LiteralPath $saveRoot) {
-        Get-ChildItem -LiteralPath $saveRoot -File -Recurse | ForEach-Object { $paths.Add($_.FullName) | Out-Null }
+        Get-ChildItem -LiteralPath $saveRoot -File -Recurse | Where-Object {
+            -not (Test-Wm15GeneratedTestArtifact $_.FullName $saveRoot)
+        } | ForEach-Object { $paths.Add($_.FullName) | Out-Null }
     }
     foreach ($path in $paths | Sort-Object) {
         [pscustomobject]@{ path = $path; hash = $(if (Test-Path -LiteralPath $path -PathType Leaf) { Get-Wm15Sha256 $path } else { 'MISSING' }) }
@@ -149,15 +159,48 @@ function Get-Protection {
 try {
     Add-Step 'preflight' 'preflight'
     Add-Step 'protected-inputs-before' 'before'
-    Add-Step 'compile' 'compile'
     $fixtures = @(Get-Wm15Fixtures $ProjectPath | Sort-Object Platform, Filter -Unique)
+    $repairReport = $null
+    if ($RepairFrom) {
+        $repairRoot = [IO.Path]::GetFullPath($RepairFrom)
+        if ($RunDirectory.StartsWith($repairRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or $RunDirectory -eq $repairRoot) { throw 'Repair output must be outside original evidence.' }
+        $repairReport = Get-Content -LiteralPath (Join-Path $repairRoot 'results.json') -Raw | ConvertFrom-Json
+        $selected = [Collections.Generic.List[object]]::new()
+        foreach ($failedStep in $repairReport.steps | Where-Object { $_.status -in @('FAIL','ERROR','TIMEOUT') -and $_.name -match '^(EditMode|PlayMode)-' }) {
+            $platform = $failedStep.name.Split('-')[0]
+            $files = @(Get-ChildItem -LiteralPath $failedStep.directory -Filter 'attempt-*.xml' | Sort-Object Name)
+            if ($files.Count -eq 0) { throw "Repair needs explicit case evidence for $($failedStep.name); no broad fallback." }
+            [xml]$xml = Get-Content -LiteralPath $files[-1].FullName -Raw
+            $nodes = @($xml.SelectNodes('//test-case[@result="Failed"]'))
+            # Cleanup ERROR can accompany a valid all-passed XML (HealthAndFamily: two cases).
+            if ($nodes.Count -eq 0 -and $failedStep.status -eq 'ERROR') { $nodes = @($xml.SelectNodes('//test-case')) }
+            foreach ($node in $nodes) {
+                if (-not $node.fullname) { throw 'Repair XML case lacks fullname.' }
+                $selected.Add([pscustomobject]@{Platform=$platform; Filter=[string]$node.fullname; Source=$files[-1].FullName})
+            }
+        }
+        $fixtures = @($selected | Sort-Object Platform,Filter -Unique)
+        if ($fixtures.Count -eq 0 -and $RepairStage -eq 'Tests') { throw 'No failed cases selected; refusing full-suite fallback.' }
+    }
     Write-Wm15Json (Join-Path $RunDirectory 'fixtures.json') @($fixtures)
     # World-map tests first; persistence and integration next, then every other discovered fixture.
     $fixtures = @($fixtures | Sort-Object @{Expression={ if ($_.Filter -match '\.WM\d') { 0 } elseif ($_.Filter -match 'Persistence|U31|P109') { 1 } else { 2 } }}, Platform, Filter)
-    foreach ($fixture in $fixtures) { Add-Step ($fixture.Platform + '-' + $fixture.Filter) 'test' $fixture.Filter $fixture.Platform }
-    Add-Step 'windows-build' 'build'
-    Add-Step 'player-save-load-smoke' 'smoke'
-    foreach ($population in @(100,300,500)) { Add-Step "performance-$population" 'performance' ([string]$population) }
+    if (-not $RepairFrom -or $RepairStage -eq 'Tests') {
+        Add-Step 'compile' 'compile'
+        foreach ($fixture in $fixtures) {
+            $label = if ($RepairFrom) { $fixture.Platform + '-repair-case-' + $steps.Count } else { $fixture.Platform + '-' + $fixture.Filter }
+            Add-Step $label 'test' $fixture.Filter $fixture.Platform
+        }
+    }
+    if (-not $RepairFrom -or $RepairStage -eq 'Performance') {
+        Add-Step 'windows-build' 'build'
+        if (-not $RepairFrom) { Add-Step 'player-save-load-smoke' 'smoke' }
+        foreach ($population in @(100,300,500)) {
+            if (-not $RepairFrom -or @($repairReport.steps | Where-Object { $_.name -eq "performance-$population" -and $_.status -in @('FAIL','ERROR','TIMEOUT') }).Count -eq 1) {
+                Add-Step "performance-$population" 'performance' ([string]$population)
+            }
+        }
+    }
     Add-Step 'protected-inputs-after' 'after'
     Add-Step 'git-diff-check' 'git'
     Write-Wm15Json (Join-Path $RunDirectory 'plan.json') @($steps.ToArray())
@@ -224,6 +267,13 @@ try {
                             $hash = if (Test-Path -LiteralPath $entry.path -PathType Leaf) { Get-Wm15Sha256 $entry.path } else { 'MISSING' }
                             if ($hash -ne $entry.hash) { $differences += [pscustomobject]@{ path=$entry.path; before=$entry.hash; after=$hash } }
                         }
+                        $baselinePaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+                        foreach ($entry in $protected) { $baselinePaths.Add($entry.path) | Out-Null }
+                        foreach ($entry in @(Get-Protection)) {
+                            if (-not $baselinePaths.Contains($entry.path)) {
+                                $differences += [pscustomobject]@{path=$entry.path; before='MISSING'; after=$entry.hash}
+                            }
+                        }
                         Write-Wm15Json (Join-Path $directory 'changed-files.json') @($differences)
                         $detail = "Checked $($protected.Count) files; changed=$($differences.Count)."
                         if ($differences.Count -gt 0) { $status = 'FAIL' }
@@ -236,6 +286,8 @@ try {
                     $run = Invoke-Child 'git.exe' @('-C', $ProjectPath, 'diff', '--check') 60 (Join-Path $directory 'git')
                     if ($run.TimedOut) { $status = 'TIMEOUT' } elseif ($run.ExitCode -ne 0) { $status = 'FAIL' }
                     $detail = 'git diff --check; see git.stdout.log.'
+                } elseif (@($cleanupIssues | Where-Object { -not $_.cleanup.Complete }).Count -gt 0) {
+                    $status = 'BLOCKED'; $detail = 'Owned process cleanup unresolved; see cleanupIssues/process.json. No overlapping runtime check launched.'
                 } elseif (-not $unityReady) {
                     $status = 'BLOCKED'; $detail = 'Unity preflight failed; independent static checks still run.'
                 } elseif ($timer.Elapsed.TotalHours -ge $MaxHours) {
@@ -309,7 +361,9 @@ try {
                     if ($run.TimedOut) { $status='TIMEOUT'; $detail='Performance matrix timeout; owned descendants terminated.' }
                     else {
                         $matrix = Get-Content -LiteralPath (Join-Path $output 'U29-final-summary.json') -Raw | ConvertFrom-Json
-                        if ($run.ExitCode -ne 0 -or -not $matrix.passed -or $matrix.repeatCount -ne 3 -or $matrix.smoke -or @($matrix.populations).Count -ne 1 -or $matrix.populations[0].population -ne [int]$step.Filter -or $matrix.populations[0].completedRepeats -ne 3) { throw 'Performance gate failed or evidence incomplete; see matrix report.' }
+                        if ($matrix.repeatCount -ne 3 -or $matrix.smoke -or @($matrix.populations).Count -ne 1 -or $matrix.populations[0].population -ne [int]$step.Filter -or $matrix.populations[0].completedRepeats -ne 3) { throw 'Performance evidence incomplete; see matrix report.' }
+                        if (-not $matrix.passed) { $status = 'FAIL' }
+                        elseif ($run.ExitCode -ne 0) { throw "Performance reports PASS but wrapper exit=$($run.ExitCode)." }
                         $detail="population=$($step.Filter); 3 repeats; worst p95=$($matrix.populations[0].worstP95Ms) ms. Active Player generation, not full proposed-V2 visual acceptance."
                     }
                 }
@@ -324,7 +378,7 @@ try {
             Save-Status 'RUNNING'
             Save-Report 'RUNNING'
         }
-        $bad = @($results | Where-Object { $_.status -in @('FAIL','TIMEOUT','ERROR') }).Count
+        $bad = @($results | Where-Object { $_.status -in @('FAIL','TIMEOUT','ERROR') }).Count + @($cleanupIssues | Where-Object { -not $_.cleanup.Complete }).Count
         $incomplete = @($results | Where-Object { $_.status -in @('BLOCKED','PARTIAL') }).Count
         $state = if ($bad -gt 0) { 'FAIL' } elseif ($incomplete -gt 0) { 'PARTIAL' } else { 'AUTOMATED_PASS' }
         $currentName = 'complete'

@@ -62,7 +62,8 @@ namespace Game.Presentation.Resources
                 switch (inventory.Owner.Kind)
                 {
                     case InventoryOwnerKind.WorldPile: piles = checked(piles + units); break;
-                    case InventoryOwnerKind.Character: characters = checked(characters + units); break;
+                    case InventoryOwnerKind.Character:
+                    case InventoryOwnerKind.CarryLoad: characters = checked(characters + units); break;
                     case InventoryOwnerKind.BuildingStorage: storage = checked(storage + units); break;
                 }
             }

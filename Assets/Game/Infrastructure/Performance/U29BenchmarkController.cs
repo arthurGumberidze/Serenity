@@ -64,6 +64,7 @@ namespace Game.Infrastructure.Performance
         private U29RuntimeCounts countsStart;
         private Vector3 cameraAnchor;
         private bool allocationProbeActive;
+        private bool threadAllocationCounterAvailable;
         private long allocationProbeCursor;
         private long allocationProbeSamples;
         private long tier2Allocated;
@@ -82,7 +83,7 @@ namespace Game.Infrastructure.Performance
         public void BeginSimulationAllocationSample()
         {
             diagnostics?.BeginSimulation();
-            allocationProbeActive = measuring && !completing;
+            allocationProbeActive = measuring && !completing && threadAllocationCounterAvailable;
             if (allocationProbeActive) allocationProbeCursor = GC.GetAllocatedBytesForCurrentThread();
         }
 
@@ -132,6 +133,7 @@ namespace Game.Infrastructure.Performance
                 Screen.SetResolution(config.width, config.height, false);
                 root.SetPerformanceTierPolicySuppressed(true);
                 scenario = U29BenchmarkScenario.Create(root, config);
+                ApplyRenderDiagnostic();
                 cameraAnchor = root.CameraController.transform.position;
                 if (config.enableTierChurn) scenario.ExerciseTierChurn();
                 if (config.detailedDiagnostics)
@@ -143,7 +145,8 @@ namespace Game.Infrastructure.Performance
                     diagnostics = gameObject.AddComponent<U29FrameDiagnostics>();
                     diagnostics.Initialize(this);
                 }
-                root.AiRuntime.AllocationDiagnosticsEnabled = true;
+                threadAllocationCounterAvailable = U29FrameDiagnostics.ProbeThreadAllocationCounter(out _);
+                root.AiRuntime.AllocationDiagnosticsEnabled = threadAllocationCounterAvailable;
                 CaptureVisualEvidence(Path.Combine(config.outputDirectory, "visual-evidence.png"));
                 StartRecorders();
                 NormalizeManagedHeap();
@@ -406,10 +409,21 @@ namespace Game.Infrastructure.Performance
 
         private U29AllocationBreakdown BuildAllocationBreakdown()
         {
+            if (!threadAllocationCounterAvailable)
+                return new U29AllocationBreakdown
+                {
+                    threadCounterAvailable = false,
+                    tier1SchedulerBytesPerSample = -1, simulationCallbackBytesPerSample = -1,
+                    movementPresentationBytesPerSample = -1, tier2BytesPerSample = -1,
+                    tier3AndResearchBytesPerSample = -1, workersAndWeatherBytesPerSample = -1,
+                    canonicalServicesBytesPerSample = -1, presentationAndTierPolicyBytesPerSample = -1,
+                    totalSimulationBytesPerSample = -1
+                };
             var divisor = Math.Max(1L, allocationProbeSamples);
             var tier1Divisor = Math.Max(1L, root.AiRuntime.AllocationDiagnosticSamples);
             return new U29AllocationBreakdown
             {
+                threadCounterAvailable = true,
                 simulationSamples = allocationProbeSamples,
                 tier1RuntimeSamples = root.AiRuntime.AllocationDiagnosticSamples,
                 tier1SchedulerBytesPerSample = (double)root.AiRuntime.SchedulerAllocatedBytes / tier1Divisor,
@@ -423,6 +437,53 @@ namespace Game.Infrastructure.Performance
                 totalSimulationBytesPerSample = (double)(tier2Allocated + tier3AndResearchAllocated +
                     workersAndWeatherAllocated + canonicalServicesAllocated + presentationAndTierPolicyAllocated) / divisor
             };
+        }
+
+        private void ApplyRenderDiagnostic()
+        {
+            if (config.detailedDiagnostics)
+            {
+                var rows = new List<string> { "terrain,assignedLayers,usedLayers" };
+                foreach (var terrain in Terrain.activeTerrains.OrderBy(value => value.name))
+                {
+                    var data = terrain.terrainData;
+                    var weights = data.GetAlphamaps(0, 0, data.alphamapWidth, data.alphamapHeight);
+                    var used = 0;
+                    for (var layer = 0; layer < weights.GetLength(2); layer++)
+                    {
+                        var found = false;
+                        for (var z = 0; z < weights.GetLength(0) && !found; z++)
+                        for (var x = 0; x < weights.GetLength(1); x++)
+                            if (weights[z, x, layer] > 0f) { found = true; break; }
+                        if (found) used++;
+                    }
+                    rows.Add(terrain.name + "," + data.terrainLayers.Length + "," + used);
+                }
+                File.WriteAllLines(Path.Combine(config.outputDirectory, "terrain-layers.csv"), rows);
+            }
+            if (string.IsNullOrEmpty(config.renderDiagnostic)) return;
+            // These isolation runs are rejected by the mandatory-gate config validator.
+            File.WriteAllText(Path.Combine(config.outputDirectory, "render-diagnostic.txt"), config.renderDiagnostic);
+            switch (config.renderDiagnostic)
+            {
+                case "basemap":
+                    foreach (var terrain in Terrain.activeTerrains) terrain.basemapDistance = 0f;
+                    break;
+                case "shadows":
+                    foreach (var light in UnityEngine.Object.FindObjectsByType<Light>()) light.shadows = LightShadows.None;
+                    break;
+                case "foliage":
+                    foreach (var renderer in UnityEngine.Object.FindObjectsByType<MeshRenderer>())
+                    {
+                        var source = renderer.GetComponentInParent<Game.Presentation.Production.ProductionSourcePresenter>();
+                        if (source != null && source.IsBound && source.Site.RecipeId.ToString() == "chop_wood")
+                            renderer.enabled = false;
+                    }
+                    break;
+                case "characters":
+                    foreach (var renderer in UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>()) renderer.enabled = false;
+                    break;
+            }
         }
 
         private U29HardwareProfile CaptureHardware() => new U29HardwareProfile

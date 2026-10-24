@@ -1,5 +1,56 @@
 # DECISIONS.md
 
+## D-190 WM15 foliage repair reuses mesh LODs without changing world density (2026-10-24)
+
+Rendered build-e isolation measured GPU means of 81.875ms for the normal scene,
+75.894ms with terrain basemaps, 77.414ms without shadows, 20.448ms without foliage,
+and 74.052ms without skinned characters. These 10s/30s smoke runs are diagnostic only.
+Their original wrapper reports retain a cross-host Get-FileHash failure; independent
+SHA-256 and focus checks are recorded in `render-e-integrity.json`. The wrapper hash
+implementation now uses .NET and passes both Windows PowerShell and PowerShell 7 probes.
+
+The current compact world reuses the already reviewed WM05 mesh-only variants of the
+same four Meadow/Birch models. This is asset reuse, not activation of the proposed V2
+generation. LOD0 still determines exact normalization and trunk placement. Distinct
+mesh stages use no wind, dithering, overlapping cross-fades or billboard stages. Tree
+count, canonical source IDs, material mapping, colliders and world layout remain intact.
+This supersedes D-156's temporary LOD0-only rendering choice, subject to rendered checks.
+
+Terrain tiles omit only material layers whose sampled weights are all exactly zero.
+Every positive weight keeps its original material and value. Thirteen of sixteen compact
+tiles use fewer than five layers. Height, alphamap and basemap resolution, draw distance,
+render scale, shadow quality, population/tier mix and performance thresholds stay unchanged.
+
+## D-189 WM15 repair separates current contracts, defects and measurement evidence (2026-10-24)
+
+Original night artifacts are immutable. Repair selects exact failed NUnit fullnames and
+separately repeats cleanup/protection regressions and failed rendered population gates.
+Valid completed performance evidence above the threshold is FAIL; missing/incomplete
+evidence is ERROR. Owned-process cleanup diagnostics cannot replace NUnit's assertion
+verdict, and unresolved owned processes block the next runtime launch. Only the exact
+root-level generated TestResults.xml is excluded from protected-save inventory; real save
+changes, deletions and additions remain failures.
+
+Historical assertions must follow approved current contracts: ten nearby starter residents,
+authored expanded catalogs, current generation/profile, temporary CarryLoad inventories,
+worker-driven construction and admitted sources on canonical tiled ground. This does not
+permit weakening conservation, identity, navigation, role/capability or save-roundtrip checks.
+Actual integration defects are repaired in runtime code: explicit research assignment must
+survive NeedsOnly policy, replacement presenters must remove stale scheduler state, scene
+unload must tolerate destroyed cameras, and manual movement must accept TerrainCollider.
+Starter outcrops register finite ecology state using the existing Production/Ecology services.
+Strategic resource commands route to DirectWorkCommandService in the same physical world.
+Placement cancellation records its rendered frame so later handlers of the same click cannot
+create a movement order. Selected residents use the modern context-command path; an explicitly
+selected developer group with no individual selection retains physical-only group verdicts.
+Tiled presentation caches source components and only announces actual tile-visibility changes;
+canonical simulation callbacks still refresh resource state, and save-load clears the view cache.
+
+Unsupported Mono thread allocation counters report unavailable and -1, never measured zero.
+Render isolation modes require explicit diagnostic smoke configuration and are rejected by
+the mandatory gate validator. They cannot qualify a performance acceptance result. Density,
+tier mix, rendered resolution, 33.33ms p95 and 3 x (60s + 300s) durations remain gate constraints.
+
 ## WM15 runner decision — independent evidence and bounded process ownership (2026-10-24)
 
 The user requested an unattended local runner that continues after failures and reports concise progress.
@@ -1571,3 +1622,13 @@ but have no presentation or early extraction recipe. Fish placement and recovery
 Resource visuals reuse audited project prefabs through a V2-only ScriptableObject lookup. The catalog contains
 references, not canonical state, and missing V2 art is an error rather than permission to create a runtime
 primitive. The compact-world branch and active generation remain unchanged.
+
+### D-191 — performance handoff and save-isolation incident (2026-10-24)
+
+The user's long 100/300/500 gates run through a dedicated performance-only offline launcher.
+It builds fresh and retains the original thresholds/durations; a short smoke PASS cannot
+qualify the frame budget. The normal build-f diagnostic is still above that budget.
+P6 test teardown must restore the inherited SERENITY_SAVE_DIRECTORY rather than clear it.
+PlayMode-c exposed this omission: later tests wrote an original slot 2702 and a new slot
+2701 in StoneAgeBuildingsV1. Original hashes/evidence remain immutable; no matching backup
+was located. Do not describe save protection as passed or silently replace the old baseline.

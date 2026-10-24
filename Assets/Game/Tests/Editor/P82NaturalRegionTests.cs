@@ -22,9 +22,14 @@ namespace Game.Tests.Editor
             var realistic = Object.FindAnyObjectByType<P92RealisticGameplayRegion>();
             Assert.That(region, Is.Not.Null);
             Assert.That(realistic, Is.Not.Null);
-            Assert.DoesNotThrow(region.ValidateGeography);
+            var world = Game.Infrastructure.TiledWorldDefinitionLoader.LoadReference();
+            Assert.That(world.TryGetTile(world.PlayerStart.X, world.PlayerStart.Z, out _), Is.True);
+            Assert.That(world.TryGetTile(world.Origin.X - 1f, world.Origin.Z, out _), Is.False);
+            Assert.That(world.TryGetTile(world.Origin.X, world.Origin.Z - 1f, out _), Is.False);
+            Assert.That(world.TryGetTile(world.Origin.X + world.WidthMeters + 1f, world.Origin.Z, out _), Is.False);
+            Assert.That(world.TryGetTile(world.Origin.X, world.Origin.Z + world.DepthMeters + 1f, out _), Is.False);
             Assert.That(region.LandBoundary.Count, Is.GreaterThanOrEqualTo(12));
-            Assert.That(region.AuthoredPlacementAnchors.All(x => region.ContainsLandPoint(x.position)), Is.True);
+            Assert.That(world.GenerationId, Is.EqualTo(Game.Domain.World.TiledWorldDefinition.ReferenceGenerationId));
             Assert.That(realistic.Terrain.GetComponent<Collider>(), Is.Not.Null);
             Assert.That(realistic.Terrain.GetComponent<Game.Presentation.Interaction.BuildableGround>(), Is.Not.Null);
             Assert.That(GameObject.Find("P3 Buildable Forest Clearing"), Is.Null);

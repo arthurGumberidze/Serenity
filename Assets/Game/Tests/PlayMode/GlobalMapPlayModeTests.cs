@@ -71,16 +71,22 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GlobalMapBridge.IsGlobalSceneLoaded, Is.True);
             var controller = Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(controller, Is.Not.Null);
-            Assert.That(controller.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GetComponent<Game.Presentation.World.P102StrategicWorldView>().IsActive, Is.True);
+            Assert.That(root.GlobalMap.Locations.Select(x => x.Id).Distinct().Count(),
+                Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GlobalMap.Locations.All(x => root.WorldDefinition.TryGetTile(x.MapX, x.MapY, out _)), Is.True);
             Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
             Assert.That(root.MilitaryUnits.Get(unit.Id).Representation,
                 Is.EqualTo(MilitaryUnitRepresentationMode.Aggregate));
-            var order = root.GlobalMap.IssueTravelOrder(unit.Id, new WorldLocationId("river_ford"),
+            var origin = new WorldLocationId(root.MilitaryUnits.Get(unit.Id).AbstractLocationId);
+            var route = root.GlobalMap.GetRoutes(origin).First();
+            var destination = route.From == origin ? route.To : route.From;
+            var order = root.GlobalMap.IssueTravelOrder(unit.Id, destination,
                 root.Clock.State.CalendarTicks);
-            Assert.That(order.Issued, Is.True);
+            Assert.That(order.Issued, Is.True, order.Status.ToString());
             root.AiRuntime.SetSpeed(GameSpeed.Maximum);
             root.AiRuntime.AdvanceForDebug(System.TimeSpan.FromSeconds(50));
-            Assert.That(root.MilitaryUnits.Get(unit.Id).AbstractLocationId, Is.EqualTo("river_ford"));
+            Assert.That(root.MilitaryUnits.Get(unit.Id).AbstractLocationId, Is.EqualTo(destination.Value));
             Assert.That(root.ModeTransitions.EnterLocation(new WorldLocationId("starter_settlement"),
                 root.Clock.State.CalendarTicks).Changed, Is.True);
             yield return null;

@@ -35,7 +35,8 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root, Is.Not.Null);
             Assert.That(root.Production, Is.Not.Null);
-            Assert.That(root.ProductionRecipes.All.Count, Is.EqualTo(12));
+            Assert.That(root.ProductionRecipes.All.Select(x => x.Id), Is.EquivalentTo(
+                ProductionCatalog.CreateStoneAge(root.Resources).All.Select(x => x.Id)));
             Assert.That(root.Production.Sites.Count, Is.GreaterThanOrEqualTo(4),
                 "The reference camp has at least the original sources; P5 may add authored regional sources.");
             Assert.That(root.DemoCropPlotBuilding, Is.Null);

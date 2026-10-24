@@ -28,17 +28,29 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.InhabitableRegion.HasCanonicalMapCorrespondence, Is.True);
-            Assert.That(root.Production.Sites.Count(x => x.Kind == Game.Domain.Production.ProductionSiteKind.NaturalSource),
-                Is.EqualTo(root.InhabitableRegion.ResourceAnchors.Count));
+            var admitted = 0;
             foreach (var anchor in root.InhabitableRegion.ResourceAnchors)
             {
                 var id = DeterministicStableId.Create(root.ActiveNewGameConfiguration.WorldSeed,
                     "player_source", anchor.StableIndex);
-                Assert.That(root.Production.TryGetSite(id, out var site), Is.True);
-                Assert.That(site.RemainingAmount, Is.EqualTo(anchor.Amount));
+                var position = anchor.VisualRoot.position;
+                var expected = root.WorldDefinition.TryGetTile(position.x, position.z, out _) &&
+                    !root.WorldHeight.IsWater(position.x, position.z);
+                Assert.That(root.Production.TryGetSite(id, out var site), Is.EqualTo(expected), anchor.StableIndex.ToString());
+                if (!expected)
+                {
+                    Assert.That(anchor.VisualRoot.gameObject.activeSelf, Is.False);
+                    continue;
+                }
+                admitted++;
+                Assert.That(site.SourceCapacity, Is.InRange(20, 50));
+                Assert.That(site.RemainingAmount, Is.InRange(0, site.SourceCapacity));
                 Assert.That(anchor.VisualRoot.TryGetComponent<ProductionSourcePresenter>(out var presenter), Is.True);
                 Assert.That(presenter.Site, Is.SameAs(site));
             }
+            Assert.That(admitted, Is.GreaterThan(0));
+            Assert.That(root.Production.Sites.Count(x => x.Kind == Game.Domain.Production.ProductionSiteKind.NaturalSource),
+                Is.GreaterThanOrEqualTo(admitted));
             yield return null;
         }
 
@@ -47,9 +59,9 @@ namespace Game.Tests.PlayMode
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var path = new NavMeshPath();
-            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.PlayerTerritoryAnchor.position,
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position),
                 out var start, 6f, NavMesh.AllAreas), Is.True);
-            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.RivalTerritoryAnchor.position,
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(root.InhabitableRegion.RivalTerritoryAnchor.position),
                 out var end, 8f, NavMesh.AllAreas), Is.True);
             Assert.That(NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, path), Is.True);
             Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete));
@@ -60,7 +72,7 @@ namespace Game.Tests.PlayMode
                 new BuildingDefinitionId("primitive_shelter")), Is.True);
             Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(8f, 0f, -6f)),
                 Is.True);
-            Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(60f, 0f, 60f)),
+            Assert.That(root.BuildingPlacementController.TryMovePreviewToWorldPoint(new Vector3(10000f, 0f, 10000f)),
                 Is.False);
             root.BuildingPlacementController.CancelPlacement();
             yield return null;

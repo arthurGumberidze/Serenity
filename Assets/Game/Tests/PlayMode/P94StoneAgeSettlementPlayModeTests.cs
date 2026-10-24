@@ -109,7 +109,10 @@ namespace Game.Tests.PlayMode
             root.WorkOrderIndicators.RefreshNow();
             Assert.That(root.WorkOrderIndicators.TryGetIndicator(build.Id, out var buildIndicator), Is.True);
             Assert.That(buildIndicator.name, Does.Contain("Immediate"));
-            Assert.That(root.WorkOrderIndicators.VisibleIndicatorCount, Is.EqualTo(1));
+            var visibleOrders = root.Work.Jobs.Where(x => !x.IsTerminal).Take(24).ToArray();
+            Assert.That(root.WorkOrderIndicators.VisibleIndicatorCount, Is.EqualTo(visibleOrders.Length));
+            foreach (var order in visibleOrders)
+                Assert.That(root.WorkOrderIndicators.TryGetIndicator(order.Id, out _), Is.True);
             yield return null;
         }
 
@@ -137,9 +140,9 @@ namespace Game.Tests.PlayMode
             var destination = root.StoneAgeSettlement.Worksites
                 .First(x => x.Kind == P94StoneAgeSettlement.WorksiteKind.Construction).VisualRoot.transform.position;
             var path = new NavMeshPath();
-            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.PlayerTerritoryAnchor.position,
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position),
                 out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
-            Assert.That(NavMesh.SamplePosition(destination, out var sampledDestination, 4f, NavMesh.AllAreas), Is.True);
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(destination), out var sampledDestination, 4f, NavMesh.AllAreas), Is.True);
             Assert.That(NavMesh.CalculatePath(sampledStart.position,
                 sampledDestination.position, NavMesh.AllAreas, path), Is.True);
             Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete));

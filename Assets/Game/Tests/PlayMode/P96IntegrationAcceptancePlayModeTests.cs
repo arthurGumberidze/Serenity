@@ -56,7 +56,10 @@ namespace Game.Tests.PlayMode
                 "Runtime scene objects must not retain missing scripts: " + string.Join(", ", missingRuntimeScripts));
             var sources = root.InhabitableRegion.ResourceAnchors
                 .Select(x => x.VisualRoot.GetComponent<ProductionSourcePresenter>()).Where(x => x != null).ToArray();
-            Assert.That(sources, Has.Length.EqualTo(24));
+            Assert.That(sources, Is.Not.Empty);
+            Assert.That(sources.Length, Is.EqualTo(root.InhabitableRegion.ResourceAnchors.Count(x =>
+                root.WorldDefinition.TryGetTile(x.VisualRoot.position.x, x.VisualRoot.position.z, out _) &&
+                !root.WorldHeight.IsWater(x.VisualRoot.position.x, x.VisualRoot.position.z))));
             Assert.That(sources.All(x => x.Site.Id.IsValid && x.RemainingAmount > 0), Is.True);
             Assert.That(root.DirectWorkCommands.EnsureRoleGroups().Select(x => x.Role),
                 Does.Contain(WorkGroupRole.Gatherers));
@@ -93,7 +96,10 @@ namespace Game.Tests.PlayMode
             for (var frame = 0; frame < 240 && !root.GlobalMapBridge.IsGlobalSceneLoaded; frame++) yield return null;
             var map = UnityEngine.Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(map, Is.Not.Null);
-            Assert.That(map.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GetComponent<Game.Presentation.World.P102StrategicWorldView>().IsActive, Is.True);
+            Assert.That(root.GlobalMap.Locations.Select(x => x.Id).Distinct().Count(),
+                Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GlobalMap.Locations.All(x => root.WorldDefinition.TryGetTile(x.MapX, x.MapY, out _)), Is.True);
             Assert.That(map.AccessibleAreaSquareMeters, Is.GreaterThanOrEqualTo(163840));
             Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
 

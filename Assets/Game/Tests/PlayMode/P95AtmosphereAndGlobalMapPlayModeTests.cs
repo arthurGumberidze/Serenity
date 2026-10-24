@@ -64,15 +64,18 @@ namespace Game.Tests.PlayMode
             yield return null;
             var map = UnityEngine.Object.FindAnyObjectByType<Game.Presentation.Environment.P102ConnectedWorldPresentation>();
             Assert.That(map, Is.Not.Null);
-            Assert.That(map.Districts.Count, Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GetComponent<Game.Presentation.World.P102StrategicWorldView>().IsActive, Is.True);
+            Assert.That(root.GlobalMap.Locations.Select(x => x.Id).Distinct().Count(),
+                Is.EqualTo(root.GlobalMap.Locations.Count));
+            Assert.That(root.GlobalMap.Locations.All(x => root.WorldDefinition.TryGetTile(x.MapX, x.MapY, out _)), Is.True);
             Assert.That(SceneManager.sceneCount, Is.EqualTo(1));
 
             root.PlayerSaves.Load(2);
             Assert.That(root.Characters.Get(character.Id), Is.SameAs(character));
             var path = new NavMeshPath();
-            Assert.That(NavMesh.SamplePosition(root.InhabitableRegion.PlayerTerritoryAnchor.position,
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position),
                 out var sampledStart, 4f, NavMesh.AllAreas), Is.True);
-            Assert.That(NavMesh.SamplePosition(root.StoneAgeSettlement.Worksites[0].VisualRoot.transform.position,
+            Assert.That(NavMesh.SamplePosition(root.TiledWorld.ProjectToGround(root.StoneAgeSettlement.Worksites[0].VisualRoot.transform.position),
                 out var sampledDestination, 4f, NavMesh.AllAreas), Is.True);
             Assert.That(NavMesh.CalculatePath(sampledStart.position,
                 sampledDestination.position, NavMesh.AllAreas, path), Is.True);

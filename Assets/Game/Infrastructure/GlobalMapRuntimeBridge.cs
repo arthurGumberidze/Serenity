@@ -29,6 +29,7 @@ namespace Game.Infrastructure
                 if (world == null) throw new InvalidOperationException("P10.2 connected-world presentation is missing.");
                 strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld, root.Production);
             }
+            strategicView.ConfigureResourceCommands(root.DirectWorkCommands);
         }
 
         public void RequestEnterGlobal()

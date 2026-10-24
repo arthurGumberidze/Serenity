@@ -32,15 +32,19 @@ namespace Game.Tests.PlayMode
             Assert.That(root.RealisticGameplayRegion, Is.Not.Null);
             Assert.DoesNotThrow(root.RealisticGameplayRegion.ValidateConfiguration);
             var path = new NavMeshPath();
-            Assert.That(NavMesh.CalculatePath(root.InhabitableRegion.PlayerTerritoryAnchor.position,
-                root.InhabitableRegion.RivalTerritoryAnchor.position, NavMesh.AllAreas, path), Is.True);
+            Assert.That(NavMesh.CalculatePath(root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position),
+                root.TiledWorld.ProjectToGround(root.InhabitableRegion.RivalTerritoryAnchor.position), NavMesh.AllAreas, path), Is.True);
             Assert.That(path.status, Is.EqualTo(NavMeshPathStatus.PathComplete));
             Assert.That(path.corners.Length, Is.GreaterThanOrEqualTo(2));
             foreach (var anchor in root.InhabitableRegion.ResourceAnchors)
             {
                 var id = DeterministicStableId.Create(root.ActiveNewGameConfiguration.WorldSeed,
                     "player_source", anchor.StableIndex);
-                Assert.That(root.Production.TryGetSite(id, out var site), Is.True);
+                var position = anchor.VisualRoot.position;
+                var admitted = root.WorldDefinition.TryGetTile(position.x, position.z, out _) &&
+                    !root.WorldHeight.IsWater(position.x, position.z);
+                Assert.That(root.Production.TryGetSite(id, out var site), Is.EqualTo(admitted));
+                if (!admitted) { Assert.That(anchor.VisualRoot.gameObject.activeSelf, Is.False); continue; }
                 var presenter = anchor.VisualRoot.GetComponent<ProductionSourcePresenter>();
                 Assert.That(presenter.Site, Is.SameAs(site));
                 root.SelectionProbe.SelectProductionSource(presenter);
@@ -60,7 +64,7 @@ namespace Game.Tests.PlayMode
             var building = root.BuildingPlacementController.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
             var presenter = root.BuildingPlacementController.LastPlacedPresenter;
-            var terrainY = root.RealisticGameplayRegion.ProjectToGround(presenter.transform.position).y;
+            var terrainY = root.TiledWorld.ProjectToGround(presenter.transform.position).y;
             Assert.That(Mathf.Abs(presenter.transform.position.y - terrainY), Is.LessThan(0.15f));
 
             var weatherBefore = root.Weather.CaptureState();

@@ -54,7 +54,7 @@ namespace Game.Tests.Editor
             var fixture = UnitFixture.Create(1);
             fixture.ToAggregate();
             fixture.Battles.StartAbstractBattle(fixture.FirstUnit, fixture.SecondUnit, Id(8001), 0,
-                _ => new CombatWeaponId("stone_spear"));
+                _ => new CombatWeaponId("unarmed"));
 
             fixture.Battles.AdvanceTo(Minute.Ticks, 0);
             var first = fixture.Combat.Encounters.Single();
@@ -80,7 +80,7 @@ namespace Game.Tests.Editor
         {
             var fixture = UnitFixture.Create(2);
             fixture.Battles.StartPhysicalBattle(fixture.FirstUnit, fixture.SecondUnit, Id(8002), 0,
-                _ => new CombatWeaponId("stone_spear"));
+                _ => new CombatWeaponId("unarmed"));
             fixture.Battles.AdvanceTo(Minute.Ticks, 0);
             var before = fixture.Combat.Encounters.Single();
             var attackCount = before.AttackHistory.Count;

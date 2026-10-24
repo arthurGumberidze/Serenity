@@ -26,11 +26,13 @@ namespace Game.Tests.PlayMode
     public sealed class U30ACompliancePlayModeTests
     {
         private string saveDirectory;
+        private string previousSaveDirectory;
 
         [UnitySetUp]
         public IEnumerator LoadScene()
         {
             saveDirectory = Path.Combine(Path.GetTempPath(), "serenity-u30a-play-" + Guid.NewGuid().ToString("N"));
+            previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             Screen.SetResolution(1600, 900, false);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
@@ -43,7 +45,7 @@ namespace Game.Tests.PlayMode
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             if (root != null) Object.Destroy(root.gameObject);
             yield return null;
-            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", null);
+            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", previousSaveDirectory);
             if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
         }
 
@@ -224,6 +226,13 @@ namespace Game.Tests.PlayMode
             Assert.That(root.ThirdPersonControl.TryAttack(target), Is.EqualTo(ManualCombatAttackStatus.Hit));
             var afterOne = root.Combat.Encounters.Single(x => x.BattleId == battle.BattleId).AttackHistory.Count;
             Assert.That(afterOne, Is.EqualTo(before + 1));
+            // A lethal hit makes that victim invalid. Check attacker cooldown against a live opponent.
+            target = root.Combat.Encounters.Single(x => x.BattleId == battle.BattleId).Combatants
+                .First(x => x.SideId == battle.SideB && x.State != CombatantState.Incapacitated &&
+                    x.State != CombatantState.Dead && x.State != CombatantState.Disengaged).CharacterId;
+            Assert.That(root.CharacterPresentations.TryGet(target, out targetPresenter), Is.True);
+            targetPresenter.transform.position = attackerPresenter.transform.position + attackerPresenter.transform.forward;
+            Physics.SyncTransforms();
             Assert.That(root.ThirdPersonControl.TryAttack(target), Is.EqualTo(ManualCombatAttackStatus.Cooldown));
             Assert.That(root.Combat.Encounters.Single(x => x.BattleId == battle.BattleId).AttackHistory.Count,
                 Is.EqualTo(afterOne));

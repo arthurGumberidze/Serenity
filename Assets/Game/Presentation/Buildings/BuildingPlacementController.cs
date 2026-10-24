@@ -50,10 +50,12 @@ namespace Game.Presentation.Buildings
         private IReadOnlyList<GridCoordinate> authoredPlacementCells = Array.Empty<GridCoordinate>();
         private GridCoordinate zoneDragAnchor;
         private bool zoneDragActive;
+        private int lastCancelledFrame = -1;
         private const int GardenMinimumSide = 2;
         private const int GardenMaximumSide = 8;
 
         public bool IsActive => activeDefinition != null;
+        public bool WasCancelledThisFrame => lastCancelledFrame == Time.frameCount;
         public bool HasPreview => previewObject != null;
         public bool IsPreviewValid => HasPreview && previewEvaluation.IsValid &&
             (construction == null || constructionEvaluation.IsValid);
@@ -242,6 +244,7 @@ namespace Game.Presentation.Buildings
 
         public void CancelPlacement()
         {
+            if (IsActive) lastCancelledFrame = Time.frameCount;
             DestroyPreview();
             activeDefinition = null;
             previewEvaluation = default;

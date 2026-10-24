@@ -63,7 +63,7 @@ namespace Game.Tests.PlayMode
             Assert.That(snapshot.CharacterRuntime.Entries.Any(x => x.State.CharacterId == first), Is.True);
             Assert.That(snapshot.Appearance, Is.Not.Null);
             Assert.That(snapshot.Work, Is.Not.Null);
-            Assert.That(snapshot.ConnectedWorld.GenerationId, Is.EqualTo("p10-connected-world-v1"));
+            Assert.That(snapshot.ConnectedWorld.GenerationId, Is.EqualTo(root.WorldDefinition.GenerationId));
             root.GameplayUi.CancelModal();
         }
     }

@@ -46,6 +46,10 @@ namespace Game.Presentation.Environment
         public static void Apply(IEnumerable<GameObject> trees, StarterNatureCatalog catalog)
         {
             if (catalog == null || catalog.Trees == null || catalog.Trees.Length == 0) return;
+            // Reuse the reviewed mesh-only versions of the same four tree models. This
+            // changes disposable rendering, never the active world definition or source IDs.
+            var prefabs = catalog.WorldMapTrees != null && catalog.WorldMapTrees.Length == catalog.Trees.Length
+                ? catalog.WorldMapTrees : catalog.Trees;
             var index = 0;
             foreach (var tree in trees.Where(x => x != null).Distinct())
             {
@@ -57,12 +61,17 @@ namespace Game.Presentation.Environment
                 foreach (var renderer in tree.GetComponentsInChildren<Renderer>(true))
                 { renderer.enabled = false; renderer.sharedMaterials = System.Array.Empty<Material>(); }
                 foreach (var collider in tree.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
-                var visual = Object.Instantiate(catalog.Trees[index % catalog.Trees.Length], tree.transform);
+                var visual = Object.Instantiate(prefabs[index % prefabs.Length], tree.transform);
                 visual.name = "Synty playable tree";
                 // Historical roots carry arbitrary scaling. Normalize the replacement in world units.
                 var parentScale = tree.transform.lossyScale;
                 visual.transform.localScale = new Vector3(1f / parentScale.x, 1f / parentScale.y, 1f / parentScale.z);
-                var renderers = visual.GetComponentsInChildren<MeshRenderer>();
+                // Normalize against LOD0 exactly as before; lower meshes/card shells must
+                // not change world height, trunk position or selectable resource geometry.
+                var lodGroup = visual.GetComponentInChildren<LODGroup>();
+                var renderers = lodGroup != null && lodGroup.GetLODs().Length > 0
+                    ? lodGroup.GetLODs()[0].renderers.OfType<MeshRenderer>().ToArray()
+                    : visual.GetComponentsInChildren<MeshRenderer>();
                 var bounds = renderers[0].bounds;
                 foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
                 var height = Mathf.Lerp(catalog.MinimumTreeHeight, catalog.MaximumTreeHeight, (index % 7) / 6f);

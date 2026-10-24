@@ -21,11 +21,13 @@ namespace Game.Tests.PlayMode
     public sealed class P108DiagnosticsPlayModeTests
     {
         private string saveDirectory;
+        private string previousSaveDirectory;
 
         [UnitySetUp]
         public IEnumerator LoadLocal()
         {
             saveDirectory = Path.Combine(Path.GetTempPath(), "serenity-p108-play-" + Guid.NewGuid().ToString("N"));
+            previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
             yield return null;
@@ -34,7 +36,7 @@ namespace Game.Tests.PlayMode
         [UnityTearDown]
         public IEnumerator Cleanup()
         {
-            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", null);
+            Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", previousSaveDirectory);
             if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
             yield return null;
         }
@@ -128,7 +130,7 @@ namespace Game.Tests.PlayMode
             var marked = root.PlayerSaves.ListSlots().Single(x => x.Index == 1);
             Assert.That(marked.CheatsUsed, Is.True);
             Assert.That(marked.Detail, Does.Contain("достижения отключены"));
-            Assert.That(root.Saves.Capture().FormatVersion, Is.EqualTo(Game.Domain.SaveSnapshot.DiagnosticVersion));
+            Assert.That(root.Saves.Capture().FormatVersion, Is.EqualTo(StartupSaveProfile.ForWorld(root.WorldDefinition).FormatVersion));
 
             root.PlayerSaves.Load(2);
             yield return null;

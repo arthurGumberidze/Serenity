@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+WM15 night repair (2026-10-24): **IN_PROGRESS**. Work only from the failed-case evidence in
+`Artifacts/WM15/night-20261024-002730-4c6d7c`; no full-night or passed-case rerun. All 62 original NUnit failures now pass; build-f passes. Full rendered gates await the user's offline run. The short diagnostic remains over budget. Save protection is FAIL: one original slot was overwritten during PlayMode-c; recovery is unresolved. Runner regressions pass 72 assertions.
+See `docs/world_map/WM15_NIGHT_REPAIR.md` and `WM15_REPAIR_CASES.md`. This repair does not
+advance WM15 to DONE or imply visual acceptance. PostgreSQL stays PARTIAL without a test DB.
+
 User-requested support deliverable (2026-10-24): resilient WM15 offline runner DONE. This is runner tooling,
 not completion of WM15. The final game test/build/performance/visual gates remain pending. The runner passed
 81 fault-injection assertions in Windows PowerShell and 62 in PowerShell 7, including repeated continuation after independent failures; its real-project

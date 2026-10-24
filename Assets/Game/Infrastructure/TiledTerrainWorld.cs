@@ -207,6 +207,7 @@ namespace Game.Infrastructure
 
         private void ApplyPlan(TiledWorldStreamingPlan plan)
         {
+            var visibilityChanged = !visual.SetEquals(plan.VisualTiles);
             var required = new HashSet<WorldTileId>(plan.CollisionTiles);
             var added = false;
             foreach (var id in plan.CollisionTiles)
@@ -239,10 +240,10 @@ namespace Game.Infrastructure
                 }
                 pair.Value.Collider.enabled = true;
             }
-            ConnectTerrainNeighbours();
+            if (added) ConnectTerrainNeighbours();
             if (navigationEnabled && added) RebuildLinks();
             RefreshVegetationColliders(lastCameraFocus);
-            VisualTilesChanged?.Invoke();
+            if (added || visibilityChanged) VisualTilesChanged?.Invoke();
         }
 
         private LoadedTile CreateTile(WorldTileId id)
@@ -259,7 +260,7 @@ namespace Game.Infrastructure
                 terrainLayers = sourceLayers
             };
             data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, heightmapResolution));
-            if (sourceLayers.Length > 0) data.SetAlphamaps(0, 0, CreateTerrainPaint(id, data));
+            if (sourceLayers.Length > 0) ApplyTerrainPaint(id, data);
             if (vegetationPlan != null) ApplyVegetation(data, id);
             var root = Terrain.CreateTerrainGameObject(data);
             root.name = "P10.9 Terrain " + id;
@@ -320,6 +321,33 @@ namespace Game.Infrastructure
                 collider.center = Vector3.up * collider.height * 0.5f;
                 vegetationColliders.Add(value.StableId, root);
             }
+        }
+
+        private void ApplyTerrainPaint(WorldTileId id, TerrainData data)
+        {
+            var weights = CreateTerrainPaint(id, data);
+            var used = new List<int>();
+            for (var layer = 0; layer < sourceLayers.Length; layer++)
+            {
+                var found = false;
+                for (var z = 0; z < weights.GetLength(0) && !found; z++)
+                for (var x = 0; x < weights.GetLength(1); x++)
+                    if (weights[z, x, layer] > 0f) { found = true; break; }
+                if (found) used.Add(layer);
+            }
+            // Zero-weight layers contribute no pixels but can force another terrain pass.
+            // Preserve every positive weight and its exact material; do not merge or rebalance.
+            if (used.Count > 0 && used.Count < sourceLayers.Length)
+            {
+                var compact = new float[weights.GetLength(0), weights.GetLength(1), used.Count];
+                for (var z = 0; z < weights.GetLength(0); z++)
+                for (var x = 0; x < weights.GetLength(1); x++)
+                for (var layer = 0; layer < used.Count; layer++)
+                    compact[z, x, layer] = weights[z, x, used[layer]];
+                data.terrainLayers = used.Select(index => sourceLayers[index]).ToArray();
+                weights = compact;
+            }
+            data.SetAlphamaps(0, 0, weights);
         }
 
         private float[,,] CreateTerrainPaint(WorldTileId id, TerrainData data)

@@ -38,6 +38,11 @@ try {
     $project = Join-Path $root 'Project with spaces'
     Write-Text (Join-Path $project 'ProjectSettings/ProjectVersion.txt') "m_EditorVersion: 6000.6.4f1`n"
     Write-Text (Join-Path $project 'protected-user-saves/example.xml') '<protected-save />'
+    Write-Text (Join-Path $project 'protected-user-saves/TestResults.xml') '<test-run />'
+    $saveRoot = Join-Path $project 'protected-user-saves'
+    Assert (Test-Wm15GeneratedTestArtifact (Join-Path $saveRoot 'TestResults.xml') $saveRoot) 'Only the root Unity generated NUnit report is excluded.'
+    Assert (-not (Test-Wm15GeneratedTestArtifact (Join-Path $saveRoot 'slot/TestResults.xml') $saveRoot)) 'A nested save named TestResults.xml remains protected.'
+    Assert (-not (Test-Wm15GeneratedTestArtifact (Join-Path $saveRoot 'example.xml') $saveRoot)) 'Real XML saves remain protected.'
     foreach ($name in @('Crash','Failed','Good','Hang','Malformed','Missing','Skipped','Zero')) {
         Write-Text (Join-Path $project "Assets/Game/Tests/Editor/$($name)Tests.cs") "namespace Fixture {`npublic class $($name)Tests { }`n}"
     }
@@ -82,6 +87,15 @@ class Git { static int Main(string[] args) { if(Array.IndexOf(args,"rev-parse")>
     } finally { if (-not $unrelated.HasExited) { $unrelated.Kill(); $unrelated.WaitForExit() }; $unrelated.Dispose() }
 
     $orphanPidFile = Join-Path $root 'orphan.pid'
+    $denied = Start-Process -FilePath $fakeEditor -ArgumentList '--hang' -WindowStyle Hidden -PassThru
+    $null = $denied.Handle
+    try {
+        $ticks = $denied.StartTime.ToUniversalTime().Ticks
+        $cleanup = Stop-Wm15OwnedProcess $denied $ticks $denied.Id
+        Assert (-not $cleanup.Complete -and $cleanup.UnresolvedPids.Contains($denied.Id) -and -not $denied.HasExited) 'Access denied on a live owned process is explicit and unresolved.'
+        $cleanup = Stop-Wm15OwnedProcess $denied $ticks (-$denied.Id)
+        Assert ($cleanup.Complete -and $cleanup.Diagnostics.Count -eq 1 -and $denied.HasExited) 'Exit/access-denied race keeps a diagnostic without losing the child verdict.'
+    } finally { if (-not $denied.HasExited) { $denied.Kill(); $denied.WaitForExit(10000) | Out-Null }; $denied.Dispose() }
     $orphan = Invoke-Wm15Process $fakeEditor @('--spawn-child',$orphanPidFile,'--exit-parent') $root (Join-Path $root 'orphan') 3
     $orphanId = [int](Get-Content -LiteralPath $orphanPidFile -Raw)
     Assert (-not $orphan.TimedOut -and $null -eq (Get-Process -Id $orphanId -ErrorAction SilentlyContinue)) 'Exited wrapper cannot leave a Player or an inherited-pipe hang behind.'
@@ -129,7 +143,7 @@ class Git { static int Main(string[] args) { if(Array.IndexOf(args,"rev-parse")>
         foreach ($expected in @(
             @('CrashTests','FAIL'), @('FailedTests','FAIL'), @('GoodTests','PASS'), @('HangTests','TIMEOUT'),
             @('MalformedTests','ERROR'), @('MissingTests','FAIL'), @('SkippedTests','PARTIAL'), @('ZeroTests','ERROR'),
-            @('windows-build','PASS'), @('player-save-load-smoke','PASS'), @('performance-100','ERROR'),
+            @('windows-build','PASS'), @('player-save-load-smoke','PASS'), @('performance-100','FAIL'),
             @('performance-300','PASS'), @('performance-500','PASS'), @('protected-inputs-after','PASS'), @('git-diff-check','PASS')
         )) {
             $found = @($steps | Where-Object { $_.name.EndsWith($expected[0]) })
@@ -146,6 +160,12 @@ class Git { static int Main(string[] args) { if(Array.IndexOf(args,"rev-parse")>
     $healthy = Invoke-Runner 'healthy' @() 'healthy'
     Assert ($healthy.Process.ExitCode -eq 0 -and $healthy.Report.state -eq 'AUTOMATED_PASS') 'Healthy complete run passes with manual acceptance still pending.'
     Assert ($healthy.Report.manualAcceptance -eq 'PENDING') 'Automatic success never pretends human acceptance.'
+    $generated = Invoke-Runner 'generated-report' @() 'generated-report'
+    Assert (($generated.Report.steps | Where-Object name -eq 'protected-inputs-after').status -eq 'PASS') 'Regenerated Unity root TestResults.xml does not accuse a save mutation.'
+    $changedSave = Invoke-Runner 'save-change' @() 'save-change'
+    Assert (($changedSave.Report.steps | Where-Object name -eq 'protected-inputs-after').status -eq 'FAIL') 'A changed real save is still detected independently of test artifacts.'
+    $addedSave = Invoke-Runner 'save-added' @() 'save-added'
+    Assert (($addedSave.Report.steps | Where-Object name -eq 'protected-inputs-after').status -eq 'FAIL') 'A newly added real save is detected as well as changes to existing saves.'
     $brokenBuild = Invoke-Runner 'broken-build' @() 'build-fail'
     Assert (@($brokenBuild.Report.steps | Where-Object { $_.name -match 'smoke|performance-' -and $_.status -eq 'BLOCKED' }).Count -eq 4) 'Failed build blocks smoke and all matrices without using stale Player.'
     Assert ($brokenBuild.Report.steps[-1].name -eq 'git-diff-check') 'End-of-run checks survive failed build.'
@@ -153,6 +173,15 @@ class Git { static int Main(string[] args) { if(Array.IndexOf(args,"rev-parse")>
     Assert ($missingEditor.Report.steps[-1].name -eq 'git-diff-check' -and $missingEditor.Process.ExitCode -ne 0) 'Missing Editor produces complete blocked/static report.'
     $dry = Invoke-Runner 'dry-run' @('-DryRun')
     Assert ($dry.Report.state -eq 'DRY_RUN' -and $dry.Process.ExitCode -eq 0 -and @($dry.Report.steps).Count -eq 0) 'Dry run plans checks without starting fake Unity.'
+    $repairSource = Join-Path $root 'repair-source'
+    $repairStep = Join-Path $repairSource 'failed-step'
+    Write-Text (Join-Path $repairStep 'attempt-0.xml') '<test-run><test-case fullname="Fixture.FailedCase" result="Failed"/><test-case fullname="Fixture.PassedCase" result="Passed"/></test-run>'
+    Write-Wm15Json (Join-Path $repairSource 'results.json') @{steps=@(@{name='EditMode-Fixture';status='FAIL';directory=$repairStep})}
+    $repair = Invoke-Runner 'repair-plan' @('-DryRun','-RepairFrom',$repairSource)
+    $repairPlan = @(Get-Content (Join-Path $repair.Output 'plan.json') -Raw | ConvertFrom-Json)
+    $repairCases = @($repairPlan | Where-Object Kind -eq 'test')
+    Assert ($repair.Process.ExitCode -eq 0 -and $repairCases.Count -eq 1 -and $repairCases[0].Filter -eq 'Fixture.FailedCase') 'Repair selects only the exact failed fullname, never the passed neighbour.'
+    Assert (@($repairPlan | Where-Object {$_.Kind -in @('build','performance','smoke')}).Count -eq 0) 'Repair test stage cannot silently rerun build or Player gates.'
     $rejectedOutput = Invoke-Wm15Process -FilePath "$env:SystemRoot/System32/WindowsPowerShell/v1.0/powershell.exe" `
         -Arguments @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $runnerDirectory 'Run-WM15.ps1'),'-ProjectPath',$project,'-RunDirectory',$dry.Output,'-DryRun') `
         -WorkingDirectory $root -OutputPrefix (Join-Path $root 'reject-existing') -TimeoutSeconds 10

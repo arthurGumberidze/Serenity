@@ -5,6 +5,7 @@ using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Infrastructure;
 using Game.Presentation.Buildings;
+using Game.Simulation.Resources;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,10 +27,13 @@ namespace Game.Tests.PlayMode
         public IEnumerator LocalGameplayCreatesCanonicalPilesAndCharacterInventories()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            Assert.That(root.DemoPilePresenters.Count, Is.EqualTo(4));
-            Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.WorldPile), Is.EqualTo(4));
-            Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.EqualTo(10));
-            Assert.That(root.DemoPilePresenters.Sum(x => x.Quantity.Units), Is.EqualTo(65));
+            Assert.That(root.DemoPilePresenters.Count, Is.GreaterThanOrEqualTo(4));
+            foreach (var pile in root.DemoPilePresenters)
+                Assert.That(root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId))
+                    .GetAmount(pile.ResourceId), Is.EqualTo(pile.Quantity));
+            Assert.That(root.Inventories.All.Count(x => x.Owner.Kind == InventoryOwnerKind.Character), Is.Zero);
+            Assert.That(root.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.CarryLoad)
+                .Select(x => x.Owner.Id), Is.EquivalentTo(root.PlayerCharacterIds));
             Assert.That(root.DemoPresenters.Count, Is.EqualTo(2));
             if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
                 CaptureRuntimeValidation(root.PointerRaycaster.WorldCamera);
@@ -40,6 +44,7 @@ namespace Game.Tests.PlayMode
         public IEnumerator ShelterConfirmConsumesExactRealResources()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            root.AiRuntime.SetPaused(true);
             CompleteTechnology(root, "shelter_construction");
             var beforeBuildings = root.Buildings.Count;
             var wood = new ResourceId("wood_log");
@@ -51,9 +56,37 @@ namespace Game.Tests.PlayMode
             Assert.That(controller.TryMovePreviewToWorldPoint(new Vector3(20f, 0f, 20f)), Is.True);
             var building = controller.ConfirmPlacement();
             Assert.That(building, Is.Not.Null);
+            Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Planned));
+            Assert.That(Total(root, wood), Is.EqualTo(beforeWood));
+            Assert.That(Total(root, fiber), Is.EqualTo(beforeFiber));
+            var definition = root.BuildingCatalog.ResolveDefinition(building.DefinitionId);
+            var carry = new InventoryOwner(InventoryOwnerKind.CarryLoad, root.MaleDemoCharacter.Id);
+            // Exercise the canonical pickup, transport buffer and construction delivery transactions.
+            // Planning itself must not consume or teleport any material.
+            foreach (var cost in definition.ConstructionCost)
+            {
+                var remaining = cost.Quantity.Units;
+                foreach (var source in root.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.WorldPile ||
+                             x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray())
+                {
+                    while (remaining > 0 && source.GetAmount(cost.ResourceId).Units > 0)
+                    {
+                        var amount = new ResourceQuantity(System.Math.Min(remaining,
+                            System.Math.Min(source.GetAmount(cost.ResourceId).Units, root.Inventories.Get(carry).Capacity)));
+                        Assert.That(root.ResourceTransfers.TransferExact(source.Owner, carry, cost.ResourceId, amount),
+                            Is.EqualTo(TransferFailureReason.None));
+                        Assert.That(root.ResourceTransfers.TransferExact(carry, building.ConstructionBufferOwner, cost.ResourceId, amount),
+                            Is.EqualTo(TransferFailureReason.None));
+                        root.ConstructionSites.NotifyDelivery(building);
+                        remaining -= amount.Units;
+                    }
+                }
+                Assert.That(remaining, Is.Zero, cost.ResourceId.ToString());
+            }
+            building.AdvanceConstruction(System.TimeSpan.FromTicks(building.ConstructionRequiredTicks));
             Assert.That(building.ConstructionState, Is.EqualTo(ConstructionState.Completed));
-            Assert.That(Total(root, wood), Is.EqualTo(beforeWood - 8));
-            Assert.That(Total(root, fiber), Is.EqualTo(beforeFiber - 3));
+            Assert.That(Total(root, wood), Is.EqualTo(beforeWood - definition.ConstructionCost.Single(x => x.ResourceId == wood).Quantity.Units));
+            Assert.That(Total(root, fiber), Is.EqualTo(beforeFiber - definition.ConstructionCost.Single(x => x.ResourceId == fiber).Quantity.Units));
             Assert.That(root.Buildings.Count, Is.EqualTo(beforeBuildings + 1));
             yield return null;
         }

@@ -56,7 +56,7 @@ function Test-Wm15ProjectBusy([string]$ProjectPath) {
     catch [UnauthorizedAccessException] { return $true }
 }
 
-function Stop-Wm15OwnedProcess([Diagnostics.Process]$Process, [long]$StartedTicks) {
+function Stop-Wm15OwnedProcess([Diagnostics.Process]$Process, [long]$StartedTicks, [int]$InjectDeniedPid = 0) {
     if (-not ('Wm15OwnedProcessTree' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
@@ -76,11 +76,23 @@ public static class Wm15OwnedProcessTree
     [DllImport("kernel32.dll", CharSet=CharSet.Auto)] private static extern bool Process32First(IntPtr snapshot, ref Entry entry);
     [DllImport("kernel32.dll", CharSet=CharSet.Auto)] private static extern bool Process32Next(IntPtr snapshot, ref Entry entry);
     [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
-    public static void Stop(int root, long startedTicks)
+    public sealed class CleanupResult
     {
+        public List<string> Diagnostics = new List<string>();
+        public List<int> UnresolvedPids = new List<int>();
+        public bool Complete { get { return UnresolvedPids.Count == 0; } }
+    }
+    public static CleanupResult Stop(int root, long startedTicks, int injectDeniedPid)
+    {
+        var result = new CleanupResult();
         var parents = new Dictionary<int,int>();
         var snapshot = CreateToolhelp32Snapshot(2, 0);
-        if (snapshot == new IntPtr(-1)) throw new InvalidOperationException("Cannot enumerate owned descendants.");
+        if (snapshot == new IntPtr(-1))
+        {
+            result.Diagnostics.Add("Cannot enumerate owned descendants: " + Marshal.GetLastWin32Error());
+            result.UnresolvedPids.Add(root);
+            return result;
+        }
         try
         {
             var entry = new Entry { size=(uint)Marshal.SizeOf(typeof(Entry)) };
@@ -96,17 +108,53 @@ public static class Wm15OwnedProcessTree
             try
             {
                 using(var process=Process.GetProcessById(owned[i]))
-                    if(!process.HasExited && process.StartTime.ToUniversalTime().Ticks >= startedTicks)
+                {
+                    if(process.HasExited) continue;
+                    long created = process.StartTime.ToUniversalTime().Ticks;
+                    // Never terminate a recycled root PID or a process predating this invocation.
+                    if(created < startedTicks || (owned[i] == root && created != startedTicks)) continue;
+                    try
+                    {
+                        if (owned[i] == injectDeniedPid) throw new System.ComponentModel.Win32Exception(5);
                         process.Kill();
+                        if (owned[i] == -injectDeniedPid)
+                        {
+                            process.WaitForExit(10000);
+                            throw new System.ComponentModel.Win32Exception(5);
+                        }
+                        if(!process.WaitForExit(10000))
+                        {
+                            result.Diagnostics.Add("Owned process did not exit: " + owned[i]);
+                            result.UnresolvedPids.Add(owned[i]);
+                        }
+                    }
+                    catch(System.ComponentModel.Win32Exception ex)
+                    {
+                        // A process can exit between HasExited and Kill (Windows reports access denied).
+                        // Keep the diagnostic even when the retained handle proves that it has exited.
+                        result.Diagnostics.Add("Cleanup PID " + owned[i] + ": " + ex.Message);
+                        if(!process.WaitForExit(250)) result.UnresolvedPids.Add(owned[i]);
+                    }
+                }
             }
             catch(ArgumentException) { } // Exited between enumeration and opening.
+            catch(InvalidOperationException ex)
+            {
+                result.Diagnostics.Add("Cleanup PID " + owned[i] + ": " + ex.Message);
+                result.UnresolvedPids.Add(owned[i]);
+            }
+            catch(System.ComponentModel.Win32Exception ex)
+            {
+                result.Diagnostics.Add("Cannot inspect owned PID " + owned[i] + ": " + ex.Message);
+                result.UnresolvedPids.Add(owned[i]);
+            }
         }
+        return result;
     }
 }
 '@
     }
-    [Wm15OwnedProcessTree]::Stop($Process.Id, $StartedTicks)
-    if (-not $Process.WaitForExit(10000)) { throw "Could not stop owned PID $($Process.Id)." }
+    return [Wm15OwnedProcessTree]::Stop($Process.Id, $StartedTicks, $InjectDeniedPid)
 }
 
 function Invoke-Wm15Process {
@@ -136,8 +184,8 @@ function Invoke-Wm15Process {
         while (-not $process.HasExited) {
             if ($timer.Elapsed.TotalSeconds -ge $TimeoutSeconds) {
                 # Only the process created above and its descendants; never kill an existing Editor.
-                Stop-Wm15OwnedProcess $process $startedTicks
-                return [pscustomobject]@{ ExitCode = $null; TimedOut = $true; Seconds = $timer.Elapsed.TotalSeconds }
+                $cleanup = Stop-Wm15OwnedProcess $process $startedTicks
+                return [pscustomobject]@{ ExitCode = $null; TimedOut = $true; Seconds = $timer.Elapsed.TotalSeconds; Cleanup = $cleanup }
             }
             if ($timer.Elapsed.TotalSeconds -ge $nextUpdate) {
                 if ($OnProgress) { & $OnProgress $timer.Elapsed.TotalSeconds $process.Id }
@@ -148,19 +196,27 @@ function Invoke-Wm15Process {
         }
         # A crashed wrapper can leave a Player holding redirected pipes open. Reap descendants even
         # when the wrapper exited normally; never use unbounded WaitForExit() on inherited pipes.
-        Stop-Wm15OwnedProcess $process $startedTicks
-        return [pscustomobject]@{ ExitCode = $process.ExitCode; TimedOut = $false; Seconds = $timer.Elapsed.TotalSeconds }
+        $cleanup = Stop-Wm15OwnedProcess $process $startedTicks
+        return [pscustomobject]@{ ExitCode = $process.ExitCode; TimedOut = $false; Seconds = $timer.Elapsed.TotalSeconds; Cleanup = $cleanup }
     } finally {
         foreach ($key in $oldEnvironment.Keys) {
             [Environment]::SetEnvironmentVariable($key, $oldEnvironment[$key], 'Process')
         }
         if ($null -ne $process) {
             if (-not $process.HasExited) {
-                Stop-Wm15OwnedProcess $process $startedTicks
+                $finalCleanup = Stop-Wm15OwnedProcess $process $startedTicks
+                Write-Wm15Json ($OutputPrefix + '.final-cleanup.json') $finalCleanup
             }
             $process.Dispose()
         }
     }
+}
+
+function Test-Wm15GeneratedTestArtifact([string]$Path, [string]$SaveRoot) {
+    # Unity's default NUnit report is exactly at persistentDataPath/TestResults.xml.
+    # Do not exclude XML generally, nested slots, settings, logs or arbitrary user files.
+    return [IO.Path]::GetFullPath($Path).Equals(
+        [IO.Path]::GetFullPath((Join-Path $SaveRoot 'TestResults.xml')), [StringComparison]::OrdinalIgnoreCase)
 }
 
 function Read-Wm15NUnit([string]$Path) {

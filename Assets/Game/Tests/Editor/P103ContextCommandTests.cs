@@ -54,10 +54,11 @@ namespace Game.Tests
                 new ContextCommandTarget(ContextTargetKind.Building, position, entity),
                 new ContextCommandTarget(ContextTargetKind.Ground, position),
                 new ContextCommandTarget(ContextTargetKind.Ground, position),
-                new ContextCommandTarget(ContextTargetKind.Character, position, entity)
+                new ContextCommandTarget(ContextTargetKind.Character, position, entity),
+                new ContextCommandTarget(ContextTargetKind.Building, position, entity)
             };
             var actions = (ContextActionKind[])Enum.GetValues(typeof(ContextActionKind));
-            Assert.That(actions, Has.Length.EqualTo(9));
+            Assert.That(actions, Has.Length.EqualTo(targets.Length), "Every declared action, including building Craft, needs a valid target.");
             for (var i = 0; i < actions.Length; i++)
                 Assert.That(ContextActionRules.Evaluate(actions[i], targets[i], Ready()).Enabled,
                     Is.True, actions[i].ToString());

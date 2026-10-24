@@ -434,6 +434,18 @@ namespace Game.Simulation.AI
 
             if (autonomousWorkMode == AutonomousWorkMode.NeedsOnly)
             {
+                // AssignWorker is an explicit player command, not autonomous job selection.
+                // Keep queued work and critical needs above it, but do not strand assigned researchers.
+                if (world.Research != null && world.Research.ActiveProject != null &&
+                    world.Research.IsAssigned(entry.Agent.CharacterId) &&
+                    (!characterCapabilities.HasValue || characterCapabilities.Value.CanResearch))
+                {
+                    if (entry.Action?.Kind == UtilityActionKind.Research && entry.Action.IsValid) return;
+                    entry.Action?.Cancel();
+                    entry.Action = null;
+                    Start(entry, UtilityActionKind.Research);
+                    return;
+                }
                 // Explicit queued orders were resolved above. Only idle residents may clean up
                 // world piles; source/destination reservations limit pickup to actual free space.
                 if (world.Production?.UsesGroundOutputs == true && entry.Movement.IsAvailable)

@@ -25,6 +25,9 @@ namespace Game.Infrastructure
     public sealed class P109TiledWorldPopulationPresenter : MonoBehaviour
     {
         private readonly Dictionary<WorldTileId, GameObject> tileViews = new Dictionary<WorldTileId, GameObject>();
+        private readonly Dictionary<WorldTileId, ProductionSourcePresenter[]> tileSources =
+            new Dictionary<WorldTileId, ProductionSourcePresenter[]>();
+        private readonly HashSet<WorldTileId> requiredTiles = new HashSet<WorldTileId>();
         private readonly Dictionary<string, GameObject> templates = new Dictionary<string, GameObject>(StringComparer.Ordinal);
         private ProductionService production;
         private ResourceEcologyService ecology;
@@ -51,6 +54,7 @@ namespace Game.Infrastructure
             public StableEntityId? AudibleTaskId;
             public long LastAudibleWorkTicks;
             public float NextHuntSoundTime;
+            public int DisplayedHealth = -1;
         }
         private readonly List<AnimalView> animals = new List<AnimalView>();
         private LocalSceneCompositionRoot session;
@@ -108,17 +112,25 @@ namespace Game.Infrastructure
         public void RefreshViews()
         {
             if (terrainWorld == null || Plan == null) return;
-            var required = new HashSet<WorldTileId>(terrainWorld.VisualTiles);
-            foreach (var tile in tileViews.Keys.Where(tile => !required.Contains(tile)).ToArray())
+            requiredTiles.Clear();
+            foreach (var tile in terrainWorld.VisualTiles) requiredTiles.Add(tile);
+            foreach (var tile in tileViews.Keys.Where(tile => !requiredTiles.Contains(tile)).ToArray())
             {
                 Destroy(tileViews[tile]);
                 tileViews.Remove(tile);
+                tileSources.Remove(tile);
             }
             animals.RemoveAll(x => x.Transform == null);
-            foreach (var tile in required.OrderBy(value => value))
-                if (!tileViews.ContainsKey(tile)) tileViews.Add(tile, CreateTileView(tile));
-            foreach (var presenter in tileViews.Values.SelectMany(root =>
-                         root.GetComponentsInChildren<ProductionSourcePresenter>(true))) presenter.Refresh();
+            foreach (var tile in requiredTiles.OrderBy(value => value))
+                if (!tileViews.ContainsKey(tile))
+                {
+                    var view = CreateTileView(tile);
+                    tileViews.Add(tile, view);
+                    tileSources.Add(tile, view.GetComponentsInChildren<ProductionSourcePresenter>(true));
+                }
+            foreach (var sources in tileSources.Values)
+                for (var index = 0; index < sources.Length; index++)
+                    if (sources[index] != null) sources[index].Refresh();
             if (wildlifePresenter != null) wildlifePresenter.Rebalance(WildlifeFocus());
         }
 
@@ -166,6 +178,7 @@ namespace Game.Infrastructure
         {
             foreach (var root in tileViews.Values) if (root != null) Destroy(root);
             tileViews.Clear();
+            tileSources.Clear();
             RefreshViews();
             wildlifePresenter?.Reconcile();
         }
@@ -356,6 +369,8 @@ namespace Game.Infrastructure
             var now = animalTime;
             var camera = Camera.main;
             RefreshForestAmbience();
+            // Capture the canonical task snapshot once, not once per animal.
+            var activeTasks = production.ActiveTasks;
             for (var index = animals.Count - 1; index >= 0; index--)
             {
                 var animal = animals[index];
@@ -379,9 +394,14 @@ namespace Game.Infrastructure
                     animal.Animator.speed = delta <= 0f ? 0f : speed > .03f ? Mathf.Clamp(speed / .85f, .2f, 1.2f) : 1f;
                 }
                 var hp = 120;
-                var task = production.ActiveTasks.Where(x => x.SiteId == animal.SiteId &&
-                        x.RecipeId.ToString() == "hunt_animal")
-                    .OrderByDescending(x => x.AccumulatedWorkTicks).FirstOrDefault();
+                ProductionTask task = null;
+                for (var taskIndex = 0; taskIndex < activeTasks.Count; taskIndex++)
+                {
+                    var candidate = activeTasks[taskIndex];
+                    if (candidate.SiteId == animal.SiteId && candidate.RecipeId.ToString() == "hunt_animal" &&
+                        (task == null || candidate.AccumulatedWorkTicks > task.AccumulatedWorkTicks))
+                        task = candidate;
+                }
                 if (task != null && task.RequiredWorkTicks > 0)
                     hp = Mathf.Clamp(Mathf.CeilToInt(120f * (1f -
                         task.AccumulatedWorkTicks / (float)task.RequiredWorkTicks)), 0, 120);
@@ -405,7 +425,11 @@ namespace Game.Infrastructure
                 }
                 if (animal.HealthLabel != null)
                 {
-                    animal.HealthLabel.text = $"HP {hp}/120";
+                    if (animal.DisplayedHealth != hp)
+                    {
+                        animal.HealthLabel.text = $"HP {hp}/120";
+                        animal.DisplayedHealth = hp;
+                    }
                     if (camera != null) animal.HealthLabel.transform.rotation = camera.transform.rotation;
                 }
             }

@@ -54,7 +54,18 @@ namespace Game.Presentation.Environment
 
         public void ConfigureTree(GameObject tree)
         {
-            foreach (var group in tree.GetComponentsInChildren<LODGroup>(true)) Configure(group);
+            var stableProjection = tree.transform.Find("Synty playable tree");
+            foreach (var group in tree.GetComponentsInChildren<LODGroup>(true))
+            {
+                Configure(group);
+                if (stableProjection != null && group.transform.IsChildOf(stableProjection))
+                {
+                    // These stable materials deliberately disable dithering and wind. Use
+                    // distinct mesh stages without simultaneously drawing opaque LOD shells.
+                    group.fadeMode = LODFadeMode.None;
+                    group.animateCrossFading = false;
+                }
+            }
             // Imported SpeedTree vertex animation depends on wind/geometry metadata. A static
             // Lit projection keeps the approved meshes/textures without camera-facing or wind deformation.
             foreach (var renderer in tree.GetComponentsInChildren<Renderer>(true))

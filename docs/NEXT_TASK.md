@@ -1,5 +1,18 @@
 # NEXT_TASK.md
 
+## Active override — WM15 night repair only (2026-10-24)
+
+Repair the failures from `Artifacts/WM15/night-20261024-002730-4c6d7c` in this checkout.
+Only exact failed NUnit cases, cleanup/protection runner regressions and the three failed rendered
+Player performance gates may be repeated, with fresh compilation/build as needed. Do not start the
+full 182-step night suite, the 881 passed cases, another chat, automation or worktree.
+Keep proposed V2 inactive, old saves unchanged and the seven inherited dirty materials plus
+`New Unity Project/` outside repair commits. PostgreSQL remains PARTIAL without a configured test DB.
+Repair evidence: `Artifacts/WM15/repair-20261024`; final repair report will track each original failure.
+The historical full-WM15 instructions below are superseded for this repair. User visual acceptance
+and overall WM15 DONE are not implied by repair results.
+
+
 ## User-requested offline validation tooling — 2026-10-24
 
 The requested runner is ready at `Tools/Validation/Run-WM15-Night.cmd`; command-line entry is
@@ -290,3 +303,13 @@ Stage 2 is complete. Every tile has deterministic canonical resources; approved 
 Do not start P10.10. Await explicit user direction on the remaining P10.9 acceptance work: the inherited P10.3/P10.4 manual product-route debt and whether/when to resume the deferred performance gate. Do not repeat the completed tiled-world Stage 1 or Stage 2 work.
 
 Performance profiling/optimization remains deferred by the user's instruction. Do not run the historical 60+300 s benchmark or claim its p95 gate. Do not start P10.10, and do not change P10.3/P10.4 or P8.6/U29/U30/U31 statuses. Existing P10 saves must remain preserved, read-only and unmigrated.
+
+## Latest steering — performance-only offline handoff (2026-10-24)
+
+The user will run the long gates offline. Use Tools/Validation/Run-WM15-Performance-Repair.cmd,
+not Run-WM15-Night.cmd. The eight-step plan builds fresh, measures only failed 100/300/500
+populations at 3 x (60s + 300s), then checks protection and diffs. Reports go to a new
+Artifacts/WM15/performance-repair-* directory. No long gates were started in this repair.
+Next: consume that report, fix remaining performance failures, and resolve/document the
+original save-slot overwrite recorded in WM15_NIGHT_REPAIR.md. WM15 remains IN_PROGRESS;
+do not advance to another task or assert visual acceptance.

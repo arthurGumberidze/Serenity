@@ -26,10 +26,8 @@ namespace Game.Tests.PlayMode
         public IEnumerator AllVisibleResourceAffordancesAreCanonicalSelectableAndInspectable()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-            Assert.That(root.Resources.All.Select(x => x.Id.ToString()), Is.EquivalentTo(new[]
-            {
-                "wood_log", "stone", "plant_fiber", "hide", "berries", "iron_ore", "gold_ore", "meat", "fish"
-            }));
+            Assert.That(root.Resources.All.Select(x => x.Id), Is.EquivalentTo(
+                root.BuildingCatalog.ResourceCatalog.CreateCatalog().All.Select(x => x.Id)));
             Assert.That(root.Production.Sites.Where(x => x.Kind == ProductionSiteKind.NaturalSource)
                 .All(x => x.SourceCapacity >= 20 && x.SourceCapacity <= 50), Is.True);
 

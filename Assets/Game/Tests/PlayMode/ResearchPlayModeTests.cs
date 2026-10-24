@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using Game.Domain.Characters;
 using Game.Domain.Research;
 using Game.Infrastructure;
@@ -27,14 +28,16 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             Assert.That(root.Research, Is.Not.Null);
             Assert.That(root.ResearchDebug, Is.Not.Null);
-            Assert.That(root.Research.CompletedTechnologies.Count, Is.EqualTo(2));
+            Assert.That(root.Research.CompletedTechnologies,
+                Is.EquivalentTo(root.Research.Catalog.StartingKnowledge.Select(x => x.Id)));
             Assert.That(root.Research.IsBuildingUnlocked(new Game.Domain.Buildings.BuildingDefinitionId("primitive_crop_plot")), Is.False);
             Assert.That(root.Research.AssignedWorkers, Is.Empty);
             root.Research.AssignWorker(root.MaleDemoCharacter.Id);
             Assert.That(root.ResearchDebug.StartSelected(), Is.True);
+            root.AiRuntime.SetPaused(false);
             for (var i = 0; i < 6 && root.Research.ActiveProject != null &&
                 root.Research.ActiveProject.AccumulatedWorkTicks == 0; i++)
-                root.AiScheduler.Advance(new GameTimeAdvance(TimeSpan.FromDays(1), TimeSpan.Zero));
+                root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1));
             Assert.That(root.Research.ActiveProject == null || root.Research.ActiveProject.AccumulatedWorkTicks > 0, Is.True);
             Assert.That(root.AiRuntime.PerAgentAiUpdateCount, Is.Zero);
             yield return null;
@@ -46,7 +49,7 @@ namespace Game.Tests.PlayMode
             var root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             root.AiRuntime.SetPaused(true);
             root.Research.AssignWorkers(new[] { root.MaleDemoCharacter.Id, root.FemaleDemoCharacter.Id });
-            var technology = new TechnologyId("stone_tools");
+            var technology = new TechnologyId("controlled_fire");
             Assert.That(root.Research.Start(technology), Is.True);
             root.Tiers.Transition(root.MaleDemoCharacter.Id, CharacterSimulationTier.Tier2);
             root.Tiers.Transition(root.FemaleDemoCharacter.Id, CharacterSimulationTier.Tier3);
