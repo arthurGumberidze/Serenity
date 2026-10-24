@@ -22,11 +22,9 @@ public static class WM08WildlifeAssetAuthoring
         {
             Entry("deer", "Assets/Game/Art/CompactWorld/HuntingDeer.prefab", 1f),
             Entry("boar", "Assets/Game/Art/Prefabs/Animals/Serenity_Boar.prefab", 1f),
-            // No imported hare/fox/wolf models exist. These closest animated project assets are
-            // disposable visual fallbacks only; canonical species never share identity or state.
-            Entry("hare", "Assets/ithappy/Animals_FREE/Prefabs/Kitty_001.prefab", 0.55f),
-            Entry("fox", "Assets/ithappy/Animals_FREE/Prefabs/Dog_001.prefab", 0.7f),
-            Entry("wolf", "Assets/ithappy/Animals_FREE/Prefabs/Dog_001.prefab", 1.05f),
+            // Keep the explicitly assigned White Rabbit when this catalog is regenerated.
+            // Until its package is available locally, the existing fallback is still provisional.
+            catalog.For("hare") ?? Entry("hare", "Assets/ithappy/Animals_FREE/Prefabs/Kitty_001.prefab", 0.55f),
             Entry("bear", "Assets/Blink/Art/Animals/Stylized/Bear/Bear_Prefabs/Bear_4.prefab", 1f),
             Entry("waterfowl", "Assets/Toon Farm Pack/Prefabs/Animals/Ducks/TFP_Duck_01A.prefab", 0.8f, true)
         });

@@ -81,10 +81,7 @@ namespace Game.Presentation.Environment
             if (firstCharacter == null || !firstCharacter.IsBound || secondCharacter == null || !secondCharacter.IsBound)
                 throw new ArgumentException("P3 equipment requires two bound canonical character presenters.");
 
-            AttachTool(stoneAxePrefab, firstCharacter.RightHandSocket,
-                new Vector3(0.01f, 0.08f, 0.02f), Quaternion.Euler(15f, 8f, 92f));
-            AttachTool(stoneSpearPrefab, secondCharacter.RightHandSocket,
-                new Vector3(0.01f, 0.18f, 0.02f), Quaternion.Euler(-8f, 2f, 88f));
+            // Work equipment is owned by CharacterPresenter and follows the actual work intent.
             ApplySurfaceMaterial(shelter, shelterSurfaceMaterial, "shelter");
             ApplySurfaceMaterial(storage, storageSurfaceMaterial, "storage");
             CreateCampfireEffects();
@@ -100,10 +97,6 @@ namespace Game.Presentation.Environment
             for (var i = 0; i < equippedTools.Count; i++)
                 if (equippedTools[i] != null) Destroy(equippedTools[i]);
             equippedTools.Clear();
-            AttachTool(stoneAxePrefab, firstCharacter.RightHandSocket,
-                new Vector3(0.01f, 0.08f, 0.02f), Quaternion.Euler(15f, 8f, 92f));
-            AttachTool(stoneSpearPrefab, secondCharacter.RightHandSocket,
-                new Vector3(0.01f, 0.18f, 0.02f), Quaternion.Euler(-8f, 2f, 88f));
         }
 
         private static void ApplySurfaceMaterial(BuildingPresenter presenter, Material material, string label)

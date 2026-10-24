@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+WM15 content feedback (2026-10-24): **IN_PROGRESS / uncompiled source checkpoint**. User-selected residents,
+work tools, crop selection/rows, water outlet/shore repairs, removal of the photographed monolith and fox/wolf
+retirement are recorded in `docs/world_map/WM15_CONTENT_SOURCE_REPAIR.md`. White Rabbit admission and
+livestock pens remain open. Point 4 has analysis/questions only; regional art changes await answers.
+Tests, Unity/Player execution and rebuilding remain prohibited. No advancement to DONE or a new task.
+
 WM15 follow-up feedback (2026-10-24): **IN_PROGRESS / source edits only**. Quarry work/haul, forest-tree
 interaction, visible stock-backed fish, UMA consistency and foreign-estate command isolation are being repaired.
 User explicitly forbids tests and rebuilding for now. No execution evidence for this follow-up; old build-l and

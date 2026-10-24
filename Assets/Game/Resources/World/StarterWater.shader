@@ -29,14 +29,15 @@ Shader "Serenity/StarterWater"
             half4 Frag(Varyings i) : SV_Target
             {
                 float t = _Time.y;
-                float wave = sin(i.world.x * 1.7 + i.world.z * 0.8 + t * 0.7)
-                    * sin(i.world.z * 2.1 - i.world.x * 0.4 - t * 0.5);
+                // Broad overlapping ripples avoid the regular high-frequency checker at RTS distances.
+                float wave = sin(i.world.x * 0.19 + i.world.z * 0.12 + t * 0.45) * 0.6
+                    + sin(i.world.z * 0.27 - i.world.x * 0.08 - t * 0.32) * 0.4;
                 float2 ripple = SAMPLE_TEXTURE2D(_Ripples, sampler_Ripples, i.world.xz * 0.037 + t * float2(0.003, 0.002)).rg;
                 ripple += SAMPLE_TEXTURE2D(_Ripples, sampler_Ripples, i.world.zx * 0.071 - t * float2(0.002, 0.003)).rg;
                 float3 normal = normalize(float3((ripple.x - 1) * 0.1, 1, (ripple.y - 1) * 0.1));
                 float3 view = GetWorldSpaceNormalizeViewDir(i.world);
                 Light light = GetMainLight();
-                half3 base = lerp(half3(0.24, 0.37, 0.30), half3(0.055, 0.20, 0.22), saturate(i.depth));
+                half3 base = lerp(half3(0.20, 0.38, 0.34), half3(0.035, 0.16, 0.22), saturate(i.depth));
                 float fresnel = pow(1 - saturate(dot(normal, view)), 4);
                 float specular = pow(saturate(dot(normal, normalize(light.direction + view))), 96);
                 half3 color = base * (0.65 + light.color * 0.35) + wave * 0.009;

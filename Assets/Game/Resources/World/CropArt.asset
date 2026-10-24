@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b096237cb6d5b468d65f228c8bad92f, type: 3}
+  m_Name: CropArt
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Production.CropArtCatalog
+  Carrot: {fileID: 8391472377501456876, guid: a8e7da1417c156f8b8658af31152ef43, type: 3}
+  Cabbage: {fileID: 8692519690814794534, guid: fc7f1d30a28b52289ce3be05396111f2, type: 3}
+  Fiber: {fileID: 2872438262598781205, guid: 01910a8bf5475cd7b7f7c363b6959092, type: 3}
+  Fence: {fileID: 5811258600280286245, guid: 8f45e37f062f53a5b0dcd385109f35b1, type: 3}
+  Berries: {fileID: 8807064048693953627, guid: c06ecca5c3d565e42808724839b39b6f, type: 3}

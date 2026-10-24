@@ -30,6 +30,15 @@ namespace Game.Presentation.Environment
             public int AccentCount => accentCount;
             public float AccentRadius => accentRadius;
 
+            // A terrain landmark retains exploration identity without an artificial monument mesh.
+            public Entry ConfigureTerrainLandmark(string id)
+            {
+                if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException(nameof(id));
+                poiId = id; primaryPrefab = accentPrefab = effectPrefab = null;
+                primaryCount = accentCount = 0;
+                return this;
+            }
+
             public Entry Configure(string id, GameObject primary, float scale = 1f, int count = 1,
                 float radius = 0f, GameObject accent = null, int accents = 0, float accentRingRadius = 0f,
                 GameObject effect = null)

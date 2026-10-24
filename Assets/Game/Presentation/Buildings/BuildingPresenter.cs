@@ -63,6 +63,7 @@ namespace Game.Presentation.Buildings
         {
             if (building == null) return;
             RefreshConstruction();
+            GetComponent<Game.Presentation.Production.CropPlotPresentation>()?.Refresh();
             RefreshCampfire();
             if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
             var hasTint = building.IsDestroyed || building.OwnerSideId.ToString() == "enemy";

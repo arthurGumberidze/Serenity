@@ -62,40 +62,6 @@
       "activity": "dawn_dusk"
     },
     {
-      "id": "fox",
-      "name": "Лиса",
-      "suitableBiomes": [
-        "mixed_forest_edge",
-        "open_meadow"
-      ],
-      "targetPopulation": [
-        5,
-        9
-      ],
-      "groupSize": [
-        1,
-        2
-      ],
-      "activity": "dusk_night"
-    },
-    {
-      "id": "wolf",
-      "name": "Волк",
-      "suitableBiomes": [
-        "dense_conifer_forest",
-        "rocky_highland"
-      ],
-      "targetPopulation": [
-        5,
-        9
-      ],
-      "groupSize": [
-        2,
-        5
-      ],
-      "activity": "night"
-    },
-    {
       "id": "bear",
       "name": "Медведь",
       "suitableBiomes": [
@@ -137,8 +103,7 @@
       "name": "Южные луга",
       "species": [
         "deer",
-        "hare",
-        "fox"
+        "hare"
       ],
       "shape": {
         "type": "ellipse",
@@ -159,7 +124,6 @@
       "species": [
         "deer",
         "boar",
-        "wolf",
         "bear"
       ],
       "shape": {
@@ -200,9 +164,7 @@
       "id": "hunt_east_passes",
       "name": "Восточные проходы",
       "species": [
-        "deer",
-        "wolf",
-        "fox"
+        "deer"
       ],
       "shape": {
         "type": "ellipse",
@@ -227,8 +189,8 @@
     "predatorPrey": "future_aggregate_tick",
     "timeOfDay": true,
     "canonicalPopulationTarget": [
-      88,
-      148
+      78,
+      130
     ],
     "tier1VisibleCap": [
       20,

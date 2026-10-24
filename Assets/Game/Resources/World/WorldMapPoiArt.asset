@@ -59,11 +59,11 @@ MonoBehaviour:
     accentCount: 0
     accentRadius: 0
   - poiId: poi_rock_spire
-    primaryPrefab: {fileID: 1756931353436749007, guid: cc3aa56d3314a4b43a563d977969ed87, type: 3}
+    primaryPrefab: {fileID: 0}
     accentPrefab: {fileID: 0}
     effectPrefab: {fileID: 0}
-    visualScale: 2
-    primaryCount: 1
+    visualScale: 1
+    primaryCount: 0
     primaryRadius: 0
     accentCount: 0
     accentRadius: 0

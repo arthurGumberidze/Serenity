@@ -312,7 +312,10 @@ namespace Game.Domain.Research
                         availableBuildingIds.Contains(new BuildingDefinitionId("primitive_garden"))
                             ? TechnologyUnlock.Building(new BuildingDefinitionId("primitive_garden"))
                             : TechnologyUnlock.Capability(new CapabilityId("basic_survival")),
-                        TechnologyUnlock.Recipe(new ProductionRecipeId("cultivate_berries")) }),
+                        TechnologyUnlock.Recipe(new ProductionRecipeId("cultivate_berries")) }
+                        .Concat(production.All.Where(recipe => recipe.SiteKind == ProductionSiteKind.PrimitiveCropPlot &&
+                            recipe.Id != new ProductionRecipeId("cultivate_berries"))
+                            .Select(recipe => TechnologyUnlock.Recipe(recipe.Id)))),
                 new TechnologyDefinition(T("weaving"), "Weaving", new[] { T("fiber_working"), T("organized_labor") }, TimeSpan.FromDays(4),
                     new[] { C("weaving") }),
                 new TechnologyDefinition(T("advanced_stonecraft"), "Advanced Stonecraft",

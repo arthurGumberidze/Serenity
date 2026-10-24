@@ -171,6 +171,13 @@ namespace Game.Domain.Production
                     new[] { new ResourceAmount(berries, new ResourceQuantity(6)) }, TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot,
                     weatherExposure: ProductionWeatherExposure.Outdoor)
             };
+            foreach (var crop in new[] { ("carrot", "Cultivate Carrots", 10), ("cabbage", "Cultivate Cabbage", 8),
+                         ("plant_fiber", "Cultivate Fiber", 10) })
+                if (resources.Contains(new ResourceId(crop.Item1)))
+                    recipes.Add(new ProductionRecipe(new ProductionRecipeId("cultivate_" + crop.Item1), crop.Item2,
+                        null, new[] { new ResourceAmount(new ResourceId(crop.Item1), new ResourceQuantity(crop.Item3)) },
+                        TimeSpan.FromHours(8), ProductionSiteKind.PrimitiveCropPlot,
+                        weatherExposure: ProductionWeatherExposure.Outdoor));
             if (resources.Contains(branches))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_branches"), "Gather Branches", null,
                     new[] { new ResourceAmount(branches, new ResourceQuantity(3)) }, TimeSpan.FromHours(3),
@@ -330,7 +337,7 @@ namespace Game.Domain.Production
         }
 
         public StableEntityId Id { get; }
-        public ProductionRecipeId RecipeId { get; }
+        public ProductionRecipeId RecipeId { get; private set; }
         public ProductionSiteKind Kind { get; }
         public WorldPosition Position { get; private set; }
         public long RemainingAmount { get; private set; }
@@ -371,6 +378,15 @@ namespace Game.Domain.Production
         }
 
         public static ProductionSite Restore(ProductionSiteState state) => new ProductionSite(state);
+
+        public void SelectCrop(ProductionRecipe recipe)
+        {
+            if (recipe == null || recipe.SiteKind != ProductionSiteKind.PrimitiveCropPlot ||
+                Kind != ProductionSiteKind.PrimitiveCropPlot || CropPhase != CropPlotPhase.Unplanted)
+                throw new InvalidOperationException("Crop can only be selected on an empty plot.");
+            RecipeId = recipe.Id;
+            GrowthProgressTicks = 0;
+        }
 
         public void CompleteWork(ProductionTaskKind taskKind, bool harvestEntireSource = false)
         {

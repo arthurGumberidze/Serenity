@@ -52,21 +52,87 @@ namespace Game.Presentation.Characters
         private Quaternion lastRightLowerArmOffset = Quaternion.identity;
         private Quaternion lastLeftLowerArmOffset = Quaternion.identity;
         private float locomotionPlaybackRate = 1f;
-        private GameObject workTool;
+        private GameObject workAxe, workPickaxe, workHammer;
+        private GameObject axePrefab, pickaxePrefab, hammerPrefab;
         private bool activityHidden;
+        private bool preserveAuthoredVisualAtDistance;
+
+        public void PreserveAuthoredVisualAtDistance()
+        {
+            preserveAuthoredVisualAtDistance = true;
+            ApplyVisualDetail(automaticAnimationAllowed || IsSelected);
+        }
 
         public void ConfigureWorkTool(GameObject prefab)
         {
-            if (prefab == null || animator == null || !animator.isHuman) return;
-            if (workTool != null) Destroy(workTool);
+            ConfigureWorkTools(prefab, null, null);
+        }
+
+        public void ConfigureWorkTools(GameObject axe, GameObject pickaxe, GameObject hammer)
+        {
+            axePrefab = axe; pickaxePrefab = pickaxe; hammerPrefab = hammer;
+            RebindWorkTools();
+        }
+
+        private void RebindWorkTools()
+        {
+            foreach (var tool in new[] { workAxe, workPickaxe, workHammer })
+                if (tool != null) { tool.SetActive(false); Destroy(tool); }
+            workAxe = workPickaxe = workHammer = null;
+            if (animator == null || !animator.isHuman) return;
             var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
             if (hand == null) return;
-            workTool = Instantiate(prefab, hand, false);
-            workTool.name = "Work stone axe";
-            workTool.transform.localPosition = new Vector3(0.01f, 0.08f, 0.02f);
-            workTool.transform.localRotation = Quaternion.Euler(15f, 8f, 92f);
-            foreach (var collider in workTool.GetComponentsInChildren<Collider>()) collider.enabled = false;
-            workTool.SetActive(false);
+            workAxe = CreateTool(axePrefab, hand, "Work axe", 0.8f);
+            workPickaxe = CreateTool(pickaxePrefab, hand, "Work pickaxe", 0.95f);
+            workHammer = CreateTool(hammerPrefab, hand, "Work hammer", 0.65f);
+            RefreshWorkTools();
+        }
+
+        private GameObject CreateTool(GameObject prefab, Transform hand, string label, float length)
+        {
+            if (prefab == null) return null;
+            var holder = new GameObject(label);
+            holder.transform.SetParent(hand, false);
+            var visual = Instantiate(prefab, holder.transform, false);
+            var bounds = new Bounds();
+            var hasBounds = false;
+            foreach (var mesh in visual.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (mesh.sharedMesh == null) continue;
+                var b = mesh.sharedMesh.bounds;
+                for (var i = 0; i < 8; i++)
+                {
+                    var point = holder.transform.InverseTransformPoint(mesh.transform.TransformPoint(b.center +
+                        Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1 : 1,
+                            (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1))));
+                    if (!hasBounds) { bounds = new Bounds(point, Vector3.zero); hasBounds = true; }
+                    else bounds.Encapsulate(point);
+                }
+            }
+            if (hasBounds)
+            {
+                var size = bounds.size;
+                var axis = size.x > size.y && size.x > size.z ? Vector3.right :
+                    size.z > size.y ? Vector3.forward : Vector3.up;
+                var turn = Quaternion.FromToRotation(axis, Vector3.up);
+                var scale = length / Mathf.Max(0.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
+                visual.transform.localRotation = turn * visual.transform.localRotation;
+                visual.transform.localScale *= scale;
+                visual.transform.localPosition = turn * (visual.transform.localPosition - bounds.center) * scale +
+                    Vector3.up * length * 0.25f;
+            }
+            holder.transform.localPosition = new Vector3(0.01f, 0.03f, 0.02f);
+            holder.transform.localRotation = Quaternion.Euler(15f, 8f, 92f);
+            foreach (var collider in visual.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+            holder.SetActive(false);
+            return holder;
+        }
+
+        private void RefreshWorkTools()
+        {
+            if (workAxe != null) workAxe.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Chop);
+            if (workPickaxe != null) workPickaxe.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Mine);
+            if (workHammer != null) workHammer.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Build);
         }
 
         public bool IsBound => character != null;
@@ -122,6 +188,9 @@ namespace Game.Presentation.Characters
             // Navigation owns the root for UMA as well as role prefabs. Imported clips
             // must never move a visual away from its collider/selection identity.
             animator.applyRootMotion = false;
+            rightHandSocket = animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightHand) : null;
+            leftHandSocket = animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.LeftHand) : null;
+            RebindWorkTools();
             CacheDetailedRenderers();
             CacheAnimatorParameters();
             CacheHumanoidBones();
@@ -202,6 +271,7 @@ namespace Game.Presentation.Characters
         {
             if (activityHidden == hidden) return;
             activityHidden = hidden;
+            RefreshWorkTools();
             if (hidden)
             {
                 foreach (var renderer in activityRenderers)
@@ -223,8 +293,7 @@ namespace Game.Presentation.Characters
             if (Time.unscaledTime < manualAttackUntil) intent = CharacterAnimationIntent.Combat;
             var previousIntent = animationIntent;
             animationIntent = intent;
-            if (workTool != null) workTool.SetActive(intent == CharacterAnimationIntent.Chop ||
-                intent == CharacterAnimationIntent.Mine || intent == CharacterAnimationIntent.Build);
+            RefreshWorkTools();
             if (animator == null || !hasActionIntentParameter) return;
             if (Application.isPlaying && intent != CharacterAnimationIntent.Idle &&
                 (automaticAnimationAllowed || IsSelected) && DetailedVisualActive)
@@ -439,6 +508,9 @@ namespace Game.Presentation.Characters
                 if (detailedVisualRoot != null && detailedVisualRoot.activeSelf) detailedVisualRoot.SetActive(false);
                 return;
             }
+            // The animation budget may freeze a peasant's pose, but must not replace their
+            // explicitly chosen model with the old generic crowd body. Tier promotion remains bounded.
+            detailed |= preserveAuthoredVisualAtDistance;
             if (detailed && detailedVisualRoot != null && !detailedVisualRoot.activeSelf)
                 detailedVisualRoot.SetActive(true);
             for (var index = 0; index < detailedRenderers.Length; index++)

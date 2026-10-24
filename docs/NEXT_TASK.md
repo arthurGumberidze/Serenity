@@ -1,5 +1,19 @@
 # NEXT_TASK.md
 
+## WM15 content feedback — current, source only (2026-10-24)
+
+Keep the user's prohibition on tests, Unity/Player execution, compilation and rebuilding. WM15 is IN_PROGRESS.
+The latest source checkpoint adds Polytope residents / unchanged UMA rulers, task-specific work tools,
+selectable crops and crop rows, lake-outlet/shore mesh repairs, removal of the photographed monolith and
+retirement of fox/wolf. See `docs/world_map/WM15_CONTENT_SOURCE_REPAIR.md` for exact scope and limitations.
+White Rabbit is approved but its package is not available locally; the old hare proxy remains until admission.
+Animal pens are not implemented; Toon Farm provides suitable art but no canonical livestock gameplay.
+The broad map color/biome request is ANALYSIS ONLY until the user answers
+`docs/world_map/WM15_MAP_ART_DIRECTION_QUESTIONS.md`. Do not implement that proposed palette yet.
+Continue remaining content/new user bugs; ask for missing rabbit files when the user returns. Paid purchases
+need separate approval. All build/test/visual evidence below predates these source changes.
+Preserve the expanded inherited vendor/import changes recorded in `Artifacts/WM15Content/baseline-status.txt`.
+
 ## WM15 follow-up source repair — active, no execution (2026-10-24)
 
 User explicitly requests continuing fixes while collecting further bugs, **without running tests or rebuilding**.
@@ -8,8 +22,8 @@ Current scope: quarry worker extraction/haul, selectable forest trees, lake fish
 characters/editor, command isolation from other estates, and replacement hare/fox/wolf art.
 Source changes are recorded in `docs/world_map/WM15_FOLLOWUP_SOURCE_REPAIR.md`; they are uncompiled and untested.
 The existing WorldMapV2Feedback Player is unchanged and does not contain this follow-up.
-Three species still need suitable approved art. An asynchronous question asks for local paths or authorization
-to select new Asset Store models (paid purchases require separate approval). No new dependency was downloaded.
+The subsequent content checkpoint above supersedes the three-species art request: fox/wolf are retired,
+White Rabbit is approved but missing locally. No paid dependency was purchased.
 Continue remaining content/new user bugs; runtime checks and a fresh build wait for the user's instruction.
 WM15 remains IN_PROGRESS, not DONE. Protect the seven inherited materials and `New Unity Project/`.
 

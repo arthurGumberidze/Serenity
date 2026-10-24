@@ -529,7 +529,10 @@ namespace Game.Domain.World
         public void RestoreState(WildlifeWorldState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            var restored = state.Animals.ToDictionary(value => value.Id);
+            // Explicit content retirement only; other unknown species remain a corrupt-save error.
+            bool Retired(string id) => (id == "fox" || id == "wolf") &&
+                !plan.Definition.Species.Any(species => species.Id == id);
+            var restored = state.Animals.Where(value => !Retired(value.SpeciesId)).ToDictionary(value => value.Id);
             foreach (var animal in restored.Values)
             {
                 plan.Definition.SpeciesById(animal.SpeciesId);
@@ -543,6 +546,7 @@ namespace Game.Domain.World
             var restoredPressure = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var value in state.HuntingPressures)
             {
+                if (Retired(value.SpeciesId)) continue;
                 plan.Definition.SpeciesById(value.SpeciesId);
                 if (!plan.Capacities.Any(capacity => capacity.SpeciesId == value.SpeciesId &&
                     capacity.RegionId == value.RegionId))

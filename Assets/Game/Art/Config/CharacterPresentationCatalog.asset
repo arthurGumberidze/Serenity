@@ -38,4 +38,9 @@ MonoBehaviour:
   femaleWorkerVisual: {fileID: 656971401852858973, guid: fc75dc3cd783f094e9711aaec906243c, type: 3}
   maleMilitaryVisual: {fileID: 5091268008269631861, guid: fb4babc1304aa3d45acf408a2288a9ee, type: 3}
   femaleMilitaryVisual: {fileID: 2619011125093111949, guid: 359a152895b663546a54a22d15127f4f, type: 3}
-  WorkAxe: {fileID: 4987476390252150468, guid: 48d415786bcab4247b4388b373793326, type: 3}
+  WorkAxe: {fileID: 98534972615071453, guid: a03cfcae9a275aa8b654c70948d5c7e7, type: 3}
+  WorkPickaxe: {fileID: 7923423829790563289, guid: 97043fc09e565585b70a024d009fb1f6, type: 3}
+  WorkHammer: {fileID: 5615173893863154869, guid: b6cc2a5ef1a357e1b0ce4c3986c4666f, type: 3}
+  MaleResident: {fileID: 5949706081513176824, guid: a0695744bfff5569a71a061c337331d9, type: 3}
+  FemaleResident: {fileID: 2224834628610083241, guid: 8afb0bd9c80b5428afb7f70cb3261eef, type: 3}
+  ChildResident: {fileID: 4520716785383396158, guid: b70262cbf47f5b16b4ed46cb3c62ec47, type: 3}

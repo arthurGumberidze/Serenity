@@ -1,0 +1,230 @@
+[
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Meshes/Peasants_Citizens/Sets/PT_Male_Peasant_01.fbx",
+    "destination": "Assets/Game/Art/WM15Content/PT_Male_Peasant_01_e8196b76.fbx",
+    "guid": "dd62b7655486545492da28808bd8aebf",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Textures/PT_Modular_NPC_Texture_Base_01.png",
+    "destination": "Assets/Game/Art/WM15Content/PT_Modular_NPC_Texture_Base_01_f7390e40.png",
+    "guid": "05fc3eebb82d5e3b8869915f496cc740",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Textures/PT_Modular_NPC_Texture_Mask_01.png",
+    "destination": "Assets/Game/Art/WM15Content/PT_Modular_NPC_Texture_Mask_01_6bb85a5d.png",
+    "guid": "30aa1e7814c4529babe1c15f1b4cfef5",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Shaders/PT_Modular_NPC_Shader_PBR.shader",
+    "destination": "Assets/Game/Art/WM15Content/PT_Modular_NPC_Shader_PBR_5fdb9250.shader",
+    "guid": "582a1bbb51205f4e8e36794ce2969dcc",
+    "urp17Override": true
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_Armors/Textures/PT_Coat_of_Arms_01.png",
+    "destination": "Assets/Game/Art/WM15Content/PT_Coat_of_Arms_01_d294e954.png",
+    "guid": "6dc09c8482f15c86b52727bbbf8b8396",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Materials/PT_NPC_Mat.mat",
+    "destination": "Assets/Game/Art/WM15Content/PT_NPC_Mat_c79855c6.mat",
+    "guid": "1fb051ea8cfa5c9daeefb12d54dd32ae",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Prefabs/Modular_NPC/Peasants_Citizens/Sets/PT_Male_Peasant_01.prefab",
+    "destination": "Assets/Game/Art/WM15Content/PT_Male_Peasant_01_a0cb3b35.prefab",
+    "guid": "a0695744bfff5569a71a061c337331d9",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Meshes/Peasants_Citizens/Sets/PT_Female_Peasant_01_a.fbx",
+    "destination": "Assets/Game/Art/WM15Content/PT_Female_Peasant_01_a_ed32f375.fbx",
+    "guid": "bb24f55818315cfcb5f8535890738676",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Prefabs/Modular_NPC/Peasants_Citizens/Sets/PT_Female_Peasant_01_a.prefab",
+    "destination": "Assets/Game/Art/WM15Content/PT_Female_Peasant_01_a_1906c8b8.prefab",
+    "guid": "8afb0bd9c80b5428afb7f70cb3261eef",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Sources/Modular_NPC/Meshes/Peasants_Citizens/Sets/PT_Boy_Peasant_01.fbx",
+    "destination": "Assets/Game/Art/WM15Content/PT_Boy_Peasant_01_41462ae3.fbx",
+    "guid": "c0a3dd598cc55e84a63eda67e5ca1e3e",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Polytope Studio/Lowpoly_Characters/Prefabs/Modular_NPC/Peasants_Citizens/Sets/PT_Boy_Peasant_01.prefab",
+    "destination": "Assets/Game/Art/WM15Content/PT_Boy_Peasant_01_03fb6f49.prefab",
+    "guid": "b70262cbf47f5b16b4ed46cb3c62ec47",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Materials/ToonBuildingsAtlas.png",
+    "destination": "Assets/Game/Art/WM15Content/ToonBuildingsAtlas_830f371e.png",
+    "guid": "a7a07e76292b5ee880b8a72f3fd65f8e",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Materials/M_Building.mat",
+    "destination": "Assets/Game/Art/WM15Content/M_Building_af19245b.mat",
+    "guid": "c458512a87bd55409f691c741a9a37b2",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Models/Props/P_Axe.fbx",
+    "destination": "Assets/Game/Art/WM15Content/P_Axe_4ddd827c.fbx",
+    "guid": "4498e36918d55777bdb4bf93a4b7f8f0",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Prefabs/Props/Axe.prefab",
+    "destination": "Assets/Game/Art/WM15Content/Axe_2f49abab.prefab",
+    "guid": "a03cfcae9a275aa8b654c70948d5c7e7",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Models/Props/P_Pickaxe.fbx",
+    "destination": "Assets/Game/Art/WM15Content/P_Pickaxe_227736e4.fbx",
+    "guid": "374bc0a0614b58f9bbcb605eb0b2f4fc",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/RTSToonBuildings/Prefabs/Props/Pickaxe.prefab",
+    "destination": "Assets/Game/Art/WM15Content/Pickaxe_f367444b.prefab",
+    "guid": "97043fc09e565585b70a024d009fb1f6",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyRPGWeapons/Textures/RPG_Weapons_Texture_01.png",
+    "destination": "Assets/Game/Art/WM15Content/RPG_Weapons_Texture_01_1bacb6ba.png",
+    "guid": "d8360fb8548159bc9a8427cd3d1fe4d0",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyRPGWeapons/Materials/LowPolyRPGWeapons_MAIN.mat",
+    "destination": "Assets/Game/Art/WM15Content/LowPolyRPGWeapons_MAIN_2eaa5270.mat",
+    "guid": "2c7e121402bc5c5382ede44332ee1ddb",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyRPGWeapons/Models/Hammers/Hammer_01.fbx",
+    "destination": "Assets/Game/Art/WM15Content/Hammer_01_a68ea19f.fbx",
+    "guid": "0810cdfc1ce4501084c4b4da12776b3d",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyRPGWeapons/Prefabs/Hammers/Hammer_01.prefab",
+    "destination": "Assets/Game/Art/WM15Content/Hammer_01_2a2f54cb.prefab",
+    "guid": "b6cc2a5ef1a357e1b0ce4c3986c4666f",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Textures/TFP_Atlas_1A.psd",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Atlas_1A_522fcb2b.psd",
+    "guid": "277c86d83c75538c917d688c5e8488e5",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Textures/TFP_Toon_Ramp_1D.psd",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Toon_Ramp_1D_de9bbe5c.psd",
+    "guid": "acdc56540f8a5d25bdc10d12741df87a",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Textures/TFP_Noise_1.psd",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Noise_1_48c81fcf.psd",
+    "guid": "10352e24c4b55eda9537fcc2f12569df",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/Materials/TFP_Atlas_Vegetation_1A.mat",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Atlas_Vegetation_1A_319d953b.mat",
+    "guid": "d4fa289f2758528eae60bc53c3a39210",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/TFP_Carrot_Plant_01A_Leaves.fbx",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Carrot_Plant_01A_Leaves_556780dc.fbx",
+    "guid": "59acf69325ca53bdb1e4c927cc2b1bdd",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Prefabs/Vegetation/Agricultural Plants/TFP_Carrot_Plant_01A_Leaves.prefab",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Carrot_Plant_01A_Leaves_30cd20e2.prefab",
+    "guid": "a8e7da1417c156f8b8658af31152ef43",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/TFP_Cabbage_Plant_01A.fbx",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Cabbage_Plant_01A_78b435ac.fbx",
+    "guid": "c4ece15425e95a76be1de7fd0a584933",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Prefabs/Vegetation/Agricultural Plants/TFP_Cabbage_Plant_01A.prefab",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Cabbage_Plant_01A_68c73454.prefab",
+    "guid": "fc7f1d30a28b52289ce3be05396111f2",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Textures/TFP_Hay_Patch_01A.png",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Hay_Patch_01A_be866eab.png",
+    "guid": "d4d4456b6feb5a7784154008a710ed1e",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/Materials/TFP_Hay_1B.mat",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Hay_1B_aef5bfbf.mat",
+    "guid": "855629aefcef50b2a4205a94f165b4ee",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/Materials/TFP_Hay_1A.mat",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Hay_1A_48257862.mat",
+    "guid": "f97b460bb6b955a980cbdf19fec13141",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Models/TFP_Hay_Strand_01.fbx",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Hay_Strand_01_b45a6c88.fbx",
+    "guid": "36cb00efa88b5d26a5f04d05be79a5db",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/Toon Farm Pack/Prefabs/Vegetation/Agricultural Plants/TFP_Hay_Strand_01B.prefab",
+    "destination": "Assets/Game/Art/WM15Content/TFP_Hay_Strand_01B_e99736b1.prefab",
+    "guid": "01910a8bf5475cd7b7f7c363b6959092",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyNature (4 Seasons)/Models/Props/Fence_01.fbx",
+    "destination": "Assets/Game/Art/WM15Content/Fence_01_5aeaeb5e.fbx",
+    "guid": "df8288c4d24e554b81295330083e7db9",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyNature (4 Seasons)/Textures/LP_4SeasonsNature_Texture_01.png",
+    "destination": "Assets/Game/Art/WM15Content/LP_4SeasonsNature_Texture_01_ed02d0b4.png",
+    "guid": "e7828b8eecf75653b838ef8cea5441e1",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyNature (4 Seasons)/Materials/LP_4SeasonsNature_MAIN.mat",
+    "destination": "Assets/Game/Art/WM15Content/LP_4SeasonsNature_MAIN_02fe4516.mat",
+    "guid": "e24c0dc9017c5bb7b6ef2d381a30092b",
+    "urp17Override": false
+  },
+  {
+    "source": "Assets/LowPolyNature (4 Seasons)/Prefabs/Props/Fence_01.prefab",
+    "destination": "Assets/Game/Art/WM15Content/Fence_01_63fb9b0b.prefab",
+    "guid": "8f45e37f062f53a5b0dcd385109f35b1",
+    "urp17Override": false
+  }
+]

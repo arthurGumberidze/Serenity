@@ -34,7 +34,7 @@ public static class WM11PoiAssetAuthoring
                 accent: Load("Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/Prefabs/SM_Bld_Ruins_Column_01.prefab"),
                 accentCount: 4, accentRadius: 7f),
             Entry("poi_overlook", "Assets/Game/Art/Prefabs/Buildings/Serenity_Watchtower.prefab"),
-            Entry("poi_rock_spire", "Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/Prefabs/SM_Env_Monolith_02.prefab", 2f),
+            new WorldMapPoiArtCatalog.Entry().ConfigureTerrainLandmark("poi_rock_spire"),
             Entry("poi_cave", "Assets/Synty/PolygonNature/Prefabs/Rocks/SM_Rock_CaveEntrance_01.prefab", 1.2f),
             new WorldMapPoiArtCatalog.Entry().Configure("poi_giant_tree", giantTree, 1.35f),
             new WorldMapPoiArtCatalog.Entry().Configure("poi_secluded_glade", flowers, 1f, 7, 9f,

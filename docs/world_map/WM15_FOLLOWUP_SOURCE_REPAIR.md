@@ -1,5 +1,9 @@
 # WM15 follow-up — source checkpoint, 2026-10-24
 
+Later same-day steering and changes are recorded in `WM15_CONTENT_SOURCE_REPAIR.md`: Polytope residents,
+UMA rulers, approved White Rabbit (not locally available), removed fox/wolf, crop choice, tools and water.
+That checkpoint supersedes the all-UMA-residents and three-species-replacement scope below.
+
 Status: IN_PROGRESS, UNCOMPILED / UNTESTED. The user explicitly requested fixes while collecting more bugs,
 without tests or rebuilding. No Unity Editor, batchmode, Player or build command was run for this checkpoint.
 `Builds/WorldMapV2Feedback/Serenity.exe` remains the preceding candidate, not these changes.

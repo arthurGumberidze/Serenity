@@ -309,7 +309,12 @@ namespace Game.Infrastructure
             Weather = new WeatherService(worldSeed, ClimateProfile.Temperate, HealthFamily);
             CharacterPresentations = new CharacterPresentationRegistry();
             CharacterSpawner = new CharacterPresentationSpawner(characterCatalog, CharacterPresentations, Appearances,
-                presentationPositionProjector: ProjectToGameplayGround);
+                presentationPositionProjector: ProjectToGameplayGround,
+                rulerSelector: character => (Dynasty?.CurrentMonarchId ?? NewGame.Dynasty.CurrentMonarchId) == character.Id ||
+                    StarterEnemyAi?.Dynasty.CurrentMonarchId == character.Id ||
+                    StrategicAi != null && StrategicAi.Factions.Any(faction => faction.Dynasty.CurrentMonarchId == character.Id),
+                childSelector: character => character.AgeInCompletedYears(Clock != null
+                    ? Clock.State.BiologicalTicks : Character.BiologicalTicksPerYear * 20L) < 16);
 
             InteractionMode = new LocalInteractionMode();
             Buildings = new BuildingRegistry();
@@ -862,6 +867,9 @@ namespace Game.Infrastructure
             CampaignProgress.AdvanceTo(targetCalendarTick);
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
+            foreach (var character in Characters.GetAll())
+                if (CharacterSpawner.RequiresStyleRefresh(character) &&
+                    CharacterPresentations.TryGet(character.Id, out _)) Tier1Adapter.RebuildPresentation(character);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             BuildingLifecycle.AdvanceWearTo(targetCalendarTick);
             Production.Population = CountAbstractPlayerPopulation();
@@ -1076,6 +1084,10 @@ namespace Game.Infrastructure
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
                     view.Bind(canonical, Color.white, true);
+            foreach (var building in Buildings.All)
+                if ((building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
+                     building.DefinitionId == new BuildingDefinitionId("primitive_garden")) &&
+                    BuildingPresentations.TryGet(building.Id, out var cropView)) RegisterCropPlot(building, cropView);
             WorldPopulation?.RebindAfterLoad();
             DirectWorkCommands.EnsureRoleGroups();
             DirectWorkCommands.ReevaluateQueued();
@@ -1396,16 +1408,29 @@ namespace Game.Infrastructure
 
         private void RegisterCropPlot(Building building, BuildingPresenter buildingPresenter)
         {
-            if (Production.TryGetSite(building.Id, out _)) return;
             var definition = buildingCatalog.ResolveDefinition(building.DefinitionId);
-            var world = BuildingSpawner.GridToWorld(building.Coordinate, definition, building.Orientation);
-            var site = ProductionSite.CreateCropPlot(building.Id,
-                new ProductionRecipeId("cultivate_berries"),
-                new WorldPosition(world.x, world.y, world.z), Production.Settings.CropGrowthDuration);
-            Production.AddSite(site);
-            var presenter = buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
-            presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f));
-            productionPresenters.Add(presenter);
+            var world = buildingPresenter.transform.position;
+            if (!Production.TryGetSite(building.Id, out var site))
+            {
+                site = ProductionSite.CreateCropPlot(building.Id, new ProductionRecipeId("cultivate_berries"),
+                    new WorldPosition(world.x, world.y, world.z), Production.Settings.CropGrowthDuration);
+                Production.AddSite(site);
+            }
+            var visual = buildingPresenter.GetComponent<CropPlotPresentation>() ??
+                buildingPresenter.gameObject.AddComponent<CropPlotPresentation>();
+            var width = definition.Footprint.Width * buildingGridSize;
+            var depth = definition.Footprint.Depth * buildingGridSize;
+            if (building.PlacementCells.Count > 0)
+            {
+                width = (building.PlacementCells.Max(cell => cell.X) - building.PlacementCells.Min(cell => cell.X) + 1) * buildingGridSize;
+                depth = (building.PlacementCells.Max(cell => cell.Z) - building.PlacementCells.Min(cell => cell.Z) + 1) * buildingGridSize;
+                if (building.Orientation.Degrees() % 180 != 0) (width, depth) = (depth, width);
+            }
+            visual.Configure(site, width, depth);
+            var presenter = buildingPresenter.GetComponent<ProductionSourcePresenter>() ??
+                buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
+            presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f), preserveColor: true);
+            if (!productionPresenters.Contains(presenter)) productionPresenters.Add(presenter);
         }
 
         private void RegisterBuildingWorkplace(Building building, BuildingPresenter buildingPresenter)

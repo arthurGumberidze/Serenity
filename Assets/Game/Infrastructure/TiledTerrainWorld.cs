@@ -498,32 +498,32 @@ namespace Game.Infrastructure
 
         private GameObject CreateAuthoredLocalWater(WorldTileId id, Transform parent, TerrainData data)
         {
-            var resolution = data.heightmapResolution - 1;
+            var resolution = (data.heightmapResolution - 1) * 2;
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
             var colors = new List<Color>();
             var tileOrigin = Definition.TileOrigin(id);
             var step = Definition.TileSizeMeters / (float)resolution;
+            // Sample continuous corners once. Adjacent cells and tiles now agree on height/depth.
+            var samples = new Vector4[resolution + 1, resolution + 1];
+            var clipped = new Vector4[4];
+            for (var z = 0; z <= resolution; z++)
+            for (var x = 0; x <= resolution; x++)
+            {
+                var wx = tileOrigin.X + x * step;
+                var wz = tileOrigin.Z + z * step;
+                var distance = HeightSampler.WaterBoundaryDistance(wx, wz, out var surface);
+                samples[x, z] = new Vector4(x * step, surface, z * step, distance);
+            }
             for (var z = 0; z < resolution; z++)
             for (var x = 0; x < resolution; x++)
             {
-                var worldX = tileOrigin.X + (x + 0.5f) * step;
-                var worldZ = tileOrigin.Z + (z + 0.5f) * step;
-                if (!HeightSampler.TrySampleWaterSurface(worldX, worldZ, out var surface)) continue;
-                var localX = x * step;
-                var localZ = z * step;
-                var start = vertices.Count;
-                vertices.Add(new Vector3(localX, surface + 0.025f, localZ));
-                vertices.Add(new Vector3(localX, surface + 0.025f, localZ + step));
-                vertices.Add(new Vector3(localX + step, surface + 0.025f, localZ));
-                vertices.Add(new Vector3(localX + step, surface + 0.025f, localZ + step));
-                var terrain = HeightSampler.SampleHeight(worldX, worldZ);
-                var depth = Mathf.Clamp01((surface - terrain) / 7.5f);
-                for (var color = 0; color < 4; color++) colors.Add(new Color(depth, 0f, 0f, 1f));
-                triangles.Add(start); triangles.Add(start + 1); triangles.Add(start + 2);
-                triangles.Add(start + 2); triangles.Add(start + 1); triangles.Add(start + 3);
+                var a = samples[x, z]; var b = samples[x, z + 1];
+                var c = samples[x + 1, z]; var d = samples[x + 1, z + 1];
+                AddClippedWaterTriangle(a, b, c, tileOrigin, clipped, vertices, triangles, colors);
+                AddClippedWaterTriangle(c, b, d, tileOrigin, clipped, vertices, triangles, colors);
             }
-            if (vertices.Count == 0) return null;
+            if (triangles.Count == 0) return null;
             var water = new GameObject("World Map V2 Local Water " + id);
             water.transform.SetParent(parent, false);
             var mesh = new Mesh { name = "World Map V2 Local Water Mesh " + id,
@@ -542,6 +542,40 @@ namespace Game.Infrastructure
             modifier.overrideArea = true;
             modifier.area = NavMesh.GetAreaFromName("Not Walkable");
             return water;
+        }
+
+        private void AddClippedWaterTriangle(Vector4 a, Vector4 b, Vector4 c, WorldPosition origin,
+            Vector4[] polygon, List<Vector3> vertices, List<int> triangles, List<Color> colors)
+        {
+            if (a.w > 0f && b.w > 0f && c.w > 0f) return;
+            var count = 0;
+            for (var i = 0; i < 3; i++)
+            {
+                var start = i == 0 ? a : i == 1 ? b : c;
+                var end = i == 0 ? b : i == 1 ? c : a;
+                if (start.w <= 0f) polygon[count++] = start;
+                if ((start.w <= 0f) == (end.w <= 0f)) continue;
+                var edge = Vector4.Lerp(start, end, start.w / (start.w - end.w));
+                HeightSampler.WaterBoundaryDistance(origin.X + edge.x, origin.Z + edge.z, out var height);
+                edge.y = height;
+                polygon[count++] = edge;
+            }
+            if (count < 3) return;
+            var first = vertices.Count;
+            for (var i = 0; i < count; i++)
+            {
+                var point = polygon[i];
+                vertices.Add(new Vector3(point.x, point.y + 0.025f, point.z));
+                var ground = HeightSampler.SampleHeight(origin.X + point.x, origin.Z + point.z);
+                colors.Add(new Color(Mathf.Clamp01((point.y - ground) / 7.5f), 0f, 0f, 1f));
+            }
+            for (var i = 1; i + 1 < count; i++)
+            {
+                var left = vertices[first + i] - vertices[first];
+                var right = vertices[first + i + 1] - vertices[first];
+                if (Vector3.Cross(left, right).sqrMagnitude < 0.00000001f) continue;
+                triangles.Add(first); triangles.Add(first + i); triangles.Add(first + i + 1);
+            }
         }
 
         private static void AddWaterTriangle(Vector3 a, Vector3 b, Vector3 c,

@@ -46,6 +46,14 @@ namespace Game.Presentation.Characters
         public AppearanceDefinitionCatalog CreateDefinitionCatalog() => StoneAgeAppearanceProfiles.CreateCatalog();
         public GameObject UmaAvatarPrefab => umaAvatarPrefab;
         public GameObject WorkAxe;
+        public GameObject WorkPickaxe;
+        public GameObject WorkHammer;
+        public GameObject MaleResident;
+        public GameObject FemaleResident;
+        public GameObject ChildResident;
+
+        public GameObject ResolveResident(CharacterSex sex, bool child) => child && ChildResident != null
+            ? ChildResident : sex == CharacterSex.Male ? MaleResident : FemaleResident;
 
         public void ConfigureRoleVisuals(GameObject maleWorker, GameObject femaleWorker,
             GameObject maleMilitary, GameObject femaleMilitary)

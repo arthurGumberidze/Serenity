@@ -314,6 +314,34 @@ namespace Game.Domain.World
             throw new ArgumentException("Unknown canonical water ID.", nameof(waterId));
         }
 
+        /// <summary>Signed distance to the authored water union, in design metres, for clipped shore meshes.</summary>
+        public float WaterBoundaryDistance(float worldX, float worldZ, out float surfaceY)
+        {
+            surfaceY = WaterLevelMeters;
+            if (authoredHydrology == null) return SampleHeight(worldX, worldZ) - WaterLevelMeters;
+            var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
+            var best = float.PositiveInfinity;
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                var distance = DistanceToPolygon(point, lake.Shoreline);
+                if (lake.Shoreline.Contains(point)) distance = -distance;
+                if (distance >= best) continue;
+                best = distance;
+                surfaceY = lake.SurfaceY;
+            }
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point, course.Spline);
+                var distance = sample.Distance - sample.WidthMeters * 0.5f;
+                if (distance >= best) continue;
+                best = distance;
+                surfaceY = course.SurfaceLevelPolicy.Sample(sample.Progress);
+            }
+            // Inside a lake its flat surface owns the confluence, as in TrySampleWaterSurface.
+            if (TrySampleWaterSurface(worldX, worldZ, out var canonical)) surfaceY = canonical;
+            return best;
+        }
+
         public float DistanceToRiver(float worldX, float worldZ)
         {
             if (authoredHydrology != null)

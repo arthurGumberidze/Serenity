@@ -1734,3 +1734,26 @@ generation failure is reported explicitly instead of displaying a different char
 the 32-character detailed tier; the separate eight-view animation budget remains. Added generation/memory cost
 and actual visual results remain unverified until the user permits execution. Appropriate hare/fox/wolf assets
 are still required; no new Asset Store dependency is authorized by this decision.
+
+## D-197 — User-selected resident art, crop choice and bounded map repair (2026-10-24)
+
+Later explicit user direction supersedes D-196's uniform UMA body choice: rulers and their editor retain UMA;
+ordinary residents use the already imported Polytope peasants. Isolate admitted dependencies in project-owned
+assets, preserve vendor imports, retain the publisher's URP 17 NPC color-mask shader and project humanoid
+animation controller. Animation throttling may freeze a resident's pose but must not swap their selected mesh
+for the old generic crowd body. Measure the additional Tier1 rendering cost after execution is permitted.
+
+The user approves White Rabbit, retires fox/wolf, and permits asset selection but requires separate approval
+for paid purchases. The rabbit file is missing locally; do not claim the existing cat proxy is a rabbit model.
+Explicitly retire fox/wolf in saves without relaxing unknown-species validation. Keep a subsequently assigned
+hare prefab when regenerating the art catalog. No new paid dependency was acquired.
+
+Crop choice changes the canonical site's saved recipe only when empty, operational, owned by the requesting
+side and unreserved. Presentation reads canonical growth and harvest. Tool identity follows work intent and
+the current humanoid hand, not a permanent demo attachment. Imported art is not itself a livestock simulation;
+animal pen gameplay remains an explicit open item, not decorative livestock claimed as functioning economy.
+
+Repair lake-outlet continuity and shore mesh clipping in the existing hydrology. Remove only the rejected
+rock-spire mesh, preserving stable exploration identity. A water asset is optional and does not repair missing
+geometry. The broader map-art request is analysis only: do not implement suggested sakura, palettes or regional
+lighting before the user answers. The prohibition on tests/builds remains; WM15 is not DONE.

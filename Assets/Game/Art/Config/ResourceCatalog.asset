@@ -13,6 +13,12 @@ MonoBehaviour:
   m_Name: ResourceCatalog
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Resources.ResourceCatalogAsset
   entries:
+  - id: carrot
+    displayName: Carrot
+    category: 1
+  - id: cabbage
+    displayName: Cabbage
+    category: 1
   - id: wood_log
     displayName: Wood Logs
     category: 0

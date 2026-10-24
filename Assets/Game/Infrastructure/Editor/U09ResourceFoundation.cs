@@ -33,6 +33,8 @@ namespace Game.Infrastructure.Editor
                 new ResourceCatalogAsset.Entry().Configure("bone", "Bone", ResourceCategory.Other),
                 new ResourceCatalogAsset.Entry().Configure("cured_hide", "Cured Hide", ResourceCategory.Other),
                 new ResourceCatalogAsset.Entry().Configure("berries", "Berries", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("carrot", "Carrot", ResourceCategory.Food),
+                new ResourceCatalogAsset.Entry().Configure("cabbage", "Cabbage", ResourceCategory.Food),
                 new ResourceCatalogAsset.Entry().Configure("iron_ore", "Iron Ore", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("gold_ore", "Gold Ore", ResourceCategory.Construction),
                 new ResourceCatalogAsset.Entry().Configure("meat", "Meat", ResourceCategory.Food),

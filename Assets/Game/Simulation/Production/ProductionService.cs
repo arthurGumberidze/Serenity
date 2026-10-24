@@ -201,7 +201,9 @@ namespace Game.Simulation.Production
             }
             var carcass = new ResourceId("carcass");
             if (resources.Contains(carcass) && !targets.ContainsKey(carcass)) targets.Add(carcass, 4);
-            var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat", "dried_meat" }
+            foreach (var crop in new[] { "carrot", "cabbage" })
+                if (resources.Contains(new ResourceId(crop))) targets.TryAdd(new ResourceId(crop), 20);
+            var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat", "dried_meat", "carrot", "cabbage" }
                 .Select(id => new ResourceId(id)).Where(resources.Contains).ToArray();
             Food = new FoodConsumptionService(inventories, edible, settings.FoodTicksPerPersonUnit);
         }
@@ -433,6 +435,19 @@ namespace Game.Simulation.Production
             return true;
         }
 
+        public bool SelectCrop(StableEntityId siteId, ProductionRecipeId recipeId,
+            Game.Domain.Combat.CombatSideId requestingSide)
+        {
+            if (!sites.TryGetValue(siteId, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
+                site.CropPhase != CropPlotPhase.Unplanted || !buildings.TryGet(siteId, out var building) ||
+                building.OwnerSideId != requestingSide || !building.IsOperational ||
+                ActiveTasks.Any(task => task.SiteId == siteId) || !IsRecipeAvailable(recipeId)) return false;
+            var recipe = recipes.All.FirstOrDefault(value => value.Id == recipeId);
+            if (recipe == null || recipe.SiteKind != ProductionSiteKind.PrimitiveCropPlot) return false;
+            site.SelectCrop(recipe);
+            return true;
+        }
+
         public bool TryReserve(StableEntityId workerId, WorldPosition workerPosition, out ProductionJob job)
         {
             if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
@@ -661,6 +676,8 @@ namespace Game.Simulation.Production
             tasks.Clear(); foreach (var pair in restoredTasks) tasks.Add(pair.Key, pair.Value);
             workerTasks.Clear(); foreach (var pair in restoredWorkerTasks) workerTasks.Add(pair.Key, pair.Value);
             targets.Clear(); foreach (var target in state.Targets) targets.Add(target.ResourceId, target.Target);
+            foreach (var crop in new[] { "carrot", "cabbage" })
+                if (resources.Contains(new ResourceId(crop))) targets.TryAdd(new ResourceId(crop), 20);
             var carcass = new ResourceId("carcass");
             if (resources.Contains(carcass) && !targets.ContainsKey(carcass)) targets.Add(carcass, 4);
             producedTotals.Clear(); foreach (var amount in state.ProducedTotals) producedTotals.Add(amount.ResourceId, amount.Quantity.Units);
@@ -681,6 +698,7 @@ namespace Game.Simulation.Production
             foreach (var site in sites.Values.OrderBy(x => x.Id))
             {
                 AddId(ref hash, site.Id);
+                AddText(ref hash, site.RecipeId.ToString());
                 DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.RemainingAmount));
                 DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.GrowthProgressTicks));
                 DeterministicKeyedRandom.Add(ref hash, (ulong)site.CropPhase);

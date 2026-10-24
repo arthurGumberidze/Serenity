@@ -22,12 +22,6 @@ MonoBehaviour:
   - speciesId: hare
     prefab: {fileID: 6397291155531275063, guid: 44a0de0f766c9634eb66f1d56b7edc9d, type: 3}
     scale: 0.55
-  - speciesId: fox
-    prefab: {fileID: 2629182449500102118, guid: 15ca4494f24bf9741a48b37ec2c4c632, type: 3}
-    scale: 0.7
-  - speciesId: wolf
-    prefab: {fileID: 2629182449500102118, guid: 15ca4494f24bf9741a48b37ec2c4c632, type: 3}
-    scale: 1.05
   - speciesId: bear
     prefab: {fileID: 7962199819078159310, guid: f5b41ba4c79702547a89de7544b80656, type: 3}
     scale: 1

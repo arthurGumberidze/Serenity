@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## WM15 content source checkpoint — IN_PROGRESS, UNVERIFIED (2026-10-24)
+
+User-selected imported Polytope residents are connected while monarchs/editor retain UMA. Work tools now
+have separate axe/pickaxe/hammer projections. Empty fields select saved crop recipes; Toon Farm crop rows,
+growth and fencing project canonical production. Mountain/south-lake outlet points and clipped shore meshes
+are repaired in source; the photographed two-pronged monolith mapping is removed. Fox/wolf are retired.
+White Rabbit is not locally available and the old hare proxy remains; livestock pens also remain open.
+See `docs/world_map/WM15_CONTENT_SOURCE_REPAIR.md` and its asset manifest for implementation and blockers.
+No Unity invocation, compilation, tests or rebuild: the existing executable has not changed.
+Point 4 remains analysis only: `docs/world_map/WM15_MAP_ART_DIRECTION_QUESTIONS.md` proposes regional
+identities and asks for art direction. No biome recoloring/sakura/global-lighting changes were made.
+Many inherited vendor import/material/meta changes are present; preserve them outside this checkpoint.
+
 ## WM15 follow-up source changes — IN_PROGRESS, UNVERIFIED (2026-10-24)
 
 The user requested work to continue but explicitly prohibited tests and rebuilding while reporting more bugs.

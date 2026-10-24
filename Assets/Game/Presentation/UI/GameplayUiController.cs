@@ -2507,8 +2507,36 @@ namespace Game.Presentation.UI
             {
                 AddLine(inspector, F("ui.building.production", building.IsOperational ? T("ui.building.operational") : T("common.unavailable")));
                 if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
+                {
                     AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
                         site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
+                    AddLine(inspector, "Культура: " + Content("recipe", site.RecipeId.ToString()));
+                    var crops = context.Production.Recipes.All.Where(recipe =>
+                        recipe.SiteKind == ProductionSiteKind.PrimitiveCropPlot &&
+                        context.Production.IsRecipeAvailable(recipe.Id)).ToArray();
+                    if (crops.Length > 0)
+                    {
+                        var selector = new DropdownField("Выращивать", crops.Select(recipe =>
+                            Content("recipe", recipe.Id.ToString())).ToList(),
+                            Math.Max(0, Array.FindIndex(crops, recipe => recipe.Id == site.RecipeId)));
+                        selector.SetEnabled(building.OwnerSideId == new CombatSideId("player") &&
+                            building.IsOperational && site.CropPhase == CropPlotPhase.Unplanted &&
+                            !context.Production.ActiveTasks.Any(task => task.SiteId == site.Id) && crops.Length > 0);
+                        selector.RegisterValueChangedCallback(change => TryCommand(() =>
+                        {
+                            var index = selector.index;
+                            if (index < 0 || index >= crops.Length) return;
+                            var changed = context.Production.SelectCrop(site.Id, crops[index].Id,
+                                new CombatSideId("player"));
+                            SetStatus(changed ? "Культура выбрана. Жители посадят её при работе на поле." :
+                                "Дождитесь окончания работы и сбора урожая: менять культуру можно на пустом поле.");
+                        }));
+                        inspector.Add(selector);
+                    }
+                    else AddLine(inspector, "Сначала изучите земледелие.");
+                    if (site.CropPhase != CropPlotPhase.Unplanted)
+                        AddLine(inspector, "Смена культуры доступна после сбора урожая.");
+                }
             }
             var workplaceSites = context.Production.Sites.Where(x =>
                 x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id).ToArray();
