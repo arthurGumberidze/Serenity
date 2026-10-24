@@ -1651,3 +1651,64 @@ are rendered through a disposable stream capped at 192 views within 210 metres; 
 the seeded WM05 plan and collision remains independently capped at 650 proxies. Unity Terrain details that
 require unreadable source meshes/textures are disabled in Player. V2 camera framing is applied in `Start` at
 zoom 120 so the prepared clearing and surrounding forest are visible after all Awake initialization.
+
+### D-193 — feedback-driven full V2 preparation and material repair (2026-10-24)
+
+The user's recording supersedes D-192's 192-view vegetation stream. All sixteen authored V2 terrain/navigation
+tiles and population views are prepared during scene loading and retained. Canonical vegetation is projected
+through immutable spatial mesh batches, selecting LOD and frustum visibility at draw time. This trades longer
+initial loading and retained memory for removal of terrain generation/navigation baking during camera movement.
+It does not claim acceptance of the long 100/300/500 frame budgets.
+
+Imported decorative POIs must not carry interactive BuildingPresenter or vendor mesh colliders. Their world
+interaction belongs to the explicit domain-backed presenter. Material repair restores original albedo textures
+from legacy shader fields into URP BaseMap. The user's dirty original rock material remains untouched; V2 stone
+and quarry use separate authored assets. Bear is imported from the already present local archive; three other
+species remain explicitly documented temporary models.
+
+The enemy starter camp uses real canonical buildings, independent economy, its own settlement territory and
+terrain-aware construction coordinates. Mountain stone extraction is a canonical industrial zone using the
+existing shift/cost/technology/storage mechanics. Full worker assignment automation is not implied by its model.
+
+Actual local-water triangle area and a native multi-point route are required evidence: overview-water tests and
+startup screenshots had missed an integer division that collapsed water meshes. The diagnostic route runs in
+the background explicitly, with isolated saves, so a hidden window cannot silently pause its coroutine.
+
+The established enemy camp exposed starvation in the old strategic priority chain: immediate military travel
+prevented starting research, which prevented further construction. Research project selection now belongs to
+the economy tick. Civilian construction can proceed while the army's existing travel/battle/occupation order
+continues. Established-camp regression verifies research and agricultural development after twelve days.
+
+## D-194 — Settlement-first NPC military policy (2026-10-24)
+
+User explicitly rejected immediate enemy expeditions. AiWarPolicy now supplies a seven-day minimum development
+period, a one-day advance warning, a 1.25 relative strength threshold, hostile relations at -35 or below, and a
+three-person civilian reserve. These are tunable policy defaults, not a timer that forces war. Neutral starts
+continue economic research/construction and do not attack merely because a neighbour exists.
+
+Actual barracks training uses MilitaryTrainingService, spends the NPC's own food/wood, changes canonical combat
+skills/ranks and recruits existing residents. Enemy graduates form aggregate units at their own settlement;
+player training retains its existing detailed-unit behavior. Shelter, storage, agriculture, trained soldiers and
+food for both the home reserve and expedition are prerequisites. Strength estimates use living combat-capable
+residents, units and combat skills; they are planning estimates, not guaranteed battle outcomes.
+
+Faction relations and training are saved alongside the faction economy. PrepareAttack is a persisted order;
+its target, army and original issue tick survive saves. Departure rechecks relations, strength, training and
+supplies; invalid preparation is cancelled. The HUD gives advance warnings and the map retains the countdown.
+Map diplomacy offers actual food transfers as gifts and explicit hostility; active battles also establish
+hostility. This is basic state-to-state diplomacy, not the full FRS treaty/coalition system. Existing v30 faction
+records without the optional extension load with neutral relations and empty training; no current saves deleted.
+
+## D-195 — Measured vegetation rendering cost and generated character atlases (2026-10-24)
+
+The functional full-map route exposed a GPU vegetation bottleneck: a controlled visibility comparison drops
+median frame time from 96.92 ms to 13.90 ms when only vegetation drawing is disabled. Probe disabling does not
+improve it. Preserve the complete vegetation plan and its canonical identity, but use a project-owned instanced
+URP shader with source leaf/bark textures and cheap vertex wind instead of vendor fragment noise. Choose mesh
+LOD at 55/140m and retain tree shadow casting within 250m. These changes require a fresh rendered measurement;
+the ablation itself is not a performance pass and does not authorize removing the forest.
+
+Generated UMA atlases can populate legacy _MainTex while an admitted URP material reads _BaseMap. Bridge that
+texture when present; keep a valid fallback visible until generated materials are ready. Audit visible runtime
+renderers plus all source flora materials, rather than diagnosing intentionally hidden construction buffers as
+white scenery. The first Player audit after this change must remain explicit evidence.

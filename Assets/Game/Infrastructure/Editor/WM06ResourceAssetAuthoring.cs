@@ -26,7 +26,8 @@ public static class WM06ResourceAssetAuthoring
             Entry("mushrooms", "Assets/LowPolyNaturePack/Prefabs/Nature/Mushroom_04.prefab"),
             Entry("medicinal_plants", "Assets/TerrainDemoScene_URP/Prefabs/Details/Heather_A.prefab"),
             Entry("plant_fiber", "Assets/LowPolyNaturePack/Prefabs/Nature/Reeds_01.prefab"),
-            Entry("stone", "Assets/Game/Art/CompactWorld/StoneOutcrop.prefab"),
+            Entry("stone", "Assets/Game/Art/WorldMapV2/StoneOutcropV2.prefab"),
+            Entry("stone_quarry", "Assets/Game/Art/WorldMapV2/StoneQuarry.prefab"),
             Entry("flint", "Assets/TerrainDemoScene_URP/Prefabs/Rocks/Rock_A_01.prefab"),
             Entry("clay", "Assets/LowPolyFarm/Prefabs/Landscape/Mud_04.prefab"),
             Entry("fish", "Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Prefabs/FX_Fish_Small_01.prefab")

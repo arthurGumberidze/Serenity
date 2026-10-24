@@ -55,5 +55,43 @@ namespace Game.Tests.Editor
                 return distanceSquared >= 58f * 58f && distanceSquared <= 150f * 150f;
             }), Is.GreaterThan(0));
         }
+
+        [Test]
+        public void WildlifeSpawnsDoNotOverlapOrOccupyTheStarterCamp()
+        {
+            var world = TiledWorldDefinitionLoader.LoadActive();
+            var plan = new WorldMapWildlifePlanner(world, new TiledWorldHeightSampler(world, 20261021L), 20261021L).Create();
+            for (var i = 0; i < plan.Individuals.Count; i++)
+            {
+                var a = plan.Individuals[i].Position;
+                var dx = a.X - world.PlayerStart.X; var dz = a.Z - world.PlayerStart.Z;
+                Assert.That(dx * dx + dz * dz, Is.GreaterThan(60f * 60f));
+                for (var j = i + 1; j < plan.Individuals.Count; j++)
+                {
+                    var b = plan.Individuals[j].Position;
+                    dx = a.X - b.X; dz = a.Z - b.Z;
+                    Assert.That(dx * dx + dz * dz, Is.GreaterThanOrEqualTo(9f), "Overlapping animal pair");
+                }
+            }
+        }
+
+        [Test]
+        public void EveryPoiEventHasLocalizedTitleBodyAndChoice()
+        {
+            var world = TiledWorldDefinitionLoader.LoadActive();
+            var heights = new TiledWorldHeightSampler(world, 20261021L);
+            var roads = new WorldMapRoadNetworkPlanner(world, heights).Create();
+            var plan = new WorldMapPoiPlanner(world, heights, roads, 20261021L).Create();
+            foreach (var point in plan.Points)
+            {
+                var id = Game.Simulation.World.WorldMapPoiEventCatalog.DefinitionId(point).ToString();
+                Assert.That(Game.Presentation.Localization.RussianTextCatalog.EventTitle(id, "discovered"),
+                    Is.Not.EqualTo(Game.Presentation.Localization.RussianTextCatalog.MissingText));
+                Assert.That(Game.Presentation.Localization.RussianTextCatalog.EventDescription(id, "discovered"),
+                    Is.Not.EqualTo(Game.Presentation.Localization.RussianTextCatalog.MissingText));
+                Assert.That(Game.Presentation.Localization.RussianTextCatalog.EventChoice(id, "discovered", "acknowledge"),
+                    Is.EqualTo("Отметить открытие"));
+            }
+        }
     }
 }

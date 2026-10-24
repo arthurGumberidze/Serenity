@@ -11,8 +11,8 @@ using UnityEngine.AI;
 namespace Game.Infrastructure
 {
     /// <summary>
-    /// Disposable Unity projection of the versioned tiled-world authority. Only the camera ring is rendered;
-    /// actor rings and active command corridors retain collision/navigation without becoming extra visuals.
+    /// Disposable Unity projection of the versioned tiled-world authority. Authored V2 terrain is
+    /// prepared during loading and retained; vegetation drawing uses spatial batches and camera culling.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TiledTerrainWorld : MonoBehaviour
@@ -24,8 +24,6 @@ namespace Game.Infrastructure
         private readonly List<GameObject> linkObjects = new List<GameObject>();
         private readonly List<Mesh> roadMeshes = new List<Mesh>();
         private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationColliders =
-            new Dictionary<Game.Domain.StableEntityId, GameObject>();
-        private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationViews =
             new Dictionary<Game.Domain.StableEntityId, GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
@@ -73,7 +71,8 @@ namespace Game.Infrastructure
         public WorldMapRoadNetworkPlan RoadNetworkPlan => roadNetworkPlan;
         public GameObject RoadPresentationRoot => roadPresentationRoot;
         public int ActiveVegetationColliderCount => vegetationColliders.Count;
-        public int ActiveVegetationViewCount => vegetationViews.Count;
+        private WorldMapVegetationRenderer vegetationRenderer;
+        public int ActiveVegetationViewCount => vegetationRenderer != null ? vegetationRenderer.InstanceCount : 0;
         public Texture2D StrategicGroundTexture => overviewGroundTexture;
         public NavMeshSurface PrimaryNavigationSurface
         {
@@ -127,6 +126,11 @@ namespace Game.Infrastructure
             }
             else if (natureCatalog != null && natureCatalog.GroundLayers != null && natureCatalog.GroundLayers.Length > 0)
                 sourceLayers = natureCatalog.GroundLayers;
+            if (vegetationPlan != null)
+            {
+                vegetationRenderer = gameObject.AddComponent<WorldMapVegetationRenderer>();
+                vegetationRenderer.Initialize(vegetationPlan, natureCatalog);
+            }
             BuildStrategicOverview();
             if (roadNetworkPlan != null) BuildRoadPresentation();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
@@ -148,9 +152,9 @@ namespace Game.Infrastructure
         {
             if (Definition == null) throw new InvalidOperationException("The tiled world is not initialized.");
             lastCameraFocus = cameraFocus;
-            // Sixteen small tiles fit the compact world. Retain its entire terrain so a
-            // maximum-zoom view cannot expose a streaming edge or lose command collision.
-            var plan = Definition.MapData == null && Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000
+            // Prepare and retain the complete authored world during loading. Camera movement must
+            // never generate terrain, bake navigation or instantiate population tiles.
+            var plan = Definition.MapData != null || (Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000)
                 ? new TiledWorldStreamingPlan(Definition.Tiles, Definition.Tiles)
                 : planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
                     navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
@@ -330,55 +334,7 @@ namespace Game.Infrastructure
 
         private void RefreshVegetationViews(WorldPosition cameraFocus)
         {
-            if (vegetationPlan == null || natureCatalog == null) return;
-            const float radiusMeters = 210f;
-            const int maximumViews = 192;
-            var radiusSquared = radiusMeters * radiusMeters;
-            var desired = strategicMode
-                ? Array.Empty<WorldMapVegetationInstance>()
-                : vegetationPlan.Instances.Where(value =>
-                        value.Kind != WorldMapVegetationKind.GroundCover && visual.Contains(value.Tile) &&
-                        SquaredDistance(value.Position, cameraFocus) <= radiusSquared)
-                    .OrderBy(value => SquaredDistance(value.Position, cameraFocus))
-                    .ThenBy(value => value.StableId).Take(maximumViews).ToArray();
-            var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
-            foreach (var id in vegetationViews.Keys.Where(value => !ids.Contains(value)).ToArray())
-            {
-                Destroy(vegetationViews[id]);
-                vegetationViews.Remove(id);
-            }
-            foreach (var value in desired)
-            {
-                if (vegetationViews.ContainsKey(value.StableId)) continue;
-                var hash = StableVegetationIndex(value.StableId, 100);
-                var prefabs = value.Kind == WorldMapVegetationKind.InteractiveTree || hash < 60
-                    ? natureCatalog.WorldMapTrees
-                    : natureCatalog.WorldMapShrubs;
-                var prefab = prefabs[StableVegetationIndex(value.StableId, prefabs.Length)];
-                var view = Instantiate(prefab, transform);
-                view.name = "World Map vegetation " + value.StableId;
-                view.transform.position = new Vector3(value.Position.X, value.Position.Y, value.Position.Z);
-                view.transform.rotation = Quaternion.Euler(0f, value.RotationDegrees, 0f);
-                view.transform.localScale *= value.UniformScale;
-                foreach (var collider in view.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
-                vegetationViews.Add(value.StableId, view);
-            }
-        }
-
-        private static int StableVegetationIndex(Game.Domain.StableEntityId id, int count)
-        {
-            if (count <= 0) return 0;
-            var bytes = id.ToGuid().ToByteArray();
-            var hash = 17;
-            foreach (var value in bytes) hash = unchecked(hash * 31 + value);
-            return (hash & int.MaxValue) % count;
-        }
-
-        private static float SquaredDistance(WorldPosition left, WorldPosition right)
-        {
-            var x = left.X - right.X;
-            var z = left.Z - right.Z;
-            return x * x + z * z;
+            if (vegetationRenderer != null) vegetationRenderer.enabled = !strategicMode;
         }
 
         private void ApplyTerrainPaint(WorldTileId id, TerrainData data)
@@ -481,7 +437,7 @@ namespace Game.Infrastructure
             var triangles = new List<int>();
             var colors = new List<Color>();
             var tileOrigin = Definition.TileOrigin(id);
-            var step = Definition.TileSizeMeters / resolution;
+            var step = Definition.TileSizeMeters / (float)resolution;
             for (var z = 0; z < resolution; z++)
             for (var x = 0; x < resolution; x++)
             {
@@ -511,6 +467,8 @@ namespace Game.Infrastructure
             water.AddComponent<MeshFilter>().sharedMesh = mesh;
             localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
                 { name = "Starter shoreline water" };
+            if (natureCatalog != null && natureCatalog.WaterRipples != null)
+                localWaterMaterial.SetTexture("_Ripples", natureCatalog.WaterRipples);
             water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
             var waterCollider = water.AddComponent<MeshCollider>();
             waterCollider.sharedMesh = mesh;
@@ -667,7 +625,7 @@ namespace Game.Infrastructure
                 line.receiveShadows = false;
                 var navigationRibbon = new GameObject("Navigation Ribbon");
                 navigationRibbon.transform.SetParent(routeObject.transform, false);
-                navigationRibbon.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                navigationRibbon.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 var ribbonMesh = BuildRoadRibbon(route);
                 roadMeshes.Add(ribbonMesh);
                 navigationRibbon.AddComponent<MeshFilter>().sharedMesh = ribbonMesh;
@@ -747,10 +705,10 @@ namespace Game.Infrastructure
             {
                 for (var index = 1; index <= 5; index++)
                 {
-                    var marker = Instantiate(natureCatalog.WorldMapFordMarker, root.transform);
+                    var marker = WorldMapScenery.Instantiate(natureCatalog.WorldMapFordMarker, root.transform);
                     marker.name = "Ford stone " + index;
                     DisableImportedMeshColliders(marker);
-                    marker.transform.position = Vector3.Lerp(start, end, index / 6f) + Vector3.up * 0.02f;
+                    marker.transform.position = ProjectToGround(Vector3.Lerp(start, end, index / 6f), 0.02f);
                     marker.transform.rotation = root.transform.rotation;
                     marker.transform.localScale *= 0.65f;
                 }
@@ -758,12 +716,13 @@ namespace Game.Infrastructure
             }
             var prefab = crossing.Definition.Kind == "footbridge"
                 ? natureCatalog.WorldMapFootbridge : natureCatalog.WorldMapBridge;
-            var instance = Instantiate(prefab, root.transform);
+            var instance = WorldMapScenery.Instantiate(prefab, root.transform);
             instance.name = crossing.Definition.Kind;
             DisableImportedMeshColliders(instance);
             instance.transform.localPosition = Vector3.zero;
             instance.transform.localRotation = Quaternion.identity;
-            FitHorizontalSpan(instance, Mathf.Max(3f, Vector3.Distance(start, end)));
+            FitHorizontalSpan(instance, Mathf.Max(3f, Vector3.Distance(start, end)), link.WidthMeters);
+            root.transform.rotation = Quaternion.LookRotation((end - start).normalized, Vector3.up);
         }
 
         private void BuildChokepointPresentation(WorldMapNavigationLinkPlan link)
@@ -777,20 +736,20 @@ namespace Game.Infrastructure
             if (forward.sqrMagnitude < 0.01f) forward = Vector3.forward;
             root.transform.position = Vector3.Lerp(start, end, 0.5f);
             root.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
-            var step = Instantiate(natureCatalog.WorldMapPassStep, root.transform);
+            var step = WorldMapScenery.Instantiate(natureCatalog.WorldMapPassStep, root.transform);
             step.name = link.Kind + " step";
             DisableImportedMeshColliders(step);
             step.transform.localPosition = Vector3.zero;
             step.transform.localRotation = Quaternion.identity;
             step.transform.localScale *= link.Kind == "causeway" ? 1.4f : 1f;
-            var sign = Instantiate(natureCatalog.WorldMapSign, root.transform);
+            var sign = WorldMapScenery.Instantiate(natureCatalog.WorldMapSign, root.transform);
             sign.name = link.Kind + " sign";
             DisableImportedMeshColliders(sign);
             sign.transform.localPosition = new Vector3(link.WidthMeters + 1.5f, 0f, 0f);
             if (link.Kind != "causeway") return;
             for (var side = -1; side <= 1; side += 2)
             {
-                var fence = Instantiate(natureCatalog.WorldMapFence, root.transform);
+                var fence = WorldMapScenery.Instantiate(natureCatalog.WorldMapFence, root.transform);
                 fence.name = "Causeway fence " + side;
                 DisableImportedMeshColliders(fence);
                 fence.transform.localPosition = new Vector3(side * (link.WidthMeters * 0.5f + 0.8f), 0f, 0f);
@@ -798,16 +757,43 @@ namespace Game.Infrastructure
             }
         }
 
-        private static void FitHorizontalSpan(GameObject instance, float desiredLength)
+        private static void FitHorizontalSpan(GameObject instance, float desiredLength, float desiredWidth)
         {
             var renderers = instance.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0) return;
-            var bounds = renderers[0].bounds;
-            for (var index = 1; index < renderers.Length; index++) bounds.Encapsulate(renderers[index].bounds);
-            var sourceLength = Mathf.Max(bounds.size.x, bounds.size.z);
-            if (sourceLength <= 0.01f) return;
-            var scale = Mathf.Clamp(desiredLength / sourceLength, 0.25f, 4f);
-            instance.transform.localScale *= scale;
+            var bounds = LocalBounds(instance.transform.parent, renderers);
+            if (bounds.size.x > bounds.size.z)
+                instance.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+            bounds = LocalBounds(instance.transform.parent, renderers);
+            if (bounds.size.z <= 0.01f || bounds.size.x <= 0.01f) return;
+            // Fit in the crossing's coordinate system, not a rotated world AABB. Length and width
+            // are independent so a long river span does not produce a giant, misplaced bridge.
+            var fit = new GameObject("Span fit").transform;
+            fit.SetParent(instance.transform.parent, false);
+            instance.transform.SetParent(fit, true);
+            instance.transform.localPosition -= new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            fit.localScale = new Vector3(Mathf.Max(2f, desiredWidth) / bounds.size.x, 1f,
+                desiredLength / bounds.size.z);
+        }
+
+        private static Bounds LocalBounds(Transform frame, Renderer[] renderers)
+        {
+            var bounds = new Bounds();
+            var initialized = false;
+            foreach (var renderer in renderers)
+            {
+                var local = renderer.localBounds;
+                for (var corner = 0; corner < 8; corner++)
+                {
+                    var point = local.center + Vector3.Scale(local.extents, new Vector3(
+                        (corner & 1) == 0 ? -1 : 1, (corner & 2) == 0 ? -1 : 1,
+                        (corner & 4) == 0 ? -1 : 1));
+                    point = frame.InverseTransformPoint(renderer.transform.TransformPoint(point));
+                    if (!initialized) { bounds = new Bounds(point, Vector3.zero); initialized = true; }
+                    else bounds.Encapsulate(point);
+                }
+            }
+            return bounds;
         }
 
         private static void DisableImportedMeshColliders(GameObject instance)
@@ -1107,7 +1093,6 @@ namespace Game.Infrastructure
             foreach (var mesh in roadMeshes) if (mesh != null) Destroy(mesh);
             roadMeshes.Clear();
             vegetationColliders.Clear();
-            vegetationViews.Clear();
         }
     }
 }

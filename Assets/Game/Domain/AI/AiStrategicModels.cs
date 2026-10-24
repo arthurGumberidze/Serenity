@@ -39,7 +39,7 @@ namespace Game.Domain.AI
     {
         None = 0, Produce = 1, StartResearch = 2, ConstructBuilding = 3, FormMilitaryUnit = 4,
         AssignCaptain = 5, Travel = 6, AwaitBattle = 7, Capture = 8, Recover = 9, Defeated = 10,
-        Occupy = 11
+        Occupy = 11, PrepareAttack = 12, CancelAttack = 13
     }
 
     public enum AiDefeatReason { None = 0, NoControlledSettlement = 1, DynastyExtinct = 2 }
@@ -47,7 +47,7 @@ namespace Game.Domain.AI
     public sealed class AiStrategicSettings
     {
         public AiStrategicSettings(long decisionIntervalTicks, int minimumArmySize, int foodTarget,
-            int materialTarget, IEnumerable<string> buildingPriorities = null)
+            int materialTarget, IEnumerable<string> buildingPriorities = null, AiWarPolicy warPolicy = null)
         {
             if (decisionIntervalTicks <= 0) throw new ArgumentOutOfRangeException(nameof(decisionIntervalTicks));
             if (minimumArmySize <= 0 || foodTarget < 0 || materialTarget < 0)
@@ -56,14 +56,16 @@ namespace Game.Domain.AI
             MinimumArmySize = minimumArmySize;
             FoodTarget = foodTarget;
             MaterialTarget = materialTarget;
+            WarPolicy = warPolicy ?? AiWarPolicy.SettlementFirst;
             BuildingPriorities = Array.AsReadOnly((buildingPriorities ?? new[]
-                { "primitive_shelter", "storage_basket", "primitive_crop_plot" }).ToArray());
+                { "primitive_shelter", "storage_basket", "primitive_crop_plot", "military_barracks" }).ToArray());
         }
 
         public long DecisionIntervalTicks { get; }
         public int MinimumArmySize { get; }
         public int FoodTarget { get; }
         public int MaterialTarget { get; }
+        public AiWarPolicy WarPolicy { get; }
         public IReadOnlyList<string> BuildingPriorities { get; }
         public static AiStrategicSettings StoneAge => new AiStrategicSettings(
             TimeSpan.FromHours(6).Ticks, 3, 24, 16);
@@ -256,7 +258,9 @@ namespace Game.Domain.AI
     {
         public AiFactionSaveState(AiStrategicStateSnapshot strategic, DynastyStateSnapshot dynasty,
             ResearchSaveState research, ProductionSaveState production,
-            IEnumerable<WorldResourcePileState> worldPiles = null)
+            IEnumerable<WorldResourcePileState> worldPiles = null,
+            IReadOnlyDictionary<string, int> relations = null, MilitaryTrainingSaveState training = null,
+            long foundedTick = 0)
         {
             Strategic = strategic ?? throw new ArgumentNullException(nameof(strategic));
             Dynasty = dynasty ?? throw new ArgumentNullException(nameof(dynasty));
@@ -266,12 +270,20 @@ namespace Game.Domain.AI
             if (values.Select(x => x.Id).Distinct().Count() != values.Length)
                 throw new ArgumentException("AI world piles must have unique identities.", nameof(worldPiles));
             WorldPiles = Array.AsReadOnly(values);
+            if (foundedTick < 0 || relations != null && relations.Any(x => string.IsNullOrWhiteSpace(x.Key) || x.Value < -100 || x.Value > 100))
+                throw new ArgumentException("Invalid AI diplomacy state.");
+            Relations = new ReadOnlyDictionary<string, int>(relations == null ? new Dictionary<string, int>() : relations.ToDictionary(x => x.Key, x => x.Value));
+            Training = training;
+            FoundedTick = foundedTick;
         }
         public AiStrategicStateSnapshot Strategic { get; }
         public DynastyStateSnapshot Dynasty { get; }
         public ResearchSaveState Research { get; }
         public ProductionSaveState Production { get; }
         public IReadOnlyList<WorldResourcePileState> WorldPiles { get; }
+        public IReadOnlyDictionary<string, int> Relations { get; }
+        public MilitaryTrainingSaveState Training { get; }
+        public long FoundedTick { get; }
     }
 
     public sealed class AiStrategicSaveState

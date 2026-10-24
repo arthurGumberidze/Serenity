@@ -1,5 +1,27 @@
 # NEXT_TASK.md
 
+## WM15 user feedback repair — active (2026-10-24)
+
+Latest user steering: settlement-first NPC strategy. No automatic opening raid: develop agriculture and barracks,
+train canonical residents while retaining civilians, assess relations/relative strength, persist a one-day warning
+before departure, and re-evaluate readiness. This is part of the active WM15 repair, not a new unrelated task.
+
+The user's video and screenshots reject visual acceptance of the activation build. Active work is the
+camera/terrain hitch, non-selectable overlapping animals, POI localization, invalid mesh colliders,
+unbound building selection, and crossing/POI placement. Startup smoke is insufficient evidence.
+Prepare the full terrain/navigation at loading and verify a route across the map in the native Player.
+The long 100/300/500 gates remain separate; do not run the whole overnight suite.
+
+The candidate for this feedback is `Builds/WorldMapV2Feedback/Serenity.exe`, with exact evidence in
+`docs/world_map/WM15_FEEDBACK_REPAIR.md`. Build-l and native route-h now pass the functional checks (35 points,
+zero recorded errors, no visible white materials, actual enemy growth/training and neutral peace). The new
+strategic regression is 30/30; seven-species pointer selection also passes. Next unblocked WM15 work:
+shorten full-map initial loading, reduce the remaining GPU cost (pan median/P95 32.271/37.861 ms), replace the hare/fox/wolf temporary models,
+and consume the user's rendered 100/300/500 gate results. Keep visual acceptance open. The quarry uses existing
+shift commands, not a completed automated industrial worker/logistics flow. The earlier activation notes below
+are historical; do not launch `Builds/WorldMapV2/Serenity.exe` to review this repair.
+
+
 ## Active override — WM15 V2 activation and remaining performance acceptance (2026-10-24)
 
 The user explicitly approved activating World Map V2 and deleting legacy saves. Normal New Game now loads

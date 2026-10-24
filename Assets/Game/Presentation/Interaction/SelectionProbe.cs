@@ -7,6 +7,7 @@ using Game.Presentation.Characters;
 using Game.Presentation.Input;
 using Game.Presentation.Resources;
 using Game.Presentation.Production;
+using Game.Presentation.Environment;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -38,6 +39,7 @@ namespace Game.Presentation.Interaction
         public WorldResourcePilePresenter SelectedWorldResourcePilePresenter { get; private set; }
         public BuildingPresenter SelectedBuildingPresenter { get; private set; }
         public ProductionSourcePresenter SelectedProductionSourcePresenter { get; private set; }
+        public WorldMapWildlifeView SelectedWildlife { get; private set; }
         public StableWorldHitProxy HoveredProxy => hoveredProxy;
         public StableEntityId? SelectedCharacterId => SelectedCharacterPresenter != null && SelectedCharacterPresenter.IsBound
             ? SelectedCharacterPresenter.CharacterId
@@ -127,10 +129,19 @@ namespace Game.Presentation.Interaction
                 return false;
             }
             var marker = hit.collider.GetComponentInParent<SelectableMarker>();
+            var wildlife = hit.collider.GetComponentInParent<WorldMapWildlifeView>();
+            if (wildlife != null)
+            {
+                ClearSelection();
+                SelectedWildlife = wildlife;
+                wildlife.SetSelected(true);
+                return true;
+            }
             var proxy = hit.collider.GetComponentInParent<StableWorldHitProxy>();
             var characterPresenter = hit.collider.GetComponentInParent<CharacterPresenter>();
             var pilePresenter = hit.collider.GetComponentInParent<WorldResourcePilePresenter>();
             var buildingPresenter = hit.collider.GetComponentInParent<BuildingPresenter>();
+            if (buildingPresenter != null && !buildingPresenter.IsBound) buildingPresenter = null;
             var productionPresenter = hit.collider.GetComponentInParent<ProductionSourcePresenter>();
             SetSelection(marker, characterPresenter, pilePresenter, buildingPresenter, productionPresenter, additive, proxy);
             return marker != null || characterPresenter != null || pilePresenter != null ||
@@ -227,7 +238,7 @@ namespace Game.Presentation.Interaction
             }
 
             ClearCharacterSelection();
-            if (Selected == marker && SelectedWorldResourcePilePresenter == pilePresenter &&
+            if (SelectedWildlife == null && Selected == marker && SelectedWorldResourcePilePresenter == pilePresenter &&
                 SelectedBuildingPresenter == buildingPresenter &&
                 SelectedProductionSourcePresenter == productionPresenter) return;
             ClearNonCharacterSelection();
@@ -255,6 +266,8 @@ namespace Game.Presentation.Interaction
 
         private void ClearNonCharacterSelection()
         {
+            if (SelectedWildlife != null) SelectedWildlife.SetSelected(false);
+            SelectedWildlife = null;
             if (Selected != null) Selected.SetSelected(false);
             if (SelectedProductionSourcePresenter != null) SelectedProductionSourcePresenter.SetSelected(false);
             if (selectedProxy != null) selectedProxy.SetSelected(false);

@@ -17,6 +17,9 @@ namespace Game.Tests.PlayMode
         {
             var catalog = Resources.Load<StarterNatureCatalog>("World/StarterNature");
             Assert.That(catalog, Is.Not.Null);
+            var worldShader = Resources.Load<Shader>("World/WorldMapVegetation");
+            Assert.That(worldShader, Is.Not.Null);
+            Assert.That(worldShader.isSupported, Is.True);
             Assert.That(catalog.WorldMapTrees, Has.Length.EqualTo(4));
             Assert.That(catalog.WorldMapShrubs, Has.Length.EqualTo(3));
             Assert.That(catalog.WorldMapGroundCover, Has.Length.EqualTo(4));
@@ -51,7 +54,7 @@ namespace Game.Tests.PlayMode
                     Is.EqualTo(TiledWorldDefinition.ProposedWorldMapGenerationId));
                 Assert.That(data.treeInstanceCount, Is.EqualTo(0));
                 Assert.That(data.treePrototypes, Is.Empty);
-                Assert.That(data.detailPrototypes, Has.Length.EqualTo(6));
+                Assert.That(data.detailPrototypes, Is.Empty);
 
                 var streaming = new TiledWorldStreamingPlanner(definition);
                 var start = streaming.CreatePlan(definition.PlayerStart, Array.Empty<WorldPosition>(),

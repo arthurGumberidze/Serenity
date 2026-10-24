@@ -314,10 +314,7 @@ namespace Game.Infrastructure
             Buildings = new BuildingRegistry();
             BuildingOccupancy = new BuildingOccupancyGrid();
             BuildingPlacementService = new BuildingPlacementService(Buildings, BuildingOccupancy,
-                new BuildingGridBounds(Mathf.CeilToInt(WorldDefinition.Origin.X),
-                    Mathf.CeilToInt(WorldDefinition.Origin.Z),
-                    Mathf.CeilToInt(WorldDefinition.Origin.X + WorldDefinition.WidthMeters) - 1,
-                    Mathf.CeilToInt(WorldDefinition.Origin.Z + WorldDefinition.DepthMeters) - 1));
+                WorldGridBounds());
             BuildingPathing = new BuildingPathingService(Buildings, BuildingOccupancy,
                 id => buildingCatalog.ResolveDefinition(id));
             if (buildingCatalog.ResourceCatalog == null) throw new InvalidOperationException("Building catalog has no resource catalog.");
@@ -619,7 +616,11 @@ namespace Game.Infrastructure
                 buildingCatalog.ResolveDefinition(new BuildingDefinitionId(entry.DefinitionId))).ToArray();
             StarterEnemyAi = AiRuntimeBootstrap.CreateStarterEnemy(worldSeed,
                 Clock.State.CalendarTicks, Clock.State.BiologicalTicks, Characters, HealthFamily, Tiers, GlobalMap, Buildings,
-                BuildingPlacementService, Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather);
+                WorldDefinition.MapData == null ? BuildingPlacementService : CreateEnemyPlacement(),
+                Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather,
+                position => { var p = TiledWorld.ProjectToGround(new Vector3(position.X, position.Y, position.Z));
+                    return new WorldPosition(p.x, p.y, p.z); });
+            if (WorldDefinition.MapData != null) InitializeEnemyCamp();
             Appearances.EnsureDefaults(Characters.GetAll());
             HealthFamily.BindSuccession(StarterEnemyAi.Succession);
             BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
@@ -627,6 +628,9 @@ namespace Game.Infrastructure
             StrategicAi = new AiStrategicScheduler(worldSeed, Characters, HealthFamily,
                 MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
             StrategicAi.AddFaction(StarterEnemyAi);
+            StarterEnemyAi.Training = new MilitaryTrainingService(Characters, HealthFamily, Buildings,
+                StarterEnemyAi.Inventories, MilitaryUnits, Appearances, worldSeed,
+                newUnitRepresentation: MilitaryUnitRepresentationMode.Aggregate, newUnitLocation: "enemy_settlement");
             MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
                 MilitaryUnits, Appearances, worldSeed);
             MilitaryAttack = new MilitaryAttackCommandService(Characters, Buildings, MilitaryUnits,
@@ -657,7 +661,7 @@ namespace Game.Infrastructure
                 () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
-            AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining));
+            AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
             Combat.BindMovementSuppression(PlayerControl);
             Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
@@ -717,7 +721,7 @@ namespace Game.Infrastructure
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
                     () => Characters.GetAll().Where(x => !StarterEnemyAi.Residents.Contains(x.Id)).Select(x => x.Id).ToArray(),
                     position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
-                     BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance),
+                     BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi),
                 pointerRaycaster, input);
             ManualMoveInput.EnableContextMenus();
 
@@ -856,6 +860,7 @@ namespace Game.Infrastructure
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
             foreach (var buildingView in BuildingPresentations.All) buildingView.RefreshStructuralPresentation();
+            RefreshEnemyBuildings();
             WorldPopulation?.RefreshViews();
             WeatherPresentation.Refresh(targetCalendarTick);
             if (!performanceTierPolicySuppressed && Time.unscaledTime >= nextTierPolicyRefreshTime)
@@ -1166,6 +1171,76 @@ namespace Game.Infrastructure
                 new CharacterRuntimeState(character.Id, position, default, false, "local",
                     lastSimulationCalendarTick: Clock.State.CalendarTicks,
                     lastSimulationBiologicalTick: Clock.State.BiologicalTicks));
+        }
+
+        private BuildingPlacementService enemyPlacement;
+        private BuildingPresentationSpawner enemyBuildingSpawner;
+
+        private void Update()
+        {
+            // Camera inspection must materialize nearby residents even while simulation time is paused.
+            if (TierPolicy == null || Clock == null || !Clock.State.IsPaused || performanceTierPolicySuppressed ||
+                Time.unscaledTime < nextTierPolicyRefreshTime) return;
+            var focus = cameraController.transform.position;
+            TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));
+            nextTierPolicyRefreshTime = Time.unscaledTime + TierPolicyRefreshIntervalSeconds;
+        }
+
+        private BuildingGridBounds WorldGridBounds() => new BuildingGridBounds(
+            Mathf.CeilToInt((WorldDefinition.Origin.X - buildingGridOrigin.x) / buildingGridSize),
+            Mathf.CeilToInt((WorldDefinition.Origin.Z - buildingGridOrigin.z) / buildingGridSize),
+            Mathf.FloorToInt((WorldDefinition.Origin.X + WorldDefinition.WidthMeters - buildingGridOrigin.x) / buildingGridSize) - 1,
+            Mathf.FloorToInt((WorldDefinition.Origin.Z + WorldDefinition.DepthMeters - buildingGridOrigin.z) / buildingGridSize) - 1);
+
+        private BuildingPlacementService CreateEnemyPlacement()
+        {
+            enemyPlacement = new BuildingPlacementService(Buildings, BuildingOccupancy, WorldGridBounds());
+            enemyPlacement.ConfigureTerritories(BuildingTerritories);
+            enemyPlacement.ConfigureEnvironment(cells => cells.All(cell =>
+                WorldHeight.IsBuildable(buildingGridOrigin.x + cell.X * buildingGridSize,
+                    buildingGridOrigin.z + cell.Z * buildingGridSize, 18f)));
+            return enemyPlacement;
+        }
+
+        private void InitializeEnemyCamp()
+        {
+            var settlement = GlobalMap.GetSettlementAt(new WorldLocationId("enemy_settlement"));
+            var location = GlobalMap.GetLocation(settlement.LocationId);
+            var anchor = new GridCoordinate(Mathf.RoundToInt((location.MapX - buildingGridOrigin.x) / buildingGridSize),
+                Mathf.RoundToInt((location.MapY - buildingGridOrigin.z) / buildingGridSize));
+            BuildingTerritories.Replace(settlement.Id, new[] { new GridTerritoryRegion(
+                anchor.X - 60, anchor.Z - 60, anchor.X + 60, anchor.Z + 60) });
+            StarterEnemyAi.Construction.ConfigureSettlement(settlement.Id);
+            StarterEnemyAi.ConstructionOrigin = new GridCoordinate(anchor.X + 12, anchor.Z - 14);
+            enemyBuildingSpawner = new BuildingPresentationSpawner(buildingCatalog, BuildingPresentations,
+                buildingGridSize, buildingGridOrigin, null, StarterEnemyAi.Inventories,
+                position => TiledWorld.ProjectToGround(position).y);
+            var ids = new List<StableEntityId>();
+            var definitions = new[] { "primitive_shelter", "primitive_shelter", "storage_basket", "campfire" };
+            var offsets = new[] { new GridCoordinate(-8, 6), new GridCoordinate(3, 6),
+                new GridCoordinate(7, -5), new GridCoordinate(-2, -6) };
+            var storage = new StorageService(StarterEnemyAi.Inventories, Resources);
+            for (var i = 0; i < definitions.Length; i++)
+            {
+                var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId(definitions[i]));
+                var coordinate = new GridCoordinate(anchor.X + offsets[i].X, anchor.Z + offsets[i].Z);
+                var request = new BuildingPlacementRequest(definition, coordinate, BuildingOrientation.North, settlement.Id);
+                var building = enemyPlacement.Confirm(request, settlement.OwnerSideId,
+                    DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "enemy_start_building", i));
+                building.MarkCompleted();
+                storage.Attach(building, definition);
+                ids.Add(building.Id);
+            }
+            GlobalMap.SynchronizeSettlement(settlement.Id, settlement.LocationId, settlement.OwnerSideId,
+                ids, StarterEnemyAi.Residents);
+            RefreshEnemyBuildings();
+        }
+
+        private void RefreshEnemyBuildings()
+        {
+            if (enemyBuildingSpawner == null || StarterEnemyAi == null) return;
+            foreach (var building in Buildings.All.Where(value => value.OwnerSideId == StarterEnemyAi.Strategic.SideId))
+                if (!BuildingPresentations.TryGet(building.Id, out _)) enemyBuildingSpawner.Spawn(building);
         }
 
         private void SpawnDemoStorage()

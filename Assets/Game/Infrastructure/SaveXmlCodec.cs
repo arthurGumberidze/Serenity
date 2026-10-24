@@ -1201,6 +1201,10 @@ namespace Game.Infrastructure
                                 new XElement("settlementId", x.TargetSettlementId.HasValue ? x.TargetSettlementId.Value.ToString() : string.Empty),
                                 new XElement("locationId", x.TargetLocationId.HasValue ? x.TargetLocationId.Value.ToString() : string.Empty),
                                 new XElement("unitId", x.UnitId.HasValue ? x.UnitId.Value.ToString() : string.Empty))))),
+                        new XElement("foundedTick", faction.FoundedTick),
+                        new XElement("relations", faction.Relations.OrderBy(x => x.Key).Select(x =>
+                            new XElement("relation", new XElement("sideId", x.Key), new XElement("score", x.Value)))),
+                        SerializeAiTraining(faction.Training),
                         SerializeAiDynasty(faction.Dynasty), SerializeResearch(faction.Research),
                         SerializeProduction(faction.Production, false),
                         new XElement("worldPiles", faction.WorldPiles.Select(value => new XElement("pile",
@@ -1223,7 +1227,10 @@ namespace Game.Infrastructure
             RequireFields(element, new[] { "worldSeed", "lastProcessedTick", "factions" });
             var factions = Items(element.Element("factions"), "faction", item =>
             {
-                RequireFields(item, new[] { "strategic", "dynasty", "research", "production", "worldPiles" });
+                var expanded = item.Element("foundedTick") != null;
+                RequireFields(item, expanded
+                    ? new[] { "strategic", "dynasty", "research", "production", "worldPiles", "foundedTick", "relations", "training" }
+                    : new[] { "strategic", "dynasty", "research", "production", "worldPiles" });
                 var value = item.Element("strategic");
                 RequireFields(value, new[] { "id", "ownerId", "sideId", "homeSettlementId", "rulerCharacterId",
                     "controlledSettlements", "knownMilitaryUnits", "goal", "targetSettlementId", "targetLocationId",
@@ -1260,9 +1267,45 @@ namespace Game.Infrastructure
                         new GridCoordinate(Int(pile, "x"), Int(pile, "z"), Int(pile, "level")));
                 });
                 return new AiFactionSaveState(strategic, DeserializeAiDynasty(item.Element("dynasty")),
-                    DeserializeResearch(item.Element("research")), DeserializeProduction(item.Element("production"), false), piles);
+                    DeserializeResearch(item.Element("research")), DeserializeProduction(item.Element("production"), false), piles,
+                    expanded ? Items(item.Element("relations"), "relation", relation =>
+                    {
+                        RequireFields(relation, new[] { "sideId", "score" });
+                        return new KeyValuePair<string, int>(Value(relation, "sideId"), Int(relation, "score"));
+                    }).ToDictionary(x => x.Key, x => x.Value) : null,
+                    expanded ? DeserializeAiTraining(item.Element("training")) : null,
+                    expanded ? Long(item, "foundedTick") : 0);
             });
             return new AiStrategicSaveState(Long(element, "worldSeed"), Long(element, "lastProcessedTick"), factions);
+        }
+
+        private static XElement SerializeAiTraining(MilitaryTrainingSaveState state)
+        {
+            if (state == null) return new XElement("training");
+            return new XElement("training", new XElement("sequence", state.Sequence),
+                new XElement("lastProcessedTick", state.LastProcessedTick),
+                new XElement("records", state.Records.Select(value => new XElement("record",
+                    new XElement("characterId", value.CharacterId.ToString()),
+                    new XElement("barracksId", value.BarracksId.ToString()),
+                    new XElement("sideId", value.SideId.Value), new XElement("rank", (int)value.Rank),
+                    new XElement("startTick", value.StartTick), new XElement("completionTick", value.CompletionTick),
+                    new XElement("completed", value.Completed), new XElement("sequence", value.Sequence)))));
+        }
+
+        private static MilitaryTrainingSaveState DeserializeAiTraining(XElement training)
+        {
+            if (!training.HasElements) { RequireFields(training, Array.Empty<string>()); return null; }
+            RequireFields(training, new[] { "sequence", "lastProcessedTick", "records" });
+            var records = Items(training.Element("records"), "record", item =>
+            {
+                RequireFields(item, new[] { "characterId", "barracksId", "sideId", "rank", "startTick",
+                    "completionTick", "completed", "sequence" });
+                return new MilitaryTrainingRecordState(StableEntityId.Parse(Value(item, "characterId")),
+                    StableEntityId.Parse(Value(item, "barracksId")), new CombatSideId(Value(item, "sideId")),
+                    (MilitaryRank)Int(item, "rank"), Long(item, "startTick"), Long(item, "completionTick"),
+                    XmlConvert.ToBoolean(Value(item, "completed")), ULong(item, "sequence"));
+            });
+            return new MilitaryTrainingSaveState(records, ULong(training, "sequence"), Long(training, "lastProcessedTick"));
         }
 
         private static XElement SerializeAiDynasty(DynastyStateSnapshot dynasty) => new XElement("dynasty",

@@ -26,10 +26,12 @@ MonoBehaviour:
   - resourceTypeId: plant_fiber
     prefab: {fileID: 2760896527666100852, guid: 53c52efbcbe848a4d8eea449f31b58d6, type: 3}
   - resourceTypeId: stone
-    prefab: {fileID: 5355182246183666131, guid: 69190533c4b57dd42a0450f2bd12ca99, type: 3}
+    prefab: {fileID: 3078685750135030721, guid: 54da5ffcba2ec8a44b5a005e5da91ede, type: 3}
   - resourceTypeId: flint
     prefab: {fileID: 1338854965163658714, guid: dd1cb49c7d40bfb44a9b4201f7f74b6c, type: 3}
   - resourceTypeId: clay
     prefab: {fileID: 7084570193523645299, guid: 6a26b2968c1cd7743b35af444642f549, type: 3}
   - resourceTypeId: fish
     prefab: {fileID: 4882420744396746434, guid: f9b7b5ac5f540044484fbe573a7a8de8, type: 3}
+  - resourceTypeId: stone_quarry
+    prefab: {fileID: 3221855698279360271, guid: 27a1325a3ab431d48a2d2e02dca34e99, type: 3}

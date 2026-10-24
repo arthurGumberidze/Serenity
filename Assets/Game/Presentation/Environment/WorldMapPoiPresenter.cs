@@ -44,7 +44,7 @@ namespace Game.Presentation.Environment
         public WorldMapPoiProtectionVolume Protection { get; private set; }
 
         public static WorldMapPoiPresenter Create(WorldMapPoiPlanEntry point, WorldMapPoiArtCatalog.Entry art,
-            Transform parent)
+            Transform parent, Func<Vector3, Vector3> projectToGround = null)
         {
             if (point == null || art == null || parent == null) throw new ArgumentNullException();
             var root = new GameObject("World Map POI " + point.Id);
@@ -54,9 +54,9 @@ namespace Game.Presentation.Environment
             presenter.Point = point;
             presenter.Protection = root.AddComponent<WorldMapPoiProtectionVolume>();
             presenter.Protection.Configure(point);
-            CreateRing(art.PrimaryPrefab, art.PrimaryCount, art.PrimaryRadius, art.VisualScale, root.transform, 0f);
+            CreateRing(art.PrimaryPrefab, art.PrimaryCount, art.PrimaryRadius, art.VisualScale, root.transform, 0f, projectToGround);
             if (art.AccentCount > 0)
-                CreateRing(art.AccentPrefab, art.AccentCount, art.AccentRadius, 1f, root.transform, 31f);
+                CreateRing(art.AccentPrefab, art.AccentCount, art.AccentRadius, 1f, root.transform, 31f, projectToGround);
             if (art.EffectPrefab != null)
             {
                 var effect = Instantiate(art.EffectPrefab, root.transform);
@@ -67,17 +67,18 @@ namespace Game.Presentation.Environment
         }
 
         private static void CreateRing(GameObject prefab, int count, float radius, float scale, Transform parent,
-            float phaseDegrees)
+            float phaseDegrees, Func<Vector3, Vector3> projectToGround)
         {
             for (var index = 0; index < count; index++)
             {
                 var angle = (phaseDegrees + index * 360f / count) * Mathf.Deg2Rad;
-                var view = Instantiate(prefab, parent);
+                var view = WorldMapScenery.Instantiate(prefab, parent);
                 view.name = prefab.name + " POI view " + index;
                 view.transform.localPosition = new Vector3(Mathf.Cos(angle) * radius, 0f,
                     Mathf.Sin(angle) * radius);
                 view.transform.localRotation = Quaternion.Euler(0f, phaseDegrees + index * 360f / count + 180f, 0f);
                 view.transform.localScale *= scale;
+                if (projectToGround != null) view.transform.position = projectToGround(view.transform.position);
                 // Runtime tiled NavMesh baking cannot consume unreadable vendor MeshColliders reliably.
                 foreach (var collider in view.GetComponentsInChildren<MeshCollider>(true)) collider.enabled = false;
             }

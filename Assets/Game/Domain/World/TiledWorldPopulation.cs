@@ -242,7 +242,13 @@ namespace Game.Domain.World
                     throw new InvalidOperationException("The authored start resource guarantee was not met: " + pair.Key);
             AddWorldMapFishPopulations(result, ref stableIndex);
             var startTerritory = new WorldMapStartTerritoryPlanner(definition, heights, seed).Create(result);
-            return new TiledWorldPopulationPlan(result, Array.Empty<TiledWorldIndustrialNode>(), startTerritory);
+            var quarry = result.Where(value => value.SourceZoneId == "res_ridge_stone" && value.ResourceTypeId == "stone")
+                .OrderBy(value => heights.SampleSlopeDegrees(value.Position.X, value.Position.Z))
+                .ThenBy(value => value.StableIndex).First();
+            return new TiledWorldPopulationPlan(result, new[]
+            {
+                new TiledWorldIndustrialNode(0, quarry.Tile, "stone_quarry", "stone", quarry.Position, "res_ridge_stone")
+            }, startTerritory);
         }
 
         private void AddWorldMapFishPopulations(ICollection<TiledWorldResourceNode> target, ref int stableIndex)

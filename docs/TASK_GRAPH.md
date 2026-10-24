@@ -1,5 +1,17 @@
 # TASK_GRAPH.md
 
+WM15 user feedback repair (2026-10-24): **IN_PROGRESS — acceptance remains open**. The rejected activation
+build is superseded by `Builds/WorldMapV2Feedback/Serenity.exe`. Repairs cover full terrain retention,
+batched vegetation, actual local water, wildlife selection/separation, POI localization/colliders, restored
+scenery textures, the mountain quarry and a real enemy starter settlement. Established enemy research and
+construction now continue during military travel. The later user-requested settlement-first strategy adds real
+training, relations/strength/supply checks and persisted advance attack warnings; edit-l passed 30/30 and
+build-l succeeded (0 errors / 54 warnings). Native route-h passed 35 points / 0 errors, including enemy growth
+and training without a neutral opening raid. Seven-species pointer selection passed play-d. Pan median/P95 are
+32.271/37.861 ms, so full performance acceptance remains open. Evidence and exact commands:
+`docs/world_map/WM15_FEEDBACK_REPAIR.md`. Long 100/300/500 gates, initial-loading optimization, the three
+temporary fauna models and user visual acceptance remain open; this is not WM15 DONE.
+
 WM15 V2 activation (2026-10-24): **IN_PROGRESS**. The user approved activating
 `p109-world-map-v2-proposed` and deleting legacy saves. Normal New Game, save profile, start territory,
 residents, resources, roads, POI and strategic locations now use V2. Legacy presentation is hidden and the

@@ -109,6 +109,39 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void LocalLakeWaterContainsNonDegenerateTrianglesAtPlayerResolution()
+        {
+            var root = new GameObject("WM03 local water regression");
+            var data = new TerrainData { heightmapResolution = 257 };
+            Mesh mesh = null;
+            try
+            {
+                var projection = root.AddComponent<TiledTerrainWorld>();
+                typeof(TiledTerrainWorld).GetProperty("Definition").SetValue(projection, world);
+                typeof(TiledTerrainWorld).GetProperty("HeightSampler").SetValue(projection, heights);
+                var center = world.MapData.CoordinateTransform.ToUnity(world.MapData.Hydrology.Lakes[0].Center);
+                Assert.That(world.TryGetTile(center.X, center.Z, out var tile), Is.True);
+                var water = (GameObject)typeof(TiledTerrainWorld).GetMethod("CreateAuthoredLocalWater",
+                    BindingFlags.Instance | BindingFlags.NonPublic).Invoke(projection, new object[] { tile, root.transform, data });
+                Assert.That(water, Is.Not.Null);
+                mesh = water.GetComponent<MeshFilter>().sharedMesh;
+                var vertices = mesh.vertices;
+                var triangles = mesh.triangles;
+                Assert.That(triangles.Length, Is.GreaterThan(0));
+                for (var i = 0; i < triangles.Length; i += 3)
+                    Assert.That(Vector3.Cross(vertices[triangles[i + 1]] - vertices[triangles[i]],
+                        vertices[triangles[i + 2]] - vertices[triangles[i]]).sqrMagnitude,
+                        Is.GreaterThan(.1f), "Collapsed water triangle " + i);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                if (mesh != null) Object.DestroyImmediate(mesh);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
         public void TiledTerrainWorldProjectsTheCanonicalDistinctWaterLevels()
         {
             var root = new GameObject("WM03 projection test");

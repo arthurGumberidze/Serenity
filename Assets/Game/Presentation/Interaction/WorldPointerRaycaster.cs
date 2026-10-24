@@ -5,6 +5,7 @@ using Game.Presentation.Buildings;
 using Game.Presentation.Characters;
 using Game.Presentation.Production;
 using Game.Presentation.Resources;
+using Game.Presentation.Environment;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -65,11 +66,13 @@ namespace Game.Presentation.Interaction
             if (worldCamera == null || IsPointerBlockedByUi(pointerPosition)) return false;
             var ray = worldCamera.ScreenPointToRay(pointerPosition);
             foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Collide)
-                         .OrderBy(value => value.collider.GetComponentInParent<CharacterPresenter>() != null ? 0 : 1)
+                         .OrderBy(value => value.collider.GetComponentInParent<CharacterPresenter>() != null ||
+                             value.collider.GetComponentInParent<WorldMapWildlifeView>() != null ? 0 : 1)
                          .ThenBy(value => value.distance))
             {
                 var collider = candidate.collider;
                 if (collider.GetComponentInParent<StableWorldHitProxy>() == null &&
+                    collider.GetComponentInParent<WorldMapWildlifeView>() == null &&
                     collider.GetComponentInParent<SelectableMarker>() == null &&
                     collider.GetComponentInParent<CharacterPresenter>() == null &&
                     collider.GetComponentInParent<WorldResourcePilePresenter>() == null &&

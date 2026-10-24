@@ -22,6 +22,8 @@ namespace Game.Infrastructure
         private WorldMapWildlifeArtCatalog art;
         private Transform viewRoot;
         private bool shuttingDown;
+        private float movementTime;
+        private readonly Collider[] obstacles = new Collider[64];
 
         public WildlifePopulationService Population => population;
         public int Tier1ViewCount => tier1Views.Count;
@@ -94,9 +96,14 @@ namespace Game.Infrastructure
                     if (!tier1Views.TryGetValue(state.Id, out var view))
                     {
                         var entry = art.For(state.SpeciesId);
-                        view = Instantiate(entry.Prefab, viewRoot);
+                        // Imported animals can have mirrored root transforms. Keep picking geometry on
+                        // a positive-scale authority root and preserve the model transform underneath it.
+                        view = new GameObject();
+                        view.transform.SetParent(viewRoot, false);
+                        WorldMapScenery.Instantiate(entry.Prefab, view.transform);
                         view.name = "WM08 " + state.SpeciesId + " " + state.Id;
                         view.transform.localScale *= entry.Scale;
+                        foreach (var animator in view.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;
                         view.AddComponent<WorldMapWildlifeView>().Bind(state.Id, state.SpeciesId);
                         tier1Views.Add(state.Id, view);
                     }
@@ -123,6 +130,38 @@ namespace Game.Infrastructure
         }
 
         private void OnDestroy() { if (!shuttingDown) Shutdown(); }
+
+        public void MoveVisible(float delta, TiledWorldHeightSampler heights)
+        {
+            if (population == null || heights == null || delta <= 0f) return;
+            delta = Mathf.Min(delta, .15f);
+            movementTime += delta;
+            foreach (var pair in tier1Views.OrderBy(value => value.Key))
+            {
+                var state = population.Get(pair.Key);
+                var home = population.Plan.HabitatGraph.Node(state.HabitatNodeId).Position;
+                var phase = (pair.Key.ToGuid().ToByteArray()[0] / 255f) * Mathf.PI * 2f;
+                var target = new Vector3(home.X + Mathf.Sin(movementTime * .08f + phase) * 32f, 0f,
+                    home.Z + Mathf.Cos(movementTime * .07f + phase) * 32f);
+                var previous = pair.Value.transform.position;
+                target.y = previous.y;
+                var next = Vector3.MoveTowards(previous, target, delta * .7f);
+                if (!heights.Definition.ContainsClosed(next.x, next.z) || !heights.IsBuildable(next.x, next.z, 34f)) continue;
+                next.y = heights.SampleHeight(next.x, next.z);
+                var count = Physics.OverlapSphereNonAlloc(next + Vector3.up * .7f, .8f, obstacles, ~0,
+                    QueryTriggerInteraction.Ignore);
+                var blocked = count == obstacles.Length;
+                for (var i = 0; i < count && !blocked; i++)
+                    blocked = !(obstacles[i] is TerrainCollider) &&
+                        !obstacles[i].transform.IsChildOf(pair.Value.transform);
+                if (blocked || !population.TryMove(pair.Key, new WorldPosition(next.x, next.y, next.z))) continue;
+                pair.Value.transform.position = next;
+                var direction = next - previous; direction.y = 0f;
+                if (direction.sqrMagnitude > .000001f)
+                    pair.Value.transform.rotation = Quaternion.RotateTowards(pair.Value.transform.rotation,
+                        Quaternion.LookRotation(direction), delta * 100f);
+            }
+        }
 
         private void RequireInitialized()
         {

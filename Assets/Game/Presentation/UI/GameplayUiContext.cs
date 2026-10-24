@@ -142,9 +142,11 @@ namespace Game.Presentation.UI
             Action requestMainMenu, Func<IReadOnlyList<StableEntityId>> playerCharacterIds,
             Action<WorldPosition> focusWorld, BuildingLifecycleService buildingLifecycle,
             BuildingPathingService buildingPathing, SettlementFacilityService facilities = null,
-            ConstructionClearanceCoordinator constructionClearance = null)
+            ConstructionClearanceCoordinator constructionClearance = null,
+            Game.Simulation.AI.AiStrategicScheduler strategicAi = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            StrategicAi = strategicAi;
             Characters = characters ?? throw new ArgumentNullException(nameof(characters));
             Selection = selection ?? throw new ArgumentNullException(nameof(selection));
             Resources = resources ?? throw new ArgumentNullException(nameof(resources));
@@ -232,6 +234,7 @@ namespace Game.Presentation.UI
         public MilitaryUnitRepresentationService MilitaryRepresentations { get; }
         public MilitaryUnitCommandService MilitaryCommands { get; }
         public MilitaryTrainingService MilitaryTraining { get; }
+        public Game.Simulation.AI.AiStrategicScheduler StrategicAi { get; }
         public MilitaryAttackCommandService MilitaryAttack { get; }
         public SettlementFlagCaptureService SettlementCapture { get; }
         public BattleResolutionService Battles { get; }

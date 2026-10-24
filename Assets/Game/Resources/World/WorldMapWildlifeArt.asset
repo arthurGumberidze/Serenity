@@ -29,8 +29,8 @@ MonoBehaviour:
     prefab: {fileID: 2629182449500102118, guid: 15ca4494f24bf9741a48b37ec2c4c632, type: 3}
     scale: 1.05
   - speciesId: bear
-    prefab: {fileID: 8081539737464727849, guid: a684c8b44ebcfc445a0184dfc08f8928, type: 3}
-    scale: 1.45
+    prefab: {fileID: 7962199819078159310, guid: f5b41ba4c79702547a89de7544b80656, type: 3}
+    scale: 1
   - speciesId: waterfowl
     prefab: {fileID: 8002368642800288763, guid: f51c6f8219f34d140946e3611ee4df71, type: 3}
     scale: 0.8

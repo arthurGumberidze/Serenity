@@ -478,7 +478,9 @@ namespace Game.Simulation.World
                 ? new[]
                 {
                     At(player, "Player Settlement", WorldLocationType.Settlement, definition.PlayerStart),
-                    At(enemy, "Eastern Settlement", WorldLocationType.Settlement, Poi("poi_cave")),
+                    At(enemy, "Eastern Settlement", WorldLocationType.Settlement,
+                        definition.MapData.CoordinateTransform.ToUnity(definition.MapData.Buildability.Zones
+                            .Single(value => value.Id == "build_south_meadow_settlement").Shape.Center)),
                     At(northwest, "Northwestern Settlement", WorldLocationType.Settlement, Poi("poi_sacred_grove")),
                     At(forest, "North Forest", WorldLocationType.Wilderness, Poi("poi_secluded_glade")),
                     At(ford, "River Ford", WorldLocationType.Wilderness, Poi("poi_abandoned_camp")),

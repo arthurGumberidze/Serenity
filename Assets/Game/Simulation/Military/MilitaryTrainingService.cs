@@ -40,13 +40,17 @@ namespace Game.Simulation.Military
         private readonly CharacterAppearanceService appearances;
         private readonly MilitaryTrainingCatalog catalog;
         private readonly long worldSeed;
+        private readonly MilitaryUnitRepresentationMode newUnitRepresentation;
+        private readonly string newUnitLocation;
         private readonly List<MilitaryTrainingRecordState> records = new List<MilitaryTrainingRecordState>();
         private ulong sequence;
 
         public MilitaryTrainingService(CharacterRegistry characterRegistry,
             ICharacterCapabilityProvider capabilityProvider, BuildingRegistry buildingRegistry,
             ResourceInventoryRegistry inventoryRegistry, MilitaryUnitService militaryUnits,
-            CharacterAppearanceService appearanceService, long seed, MilitaryTrainingCatalog trainingCatalog = null)
+            CharacterAppearanceService appearanceService, long seed, MilitaryTrainingCatalog trainingCatalog = null,
+            MilitaryUnitRepresentationMode newUnitRepresentation = MilitaryUnitRepresentationMode.Detailed,
+            string newUnitLocation = "local")
         {
             characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             capabilities = capabilityProvider ?? throw new ArgumentNullException(nameof(capabilityProvider));
@@ -56,6 +60,8 @@ namespace Game.Simulation.Military
             appearances = appearanceService ?? throw new ArgumentNullException(nameof(appearanceService));
             worldSeed = seed;
             catalog = trainingCatalog ?? MilitaryTrainingCatalog.CreateStoneAge();
+            this.newUnitRepresentation = newUnitRepresentation;
+            this.newUnitLocation = newUnitLocation;
         }
 
         public long LastProcessedTick { get; private set; }
@@ -189,7 +195,7 @@ namespace Game.Simulation.Military
             if (target != null) units.AddMember(target.Id, record.CharacterId);
             else units.Create(new MilitaryUnitId(DeterministicStableId.Create(worldSeed,
                     "trained_unit:" + record.CharacterId)), side,
-                new[] { record.CharacterId }, record.CharacterId);
+                new[] { record.CharacterId }, record.CharacterId, newUnitRepresentation, newUnitLocation);
         }
 
         private bool TryPay(IReadOnlyList<ResourceAmount> cost, IEnumerable<InventoryOwner> sources)

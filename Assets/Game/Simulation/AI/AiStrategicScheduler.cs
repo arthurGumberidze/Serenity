@@ -34,6 +34,7 @@ namespace Game.Simulation.AI
             IEnumerable<StableEntityId> residentIds)
         {
             Strategic = strategicState ?? throw new ArgumentNullException(nameof(strategicState));
+            FoundedTick = strategicState.LastDecisionTick;
             Dynasty = dynastyState ?? throw new ArgumentNullException(nameof(dynastyState));
             Succession = successionService ?? throw new ArgumentNullException(nameof(successionService));
             Research = researchService ?? throw new ArgumentNullException(nameof(researchService));
@@ -56,8 +57,22 @@ namespace Game.Simulation.AI
         public ConstructionFundingService Construction { get; }
         public IReadOnlyDictionary<BuildingDefinitionId, BuildingDefinition> Buildings { get; }
         public IReadOnlyList<StableEntityId> Residents { get; }
+        public GridCoordinate ConstructionOrigin { get; set; } = new GridCoordinate(18, 18);
+        public MilitaryTrainingService Training { get; set; }
+        public long FoundedTick { get; set; }
+        private readonly Dictionary<string, int> relations = new Dictionary<string, int>();
+        public IReadOnlyDictionary<string, int> Relations => relations;
+        public int RelationTo(CombatSideId side) => relations.TryGetValue(side.Value, out var score) ? score : 0;
+        public void SetRelation(CombatSideId side, int score)
+        {
+            if (!side.IsValid || side == Strategic.SideId || score < -100 || score > 100) throw new ArgumentOutOfRangeException();
+            relations[side.Value] = score;
+        }
+        public void RestoreRelations(IReadOnlyDictionary<string, int> saved)
+        { relations.Clear(); foreach (var entry in saved) SetRelation(new CombatSideId(entry.Key), entry.Value); }
         public AiFactionSaveState CaptureState() => new AiFactionSaveState(Strategic.CaptureState(),
-            Dynasty.CaptureState(), Research.CaptureState(), Production.CaptureState(), WorldPiles.CaptureStates());
+            Dynasty.CaptureState(), Research.CaptureState(), Production.CaptureState(), WorldPiles.CaptureStates(),
+            Relations, Training?.CaptureState(), FoundedTick);
     }
 
     public readonly struct AiDecisionFacts
@@ -217,6 +232,27 @@ namespace Game.Simulation.AI
         public IReadOnlyList<AiFactionRuntime> Factions => factions.Values.ToArray();
         public MilitaryUnitRosterSummary GetUnitSummary(MilitaryUnitId id) => units.GetRosterSummary(id);
         public MilitaryUnitState GetUnit(MilitaryUnitId id) => units.Get(id);
+        public long AttackWarningTicks => settings.WarPolicy.WarningTicks;
+        public bool TrySendGift(AiStateId recipient, CombatSideId giver, ResourceInventoryRegistry funds)
+        {
+            if (!factions.TryGetValue(recipient, out var faction) || faction.Strategic.IsDefeated ||
+                !giver.IsValid || giver == faction.Strategic.SideId || funds == null || funds == faction.Inventories) return false;
+            var resource = new ResourceId("berries");
+            var quantity = new ResourceQuantity(10);
+            var destination = faction.Inventories.All.OrderBy(x => x.Owner.Id).FirstOrDefault(x => x.CanAdd(resource, quantity));
+            var sources = funds.All.OrderBy(x => x.Owner.Id).ToArray();
+            if (destination == null || sources.Sum(x => x.GetAmount(resource).Units) < quantity.Units) return false;
+            var remaining = quantity.Units;
+            foreach (var source in sources)
+            {
+                var amount = Math.Min(remaining, source.GetAmount(resource).Units);
+                if (amount > 0) source.TryRemove(resource, new ResourceQuantity(amount));
+                remaining -= amount;
+            }
+            destination.TryAdd(resource, quantity);
+            faction.SetRelation(giver, Math.Min(100, faction.RelationTo(giver) + 20));
+            return true;
+        }
         public void AddFaction(AiFactionRuntime faction)
         {
             if (faction == null) throw new ArgumentNullException(nameof(faction));
@@ -229,7 +265,8 @@ namespace Game.Simulation.AI
             if (!characters.TryGet(faction.Strategic.RulerCharacterId, out _))
                 throw new InvalidOperationException("AI ruler is missing from the canonical Character registry.");
             if (!factions.TryAdd(faction.Strategic.Id, faction)) throw new InvalidOperationException("AI state already exists.");
-            faction.Production.SetTarget(new ResourceId("berries"), settings.FoodTarget);
+            faction.Production.SetTarget(new ResourceId("berries"), settings.FoodTarget +
+                (settings.WarPolicy.RequireTraining ? settings.MinimumArmySize * units.SupplySettings.InitialFoodPerMember : 0));
             faction.Production.SetTarget(new ResourceId("wood_log"), settings.MaterialTarget);
             faction.Production.SetTarget(new ResourceId("plant_fiber"), settings.MaterialTarget);
             faction.Production.SetTarget(new ResourceId("stone"), settings.MaterialTarget);
@@ -286,6 +323,10 @@ namespace Game.Simulation.AI
                 faction.Production.RestoreState(saved.Production);
                 faction.WorldPiles.RestoreStates(saved.WorldPiles);
                 faction.Strategic.Restore(saved.Strategic);
+                faction.RestoreRelations(saved.Relations);
+                faction.FoundedTick = saved.FoundedTick;
+                faction.Training?.RestoreState(saved.Training ?? new MilitaryTrainingSaveState(
+                    Array.Empty<MilitaryTrainingRecordState>(), 0, state.LastProcessedTick));
             }
             LastProcessedTick = state.LastProcessedTick;
         }
@@ -298,19 +339,102 @@ namespace Game.Simulation.AI
 
         private void AdvanceFactionServices(AiFactionRuntime faction, long tick)
         {
+            AdvanceTraining(faction, tick);
             var homeLocation = map.Settlements.Single(x => x.Id == faction.Strategic.HomeSettlementId).LocationId.Value;
             var workers = Eligible(faction, x => x.CanPerformOrdinaryWork).Where(id =>
             {
+                if (faction.Training != null && faction.Training.IsExternallyControlled(id)) return false;
                 if (!units.TryGetForMember(id, out var unit)) return true;
                 return !unit.ActiveEncounterId.HasValue && !map.Travels.Any(x => x.UnitId == unit.Id) &&
                     string.Equals(unit.AbstractLocationId, homeLocation, StringComparison.Ordinal);
             }).ToArray();
             faction.Production.Population = faction.Residents.Count(id => characters.TryGet(id, out var c) && c.LifeState == CharacterLifeState.Alive);
             faction.Production.AdvanceTo(tick, workers);
+            // Civilian research progresses independently of military strategic decisions.
+            EnsureResearchProject(faction);
             var workerSet = new HashSet<StableEntityId>(workers);
             var researchers = Eligible(faction, x => x.CanResearch).Where(workerSet.Contains).Take(2).ToArray();
             faction.Research.AssignWorkers(researchers);
             faction.Research.AdvanceWorkersTo(tick, researchers);
+        }
+
+        private void AdvanceTraining(AiFactionRuntime faction, long tick)
+        {
+            if (faction.Training == null) return;
+            faction.Training.AdvanceTo(tick);
+            var home = map.Settlements.Single(x => x.Id == faction.Strategic.HomeSettlementId).LocationId.Value;
+            // Training graduates are canonical units created by the shared training service.
+            foreach (var trainedUnit in units.Units.Where(x => x.OwnerSideId.Value == faction.Strategic.SideId.Value &&
+                         x.Status != MilitaryUnitStatus.Disbanded && units.GetRosterSummary(x.Id).CombatCapable > 0))
+            {
+                if (string.IsNullOrEmpty(trainedUnit.AbstractLocationId) || trainedUnit.AbstractLocationId == "local")
+                    units.SetAbstractLocation(trainedUnit.Id, home);
+                faction.Strategic.AddUnit(trainedUnit.Id);
+            }
+            if (faction.Strategic.IsDefeated || faction.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack) ||
+                faction.Training.Active.Count > 0) return;
+            var barracks = buildingRegistry.All.Where(x => x.OwnerSideId == faction.Strategic.SideId &&
+                x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId && x.IsOperational).OrderBy(x => x.Id).FirstOrDefault();
+            if (barracks == null || !HasDevelopment(faction) ||
+                faction.Production.GetCanonicalTotal(new ResourceId("berries")) < settings.FoodTarget) return;
+            var eligible = Eligible(faction, x => x.CanFight);
+            var armyCapacity = Math.Min(settings.MinimumArmySize, Math.Max(0, eligible.Count - settings.WarPolicy.CivilianReserve));
+            var trainees = eligible.Take(armyCapacity).Where(id => !units.TryGetForMember(id, out var u) ||
+                !u.ActiveEncounterId.HasValue && u.AbstractLocationId == home && !map.Travels.Any(x => x.UnitId == u.Id));
+            foreach (var id in trainees.OrderBy(id => faction.Training.GetRank(id) ?? 0).ThenBy(id => id))
+            {
+                if (faction.Training.TryStart(id, barracks.Id, faction.Strategic.SideId, tick,
+                        faction.Inventories.All.Select(x => x.Owner)).Started) break;
+            }
+        }
+
+        private bool HasDevelopment(AiFactionRuntime faction) => new[] { "primitive_shelter", "storage_basket", "primitive_crop_plot" }
+            .All(id => buildingRegistry.All.Any(x => x.OwnerSideId == faction.Strategic.SideId &&
+                x.DefinitionId.ToString() == id && x.IsOperational));
+
+        public double EstimateStrength(IEnumerable<StableEntityId> roster) => roster.Distinct()
+            .Where(id => characters.TryGet(id, out var c) && c.LifeState == CharacterLifeState.Alive && capabilities.GetCapabilities(id).CanFight)
+            .Sum(id => 1d + (characters.Get(id).TryGetSkill(MilitaryTrainingService.CombatSkillId, out var skill) ? skill.Level.Value : 0) / 20d);
+
+        private bool CanAttack(AiFactionRuntime faction, MilitaryUnitState unit, SettlementState target, long tick)
+        {
+            var policy = settings.WarPolicy;
+            if (unit == null || target == null || target.OwnerSideId == faction.Strategic.SideId ||
+                tick - faction.FoundedTick < policy.DevelopmentTicks ||
+                faction.RelationTo(target.OwnerSideId) > policy.HostileRelationThreshold ||
+                units.GetRosterSummary(unit.Id).CombatCapable < settings.MinimumArmySize) return false;
+            var roster = unit.Roster.Where(x => x.IsActive).Select(x => x.CharacterId).ToArray();
+            if (policy.RequireTraining && (!HasDevelopment(faction) || faction.Training == null ||
+                roster.Any(id => faction.Training.IsExternallyControlled(id) ||
+                    !faction.Training.GetRank(id).HasValue || faction.Training.GetRank(id).Value < MilitaryRank.Soldier) ||
+                faction.Production.GetCanonicalTotal(new ResourceId("berries")) < settings.FoodTarget ||
+                faction.Inventories.All.Sum(x => x.GetAmount(units.SupplySettings.FoodResourceId).Units) +
+                    unit.Supply.Amounts.Where(x => x.ResourceId == units.SupplySettings.FoodResourceId).Sum(x => x.Quantity.Units) <
+                    settings.FoodTarget + roster.Length * units.SupplySettings.InitialFoodPerMember)) return false;
+            var defenders = target.ResidentCharacterIds.Concat(units.Units.Where(x => x.OwnerSideId.Value == target.OwnerSideId.Value)
+                .SelectMany(x => x.Roster.Where(m => m.IsActive).Select(m => m.CharacterId)));
+            return EstimateStrength(roster) >= Math.Max(1d, EstimateStrength(defenders)) * policy.MinimumStrengthRatio;
+        }
+
+        private void PrepareOrDepart(AiFactionRuntime faction, MilitaryUnitState unit, SettlementState target, long tick)
+        {
+            var state = faction.Strategic;
+            var preparation = state.PendingOrders.FirstOrDefault(x => x.Kind == AiDecisionKind.PrepareAttack);
+            if (preparation.Sequence == 0 || preparation.TargetSettlementId != target.Id || preparation.UnitId != unit.Id)
+            {
+                state.CompleteOrders(AiDecisionKind.PrepareAttack);
+                state.AddOrder(new AiPendingOrder(state.DecisionSequence + 1, AiDecisionKind.PrepareAttack,
+                    tick, unit.Id, target.Id, target.LocationId));
+                Record(state, tick, AiDecisionKind.PrepareAttack, AiStrategicGoal.AttackSettlement, 700,
+                    "Hostile relations and sufficient trained strength: warning issued before departure.", target.Id, target.LocationId, unit.Id);
+            }
+            else if (tick - preparation.IssuedTick >= settings.WarPolicy.WarningTicks)
+            {
+                units.LoadInitialSupply(unit.Id, faction.Inventories, faction.Inventories.All.Select(x => x.Owner));
+                Travel(faction, unit, target, tick);
+            }
+            else Record(state, tick, AiDecisionKind.PrepareAttack, AiStrategicGoal.AttackSettlement, 650,
+                "Mobilizing; advance warning remains active.", target.Id, target.LocationId, unit.Id);
         }
 
         private void ValidateSavedFaction(AiFactionSaveState saved, long lastProcessedTick)
@@ -322,6 +446,9 @@ namespace Game.Simulation.AI
                 saved.Strategic.HomeSettlementId != runtime.Strategic.HomeSettlementId ||
                 saved.Strategic.LastDecisionTick > lastProcessedTick)
                 throw new ArgumentException("Saved AI identity or checkpoint is invalid.", nameof(saved));
+            if (saved.FoundedTick > lastProcessedTick || saved.Relations.ContainsKey(runtime.Strategic.SideId.Value) ||
+                saved.Training != null && (runtime.Training == null || saved.Training.LastProcessedTick > lastProcessedTick))
+                throw new ArgumentException("Saved AI diplomacy/training checkpoint is invalid.", nameof(saved));
             if (!characters.TryGet(saved.Strategic.RulerCharacterId, out _) ||
                 !saved.Dynasty.MemberIds.Contains(saved.Strategic.RulerCharacterId))
                 throw new ArgumentException("Saved AI ruler is invalid.", nameof(saved));
@@ -346,6 +473,9 @@ namespace Game.Simulation.AI
         private void Reconcile(AiFactionRuntime faction, long tick)
         {
             var state = faction.Strategic;
+            foreach (var battle in battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active &&
+                         (x.SideA == state.SideId || x.SideB == state.SideId)))
+                faction.SetRelation(battle.SideA == state.SideId ? battle.SideB : battle.SideA, -100);
             if (characters.TryGet(state.RulerCharacterId, out var ruler) && ruler.LifeState == CharacterLifeState.Dead)
             {
                 faction.Succession.ProcessDeath(ruler.Id, ruler.BiologicalDeathTick ?? tick, tick);
@@ -422,7 +552,18 @@ namespace Game.Simulation.AI
             if (state.IsDefeated) return;
             var knownUnits = state.KnownMilitaryUnits.Where(id => units.TryGet(id, out _)).Select(units.Get).ToArray();
             var unit = knownUnits.FirstOrDefault(x => x.Status != MilitaryUnitStatus.Disbanded);
-            var target = SelectTarget(state, unit);
+            var expedition = state.PendingOrders.LastOrDefault(x => x.Kind == AiDecisionKind.Travel ||
+                x.Kind == AiDecisionKind.AwaitBattle || x.Kind == AiDecisionKind.Occupy);
+            var target = expedition.TargetSettlementId.HasValue
+                ? map.Settlements.SingleOrDefault(x => x.Id == expedition.TargetSettlementId.Value)
+                : SelectTarget(state, unit, candidate => CanAttack(faction, unit, candidate, tick));
+            if (target == null && state.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack))
+            {
+                state.CompleteOrders(AiDecisionKind.PrepareAttack);
+                Record(state, tick, AiDecisionKind.CancelAttack, AiStrategicGoal.DevelopSettlement, 800,
+                    "Attack preparation cancelled: relations, strength or supplies no longer permit war.");
+                return;
+            }
             var definition = SelectBuilding(faction);
             var candidates = Eligible(faction, x => x.CanFight).Where(id => !units.TryGetForMember(id, out _)).ToArray();
             var hasSettlementBuilding = buildingRegistry.All.Any(x => x.OwnerSideId == state.SideId &&
@@ -432,11 +573,19 @@ namespace Game.Simulation.AI
                 faction.Production.GetCanonicalTotal(new ResourceId("wood_log")) < settings.MaterialTarget,
                 faction.Research.ActiveProject != null || faction.Research.AvailableTechnologies.Count > 0,
                 definition != null, unit != null,
-                hasSettlementBuilding && candidates.Length >= settings.MinimumArmySize, target != null,
+                !settings.WarPolicy.RequireTraining && hasSettlementBuilding &&
+                candidates.Length >= settings.MinimumArmySize + settings.WarPolicy.CivilianReserve, target != null,
                 unit != null && map.Travels.Any(x => x.UnitId == unit.Id),
                 unit != null && unit.ActiveEncounterId.HasValue, false,
                 unit != null && !unit.CaptainId.HasValue,
                 unit != null && map.Occupations.Any(x => x.ClaimantUnitId == unit.Id));
+            // Construction is paid by the home economy and does not replace the army's travel order.
+            // A remote expedition must not suspend all civilian development for its entire duration.
+            if (definition != null && (facts.IsTravelling || facts.HasActiveBattle || facts.IsOccupying))
+            {
+                Construct(faction, definition, tick);
+                return;
+            }
             var selected = decisions.Select(facts);
             switch (selected)
             {
@@ -454,7 +603,9 @@ namespace Game.Simulation.AI
                     Record(state, tick, selected, AiStrategicGoal.FormArmy, 700, "Refreshed captain through U21.", unitId: unit.Id);
                     break;
                 case AiDecisionKind.Travel:
-                    Travel(faction, unit, target, tick); break;
+                    if (expedition.Sequence > 0) Travel(faction, unit, target, tick);
+                    else PrepareOrDepart(faction, unit, target, tick);
+                    break;
                 case AiDecisionKind.AwaitBattle:
                     Record(state, tick, selected, AiStrategicGoal.AttackSettlement, 950, "Canonical battle is active.",
                         state.TargetSettlementId, state.TargetLocationId, unit.Id); break;
@@ -470,16 +621,21 @@ namespace Game.Simulation.AI
 
         private void StartResearch(AiFactionRuntime faction, long tick)
         {
+            EnsureResearchProject(faction);
+            var active = faction.Research.ActiveProject;
+            Record(faction.Strategic, tick, AiDecisionKind.StartResearch, AiStrategicGoal.AdvanceResearch,
+                active == null ? 0 : TechnologyScore(active.TechnologyId),
+                active == null ? "No research is available." : "Selected available technology by stable score: " + active.TechnologyId);
+        }
+
+        private static void EnsureResearchProject(AiFactionRuntime faction)
+        {
             if (faction.Research.ActiveProject == null)
             {
                 var technology = faction.Research.AvailableTechnologies
                     .OrderByDescending(x => TechnologyScore(x)).ThenBy(x => x.Id).FirstOrDefault();
                 if (technology != null) faction.Research.Start(technology.Id);
             }
-            var active = faction.Research.ActiveProject;
-            Record(faction.Strategic, tick, AiDecisionKind.StartResearch, AiStrategicGoal.AdvanceResearch,
-                active == null ? 0 : TechnologyScore(active.TechnologyId),
-                active == null ? "No research is available." : "Selected available technology by stable score: " + active.TechnologyId);
         }
 
         private void Construct(AiFactionRuntime faction, BuildingDefinition definition, long tick)
@@ -488,7 +644,7 @@ namespace Game.Simulation.AI
             ConstructionEvaluation result = default;
             for (var offset = 0; offset < 64; offset++)
             {
-                var coordinate = ConstructionCoordinate(offset);
+                var coordinate = ConstructionCoordinate(faction, offset);
                 result = faction.Construction.TryConfirm(definition, coordinate, BuildingOrientation.North,
                     faction.Inventories.All.Select(x => x.Owner).OrderBy(x => x.Id), out placed,
                     ownerSideId: faction.Strategic.SideId,
@@ -578,12 +734,12 @@ namespace Game.Simulation.AI
             }
         }
 
-        private SettlementState SelectTarget(AiStrategicState state, MilitaryUnitState unit)
+        private SettlementState SelectTarget(AiStrategicState state, MilitaryUnitState unit, Func<SettlementState, bool> allowed)
         {
             var origin = unit == null || string.IsNullOrEmpty(unit.AbstractLocationId)
                 ? map.Settlements.Single(x => x.Id == state.HomeSettlementId).LocationId
                 : new WorldLocationId(unit.AbstractLocationId);
-            return map.Settlements.Where(x => x.OwnerSideId != state.SideId)
+            return map.Settlements.Where(x => x.OwnerSideId != state.SideId && allowed(x))
                 .Select(x => new { Settlement = x, Distance = RouteDistance(origin, x.LocationId) })
                 .Where(x => x.Distance < long.MaxValue)
                 .OrderBy(x => x.Distance).ThenBy(x => x.Settlement.Id).Select(x => x.Settlement).FirstOrDefault();
@@ -598,15 +754,16 @@ namespace Game.Simulation.AI
                     !faction.Construction.IsBuildingUnlocked(key)) continue;
                 if (buildingRegistry.All.Any(x => x.OwnerSideId == faction.Strategic.SideId && x.DefinitionId == key)) continue;
                 for (var offset = 0; offset < 64; offset++)
-                    if (faction.Construction.Evaluate(definition, ConstructionCoordinate(offset),
+                    if (faction.Construction.Evaluate(definition, ConstructionCoordinate(faction, offset),
                             BuildingOrientation.North, faction.Inventories.All.Select(x => x.Owner)).IsValid)
                         return definition;
             }
             return null;
         }
 
-        private static GridCoordinate ConstructionCoordinate(int offset) =>
-            new GridCoordinate(18 + (offset % 8) * 4, 18 + (offset / 8) * 4);
+        private static GridCoordinate ConstructionCoordinate(AiFactionRuntime faction, int offset) =>
+            new GridCoordinate(faction.ConstructionOrigin.X + (offset % 8) * 4,
+                faction.ConstructionOrigin.Z + (offset / 8) * 4);
 
         private IReadOnlyList<StableEntityId> Eligible(AiFactionRuntime faction, Func<CharacterCapabilities, bool> predicate) =>
             faction.Residents.Where(id => characters.TryGet(id, out var c) && c.LifeState == CharacterLifeState.Alive &&

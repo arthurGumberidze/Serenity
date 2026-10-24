@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Linq;
 using Game.Domain.AI;
+using Game.Domain;
+using Game.Domain.Campaign;
 using Game.Domain.Characters;
 using Game.Domain.World;
 using Game.ECS.Tier2;
 using Game.Infrastructure;
 using Game.Presentation.Environment;
+using Game.Presentation.Interaction;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -15,6 +18,40 @@ namespace Game.Tests.PlayMode
     [Category("WM08")]
     public sealed class WM08WorldMapWildlifePlayModeTests
     {
+        [UnityTest]
+        public IEnumerator EverySpeciesCanBePickedThroughItsActualPresentationBounds()
+        {
+            var catalog = Resources.Load<WorldMapWildlifeArtCatalog>("World/WorldMapWildlifeArt");
+            var host = new GameObject("wildlife picking test");
+            var camera = host.AddComponent<Camera>();
+            var raycaster = host.AddComponent<WorldPointerRaycaster>();
+            raycaster.Configure(camera, ~0);
+            var selection = host.AddComponent<SelectionProbe>();
+            selection.Configure(null, raycaster);
+            var index = 0;
+            foreach (var entry in catalog.Entries)
+            {
+                var animal = new GameObject(entry.SpeciesId);
+                animal.transform.localScale = Vector3.one * entry.Scale;
+                WorldMapScenery.Instantiate(entry.Prefab, animal.transform);
+                var view = animal.AddComponent<WorldMapWildlifeView>();
+                view.Bind(DeterministicStableId.Create(15008, "pick", index++), entry.SpeciesId);
+                var center = animal.GetComponent<Collider>().bounds.center;
+                camera.transform.position = center + new Vector3(0, 3, -6);
+                camera.transform.LookAt(center);
+                yield return null;
+                Physics.SyncTransforms();
+                var point = camera.WorldToScreenPoint(center);
+                Assert.That(selection.TrySelectAt(new Vector2(point.x, point.y), false), Is.True, entry.SpeciesId);
+                Assert.That(selection.SelectedWildlife, Is.EqualTo(view), entry.SpeciesId);
+                selection.ClearSelection();
+                Object.Destroy(animal);
+                yield return null;
+            }
+            Object.Destroy(host);
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator TierOneTwoThreeTransitionsKeepOneCanonicalAnimalAndStableId()
         {

@@ -18,6 +18,7 @@ using Game.Domain.World;
 using Game.Infrastructure;
 using Game.Simulation.AI;
 using Game.Simulation.Buildings;
+using Game.Simulation.Characters;
 using Game.Simulation.Combat;
 using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
@@ -38,6 +39,116 @@ namespace Game.Tests.Editor
     {
         private static readonly long AdultBiologicalTick = Character.BiologicalTicksPerYear * 20L;
         private static readonly long DecisionStep = TimeSpan.FromHours(6).Ticks;
+
+        [Test]
+        public void DefaultPolicyDevelopsPeacefullyWithoutOpeningRaid()
+        {
+            var f = Fixture.Create(15001, warPolicy: AiWarPolicy.SettlementFirst);
+            f.AdvanceTo(TimeSpan.FromDays(12).Ticks);
+            Assert.That(f.Ai.RelationTo(f.PlayerSide), Is.Zero);
+            Assert.That(f.Map.Travels, Is.Empty);
+            Assert.That(f.Ai.Strategic.PendingOrders, Is.Empty);
+            Assert.That(f.Ai.Research.CompletedTechnologies, Is.Not.Empty);
+            Assert.That(f.Buildings.All.Count(x => x.OwnerSideId == f.EnemySide), Is.GreaterThanOrEqualTo(3));
+            Assert.That(f.Map.Settlements.Single(x => x.Id == f.PlayerSettlement).OwnerSideId, Is.EqualTo(f.PlayerSide));
+        }
+
+        [Test]
+        public void DiplomaticGiftTransfersRealFoodAndChangesPersistentRelations()
+        {
+            var f = Fixture.Create(15006, warPolicy: AiWarPolicy.SettlementFirst);
+            var food = new ResourceId("berries");
+            var beforePlayer = f.PlayerInventories.All.Sum(x => x.GetAmount(food).Units);
+            var beforeEnemy = f.Ai.Inventories.All.Sum(x => x.GetAmount(food).Units);
+            Assert.That(f.Scheduler.TrySendGift(f.Ai.Strategic.Id, f.PlayerSide, f.PlayerInventories), Is.True);
+            Assert.That(f.Ai.RelationTo(f.PlayerSide), Is.EqualTo(20));
+            Assert.That(f.PlayerInventories.All.Sum(x => x.GetAmount(food).Units), Is.EqualTo(beforePlayer - 10));
+            Assert.That(f.Ai.Inventories.All.Sum(x => x.GetAmount(food).Units), Is.EqualTo(beforeEnemy + 10));
+            Assert.That(f.Scheduler.CaptureState().Factions.Single().Relations["player"], Is.EqualTo(20));
+        }
+
+        [Test]
+        public void HostileArmyWaitsForDevelopmentAndPersistedWarningThenDeparts()
+        {
+            var policy = new AiWarPolicy(TimeSpan.FromDays(7).Ticks, TimeSpan.FromDays(1).Ticks, 1.25, -35, 3, false);
+            var f = Fixture.Create(15002, warPolicy: policy);
+            f.Ai.SetRelation(f.PlayerSide, -60);
+            foreach (var id in f.Ai.Residents) f.Characters.Get(id).SetSkill(new SkillState(new SkillId("combat"), new SkillLevel(100)));
+            f.AdvanceTo(TimeSpan.FromDays(6).Ticks);
+            Assert.That(f.Map.Travels, Is.Empty);
+            Assert.That(f.Ai.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack), Is.False);
+            f.AdvanceUntil(() => f.Ai.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack), 40);
+            var warning = f.Ai.Strategic.PendingOrders.Single(x => x.Kind == AiDecisionKind.PrepareAttack);
+            Assert.That(f.Map.Travels, Is.Empty);
+            var codec = new SaveXmlCodec();
+            var saved = codec.Deserialize(codec.Serialize(new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(15002),
+                new GameTimeState(f.Tick, 0, 1, false), 400, strategicAi: f.Scheduler.CaptureState()))).StrategicAi;
+            f.Scheduler.RestoreState(saved);
+            Assert.That(f.Ai.RelationTo(f.PlayerSide), Is.EqualTo(-60));
+            Assert.That(f.Ai.Strategic.PendingOrders.Single().IssuedTick, Is.EqualTo(warning.IssuedTick));
+            f.AdvanceTo(warning.IssuedTick + policy.WarningTicks - 1);
+            Assert.That(f.Map.Travels, Is.Empty);
+            f.AdvanceTo(warning.IssuedTick + policy.WarningTicks);
+            Assert.That(f.Map.Travels, Is.Not.Empty);
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength(bool peace)
+        {
+            var f = Fixture.Create(15003, warPolicy: new AiWarPolicy(0, TimeSpan.FromDays(1).Ticks, 1.25, -35, 3, false));
+            f.Ai.SetRelation(f.PlayerSide, -60);
+            foreach (var id in f.Ai.Residents) f.Characters.Get(id).SetSkill(new SkillState(new SkillId("combat"), new SkillLevel(100)));
+            f.AdvanceUntil(() => f.Ai.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack), 80);
+            if (peace) f.Ai.SetRelation(f.PlayerSide, 20);
+            else
+            {
+                var unit = f.Units.Get(f.Ai.Strategic.KnownMilitaryUnits.Single());
+                f.Units.RemoveMember(unit.Id, unit.Roster.First(x => x.IsActive).CharacterId);
+            }
+            f.AdvanceTo(f.Tick + DecisionStep);
+            Assert.That(f.Map.Travels, Is.Empty);
+            Assert.That(f.Ai.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack), Is.False);
+            Assert.That(f.Ai.Strategic.RecentDecisions.Last().Kind, Is.EqualTo(AiDecisionKind.CancelAttack));
+        }
+
+        [Test]
+        public void WeakHostileArmyDoesNotAttackStrongerDefenders()
+        {
+            var f = Fixture.Create(15004, warPolicy: new AiWarPolicy(0, TimeSpan.FromDays(1).Ticks, 1.25, -35, 3, false));
+            f.Ai.SetRelation(f.PlayerSide, -100);
+            foreach (var id in f.PlayerIds) f.Characters.Get(id).SetSkill(new SkillState(new SkillId("combat"), new SkillLevel(100)));
+            f.AdvanceTo(TimeSpan.FromDays(12).Ticks);
+            Assert.That(f.Ai.Strategic.KnownMilitaryUnits, Is.Not.Empty);
+            Assert.That(f.Map.Travels, Is.Empty);
+            Assert.That(f.Ai.Strategic.PendingOrders, Is.Empty);
+        }
+
+        [Test]
+        public void EnemyBuildsBarracksTrainsRealResidentsAndKeepsCivilianReserve()
+        {
+            var f = Fixture.Create(15005, warPolicy: AiWarPolicy.SettlementFirst);
+            f.AdvanceTo(TimeSpan.FromDays(30).Ticks);
+            Assert.That(f.Buildings.All.Any(x => x.OwnerSideId == f.EnemySide &&
+                x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId && x.IsOperational), Is.True);
+            var trained = f.Ai.Training.Records.Where(x => x.Completed).Select(x => x.CharacterId).Distinct().ToArray();
+            Assert.That(trained.Length, Is.EqualTo(3));
+            Assert.That(f.Ai.Training.Records.Any(x => x.Completed && x.Rank >= MilitaryRank.Soldier), Is.True);
+            Assert.That(f.Ai.Residents.Count(id => !f.Units.TryGetForMember(id, out _)), Is.EqualTo(3));
+            Assert.That(f.Ai.Strategic.KnownMilitaryUnits, Is.Not.Empty);
+            Assert.That(f.Map.Travels, Is.Empty);
+            var before = f.Ai.Training.ComputeStateHash();
+            var codec = new SaveXmlCodec();
+            var save = codec.Deserialize(codec.Serialize(new SaveSnapshot(SaveSnapshot.CurrentVersion, Id(15005),
+                new GameTimeState(f.Tick, 0, 1, false), 400, strategicAi: f.Scheduler.CaptureState())));
+            f.Scheduler.RestoreState(save.StrategicAi);
+            Assert.That(f.Ai.Training.ComputeStateHash(), Is.EqualTo(before));
+            f.Ai.SetRelation(f.PlayerSide, -100);
+            f.AdvanceUntil(() => f.Ai.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack), 40);
+            var warning = f.Ai.Strategic.PendingOrders.Single(x => x.Kind == AiDecisionKind.PrepareAttack);
+            f.AdvanceTo(warning.IssuedTick + AiWarPolicy.SettlementFirst.WarningTicks);
+            Assert.That(f.Map.Travels, Is.Not.Empty, "Actual trained units must be able to depart after their warning.");
+        }
 
         [Test, Category("U30")]
         public void ArrivalWithoutDefenderCompletesCanonicalOccupationWithoutFabricatedBattle()
@@ -231,6 +342,25 @@ namespace Game.Tests.Editor
             Assert.That(army.Representation, Is.EqualTo(MilitaryUnitRepresentationMode.Aggregate));
             Assert.That(army.CaptainId.HasValue, Is.True);
             TestContext.WriteLine("U26 deterministic digest " + Digest(direct));
+        }
+
+        [Test]
+        public void EstablishedEnemyContinuesResearchWhileItsArmyTravels()
+        {
+            var fixture = Fixture.Create(26041);
+            var shelter = fixture.AddCompletedBuilding(fixture.Shelter, fixture.EnemySide,
+                new GridCoordinate(4, 4), Id(260410));
+            var storage = fixture.AddCompletedBuilding(fixture.Storage, fixture.EnemySide,
+                new GridCoordinate(10, 4), Id(260411));
+            fixture.SyncSettlement(fixture.EnemySettlement, fixture.EnemySide, fixture.Ai.Residents,
+                new[] { shelter.Id, storage.Id });
+            fixture.AdvanceTo(TimeSpan.FromDays(12).Ticks);
+            Assert.That(fixture.Ai.Research.IsCompleted(new TechnologyId("shelter_construction")), Is.True,
+                "Military travel must not starve the settlement's research scheduler.");
+            Assert.That(fixture.Ai.Research.IsCompleted(new TechnologyId("primitive_agriculture")), Is.True);
+            Assert.That(fixture.Buildings.All.Any(building => building.OwnerSideId == fixture.EnemySide &&
+                building.DefinitionId == fixture.Crop.Id), Is.True,
+                "Civilian construction must continue independently of the expedition.");
         }
 
         [Test]
@@ -447,7 +577,7 @@ namespace Game.Tests.Editor
             public SettlementId PlayerSettlement;
             public SettlementId EnemySettlement;
 
-            public static Fixture Create(long seed, bool defender = false)
+            public static Fixture Create(long seed, bool defender = false, AiWarPolicy warPolicy = null)
             {
                 var value = new Fixture { Seed = seed };
                 value.Characters = new CharacterRegistry();
@@ -480,9 +610,10 @@ namespace Game.Tests.Editor
                     ("wood_log", 4), ("stone", 2));
                 value.Uncapturable = new BuildingDefinition(new BuildingDefinitionId("ritual_stone"),
                     "Ritual Stone", BuildingCategory.Structure, new BuildingFootprint(1, 1), capturable: false);
-                var definitions = new[] { value.Shelter, value.Storage, value.Crop, value.Uncapturable };
+                var barracks = Definition("military_barracks", BuildingCategory.Structure, 3, 3, ("wood_log", 8), ("stone", 4));
+                var definitions = new[] { value.Shelter, value.Storage, value.Crop, value.Uncapturable, barracks };
                 value.Technologies = TechnologyCatalog.CreateStoneAge(value.Recipes,
-                    new[] { value.Shelter.Id, value.Storage.Id, value.Crop.Id });
+                    definitions.Select(x => x.Id));
                 value.Buildings = new BuildingRegistry();
                 value.Occupancy = new BuildingOccupancyGrid();
                 value.Placement = new BuildingPlacementService(value.Buildings, value.Occupancy,
@@ -526,8 +657,15 @@ namespace Game.Tests.Editor
                 value.Damage.RegisterEconomyScope(value.Ai.Production, value.Ai.Inventories, value.Ai.WorldPiles);
                 value.SyncSettlement(value.PlayerSettlement, value.PlayerSide, value.PlayerIds, Array.Empty<StableEntityId>());
                 value.Scheduler = new AiStrategicScheduler(seed, value.Characters, value.Health, value.Units,
-                    value.Map, value.Battles, value.Buildings, value.Damage);
+                    value.Map, value.Battles, value.Buildings, value.Damage,
+                    new AiStrategicSettings(DecisionStep, 3, 24, 16, warPolicy: warPolicy ??
+                        new AiWarPolicy(0, 0, .01, 100, 0, false)));
                 value.Scheduler.AddFaction(value.Ai);
+                if (warPolicy != null && warPolicy.RequireTraining)
+                    value.Ai.Training = new MilitaryTrainingService(value.Characters, value.Health, value.Buildings,
+                        value.Ai.Inventories, value.Units, new CharacterAppearanceService(value.Characters,
+                            StoneAgeAppearanceProfiles.CreateCatalog(), seed), seed,
+                        newUnitRepresentation: MilitaryUnitRepresentationMode.Aggregate, newUnitLocation: "enemy_settlement");
                 if (defender) value.CreatePlayerDefender();
                 return value;
             }

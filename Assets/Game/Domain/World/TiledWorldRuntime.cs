@@ -167,9 +167,10 @@ namespace Game.Domain.World
                 height = Lerp(height, mask.MinimumValue, influence);
             }
 
+            height = ApplyAuthoredHydrology(height, design);
             height = ApplyPreparedExpansionCorridors(height, design, plateau);
 
-            // A late pass may shape adjacent traversable ground, but it may never fill a canonical water channel.
+            // Prepared dry construction corridors remain authoritative; water cannot be filled by them.
             height = ReapplyAuthoredWaterInterior(height, design);
 
             return Math.Max(authoredTerrain.MinimumHeightMeters,
@@ -454,7 +455,7 @@ namespace Game.Domain.World
             var inner = distance <= minimumBlend ? 1f :
                 Smooth01(1f - (distance - minimumBlend) /
                     Math.Max(0.001f, maximumBlend - minimumBlend));
-            return Math.Max(height, Lerp(height, dryTarget, inner));
+            return Lerp(height, dryTarget, inner);
         }
 
         private readonly struct SplineSample

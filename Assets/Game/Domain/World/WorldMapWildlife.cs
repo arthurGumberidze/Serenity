@@ -241,7 +241,7 @@ namespace Game.Domain.World
                             "world_wildlife:" + world.MapData.MapVersion + ":" + species.Id, ordinal);
                         individuals.Add(new WildlifeIndividualState(id, species.Id,
                             (ordinal & 1) == 0 ? WildlifeSex.Female : WildlifeSex.Male, 0, node.Id,
-                            Jitter(node.Position, species.Id, ordinal), CharacterSimulationTier.Tier3));
+                            Jitter(node.Position, species.Id, ordinal, individuals), CharacterSimulationTier.Tier3));
                     }
                 }
             }
@@ -291,6 +291,9 @@ namespace Game.Domain.World
                     zMin + Unit(salt, attempt, 2) * (zMax - zMin));
                 if (!region.Polygon.Contains(design)) continue;
                 var runtime = world.MapData.CoordinateTransform.ToUnity(design);
+                var startDx = runtime.X - world.PlayerStart.X;
+                var startDz = runtime.Z - world.PlayerStart.Z;
+                if (startDx * startDx + startDz * startDz < 100f * 100f) continue;
                 if (heights.IsWater(runtime.X, runtime.Z) || !heights.IsBuildable(runtime.X, runtime.Z, 34f)) continue;
                 var weights = paint.SampleWeights(runtime.X, runtime.Z);
                 var waterDistance = heights.DistanceToWater(runtime.X, runtime.Z);
@@ -359,16 +362,22 @@ namespace Game.Domain.World
             return result;
         }
 
-        private WorldPosition Jitter(WorldPosition origin, string speciesId, int ordinal)
+        private WorldPosition Jitter(WorldPosition origin, string speciesId, int ordinal,
+            IReadOnlyList<WildlifeIndividualState> placed)
         {
             var salt = StableHash(speciesId);
-            var angle = Unit(salt, ordinal, 7) * Math.PI * 2d;
-            var radius = 2f + Unit(salt, ordinal, 8) * 7f;
-            var x = origin.X + (float)Math.Cos(angle) * radius;
-            var z = origin.Z + (float)Math.Sin(angle) * radius;
-            if (!world.ContainsClosed(x, z) || heights.IsWater(x, z) || !heights.IsBuildable(x, z, 34f))
-                return origin;
-            return new WorldPosition(x, heights.SampleHeight(x, z), z);
+            for (var attempt = 0; attempt < 512; attempt++)
+            {
+                var angle = Unit(salt, ordinal, 7 + attempt * 2) * Math.PI * 2d;
+                var radius = 3f + Unit(salt, ordinal, 8 + attempt * 2) * 32f;
+                var x = origin.X + (float)Math.Cos(angle) * radius;
+                var z = origin.Z + (float)Math.Sin(angle) * radius;
+                if (!world.ContainsClosed(x, z) || !heights.IsBuildable(x, z, 34f)) continue;
+                if (placed.Any(value => (value.Position.X - x) * (value.Position.X - x) +
+                    (value.Position.Z - z) * (value.Position.Z - z) < 9f)) continue;
+                return new WorldPosition(x, heights.SampleHeight(x, z), z);
+            }
+            throw new InvalidOperationException("No separated wildlife spawn near " + origin);
         }
 
         private float Unit(int a, int b, int c)
@@ -480,6 +489,20 @@ namespace Game.Domain.World
         }
 
         public bool Remove(StableEntityId id) => animals.Remove(id);
+
+        public bool TryMove(StableEntityId id, WorldPosition destination, float minimumSeparation = 3f)
+        {
+            var animal = Get(id);
+            if (minimumSeparation <= 0f) throw new ArgumentOutOfRangeException(nameof(minimumSeparation));
+            foreach (var other in animals.Values)
+            {
+                if (other.Id == id) continue;
+                var dx = other.Position.X - destination.X; var dz = other.Position.Z - destination.Z;
+                if (dx * dx + dz * dz < minimumSeparation * minimumSeparation) return false;
+            }
+            animals[id] = animal.At(animal.HabitatNodeId, destination);
+            return true;
+        }
 
         public void AdvanceTo(long calendarTicks)
         {

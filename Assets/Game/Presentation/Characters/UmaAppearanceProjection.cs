@@ -115,8 +115,14 @@ namespace Game.Presentation.Characters
             var deadline = Time.realtimeSinceStartup + 8f;
             while (failure == null && Time.realtimeSinceStartup < deadline)
             {
-                if (umaInstance.GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                    .Any(renderer => renderer.sharedMesh != null && renderer.sharedMesh.vertexCount > 0))
+                var generated = umaInstance.GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                    .Where(renderer => renderer.sharedMesh != null && renderer.sharedMesh.vertexCount > 0).ToArray();
+                var materialsReady = generated.Length > 0 && generated.All(renderer =>
+                    renderer.sharedMaterials.Select((material, index) => new { material, index }).All(slot =>
+                        slot.index >= renderer.sharedMesh.subMeshCount || renderer.sharedMesh.GetIndexCount(slot.index) == 0 ||
+                        PrepareGeneratedMaterial(slot.material)));
+                foreach (var renderer in generated) renderer.enabled = materialsReady;
+                if (materialsReady)
                 {
                     // UMA creates renderer children after the prefab is instantiated. Keep those late-created
                     // objects on the presenter's layer so isolated preview cameras can render the generated body.
@@ -146,6 +152,22 @@ namespace Game.Presentation.Characters
                 Debug.LogWarning("P84_UMA_FALLBACK " + (failure?.Message ?? "generation timeout"));
             }
             generation = null;
+        }
+
+        private static bool PrepareGeneratedMaterial(Material material)
+        {
+            if (material == null || material.shader == null || !material.shader.isSupported) return false;
+            if (!material.HasProperty("_BaseMap") || !material.HasProperty("_BaseColor")) return true;
+            // Some admitted UMA recipes write the generated atlas to the legacy texture property.
+            if (material.GetTexture("_BaseMap") == null && material.HasProperty("_MainTex") &&
+                material.GetTexture("_MainTex") != null)
+            {
+                material.SetTexture("_BaseMap", material.GetTexture("_MainTex"));
+                material.SetTextureScale("_BaseMap", material.GetTextureScale("_MainTex"));
+                material.SetTextureOffset("_BaseMap", material.GetTextureOffset("_MainTex"));
+            }
+            var color = material.GetColor("_BaseColor");
+            return material.GetTexture("_BaseMap") != null || color.r < .92f || color.g < .92f || color.b < .92f;
         }
 
         private void ProjectState()

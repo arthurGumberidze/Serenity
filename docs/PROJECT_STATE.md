@@ -1,5 +1,33 @@
 # PROJECT_STATE.md
 
+## WM15 user feedback repair — active (2026-10-24)
+
+The user's video and screenshots reject visual acceptance of the activation build. Active work is the
+camera/terrain hitch, non-selectable overlapping animals, POI localization, invalid mesh colliders,
+unbound building selection, and crossing/POI placement. Startup smoke is insufficient evidence.
+Prepare the full terrain/navigation at loading and verify a route across the map in the native Player.
+The long 100/300/500 gates remain separate; do not run the whole overnight suite.
+
+Current candidate: `Builds/WorldMapV2Feedback/Serenity.exe` (use New Game for the new enemy camp and quarry).
+The repair retains all sixteen terrain tiles, uses batched vegetation, fixes collapsed local water meshes,
+adds wildlife picking/separation, localizes POIs, strips invalid scenery simulation components and restores
+lost URP albedo references. It adds a mountain stone quarry and an independent six-resident/four-building
+enemy starter camp. Economic research and construction no longer stall during a military expedition.
+The user's later steering replaces opening aggression with settlement development, actual barracks training,
+retained civilians, persistent relations, strength/supply checks and a one-day advance warning. Neutral starts
+do not launch an expedition. Diplomatic gifts transfer real food; training and preparation survive saves.
+Final strategic/training regression (edit-l): 30/30. Earlier targeted water/vegetation/wildlife PlayMode: 4/4;
+new vegetation checks: 2/2; seven-species pointer-selection regression (play-d): 1/1. The P105 Editor case hit
+its 180-second load timeout; equivalent animator assertions passed in the native Player, not in that Editor case.
+Build-l succeeded with 0 errors / 54 warnings. Native route-h passed 35 points with 0 recorded errors and an
+empty visible-white-material audit. The enemy grew from four to six buildings and completed nine training
+courses by day 30, retaining six residents and neutral relations without a raid. Pan median is 32.271 ms,
+P95 37.861 ms, max 54.4596 ms on this Intel Arc machine: improved from ~94 ms median, not a 60-FPS/full-gate pass.
+Full evidence and remaining limitations are recorded in
+`docs/world_map/WM15_FEEDBACK_REPAIR.md`. The older activation account below is historical and its 192-view
+vegetation stream no longer describes the current implementation.
+
+
 ## WM15 World Map V2 activation — IN_PROGRESS (2026-10-24)
 
 The user approved replacing the compact runtime map and deleting old saves. Normal New Game now selects

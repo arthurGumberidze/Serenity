@@ -259,6 +259,7 @@ namespace Game.Presentation.UI
 
         public void RefreshAfterStateRebind()
         {
+            seenWarWarnings.Clear();
             CloseContextMenu();
             RefreshNow();
             RepaintTextTree();
@@ -2083,9 +2084,57 @@ namespace Game.Presentation.UI
             }
         }
 
+        private readonly HashSet<string> seenWarWarnings = new HashSet<string>();
+
+        private string WarWarning(Game.Simulation.AI.AiFactionRuntime faction, AiPendingOrder order)
+        {
+            var remaining = Math.Max(0, order.IssuedTick + context.StrategicAi.AttackWarningTicks - context.Clock().State.CalendarTicks);
+            return SideName(faction.Strategic.SideId) + " готовит нападение на " +
+                LocationName(order.TargetLocationId.Value) + ". Выход армии не раньше чем через " + FormatDuration(remaining) + ".";
+        }
+
+        private bool TargetsPlayer(AiPendingOrder order) => order.TargetSettlementId.HasValue &&
+            context.GlobalMap.Settlements.Any(x => x.Id == order.TargetSettlementId.Value && x.OwnerSideId.Value == "player");
+
+        private void CaptureWarWarnings()
+        {
+            if (context.StrategicAi == null) return;
+            foreach (var faction in context.StrategicAi.Factions)
+            foreach (var order in faction.Strategic.PendingOrders.Where(x => x.Kind == AiDecisionKind.PrepareAttack && TargetsPlayer(x)))
+                if (seenWarWarnings.Add(faction.Strategic.Id + ":" + order.Sequence))
+                    AddNotification("Предупреждение: " + WarWarning(faction, order));
+        }
+
+        private void DrawDiplomacy()
+        {
+            if (context.StrategicAi == null) return;
+            AddSection(mainPanel, "Соседние поселения и отношения");
+            var player = new CombatSideId("player");
+            foreach (var faction in context.StrategicAi.Factions.Where(x => !x.Strategic.IsDefeated))
+            {
+                AddLine(mainPanel, SideName(faction.Strategic.SideId) + ": отношения " + faction.RelationTo(player) +
+                    " · жителей " + faction.Residents.Count + " · обучено " + (faction.Training?.Records
+                        .Where(x => x.Completed).Select(x => x.CharacterId).Distinct().Count() ?? 0));
+                foreach (var order in faction.Strategic.PendingOrders.Where(x => x.Kind == AiDecisionKind.PrepareAttack && TargetsPlayer(x)))
+                    AddLine(mainPanel, "⚠ " + WarWarning(faction, order));
+                mainPanel.Add(ActionButton("Дар: 10 ягод (+20 к отношениям)", () => TryCommand(() =>
+                {
+                    if (!context.StrategicAi.TrySendGift(faction.Strategic.Id, player, context.Inventories))
+                        throw new PlayerFacingException("Дар не отправлен: нужно 10 ягод и свободное место у получателя.");
+                    AddNotification("Дар принят. Отношения улучшились.");
+                })));
+                mainPanel.Add(ActionButton("Объявить вражду", () => TryCommand(() =>
+                {
+                    faction.SetRelation(player, -100);
+                    AddNotification("Отношения стали враждебными. Сосед может начать подготовку к войне.");
+                })));
+            }
+        }
+
         private void DrawGlobalPanel()
         {
             AddTitle(mainPanel, T("ui.map.title"));
+            DrawDiplomacy();
             AddLine(mainPanel, F("ui.map.mode_location", E(context.GlobalMap.Mode),
                 LocationName(context.GlobalMap.ActiveLocationId)));
             if (context.GlobalMap.Occupations.Count > 0)
@@ -2188,7 +2237,8 @@ namespace Game.Presentation.UI
             var hasSelection = context.Selection.SelectedCharacterIds.Count > 0 ||
                                context.Selection.SelectedBuildingPresenter != null ||
                                context.Selection.SelectedWorldResourcePilePresenter != null ||
-                               context.Selection.SelectedProductionSourcePresenter != null;
+                               context.Selection.SelectedProductionSourcePresenter != null ||
+                               context.Selection.SelectedWildlife != null;
             inspector.style.display = hasSelection && context.GlobalMap.Mode == GameWorldMode.Local
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
@@ -2196,6 +2246,14 @@ namespace Game.Presentation.UI
             emptyInspectorRendered = !hasSelection;
             inspector.Clear();
             AddTitle(inspector, T("ui.selection.title"));
+            var wildlife = context.Selection.SelectedWildlife;
+            if (wildlife != null)
+            {
+                AddSection(inspector, wildlife.DisplayName);
+                AddLine(inspector, "Дикое животное");
+                AddMuted(inspector, "Обитает в окрестностях. Не принадлежит поселению.");
+                return;
+            }
             if (context.Selection.SelectedCharacterIds.Count > 1)
             {
                 AddLine(inspector, F("ui.selection.characters", context.Selection.SelectedCharacterIds.Count));
@@ -2208,7 +2266,7 @@ namespace Game.Presentation.UI
                 return;
             }
             var buildingPresenter = context.Selection.SelectedBuildingPresenter;
-            if (buildingPresenter != null && context.Buildings.TryGet(buildingPresenter.BuildingId, out var building))
+            if (buildingPresenter != null && buildingPresenter.IsBound && context.Buildings.TryGet(buildingPresenter.BuildingId, out var building))
             {
                 DrawBuildingInspector(building);
                 return;
@@ -2262,7 +2320,7 @@ namespace Game.Presentation.UI
             var definition = industry.GetDefinition(zone.DefinitionId);
             var output = context.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId));
             AddLine(inspector, "Промышленная зона");
-            AddSection(inspector, zone.DefinitionId.Replace('_', ' '));
+            AddSection(inspector, zone.DefinitionId == "stone_quarry" ? "Каменный карьер" : zone.DefinitionId.Replace('_', ' '));
             AddLine(inspector, $"Запас: {zone.Remaining}/{definition.Capacity}");
             AddLine(inspector, "Выход: " + string.Join(", ", definition.OutputsPerCycle.Select(x =>
                 Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
@@ -2628,6 +2686,7 @@ namespace Game.Presentation.UI
 
         private void CaptureNotifications()
         {
+            CaptureWarWarnings();
             var researchCount = context.Research.CompletedTechnologies.Count;
             var characterCount = PlayerCharacterIds().Count;
             var aliveCount = PlayerAliveCount();

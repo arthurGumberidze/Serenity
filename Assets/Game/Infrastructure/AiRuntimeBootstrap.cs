@@ -33,7 +33,8 @@ namespace Game.Infrastructure
             CharacterRegistry characters, HealthAndFamilyService health, TierManager tiers,
             GlobalMapService map, BuildingRegistry buildings, BuildingPlacementService placement,
             ResourceCatalog resources, ProductionCatalog recipes, TechnologyCatalog technologies,
-            IEnumerable<BuildingDefinition> definitions, WeatherService weather)
+            IEnumerable<BuildingDefinition> definitions, WeatherService weather,
+            Func<WorldPosition, WorldPosition> ground = null)
         {
             if (characters == null || health == null || tiers == null || map == null || buildings == null ||
                 placement == null || resources == null || recipes == null || technologies == null)
@@ -59,7 +60,8 @@ namespace Game.Infrastructure
                     BodyHealth.Healthy, new Wealth(0), new Influence(i == 0 ? 100 : 10 - i), null));
                 characters.Add(character);
                 tiers.Materialize(character, CharacterSimulationTier.Tier3,
-                    new CharacterRuntimeState(character.Id, offCameraPosition, default, false, settlement.LocationId.Value,
+                    new CharacterRuntimeState(character.Id, ground == null ? offCameraPosition : ground(new WorldPosition(
+                        offCameraPosition.X + (i % 3) * 3f - 3f, 0f, offCameraPosition.Z + (i / 3) * 3f)), default, false, settlement.LocationId.Value,
                         calendarTick, biologicalTick));
             }
 
@@ -82,10 +84,15 @@ namespace Game.Infrastructure
             var worldPiles = new WorldPileService(resources, inventories);
             var production = new ProductionService(recipes, resources, inventories, buildings, transfers,
                 researchUnlocks: research, capabilityProvider: health, weatherModifierProvider: weather);
-            AddSource(production, worldSeed, "gather_berries", 0, 160, new WorldPosition(22, 0, 18));
-            AddSource(production, worldSeed, "gather_fiber", 1, 120, new WorldPosition(24, 0, 18));
-            AddSource(production, worldSeed, "chop_wood", 2, 160, new WorldPosition(26, 0, 18));
-            AddSource(production, worldSeed, "gather_stone", 3, 120, new WorldPosition(28, 0, 18));
+            WorldPosition Source(float x, float z)
+            {
+                var position = new WorldPosition(offCameraPosition.X + x, 0f, offCameraPosition.Z + z);
+                return ground == null ? position : ground(position);
+            }
+            AddSource(production, worldSeed, "gather_berries", 0, 160, Source(-14, 12));
+            AddSource(production, worldSeed, "gather_fiber", 1, 120, Source(-10, 15));
+            AddSource(production, worldSeed, "chop_wood", 2, 160, Source(14, 18));
+            AddSource(production, worldSeed, "gather_stone", 3, 120, Source(18, 10));
             var construction = new ConstructionFundingService(placement, inventories, resources,
                 new StorageService(inventories, resources), research);
             var state = AiStrategicState.Create(new AiStateId(DeterministicStableId.Create(worldSeed, "enemy_state")),

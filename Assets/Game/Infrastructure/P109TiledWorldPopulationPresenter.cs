@@ -59,6 +59,7 @@ namespace Game.Infrastructure
         private readonly List<AnimalView> animals = new List<AnimalView>();
         private LocalSceneCompositionRoot session;
         private float animalTime;
+        private float nextWildlifeRefresh;
         private AudioSource forestAmbience;
 
         public TiledWorldPopulationPlan Plan { get; private set; }
@@ -170,8 +171,10 @@ namespace Game.Infrastructure
             var camera = Camera.main;
             if (camera == null) return terrainWorld.Definition.PlayerStart;
             var position = camera.transform.position;
-            return new WorldPosition(position.x, terrainWorld.HeightSampler.SampleHeight(position.x, position.z),
-                position.z);
+            var definition = terrainWorld.Definition;
+            var x = Mathf.Clamp(position.x, definition.Origin.X, definition.Origin.X + definition.WidthMeters);
+            var z = Mathf.Clamp(position.z, definition.Origin.Z, definition.Origin.Z + definition.DepthMeters);
+            return new WorldPosition(x, terrainWorld.HeightSampler.SampleHeight(x, z), z);
         }
 
         public void RebindAfterLoad()
@@ -242,7 +245,7 @@ namespace Game.Infrastructure
             {
                 var entry = poiArt.For(point.Id);
                 if (entry == null) throw new InvalidOperationException("Missing audited POI art for " + point.Id);
-                WorldMapPoiPresenter.Create(point, entry, parent);
+                WorldMapPoiPresenter.Create(point, entry, parent, position => terrainWorld.ProjectToGround(position));
             }
         }
 
@@ -259,11 +262,11 @@ namespace Game.Infrastructure
                         Debug.LogError("No audited World Map V2 resource prefab for fish");
                         return;
                     }
-                    var fishView = Instantiate(fishPrefab, parent);
+                    var fishView = WorldMapScenery.Instantiate(fishPrefab, parent);
                     fishView.name = "World Map fish population " + node.SourceZoneId + " " + node.StableIndex;
                     fishView.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y,
                         node.VisualPosition.Z);
-                    var collider = fishView.GetComponent<Collider>();
+                    Collider collider = null;
                     // Unity's missing-component proxy is not a CLR null, so ?? can retain an unusable collider.
                     if (collider == null) collider = fishView.AddComponent<BoxCollider>();
                     collider.isTrigger = true;
@@ -298,7 +301,7 @@ namespace Game.Infrastructure
             }
             if (reviewed != null)
             {
-                view = Instantiate(reviewed, parent);
+                view = WorldMapScenery.Instantiate(reviewed, parent);
                 var collider = view.AddComponent<BoxCollider>();
                 collider.isTrigger = true;
                 collider.center = Vector3.up * 0.8f;
@@ -364,9 +367,33 @@ namespace Game.Infrastructure
             });
         }
 
+        private readonly Collider[] animalObstacles = new Collider[64];
+
+        private bool AnimalStepIsClear(Transform animal, Vector3 position)
+        {
+            var count = Physics.OverlapSphereNonAlloc(position + Vector3.up * .7f, 1.15f,
+                animalObstacles, ~0, QueryTriggerInteraction.Collide);
+            for (var i = 0; i < count; i++)
+            {
+                var obstacle = animalObstacles[i];
+                if (obstacle == null || obstacle.transform.IsChildOf(animal) || obstacle is TerrainCollider) continue;
+                if (obstacle.GetComponentInParent<WorldMapWildlifeView>() != null ||
+                    obstacle.GetComponentInParent<ProductionSourcePresenter>() != null ||
+                    obstacle.GetComponentInParent<Game.Presentation.Buildings.BuildingPresenter>() != null ||
+                    obstacle.GetComponentInParent<Game.Presentation.Characters.CharacterPresenter>() != null) return false;
+            }
+            return count < animalObstacles.Length;
+        }
+
         private void Update()
         {
+            if (wildlifePresenter != null && Time.unscaledTime >= nextWildlifeRefresh)
+            {
+                nextWildlifeRefresh = Time.unscaledTime + .5f;
+                wildlifePresenter.Rebalance(WildlifeFocus());
+            }
             var delta = session?.Clock?.State.IsPaused == true ? 0f : Time.deltaTime;
+            wildlifePresenter?.MoveVisible(delta, terrainWorld.HeightSampler);
             animalTime += delta;
             var now = animalTime;
             var camera = Camera.main;
@@ -384,6 +411,8 @@ namespace Game.Infrastructure
                 if (terrainWorld.HeightSampler.IsBuildable(next.x, next.z))
                     next.y = terrainWorld.HeightSampler.SampleHeight(next.x, next.z) + .1f;
                 else next = previous;
+                // A Transform-driven animal must explicitly test occupancy before moving.
+                if (next != previous && !AnimalStepIsClear(animal.Transform, next)) next = previous;
                 var direction = next - previous; direction.y = 0f;
                 animal.Transform.position = next;
                 if (direction.sqrMagnitude > .000001f)
@@ -544,12 +573,30 @@ namespace Game.Infrastructure
         {
             var id = IndustrialId(node);
             if (!worldPiles.TryGet(id, out var pile) || !inventories.TryGet(pile.InventoryOwner, out var inventory)) return;
-            var marker = GameObject.CreatePrimitive(node.DefinitionId == "lake_fishing" ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+            var quarryPrefab = terrainWorld.Definition.MapData != null ? worldMapResourceArt?.PrefabFor(node.DefinitionId) : null;
+            var marker = quarryPrefab != null ? WorldMapScenery.Instantiate(quarryPrefab, parent) :
+                GameObject.CreatePrimitive(node.DefinitionId == "lake_fishing" ? PrimitiveType.Cylinder : PrimitiveType.Cube);
             marker.name = "P10.9 Industry " + node.DefinitionId + " " + node.StableIndex;
             marker.transform.SetParent(parent, false);
-            marker.transform.position = new Vector3(node.Position.X, node.Position.Y + 0.55f, node.Position.Z);
-            marker.transform.localScale = new Vector3(3.4f, 1.1f, 3.4f);
-            ApplyColor(marker, ResourceColor(node.ResourceId));
+            marker.transform.position = new Vector3(node.Position.X, node.Position.Y, node.Position.Z);
+            if (quarryPrefab != null)
+            {
+                var renderers = marker.GetComponentsInChildren<Renderer>(true);
+                var bounds = renderers[0].bounds;
+                foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                marker.transform.localScale *= 12f / Mathf.Max(bounds.size.x, bounds.size.z);
+                bounds = renderers[0].bounds;
+                foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                var hit = marker.AddComponent<BoxCollider>();
+                hit.center = marker.transform.InverseTransformPoint(bounds.center);
+                hit.size = marker.transform.InverseTransformVector(bounds.size);
+                hit.isTrigger = true;
+            }
+            else
+            {
+                marker.transform.localScale = new Vector3(3.4f, 1.1f, 3.4f);
+                ApplyColor(marker, ResourceColor(node.ResourceId));
+            }
             marker.AddComponent<WorldResourcePilePresenter>().Bind(pile, inventory);
         }
 

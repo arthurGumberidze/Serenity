@@ -71,6 +71,12 @@ namespace Game.Simulation.Resources
         public bool IsBuildingUnlocked(BuildingDefinitionId definitionId) =>
             unlocks == null || unlocks.IsBuildingUnlocked(definitionId);
 
+        public void ConfigureSettlement(SettlementId settlement)
+        {
+            if (!settlement.IsValid) throw new ArgumentException("Settlement identity is required.", nameof(settlement));
+            settlementId = settlement;
+        }
+
         public void ConfigureLogistics(ConstructionSiteService constructionSites, WorkManager workManager,
             WorldPileService worldPiles, SettlementId settlement, HaulClaimRegistry claims = null)
         {
