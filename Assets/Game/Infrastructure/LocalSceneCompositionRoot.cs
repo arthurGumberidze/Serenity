@@ -290,10 +290,16 @@ namespace Game.Infrastructure
                     requestedConfiguration.RivalKnownAtStart, requestedConfiguration.RulerName,
                     requestedConfiguration.DynastyName, requestedConfiguration.RulerSex,
                     requestedConfiguration.RulerAppearanceProfileId, requestedConfiguration.RulerAppearance);
-            WorldDefinition = TiledWorldDefinitionLoader.LoadReference();
+            WorldDefinition = TiledWorldDefinitionLoader.LoadActive();
             WorldHeight = new TiledWorldHeightSampler(WorldDefinition, ActiveNewGameConfiguration.WorldSeed);
+            var activePopulationPlan = WorldDefinition.MapData == null ? null :
+                new TiledWorldPopulationPlanner(WorldDefinition, WorldHeight,
+                    ActiveNewGameConfiguration.WorldSeed).Create();
+            if (activePopulationPlan?.StartTerritory != null)
+                buildingGridOrigin = new Vector3(activePopulationPlan.StartTerritory.Center.X, 0f,
+                    activePopulationPlan.StartTerritory.Center.Z);
             var appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
-            NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration, appearanceCatalog);
+            NewGame = NewGameBootstrap.Create(ActiveNewGameConfiguration, appearanceCatalog, activePopulationPlan);
             var worldSeed = ActiveNewGameConfiguration.WorldSeed;
             Characters = new CharacterRegistry();
             Appearances = new CharacterAppearanceService(Characters, appearanceCatalog, worldSeed);
@@ -348,11 +354,14 @@ namespace Game.Infrastructure
             cameraController.Settings.Validate();
             cameraController.ConfigureGround(position => WorldHeight.SampleHeight(position.x, position.z),
                 new Vector3(WorldDefinition.PlayerStart.X, 0f, WorldDefinition.PlayerStart.Z));
+            if (WorldDefinition.MapData != null)
+                cameraController.FocusPosition(new Vector3(WorldDefinition.PlayerStart.X, 0f,
+                    WorldDefinition.PlayerStart.Z), 90f);
             PopulatedBiomeWorld = FindAnyObjectByType<P93PopulatedBiomeWorld>();
             PopulatedBiomeWorld?.ValidateConfiguration();
             StoneAgeSettlement = FindAnyObjectByType<P94StoneAgeSettlement>();
             StoneAgeSettlement?.ValidateConfiguration();
-            if (PopulatedBiomeWorld != null)
+            if (PopulatedBiomeWorld != null && WorldDefinition.MapData == null)
             {
                 PopulatedBiomeWorld.CaptureAuthoredTreePositions();
                 var nature = UnityEngine.Resources.Load<StarterNatureCatalog>("World/StarterNature");
@@ -373,6 +382,8 @@ namespace Game.Infrastructure
                 TiledWorld.VisualTilesChanged += RefreshAuthoredTreeVisibility;
                 RefreshAuthoredTreeVisibility();
             }
+            else if (WorldDefinition.MapData != null)
+                DisableLegacyLocalPresentation();
             Inventories = new ResourceInventoryRegistry();
             ResourceTransfers = new ResourceTransferService(Inventories);
             Storage = new StorageService(Inventories, Resources);
@@ -425,9 +436,9 @@ namespace Game.Infrastructure
             RegisterStarterDomestic();
             SpawnDemoPile("berries", 60, new GridCoordinate(-8, -4), new Color(0.6f, 0.12f, 0.18f), 4);
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
-                ProjectToGameplayGround(new Vector3(-3f, 0f, 0f)), Quaternion.identity));
+                StartingResidentPosition(0, new Vector3(-3f, 0f, 0f)), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter,
-                ProjectToGameplayGround(new Vector3(3f, 0f, 0f)), Quaternion.identity));
+                StartingResidentPosition(1, new Vector3(3f, 0f, 0f)), Quaternion.identity));
             ReferenceCamp = GetComponent<StoneAgeReferenceCampPresentation>();
             ReferenceCamp?.Initialize(demoPresenters[0], demoPresenters[1], DemoShelterPresenter, DemoStoragePresenter);
 
@@ -440,16 +451,22 @@ namespace Game.Infrastructure
             ResourceEcology = new ResourceEcologyService();
             Industry = new IndustrialExtractionService(Resources, Inventories, CreateIndustrialDefinitions());
             Production.AttachNaturalResources(ResourceEcology, Industry);
-            SpawnRegionProductionSources();
-            SpawnP104NaturalSources();
-            SpawnP104IndustrialZones();
+            if (WorldDefinition.MapData == null)
+            {
+                SpawnRegionProductionSources();
+                SpawnP104NaturalSources();
+                SpawnP104IndustrialZones();
+            }
             var worksite = gameObject.AddComponent<WorksitePresentation>();
             worksite.Initialize(this);
             WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
                 Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
-            RegisterStarterTrees();
-            RegisterStarterRocks();
+            if (WorldDefinition.MapData == null)
+            {
+                RegisterStarterTrees();
+                RegisterStarterRocks();
+            }
             DisableSupersededRouteStrips();
             resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
@@ -516,7 +533,8 @@ namespace Game.Infrastructure
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             for (var i = 2; i < playerCharacters.Length; i++)
                 Tiers.Materialize(playerCharacters[i], CharacterSimulationTier.Tier1,
-                    new CharacterRuntimeState(playerCharacters[i].Id, new WorldPosition(-6 + i * 1.5f, 0, 4),
+                    new CharacterRuntimeState(playerCharacters[i].Id, StartingResidentWorldPosition(i,
+                            new WorldPosition(-6 + i * 1.5f, 0, 4)),
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work);
             DirectWorkCommands.EnsureRoleGroups();
@@ -528,7 +546,7 @@ namespace Game.Infrastructure
                     WorldDefinition.MapData.Buildability.IsClearableRecipe(site.RecipeId.ToString()));
             buildingPlacementController.ConfigureClearance(ConstructionClearance);
             ContextCommands = new ContextCommandService(Work, AiScheduler);
-            if (StoneAgeSettlement != null)
+            if (StoneAgeSettlement != null && WorldDefinition.MapData == null)
             {
                 WorkOrderIndicators = gameObject.AddComponent<P94WorkOrderIndicatorSystem>();
                 WorkOrderIndicators.Initialize(Work, StoneAgeSettlement);
@@ -747,6 +765,13 @@ namespace Game.Infrastructure
             P93PlayerSmoke = P93PlayerSmokeController.AttachIfRequested(this);
             P94PlayerSmoke = P94PlayerSmokeController.AttachIfRequested(this);
             P95PlayerSmoke = P95PlayerSmokeController.AttachIfRequested(this);
+        }
+
+        private void Start()
+        {
+            if (WorldDefinition?.MapData == null || cameraController == null) return;
+            cameraController.FocusPosition(new Vector3(WorldDefinition.PlayerStart.X, 0f,
+                WorldDefinition.PlayerStart.Z), 120f);
         }
 
         private void OnDestroy()
@@ -1015,12 +1040,12 @@ namespace Game.Infrastructure
             RefreshTier1AppearanceAfterLoad();
             selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
-            RebindRegionResourcePresenters();
+            if (WorldDefinition.MapData == null) RebindRegionResourcePresenters();
             foreach (var building in Buildings.All)
                 ConstructionSites.RebindRestored(building);
             ConstructionClearance?.RebindAfterLoad(Buildings.All);
             BuildingPathing.RebindAfterLoad();
-            RegisterStarterTrees();
+            if (WorldDefinition.MapData == null) RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
                     view.Bind(canonical, Color.white, true);
@@ -1197,11 +1222,13 @@ namespace Game.Infrastructure
             var firstBed = new BedState(
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "starter_bed", 0),
                 DemoShelterBuilding.Id, new GridCoordinate(-6, 5),
-                ToWorldPosition(ProjectToGameplayGround(new Vector3(-6f, 0f, 5f))));
+                ToWorldPosition(ProjectToGameplayGround(buildingGridOrigin +
+                    new Vector3(-6f * buildingGridSize, 0f, 5f * buildingGridSize))));
             var secondBed = new BedState(
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "starter_bed", 1),
                 DemoShelterBuilding.Id, new GridCoordinate(-5, 5),
-                ToWorldPosition(ProjectToGameplayGround(new Vector3(-5f, 0f, 5f))));
+                ToWorldPosition(ProjectToGameplayGround(buildingGridOrigin +
+                    new Vector3(-5f * buildingGridSize, 0f, 5f * buildingGridSize))));
             Domestic.RegisterBed(firstBed);
             Domestic.RegisterBed(secondBed);
             Domestic.AssignBed(firstBed.Id, MaleDemoCharacter.Id);
@@ -1429,6 +1456,51 @@ namespace Game.Infrastructure
                 }
             }
             RefreshAuthoredTreeVisibility();
+        }
+
+        private Vector3 StartingResidentPosition(int index, Vector3 legacyPosition)
+        {
+            var spawns = NewGame?.StartTerritory?.ResidentSpawns;
+            if (spawns != null && index >= 0 && index < spawns.Count)
+            {
+                var position = spawns[index];
+                return new Vector3(position.X, position.Y, position.Z);
+            }
+            return ProjectToGameplayGround(legacyPosition);
+        }
+
+        private WorldPosition StartingResidentWorldPosition(int index, WorldPosition legacyPosition)
+        {
+            var spawns = NewGame?.StartTerritory?.ResidentSpawns;
+            return spawns != null && index >= 0 && index < spawns.Count ? spawns[index] : legacyPosition;
+        }
+
+        private void DisableLegacyLocalPresentation()
+        {
+            void Hide(GameObject value)
+            {
+                if (value != null && value.scene.IsValid()) value.SetActive(false);
+            }
+
+            if (RealisticGameplayRegion != null)
+                foreach (var value in RealisticGameplayRegion.Trees.Concat(RealisticGameplayRegion.Rocks)
+                             .Concat(RealisticGameplayRegion.Foliage)) Hide(value);
+            if (PopulatedBiomeWorld != null)
+            {
+                foreach (var value in PopulatedBiomeWorld.CanopyTrees.Concat(PopulatedBiomeWorld.MajorRocks)
+                             .Concat(PopulatedBiomeWorld.GroundCover)) Hide(value);
+                foreach (var formation in PopulatedBiomeWorld.ResourceFormations)
+                {
+                    if (formation.ClickableRoot != null) Hide(formation.ClickableRoot.gameObject);
+                    foreach (var value in formation.DecorativeSatellites) Hide(value);
+                }
+            }
+            if (StoneAgeSettlement != null)
+            {
+                foreach (var worksite in StoneAgeSettlement.Worksites) Hide(worksite.VisualRoot);
+                foreach (var supply in StoneAgeSettlement.SupplyPresentations)
+                    if (supply != null) Hide(supply.gameObject);
+            }
         }
 
         private IEnumerable<GameObject> StarterTreeViews() =>

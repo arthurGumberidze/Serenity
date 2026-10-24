@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
 using Game.Domain.World;
@@ -16,34 +15,22 @@ namespace Game.Infrastructure
         {
             if (data == null || definition == null || plan == null || catalog == null)
                 throw new ArgumentNullException(nameof(data));
-            var trees = catalog.WorldMapTrees;
-            var shrubs = catalog.WorldMapShrubs;
-            var prototypes = trees.Concat(shrubs).Distinct().ToArray();
-            data.treePrototypes = prototypes.Select(value => new TreePrototype
-                { prefab = value, bendFactor = 0f }).ToArray();
+            // Imported LODGroup prefabs are streamed as bounded GameObject views by TiledTerrainWorld.
+            // Unity Terrain tree prototypes do not reliably render these multi-LOD prefabs in Player.
+            data.treePrototypes = Array.Empty<TreePrototype>();
             var origin = definition.TileOrigin(tile);
-            var instances = new List<TreeInstance>();
-            foreach (var value in plan.ForTile(tile).Where(value =>
-                         value.Kind != WorldMapVegetationKind.GroundCover))
-            {
-                instances.Add(new TreeInstance
-                {
-                    position = new Vector3((value.Position.X - origin.X) / definition.TileSizeMeters,
-                        value.Position.Y / data.size.y,
-                        (value.Position.Z - origin.Z) / definition.TileSizeMeters),
-                    rotation = value.RotationDegrees * Mathf.Deg2Rad,
-                    widthScale = value.UniformScale,
-                    heightScale = value.UniformScale,
-                    color = Color.white,
-                    lightmapColor = Color.white,
-                    prototypeIndex = TreePrototypeIndex(value, trees.Length, shrubs.Length)
-                });
-            }
-            data.SetTreeInstances(instances.ToArray(), false);
 
             var ground = catalog.WorldMapGroundCover
                 .Concat(catalog.WorldMapSmallProps ?? Array.Empty<GameObject>()).Distinct().ToArray();
             data.SetDetailResolution(128, 16);
+            if (!Application.isEditor)
+            {
+                // These audited source meshes/textures are intentionally non-readable. Unity's Player terrain
+                // detail backend rejects them and opens the Development Console, while tree/resource projection
+                // already supplies the visible V2 vegetation. Keep the invalid detail route Editor-only.
+                data.detailPrototypes = Array.Empty<DetailPrototype>();
+                return;
+            }
             data.detailPrototypes = ground.Select(value => new DetailPrototype
             {
                 prototype = value,
@@ -68,14 +55,6 @@ namespace Game.Infrastructure
                 maps[prototype][z, x] = Math.Min(4, maps[prototype][z, x] + 1);
             }
             for (var index = 0; index < maps.Length; index++) data.SetDetailLayer(0, 0, index, maps[index]);
-        }
-
-        private static int TreePrototypeIndex(WorldMapVegetationInstance value, int treeCount, int shrubCount)
-        {
-            var index = StableIndex(value.StableId, 100);
-            return value.Kind == WorldMapVegetationKind.InteractiveTree || index < 46 || shrubCount == 0
-                ? StableIndex(value.StableId, treeCount)
-                : treeCount + StableIndex(value.StableId, shrubCount);
         }
 
         private static int StableIndex(StableEntityId id, int count)

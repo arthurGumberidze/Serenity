@@ -450,6 +450,9 @@ namespace Game.Domain.World
                 var radius = poi.ProtectionRadiusMeters + 2f;
                 if (dx * dx + dz * dz < radius * radius) return false;
             }
+            // The start-zone list is an authored gameplay guarantee. Terrain paint is cosmetic and seed-driven;
+            // it must not make a required resource impossible after all physical exclusions have passed.
+            if (zone.Id == "res_start_basics" && StartMinimums.ContainsKey(resourceId)) return true;
             return PaintAffinity(resourceId, paint.SampleWeights(worldX, worldZ)) >= 0.07f;
         }
 

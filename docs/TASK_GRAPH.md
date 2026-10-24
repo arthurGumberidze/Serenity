@@ -1,9 +1,15 @@
 # TASK_GRAPH.md
 
-WM15 night repair (2026-10-24): **IN_PROGRESS**. Work only from the failed-case evidence in
-`Artifacts/WM15/night-20261024-002730-4c6d7c`; no full-night or passed-case rerun. All 62 original NUnit failures now pass; build-f passes. Full rendered gates await the user's offline run. The short diagnostic remains over budget. Save protection is FAIL: one original slot was overwritten during PlayMode-c; recovery is unresolved. Runner regressions pass 72 assertions.
-See `docs/world_map/WM15_NIGHT_REPAIR.md` and `WM15_REPAIR_CASES.md`. This repair does not
-advance WM15 to DONE or imply visual acceptance. PostgreSQL stays PARTIAL without a test DB.
+WM15 V2 activation (2026-10-24): **IN_PROGRESS**. The user approved activating
+`p109-world-map-v2-proposed` and deleting legacy saves. Normal New Game, save profile, start territory,
+residents, resources, roads, POI and strategic locations now use V2. Legacy presentation is hidden and the
+menu no longer reads old saves. Bounded streamed vegetation plus the post-Awake zoom make the authored clearing
+and forest edge visible in the Windows Player. Activation/vegetation EditMode passed 9/9, affected PlayMode
+passed 3/3, the final build passed, and native Player smoke exited 0. Evidence:
+`Artifacts/WM15Activation/world-map-v2-release-candidate.png` and `Builds/WorldMapV2/Serenity.exe`.
+The full rendered 100/300/500 gates still await the user's offline run, so WM15 is not DONE. PostgreSQL stays
+PARTIAL without a test DB. The earlier save-protection incident remains historical; the user authorized
+deletion of all old local saves.
 
 User-requested support deliverable (2026-10-24): resilient WM15 offline runner DONE. This is runner tooling,
 not completion of WM15. The final game test/build/performance/visual gates remain pending. The runner passed

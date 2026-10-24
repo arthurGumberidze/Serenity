@@ -49,8 +49,8 @@ namespace Game.Tests.PlayMode
                 WorldMapVegetationTerrainProjector.Apply(data, tile, definition, plan, catalog);
                 Assert.That(definition.GenerationId,
                     Is.EqualTo(TiledWorldDefinition.ProposedWorldMapGenerationId));
-                Assert.That(data.treeInstanceCount, Is.GreaterThan(0));
-                Assert.That(data.treePrototypes, Has.Length.EqualTo(7));
+                Assert.That(data.treeInstanceCount, Is.EqualTo(0));
+                Assert.That(data.treePrototypes, Is.Empty);
                 Assert.That(data.detailPrototypes, Has.Length.EqualTo(6));
 
                 var streaming = new TiledWorldStreamingPlanner(definition);

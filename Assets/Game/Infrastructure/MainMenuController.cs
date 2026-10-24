@@ -88,12 +88,10 @@ namespace Game.Infrastructure
             if (actionAsset == null) throw new InvalidOperationException("Main menu input actions are required.");
             if (characterCatalog == null) throw new InvalidOperationException("P4 character presentation catalog is required.");
             appearanceCatalog = characterCatalog.CreateDefinitionCatalog();
-            var saveProfile = StartupSaveProfile.Current;
+            var saveProfile = StartupSaveProfile.Active;
             var saveDirectory = ResolveSaveDirectory(saveProfile);
-            var legacyDirectory = ResolveLegacySaveDirectory();
             saveCatalog = new StartupSaveCatalog(new FileSaveStore(saveDirectory),
-                string.Equals(saveDirectory, legacyDirectory, StringComparison.OrdinalIgnoreCase)
-                    ? null : new FileSaveStore(legacyDirectory), saveProfile.SaveGenerationId);
+                expectedGenerationId: saveProfile.SaveGenerationId);
             settingsStore = UserSettingsStore.CreateDefault();
             var loadedSettings = settingsStore.Load();
             settings = loadedSettings.Settings;
@@ -973,14 +971,6 @@ namespace Game.Infrastructure
             var configured = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             return string.IsNullOrWhiteSpace(configured)
                 ? profile.ResolveDirectory(Application.persistentDataPath)
-                : configured;
-        }
-
-        private static string ResolveLegacySaveDirectory()
-        {
-            var configured = Environment.GetEnvironmentVariable("SERENITY_LEGACY_SAVE_DIRECTORY");
-            return string.IsNullOrWhiteSpace(configured)
-                ? System.IO.Path.Combine(Application.persistentDataPath, "Serenity", "P109", "CompactWorldV1", "Saves")
                 : configured;
         }
 

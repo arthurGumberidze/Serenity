@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "mapVersion": "serenity-world-map-v1",
   "implementationGenerationId": "p109-world-map-v2-proposed",
-  "status": "design_only_not_activated",
+  "status": "active_runtime",
   "date": "2026-10-23",
   "layer": "water",
   "units": "meters",

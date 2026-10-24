@@ -1632,3 +1632,22 @@ P6 test teardown must restore the inherited SERENITY_SAVE_DIRECTORY rather than 
 PlayMode-c exposed this omission: later tests wrote an original slot 2702 and a new slot
 2701 in StoneAgeBuildingsV1. Original hashes/evidence remain immutable; no matching backup
 was located. Do not describe save protection as passed or silently replace the old baseline.
+
+### D-192 — World Map V2 is the active runtime generation (2026-10-24)
+
+The user's explicit activation and save-deletion decision supersedes the earlier inactive-V2 constraint.
+Normal New Game selects `p109-world-map-v2-proposed` and snapshot v30 in `WorldMapV2/Saves`; the generation ID
+is retained for persistence compatibility even though its historical name contains `proposed`. The menu does
+not enumerate legacy saves. The old loader stays available only to regression fixtures, and old local save
+directories were deleted as authorized.
+
+The authored start contract controls the building origin and ten resident spawn positions. Prepared expansion
+corridors receive a deterministic terrain shoulder so they satisfy their buildability promise for every tested
+seed. Start-resource guarantees obey physical exclusions but cannot be invalidated by cosmetic paint weights.
+Strategic-map locations reuse V2 start/POI coordinates rather than compact-world zone IDs.
+
+Vegetation masks clear only construction zones that do not require clearing. Imported multi-LOD tree prefabs
+are rendered through a disposable stream capped at 192 views within 210 metres; canonical vegetation remains
+the seeded WM05 plan and collision remains independently capped at 650 proxies. Unity Terrain details that
+require unreadable source meshes/textures are disabled in Player. V2 camera framing is applied in `Start` at
+zoom 120 so the prepared clearing and surrounding forest are visible after all Awake initialization.

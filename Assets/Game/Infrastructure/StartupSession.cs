@@ -28,7 +28,9 @@ namespace Game.Infrastructure
 
         public static StartupSaveProfile WorldMapV2Proposed { get; } = new StartupSaveProfile(
             TiledWorldDefinition.ProposedWorldMapGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
-            SaveSnapshot.WorldMapV2Version, "WorldMapV2Proposed");
+            SaveSnapshot.WorldMapV2Version, "WorldMapV2");
+
+        public static StartupSaveProfile Active => WorldMapV2Proposed;
 
         public string WorldGenerationId { get; }
         public string SaveGenerationId { get; }

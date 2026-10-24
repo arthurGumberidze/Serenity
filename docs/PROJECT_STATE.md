@@ -1,6 +1,27 @@
 # PROJECT_STATE.md
 
-## WM15 night repair — IN_PROGRESS (2026-10-24)
+## WM15 World Map V2 activation — IN_PROGRESS (2026-10-24)
+
+The user approved replacing the compact runtime map and deleting old saves. Normal New Game now selects
+`p109-world-map-v2-proposed`; its v30 save profile writes only to `WorldMapV2/Saves`, and the main menu no
+longer reads a legacy catalog. Legacy local save directories (`Saves`, `P10`, `StoneAgeBuildingsV1`, `TiledV2`)
+were deleted. The legacy map loader remains only as a regression fixture and is not on the normal route.
+
+The activation connects the authored start territory, resident spawns, prepared expansion terrain, resources,
+roads, POI and strategic-map locations. It hides legacy compact-world presentation. Seed-dependent start
+resources no longer depend on cosmetic terrain-paint weights. Buildable masks marked `requiresClearing` retain
+vegetation. Imported multi-LOD tree prefabs use a bounded 192-view/210m stream because Unity Terrain tree
+prototypes did not render them reliably in Player; canonical placement and the 650-collider cap are unchanged.
+The V2 start camera is applied after Awake at zoom 120 so the clearing and forest edge are visible immediately.
+
+Validation: activation EditMode 4/4; WM05 plus activation EditMode 9/9; final WM05 plus activation PlayMode 3/3;
+camera/full-scene PlayMode 1/1. The final Windows Development build succeeded with 0 errors and 54 warnings via
+`U00Build.WindowsDevelopment` at `Builds/WorldMapV2/Serenity.exe`. Native Player smoke exited 0 and wrote
+`Artifacts/WM15Activation/world-map-v2-release-candidate.png`; no terrain-detail Read/Write error was emitted.
+The long rendered 100/300/500 gates remain assigned to the user's offline runner, so overall WM15 is not DONE.
+PostgreSQL remains PARTIAL. Seven inherited materials and `New Unity Project/` remain excluded.
+
+## WM15 night repair — historical checkpoint (2026-10-24)
 
 The completed night run at `Artifacts/WM15/night-20261024-002730-4c6d7c` contains 62 failed
 NUnit cases, cleanup/protection wrapper errors and failed rendered 100/300/500 gates.
@@ -17,8 +38,8 @@ Final protection audit found one overwritten original save (StoneAgeBuildingsV1 
 2702, during PlayMode-c) and a new slot 2701. P6 teardown cleared the inherited save
 directory; the restoration fix passes both targeted regression tests without further save changes. No exact original slot-2702 backup
 was found in the project. Protection is FAIL, not restored; ten other payloads match.
-Overall WM15 and user visual acceptance remain open; PostgreSQL remains PARTIAL.
-V2 stays inactive. Seven inherited materials are unchanged and excluded from commits,
+Overall WM15 and user visual acceptance remained open at this checkpoint; PostgreSQL was PARTIAL.
+V2 was inactive at this checkpoint. Seven inherited materials are unchanged and excluded from commits,
 as is New Unity Project/. See the repair report for exact evidence and the incident.
 
 ## WM14 checkpoint — 2026-10-24 optimization and profiling DONE

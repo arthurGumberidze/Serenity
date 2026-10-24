@@ -1,16 +1,18 @@
 # NEXT_TASK.md
 
-## Active override — WM15 night repair only (2026-10-24)
+## Active override — WM15 V2 activation and remaining performance acceptance (2026-10-24)
 
-Repair the failures from `Artifacts/WM15/night-20261024-002730-4c6d7c` in this checkout.
-Only exact failed NUnit cases, cleanup/protection runner regressions and the three failed rendered
-Player performance gates may be repeated, with fresh compilation/build as needed. Do not start the
-full 182-step night suite, the 881 passed cases, another chat, automation or worktree.
-Keep proposed V2 inactive, old saves unchanged and the seven inherited dirty materials plus
-`New Unity Project/` outside repair commits. PostgreSQL remains PARTIAL without a configured test DB.
-Repair evidence: `Artifacts/WM15/repair-20261024`; final repair report will track each original failure.
-The historical full-WM15 instructions below are superseded for this repair. User visual acceptance
-and overall WM15 DONE are not implied by repair results.
+The user explicitly approved activating World Map V2 and deleting legacy saves. Normal New Game now loads
+`p109-world-map-v2-proposed`, uses the v30 `WorldMapV2` save directory and has no legacy save catalog in the
+menu. The old local save directories were deleted. A fresh Player with visible streamed vegetation is at
+`Builds/WorldMapV2/Serenity.exe`; visual evidence is
+`Artifacts/WM15Activation/world-map-v2-release-candidate.png`.
+
+Activation tests and the Windows build pass. The next authorized work is the user's offline rendered
+100/300/500 performance run with `Tools/Validation/Run-WM15-Performance-Repair.cmd`, followed by investigation
+of any failed gates. Do not run the full 182-step night suite. WM15 remains IN_PROGRESS until those long gates
+and user visual acceptance complete. PostgreSQL remains PARTIAL without a configured test database. Keep the
+seven inherited dirty materials and `New Unity Project/` outside WM15 commits.
 
 
 ## User-requested offline validation tooling — 2026-10-24

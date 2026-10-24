@@ -263,7 +263,9 @@ namespace Game.Infrastructure
                     fishView.name = "World Map fish population " + node.SourceZoneId + " " + node.StableIndex;
                     fishView.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y,
                         node.VisualPosition.Z);
-                    var collider = fishView.GetComponent<Collider>() ?? fishView.AddComponent<BoxCollider>();
+                    var collider = fishView.GetComponent<Collider>();
+                    // Unity's missing-component proxy is not a CLR null, so ?? can retain an unusable collider.
+                    if (collider == null) collider = fishView.AddComponent<BoxCollider>();
                     collider.isTrigger = true;
                     if (collider is BoxCollider box)
                     {

@@ -472,23 +472,42 @@ namespace Game.Simulation.World
             var coast = new WorldLocationId("southern_coast");
             WorldLocationState At(WorldLocationId id, string name, WorldLocationType type, WorldPosition position) =>
                 new WorldLocationState(id, name, type, (int)Math.Round(position.X), (int)Math.Round(position.Z));
-            var locations = new[]
-            {
-                At(player, "Player Settlement", WorldLocationType.Settlement, Zone("starter_settlement").Center),
-                At(enemy, "Eastern Settlement", WorldLocationType.Settlement, Zone("enemy_settlement").Center),
-                At(northwest, "Northwestern Settlement", WorldLocationType.Settlement,
-                    Zone("northwest_settlement").Center),
-                At(forest, "North Forest", WorldLocationType.Wilderness, Zone("forest_north").Center),
-                At(ford, "River Ford", WorldLocationType.Wilderness, definition.River[5]),
-                At(hills, "East Hills", WorldLocationType.Wilderness, Zone("ore_east").Center),
-                At(field, "South Field", WorldLocationType.Wilderness, Zone("farmland_southwest").Center),
-                At(lake, "Mirror Lake", WorldLocationType.Wilderness, Zone("lake_southeast").Center),
-                At(west, "West Hunting Grounds", WorldLocationType.Wilderness,
-                    Zone("western_hunting_berries").Center),
-                At(ridge, "Iron Ridge", WorldLocationType.Wilderness, Zone("ore_northwest").Center),
-                At(coast, "Southern River Mouth", WorldLocationType.Wilderness,
-                    new WorldPosition(definition.River.Last().X, 0f, definition.River.Last().Z + definition.DepthMeters * 0.01f))
-            };
+            WorldPosition Poi(string id) => definition.MapData.CoordinateTransform.ToUnity(
+                definition.MapData.PointsOfInterest.Single(value => value.Id == id).Position);
+            var locations = definition.MapData != null
+                ? new[]
+                {
+                    At(player, "Player Settlement", WorldLocationType.Settlement, definition.PlayerStart),
+                    At(enemy, "Eastern Settlement", WorldLocationType.Settlement, Poi("poi_cave")),
+                    At(northwest, "Northwestern Settlement", WorldLocationType.Settlement, Poi("poi_sacred_grove")),
+                    At(forest, "North Forest", WorldLocationType.Wilderness, Poi("poi_secluded_glade")),
+                    At(ford, "River Ford", WorldLocationType.Wilderness, Poi("poi_abandoned_camp")),
+                    At(hills, "East Hills", WorldLocationType.Wilderness, Poi("poi_overlook")),
+                    At(field, "South Field", WorldLocationType.Wilderness, Poi("poi_stone_circle")),
+                    At(lake, "Mirror Lake", WorldLocationType.Wilderness, Poi("poi_ancient_ruins")),
+                    At(west, "West Hunting Grounds", WorldLocationType.Wilderness, Poi("poi_giant_tree")),
+                    At(ridge, "Iron Ridge", WorldLocationType.Wilderness, Poi("poi_rock_spire")),
+                    At(coast, "Southern River Mouth", WorldLocationType.Wilderness,
+                        definition.MapData.CoordinateTransform.ToUnity(new WorldMapPoint(850f, 100f)))
+                }
+                : new[]
+                {
+                    At(player, "Player Settlement", WorldLocationType.Settlement, Zone("starter_settlement").Center),
+                    At(enemy, "Eastern Settlement", WorldLocationType.Settlement, Zone("enemy_settlement").Center),
+                    At(northwest, "Northwestern Settlement", WorldLocationType.Settlement,
+                        Zone("northwest_settlement").Center),
+                    At(forest, "North Forest", WorldLocationType.Wilderness, Zone("forest_north").Center),
+                    At(ford, "River Ford", WorldLocationType.Wilderness, definition.River[5]),
+                    At(hills, "East Hills", WorldLocationType.Wilderness, Zone("ore_east").Center),
+                    At(field, "South Field", WorldLocationType.Wilderness, Zone("farmland_southwest").Center),
+                    At(lake, "Mirror Lake", WorldLocationType.Wilderness, Zone("lake_southeast").Center),
+                    At(west, "West Hunting Grounds", WorldLocationType.Wilderness,
+                        Zone("western_hunting_berries").Center),
+                    At(ridge, "Iron Ridge", WorldLocationType.Wilderness, Zone("ore_northwest").Center),
+                    At(coast, "Southern River Mouth", WorldLocationType.Wilderness,
+                        new WorldPosition(definition.River.Last().X, 0f,
+                            definition.River.Last().Z + definition.DepthMeters * 0.01f))
+                };
             var hour = TimeSpan.TicksPerHour;
             var routes = new[]
             {

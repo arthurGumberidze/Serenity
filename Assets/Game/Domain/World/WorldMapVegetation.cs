@@ -300,7 +300,8 @@ namespace Game.Domain.World
             foreach (var poi in world.MapData.PointsOfInterest)
                 if (Distance(design, poi.Position) < poi.ProtectionRadiusMeters) return true;
             foreach (var build in world.MapData.BuildabilityMasks)
-                if (build.Category != "restricted" && build.Shape.Contains(design)) return true;
+                if (build.Category != "restricted" && !build.RequiresClearing &&
+                    build.Shape.Contains(design)) return true;
 
             var unity = world.MapData.CoordinateTransform.ToUnity(design);
             if (heights.IsWater(unity.X, unity.Z)) return true;

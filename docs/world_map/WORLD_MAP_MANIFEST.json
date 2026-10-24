@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "mapVersion": "serenity-world-map-v1",
   "implementationGenerationId": "p109-world-map-v2-proposed",
-  "status": "design_only_not_activated",
+  "status": "active_runtime",
   "date": "2026-10-23",
   "layer": "manifest",
   "units": "meters",
@@ -11,8 +11,8 @@
   "files": [
     {
       "path": "generate_world_map_package.py",
-      "bytes": 95787,
-      "sha256": "aadc4a75b129ca10ddc62fb7baca8ab6873fdefc5b6df73034e0769585f5eabe"
+      "bytes": 95776,
+      "sha256": "9ea5d7757fd4f7c6bac219df10d7bf2f1a1d193bed95dc0b09bc352cf9f561bc"
     },
     {
       "path": "images/world_map_buildability.png",
@@ -70,14 +70,29 @@
       "sha256": "009df2d8589866291b2d836afe7f32a4825b7434ec40d5cb67df49e9bad494f4"
     },
     {
+      "path": "WM15_NIGHT_REPAIR.md",
+      "bytes": 9891,
+      "sha256": "f0efd717beccd377fcb2bf30abf477c285b194e929128bdc0e9b5ebff098fce6"
+    },
+    {
+      "path": "WM15_OFFLINE_RUNNER.md",
+      "bytes": 10305,
+      "sha256": "ac62e6d7b2743b9ded0cc7e17c336795267f7079deee1bf731ce94ad7c5c19ed"
+    },
+    {
+      "path": "WM15_REPAIR_CASES.md",
+      "bytes": 14966,
+      "sha256": "82666ab4b6afa5d236cda2015cb724ed21ea230d8a1c87e1cfb44262a9d911e4"
+    },
+    {
       "path": "WORLD_MAP_BIOMES.json",
-      "bytes": 7683,
-      "sha256": "d51b243a75922d99bf7f3e28205eba131d5444205599bb4becf94c78df301c42"
+      "bytes": 7672,
+      "sha256": "c04042be6ad7906e0101c0f9180c2c4e348abbbdcccdfd15274fc569031f4401"
     },
     {
       "path": "WORLD_MAP_BUILDABILITY.json",
-      "bytes": 5601,
-      "sha256": "6e1129c4a3b3db114be9260db731506fdd2e85c35bf566b1b5d5475b67fb35dc"
+      "bytes": 5590,
+      "sha256": "b25c9d39e2d89f5dd730050ce475463512a5d84023201738447b976cd4ad8ab7"
     },
     {
       "path": "WORLD_MAP_BUILDABILITY.md",
@@ -91,8 +106,8 @@
     },
     {
       "path": "WORLD_MAP_COORDINATES.json",
-      "bytes": 15820,
-      "sha256": "5834a1ef85704ebaf7ffe2d283be43f6ffdfe4d1e78da2e11e7ee6dbe9655da5"
+      "bytes": 15809,
+      "sha256": "983f31c8867f4b044fc3748cf147548930474c745bb432881325c31cb2777daf"
     },
     {
       "path": "WORLD_MAP_GENERATION.md",
@@ -116,23 +131,23 @@
     },
     {
       "path": "WORLD_MAP_POI.json",
-      "bytes": 3282,
-      "sha256": "d86188b3318281b4bdc07810be881fc6e955ad82354a0e5b1c164bb7abd33965"
+      "bytes": 3271,
+      "sha256": "e462711715d9a3c2e406c0c3ef640401a1d3aeb7bd1462edf2752338f332d912"
     },
     {
       "path": "WORLD_MAP_RESOURCES.json",
-      "bytes": 10320,
-      "sha256": "200262b4923cd032d5b346ac0ab523dea16d16d9dee9ad1e52003a1848bc9c24"
+      "bytes": 10309,
+      "sha256": "d4b26ce78a7cf13b939149029106c5b256542d84913fd86735ea7903fe0042ed"
     },
     {
       "path": "WORLD_MAP_ROADS.json",
-      "bytes": 6071,
-      "sha256": "f8d970c8844311d79f0b2142a1d5ded7eaff362bfe6ea5dd60be88932a716b4b"
+      "bytes": 6060,
+      "sha256": "dd5c07a6d1b7e5492b640abbae89c9b85d7f216bfc6596dfbd098d1318feff37"
     },
     {
       "path": "WORLD_MAP_TERRAIN.json",
-      "bytes": 4158,
-      "sha256": "a970ff4ac2b77d27f8415eda86bc61a5da3add1dd8a60415335ebdd5fce6c4d9"
+      "bytes": 4147,
+      "sha256": "4f9b34eed45ff879ac2bf9165f312796e2b33bc3099d3ed88602ecf72cfb6d1f"
     },
     {
       "path": "WORLD_MAP_VALIDATION_REPORT.md",
@@ -141,18 +156,18 @@
     },
     {
       "path": "WORLD_MAP_VEGETATION.json",
-      "bytes": 7079,
-      "sha256": "014930c21c35e1671b3fd80606c17f69ac2e933e20da31bc10a883a35eecdbae"
+      "bytes": 7068,
+      "sha256": "631eff883b15ff246bdda7b4a4173f01e7a3144a5fa7e2c8cb8a5dd0cb66ed20"
     },
     {
       "path": "WORLD_MAP_WATER.json",
-      "bytes": 8204,
-      "sha256": "6479edb16d0bc6c1f76953069985df070e329d4c36c775ba7b6104b16f90006a"
+      "bytes": 8193,
+      "sha256": "6724213ec5e2480dcbbab4c28673abbab2b7c7983dde07d714bc484864b639bc"
     },
     {
       "path": "WORLD_MAP_WILDLIFE.json",
-      "bytes": 5067,
-      "sha256": "728440c3cef77a064f7ddd483907217d797a1b42fe0783f37f3eeffe872fb034"
+      "bytes": 5056,
+      "sha256": "af5c208076ad331d7ed619b9dbe983e0ac147d5d3dc0a0780058f685cba31918"
     }
   ]
 }

@@ -393,7 +393,7 @@ def meta(layer: str) -> dict[str, Any]:
         "schemaVersion": 1,
         "mapVersion": MAP_VERSION,
         "implementationGenerationId": GENERATION_ID,
-        "status": "design_only_not_activated",
+        "status": "active_runtime",
         "date": DATE,
         "layer": layer,
         "units": "meters",

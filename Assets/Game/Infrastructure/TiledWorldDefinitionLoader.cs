@@ -44,6 +44,12 @@ namespace Game.Infrastructure
             return Parse(asset.text);
         }
 
+        /// <summary>The world selected by the normal New Game route.</summary>
+        public static TiledWorldDefinition LoadActive()
+        {
+            return LoadProposedWorldMap();
+        }
+
         /// <summary>Loads and validates the isolated V2 design package without activating it.</summary>
         public static TiledWorldDefinition LoadProposedWorldMap()
         {
@@ -225,7 +231,7 @@ namespace Game.Infrastructure
                 var root = pair.Value;
                 if (root.Int("schemaVersion") != 1 || root.String("mapVersion") != MapVersion ||
                     root.String("implementationGenerationId") != TiledWorldDefinition.ProposedWorldMapGenerationId ||
-                    root.String("status") != "design_only_not_activated" || root.String("units") != "meters" ||
+                    root.String("status") != "active_runtime" || root.String("units") != "meters" ||
                     root.String("north") != "+Z" || root.String("layer") != expectedLayers[pair.Key])
                     throw new InvalidDataException($"{pair.Key} has an incompatible world-map header.");
             }

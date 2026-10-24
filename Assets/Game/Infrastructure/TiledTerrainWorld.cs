@@ -25,6 +25,8 @@ namespace Game.Infrastructure
         private readonly List<Mesh> roadMeshes = new List<Mesh>();
         private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationColliders =
             new Dictionary<Game.Domain.StableEntityId, GameObject>();
+        private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationViews =
+            new Dictionary<Game.Domain.StableEntityId, GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
         private WorldMapTerrainPaintSampler terrainPaintSampler;
@@ -71,6 +73,7 @@ namespace Game.Infrastructure
         public WorldMapRoadNetworkPlan RoadNetworkPlan => roadNetworkPlan;
         public GameObject RoadPresentationRoot => roadPresentationRoot;
         public int ActiveVegetationColliderCount => vegetationColliders.Count;
+        public int ActiveVegetationViewCount => vegetationViews.Count;
         public Texture2D StrategicGroundTexture => overviewGroundTexture;
         public NavMeshSurface PrimaryNavigationSurface
         {
@@ -187,6 +190,7 @@ namespace Game.Infrastructure
             foreach (var pair in loaded)
                 pair.Value.Terrain.drawHeightmap = !active && visual.Contains(pair.Key);
             RefreshVegetationColliders(lastCameraFocus);
+            RefreshVegetationViews(lastCameraFocus);
             VisualTilesChanged?.Invoke();
             if (!active && cameraFocusProvider != null) RefreshFromProviders();
         }
@@ -243,6 +247,7 @@ namespace Game.Infrastructure
             if (added) ConnectTerrainNeighbours();
             if (navigationEnabled && added) RebuildLinks();
             RefreshVegetationColliders(lastCameraFocus);
+            RefreshVegetationViews(lastCameraFocus);
             if (added || visibilityChanged) VisualTilesChanged?.Invoke();
         }
 
@@ -321,6 +326,59 @@ namespace Game.Infrastructure
                 collider.center = Vector3.up * collider.height * 0.5f;
                 vegetationColliders.Add(value.StableId, root);
             }
+        }
+
+        private void RefreshVegetationViews(WorldPosition cameraFocus)
+        {
+            if (vegetationPlan == null || natureCatalog == null) return;
+            const float radiusMeters = 210f;
+            const int maximumViews = 192;
+            var radiusSquared = radiusMeters * radiusMeters;
+            var desired = strategicMode
+                ? Array.Empty<WorldMapVegetationInstance>()
+                : vegetationPlan.Instances.Where(value =>
+                        value.Kind != WorldMapVegetationKind.GroundCover && visual.Contains(value.Tile) &&
+                        SquaredDistance(value.Position, cameraFocus) <= radiusSquared)
+                    .OrderBy(value => SquaredDistance(value.Position, cameraFocus))
+                    .ThenBy(value => value.StableId).Take(maximumViews).ToArray();
+            var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
+            foreach (var id in vegetationViews.Keys.Where(value => !ids.Contains(value)).ToArray())
+            {
+                Destroy(vegetationViews[id]);
+                vegetationViews.Remove(id);
+            }
+            foreach (var value in desired)
+            {
+                if (vegetationViews.ContainsKey(value.StableId)) continue;
+                var hash = StableVegetationIndex(value.StableId, 100);
+                var prefabs = value.Kind == WorldMapVegetationKind.InteractiveTree || hash < 60
+                    ? natureCatalog.WorldMapTrees
+                    : natureCatalog.WorldMapShrubs;
+                var prefab = prefabs[StableVegetationIndex(value.StableId, prefabs.Length)];
+                var view = Instantiate(prefab, transform);
+                view.name = "World Map vegetation " + value.StableId;
+                view.transform.position = new Vector3(value.Position.X, value.Position.Y, value.Position.Z);
+                view.transform.rotation = Quaternion.Euler(0f, value.RotationDegrees, 0f);
+                view.transform.localScale *= value.UniformScale;
+                foreach (var collider in view.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+                vegetationViews.Add(value.StableId, view);
+            }
+        }
+
+        private static int StableVegetationIndex(Game.Domain.StableEntityId id, int count)
+        {
+            if (count <= 0) return 0;
+            var bytes = id.ToGuid().ToByteArray();
+            var hash = 17;
+            foreach (var value in bytes) hash = unchecked(hash * 31 + value);
+            return (hash & int.MaxValue) % count;
+        }
+
+        private static float SquaredDistance(WorldPosition left, WorldPosition right)
+        {
+            var x = left.X - right.X;
+            var z = left.Z - right.Z;
+            return x * x + z * z;
         }
 
         private void ApplyTerrainPaint(WorldTileId id, TerrainData data)
@@ -1049,6 +1107,7 @@ namespace Game.Infrastructure
             foreach (var mesh in roadMeshes) if (mesh != null) Destroy(mesh);
             roadMeshes.Clear();
             vegetationColliders.Clear();
+            vegetationViews.Clear();
         }
     }
 }

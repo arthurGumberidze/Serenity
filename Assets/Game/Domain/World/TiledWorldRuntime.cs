@@ -167,11 +167,37 @@ namespace Game.Domain.World
                 height = Lerp(height, mask.MinimumValue, influence);
             }
 
+            height = ApplyPreparedExpansionCorridors(height, design, plateau);
+
             // A late pass may shape adjacent traversable ground, but it may never fill a canonical water channel.
             height = ReapplyAuthoredWaterInterior(height, design);
 
             return Math.Max(authoredTerrain.MinimumHeightMeters,
                 Math.Min(authoredTerrain.MaximumHeightMeters, height));
+        }
+
+        private float ApplyPreparedExpansionCorridors(float height, WorldMapPoint point,
+            WorldMapHeightAnchor plateau)
+        {
+            var start = definition.MapData.StartTerritory;
+            if (start == null || plateau == null) return height;
+
+            // The authored corridors are construction-ready ground. Give the four-metre playable strip
+            // a wider terrain shoulder so height samples at its edge remain gentle for every world seed.
+            const float fullInfluenceRadiusMeters = 7f;
+            const float shoulderRadiusMeters = 24f;
+            var influence = 0f;
+            foreach (var direction in start.ExpansionDirections)
+            {
+                var distance = direction.DistanceTo(point);
+                if (distance >= shoulderRadiusMeters) continue;
+                var corridorInfluence = distance <= fullInfluenceRadiusMeters
+                    ? 1f
+                    : Smooth01(1f - (distance - fullInfluenceRadiusMeters) /
+                        (shoulderRadiusMeters - fullInfluenceRadiusMeters));
+                influence = Math.Max(influence, corridorInfluence);
+            }
+            return Lerp(height, plateau.HeightMeters, influence);
         }
 
         private float ApplyRidge(float height, WorldMapPoint point, WorldMapHeightMask mask)
