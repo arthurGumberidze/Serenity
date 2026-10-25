@@ -1,5 +1,20 @@
 # NEXT_TASK.md
 
+## WM15 preview delivered — next work (2026-10-25)
+
+Compilation and the requested Windows build are complete: Builds/WorldMapArtHunting/Serenity.exe,
+0 errors / 30 warnings. See docs/world_map/WM15_PREVIEW_BUILD.md. Continue user feedback and focused
+map/hunting/pasture inspection within WM15; do not mark DONE. Full 100/300/500 performance gates remain
+prohibited for now. White Rabbit and complete husbandry remain open. Preserve inherited imports.
+Historical no-execution restrictions below are superseded by the user's compile/build authorization.
+
+## WM15 preview build authorized (2026-10-25)
+
+The user now requests compilation and a new Windows Player to inspect the map, hunting and sheep pasture.
+This supersedes the execution prohibition in historical entries below. Full 100/300/500 performance suites
+remain deferred. Compile, fix build blockers and produce Builds/WorldMapArtHunting/Serenity.exe; retain WM15
+IN_PROGRESS pending gameplay/visual acceptance and outstanding content. Preserve inherited imports.
+
 ## WM15 approved art direction + animal health — current (2026-10-25)
 
 The user's answers authorize the regional art implementation; the analysis-only restriction in older entries

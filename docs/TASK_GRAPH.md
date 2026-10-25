@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+WM15 preview checkpoint (2026-10-25): **IN_PROGRESS / compiled and built**. Build-e succeeded with 0 errors,
+30 warnings after C# and HLSL repairs. Deliver Builds/WorldMapArtHunting/Serenity.exe for manual inspection.
+No tests or gameplay/visual acceptance claimed; full performance gates remain deferred. See
+`docs/world_map/WM15_PREVIEW_BUILD.md`. Earlier no-execution status below is superseded by user authorization.
+
 WM15 art/health feedback (2026-10-25): **IN_PROGRESS / source only**. All art-direction answers received and
 implemented as a first regional appearance pass, with saved animal HP, bow impacts/death/skinning and a first
 sheep pasture. See `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md`. No compilation, tests, Unity/Player run,

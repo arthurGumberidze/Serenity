@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
+using Game.Domain.AI;
 using Game.Domain.World;
 using Game.Presentation.Environment;
 using Game.Presentation.Production;

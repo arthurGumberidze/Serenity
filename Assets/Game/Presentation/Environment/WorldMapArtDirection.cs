@@ -20,7 +20,7 @@ namespace Game.Presentation.Environment
         public Color shallowWater, deepWater, marshWater;
         public static WorldMapArtDirection Load()
         {
-            var asset = Resources.Load<TextAsset>("World/WorldMapArtDirection");
+            var asset = UnityEngine.Resources.Load<TextAsset>("World/WorldMapArtDirection");
             if (asset == null) throw new InvalidOperationException("Missing map art direction.");
             var result = JsonUtility.FromJson<WorldMapArtDirection>(asset.text);
             if (result.regions == null || result.regions.Length != 8 ||

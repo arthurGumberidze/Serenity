@@ -5,9 +5,9 @@ float4 _WorldMapBiomeShapes[8], _WorldMapBiomeColors[8], _WorldMapBlossomGroves[
 float _WorldMapArtEnabled, _WorldMapSeason;
 half4 _WorldMapShallowWater, _WorldMapDeepWater, _WorldMapMarshWater;
 float2 WorldMapDesign(float2 world) { return world * _WorldMapToDesign.zw + _WorldMapToDesign.xy; }
-float WorldMapEllipse(float2 point, float4 ellipse)
+float WorldMapEllipse(float2 samplePosition, float4 ellipse)
 {
-    float2 d = (point - ellipse.xy) / max(ellipse.zw, 1);
+    float2 d = (samplePosition - ellipse.xy) / max(ellipse.zw, 1);
     return 1 - smoothstep(.45, 1, length(d));
 }
 half4 WorldMapFoliage(float2 world, float flowering)

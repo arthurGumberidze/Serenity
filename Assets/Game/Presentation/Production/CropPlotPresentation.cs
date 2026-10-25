@@ -28,7 +28,7 @@ namespace Game.Presentation.Production
             site = source;
             animals = animalRegistry;
             building = GetComponent<BuildingPresenter>();
-            art = Resources.Load<CropArtCatalog>("World/CropArt");
+            art = UnityEngine.Resources.Load<CropArtCatalog>("World/CropArt");
             width = Mathf.Max(1f, widthMeters - 0.25f);
             depth = Mathf.Max(1f, depthMeters - 0.25f);
             if (plot == null)

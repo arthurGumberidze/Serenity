@@ -1786,3 +1786,12 @@ imported animal art alone as an implemented economy. White Rabbit remains missin
 The user's explicit no-tests/no-rebuild instruction still overrides the timing of AGENTS.md validation.
 Record source/diff review only, do not claim visual correctness or performance without execution, and keep
 WM15 IN_PROGRESS. Scope and exact commands are in `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md`.
+
+## D-199 — Preview build acceptance is separate from runtime/performance acceptance (2026-10-25)
+
+The user authorizes compilation and a Windows preview for map/hunting/pasture, while deferring full
+performance tests. Require both a successful build result and zero reported build/shader errors: Unity
+reported Succeeded with 12 shader errors in build-d. Reject that artifact and use corrected build-e,
+0 errors / 30 warnings. Keep the preview in Builds/WorldMapArtHunting, preserve the previous build,
+and retain WM15 IN_PROGRESS. Compilation does not establish gameplay, visual or performance acceptance.
+See docs/world_map/WM15_PREVIEW_BUILD.md for exact commands and validation boundaries.

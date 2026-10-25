@@ -1,5 +1,14 @@
 # PROJECT_STATE.md
 
+## WM15 preview Player built (2026-10-25)
+
+User authorized compilation/rebuild; prior execution prohibitions below are historical. Fixed three C#
+compile errors and the HLSL reserved `point` parameter. Build-e: Unity 6000.6.4f1 Windows x64 Development,
+exit 0, Succeeded, 0 errors / 30 warnings. New executable: Builds/WorldMapArtHunting/Serenity.exe.
+See docs/world_map/WM15_PREVIEW_BUILD.md for exact commands, failed attempts and provenance.
+No test suites or Player gameplay validation; full 100/300/500 performance gates remain deferred.
+WM15 remains IN_PROGRESS pending visual/gameplay acceptance and outstanding content. Inherited imports retained.
+
 ## WM15 art direction and hunting — IN_PROGRESS, UNVERIFIED (2026-10-25)
 
 The user answered all 13 art questions; the earlier analysis-only restriction is superseded. Implemented source
