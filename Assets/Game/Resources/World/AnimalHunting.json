@@ -1,0 +1,20 @@
+{
+  "arrowDamage": 30,
+  "drawGameSeconds": 60,
+  "flightGameSeconds": 24,
+  "rangeMeters": 18,
+  "accuracyPermille": 850,
+  "pastureCapacity": 4,
+  "livestockMaturityDays": 3,
+  "livestockBirthDays": 5,
+  "species": [
+    { "id": "deer", "health": 120 },
+    { "id": "boar", "health": 150 },
+    { "id": "bear", "health": 300 },
+    { "id": "hare", "health": 30 },
+    { "id": "waterfowl", "health": 30 },
+    { "id": "sheep", "health": 90 },
+    { "id": "cow", "health": 180 },
+    { "id": "pig", "health": 120 }
+  ]
+}

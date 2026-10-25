@@ -61,3 +61,13 @@ MonoBehaviour:
   WaterRipples: {fileID: 2800000, guid: a4b970a3609f4f94ea150a6f10e8e540, type: 3}
   MinimumTreeHeight: 9
   MaximumTreeHeight: 13
+  WorldMapConifers:
+  - {fileID: 1182756067964316, guid: fd132a454b0a5d0da7567ced569ada76, type: 3}
+  - {fileID: 1247767785291130, guid: d8dbd1ac057353dd89b429d65f166d5d, type: 3}
+  WorldMapWetlandTrees:
+  - {fileID: 1041271695553482, guid: e4a8b1b99bfe521fb4e230e63f08ebf0, type: 3}
+  - {fileID: 1644641572348816, guid: dc2ab25db6ed5333901d72d2a0b5761b, type: 3}
+  WorldMapFlowers:
+  - {fileID: 8430139830498947291, guid: 41db7f3d229920b4c8bfca0cefbd6bad, type: 3}
+  - {fileID: 7549560119917370044, guid: 9d046103ca4c9b846a6b0017630ca7da, type: 3}
+  - {fileID: 7308756808918190896, guid: b79cbc8e3d7fb5b4d9ee4f9988f6ef45, type: 3}

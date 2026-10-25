@@ -181,6 +181,19 @@ namespace Game.Domain.World
                 if (Has(value, "sand"))
                     weights[(int)WorldMapTerrainPaintLayer.Shore] += 1f;
             }
+            // Regional soils retain their existing smooth spatial membership, but grass must dominate
+            // meadows: the former loam rule made every open area look like the same bare dirt field.
+            if (region.Id == "region_a_start_valley" || region.Id == "region_e_south_meadows")
+            {
+                weights[(int)WorldMapTerrainPaintLayer.Grass] *= 3.3f;
+                weights[(int)WorldMapTerrainPaintLayer.Soil] *= .35f;
+                weights[(int)WorldMapTerrainPaintLayer.Wetland] *= .25f;
+            }
+            if (region.Id == "region_d_west_grove")
+            {
+                weights[(int)WorldMapTerrainPaintLayer.Grass] *= 2.2f;
+                weights[(int)WorldMapTerrainPaintLayer.ForestMoss] *= .65f;
+            }
             Normalize(weights);
             return weights;
         }

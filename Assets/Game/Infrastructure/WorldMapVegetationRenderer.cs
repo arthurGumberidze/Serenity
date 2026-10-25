@@ -24,7 +24,7 @@ namespace Game.Infrastructure
             public StableEntityId[] Ids;
         }
         private readonly List<Batch> batches = new List<Batch>();
-        private readonly Dictionary<Material, Material> materials = new Dictionary<Material, Material>();
+        private readonly Dictionary<(Material, bool, bool), Material> materials = new();
         private readonly Plane[] planes = new Plane[6];
         public int InstanceCount { get; private set; }
         public int LastDrawnInstances { get; private set; }
@@ -48,7 +48,8 @@ namespace Game.Infrastructure
             // Small spatial cells give the renderer useful culling bounds without rebuilding matrices.
             foreach (var group in plan.Instances.GroupBy(v => new
                      { X = Mathf.FloorToInt(v.Position.X / 64f), Z = Mathf.FloorToInt(v.Position.Z / 64f),
-                       Prefab = Prefab(v, catalog), Ground = v.Kind == WorldMapVegetationKind.GroundCover }))
+                       Prefab = Prefab(v, catalog), Ground = v.Kind == WorldMapVegetationKind.GroundCover,
+                       Flowering = IsTree(v) && v.ClassId != "dense_conifer" && v.ClassId != "marsh_vegetation" }))
             {
                 var prefab = group.Key.Prefab;
                 var instances = group.ToArray();
@@ -71,12 +72,25 @@ namespace Game.Infrastructure
                     {
                         var source = renderer.sharedMaterials[sub];
                         if (source == null) continue;
-                        if (!materials.TryGetValue(source, out var material))
+                        var key = (source, group.Key.Flowering, group.Key.Ground);
+                        if (!materials.TryGetValue(key, out var material))
                         {
                             material = new Material(source) { enableInstancing = true };
-                            if (source.shader.name == "SyntyStudios/VegitationShader")
-                                material.shader = worldShader;
-                            materials.Add(source, material);
+                            var foliage = source.HasProperty("_LeafTex");
+                            var atlas = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : source.mainTexture;
+                            material.shader = worldShader;
+                            if (!foliage)
+                            {
+                                material.SetTexture("_LeafTex", atlas); material.SetTexture("_TunkTex", atlas);
+                                material.SetColor("_LeafBaseColour", Color.black);
+                                material.SetColor("_LeafNoiseColour", Color.black);
+                                material.SetColor("_TrunkBaseColour", Color.black);
+                                material.SetColor("_TrunkNoiseColour", Color.black);
+                                material.SetFloat("_AtlasMode", 1f);
+                            }
+                            material.SetFloat("_Flowering", group.Key.Flowering ? 1f : 0f);
+                            material.SetFloat("_BiomeStrength", group.Key.Ground ? .38f : .72f);
+                            materials.Add(key, material);
                         }
                         for (var offset = 0; offset < matrices.Length; offset += 1023)
                             batches.Add(new Batch { Mesh = mesh, Material = material, Submesh = sub,
@@ -122,6 +136,21 @@ namespace Game.Infrastructure
 
         public static GameObject Prefab(WorldMapVegetationInstance value, StarterNatureCatalog catalog)
         {
+            if (IsTree(value))
+            {
+                var regional = value.ClassId == "dense_conifer" ? catalog.WorldMapConifers :
+                    value.ClassId == "marsh_vegetation" ? catalog.WorldMapWetlandTrees : null;
+                // A small admixture of broadleaf trees keeps the forest edge from being a hard species line.
+                if (regional != null && regional.Length > 0 && Index(value.StableId, 100) < 85)
+                    return regional[Index(value.StableId, regional.Length)];
+            }
+            if (value.Kind == WorldMapVegetationKind.GroundCover && catalog.WorldMapFlowers?.Length > 0 &&
+                (value.ClassId == "meadow" || value.ClassId == "open_woodland" || value.ClassId == "deciduous_grove"))
+            {
+                var patch = Mathf.PerlinNoise(value.Position.X * .035f, value.Position.Z * .035f);
+                if (patch > .49f && Index(value.StableId, 100) < 65)
+                    return catalog.WorldMapFlowers[Index(value.StableId, catalog.WorldMapFlowers.Length)];
+            }
             var prefabs = value.Kind == WorldMapVegetationKind.GroundCover ? catalog.WorldMapGroundCover :
                 IsTree(value)
                     ? catalog.WorldMapTrees : catalog.WorldMapShrubs;

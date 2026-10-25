@@ -9,6 +9,7 @@ namespace Game.Presentation.Production
         public GameObject Fiber;
         public GameObject Fence;
         public GameObject Berries;
+        public GameObject Sheep;
 
         public GameObject For(string recipe) => recipe switch
         {

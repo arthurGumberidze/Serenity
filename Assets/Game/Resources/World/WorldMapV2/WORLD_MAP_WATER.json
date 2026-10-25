@@ -3,7 +3,7 @@
   "mapVersion": "serenity-world-map-v1",
   "implementationGenerationId": "p109-world-map-v2-proposed",
   "status": "active_runtime",
-  "date": "2026-10-23",
+  "date": "2026-10-25",
   "layer": "water",
   "units": "meters",
   "north": "+Z",
@@ -78,8 +78,8 @@
       3.2
     ],
     "bankBlendMeters": [
-      14,
-      28
+      3,
+      42
     ],
     "navigability": "not_boat_authorized_in_stone_age_design"
   },

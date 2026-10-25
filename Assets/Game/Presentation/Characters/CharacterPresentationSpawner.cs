@@ -73,7 +73,7 @@ namespace Game.Presentation.Characters
                 }
                 presenter.Bind(character, registry, requested);
                 if (resident != null) presenter.PreserveAuthoredVisualAtDistance();
-                presenter.ConfigureWorkTools(catalog.WorkAxe, catalog.WorkPickaxe, catalog.WorkHammer);
+                presenter.ConfigureWorkTools(catalog.WorkAxe, catalog.WorkPickaxe, catalog.WorkHammer, catalog.HuntingBow);
                 return presenter;
             }
             catch

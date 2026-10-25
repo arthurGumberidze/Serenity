@@ -2254,6 +2254,14 @@ namespace Game.Presentation.UI
                 AddSection(inspector, wildlife.DisplayName);
                 AddLine(inspector, "Дикое животное");
                 AddMuted(inspector, "Обитает в окрестностях. Не принадлежит поселению.");
+                if (context.Production.Animals.TryGet(wildlife.StableId, out var animal) &&
+                    context.Production.TryGetSite(wildlife.StableId, out var animalSite))
+                {
+                    AddLine(inspector, $"Здоровье: {animal.Health}/{animal.Maximum}");
+                    inspector.Add(ActionButton(animal.Alive ? "Охотиться с луком" : "Освежевать", () => TryCommand(() =>
+                        IssueDirect(WorkJobType.Gather, WorkTarget.ForEntity(WorkTargetKind.ProductionSite,
+                            wildlife.StableId, animalSite.Position)))));
+                }
                 return;
             }
             if (context.Selection.SelectedCharacterIds.Count > 1)
@@ -2295,6 +2303,17 @@ namespace Game.Presentation.UI
                 var recipe = context.Production.Recipes.Get(source.Site.RecipeId);
                 AddLine(inspector, T("ui.selection.natural_source"));
                 AddLine(inspector, Content("recipe", recipe.Id.ToString()));
+                if (context.Production.Animals.TryGet(source.Site.Id, out var prey))
+                {
+                    AddLine(inspector, $"Здоровье: {prey.Health}/{prey.Maximum} · " +
+                        (prey.Alive ? "Охота с луком" : "Туша готова к разделке"));
+                    if (prey.Domestic)
+                    {
+                        AddLine(inspector, "Домашняя овца · " + (prey.Male ? "самец" : "самка"));
+                        if (!context.Buildings.TryGet(prey.Home, out var home) || home.OwnerSideId.Value != "player")
+                        { AddMuted(inspector, "Животное принадлежит другому поместью."); return; }
+                    }
+                }
                 AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
                 AddLine(inspector, string.Join(" + ", recipe.OutputsFor(source.Site).Select(x =>
                     Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
@@ -2305,7 +2324,8 @@ namespace Game.Presentation.UI
                 if (recipe.HarvestEntireSource)
                     AddMuted(inspector, "Один приказ — весь источник. Добытое попадает в инвентарь работника или свободный склад.");
                 DrawDirectPriority();
-                inspector.Add(ActionButton(source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
+                inspector.Add(ActionButton(prey != null ? (prey.Alive ? "Охотиться с луком" : "Освежевать") :
+                    source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
                     () => TryCommand(() => IssueDirect(source.Site.Kind == ProductionSiteKind.NaturalSource
                         ? WorkJobType.Gather : WorkJobType.Farm,
                         WorkTarget.ForEntity(WorkTargetKind.ProductionSite, source.Site.Id, source.Site.Position)))));
@@ -2389,7 +2409,8 @@ namespace Game.Presentation.UI
             var body = character.Health;
             var hitPoints = new[] { body.Head.Value, body.Torso.Value, body.LeftArm.Value, body.RightArm.Value,
                 body.LeftLeg.Value, body.RightLeg.Value };
-            AddLine(inspector, $"Жизнь: {hitPoints.Sum() / hitPoints.Length}/100 · минимум части тела {hitPoints.Min()}/100");
+            var healthPoints = character.LifeState == CharacterLifeState.Dead ? 0 : hitPoints.Sum() / hitPoints.Length;
+            AddLine(inspector, $"Жизнь: {healthPoints}/100 · минимум части тела {hitPoints.Min()}/100");
             AddLine(inspector, $"Любимое занятие: {CharacterSkillRules.Favorite(character)}");
             AddMuted(inspector, "Навыки: " + string.Join(", ", character.CaptureState().Skills
                 .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
@@ -2506,8 +2527,27 @@ namespace Game.Presentation.UI
             if (context.Production.Sites.FirstOrDefault(x => x.Id == building.Id) is ProductionSite site)
             {
                 AddLine(inspector, F("ui.building.production", building.IsOperational ? T("ui.building.operational") : T("common.unavailable")));
-                if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
+                if (context.Production.Animals.IsPasture(site.Id))
                 {
+                    var herd = context.Production.Animals.AtHome(site.Id);
+                    var policy = context.Production.Animals.Policy;
+                    AddLine(inspector, $"Овечий загон · живых животных: {herd.Count(x => x.Alive)}/{policy.PastureCapacity}");
+                    AddMuted(inspector, $"Для приплода нужны взрослые самец и самка. Взросление — {policy.LivestockMaturityDays} дн., приплод — раз в {policy.LivestockBirthDays} дн. при свободном месте.");
+                    foreach (var sheep in herd.Where(x => !x.Harvested))
+                        AddLine(inspector, $"{(sheep.Male ? "Самец" : "Самка")}: {sheep.Health}/{sheep.Maximum} HP");
+                }
+                else if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
+                {
+                    if (building.OwnerSideId.Value == "player" && building.IsOperational &&
+                        site.CropPhase == CropPlotPhase.Unplanted && !context.Production.Animals.States.Any(x => x.Domestic))
+                    {
+                        AddMuted(inspector, "Первое пустое поле можно отдать стартовой паре овец. Пара доступна один раз; дальше стадо размножается.");
+                        inspector.Add(ActionButton("Сделать овечий загон", () => TryCommand(() =>
+                        {
+                            var changed = context.Production.EstablishSheepPasture(site.Id, new CombatSideId("player"));
+                            SetStatus(changed ? "В загон заселены самец и самка." : "Нужно свободное поле без выполняемых работ.");
+                        })));
+                    }
                     AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
                         site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
                     AddLine(inspector, "Культура: " + Content("recipe", site.RecipeId.ToString()));

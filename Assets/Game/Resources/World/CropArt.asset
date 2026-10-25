@@ -17,3 +17,4 @@ MonoBehaviour:
   Fiber: {fileID: 2872438262598781205, guid: 01910a8bf5475cd7b7f7c363b6959092, type: 3}
   Fence: {fileID: 5811258600280286245, guid: 8f45e37f062f53a5b0dcd385109f35b1, type: 3}
   Berries: {fileID: 8807064048693953627, guid: c06ecca5c3d565e42808724839b39b6f, type: 3}
+  Sheep: {fileID: 3255867418874246156, guid: b3a8a85f683a528785af26487380e76c, type: 3}

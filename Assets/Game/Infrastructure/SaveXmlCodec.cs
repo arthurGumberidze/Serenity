@@ -245,7 +245,14 @@ namespace Game.Infrastructure
                     new XElement("kind", (int)task.Kind), new XElement("work", task.AccumulatedWorkTicks),
                     new XElement("required", task.RequiredWorkTicks), new XElement("status", (int)task.Status)))),
                 new XElement("producedTotals", state.ProducedTotals.Select(SerializeAmount)),
-                new XElement("inventories", state.Inventories.Select(SerializeInventory)));
+                new XElement("inventories", state.Inventories.Select(SerializeInventory)),
+                new XElement("animals", state.Animals.Select(animal => new XElement("animal",
+                    new XElement("id", animal.Id.ToString()), new XElement("species", animal.Species),
+                    new XElement("maximum", animal.Maximum), new XElement("health", animal.Health),
+                    new XElement("domestic", animal.Domestic), new XElement("shotTicks", animal.ShotTicks),
+                    new XElement("shotSequence", animal.ShotSequence), new XElement("harvested", animal.Harvested),
+                    new XElement("home", animal.Home.IsValid ? animal.Home.ToString() : string.Empty),
+                    new XElement("male", animal.Male), new XElement("bornTick", animal.BornTick)))));
             if (includeNaturalResources)
             {
                 element.Add(new XElement("naturalLifecycles", state.NaturalLifecycles.Select(item =>
@@ -290,6 +297,7 @@ namespace Game.Infrastructure
             var fields = new List<string> { "lastCalendarTick", "foodRemainderTicks", "foodConsumed", "foodShortage",
                 "targets", "sites", "tasks", "producedTotals", "inventories" };
             if (includeNaturalResources) fields.AddRange(new[] { "naturalLifecycles", "industry" });
+            if (element.Element("animals") != null) fields.Add("animals");
             RequireFields(element, fields.ToArray());
             var targets = Items(element.Element("targets"), "target", item =>
             {
@@ -360,7 +368,21 @@ namespace Game.Infrastructure
                 : null;
             return new ProductionSaveState(Long(element, "lastCalendarTick"), Long(element, "foodRemainderTicks"),
                 Long(element, "foodConsumed"), Long(element, "foodShortage"), targets, sites, tasks, produced,
-                inventories, natural, industry);
+                inventories, natural, industry, element.Element("animals") == null ? null :
+                Items(element.Element("animals"), "animal", item =>
+                {
+                    var animalFields = new List<string> { "id", "species", "maximum", "health", "domestic",
+                        "shotTicks", "shotSequence", "harvested" };
+                    if (item.Element("home") != null) animalFields.AddRange(new[] { "home", "male", "bornTick" });
+                    RequireFields(item, animalFields.ToArray());
+                    return new AnimalVitalState(StableEntityId.Parse(Value(item, "id")), Value(item, "species"),
+                        Int(item, "maximum"), Int(item, "health"), XmlConvert.ToBoolean(Value(item, "domestic")),
+                        Long(item, "shotTicks"), Int(item, "shotSequence"), XmlConvert.ToBoolean(Value(item, "harvested")),
+                        item.Element("home") == null || string.IsNullOrEmpty(Value(item, "home")) ? default :
+                            StableEntityId.Parse(Value(item, "home")),
+                        item.Element("male") != null && XmlConvert.ToBoolean(Value(item, "male")),
+                        item.Element("bornTick") == null ? 0 : Long(item, "bornTick"));
+                }));
         }
 
         private static ResourceAmount DeserializeAmount(XElement item)

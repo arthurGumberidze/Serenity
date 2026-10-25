@@ -458,6 +458,7 @@ namespace Game.Domain.World
         }
 
         public WildlifePopulationPlan Plan => plan;
+        public Func<StableEntityId, bool> IsAlive { get; set; } = _ => true;
         public long LastDay { get; private set; }
         public IReadOnlyList<WildlifeIndividualState> Animals => animals.Values.OrderBy(value => value.Id).ToArray();
         public int Count => animals.Count;
@@ -493,6 +494,7 @@ namespace Game.Domain.World
         public bool TryMove(StableEntityId id, WorldPosition destination, float minimumSeparation = 3f)
         {
             var animal = Get(id);
+            if (!IsAlive(id)) return false;
             if (minimumSeparation <= 0f) throw new ArgumentOutOfRangeException(nameof(minimumSeparation));
             foreach (var other in animals.Values)
             {
@@ -567,10 +569,12 @@ namespace Game.Domain.World
             {
                 var local = Local(capacity.SpeciesId, capacity.RegionId);
                 pressure.TryGetValue(capacity.SpeciesId + ":" + capacity.RegionId, out var localPressure);
+                if (local.Count == 0) continue;
                 if (local.Count <= capacity.CarryingCapacity && localPressure < 250) continue;
                 var destination = plan.HabitatGraph.RegionNeighbors(capacity.RegionId)
                     .Select(region => Capacity(capacity.SpeciesId, region))
-                    .Where(value => value != null && Local(value.SpeciesId, value.RegionId).Count < value.CarryingCapacity)
+                    .Where(value => value != null && animals.Values.Count(animal => animal.SpeciesId == value.SpeciesId &&
+                        plan.HabitatGraph.Node(animal.HabitatNodeId).RegionId == value.RegionId) < value.CarryingCapacity)
                     .OrderBy(value => Local(value.SpeciesId, value.RegionId).Count / (double)value.CarryingCapacity)
                     .ThenBy(value => value.RegionId, StringComparer.Ordinal).FirstOrDefault();
                 if (destination == null) continue;
@@ -585,7 +589,8 @@ namespace Game.Domain.World
             foreach (var capacity in plan.Capacities)
             {
                 var local = Local(capacity.SpeciesId, capacity.RegionId);
-                if (local.Count >= capacity.CarryingCapacity ||
+                if (animals.Values.Count(value => value.SpeciesId == capacity.SpeciesId &&
+                    plan.HabitatGraph.Node(value.HabitatNodeId).RegionId == capacity.RegionId) >= capacity.CarryingCapacity ||
                     !local.Any(value => value.Sex == WildlifeSex.Female) ||
                     !local.Any(value => value.Sex == WildlifeSex.Male)) continue;
                 var interval = 3 + Math.Abs(StableHash(capacity.SpeciesId)) % 4;
@@ -600,7 +605,7 @@ namespace Game.Domain.World
         }
 
         private List<WildlifeIndividualState> Local(string speciesId, string regionId) => animals.Values
-            .Where(value => value.SpeciesId == speciesId &&
+            .Where(value => IsAlive(value.Id) && value.SpeciesId == speciesId &&
                             plan.HabitatGraph.Node(value.HabitatNodeId).RegionId == regionId).ToList();
 
         private WildlifeHabitatCapacity Capacity(string speciesId, string regionId) => plan.Capacities

@@ -54,6 +54,9 @@ namespace Game.Simulation.Production
             {
                 var registration = registrations[id];
                 var state = states[id];
+                // Animals are individuals with persistent HP. Wildlife births create new identities;
+                // resource regeneration must never resurrect an already butchered individual.
+                if (registration.Site.RecipeId.ToString() == "hunt_animal") continue;
                 if (registration.RecoveryPolicy.IsEnabled)
                 {
                     if (registration.Site.IsDepleted && state.DepletedAtTick < 0)

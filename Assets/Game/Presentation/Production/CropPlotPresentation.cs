@@ -18,10 +18,15 @@ namespace Game.Presentation.Production
         private float width, depth;
         private string displayedRecipe;
         private static Material soil;
+        private Game.Domain.World.AnimalHealthRegistry animals;
+        public Vector3 GrazingPosition(int slot) => transform.TransformPoint(new Vector3(
+            (slot % 2 == 0 ? -.25f : .25f) * width, 0f, (slot / 2 == 0 ? -.25f : .25f) * depth));
 
-        public void Configure(ProductionSite source, float widthMeters, float depthMeters)
+        public void Configure(ProductionSite source, float widthMeters, float depthMeters,
+            Game.Domain.World.AnimalHealthRegistry animalRegistry = null)
         {
             site = source;
+            animals = animalRegistry;
             building = GetComponent<BuildingPresenter>();
             art = Resources.Load<CropArtCatalog>("World/CropArt");
             width = Mathf.Max(1f, widthMeters - 0.25f);
@@ -62,6 +67,10 @@ namespace Game.Presentation.Production
             plot.gameObject.SetActive(active);
             if (!active) return;
             foreach (var renderer in legacy) if (renderer != null) renderer.enabled = false;
+            var pasture = animals?.IsPasture(site.Id) == true;
+            foreach (Transform child in plot)
+                if (child.name == "Soil row") child.gameObject.SetActive(!pasture);
+            if (pasture) { if (planting != null) planting.gameObject.SetActive(false); return; }
             if (displayedRecipe != site.RecipeId.ToString()) Replant();
             if (planting == null) return;
             planting.gameObject.SetActive(site.CropPhase != CropPlotPhase.Unplanted);

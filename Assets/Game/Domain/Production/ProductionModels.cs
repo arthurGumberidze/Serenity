@@ -209,14 +209,14 @@ namespace Game.Domain.Production
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_gold"), "Gather Gold Ore", null,
                     new[] { new ResourceAmount(gold, new ResourceQuantity(2)) }, TimeSpan.FromHours(16), ProductionSiteKind.NaturalSource,
                     weatherExposure: ProductionWeatherExposure.Outdoor));
-            if (resources.Contains(carcass))
+            if (resources.Contains(hide) && resources.Contains(meat))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt and Skin Animal", null,
+                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
+                        new ResourceAmount(meat, new ResourceQuantity(4)) }, TimeSpan.FromMinutes(20),
+                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
+            else if (resources.Contains(carcass))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
                     new[] { new ResourceAmount(carcass, new ResourceQuantity(1)) }, TimeSpan.FromHours(12),
-                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
-            else if (resources.Contains(hide) && resources.Contains(meat))
-                recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
-                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
-                        new ResourceAmount(meat, new ResourceQuantity(4)) }, TimeSpan.FromHours(12),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
             if (resources.Contains(carcass) && resources.Contains(hide) && resources.Contains(meat) && resources.Contains(bone))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("butcher_carcass"), "Butcher Carcass",
@@ -378,6 +378,12 @@ namespace Game.Domain.Production
         }
 
         public static ProductionSite Restore(ProductionSiteState state) => new ProductionSite(state);
+
+        public void MoveAnimal(WorldPosition position)
+        {
+            if (RecipeId.ToString() != "hunt_animal") throw new InvalidOperationException("Only animal sources move.");
+            Position = position;
+        }
 
         public void SelectCrop(ProductionRecipe recipe)
         {
@@ -574,7 +580,7 @@ namespace Game.Domain.Production
             IEnumerable<ProductionTaskState> tasks, IEnumerable<ResourceAmount> producedTotals,
             IEnumerable<ResourceInventoryState> inventories,
             IEnumerable<NaturalNodeLifecycleState> naturalLifecycles = null,
-            IndustrialSaveState industry = null)
+            IndustrialSaveState industry = null, IEnumerable<Game.Domain.World.AnimalVitalState> animals = null)
         {
             if (lastCalendarTick < 0 || foodRemainderTicks < 0 || foodConsumed < 0 || foodShortage < 0)
                 throw new ArgumentOutOfRangeException(nameof(lastCalendarTick));
@@ -591,6 +597,7 @@ namespace Game.Domain.Production
             NaturalLifecycles = Array.AsReadOnly((naturalLifecycles ?? Array.Empty<NaturalNodeLifecycleState>())
                 .OrderBy(x => x.SiteId).ToArray());
             Industry = industry;
+            Animals = Array.AsReadOnly((animals ?? Array.Empty<Game.Domain.World.AnimalVitalState>()).OrderBy(x => x.Id).ToArray());
         }
 
         public long LastCalendarTick { get; }
@@ -604,5 +611,6 @@ namespace Game.Domain.Production
         public IReadOnlyList<ResourceInventoryState> Inventories { get; }
         public IReadOnlyList<NaturalNodeLifecycleState> NaturalLifecycles { get; }
         public IndustrialSaveState Industry { get; }
+        public IReadOnlyList<Game.Domain.World.AnimalVitalState> Animals { get; }
     }
 }

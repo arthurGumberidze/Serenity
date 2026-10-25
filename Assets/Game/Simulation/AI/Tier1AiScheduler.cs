@@ -85,7 +85,8 @@ namespace Game.Simulation.AI
         public bool IsFishing(StableEntityId characterId) => world.Production != null &&
             world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "fish_water");
         public bool IsHunting(StableEntityId characterId) => world.Production != null &&
-            world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "hunt_animal");
+            world.Production.ActiveTasks.Any(x => x.WorkerId == characterId && x.RecipeId.ToString() == "hunt_animal" &&
+                world.Production.Animals.IsAlive(x.SiteId));
 
         public bool TryGetHuntingTarget(StableEntityId characterId, out WorldPosition position)
         {

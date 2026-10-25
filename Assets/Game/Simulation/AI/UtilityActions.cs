@@ -346,6 +346,11 @@ namespace Game.Simulation.AI
         private InventoryOwner destination;
         private readonly int workRatePerThousand;
         private readonly Action onWorkExperience;
+        private WorldPosition lastSourceTarget;
+        private bool approachingCorpse;
+        private WorldPosition lastMovementPosition;
+        private bool Hunting => job.Task.RecipeId.ToString() == "hunt_animal";
+        private float StopDistance => Hunting && production.Animals.IsAlive(job.Task.SiteId) ? 8f : .9f;
 
         public ProductionActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             ProductionService production, Tier1AiSettings settings, ProductionJob job,
@@ -360,7 +365,9 @@ namespace Game.Simulation.AI
             this.workRatePerThousand = workRatePerThousand;
             this.onWorkExperience = onWorkExperience;
             SetPhase(AiActionPhase.MoveToSource);
-            movement.MoveTo(job.SourcePosition, 0.9f);
+            lastSourceTarget = job.SourcePosition;
+            lastMovementPosition = movement.CurrentPosition;
+            movement.MoveTo(lastSourceTarget, StopDistance);
         }
 
         public UtilityActionKind Kind => UtilityActionKind.Produce;
@@ -375,6 +382,24 @@ namespace Game.Simulation.AI
             if (IsFinished) return;
             agent.UpdatePosition(movement.CurrentPosition);
             phaseElapsed += simulationDelta;
+            if (Hunting && !completion.Completed && production.TryGetSite(job.Task.SiteId, out var prey))
+            {
+                var alive = production.Animals.IsAlive(prey.Id);
+                var distance = movement.CurrentPosition.DistanceSquared(prey.Position);
+                if ((!alive && !approachingCorpse) ||
+                    (alive && Phase == AiActionPhase.Working &&
+                     distance > production.Animals.Policy.Range * production.Animals.Policy.Range * .8f) ||
+                    (Phase == AiActionPhase.MoveToSource && prey.Position.DistanceSquared(lastSourceTarget) > 4f))
+                {
+                    approachingCorpse = !alive;
+                    lastSourceTarget = prey.Position;
+                    SetPhase(AiActionPhase.MoveToSource);
+                    movement.MoveTo(lastSourceTarget, StopDistance);
+                }
+            }
+            if ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
+                movement.CurrentPosition.DistanceSquared(lastMovementPosition) > .04f)
+            { phaseElapsed = TimeSpan.Zero; lastMovementPosition = movement.CurrentPosition; }
             if (movement.State == MovementState.Failed ||
                 ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
                  phaseElapsed >= settings.MovementTimeout))
@@ -395,6 +420,7 @@ namespace Game.Simulation.AI
                     break;
                 case AiActionPhase.Working:
                     completion = production.AdvanceTask(job.Task.Id, TimeSpan.FromTicks(checked(
+                        Hunting && production.Animals.IsAlive(job.Task.SiteId) ? simulationDelta.Ticks :
                         simulationDelta.Ticks * workRatePerThousand / 1000L)));
                     if (!completion.Completed) break;
                     if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage ||

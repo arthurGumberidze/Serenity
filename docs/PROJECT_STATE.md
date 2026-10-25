@@ -1,5 +1,17 @@
 # PROJECT_STATE.md
 
+## WM15 art direction and hunting — IN_PROGRESS, UNVERIFIED (2026-10-25)
+
+The user answered all 13 art questions; the earlier analysis-only restriction is superseded. Implemented source
+for eight regional palettes, differentiated vegetation/flower clusters, permanent/seasonal flowering groves,
+clear versus marsh water, broader shoreline blends, local haze and distant land/sea. Canonical animal HP and
+bow-hit/kill/approach/skinning now replace the work-timer hunting illusion. People retain BodyHealth. A first
+saved sheep pasture uses admitted Toon Farm animals, male/female breeding and HP; full husbandry remains open.
+See `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md` and `WM15_ART_HUNT_ASSETS.json` for exact scope,
+accepted answers, source-only commands and limitations. White Rabbit admission is still outstanding.
+No Unity/Player invocation, compilation, tests or rebuild. Existing EXE and previous validation are unchanged.
+WM15 is not DONE. Preserve the inherited user imports/material edits outside this checkpoint.
+
 ## WM15 content source checkpoint — IN_PROGRESS, UNVERIFIED (2026-10-24)
 
 User-selected imported Polytope residents are connected while monarchs/editor retain UMA. Work tools now

@@ -447,6 +447,7 @@ namespace Game.Infrastructure
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
+            Production.Animals.Configure(AnimalHuntingConfig.Load());
             Production.UseGroundOutputs(WorldPiles, position => new GridCoordinate(
                 Mathf.RoundToInt((position.X - buildingGridOrigin.x) / buildingGridSize),
                 Mathf.RoundToInt((position.Z - buildingGridOrigin.z) / buildingGridSize)));
@@ -515,6 +516,7 @@ namespace Game.Infrastructure
             WeatherPresentation = gameObject.AddComponent<WeatherPresentationController>();
             WeatherPresentation.Initialize(Weather, ReferenceCamp != null ? ReferenceCamp.RainParticleMaterial : null,
                 InhabitableRegion, naturalAtmosphereProfile);
+            WeatherPresentation.ConfigureMapArt(TiledWorld.ArtDirection, TiledWorld.ArtWorldToDesign);
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             DynastyDebug = gameObject.AddComponent<DynastyDebugOverlay>();
             DynastyDebug.Initialize(Succession, Characters, selectionProbe, Clock, pointerRaycaster);
@@ -679,6 +681,8 @@ namespace Game.Infrastructure
             Combat.BindMovementSuppression(PlayerControl);
             Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
+            gameObject.AddComponent<LivestockPresentation>().Initialize(this);
+            gameObject.AddComponent<HuntingPresentation>().Initialize(this, characterCatalog.HuntingArrow);
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
@@ -1426,7 +1430,7 @@ namespace Game.Infrastructure
                 depth = (building.PlacementCells.Max(cell => cell.Z) - building.PlacementCells.Min(cell => cell.Z) + 1) * buildingGridSize;
                 if (building.Orientation.Degrees() % 180 != 0) (width, depth) = (depth, width);
             }
-            visual.Configure(site, width, depth);
+            visual.Configure(site, width, depth, Production.Animals);
             var presenter = buildingPresenter.GetComponent<ProductionSourcePresenter>() ??
                 buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f), preserveColor: true);

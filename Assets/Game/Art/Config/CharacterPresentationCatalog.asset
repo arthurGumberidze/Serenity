@@ -44,3 +44,5 @@ MonoBehaviour:
   MaleResident: {fileID: 5949706081513176824, guid: a0695744bfff5569a71a061c337331d9, type: 3}
   FemaleResident: {fileID: 2224834628610083241, guid: 8afb0bd9c80b5428afb7f70cb3261eef, type: 3}
   ChildResident: {fileID: 4520716785383396158, guid: b70262cbf47f5b16b4ed46cb3c62ec47, type: 3}
+  HuntingBow: {fileID: 1584863354220464103, guid: 3d51005c83425910afbd0c612665910d, type: 3}
+  HuntingArrow: {fileID: 8984633993355236378, guid: 729f6ef29538594597e074e0cc0ae318, type: 3}

@@ -27,6 +27,9 @@ namespace Game.Infrastructure
             new Dictionary<Game.Domain.StableEntityId, GameObject>();
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
+        private readonly List<TerrainLayer> artLayers = new();
+        public WorldMapArtDirection ArtDirection { get; private set; }
+        public Vector4 ArtWorldToDesign { get; private set; }
         private WorldMapTerrainPaintSampler terrainPaintSampler;
         private WorldMapRoadNetworkPlan roadNetworkPlan;
         private StarterNatureCatalog natureCatalog;
@@ -132,6 +135,22 @@ namespace Game.Infrastructure
                     natureCatalog.WorldMapGroundCover.Any(value => value == null))
                     throw new InvalidOperationException("World Map V2 requires its audited vegetation catalog.");
                 sourceLayers = natureCatalog.WorldMapGroundLayers;
+                ArtDirection = WorldMapArtDirection.Load();
+                var designOrigin = definition.MapData.CoordinateTransform.ToDesign(definition.Origin);
+                var designUnit = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(
+                    definition.Origin.X + 1f, 0f, definition.Origin.Z + 1f));
+                var sx = designUnit.X - designOrigin.X; var sz = designUnit.Z - designOrigin.Z;
+                ArtWorldToDesign = new Vector4(designOrigin.X - definition.Origin.X * sx,
+                    designOrigin.Z - definition.Origin.Z * sz, sx, sz);
+                ArtDirection.ApplyShaderGlobals(ArtWorldToDesign);
+                for (var i = 0; i < sourceLayers.Length; i++)
+                {
+                    var layer = Instantiate(sourceLayers[i]);
+                    layer.name = sourceLayers[i].name + " regional palette";
+                    layer.diffuseRemapMax = Vector4.Scale(layer.diffuseRemapMax, ArtDirection.terrainTints[i]);
+                    artLayers.Add(layer);
+                }
+                sourceLayers = artLayers.ToArray();
                 terrainPaintSampler = new WorldMapTerrainPaintSampler(definition, heightSampler);
                 vegetationPlan = new WorldMapVegetationPlanner(definition, heightSampler,
                     heightSampler.WorldSeed).Create();
@@ -150,6 +169,8 @@ namespace Game.Infrastructure
             if (roadNetworkPlan != null) BuildRoadPresentation();
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
+            if (definition.MapData != null)
+                gameObject.AddComponent<WorldMapHorizon>().Initialize(this, natureCatalog);
         }
 
         public void ConfigureStreaming(Func<WorldPosition> cameraFocus,
@@ -1184,6 +1205,8 @@ namespace Game.Infrastructure
 
         private void OnDestroy()
         {
+            foreach (var layer in artLayers) if (layer != null) Destroy(layer);
+            if (ArtDirection != null) Shader.SetGlobalFloat("_WorldMapArtEnabled", 0);
             foreach (var tile in loaded.Values.ToArray()) DestroyTile(tile);
             loaded.Clear();
             if (overviewGroundMaterial != null) Destroy(overviewGroundMaterial);

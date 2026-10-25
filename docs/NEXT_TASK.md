@@ -1,5 +1,17 @@
 # NEXT_TASK.md
 
+## WM15 approved art direction + animal health — current (2026-10-25)
+
+The user's answers authorize the regional art implementation; the analysis-only restriction in older entries
+below is historical. Current source changes are documented in `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md`.
+Work remains on WM15, IN_PROGRESS. Do not launch tests, Unity, Player, compilation or rebuilding until the user
+revokes the execution prohibition. Do not present source changes as present in the existing executable.
+Continue incoming bugs and source review. White Rabbit package admission is still blocked on obtaining the
+approved local package. Full livestock feeding/trade/production and aggregate hunting are not implemented.
+Once execution is authorized: compile, then targeted hunting/HP/persistence/ownership and start-grove-marsh
+visual/navigation checks before claiming acceptance; the 100/300/500 performance gates remain deferred.
+Preserve inherited imports and materials; no additional asset purchase without separate approval.
+
 ## WM15 content feedback — current, source only (2026-10-24)
 
 Keep the user's prohibition on tests, Unity/Player execution, compilation and rebuilding. WM15 is IN_PROGRESS.

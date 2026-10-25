@@ -5,6 +5,8 @@ using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.World;
+using Game.Domain.Production;
+using Game.Simulation.Production;
 using Game.ECS.Tier2;
 using Game.Presentation.Environment;
 using UnityEngine;
@@ -23,6 +25,13 @@ namespace Game.Infrastructure
         private Transform viewRoot;
         private bool shuttingDown;
         private float movementTime;
+        private ProductionService production;
+
+        public void ConfigureHealth(ProductionService service)
+        {
+            production = service;
+            if (population != null) population.IsAlive = production.Animals.IsAlive;
+        }
         private readonly Collider[] obstacles = new Collider[64];
 
         public WildlifePopulationService Population => population;
@@ -36,6 +45,7 @@ namespace Game.Infrastructure
         {
             if (population != null) throw new InvalidOperationException("Wildlife presenter is already initialized.");
             population = wildlife ?? throw new ArgumentNullException(nameof(wildlife));
+            if (production != null) population.IsAlive = production.Animals.IsAlive;
             tier2 = tier2Runtime ?? throw new ArgumentNullException(nameof(tier2Runtime));
             art = artCatalog ?? throw new ArgumentNullException(nameof(artCatalog));
             foreach (var species in population.Plan.Definition.Species)
@@ -80,6 +90,20 @@ namespace Game.Infrastructure
         {
             RequireInitialized();
             var states = population.Animals.ToDictionary(value => value.Id);
+            foreach (var state in states.Values.ToArray())
+            {
+                if (production == null) continue;
+                if (production.Animals.TryGet(state.Id, out var health) && health.Harvested)
+                { population.Remove(state.Id); states.Remove(state.Id); continue; }
+                if (!production.TryGetSite(state.Id, out var site))
+                {
+                    site = ProductionSite.Restore(new ProductionSiteState(state.Id,
+                        new ProductionRecipeId("hunt_animal"), ProductionSiteKind.NaturalSource,
+                        state.Position, 1, 1, CropPlotPhase.Unplanted, 0, 0));
+                    production.AddSite(site, state.SpeciesId);
+                }
+                site.MoveAnimal(state.Position);
+            }
             foreach (var id in tier1Views.Keys.Where(id => !states.TryGetValue(id, out var state) ||
                          state.Tier != CharacterSimulationTier.Tier1).ToArray())
             {
@@ -105,9 +129,12 @@ namespace Game.Infrastructure
                         view.transform.localScale *= entry.Scale;
                         foreach (var animator in view.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;
                         view.AddComponent<WorldMapWildlifeView>().Bind(state.Id, state.SpeciesId);
+                        if (production != null) view.AddComponent<AnimalHealthPresentation>().Bind(
+                            production.Animals, state.Id, view.transform.GetChild(0));
                         tier1Views.Add(state.Id, view);
                     }
                     view.transform.position = new Vector3(state.Position.X, state.Position.Y, state.Position.Z);
+                    view.GetComponent<AnimalHealthPresentation>()?.Refresh();
                 }
                 else if (state.Tier == CharacterSimulationTier.Tier2)
                 {
@@ -139,6 +166,8 @@ namespace Game.Infrastructure
             foreach (var pair in tier1Views.OrderBy(value => value.Key))
             {
                 var state = population.Get(pair.Key);
+                pair.Value.GetComponent<AnimalHealthPresentation>()?.Refresh();
+                if (!population.IsAlive(state.Id)) continue;
                 var home = population.Plan.HabitatGraph.Node(state.HabitatNodeId).Position;
                 var phase = (pair.Key.ToGuid().ToByteArray()[0] / 255f) * Mathf.PI * 2f;
                 var target = new Vector3(home.X + Mathf.Sin(movementTime * .08f + phase) * 32f, 0f,
@@ -149,13 +178,20 @@ namespace Game.Infrastructure
                 if (!heights.Definition.ContainsClosed(next.x, next.z) || !heights.IsBuildable(next.x, next.z, 34f)) continue;
                 next.y = heights.SampleHeight(next.x, next.z);
                 var count = Physics.OverlapSphereNonAlloc(next + Vector3.up * .7f, .8f, obstacles, ~0,
-                    QueryTriggerInteraction.Ignore);
+                    QueryTriggerInteraction.Collide);
                 var blocked = count == obstacles.Length;
                 for (var i = 0; i < count && !blocked; i++)
-                    blocked = !(obstacles[i] is TerrainCollider) &&
-                        !obstacles[i].transform.IsChildOf(pair.Value.transform);
+                {
+                    var obstacle = obstacles[i];
+                    if (obstacle is TerrainCollider || obstacle.transform.IsChildOf(pair.Value.transform)) continue;
+                    blocked = !obstacle.isTrigger || obstacle.GetComponentInParent<WorldMapWildlifeView>() != null ||
+                        obstacle.GetComponentInParent<Game.Presentation.Production.ProductionSourcePresenter>() != null ||
+                        obstacle.GetComponentInParent<Game.Presentation.Characters.CharacterPresenter>() != null;
+                }
                 if (blocked || !population.TryMove(pair.Key, new WorldPosition(next.x, next.y, next.z))) continue;
                 pair.Value.transform.position = next;
+                if (production != null && production.TryGetSite(pair.Key, out var site))
+                    site.MoveAnimal(new WorldPosition(next.x, next.y, next.z));
                 var direction = next - previous; direction.y = 0f;
                 if (direction.sqrMagnitude > .000001f)
                     pair.Value.transform.rotation = Quaternion.RotateTowards(pair.Value.transform.rotation,

@@ -48,13 +48,8 @@ namespace Game.Infrastructure
             public Transform Transform;
             public Vector3 Origin;
             public float Phase;
-            public TextMesh HealthLabel;
             public Animator Animator;
             public AudioSource Audio;
-            public StableEntityId? AudibleTaskId;
-            public long LastAudibleWorkTicks;
-            public float NextHuntSoundTime;
-            public int DisplayedHealth = -1;
         }
         private readonly List<AnimalView> animals = new List<AnimalView>();
         private LocalSceneCompositionRoot session;
@@ -160,6 +155,7 @@ namespace Game.Infrastructure
             var catalog = Resources.Load<WorldMapWildlifeArtCatalog>("World/WorldMapWildlifeArt");
             if (catalog == null) throw new InvalidOperationException("World Map V2 wildlife art catalog is missing.");
             wildlifePresenter = gameObject.AddComponent<WorldMapWildlifePresenter>();
+            wildlifePresenter.ConfigureHealth(production);
             wildlifePresenter.Initialize(wildlifePopulation, tier2Runtime, catalog, WildlifeFocus());
             wildlifePresenter.AdvanceTo(calendarTicks);
         }
@@ -339,16 +335,7 @@ namespace Game.Infrastructure
 
         private void RegisterAnimalView(GameObject view, ProductionSite site, int stableIndex)
         {
-            var labelObject = new GameObject("Animal HP");
-            labelObject.transform.SetParent(view.transform, false);
-            labelObject.transform.localPosition = Vector3.up * 1.65f;
-            var label = labelObject.AddComponent<TextMesh>();
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.08f;
-            label.fontSize = 32;
-            label.color = new Color(0.95f, 0.22f, 0.16f);
-            label.text = "HP 120/120";
+            view.AddComponent<AnimalHealthPresentation>().Bind(production.Animals, site.Id);
             animals.Add(new AnimalView
             {
                 SiteId = site.Id,
@@ -356,7 +343,7 @@ namespace Game.Infrastructure
                 Origin = view.transform.position,
                 Phase = stableIndex * 0.73f,
                 Animator = view.GetComponentInChildren<Animator>(true),
-                HealthLabel = label,
+
                 Audio = ConfigureHuntingAudio(view)
             });
         }
@@ -392,12 +379,12 @@ namespace Game.Infrastructure
             var now = animalTime;
             var camera = Camera.main;
             RefreshForestAmbience();
-            // Capture the canonical task snapshot once, not once per animal.
-            var activeTasks = production.ActiveTasks;
             for (var index = animals.Count - 1; index >= 0; index--)
             {
                 var animal = animals[index];
                 if (animal.Transform == null) { animals.RemoveAt(index); continue; }
+                animal.Transform.GetComponent<AnimalHealthPresentation>()?.Refresh();
+                if (!production.Animals.IsAlive(animal.SiteId)) continue;
                 var offset = new Vector3(Mathf.Sin(now * 0.32f + animal.Phase), 0f,
                     Mathf.Cos(now * 0.27f + animal.Phase)) * 2.4f;
                 var previous = animal.Transform.position;
@@ -418,45 +405,8 @@ namespace Game.Infrastructure
                     animal.Animator.SetBool("Moving", speed > .03f);
                     animal.Animator.speed = delta <= 0f ? 0f : speed > .03f ? Mathf.Clamp(speed / .85f, .2f, 1.2f) : 1f;
                 }
-                var hp = 120;
-                ProductionTask task = null;
-                for (var taskIndex = 0; taskIndex < activeTasks.Count; taskIndex++)
-                {
-                    var candidate = activeTasks[taskIndex];
-                    if (candidate.SiteId == animal.SiteId && candidate.RecipeId.ToString() == "hunt_animal" &&
-                        (task == null || candidate.AccumulatedWorkTicks > task.AccumulatedWorkTicks))
-                        task = candidate;
-                }
-                if (task != null && task.RequiredWorkTicks > 0)
-                    hp = Mathf.Clamp(Mathf.CeilToInt(120f * (1f -
-                        task.AccumulatedWorkTicks / (float)task.RequiredWorkTicks)), 0, 120);
-                if (task == null)
-                {
-                    animal.AudibleTaskId = null;
-                    animal.LastAudibleWorkTicks = 0;
-                }
-                else if (!animal.AudibleTaskId.HasValue || animal.AudibleTaskId.Value != task.Id)
-                {
-                    animal.AudibleTaskId = task.Id;
-                    animal.LastAudibleWorkTicks = 0;
-                }
-                if (task != null && task.AccumulatedWorkTicks > animal.LastAudibleWorkTicks &&
-                    Time.unscaledTime >= animal.NextHuntSoundTime)
-                {
-                    var clip = animal.LastAudibleWorkTicks == 0 ? art?.HuntingBow : art?.HuntingArrow;
-                    if (clip != null && animal.Audio != null) animal.Audio.PlayOneShot(clip, 0.58f);
-                    animal.LastAudibleWorkTicks = task.AccumulatedWorkTicks;
-                    animal.NextHuntSoundTime = Time.unscaledTime + 1.15f;
-                }
-                if (animal.HealthLabel != null)
-                {
-                    if (animal.DisplayedHealth != hp)
-                    {
-                        animal.HealthLabel.text = $"HP {hp}/120";
-                        animal.DisplayedHealth = hp;
-                    }
-                    if (camera != null) animal.HealthLabel.transform.rotation = camera.transform.rotation;
-                }
+                if (production.TryGetSite(animal.SiteId, out var source))
+                    source.MoveAnimal(new WorldPosition(next.x, next.y, next.z));
             }
         }
 

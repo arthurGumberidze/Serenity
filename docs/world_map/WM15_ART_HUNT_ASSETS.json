@@ -1,0 +1,162 @@
+{
+  "hunting-art": [
+    {
+      "source": "Assets/LowPolyRPGWeapons/Models/Bows/Bow_01.fbx",
+      "destination": "Assets/Game/Art/WM15HuntArt/Bow_01_4767a13b.fbx",
+      "guid": "e72a90b0f2755a4e9349676dbe2033cb"
+    },
+    {
+      "source": "Assets/LowPolyRPGWeapons/Textures/RPG_Weapons_Texture_01.png",
+      "destination": "Assets/Game/Art/WM15HuntArt/RPG_Weapons_Texture_01_1bacb6ba.png",
+      "guid": "ecce00fc176d525d845e850f5af5d8b8"
+    },
+    {
+      "source": "Assets/LowPolyRPGWeapons/Materials/LowPolyRPGWeapons_MAIN.mat",
+      "destination": "Assets/Game/Art/WM15HuntArt/LowPolyRPGWeapons_MAIN_2eaa5270.mat",
+      "guid": "706cbf55900356f4a1f3de79c00ec8bb"
+    },
+    {
+      "source": "Assets/LowPolyRPGWeapons/Prefabs/Bows/Bow_01.prefab",
+      "destination": "Assets/Game/Art/WM15HuntArt/Bow_01_61665750.prefab",
+      "guid": "3d51005c83425910afbd0c612665910d"
+    },
+    {
+      "source": "Assets/RTSToonBuildings/Materials/ToonBuildingsAtlas.png",
+      "destination": "Assets/Game/Art/WM15HuntArt/ToonBuildingsAtlas_830f371e.png",
+      "guid": "1454d39cb03e5d35aceabca6109971a0"
+    },
+    {
+      "source": "Assets/RTSToonBuildings/Materials/M_Building.mat",
+      "destination": "Assets/Game/Art/WM15HuntArt/M_Building_af19245b.mat",
+      "guid": "8bbd061998be54e883e51839d5dd0913"
+    },
+    {
+      "source": "Assets/RTSToonBuildings/Models/Props/P_Arrow.fbx",
+      "destination": "Assets/Game/Art/WM15HuntArt/P_Arrow_cd1b977a.fbx",
+      "guid": "35599268bd2252dc8442cfe511ccedc0"
+    },
+    {
+      "source": "Assets/RTSToonBuildings/Prefabs/Props/Arrow.prefab",
+      "destination": "Assets/Game/Art/WM15HuntArt/Arrow_5e85cabd.prefab",
+      "guid": "729f6ef29538594597e074e0cc0ae318"
+    }
+  ],
+  "livestock-art": [
+    {
+      "source": "Assets/Toon Farm Pack/Textures/TFP_Atlas_1A.psd",
+      "destination": "Assets/Game/Art/WM15Livestock/TFP_Atlas_1A_522fcb2b.psd",
+      "guid": "356cc0d606a85885a541ff4cbce1acbc"
+    },
+    {
+      "source": "Assets/Toon Farm Pack/Models/Materials/TFP_Atlas_1A.mat",
+      "destination": "Assets/Game/Art/WM15Livestock/TFP_Atlas_1A_8947ea2c.mat",
+      "guid": "029816f5977051fa9849fb941e274f0e"
+    },
+    {
+      "source": "Assets/Toon Farm Pack/Models/TFP_Sheep_01.fbx",
+      "destination": "Assets/Game/Art/WM15Livestock/TFP_Sheep_01_f0c9216a.fbx",
+      "guid": "4ed50b10590858c1bb1b1aed8a03e5c5"
+    },
+    {
+      "source": "Assets/Toon Farm Pack/Prefabs/Animals/Sheep/TFP_Sheep_01A.prefab",
+      "destination": "Assets/Game/Art/WM15Livestock/TFP_Sheep_01A_39e6eba5.prefab",
+      "guid": "b3a8a85f683a528785af26487380e76c"
+    }
+  ],
+  "map-art-references": [
+    {
+      "catalogField": "WorldMapConifers",
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Pine_01.prefab",
+      "guid": "fc9f550802bde56499ac8b64cac565f0",
+      "fileID": "1182756067964316"
+    },
+    {
+      "catalogField": "WorldMapConifers",
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Pine_02.prefab",
+      "guid": "0734397d1a4fd924f98424ecb4ca43b9",
+      "fileID": "1247767785291130"
+    },
+    {
+      "catalogField": "WorldMapWetlandTrees",
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Willow_Small_01.prefab",
+      "guid": "4d88971c9d891dc45a8dbd49a3ba6913",
+      "fileID": "1041271695553482"
+    },
+    {
+      "catalogField": "WorldMapWetlandTrees",
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Swamp_01.prefab",
+      "guid": "d6660cac033867643a649f4255fa8e4d",
+      "fileID": "1644641572348816"
+    },
+    {
+      "catalogField": "WorldMapFlowers",
+      "source": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Prefabs/SM_Env_Wildflowers_Patch_01.prefab",
+      "guid": "41db7f3d229920b4c8bfca0cefbd6bad",
+      "fileID": "8430139830498947291"
+    },
+    {
+      "catalogField": "WorldMapFlowers",
+      "source": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Prefabs/SM_Env_Wildflowers_Patch_02.prefab",
+      "guid": "9d046103ca4c9b846a6b0017630ca7da",
+      "fileID": "7549560119917370044"
+    },
+    {
+      "catalogField": "WorldMapFlowers",
+      "source": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Prefabs/SM_Env_Flowers_Flat_03.prefab",
+      "guid": "b79cbc8e3d7fb5b4d9ee4f9988f6ef45",
+      "fileID": "7308756808918190896"
+    }
+  ],
+  "nature-material-repairs": [
+    {
+      "source": "Assets/Synty/PolygonNature/Materials/LODS/Leaves_Pine_LOD_01.mat",
+      "destination": "Assets/Game/Art/WM15Nature/Leaves_Pine_LOD_01.mat",
+      "guid": "0c9d97f10eaa5d0a8c673441544b7922",
+      "atlasGuid": "bc5b6eba09de2524ba62622e5d8e2ec6"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Materials/Alts/PolygonNature_Tree_Trunk_01.mat",
+      "destination": "Assets/Game/Art/WM15Nature/PolygonNature_Tree_Trunk_01.mat",
+      "guid": "66ce07d045065d3498d2b55bd0c0ec44",
+      "atlasGuid": "2edd58f7c433e934db9029c375173b44"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Materials/Leaves/Leaves_Pine_01.mat",
+      "destination": "Assets/Game/Art/WM15Nature/Leaves_Pine_01.mat",
+      "guid": "10083bf829635696a1b55170b29f923f",
+      "atlasGuid": "bc5b6eba09de2524ba62622e5d8e2ec6"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Pine_01.prefab",
+      "destination": "Assets/Game/Art/WM15Nature/SM_Tree_Pine_01.prefab",
+      "guid": "fd132a454b0a5d0da7567ced569ada76"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Pine_02.prefab",
+      "destination": "Assets/Game/Art/WM15Nature/SM_Tree_Pine_02.prefab",
+      "guid": "d8dbd1ac057353dd89b429d65f166d5d"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Materials/LODS/Leaves_Willow_LOD_01.mat",
+      "destination": "Assets/Game/Art/WM15Nature/Leaves_Willow_LOD_01.mat",
+      "guid": "2cb799af8e2e566db485fd021f035240",
+      "atlasGuid": "830fc72bc2c8075489b0a150dbd0ca1c"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Materials/Leaves/Leaves_Willow_01.mat",
+      "destination": "Assets/Game/Art/WM15Nature/Leaves_Willow_01.mat",
+      "guid": "d69b351519f25a078ee2762b8a17a12d",
+      "atlasGuid": "830fc72bc2c8075489b0a150dbd0ca1c"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Willow_Small_01.prefab",
+      "destination": "Assets/Game/Art/WM15Nature/SM_Tree_Willow_Small_01.prefab",
+      "guid": "e4a8b1b99bfe521fb4e230e63f08ebf0"
+    },
+    {
+      "source": "Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Swamp_01.prefab",
+      "destination": "Assets/Game/Art/WM15Nature/SM_Tree_Swamp_01.prefab",
+      "guid": "dc2ab25db6ed5333901d72d2a0b5761b"
+    }
+  ]
+}

@@ -1757,3 +1757,32 @@ Repair lake-outlet continuity and shore mesh clipping in the existing hydrology.
 rock-spire mesh, preserving stable exploration identity. A water asset is optional and does not repair missing
 geometry. The broader map-art request is analysis only: do not implement suggested sakura, palettes or regional
 lighting before the user answers. The prohibition on tests/builds remains; WM15 is not DONE.
+
+## D-198 — Approved regional art and canonical animal health (2026-10-25)
+
+The user's thirteen answers approve strong but smoothly blended regional identities, natural stylization,
+one permanent flowering grove with seasonal smaller pockets, dark realistic wetlands, readable start lighting,
+weather/night, distant ridges plus a sea coast. Implement this within WM15, retaining canonical vegetation IDs,
+resource nodes and gameplay bounds. Reuse admitted local art and runtime material copies; do not alter vendor
+assets. The pink crowns are a stylized existing-mesh treatment, not a newly acquired sakura package. Scenic
+sea/ridges are outside playable land. Geometry/navigation and shader cost require later execution evidence.
+
+Animal HP is persistent domain state, shared by canonical wildlife and legacy hunt sources. A successful timed
+bow flight plus accuracy/range/obstruction checks causes damage; presentation arrows and blood have no damage
+authority. At zero HP, a hunter must approach and skin the corpse before resources are awarded. Do not derive
+HP from a production progress bar, grant outputs from a living animal, resurrect harvested identities through
+resource ecology, or reset HP on visual tier changes. People keep their established BodyHealth injury model.
+Physical hunters use Tier1 presentation for the obstruction adapter; offscreen workers in this local service
+select other tasks. A future aggregate hunting model must explicitly resolve movement/encounters, not bypass
+physical hit checks. Animal save XML is an optional backward-readable extension; older executables need not
+read extended snapshots.
+
+First domestic gameplay uses an empty owned field as a sheep pasture, with one campaign founding pair to avoid
+unlimited free animals through rebuilding. Persist health, home, sex and age; reproduction needs living mature
+male and female animals and free capacity. A shared presenter projects the herd. This is not full husbandry:
+feeding, trade, wool/milk, transfer between pens and other domestic herds remain separate work. Never describe
+imported animal art alone as an implemented economy. White Rabbit remains missing; no purchase was made.
+
+The user's explicit no-tests/no-rebuild instruction still overrides the timing of AGENTS.md validation.
+Record source/diff review only, do not claim visual correctness or performance without execution, and keep
+WM15 IN_PROGRESS. Scope and exact commands are in `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md`.

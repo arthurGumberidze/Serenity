@@ -10,6 +10,9 @@ Shader "Serenity/World Map Vegetation"
         _TrunkNoiseColour("Bark variation", Color) = (0,0,0,0)
         _TotalWindAmount("Wind", Range(0,1)) = 0.2
         _AlphaCutoff("Cutoff", Range(0,1)) = 0.5
+        _AtlasMode("Atlas material", Float) = 0
+        _Flowering("Deciduous seasonal crown", Float) = 1
+        _BiomeStrength("Regional foliage", Range(0,1)) = 0.68
     }
     SubShader
     {
@@ -18,12 +21,13 @@ Shader "Serenity/World Map Vegetation"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "WorldMapBiomePalette.hlsl"
         TEXTURE2D(_LeafTex); SAMPLER(sampler_LeafTex);
         TEXTURE2D(_TunkTex); SAMPLER(sampler_TunkTex);
         CBUFFER_START(UnityPerMaterial)
         float4 _LeafTex_ST, _TunkTex_ST;
         half4 _LeafBaseColour, _TrunkBaseColour, _LeafNoiseColour, _TrunkNoiseColour;
-        float _TotalWindAmount, _AlphaCutoff;
+        float _TotalWindAmount, _AlphaCutoff, _AtlasMode, _Flowering, _BiomeStrength;
         CBUFFER_END
         struct Attributes
         {
@@ -40,6 +44,7 @@ Shader "Serenity/World Map Vegetation"
             float3 world : TEXCOORD1;
             half3 normal : TEXCOORD2;
             half2 leafFog : TEXCOORD3;
+            half4 biome : TEXCOORD4;
             UNITY_VERTEX_INPUT_INSTANCE_ID
             UNITY_VERTEX_OUTPUT_STEREO
         };
@@ -58,18 +63,24 @@ Shader "Serenity/World Map Vegetation"
             output.positionCS = TransformWorldToHClip(world);
             output.uv = input.uv;
             output.leafFog = half2(step(.5h, input.color.b), ComputeFogFactor(output.positionCS.z));
+            output.biome = WorldMapFoliage(world.xz, _Flowering);
             return output;
         }
         half4 Surface(Varyings input)
         {
-            half4 tex = input.leafFog.x > .5h
+            half4 tex = input.leafFog.x > .5h || _AtlasMode > .5
                 ? SAMPLE_TEXTURE2D(_LeafTex, sampler_LeafTex, input.uv * _LeafTex_ST.xy + _LeafTex_ST.zw)
                 : SAMPLE_TEXTURE2D(_TunkTex, sampler_TunkTex, input.uv * _TunkTex_ST.xy + _TunkTex_ST.zw);
             clip(tex.a - _AlphaCutoff);
             half3 tint = input.leafFog.x > .5h
                 ? lerp(_LeafBaseColour.rgb, _LeafNoiseColour.rgb, .35h)
                 : lerp(_TrunkBaseColour.rgb, _TrunkNoiseColour.rgb, .35h);
-            return half4(max(tex.rgb, tint), 1);
+            half3 original = max(tex.rgb, tint);
+            half foliage = _AtlasMode > .5 ? step(tex.r * 1.08, tex.g) * step(tex.b * 1.1, tex.g) : input.leafFog.x;
+            half luminance = dot(original, half3(.22,.7,.08));
+            half3 regional = input.biome.rgb * lerp(.65, 1.3, saturate(luminance * 1.8));
+            half strength = max(_BiomeStrength, input.biome.a * .92) * foliage * _WorldMapArtEnabled;
+            return half4(lerp(original, regional, strength), 1);
         }
         ENDHLSL
         Pass

@@ -52,8 +52,8 @@ namespace Game.Presentation.Characters
         private Quaternion lastRightLowerArmOffset = Quaternion.identity;
         private Quaternion lastLeftLowerArmOffset = Quaternion.identity;
         private float locomotionPlaybackRate = 1f;
-        private GameObject workAxe, workPickaxe, workHammer;
-        private GameObject axePrefab, pickaxePrefab, hammerPrefab;
+        private GameObject workAxe, workPickaxe, workHammer, huntingBow;
+        private GameObject axePrefab, pickaxePrefab, hammerPrefab, bowPrefab;
         private bool activityHidden;
         private bool preserveAuthoredVisualAtDistance;
 
@@ -68,23 +68,26 @@ namespace Game.Presentation.Characters
             ConfigureWorkTools(prefab, null, null);
         }
 
-        public void ConfigureWorkTools(GameObject axe, GameObject pickaxe, GameObject hammer)
+        public void ConfigureWorkTools(GameObject axe, GameObject pickaxe, GameObject hammer, GameObject bow = null)
         {
             axePrefab = axe; pickaxePrefab = pickaxe; hammerPrefab = hammer;
+            bowPrefab = bow;
             RebindWorkTools();
         }
 
         private void RebindWorkTools()
         {
-            foreach (var tool in new[] { workAxe, workPickaxe, workHammer })
+            foreach (var tool in new[] { workAxe, workPickaxe, workHammer, huntingBow })
                 if (tool != null) { tool.SetActive(false); Destroy(tool); }
-            workAxe = workPickaxe = workHammer = null;
+            workAxe = workPickaxe = workHammer = huntingBow = null;
             if (animator == null || !animator.isHuman) return;
             var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
             if (hand == null) return;
             workAxe = CreateTool(axePrefab, hand, "Work axe", 0.8f);
             workPickaxe = CreateTool(pickaxePrefab, hand, "Work pickaxe", 0.95f);
             workHammer = CreateTool(hammerPrefab, hand, "Work hammer", 0.65f);
+            var left = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            if (left != null) huntingBow = CreateTool(bowPrefab, left, "Hunting bow", 1.1f);
             RefreshWorkTools();
         }
 
@@ -133,6 +136,7 @@ namespace Game.Presentation.Characters
             if (workAxe != null) workAxe.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Chop);
             if (workPickaxe != null) workPickaxe.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Mine);
             if (workHammer != null) workHammer.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Build);
+            if (huntingBow != null) huntingBow.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Hunt);
         }
 
         public bool IsBound => character != null;
@@ -323,6 +327,16 @@ namespace Game.Presentation.Characters
         {
             if (animator == null || !animator.isHuman || !DetailedVisualActive) return;
             RemoveLastPoseOffsets();
+            if (animationIntent == CharacterAnimationIntent.Hunt)
+            {
+                // Left hand holds the bow; the drawing hand stays by the cheek.
+                ApplyOffset(spineBone, Quaternion.Euler(0f, -18f, 0f), ref lastSpineOffset);
+                ApplyOffset(leftUpperArmBone, Quaternion.Euler(78f, -12f, 8f), ref lastLeftUpperArmOffset);
+                ApplyOffset(leftLowerArmBone, Quaternion.Euler(-8f, 0f, 0f), ref lastLeftLowerArmOffset);
+                ApplyOffset(rightUpperArmBone, Quaternion.Euler(66f, 28f, -26f), ref lastRightUpperArmOffset);
+                ApplyOffset(rightLowerArmBone, Quaternion.Euler(-112f, 0f, 0f), ref lastRightLowerArmOffset);
+                return;
+            }
             if (hasActionIntentParameter) return;
             if (animationIntent == CharacterAnimationIntent.Idle) return;
             var wave = Mathf.Sin(unscaledTime * (animationIntent == CharacterAnimationIntent.Combat ? 7.5f : 5.2f));

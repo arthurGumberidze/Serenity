@@ -3,7 +3,7 @@
   "mapVersion": "serenity-world-map-v1",
   "implementationGenerationId": "p109-world-map-v2-proposed",
   "status": "active_runtime",
-  "date": "2026-10-23",
+  "date": "2026-10-25",
   "layer": "terrain",
   "units": "meters",
   "north": "+Z",
@@ -163,8 +163,8 @@
       "operation": "carve_spline",
       "source": "WORLD_MAP_WATER.json#river_main",
       "bankBlendMeters": [
-        14,
-        28
+        3,
+        42
       ]
     },
     {
@@ -172,8 +172,8 @@
       "operation": "carve_polygons",
       "source": "WORLD_MAP_WATER.json#lakes",
       "bankBlendMeters": [
-        10,
-        22
+        3,
+        68
       ]
     },
     {

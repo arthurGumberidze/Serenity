@@ -10,6 +10,9 @@ namespace Game.Presentation.Environment
         public TerrainLayer[] GroundLayers;
         public TerrainLayer[] WorldMapGroundLayers;
         public GameObject[] WorldMapTrees;
+        public GameObject[] WorldMapConifers;
+        public GameObject[] WorldMapWetlandTrees;
+        public GameObject[] WorldMapFlowers;
         public GameObject[] WorldMapShrubs;
         public GameObject[] WorldMapGroundCover;
         public GameObject[] WorldMapSmallProps;

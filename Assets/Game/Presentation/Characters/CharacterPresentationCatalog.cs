@@ -48,6 +48,8 @@ namespace Game.Presentation.Characters
         public GameObject WorkAxe;
         public GameObject WorkPickaxe;
         public GameObject WorkHammer;
+        public GameObject HuntingBow;
+        public GameObject HuntingArrow;
         public GameObject MaleResident;
         public GameObject FemaleResident;
         public GameObject ChildResident;

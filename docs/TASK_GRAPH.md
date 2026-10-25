@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+WM15 art/health feedback (2026-10-25): **IN_PROGRESS / source only**. All art-direction answers received and
+implemented as a first regional appearance pass, with saved animal HP, bow impacts/death/skinning and a first
+sheep pasture. See `docs/world_map/WM15_ART_DIRECTION_AND_HUNTING.md`. No compilation, tests, Unity/Player run,
+rebuild or new visual acceptance. White Rabbit and full husbandry remain open. Do not move WM15 to DONE.
+
 WM15 content feedback (2026-10-24): **IN_PROGRESS / uncompiled source checkpoint**. User-selected residents,
 work tools, crop selection/rows, water outlet/shore repairs, removal of the photographed monolith and fox/wolf
 retirement are recorded in `docs/world_map/WM15_CONTENT_SOURCE_REPAIR.md`. White Rabbit admission and

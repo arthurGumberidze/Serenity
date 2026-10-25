@@ -13,6 +13,8 @@ using Game.Simulation.Tiers;
 using Game.Domain.Research;
 using Game.Domain.Health;
 using Game.Domain.Weather;
+using Game.Domain.World;
+using Game.Domain.Campaign;
 
 namespace Game.Simulation.Production
 {
@@ -231,7 +233,48 @@ namespace Game.Simulation.Production
             Industry = industry ?? throw new ArgumentNullException(nameof(industry));
         }
 
-        public void AddSite(ProductionSite site)
+        public AnimalHealthRegistry Animals { get; } = new AnimalHealthRegistry();
+
+        // The campaign has one founding breeding pair. Its saved identities prevent repeat grants
+        // through demolishing/rebuilding a pen. Further animals come from a living male/female pair.
+        public bool EstablishSheepPasture(StableEntityId id, Game.Domain.Combat.CombatSideId requester)
+        {
+            if (Animals.States.Any(x => x.Domestic) || !buildings.TryGet(id, out var building) ||
+                building.OwnerSideId != requester || !building.IsOperational ||
+                !sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
+                site.CropPhase != CropPlotPhase.Unplanted || tasks.Values.Any(x => !x.IsTerminal && x.SiteId == id))
+                return false;
+            AddSheep(id, site.Position, true, LastCalendarTick, 0);
+            AddSheep(id, site.Position, false, LastCalendarTick, 1);
+            return true;
+        }
+
+        private void AddSheep(StableEntityId home, WorldPosition position, bool male, long tick, int sequence)
+        {
+            var id = DeterministicStableId.Create(0, "livestock:" + home, sequence);
+            Animals.RegisterDomestic(id, "sheep", home, male, tick);
+            var site = ProductionSite.Restore(new ProductionSiteState(id, new ProductionRecipeId("hunt_animal"),
+                ProductionSiteKind.NaturalSource, position, 1, 1, CropPlotPhase.Unplanted, 0, 0));
+            AddSite(site, "sheep", true);
+        }
+
+        private void AdvanceLivestock(long tick)
+        {
+            foreach (var home in Animals.Pastures)
+            {
+                if (!buildings.TryGet(home, out var building) || !building.IsOperational ||
+                    !sites.TryGetValue(home, out var site)) continue;
+                var herd = Animals.AtHome(home);
+                var alive = herd.Where(x => x.Alive).ToArray();
+                if (herd.Count(x => !x.Harvested) >= Animals.Policy.PastureCapacity || herd.Count == 0 ||
+                    tick - herd.Max(x => x.BornTick) < TimeSpan.TicksPerDay * Animals.Policy.LivestockBirthDays) continue;
+                var mature = alive.Where(x => tick - x.BornTick >= TimeSpan.TicksPerDay * Animals.Policy.LivestockMaturityDays).ToArray();
+                if (!mature.Any(x => x.Male) || !mature.Any(x => !x.Male)) continue;
+                AddSheep(home, site.Position, herd.Count % 2 == 0, tick, herd.Count);
+            }
+        }
+
+        public void AddSite(ProductionSite site, string animalSpecies = "deer", bool domesticAnimal = false)
         {
             if (site == null) throw new ArgumentNullException(nameof(site));
             var recipe = recipes.Get(site.RecipeId);
@@ -239,6 +282,7 @@ namespace Game.Simulation.Production
             if (!sites.TryAdd(site.Id, site)) throw new InvalidOperationException("Production site already exists.");
             orderedSites.Add(site);
             orderedSites.Sort((left, right) => left.Id.CompareTo(right.Id));
+            if (site.RecipeId.ToString() == "hunt_animal") Animals.Register(site.Id, animalSpecies, domesticAnimal);
         }
 
         public IReadOnlyList<ProductionSite> RegisterBuildingWorkplace(StableEntityId buildingId,
@@ -382,6 +426,7 @@ namespace Game.Simulation.Production
         }
         public bool IsSiteOperational(StableEntityId id)
         {
+            if (Animals.IsPasture(id)) return false;
             if (!sites.TryGetValue(id, out var site)) return false;
             if (site.Kind == ProductionSiteKind.NaturalSource) return true;
             var ownerId = site.Kind == ProductionSiteKind.BuildingWorkplace ? site.OwnerBuildingId : id;
@@ -438,6 +483,7 @@ namespace Game.Simulation.Production
         public bool SelectCrop(StableEntityId siteId, ProductionRecipeId recipeId,
             Game.Domain.Combat.CombatSideId requestingSide)
         {
+            if (Animals.IsPasture(siteId)) return false;
             if (!sites.TryGetValue(siteId, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
                 site.CropPhase != CropPlotPhase.Unplanted || !buildings.TryGet(siteId, out var building) ||
                 building.OwnerSideId != requestingSide || !building.IsOperational ||
@@ -552,6 +598,15 @@ namespace Game.Simulation.Production
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return default;
             if (!IsSiteOperational(task.SiteId)) { Cancel(task.Id); return default; }
             var workTicks = GetEffectiveWorkTicks(task, work.Ticks, calendarTick);
+            if (task.RecipeId.ToString() == "hunt_animal" && Animals.TryGet(task.SiteId, out var animal))
+            {
+                if (animal.Harvested) { Cancel(task.Id); return default; }
+                if (animal.Alive)
+                {
+                    Animals.AdvanceHunt(task.SiteId, task.WorkerId, work.Ticks);
+                    return default;
+                }
+            }
             task.AddWork(workTicks);
             if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) return default;
             return Complete(task);
@@ -560,6 +615,7 @@ namespace Game.Simulation.Production
         public bool Cancel(StableEntityId taskId)
         {
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return false;
+            if (task.RecipeId.ToString() == "hunt_animal") Animals.CancelShot(task.SiteId);
             task.Cancel();
             Release(task);
             return true;
@@ -616,6 +672,7 @@ namespace Game.Simulation.Production
             for (var step = firstStep; step <= finalStep; step++)
             {
                 var stepStartTick = checked((step - 1L) * settings.FixedStep.Ticks);
+                AdvanceLivestock(stepStartTick);
                 var cropModifier = weather == null ? 1000 :
                     weather.GetWeatherAtCalendarTick(stepStartTick).Modifiers.CropGrowthPerThousand;
                 var growthTicks = checked(settings.FixedStep.Ticks * cropModifier / 1000L);
@@ -647,7 +704,7 @@ namespace Game.Simulation.Production
             Food.RemainderTicks, Food.TotalConsumed, Food.TotalShortage, Targets,
             sites.Values.Select(x => x.CaptureState()), tasks.Values.Where(x => !x.IsTerminal).Select(x => x.CaptureState()),
             producedTotals.Where(x => x.Value > 0).Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))),
-            inventories.CaptureStates(), Ecology?.CaptureState(), Industry?.CaptureState());
+            inventories.CaptureStates(), Ecology?.CaptureState(), Industry?.CaptureState(), Animals.States);
 
         public void RestoreState(ProductionSaveState state)
         {
@@ -671,6 +728,13 @@ namespace Game.Simulation.Production
                     throw new ArgumentException("Invalid or duplicate production task snapshot.", nameof(state));
             }
             inventories.ReplaceAll(state.Inventories, resources);
+            Animals.Restore(state.Animals);
+            foreach (var site in restoredSites.Values.Where(x => x.RecipeId.ToString() == "hunt_animal"))
+            {
+                Animals.Register(site.Id, "deer"); // Legacy snapshots had no persisted animal HP.
+                if (site.IsDepleted && Animals.TryGet(site.Id, out var animal) && !animal.Harvested)
+                { Animals.Damage(site.Id, animal.Maximum); Animals.Harvest(site.Id); }
+            }
             sites.Clear(); foreach (var pair in restoredSites) sites.Add(pair.Key, pair.Value);
             orderedSites.Clear(); orderedSites.AddRange(restoredSites.Values.OrderBy(x => x.Id));
             tasks.Clear(); foreach (var pair in restoredTasks) tasks.Add(pair.Key, pair.Value);
@@ -691,6 +755,20 @@ namespace Game.Simulation.Production
         public ulong ComputeStateHash()
         {
             var hash = 14695981039346656037UL;
+            foreach (var animal in Animals.States)
+            {
+                AddId(ref hash, animal.Id);
+                AddText(ref hash, animal.Species);
+                DeterministicKeyedRandom.Add(ref hash, (ulong)animal.Health);
+                DeterministicKeyedRandom.Add(ref hash, (ulong)animal.Maximum);
+                DeterministicKeyedRandom.Add(ref hash, (ulong)animal.ShotTicks);
+                DeterministicKeyedRandom.Add(ref hash, (ulong)animal.ShotSequence);
+                DeterministicKeyedRandom.Add(ref hash, animal.Domestic ? 1UL : 0UL);
+                DeterministicKeyedRandom.Add(ref hash, animal.Harvested ? 1UL : 0UL);
+                if (animal.Home.IsValid) AddId(ref hash, animal.Home);
+                DeterministicKeyedRandom.Add(ref hash, animal.Male ? 1UL : 0UL);
+                DeterministicKeyedRandom.Add(ref hash, (ulong)animal.BornTick);
+            }
             DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)LastCalendarTick));
             DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)Food.RemainderTicks));
             DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)Food.TotalConsumed));
@@ -726,6 +804,12 @@ namespace Game.Simulation.Production
                     task = job.Task;
                 }
                 var remainingWorkTicks = task.RequiredWorkTicks - task.AccumulatedWorkTicks;
+                if (task.RecipeId.ToString() == "hunt_animal")
+                {
+                    if (Animals.CanHunt != null && !Animals.CanHunt(workerId)) { Cancel(task.Id); return; }
+                    AdvanceTaskAt(task.Id, TimeSpan.FromTicks(budgetTicks), calendarTick);
+                    return;
+                }
                 var effectiveBudgetTicks = GetEffectiveWorkTicks(task, budgetTicks, calendarTick);
                 if (effectiveBudgetTicks < remainingWorkTicks)
                 {
@@ -795,6 +879,8 @@ namespace Game.Simulation.Production
             }
             var recipe = recipes.Get(task.RecipeId);
             var outputs = recipe.OutputsFor(site);
+            if (task.RecipeId.ToString() == "hunt_animal" && Animals.TryGet(site.Id, out var hunted) &&
+                (hunted.Alive || hunted.Harvested)) return default;
             var outputOwner = site.Kind == ProductionSiteKind.BuildingWorkplace
                 ? OutputOwner(site.OwnerBuildingId) : inventories.WorkerOwner(task.WorkerId);
             if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
@@ -805,7 +891,8 @@ namespace Game.Simulation.Production
                 !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
                 return default;
             if (!TryConsumeInputs(recipe, site)) return default;
-            site.CompleteWork(task.Kind, recipe.HarvestEntireSource);
+            site.CompleteWork(task.Kind, recipe.HarvestEntireSource || task.RecipeId.ToString() == "hunt_animal");
+            if (task.RecipeId.ToString() == "hunt_animal") Animals.Harvest(site.Id);
             var produced = false;
             var outputId = default(ResourceId);
             long outputUnits = 0;
@@ -868,6 +955,10 @@ namespace Game.Simulation.Production
             foreach (var site in orderedSites)
             {
                 if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
+                if (Animals.IsPasture(site.Id)) continue;
+                if (site.RecipeId.ToString() == "hunt_animal" &&
+                    (Animals.CanHunt != null && !Animals.CanHunt(workerId) ||
+                     Animals.TryGet(site.Id, out var domestic) && domestic.Domestic)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
@@ -894,6 +985,8 @@ namespace Game.Simulation.Production
           {
               if (site.Kind != ProductionSiteKind.NaturalSource) return true;
               var reservedUnits = tasks.Values.LongCount(task => !task.IsTerminal && task.SiteId == site.Id);
+              if (site.RecipeId.ToString() == "hunt_animal")
+                  return reservedUnits == 0 && (!Animals.TryGet(site.Id, out var animal) || !animal.Harvested);
               return reservedUnits < site.RemainingAmount;
           }
 

@@ -33,6 +33,20 @@ namespace Game.Presentation.Weather
         private bool previewActive;
         private bool ownsRainMaterial;
         private bool ownsAtmosphereProfile;
+        private WorldMapArtDirection mapArt;
+        private Vector4 mapTransform;
+
+        public void ConfigureMapArt(WorldMapArtDirection art, Vector4 worldToDesign)
+        { mapArt = art; mapTransform = worldToDesign; }
+
+        private void ApplyLocalFog()
+        {
+            if (mapArt == null || Camera.main == null) return;
+            var point = Camera.main.transform.position;
+            var haze = mapArt.Haze(new Vector2(point.x * mapTransform.z + mapTransform.x,
+                point.z * mapTransform.w + mapTransform.y));
+            RenderSettings.fogDensity = CurrentVisualState.FogDensity * haze;
+        }
 
         public P95AtmosphereVisualState CurrentVisualState { get; private set; }
 
@@ -69,7 +83,7 @@ namespace Game.Presentation.Weather
             if (weather == null || previewActive) return;
             var state = weather.GetWeatherAtCalendarTick(calendarTick);
             var bucket = calendarTick / TimeSpan.TicksPerMinute;
-            if (bucket == displayedTimeBucket) return;
+            if (bucket == displayedTimeBucket) { ApplyLocalFog(); return; }
             displayedTimeBucket = bucket;
             ApplyState(state, calendarTick);
         }
@@ -99,14 +113,15 @@ namespace Game.Presentation.Weather
             RenderSettings.fogDensity = CurrentVisualState.FogDensity;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             // Preserve weather/night colour, but keep units and interaction targets readable.
-            RenderSettings.ambientLight = Color.Lerp(CurrentVisualState.AmbientColor, Color.white, 0.18f);
-            RenderSettings.ambientIntensity = Mathf.Max(0.7f, CurrentVisualState.AmbientIntensity);
+            RenderSettings.ambientLight = Color.Lerp(CurrentVisualState.AmbientColor, Color.white,
+                0.18f * CurrentVisualState.Daylight);
+            RenderSettings.ambientIntensity = Mathf.Max(0.16f, CurrentVisualState.AmbientIntensity);
             RenderSettings.reflectionIntensity = CurrentVisualState.ReflectionIntensity;
             ApplySkybox(CurrentVisualState.SkyColor);
             if (sun != null)
             {
                 sun.transform.rotation = CurrentVisualState.LightRotation;
-                sun.intensity = Mathf.Max(0.45f, CurrentVisualState.LightIntensity);
+                sun.intensity = Mathf.Max(0.05f, CurrentVisualState.LightIntensity);
                 sun.color = CurrentVisualState.LightColor;
                 sun.shadows = LightShadows.Soft;
                 sun.shadowStrength = CurrentVisualState.ShadowStrength;
@@ -146,6 +161,9 @@ namespace Game.Presentation.Weather
                 HideLightning();
             }
             region?.ApplySeason(state.Season, state.Snowing);
+            Shader.SetGlobalFloat("_WorldMapSeason", state.Season == Season.Spring ? 0 :
+                state.Season == Season.Summer ? 1 : state.Season == Season.Autumn ? 2 : 3);
+            ApplyLocalFog();
             ApplyWater(CurrentVisualState);
         }
 
