@@ -155,6 +155,11 @@ namespace Game.Infrastructure
                 ArtWorldToDesign = new Vector4(designOrigin.X - definition.Origin.X * sx,
                     designOrigin.Z - definition.Origin.Z * sz, sx, sz);
                 ArtDirection.ApplyShaderGlobals(ArtWorldToDesign);
+                natureCatalog.RuntimeLate = Resources.Load<LateLandscapeCatalog>("World/LateLandscape");
+                if (natureCatalog.RuntimeLate?.WaterWaves != null) natureCatalog.WaterRipples = natureCatalog.RuntimeLate.WaterWaves;
+                natureCatalog.RuntimeWorldToDesign = ArtWorldToDesign;
+                var snowRegion = ArtDirection.regions[2];
+                natureCatalog.RuntimeSnowRegion = new Vector4(snowRegion.center.x,snowRegion.center.y,snowRegion.radius.x,snowRegion.radius.y);
                 var regionalMaterial = Resources.Load<Material>("World/RegionalTerrain");
                 if (regionalMaterial == null) throw new InvalidOperationException("Regional terrain material is missing.");
                 sourceTerrainMaterial = new Material(regionalMaterial)
@@ -164,6 +169,14 @@ namespace Game.Infrastructure
                     var layer = Instantiate(sourceLayers[i]);
                     layer.name = sourceLayers[i].name + " regional palette";
                     layer.diffuseRemapMax = Vector4.Scale(layer.diffuseRemapMax, ArtDirection.terrainTints[i]);
+                    var late = natureCatalog.RuntimeLate;
+                    if (late != null && (i == 0 || i == 1 || i == 3))
+                    {
+                        layer.diffuseTexture = i == 0 ? late.Grass : i == 1 ? late.ForestFloor : late.Pebbles;
+                        layer.normalMapTexture = i == 0 ? late.GrassNormal : i == 1 ? late.ForestNormal : late.PebblesNormal;
+                        layer.tileSize = Vector2.one * (i == 0 ? 9f : 6f);
+                        layer.normalScale = .45f;
+                    }
                     artLayers.Add(layer);
                 }
                 sourceLayers = artLayers.ToArray();
@@ -211,7 +224,10 @@ namespace Game.Infrastructure
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
             if (definition.MapData != null)
+            {
                 gameObject.AddComponent<WorldMapHorizon>().Initialize(this, natureCatalog);
+                gameObject.AddComponent<LateLandscapePresentation>().Initialize(this, natureCatalog.RuntimeLate);
+            }
             Debug.Log("WM15_BOOT terrain ready");
         }
 
@@ -654,12 +670,39 @@ namespace Game.Infrastructure
             if (natureCatalog != null && natureCatalog.WaterRipples != null)
                 localWaterMaterial.SetTexture("_Ripples", natureCatalog.WaterRipples);
             water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
-            var waterCollider = water.AddComponent<MeshCollider>();
-            waterCollider.sharedMesh = mesh;
-            var modifier = water.AddComponent<NavMeshModifier>();
-            modifier.overrideArea = true;
-            modifier.area = NavMesh.GetAreaFromName("Not Walkable");
+            // Water is not a physical floor. Block the submerged terrain volume, not just a thin
+            // surface triangle; bridge and pier decks above the surface remain navigable.
+            AddDeepWaterExclusions(water.transform, tileOrigin, data);
             return water;
+        }
+
+        private void AddDeepWaterExclusions(Transform parent, WorldPosition origin, TerrainData data)
+        {
+            const float cell = 4f;
+            var count = Mathf.CeilToInt(Definition.TileSizeMeters / cell);
+            for (var z = 0; z < count; z++)
+            {
+                var start = -1; var top = 0f;
+                for (var x = 0; x <= count; x++)
+                {
+                    var wx = origin.X + (x + .5f) * cell;
+                    var wz = origin.Z + (z + .5f) * cell;
+                    var surface = 0f;
+                    var blocked = x < count && HeightSampler.TrySampleWaterSurface(wx, wz, out surface) &&
+                        surface - data.GetInterpolatedHeight((x + .5f) * cell / Definition.TileSizeMeters,
+                            (z + .5f) * cell / Definition.TileSizeMeters) > 1.25f;
+                    if (start >= 0 && (!blocked || Mathf.Abs(surface - top) > .2f))
+                    {
+                        var volume = new GameObject("Deep water exclusion").AddComponent<NavMeshModifierVolume>();
+                        volume.transform.SetParent(parent, false);
+                        volume.center = new Vector3((start + x) * .5f * cell, (top - 100f) * .5f, (z + .5f) * cell);
+                        volume.size = new Vector3((x - start) * cell, top + 100f, cell);
+                        volume.area = NavMesh.GetAreaFromName("Not Walkable");
+                        start = -1;
+                    }
+                    if (blocked && start < 0) { start = x; top = surface + .18f; }
+                }
+            }
         }
 
         private void AddClippedWaterTriangle(Vector4 a, Vector4 b, Vector4 c, WorldPosition origin,

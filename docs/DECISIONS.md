@@ -1822,3 +1822,23 @@ camp exists. Research gates remain mandatory; automatic site selection still req
 a gathering target, wildlife a bow-hunting/skinning target rather than a military area attack. Both mouse
 buttons use the same character/animal priority through decorative foliage. Regression checks cover the
 policy and canopy interception; an opt-in disposable Player route verifies actual navigation and work.
+
+## D-203 — Late feedback: physical water boundaries and owned asset admission (2026-10-25)
+
+Water is a visual surface rather than a walkable physics floor. Navigation excludes deep submerged
+terrain through merged volumes, while elevated piers/bridges retain navigation. The RTS camera uses
+water level as its minimum focus ground and retains a selected elevated occupant's height until panning.
+Hunt/fish intents use a neutral base animation so generic labor swings cannot fight their hand poses.
+Fish outputs use a scene-supplied dry landing near the actual
+pier; source IDs and saved output inventories keep their existing authorities.
+
+Death presentation binds a real model explicitly, never an incidental temporary child. Shared character
+pose scheduling owns its additive offsets and restores them only when Animator has not replaced them.
+Bow drawing follows canonical shot timing; visual impact particles do not decide resource production.
+External deaths between scheduler ticks immediately disable capabilities without rewriting death dates.
+
+User-provided packages are admitted selectively into owned GUID-remapped copies, without old demo,
+editor or postprocessing scripts. Missing Arctic palette dependencies receive explicit URP snow materials.
+AQUAS wave textures may be reused now; this does not establish compatibility of its legacy GrabPass,
+reflection or underwater pipeline. A full AQUAS port remains unimplemented. See
+`docs/world_map/WM15_LATE_FEEDBACK.md` for all eleven package dispositions and validation boundaries.

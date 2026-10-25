@@ -1,0 +1,374 @@
+[
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/IceFloeLow.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/IceFloeLow.prefab",
+    "bytes": 2825
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Rocks/IceFloeLow.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Rocks/IceFloeLow.fbx",
+    "bytes": 27200
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared Materials and Textures/MAT_MAIN.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared Materials and Textures/MAT_MAIN.mat",
+    "bytes": 2068
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/GlacierWall.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/GlacierWall.prefab",
+    "bytes": 2607
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Terrain/GlacierWall.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Terrain/GlacierWall.fbx",
+    "bytes": 59904
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/SnowyCliff.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/SnowyCliff.prefab",
+    "bytes": 2826
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Terrain/SnowyCliff.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Terrain/SnowyCliff.fbx",
+    "bytes": 36816
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/SnowyRock1.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/SnowyRock1.prefab",
+    "bytes": 2826
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Rocks/SnowyRock1.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Rocks/SnowyRock1.fbx",
+    "bytes": 41824
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/IceBerg.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/IceBerg.prefab",
+    "bytes": 2822
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Rocks/IceBerg.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Rocks/IceBerg.fbx",
+    "bytes": 33856
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/SnowyDeadTree1.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/SnowyDeadTree1.prefab",
+    "bytes": 3012
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Plants/SnowyDeadTree1.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Plants/SnowyDeadTree1.fbx",
+    "bytes": 170256
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/SnowyTreeStump.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/SnowyTreeStump.prefab",
+    "bytes": 2829
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Plants/SnowyTreeStump.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Plants/SnowyTreeStump.fbx",
+    "bytes": 43632
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Arctic Tundra/Prefabs/SnowyTree.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Arctic Tundra/Prefabs/SnowyTree.prefab",
+    "bytes": 2825
+  },
+  {
+    "package": "66d2c3cc80_uassets-dl-gtrsb9.unitypackage",
+    "original": "Assets/Lowpoly Style/Shared FBX Meshes/Plants/SnowyTree.fbx",
+    "path": "Assets/Game/Art/WM15Late/Imported/Arctic/Lowpoly Style/Shared FBX Meshes/Plants/SnowyTree.fbx",
+    "bytes": 68304
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/DeadTrees/noLODs/DeadTree_02.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/DeadTrees/noLODs/DeadTree_02.prefab",
+    "bytes": 2841
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Colliders/Tree_02_Collider.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Colliders/Tree_02_Collider.FBX",
+    "bytes": 35968
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Trees/Tree_02_i_LOD0.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Trees/Tree_02_i_LOD0.FBX",
+    "bytes": 55920
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Materials/M_SNB_DeadTrees.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Materials/M_SNB_DeadTrees.mat",
+    "bytes": 1501
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Trees_Normal.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Trees_Normal.tga",
+    "bytes": 12582956
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Trees_BaseColor.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Trees_BaseColor.tga",
+    "bytes": 16777260
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Particles/Particles_Fireflies.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Particles/Particles_Fireflies.prefab",
+    "bytes": 111960
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Materials/M_SNB_Particles_Fireflies.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Materials/M_SNB_Particles_Fireflies.mat",
+    "bytes": 4444
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Rocks/noLODs/Rock_03.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Rocks/noLODs/Rock_03.prefab",
+    "bytes": 2847
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Colliders/Rock_03_Collider.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Colliders/Rock_03_Collider.FBX",
+    "bytes": 32800
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Rocks/Rock_03_LOD0.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Rocks/Rock_03_LOD0.FBX",
+    "bytes": 40400
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Materials/M_SNB_Rocks.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Materials/M_SNB_Rocks.mat",
+    "bytes": 4116
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Rocks_Normal.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Rocks_Normal.tga",
+    "bytes": 12582956
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Rocks_BaseColor.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Rocks_BaseColor.tga",
+    "bytes": 16777260
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Flower_02_b.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Flower_02_b.prefab",
+    "bytes": 2399
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Flower_02_b.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Flower_02_b.FBX",
+    "bytes": 28144
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Materials/M_SNB_Vegetation.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Materials/M_SNB_Vegetation.mat",
+    "bytes": 4651
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Vegetation_Normal.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Vegetation_Normal.tga",
+    "bytes": 12582956
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Vegetation_BaseColor.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Vegetation_BaseColor.tga",
+    "bytes": 16777260
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Vegetation_Surface.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Vegetation_Surface.tga",
+    "bytes": 12582956
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Rocks/noLODs/Rock_08.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Rocks/noLODs/Rock_08.prefab",
+    "bytes": 2847
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Colliders/Rock_08_Collider.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Colliders/Rock_08_Collider.FBX",
+    "bytes": 32304
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Rocks/Rock_08_LOD0.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Rocks/Rock_08_LOD0.FBX",
+    "bytes": 39552
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Plant_04_e.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Plant_04_e.prefab",
+    "bytes": 2398
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Plant_04_e.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Plant_04_e.FBX",
+    "bytes": 29088
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Flower_01_h.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Flower_01_h.prefab",
+    "bytes": 2399
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Flower_01_h.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Flower_01_h.FBX",
+    "bytes": 25808
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Particles/Particles_Zone_FallingLeaves.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Particles/Particles_Zone_FallingLeaves.prefab",
+    "bytes": 112491
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Materials/M_SNB_Particles_Leaf.mat",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Materials/M_SNB_Particles_Leaf.mat",
+    "bytes": 4441
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Textures/T_SNB_Particles_Leaf.tga",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Textures/T_SNB_Particles_Leaf.tga",
+    "bytes": 65580
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Flower_07_c.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Flower_07_c.prefab",
+    "bytes": 2429
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Flower_07_c.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Flower_07_c.FBX",
+    "bytes": 28160
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Flower_01_a.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Flower_01_a.prefab",
+    "bytes": 2399
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Flower_01_a.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Flower_01_a.FBX",
+    "bytes": 25792
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Prefabs/Vegetation/Plant_03.prefab",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Prefabs/Vegetation/Plant_03.prefab",
+    "bytes": 2396
+  },
+  {
+    "package": "ecc658483f_uassets-dl-qceo2b.unitypackage",
+    "original": "Assets/StylizedNatureBundle/Models/Vegetation/Plant_03.FBX",
+    "path": "Assets/Game/Art/WM15Late/Imported/Stylized/StylizedNatureBundle/Models/Vegetation/Plant_03.FBX",
+    "bytes": 27136
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GroundDryLeaves01_N.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GroundDryLeaves01_N.png",
+    "bytes": 32615761
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GrassUV02_N.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GrassUV02_N.png",
+    "bytes": 119405509
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GrassUV02.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GrassUV02.png",
+    "bytes": 156738666
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GroundStones01_N.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GroundStones01_N.png",
+    "bytes": 22487016
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GroundDryLeaves01.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GroundDryLeaves01.png",
+    "bytes": 36946498
+  },
+  {
+    "package": "Terrain Textures Pack Free.unitypackage",
+    "original": "Assets/TerrainTexturesPackFree/TerrainTextures/GroundStones01.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Ground/TerrainTexturesPackFree/TerrainTextures/GroundStones01.png",
+    "bytes": 22141910
+  },
+  {
+    "package": "7b01a393b0_uassets-dl-skh3th.unitypackage",
+    "original": "Assets/AQUAS/Textures/Normals/MediumWaves_norm.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Aquas/AQUAS/Textures/Normals/MediumWaves_norm.png",
+    "bytes": 596234
+  },
+  {
+    "package": "7b01a393b0_uassets-dl-skh3th.unitypackage",
+    "original": "Assets/AQUAS/Textures/Normals/HiRes/MediumWaves_norm.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Aquas/AQUAS/Textures/Normals/HiRes/MediumWaves_norm.png",
+    "bytes": 2250753
+  },
+  {
+    "package": "7b01a393b0_uassets-dl-skh3th.unitypackage",
+    "original": "Assets/AQUAS/Textures/MediumWaves_tex.png",
+    "path": "Assets/Game/Art/WM15Late/Imported/Aquas/AQUAS/Textures/MediumWaves_tex.png",
+    "bytes": 596234
+  }
+]

@@ -1,0 +1,51 @@
+PASS Ruler editor UMA generated
+PASS World ruler visible UMA
+PASS Wildlife materialized
+PASS Wildlife left click
+PASS Wildlife right click hit
+PASS Animal inspector stays visible after layout
+PASS Wildlife menu has hunt, no military attack
+PASS Dry-land barracks placement confirms
+PASS Barracks material delivered: stone
+PASS Barracks material delivered: wood_log
+PASS Army cheat adds four commandable physical residents
+PASS Training starts
+PASS Trainee reaches barracks
+PASS Trainee hidden indoors
+PASS Training completes after arrival
+PASS Graduate reappears
+PASS Graduate wears training tunic
+PASS Pier for lake_south_forest
+PASS Deep lake bed excluded from walking: lake_south_forest
+PASS Pier for lake_west_grove
+PASS Deep lake bed excluded from walking: lake_west_grove
+PASS Pier for lake_mountain
+PASS Deep lake bed excluded from walking: lake_mountain
+PASS Pier for lake_central_east
+PASS Deep lake bed excluded from walking: lake_central_east
+PASS Fishing stance lies on dock navigation
+PASS Fish menu offers gathering, never attack
+PASS chop_wood direct order accepted: None
+PASS chop_wood worker reaches source and works
+PASS chop_wood production completes
+PASS chop_wood impact fragments emitted
+PASS gather_stone direct order accepted: None
+PASS gather_stone worker reaches source and works
+PASS gather_stone production completes
+PASS gather_stone impact fragments emitted
+PASS hunt_animal direct order accepted: None
+PASS Bow string and hands draw before release
+PASS hunt_animal worker reaches source and works
+PASS hunt_animal production completes
+PASS Bow impacts reduce animal health before skinning
+PASS Fishing camp menu offers work
+PASS fish_water direct order accepted: None
+PASS Fisher physically stands on pier
+PASS Fisher holds a visible rod
+PASS Close fishing camera remains above water
+PASS Fish catch placed near pier on dry bank
+PASS fish_water worker reaches source and works
+PASS fish_water production completes
+PASS Dead wildlife model falls on its side
+PASS New snow scenery materialized
+PASS No runtime errors

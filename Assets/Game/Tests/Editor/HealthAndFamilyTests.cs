@@ -20,6 +20,17 @@ namespace Game.Tests.Editor
     {
         private static readonly long AdultTick = Character.BiologicalTicksPerYear * 20L;
 
+        [Test]
+        public void ExternalDeathBeforeHealthClockAdvanceImmediatelyDisablesWork()
+        {
+            var fixture = Fixture.Create(2510);
+            fixture.Health.AdvanceTo(0, AdultTick);
+            fixture.Father.MarkDead(AdultTick + 1);
+            Assert.DoesNotThrow(() => fixture.Health.GetCapabilities(fixture.Father.Id));
+            Assert.That(fixture.Health.GetCapabilities(fixture.Father.Id).CanPerformOrdinaryWork, Is.False);
+            Assert.That(fixture.Father.BiologicalDeathTick, Is.EqualTo(AdultTick + 1));
+        }
+
         [Test, Category("U30")]
         public void HistoricalConditionsDoNotRemainInActiveIndexAndRestoreRebuildsIt()
         {

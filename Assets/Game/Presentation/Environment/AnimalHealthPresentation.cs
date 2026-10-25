@@ -15,6 +15,7 @@ namespace Game.Presentation.Environment
         private Transform body;
         private Quaternion standing;
         private bool dead;
+        private Quaternion corpseRotation;
         public void Bind(AnimalHealthRegistry source, StableEntityId identity, Transform model = null)
         {
             registry = source; id = identity;
@@ -44,12 +45,32 @@ namespace Game.Presentation.Environment
                 label.transform.rotation = camera.transform.rotation;
                 label.gameObject.SetActive((camera.transform.position - transform.position).sqrMagnitude < 10000f);
             }
-            if (dead == !health.Alive) return;
+            if (dead == !health.Alive)
+            {
+                if (dead && body != null) body.rotation = corpseRotation;
+                return;
+            }
             dead = !health.Alive;
             foreach (var animator in animators) if (animator != null) animator.enabled = !dead;
             foreach (var animation in legacyAnimations) if (animation != null)
             { if (dead) animation.Stop(); animation.enabled = !dead; }
-            if (body != null) body.localRotation = standing * (dead ? Quaternion.Euler(0, 0, 85) : Quaternion.identity);
+            if (body != null)
+            {
+                if (dead)
+                {
+                    var ground = transform.position.y;
+                    // Roll in the authority root's world frame, independent of vendor FBX axes.
+                    corpseRotation = Quaternion.AngleAxis(88f, transform.forward) * body.rotation;
+                    body.rotation = corpseRotation;
+                    var meshes = body.GetComponentsInChildren<Renderer>();
+                    var bottom = float.PositiveInfinity;
+                    foreach (var mesh in meshes)
+                        if (!(mesh is LineRenderer) && mesh.GetComponent<TextMesh>() == null)
+                            bottom = Mathf.Min(bottom, mesh.bounds.min.y);
+                    if (!float.IsInfinity(bottom)) body.position += Vector3.up * (ground + .03f - bottom);
+                }
+                else body.localRotation = standing;
+            }
         }
     }
 }

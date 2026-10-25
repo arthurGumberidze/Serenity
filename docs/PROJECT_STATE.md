@@ -1,5 +1,20 @@
 # PROJECT_STATE.md
 
+## WM15 late feedback — validated candidate (2026-10-26)
+
+Deliver `Builds/WorldMapLateFix/Serenity.exe`: build-c exited 0, 0 errors / 71 warnings.
+Player-c exited 0 with 51/51 functional checks and no runtime exceptions. Four distinct focused
+regressions passed (3 in focused-a, 1 camera test). No full 100/300/500 performance tests ran.
+The six late screenshots/two videos are addressed: exhausted-source and death-clock exceptions,
+actual corpse model fall, stable work grips and impact fragments, bow draw/string, fishing rod/nearby
+dry catch, fishing-camp work menu, deep-water navigation exclusion and elevated-pier camera focus.
+Reviewed all eleven local packages; admitted selected snow/ice, flowers/marsh plants, bounded effects,
+ground textures and AQUAS wave texture. Full AQUAS rendering/reflections/underwater remain unported.
+See `docs/world_map/WM15_LATE_FEEDBACK.md` and `docs/validation/WM15LateFeedback/` for exact evidence.
+WM15 remains IN_PROGRESS: user art acceptance, loading duration, White Rabbit/full husbandry and
+earlier deferred performance gates remain open. Preserve inherited imports. User requested PC shutdown
+after this repair batch; all checks/processes must finish and changes be committed before shutdown.
+
 ## WM15 October 25 feedback — built and focused route verified
 
 The latest eleven-point report is the active WM15 scope. See

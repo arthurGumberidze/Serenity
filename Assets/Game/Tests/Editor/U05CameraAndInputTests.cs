@@ -37,6 +37,31 @@ namespace Game.Tests
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
+        [Test]
+        public void ElevatedPierFocusSurvivesIdleTicksUntilCameraPans()
+        {
+            var go = new GameObject("Pier camera regression");
+            try
+            {
+                var mount = new GameObject("Mount").transform;
+                mount.SetParent(go.transform, false);
+                var controller = go.AddComponent<RtsCameraController>();
+                controller.Configure(null, mount, new RtsCameraSettings(), 25f);
+                controller.ConfigureGround(_ => 10f, new Vector3(0, 10, 0));
+                var input = new CameraInput();
+                typeof(RtsCameraController).GetField("input", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(controller, input);
+                controller.FocusPosition(new Vector3(0, 15, 0), 8f);
+                controller.Tick(.1f, true, new Vector2(1920, 1080));
+                Assert.That(go.transform.position.y, Is.EqualTo(15f));
+                input.IsPanPressed = true;
+                input.PanDelta = new Vector2(100, 0);
+                controller.Tick(.1f, true, new Vector2(1920, 1080));
+                Assert.That(go.transform.position.y, Is.EqualTo(10f));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
         private sealed class CameraInput : ILocalGameplayInput
         {
             public Vector2 Move => Vector2.zero;

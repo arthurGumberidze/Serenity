@@ -1,0 +1,55 @@
+Assets/AQUAS/Scripts/AQUAS_Reflection.cs
+  public void OnWillRenderObject()
+Assets/AQUAS/Shaders/Water/Mobile/BiColored.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Mobile/OneColoredOpaque.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/SingleTextured.shader
+  GrabPass{ "Refraction" }
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Mobile/OneColored.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/2SidedDoubleTextured.shader
+  GrabPass{ "Refraction" }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Bubble.shader
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/River.shader
+  GrabPass{ }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Caustics.shader
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Camera Effects/UnderWaterLens.shader
+  GrabPass{ }
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/DoubleTextured.shader
+  GrabPass{ "Refraction" }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Mobile/BiColoredPseudoOpaque.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/2SidedSingleTextured.shader
+  GrabPass{ "Refraction" }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Mobile/FoamyOneColored.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Camera Effects/WetLens.shader
+  GrabPass{ }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Mobile/FoamyBiColored.shader
+  #include "UnityCG.cginc"
+Assets/AQUAS/Shaders/Water/Desktop&Web/2SidedTripleTextured.shader
+  GrabPass{ "Refraction" }
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"
+  #include "UnityCG.cginc"

@@ -79,8 +79,9 @@ namespace Game.Infrastructure
                             var foliage = source.HasProperty("_LeafTex");
                             var atlas = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") :
                                 source.HasProperty("_MainTex") ? source.GetTexture("_MainTex") : null;
-                            material.shader = worldShader;
-                            if (!foliage)
+                            var keepAuthored = prefab.name.StartsWith("Late_");
+                            if (!keepAuthored) material.shader = worldShader;
+                            if (!keepAuthored && !foliage)
                             {
                                 material.SetTexture("_LeafTex", atlas); material.SetTexture("_TunkTex", atlas);
                                 material.SetColor("_LeafBaseColour", Color.black);
@@ -89,8 +90,11 @@ namespace Game.Infrastructure
                                 material.SetColor("_TrunkNoiseColour", Color.black);
                                 material.SetFloat("_AtlasMode", 1f);
                             }
-                            material.SetFloat("_Flowering", group.Key.Flowering ? 1f : 0f);
-                            material.SetFloat("_BiomeStrength", group.Key.Ground ? .38f : .72f);
+                            if (!keepAuthored)
+                            {
+                                material.SetFloat("_Flowering", group.Key.Flowering ? 1f : 0f);
+                                material.SetFloat("_BiomeStrength", group.Key.Ground ? .38f : .72f);
+                            }
                             materials.Add(key, material);
                         }
                         for (var offset = 0; offset < matrices.Length; offset += 1023)
@@ -137,6 +141,19 @@ namespace Game.Infrastructure
 
         public static GameObject Prefab(WorldMapVegetationInstance value, StarterNatureCatalog catalog)
         {
+            var late = catalog.RuntimeLate;
+            if (late != null)
+            {
+                var map = catalog.RuntimeWorldToDesign; var snow = catalog.RuntimeSnowRegion;
+                var point = new Vector2(value.Position.X*map.z+map.x,value.Position.Z*map.w+map.y);
+                var distance = new Vector2((point.x-snow.x)/snow.z,(point.y-snow.y)/snow.w).magnitude;
+                if (IsTree(value) && late.SnowTree != null && distance < .78f) return late.SnowTree;
+                if (value.Kind == WorldMapVegetationKind.GroundCover && distance > 1f && Index(value.StableId,100)<45)
+                {
+                    var pool = value.ClassId == "marsh_vegetation" ? late.MarshPlants : late.Flowers;
+                    if (pool != null && pool.Length>0) return pool[Index(value.StableId,pool.Length)];
+                }
+            }
             if (IsTree(value))
             {
                 var regional = value.ClassId == "dense_conifer" ? catalog.WorldMapConifers :

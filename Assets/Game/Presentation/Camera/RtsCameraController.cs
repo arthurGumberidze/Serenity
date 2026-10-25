@@ -16,6 +16,7 @@ namespace Game.Presentation.CameraControl
         private float currentZoom;
         private Func<Vector3, float> groundHeight;
         private Vector3 home;
+        private float focusAboveGround;
 
         public void ConfigureGround(Func<Vector3, float> sample, Vector3 start)
         {
@@ -32,7 +33,12 @@ namespace Game.Presentation.CameraControl
         public void FocusPosition(Vector3 position, float zoom)
         {
             position = RtsCameraMath.ClampToBounds(position, settings.BoundsMin, settings.BoundsMax);
-            if (groundHeight != null) position.y = groundHeight(position);
+            if (groundHeight != null)
+            {
+                var ground = groundHeight(position);
+                focusAboveGround = Mathf.Max(0f,position.y-ground);
+                position.y = ground+focusAboveGround;
+            }
             transform.position = position;
             targetZoom = currentZoom = Mathf.Clamp(zoom, settings.MinZoom, settings.MaxZoom);
             ApplyCameraMount();
@@ -89,7 +95,8 @@ namespace Game.Presentation.CameraControl
             }
             var position = RtsCameraMath.ClampToBounds(transform.position + translation,
                 settings.BoundsMin, settings.BoundsMax);
-            if (groundHeight != null) position.y = groundHeight(position);
+            if (translation.sqrMagnitude > .000001f) focusAboveGround = 0f;
+            if (groundHeight != null) position.y = groundHeight(position)+focusAboveGround;
             if ((position - transform.position).sqrMagnitude > 0.00000001f) transform.position = position;
 
             targetZoom = Mathf.Clamp(targetZoom - input.Zoom * settings.ZoomSpeed,

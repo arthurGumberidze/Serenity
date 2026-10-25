@@ -59,28 +59,44 @@ namespace Game.Infrastructure
             {
                 if (task.RecipeId.ToString() != "hunt_animal" ||
                     !root.Production.Animals.TryGet(task.SiteId, out var health) || !health.Alive ||
-                    health.ShotTicks < root.Production.Animals.Policy.DrawTicks ||
                     !root.CharacterPresentations.TryGet(task.WorkerId, out var person) ||
                     !root.Production.TryGetSite(task.SiteId, out var site) || arrowPrefab == null) continue;
+                var released = health.ShotTicks >= root.Production.Animals.Policy.DrawTicks;
+                person.SetHuntingDraw((float)health.ShotTicks / root.Production.Animals.Policy.DrawTicks, released);
+                if (person.AnimationIntent != Game.Presentation.Characters.CharacterAnimationIntent.Hunt) continue;
                 visible.Add(task.SiteId);
                 if (!arrows.TryGetValue(task.SiteId, out var arrow))
                 {
                     arrow = new GameObject("Hunting arrow"); arrow.transform.SetParent(transform, false);
                     var model = WorldMapScenery.Instantiate(arrowPrefab, arrow.transform);
-                    var filter = model.GetComponentInChildren<MeshFilter>();
-                    if (filter != null && filter.sharedMesh != null)
+                    var bounds = new Bounds(); var hasBounds = false;
+                    foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
                     {
-                        var size = filter.sharedMesh.bounds.size;
+                        if (filter.sharedMesh == null) continue;
+                        var localBounds = filter.sharedMesh.bounds;
+                        for (var corner = 0; corner < 8; corner++)
+                        {
+                            var point = arrow.transform.InverseTransformPoint(filter.transform.TransformPoint(localBounds.center +
+                                Vector3.Scale(localBounds.extents,new Vector3((corner&1)==0 ? -1:1,
+                                    (corner&2)==0 ? -1:1,(corner&4)==0 ? -1:1))));
+                            if (!hasBounds) { bounds = new Bounds(point,Vector3.zero); hasBounds = true; }
+                            else bounds.Encapsulate(point);
+                        }
+                    }
+                    if (hasBounds)
+                    {
+                        var size = bounds.size;
                         var axis = size.x > size.y && size.x > size.z ? Vector3.right :
                             size.y > size.z ? Vector3.up : Vector3.forward;
-                        model.transform.localRotation = Quaternion.FromToRotation(axis, Vector3.forward);
-                        model.transform.localScale = Vector3.one * (.72f / Mathf.Max(.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z))));
-                        model.transform.localPosition = -(model.transform.localRotation * filter.sharedMesh.bounds.center) * model.transform.localScale.x;
+                        var turn = Quaternion.FromToRotation(axis, Vector3.forward);
+                        var scale = .72f / Mathf.Max(.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
+                        model.transform.localRotation = turn * model.transform.localRotation;
+                        model.transform.localScale *= scale;
+                        model.transform.localPosition = turn * (model.transform.localPosition - bounds.center) * scale;
                     }
                     arrows.Add(task.SiteId, arrow);
                 }
-                var start = person.LeftHandSocket != null ? person.LeftHandSocket.position :
-                    person.transform.position + Vector3.up * 1.2f;
+                var start = person.BowLaunchPoint;
                 var target = new Vector3(site.Position.X, site.Position.Y + .8f, site.Position.Z);
                 if (!root.Production.Animals.IsAccurateShot(task.SiteId, health.ShotSequence + 1))
                     target += Vector3.Cross((target - start).normalized, Vector3.up) * 1.6f;
@@ -88,8 +104,8 @@ namespace Game.Infrastructure
                 if (facing.sqrMagnitude > .001f) person.transform.rotation = Quaternion.LookRotation(facing);
                 var fraction = (float)(health.ShotTicks - root.Production.Animals.Policy.DrawTicks) /
                     root.Production.Animals.Policy.FlightTicks;
-                arrow.transform.position = Vector3.Lerp(start, target, fraction) + Vector3.up *
-                    (Mathf.Sin(fraction * Mathf.PI) * .15f);
+                arrow.transform.position = released ? Vector3.Lerp(start, target, fraction) + Vector3.up *
+                    (Mathf.Sin(fraction * Mathf.PI) * .15f) : person.ArrowNockPoint + (target-start).normalized*.35f;
                 if ((target - start).sqrMagnitude > .001f)
                     arrow.transform.rotation = Quaternion.LookRotation(target - start);
             }

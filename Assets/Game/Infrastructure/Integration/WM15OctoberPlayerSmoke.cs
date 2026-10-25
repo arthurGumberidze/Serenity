@@ -63,6 +63,13 @@ namespace Game.Infrastructure.Integration
             texture.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0); texture.Apply();
             File.WriteAllBytes(Path.Combine(output,name+".png"),texture.EncodeToPNG()); Destroy(texture);
         }
+        private IEnumerator CaptureReadable(LocalSceneCompositionRoot root,string name)
+        {
+            // Only the diagnostic capture uses a noon preview; canonical weather/time keep advancing normally.
+            root.WeatherPresentation.ShowPreview(root.Weather.GetWeatherForDay(0),12*TimeSpan.TicksPerHour);
+            yield return null; yield return Capture(name);
+            root.WeatherPresentation.ClearPreview(root.Clock.State.CalendarTicks);
+        }
         private IEnumerator Run()
         {
             MainMenuController menu;
@@ -178,6 +185,8 @@ namespace Game.Infrastructure.Integration
             {
                 Check(root.GetComponent<WorldWorkApproaches>().transform.Cast<Transform>().Any(t=>t.name=="Wooden fishing pier "+lake.Id),"Pier for "+lake.Id);
                 var center=root.WorldDefinition.MapData.CoordinateTransform.ToUnity(lake.Center);
+                var bed=root.WorldHeight.SampleHeight(center.X,center.Z);
+                Check(!NavMesh.SamplePosition(new Vector3(center.X,bed,center.Z),out _,.75f,NavMesh.AllAreas),"Deep lake bed excluded from walking: "+lake.Id);
                 root.CameraController.FocusPosition(new Vector3(center.X,root.WorldHeight.SampleHeight(center.X,center.Z),center.Z),100f);
                 yield return null; yield return null; yield return Capture("lake-"+lake.Id);
             }
@@ -190,11 +199,44 @@ namespace Game.Infrastructure.Integration
             root.GameplayUi.CloseContextMenu();
             foreach (var recipe in new[]{"chop_wood","gather_stone","hunt_animal","fish_water"})
                 yield return WorkRoute(root,recipe);
+            var corpse=FindObjectsByType<WorldMapWildlifeView>(FindObjectsSortMode.None)
+                .OrderBy(v=>root.Production.Animals.TryGet(v.StableId,out var h) && h.Species=="boar" ? 0 : 1)
+                .FirstOrDefault(v=>root.Production.Animals.TryGet(v.StableId,out var h) && h.Alive);
+            if(corpse!=null)
+            {
+                var mesh=corpse.GetComponentsInChildren<Renderer>().First(r=>r is MeshRenderer || r is SkinnedMeshRenderer);
+                var standing=mesh.transform.rotation;
+                root.Production.Animals.Damage(corpse.StableId,10000);
+                corpse.GetComponent<AnimalHealthPresentation>().Refresh();
+                yield return null;
+                Check(Quaternion.Angle(standing,mesh.transform.rotation)>70f,"Dead wildlife model falls on its side");
+                root.CameraController.FocusPosition(corpse.transform.position,10f);
+                root.CameraController.enabled=false;
+                var corpseCamera=root.CameraController.CameraMount;
+                corpseCamera.position=corpse.transform.position+Vector3.right*3f+Vector3.up*1.5f;
+                corpseCamera.rotation=Quaternion.LookRotation(mesh.bounds.center-corpseCamera.position);
+                yield return CaptureReadable(root,"corpse");
+                root.CameraController.enabled=true;
+            }
+            Check(FindAnyObjectByType<LateLandscapePresentation>()?.SnowSceneryCount>0,"New snow scenery materialized");
+            var snow=FindAnyObjectByType<LateLandscapePresentation>()?.transform.Cast<Transform>()
+                .FirstOrDefault(t=>t.name.Contains("SnowyRock"));
+            if(snow!=null)
+            {
+                root.CameraController.FocusPosition(snow.position,25f);
+                yield return CaptureReadable(root,"snow-scenery");
+            }
             Check(errors.Count==0,"No runtime errors"); Finish();
         }
         private IEnumerator WorkRoute(LocalSceneCompositionRoot root,string recipe)
         {
             var worker=root.MaleDemoCharacter.Id;
+            if(recipe=="chop_wood" || recipe=="fish_water")
+                worker=root.Characters.GetAll().First(c=>root.CanCommandResident(c.Id) &&
+                    c.Id!=root.MaleDemoCharacter.Id && c.Id!=root.FemaleDemoCharacter.Id &&
+                    !c.Name.ToString().StartsWith("Diag ") && root.CharacterPresentations.TryGet(c.Id,out _) &&
+                    c.Sex==Game.Domain.Characters.CharacterSex.Female &&
+                    c.AgeInCompletedYears(root.Clock.State.BiologicalTicks)>=18).Id;
             if (!root.CharacterPresentations.TryGet(worker,out var person)) { Check(false,recipe+" worker visible"); yield break; }
             var position=person.transform.position;
             var site=root.Production.Sites.Where(s=>s.RecipeId.ToString()==recipe && s.IsWorkAvailable)
@@ -204,11 +246,23 @@ namespace Game.Infrastructure.Integration
             var resource=recipe=="chop_wood"?"wood_log":recipe=="gather_stone"?"stone":recipe=="fish_water"?"fish":"meat";
             var resourceClass=recipe=="chop_wood"?ContextResourceClass.Choppable:recipe=="gather_stone"?ContextResourceClass.Mineable:ContextResourceClass.Gatherable;
             root.SelectionProbe.SelectCharacterIds(new[]{worker});
-            root.GameplayUi.OpenContextMenu(new ContextCommandTarget(ContextTargetKind.ResourceSource,site.Position,site.Id,new ResourceId(resource),resourceClass),new Vector2(700,450));
+            Building fishingCamp=null;
+            if(recipe=="fish_water")
+            {
+                // A completed camp fixture exercises the building menu; the issued work still uses the real lake site.
+                fishingCamp=Building.Restore(new BuildingState(StableEntityId.NewId(),new BuildingDefinitionId("fishing_camp"),
+                    new GridCoordinate(0,0),(BuildingOrientation)0,ConstructionState.Completed));
+                root.Buildings.Add(fishingCamp);
+                root.GameplayUi.OpenContextMenu(new ContextCommandTarget(ContextTargetKind.Building,site.Position,fishingCamp.Id),new Vector2(700,450));
+                Check(root.GameplayUi.ContextActionStates.ContainsKey(ContextActionKind.Gather),"Fishing camp menu offers work");
+            }
+            else root.GameplayUi.OpenContextMenu(new ContextCommandTarget(ContextTargetKind.ResourceSource,site.Position,site.Id,new ResourceId(resource),resourceClass),new Vector2(700,450));
             var command=root.GameplayUi.ExecuteContextAction(kind,false);
+            if(fishingCamp!=null) root.Buildings.Remove(fishingCamp);
             Check(command.Orders.Count==1,recipe+" direct order accepted: "+string.Join(",",command.Entries.Select(e=>e.Availability.Reason)));
             if(command.Orders.Count==0) yield break;
             var until=Time.realtimeSinceStartup+100f;
+            var burstsBefore=root.GetComponent<WorldWorkApproaches>().WorkImpactBursts;
             root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.VeryFast); root.Clock.Resume();
             var worked=false; var completed=false; var impacts=0;
             void OnImpact(Game.Domain.World.HuntingImpact impact) { if(impact.Animal==site.Id && impact.Damage>0) impacts++; }
@@ -225,19 +279,41 @@ namespace Game.Infrastructure.Integration
                         // Inspect under the canopy, from the worker's side, rather than looking down through leaves.
                         root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Normal);
                         root.CameraController.enabled=false;
-                        var camera=Camera.main;
-                        camera.transform.position=person.transform.position-person.transform.forward*2f+person.transform.right*3.2f+Vector3.up*2f;
-                        camera.transform.rotation=Quaternion.LookRotation(person.transform.position+Vector3.up*1.1f-camera.transform.position);
+                        var camera=root.CameraController.CameraMount;
+                        camera.position=person.transform.position-person.transform.forward*2f+person.transform.right*3.2f+Vector3.up*2f;
+                        camera.rotation=Quaternion.LookRotation(person.transform.position+Vector3.up*1.1f-camera.position);
                         for(var frame=0;frame<4;frame++)
-                        { yield return new WaitForSecondsRealtime(.23f); yield return Capture("work-"+recipe+"-"+frame); }
+                        { yield return new WaitForSecondsRealtime(.23f); yield return CaptureReadable(root,"work-"+recipe+"-"+frame); }
                         root.CameraController.enabled=true;
                         root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.VeryFast);
                     }
-                    else yield return Capture("work-"+recipe);
+                    else
+                    {
+                        root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Normal);
+                        root.CameraController.FocusPosition(person.transform.position,8f);
+                        var shortest=float.PositiveInfinity;var longest=0f;
+                        for(var frame=0;frame<5;frame++)
+                        {
+                            yield return new WaitForSecondsRealtime(.35f); yield return CaptureReadable(root,"work-"+recipe+"-"+frame);
+                            var bow=person.GetComponentsInChildren<LineRenderer>().FirstOrDefault(l=>l.name=="Drawn bow string");
+                            if(bow!=null)
+                            {
+                                var draw=Vector3.Distance(bow.GetPosition(1),(bow.GetPosition(0)+bow.GetPosition(2))*.5f);
+                                shortest=Mathf.Min(shortest,draw);longest=Mathf.Max(longest,draw);
+                            }
+                        }
+                        if(recipe=="hunt_animal") Check(longest-shortest>.08f,"Bow string and hands draw before release");
+                        root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.VeryFast);
+                    }
                     if(recipe=="fish_water")
                     {
                         var p=root.Production.WorkPosition(worker,site);
                         Check((person.transform.position-new Vector3(p.X,p.Y,p.Z)).magnitude<1.5f,"Fisher physically stands on pier");
+                        Check(person.HasFishingRod,"Fisher holds a visible rod");
+                        if(root.WorldHeight.TrySampleWaterSurface(person.transform.position.x,person.transform.position.z,out var water))
+                            Check(Camera.main.transform.position.y>water,"Close fishing camera remains above water");
+                        var catchPoint=root.Production.OutputPosition(worker,site);
+                        Check(catchPoint.DistanceSquared(p)<15f*15f && !root.WorldHeight.IsWater(catchPoint.X,catchPoint.Z),"Fish catch placed near pier on dry bank");
                     }
                 }
                 if(recipe=="hunt_animal")
@@ -251,6 +327,8 @@ namespace Game.Infrastructure.Integration
             root.Clock.Pause(); root.Clock.SetSpeed(Game.Simulation.Time.GameSpeed.Normal);
             Check(worked,recipe+" worker reaches source and works");
             Check(completed,recipe+" production completes");
+            if(recipe=="chop_wood" || recipe=="gather_stone")
+                Check(root.GetComponent<WorldWorkApproaches>().WorkImpactBursts>burstsBefore,recipe+" impact fragments emitted");
             if(recipe=="hunt_animal") Check(impacts>0,"Bow impacts reduce animal health before skinning");
             foreach(var task in root.Production.ActiveTasks.Where(t=>t.WorkerId==worker).ToArray()) root.Production.Cancel(task.Id);
         }

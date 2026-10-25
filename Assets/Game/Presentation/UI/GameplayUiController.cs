@@ -518,6 +518,19 @@ namespace Game.Presentation.UI
                     : state.Reason == ContextUnavailableReason.None
                         ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
+            if (TryGetFishingCampTarget(target, out var fishingTarget))
+            {
+                var state = EvaluateForSelection(ContextActionKind.Gather, fishingTarget);
+                contextActionStates[ContextActionKind.Gather] = state;
+                var fishButton = ActionButton("Ловить рыбу с пирса", () =>
+                {
+                    activeContextTarget = fishingTarget;
+                    ExecuteContextAction(ContextActionKind.Gather, Keyboard.current != null && Keyboard.current.shiftKey.isPressed);
+                }, "context-fishing-camp");
+                fishButton.SetEnabled(state.Enabled);
+                contextMenu.Add(fishButton);
+                AddMuted(contextMenu, state.Enabled ? "Доступно" : "Недоступно: " + ContextReason(state.Reason));
+            }
             AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
             PositionContextMenu(screenPosition);
             contextMenu.style.display = DisplayStyle.Flex;
@@ -525,10 +538,25 @@ namespace Game.Presentation.UI
 
         public ContextCommandResult LastContextCommandResult { get; private set; }
 
+        public bool TryGetFishingCampTarget(ContextCommandTarget target, out ContextCommandTarget fishTarget)
+        {
+            fishTarget = default;
+            if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var camp) ||
+                camp.DefinitionId.ToString() != "fishing_camp" || !camp.IsOperational || camp.OwnerSideId.Value != "player") return false;
+            var source = context.Production.Sites.Where(s => s.RecipeId.ToString() == "fish_water" && s.IsWorkAvailable)
+                .OrderBy(s => s.Position.DistanceSquared(target.Position)).FirstOrDefault();
+            if (source == null || source.Position.DistanceSquared(target.Position) > 300f * 300f) return false;
+            fishTarget = new ContextCommandTarget(ContextTargetKind.ResourceSource, source.Position, source.Id,
+                new ResourceId("fish"), ContextResourceClass.Gatherable);
+            return true;
+        }
+
         public ContextCommandResult ExecuteContextAction(ContextActionKind action, bool append)
         {
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
             var target = activeContextTarget.Value;
+            if (action == ContextActionKind.Gather && TryGetFishingCampTarget(target, out var fishingTarget))
+                target = fishingTarget;
             var roster = activeContextSelectionIds.ToArray();
             var destination = action == ContextActionKind.Haul ? FindHaulDestination() : null;
             InventoryOwner? source = null;

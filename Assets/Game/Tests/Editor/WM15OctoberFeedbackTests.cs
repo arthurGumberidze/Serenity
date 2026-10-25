@@ -17,6 +17,38 @@ namespace Game.Tests.Editor
     public sealed class WM15OctoberFeedbackTests
     {
         [Test]
+        public void ExhaustedWholeSourceHasNoZeroQuantityOutput()
+        {
+            var recipe = new ProductionRecipe(new ProductionRecipeId("chop_wood"), "Wood", null,
+                new[]{new ResourceAmount(new ResourceId("wood_log"),new ResourceQuantity(1))},
+                System.TimeSpan.FromSeconds(30),ProductionSiteKind.NaturalSource,harvestEntireSource:true);
+            var source = ProductionSite.CreateNatural(recipe.Id,new WorldPosition(0,0,0),20);
+            Assert.That(recipe.OutputsFor(source).Single().Quantity.Units,Is.EqualTo(20));
+            source.CompleteWork(ProductionTaskKind.Gather,true);
+            Assert.That(recipe.OutputsFor(source),Is.Empty);
+        }
+
+        [Test]
+        public void CorpseRollsActualModelAndRestsOnGround()
+        {
+            var host = new UnityEngine.GameObject("animal");
+            var model = UnityEngine.GameObject.CreatePrimitive(UnityEngine.PrimitiveType.Cube);
+            model.transform.SetParent(host.transform,false);
+            model.transform.localPosition=UnityEngine.Vector3.up;
+            model.transform.localScale=new UnityEngine.Vector3(.6f,2f,1.6f);
+            try
+            {
+                var health=new AnimalHealthRegistry(); var id=StableEntityId.NewId();health.Register(id,"boar");
+                var view=host.AddComponent<Game.Presentation.Environment.AnimalHealthPresentation>();
+                view.Bind(health,id,model.transform);
+                health.Damage(id,150);view.Refresh();view.Refresh();
+                var bounds=model.GetComponent<UnityEngine.Renderer>().bounds;
+                Assert.That(bounds.size.y,Is.LessThan(1f));
+                Assert.That(bounds.min.y,Is.EqualTo(.03f).Within(.01f));
+            }
+            finally {UnityEngine.Object.DestroyImmediate(host);}
+        }
+        [Test]
         public void BothMouseButtonsPickAnimalThroughDecorativeCanopy()
         {
             var cameraObject=new UnityEngine.GameObject("pointer test camera");

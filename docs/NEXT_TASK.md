@@ -1,5 +1,16 @@
 # NEXT_TASK.md
 
+## WM15 late feedback — next unblocked work (2026-10-26)
+
+Current candidate: `Builds/WorldMapLateFix/Serenity.exe`, build-c 0 errors / 71 warnings.
+Player-c passed 51/51 checks, no runtime errors; four distinct focused regressions passed.
+See `docs/world_map/WM15_LATE_FEEDBACK.md`. Next remain user review of this candidate and WM15
+visual refinement/loading duration; preserve the regional palette and inherited imports. AQUAS is
+partially reused through its wave texture; a full URP port is separate outstanding work, not claimed done.
+Do not repeat passed checks without new changes/concerns. Full 100/300/500 gates still await authorization.
+Keep WM15 IN_PROGRESS pending visual acceptance and outstanding White Rabbit/husbandry content.
+The user requested shutdown after saving this completed repair batch; do not start unrelated work first.
+
 ## WM15 October 25 feedback — active
 
 Build-f is ready at Builds/WorldMapOctoberFix/Serenity.exe: 0 errors / 69 warnings. Player-f passed

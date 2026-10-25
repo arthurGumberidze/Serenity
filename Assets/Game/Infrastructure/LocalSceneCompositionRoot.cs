@@ -396,7 +396,9 @@ namespace Game.Infrastructure
             cameraController.Settings.MaxZoom = Mathf.Max(cameraController.Settings.MaxZoom, 160f);
             cameraController.Settings.ZoomSpeed = 4f;
             cameraController.Settings.Validate();
-            cameraController.ConfigureGround(position => WorldHeight.SampleHeight(position.x, position.z),
+            cameraController.ConfigureGround(position => WorldHeight.TrySampleWaterSurface(position.x, position.z, out var water)
+                    ? Mathf.Max(water, WorldHeight.SampleHeight(position.x, position.z))
+                    : WorldHeight.SampleHeight(position.x, position.z),
                 new Vector3(WorldDefinition.PlayerStart.X, 0f, WorldDefinition.PlayerStart.Z));
             if (WorldDefinition.MapData != null)
                 cameraController.FocusPosition(new Vector3(WorldDefinition.PlayerStart.X, 0f,

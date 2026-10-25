@@ -10,7 +10,7 @@ namespace Game.Presentation.Characters
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CapsuleCollider))]
-    public sealed class CharacterPresenter : MonoBehaviour
+    public sealed partial class CharacterPresenter : MonoBehaviour
     {
         private static readonly int SpeedParameter = Animator.StringToHash("Speed");
         private static readonly int MovingParameter = Animator.StringToHash("Moving");
@@ -77,9 +77,10 @@ namespace Game.Presentation.Characters
 
         private void RebindWorkTools()
         {
-            foreach (var tool in new[] { workAxe, workPickaxe, workHammer, huntingBow })
+            foreach (var tool in new[] { workAxe, workPickaxe, workHammer, huntingBow, fishingRod })
                 if (tool != null) { tool.SetActive(false); Destroy(tool); }
             workAxe = workPickaxe = workHammer = huntingBow = null;
+            fishingRod = null;
             if (animator == null || !animator.isHuman) return;
             var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
             if (hand == null) return;
@@ -88,6 +89,7 @@ namespace Game.Presentation.Characters
             workHammer = CreateTool(hammerPrefab, hand, "Work hammer", 0.65f);
             var left = animator.GetBoneTransform(HumanBodyBones.LeftHand);
             if (left != null) huntingBow = CreateTool(bowPrefab, left, "Hunting bow", 1.1f);
+            CreateFishingRod(hand);
             RefreshWorkTools();
         }
 
@@ -136,7 +138,7 @@ namespace Game.Presentation.Characters
                 visual.transform.localRotation = turn * visual.transform.localRotation;
                 visual.transform.localScale *= scale;
                 visual.transform.localPosition = turn * (visual.transform.localPosition - bounds.center) * scale +
-                    Vector3.up * length * 0.25f;
+                    Vector3.up * length * (label == "Hunting bow" ? 0f : 0.25f);
             }
             holder.transform.localPosition = new Vector3(0.01f, 0.03f, 0.02f);
             holder.transform.localRotation = Quaternion.Euler(15f, 8f, 92f);
@@ -151,6 +153,7 @@ namespace Game.Presentation.Characters
             if (workPickaxe != null) workPickaxe.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Mine);
             if (workHammer != null) workHammer.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Build);
             if (huntingBow != null) huntingBow.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Hunt);
+            if (fishingRod != null) fishingRod.SetActive(!activityHidden && animationIntent == CharacterAnimationIntent.Fish);
         }
 
         public bool IsBound => character != null;
@@ -321,7 +324,11 @@ namespace Game.Presentation.Characters
                 animator.enabled = true;
                 disableAutomaticAnimationAfter = float.PositiveInfinity;
             }
-            animator.SetInteger(ActionIntentParameter, (int)intent);
+            // Procedural drawing/fishing owns the arms; the generic labour clip bends the torso and
+            // raises a hand as if striking, fighting those poses. Keep a neutral base stance instead.
+            var baseIntent = intent == CharacterAnimationIntent.Hunt || intent == CharacterAnimationIntent.Fish
+                ? CharacterAnimationIntent.Idle : intent;
+            animator.SetInteger(ActionIntentParameter, (int)baseIntent);
             if (Application.isPlaying && intent == CharacterAnimationIntent.Idle &&
                 previousIntent != CharacterAnimationIntent.Idle && animator.enabled && !automaticMovementAnimation)
                 disableAutomaticAnimationAfter = Time.unscaledTime + 0.2f;
@@ -341,7 +348,7 @@ namespace Game.Presentation.Characters
             var tool = animationIntent == CharacterAnimationIntent.Chop ? workAxe : workPickaxe;
             if (hand == null || tool == null || rightUpperArmBone == null || rightLowerArmBone == null) return false;
             var length = animationIntent == CharacterAnimationIntent.Chop ? .8f : .95f;
-            var stroke = (1f - Mathf.Cos(time * 5.2f)) * .5f;
+            var stroke = (1f - Mathf.Cos(workPoseClock * 5.2f)) * .5f;
             var head = workContact + Vector3.up * stroke * .8f - transform.forward * stroke * .25f;
             var reach = head - rightUpperArmBone.position;
             var grip = head - reach.normalized * length * .75f;
@@ -358,8 +365,12 @@ namespace Game.Presentation.Characters
             ApplyOffset(rightUpperArmBone,Quaternion.Inverse(rightUpperArmBone.rotation)*rotation,ref lastRightUpperArmOffset);
             rotation = Quaternion.FromToRotation(hand.position-rightLowerArmBone.position,grip-rightLowerArmBone.position)*rightLowerArmBone.rotation;
             ApplyOffset(rightLowerArmBone,Quaternion.Inverse(rightLowerArmBone.rotation)*rotation,ref lastRightLowerArmOffset);
-            rotation = Quaternion.FromToRotation(tool.transform.up,head-hand.position)*hand.rotation;
+            var toolAxis = (head - hand.position).normalized;
+            var fixedRoll = Quaternion.LookRotation(transform.right, toolAxis);
+            rotation = fixedRoll * Quaternion.Inverse(tool.transform.localRotation);
             ApplyOffset(hand,Quaternion.Inverse(hand.rotation)*rotation,ref lastWorkHandOffset);
+            var cycle = Mathf.FloorToInt(workPoseClock * 5.2f / (Mathf.PI * 2f));
+            if (cycle > lastWorkImpactCycle) { WorkImpactSequence++; lastWorkImpactCycle = cycle; }
             return true;
         }
 
@@ -375,16 +386,15 @@ namespace Game.Presentation.Characters
         {
             if (animator == null || !animator.isHuman || !DetailedVisualActive) return;
             RemoveLastPoseOffsets();
+            var elapsed = Mathf.Clamp(unscaledTime - previousPoseTime, 0f, .1f);
+            previousPoseTime = unscaledTime;
+            if (displayedPaused != true) workPoseClock += elapsed;
             if (animationIntent == CharacterAnimationIntent.Hunt)
             {
-                // Left hand holds the bow; the drawing hand stays by the cheek.
-                ApplyOffset(spineBone, Quaternion.Euler(0f, -18f, 0f), ref lastSpineOffset);
-                ApplyOffset(leftUpperArmBone, Quaternion.Euler(78f, -12f, 8f), ref lastLeftUpperArmOffset);
-                ApplyOffset(leftLowerArmBone, Quaternion.Euler(-8f, 0f, 0f), ref lastLeftLowerArmOffset);
-                ApplyOffset(rightUpperArmBone, Quaternion.Euler(66f, 28f, -26f), ref lastRightUpperArmOffset);
-                ApplyOffset(rightLowerArmBone, Quaternion.Euler(-112f, 0f, 0f), ref lastRightLowerArmOffset);
+                ApplyBowDrawPose();
                 return;
             }
+            if (animationIntent == CharacterAnimationIntent.Fish) { ApplyFishingPose(); return; }
             if (ApplyWorkContactPose(unscaledTime)) return;
             if (hasActionIntentParameter) return;
             if (animationIntent == CharacterAnimationIntent.Idle) return;
@@ -445,6 +455,8 @@ namespace Game.Presentation.Characters
 
         private void OnDestroy()
         {
+            if (workLineMaterial != null) Destroy(workLineMaterial);
+            if (rodMaterial != null) Destroy(rodMaterial);
             Unbind();
         }
 
@@ -488,7 +500,10 @@ namespace Game.Presentation.Characters
         private void RemoveLastPoseOffsets()
         {
             if (animator != null && animator.isHuman)
+            {
                 RemoveOffset(animator.GetBoneTransform(HumanBodyBones.RightHand), ref lastWorkHandOffset);
+                RemoveOffset(animator.GetBoneTransform(HumanBodyBones.LeftHand), ref lastLeftHandOffset);
+            }
             RemoveOffset(spineBone, ref lastSpineOffset);
             RemoveOffset(rightUpperArmBone, ref lastRightUpperArmOffset);
             RemoveOffset(leftUpperArmBone, ref lastLeftUpperArmOffset);
@@ -496,16 +511,23 @@ namespace Game.Presentation.Characters
             RemoveOffset(leftLowerArmBone, ref lastLeftLowerArmOffset);
         }
 
-        private static void ApplyOffset(Transform bone, Quaternion offset, ref Quaternion previous)
+        private void ApplyOffset(Transform bone, Quaternion offset, ref Quaternion previous)
         {
             if (bone == null) return;
+            poseBefore[bone] = bone.localRotation;
             bone.localRotation *= offset;
+            poseAfter[bone] = bone.localRotation;
             previous = offset;
         }
 
-        private static void RemoveOffset(Transform bone, ref Quaternion previous)
+        private void RemoveOffset(Transform bone, ref Quaternion previous)
         {
-            if (bone != null && previous != Quaternion.identity) bone.localRotation *= Quaternion.Inverse(previous);
+            // Animator may already have written a fresh pose. Never subtract yesterday's additive
+            // rotation from today's animation, which produced alternating wrist twists.
+            if (bone != null && poseAfter.TryGetValue(bone, out var applied) &&
+                Quaternion.Angle(bone.localRotation, applied) < .01f && poseBefore.TryGetValue(bone, out var original))
+                bone.localRotation = original;
+            if (bone != null) { poseBefore.Remove(bone); poseAfter.Remove(bone); }
             previous = Quaternion.identity;
         }
 

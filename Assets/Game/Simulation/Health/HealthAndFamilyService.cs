@@ -333,7 +333,10 @@ namespace Game.Simulation.Health
             var character = characters.Get(characterId);
             if (biologicalTick < character.BiologicalBirthTick) throw new ArgumentOutOfRangeException(nameof(biologicalTick));
             var bootstrapAdult = biologicalTick == 0 && character.BiologicalBirthTick == 0 && character.Parents.Count == 0;
-            var adult = bootstrapAdult || character.AgeInCompletedYears(biologicalTick) >= AdultAgeYears;
+            // A death can be recorded by another service during this tick, before our clock advances.
+            // Capabilities describe current canonical state, never a reconstruction before that death.
+            var ageTick = Math.Max(biologicalTick, character.BiologicalDeathTick ?? biologicalTick);
+            var adult = bootstrapAdult || character.AgeInCompletedYears(ageTick) >= AdultAgeYears;
             var work = adult ? 1000 : 0;
             var movement = 1000;
             var research = adult ? 1000 : 0;

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 383f49d342ec41849614591512eb19cf, type: 3}
+  m_Name: LateLandscape
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.LateLandscapeCatalog
+  SnowTree: {fileID: 398570720220517038, guid: 9c4eb796b7ff9534fb366204424239b0, type: 3}
+  SnowRocks:
+  - {fileID: 3441233942126680077, guid: 911fb2e1cfd393948b77a4dca4d4f438, type: 3}
+  - {fileID: 9029350230317761030, guid: a1f657e0f0aee3242b1fc296bcadebee, type: 3}
+  - {fileID: 111072760437077779, guid: 1d214b34383adb44bb0aa99b27749a35, type: 3}
+  Flowers:
+  - {fileID: 4113220790408712802, guid: b1b33096923930847a271abc0889a828, type: 3}
+  - {fileID: 6793379823314433865, guid: c5a9923ecff729442a03168a4cc3ac3c, type: 3}
+  - {fileID: 7236661156708847131, guid: 231e5c41830e6c648b0b760d12b5f300, type: 3}
+  - {fileID: 1236985704335068917, guid: 4da8f26e5a8ab0b4786e007973a81608, type: 3}
+  MarshPlants:
+  - {fileID: 5380792568026161160, guid: 30c61788fde8bbc408a70cac3a0936b9, type: 3}
+  - {fileID: 8057248292457726294, guid: 715a244bc7d41b642b81f3c41543d3f4, type: 3}
+  IceFloe: {fileID: 5332452112081937584, guid: a0d4c27e2fc319443baf768d46c90031, type: 3}
+  FallingLeaves: {fileID: 8474697301851507070, guid: 75cb9d0caab0ab24e963badd012732b4, type: 3}
+  Fireflies: {fileID: 2694667942693770651, guid: 883e694e74d59a246b3d7d92e3edf047, type: 3}
+  Grass: {fileID: 2800000, guid: 4c3b498d9f7e5fd0816ff5b4b8a67ddb, type: 3}
+  GrassNormal: {fileID: 2800000, guid: 6ca17d20a20c5001881febf2a12431e5, type: 3}
+  ForestFloor: {fileID: 2800000, guid: dbf488338fea52a5af766bf19837ad55, type: 3}
+  ForestNormal: {fileID: 2800000, guid: 117be6401eae579289a41033a5877d96, type: 3}
+  Pebbles: {fileID: 2800000, guid: e89b0066580a594b890642f92b8dfacd, type: 3}
+  PebblesNormal: {fileID: 2800000, guid: 7203a77323385305ac2cbade15aa2e54, type: 3}
+  WaterWaves: {fileID: 2800000, guid: b71c145756a656169c453d5f605dfdf2, type: 3}

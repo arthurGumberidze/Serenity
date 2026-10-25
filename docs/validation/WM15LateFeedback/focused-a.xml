@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0,8867615">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="776" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.886762" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1901" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="772" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.832331" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12864" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1902" name="Game" fullname="Game" runstate="Runnable" testcasecount="772" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.784586" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1903" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="772" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.758169" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1904" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="590" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.680881" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1357" name="HealthAndFamilyTests" fullname="Game.Tests.Editor.HealthAndFamilyTests" classname="Game.Tests.Editor.HealthAndFamilyTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.212431" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U18" />
+              </properties>
+              <test-case id="1358" name="ExternalDeathBeforeHealthClockAdvanceImmediatelyDisablesWork" fullname="Game.Tests.Editor.HealthAndFamilyTests.ExternalDeathBeforeHealthClockAdvanceImmediatelyDisablesWork" methodname="ExternalDeathBeforeHealthClockAdvanceImmediatelyDisablesWork" classname="Game.Tests.Editor.HealthAndFamilyTests" runstate="Runnable" seed="1533269641" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.132952" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1847" name="WM15OctoberFeedbackTests" fullname="Game.Tests.Editor.WM15OctoberFeedbackTests" classname="Game.Tests.Editor.WM15OctoberFeedbackTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.215812" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1849" name="CorpseRollsActualModelAndRestsOnGround" fullname="Game.Tests.Editor.WM15OctoberFeedbackTests.CorpseRollsActualModelAndRestsOnGround" methodname="CorpseRollsActualModelAndRestsOnGround" classname="Game.Tests.Editor.WM15OctoberFeedbackTests" runstate="Runnable" seed="103053429" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.179219" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1848" name="ExhaustedWholeSourceHasNoZeroQuantityOutput" fullname="Game.Tests.Editor.WM15OctoberFeedbackTests.ExhaustedWholeSourceHasNoZeroQuantityOutput" methodname="ExhaustedWholeSourceHasNoZeroQuantityOutput" classname="Game.Tests.Editor.WM15OctoberFeedbackTests" runstate="Runnable" seed="1918300156" result="Passed" start-time="2026-10-25 20:23:51Z" end-time="2026-10-25 20:23:51Z" duration="0.024768" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

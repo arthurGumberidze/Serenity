@@ -5,6 +5,8 @@ namespace Game.Presentation.Environment
     /// <summary>Presentation-only assets; resource identity and stock remain in ProductionService.</summary>
     public sealed class StarterNatureCatalog : ScriptableObject
     {
+        [System.NonSerialized] public LateLandscapeCatalog RuntimeLate;
+        [System.NonSerialized] public Vector4 RuntimeWorldToDesign, RuntimeSnowRegion;
         public GameObject[] Trees;
         public GameObject[] ShoreProps;
         public TerrainLayer[] GroundLayers;

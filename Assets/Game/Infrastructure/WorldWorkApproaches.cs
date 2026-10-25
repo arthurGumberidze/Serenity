@@ -18,7 +18,15 @@ namespace Game.Infrastructure
         private readonly Dictionary<string, Vector3> docks = new();
         private readonly Dictionary<StableEntityId, Vector3> fishStances = new();
         private readonly Dictionary<StableEntityId, Vector3> fishTargets = new();
+        private readonly Dictionary<string, Vector3> catches = new();
+        private readonly Dictionary<StableEntityId, Vector3> fishOutputs = new();
         private Material timber;
+        private Material chipMaterial, stoneMaterial;
+        private Mesh fragmentMesh;
+        private float effectWindow;
+        private int effectsThisWindow;
+        private readonly Dictionary<StableEntityId, int> lastImpacts = new();
+        public int WorkImpactBursts { get; private set; }
         private float nextSourceRefresh;
         private readonly Dictionary<StableEntityId, ProductionSourcePresenter> sources = new();
         private ProductionSourcePresenter Source(StableEntityId id)
@@ -38,6 +46,8 @@ namespace Game.Infrastructure
             timber = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             timber.SetColor("_BaseColor", new Color(.34f,.19f,.085f));
             root.Production.WorkPosition = Resolve;
+            root.Production.OutputPosition = (worker, site) => fishOutputs.TryGetValue(site.Id, out var p)
+                ? new WorldPosition(p.x, p.y, p.z) : site.Position;
         }
         public void RegisterFish(TiledWorldResourceNode node, StableEntityId id)
         {
@@ -58,6 +68,9 @@ namespace Game.Infrastructure
                     break;
                 }
                 start.y = Mathf.Max(root.WorldHeight.SampleHeight(start.x, start.z) + .12f, target.y);
+                var catchPoint = start - direction * 1.8f;
+                catchPoint.y = root.WorldHeight.SampleHeight(catchPoint.x, catchPoint.z);
+                catches[node.SourceZoneId] = catchPoint;
                 var length = Mathf.Min(9f, Vector3.Distance(new Vector3(start.x,0,start.z),new Vector3(target.x,0,target.z)));
                 length = Mathf.Max(3f, length);
                 var end = start + direction.normalized * length;
@@ -109,6 +122,7 @@ namespace Game.Infrastructure
                 docks.Add(node.SourceZoneId,stance);
             }
             fishStances[id] = stance;
+            fishOutputs[id] = catches[node.SourceZoneId];
             fishTargets[id] = new Vector3(node.VisualPosition.X,node.VisualPosition.Y,node.VisualPosition.Z);
         }
         private WorldPosition Resolve(StableEntityId worker, ProductionSite site)
@@ -152,6 +166,7 @@ namespace Game.Infrastructure
                     !root.Production.TryGetSite(task.SiteId,out var site)) continue;
                 var direction = new Vector3(site.Position.X,0,site.Position.Z)-movement.Presenter.transform.position;
                 if (fishTargets.TryGetValue(site.Id,out var fishTarget)) direction = fishTarget-movement.Presenter.transform.position;
+                if (fishTargets.TryGetValue(site.Id,out fishTarget)) movement.Presenter.SetFishingTarget(fishTarget);
                 direction.y = 0;
                 if (direction.sqrMagnitude > .01f) movement.Presenter.transform.rotation = Quaternion.LookRotation(direction);
                 if (task.RecipeId.ToString() == "chop_wood" || task.RecipeId.ToString() == "gather_stone")
@@ -166,9 +181,47 @@ namespace Game.Infrastructure
                         if (renderer != null) contact = renderer.bounds.ClosestPoint(movement.Presenter.transform.position + Vector3.up);
                     }
                     movement.Presenter.SetWorkContact(contact);
+                    var sequence = movement.Presenter.WorkImpactSequence;
+                    if (lastImpacts.TryGetValue(task.WorkerId, out var previous) && sequence != previous)
+                        EmitWorkImpact(contact, task.RecipeId.ToString() == "chop_wood");
+                    lastImpacts[task.WorkerId] = sequence;
                 }
             }
         }
-        private void OnDestroy() { if(timber != null) Destroy(timber); }
+        private void EmitWorkImpact(Vector3 contact, bool wood)
+        {
+            if (Time.unscaledTime >= effectWindow) { effectWindow = Time.unscaledTime+1f; effectsThisWindow = 0; }
+            var camera = Camera.main;
+            if (effectsThisWindow >= 16 || camera == null || (camera.transform.position-contact).sqrMagnitude > 10000f) return;
+            effectsThisWindow++; WorkImpactBursts++;
+            if (fragmentMesh == null)
+            {
+                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                fragmentMesh = cube.GetComponent<MeshFilter>().sharedMesh;
+                Destroy(cube);
+                chipMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                chipMaterial.SetColor("_BaseColor",new Color(.7f,.42f,.18f));
+                stoneMaterial = new Material(chipMaterial); stoneMaterial.SetColor("_BaseColor",new Color(.48f,.49f,.47f));
+            }
+            var effect = new GameObject(wood ? "Wood chips impact" : "Stone fragments impact");
+            effect.transform.position = contact;
+            effect.transform.rotation = Quaternion.Euler(-65,0,0);
+            var particles = effect.AddComponent<ParticleSystem>();
+            particles.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = particles.main; main.loop=false; main.duration=.15f; main.startLifetime=.65f;
+            main.startSpeed=new ParticleSystem.MinMaxCurve(1.2f,2.5f); main.startSize=new ParticleSystem.MinMaxCurve(.025f,.075f);
+            main.gravityModifier=1f; main.maxParticles=12;
+            var emission=particles.emission; emission.rateOverTime=0;
+            var shape=particles.shape; shape.shapeType=ParticleSystemShapeType.Cone; shape.angle=65; shape.radius=.06f;
+            var renderer=particles.GetComponent<ParticleSystemRenderer>(); renderer.renderMode=ParticleSystemRenderMode.Mesh;
+            renderer.mesh=fragmentMesh; renderer.sharedMaterial=wood ? chipMaterial : stoneMaterial;
+            particles.Play(); particles.Emit(10); Destroy(effect,1f);
+        }
+        private void OnDestroy()
+        {
+            if(timber != null) Destroy(timber);
+            if(chipMaterial != null) Destroy(chipMaterial);
+            if(stoneMaterial != null) Destroy(stoneMaterial);
+        }
     }
 }

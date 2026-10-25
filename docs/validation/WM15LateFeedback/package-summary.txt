@@ -1,0 +1,33 @@
+66d2c3cc80_uassets-dl-gtrsb9.unitypackage
+  [('Assets/Lowpoly Style/Arctic Tundra', 50), ('Assets/Lowpoly Style/Shared FBX Meshes', 39), ('Assets/Lowpoly Style/Shared Materials and Textures', 5), ('Assets/Lowpoly Style/Shared Scripts', 2), ('Assets/___www.unityassetcollection.com___.txt', 1)]
+  [('.prefab', 41), ('.fbx', 39), ('.mat', 3), ('', 3), ('.exr', 2), ('.cs', 2), ('.asset', 2), ('.txt', 2), ('.unity', 1), ('.png', 1)]
+7b01a393b0_uassets-dl-skh3th.unitypackage
+  [('Assets/AQUAS/Textures', 630), ('Assets/AQUAS/Demo', 56), ('Assets/PostProcessing/Runtime', 49), ('Assets/AQUAS/Materials', 42), ('Assets/PostProcessing/Editor', 40), ('Assets/PostProcessing/Resources', 34), ('Assets/AQUAS/Shaders', 22), ('Assets/PostProcessing/Utilities', 18)]
+  [('.jpg', 622), ('.cs', 98), ('', 66), ('.mat', 55), ('.shader', 38), ('.cginc', 14), ('.png', 12), ('.tga', 10), ('.asset', 9), ('.prefab', 8)]
+80cef589b5_uassets-dl-ysplrj.unitypackage
+  [('Assets/TerrainComposer2/Examples', 175), ('Assets/TerrainComposer2/GUI', 152), ('Assets/TerrainComposer2/Scripts', 92), ('Assets/TerrainComposer2/Products', 11), ('Assets/TerrainComposer2/Shaders', 8), ('Assets/TerrainComposer2/Defaults', 7), ('Assets/TerrainComposer2/ReadMe.txt', 1)]
+  [('.png', 144), ('.prefab', 98), ('.cs', 83), ('', 58), ('.psd', 33), ('.unity', 6), ('.jpg', 5), ('.asset', 4), ('.mat', 3), ('.cginc', 3)]
+Ambience - Banaue Rice Terraces Free Sample Pack.unitypackage
+  [('Assets/Ambience - Banaue Rice Terraces (Free Sample Pack)/Ambience - Banaue Rice Terraces (Free Sample Pack)', 10)]
+  [('.wav', 10)]
+ecc658483f_uassets-dl-qceo2b.unitypackage
+  [('Assets/StylizedNatureBundle/Prefabs', 284), ('Assets/StylizedNatureBundle/Models', 254), ('Assets/StylizedNatureBundle/Demo', 197), ('Assets/StylizedNatureBundle/Textures', 19), ('Assets/StylizedNatureBundle/Materials', 17), ('Assets/StylizedNatureBundle/Shaders', 9), ('Assets/StylizedNatureBundle/Documentation', 3), ('Assets/StylizedNatureBundle/SNB_URP_7xxx.unitypackage', 1)]
+  [('.prefab', 267), ('.fbx', 248), ('.cs', 79), ('', 57), ('.mat', 37), ('.shader', 28), ('.tga', 17), ('.cginc', 15), ('.asset', 12), ('.unity', 11)]
+FREE 3D VEGETATION PACK.unitypackage
+  [('Assets/ZNS3D/FREE_VEGETATION_PACK', 89), ('Assets/ZNS3D/PLANE_TREE', 19), ('Assets/ZNS3D', 1)]
+  [('', 34), ('.png', 24), ('.fbx', 12), ('.prefab', 12), ('.mat', 12), ('.terrainlayer', 5), ('.asset', 4), ('.unity', 3), ('.exr', 1), ('.pdf', 1)]
+Grass And Flowers Pack 1.unitypackage
+  [('Assets/Grass And Flowers Pack 1/Flower', 48), ('Assets/Grass And Flowers Pack 1/Example Scene', 22), ('Assets/Grass And Flowers Pack 1/Small Tree', 12), ('Assets/Grass And Flowers Pack 1/Bush', 9), ('Assets/Grass And Flowers Pack 1/Ground Textures', 5), ('Assets/Grass And Flowers Pack 1/Grass', 5)]
+  [('.png', 73), ('', 9), ('.tif', 6), ('.mat', 5), ('.rendertexture', 2), ('.jpg', 2), ('.unity', 1), ('.txt', 1), ('.cs', 1), ('.asset', 1)]
+Nature Materials vol.1.unitypackage
+  [('Assets/QS/QS-Textures-Grass-v1', 38)]
+  [('.mat', 20), ('.png', 10), ('', 6), ('.txt', 1), ('.unity', 1)]
+Nature Materials vol.2.unitypackage
+  [('Assets/QS/Materials', 9), ('Assets/QS/Textures', 9), ('Assets/QS/Scenes', 2), ('Assets/QS/Documentation', 2)]
+  [('.mat', 8), ('.png', 8), ('', 4), ('.txt', 1), ('.unity', 1)]
+Outdoor Ground Textures.unitypackage
+  [('Assets/ADG_Textures/ground_vol1', 100), ('Assets/ADG_Textures/Demo', 2)]
+  [('.tga', 70), ('', 16), ('.mat', 14), ('.unity', 1), ('.lighting', 1)]
+Terrain Textures Pack Free.unitypackage
+  [('Assets/TerrainTexturesPackFree/TerrainTextures', 11), ('Assets/TerrainTexturesPackFree/DemoScene', 5)]
+  [('.png', 10), ('', 3), ('.exr', 1), ('.unity', 1), ('.asset', 1)]

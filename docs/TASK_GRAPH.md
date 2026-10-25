@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 late feedback (2026-10-26): **IN_PROGRESS / build-c and focused route verified**.
+`Builds/WorldMapLateFix/Serenity.exe`: 0 errors / 71 warnings, immutable-source provenance verified.
+Player-c: 51/51 PASS, exit 0, no runtime errors; four distinct focused regressions passed. Current
+batch repairs resource/death errors, animal corpse pose, tools/bow/fishing, deep-water navigation,
+fishing camp work and admits selected content from eleven local packages. Full AQUAS not ported.
+Evidence: `docs/world_map/WM15_LATE_FEEDBACK.md`. User visual acceptance, loading optimization,
+White Rabbit/full husbandry and full performance gates remain open. Preserve inherited imports.
+
 WM15 October 25 feedback: **IN_PROGRESS / build-f and focused route verified**.
 Builds/WorldMapOctoberFix/Serenity.exe: 0 errors / 69 warnings. Player-f: 38/38 PASS, exit 0,
 no runtime errors. Eight distinct targeted regressions passed. Final visual acceptance, fine shoreline

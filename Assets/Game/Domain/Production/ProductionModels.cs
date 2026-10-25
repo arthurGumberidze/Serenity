@@ -83,7 +83,7 @@ namespace Game.Domain.Production
         public bool HarvestEntireSource { get; }
 
         public IReadOnlyList<ResourceAmount> OutputsFor(ProductionSite site) => HarvestEntireSource
-            ? outputs.Select(x => new ResourceAmount(x.ResourceId,
+            ? site.RemainingAmount == 0 ? Array.Empty<ResourceAmount>() : outputs.Select(x => new ResourceAmount(x.ResourceId,
                 new ResourceQuantity(checked(x.Quantity.Units * site.RemainingAmount)))).ToArray()
             : Outputs;
     }

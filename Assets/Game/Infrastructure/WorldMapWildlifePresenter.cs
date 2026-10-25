@@ -141,7 +141,7 @@ namespace Game.Infrastructure
                         foreach (var animator in view.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;
                         view.AddComponent<WorldMapWildlifeView>().Bind(state.Id, state.SpeciesId);
                         if (production != null) view.AddComponent<AnimalHealthPresentation>().Bind(
-                            production.Animals, state.Id, view.transform.GetChild(0));
+                            production.Animals, state.Id, model.transform);
                         tier1Views.Add(state.Id, view);
                     }
                     view.transform.position = new Vector3(state.Position.X, state.Position.Y, state.Position.Z);

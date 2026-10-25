@@ -1,6 +1,6 @@
 Shader "Serenity/StarterWater"
 {
-    Properties { _Ripples("Synty lake ripples", 2D) = "gray" {} }
+    Properties { _Ripples("Lake ripple texture", 2D) = "gray" {} }
     SubShader
     {
         Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Transparent" "Queue"="Transparent" }

@@ -235,6 +235,7 @@ namespace Game.Simulation.Production
 
         public AnimalHealthRegistry Animals { get; } = new AnimalHealthRegistry();
         public Func<StableEntityId, ProductionSite, WorldPosition> WorkPosition { get; set; }
+        public Func<StableEntityId, ProductionSite, WorldPosition> OutputPosition { get; set; }
         private ProductionJob CreateJob(ProductionTask task, ProductionSite site) =>
             new ProductionJob(task, WorkPosition != null ? WorkPosition(task.WorkerId, site) : site.Position);
 
@@ -913,7 +914,7 @@ namespace Game.Simulation.Production
                     else if (UsesGroundOutputs)
                     {
                         var pile = outputPiles.Create(output.ResourceId, output.Quantity,
-                            outputCoordinate(site.Position));
+                            outputCoordinate(OutputPosition != null ? OutputPosition(task.WorkerId, site) : site.Position));
                         if (!produced) outputOwner = pile.InventoryOwner;
                     }
                     else if (!inventories.Get(outputOwner).TryAdd(output.ResourceId, output.Quantity))
