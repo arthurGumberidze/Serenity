@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Game.Domain.AI;
 using Game.Domain.World;
 using Game.Presentation.Environment;
@@ -104,11 +106,21 @@ namespace Game.Infrastructure
         public void Initialize(TiledWorldDefinition definition, TiledWorldHeightSampler heightSampler,
             Terrain legacyTerrain)
         {
+            var routine = InitializeRoutine(definition, heightSampler, legacyTerrain);
+            while (routine.MoveNext()) { }
+        }
+
+        public IEnumerator InitializeRoutine(TiledWorldDefinition definition, TiledWorldHeightSampler heightSampler,
+            Terrain legacyTerrain, Action<string> progress = null)
+        {
+            progress?.Invoke("Подготавливаем рельеф и растительность…");
+            yield return null;
             if (Definition != null) throw new InvalidOperationException("The tiled world is already initialized.");
             Definition = definition ?? throw new ArgumentNullException(nameof(definition));
             HeightSampler = heightSampler ?? throw new ArgumentNullException(nameof(heightSampler));
             if (!ReferenceEquals(definition, heightSampler.Definition))
                 throw new ArgumentException("Height sampler must use the active world definition.", nameof(heightSampler));
+            Debug.Log("WM15_BOOT terrain setup");
             planner = new TiledWorldStreamingPlanner(definition);
             if (legacyTerrain != null && legacyTerrain.terrainData != null)
             {
@@ -143,6 +155,10 @@ namespace Game.Infrastructure
                 ArtWorldToDesign = new Vector4(designOrigin.X - definition.Origin.X * sx,
                     designOrigin.Z - definition.Origin.Z * sz, sx, sz);
                 ArtDirection.ApplyShaderGlobals(ArtWorldToDesign);
+                var regionalMaterial = Resources.Load<Material>("World/RegionalTerrain");
+                if (regionalMaterial == null) throw new InvalidOperationException("Regional terrain material is missing.");
+                sourceTerrainMaterial = new Material(regionalMaterial)
+                { name = "Regional terrain", hideFlags = HideFlags.DontSave, enableInstancing = true };
                 for (var i = 0; i < sourceLayers.Length; i++)
                 {
                     var layer = Instantiate(sourceLayers[i]);
@@ -159,18 +175,44 @@ namespace Game.Infrastructure
             }
             else if (natureCatalog != null && natureCatalog.GroundLayers != null && natureCatalog.GroundLayers.Length > 0)
                 sourceLayers = natureCatalog.GroundLayers;
+            yield return null;
             if (vegetationPlan != null)
             {
                 selectableTrees = vegetationPlan.Instances.Where(WorldMapVegetationRenderer.IsTree).ToArray();
                 vegetationRenderer = gameObject.AddComponent<WorldMapVegetationRenderer>();
                 vegetationRenderer.Initialize(vegetationPlan, natureCatalog);
             }
+            progress?.Invoke("Подготавливаем обзор карты…");
+            yield return null;
+            Debug.Log("WM15_BOOT strategic overview");
             BuildStrategicOverview();
+            Debug.Log("WM15_BOOT roads and terrain tiles");
             if (roadNetworkPlan != null) BuildRoadPresentation();
+            if (definition.MapData != null)
+            {
+                var tileIndex = 0;
+                foreach (var id in definition.Tiles)
+                {
+                    progress?.Invoke("Создаём рельеф и воду: " + (++tileIndex) + "/" + definition.Tiles.Count + "…");
+                    yield return null;
+                    // Compute only pure domain arrays off the Unity thread. Keep pumping the loading UI;
+                    // Terrain, Mesh, colliders and navigation are still created on the main thread.
+                    var tileId = id;
+                    var preparation = Task.Run(() => (
+                        heights: HeightSampler.CreateNormalizedHeights(tileId,HeightSampler.HeightmapResolution),
+                        paint: terrainPaintSampler?.CreateTileWeights(tileId,128)));
+                    while (!preparation.IsCompleted) yield return null;
+                    var prepared = preparation.GetAwaiter().GetResult();
+                    loaded.Add(id, CreateTile(id,prepared.heights,prepared.paint));
+                }
+            }
+            progress?.Invoke("Соединяем берега и дороги…");
+            yield return null;
             RefreshNow(definition.PlayerStart, Array.Empty<WorldPosition>(),
                 Array.Empty<Tuple<WorldPosition, WorldPosition>>());
             if (definition.MapData != null)
                 gameObject.AddComponent<WorldMapHorizon>().Initialize(this, natureCatalog);
+            Debug.Log("WM15_BOOT terrain ready");
         }
 
         public void ConfigureStreaming(Func<WorldPosition> cameraFocus,
@@ -215,11 +257,23 @@ namespace Game.Infrastructure
 
         public void BuildNavigation()
         {
+            var routine = BuildNavigationRoutine();
+            while (routine.MoveNext()) { }
+        }
+
+        public IEnumerator BuildNavigationRoutine(Action<string> progress = null)
+        {
             // Runtime terrains are positioned during the same bootstrap frame. Volume
             // collection must see their final collider bounds, not the creation origin.
             Physics.SyncTransforms();
             navigationEnabled = true;
-            foreach (var tile in loaded.Values.OrderBy(value => value.Id)) EnsureNavigation(tile);
+            var index = 0;
+            foreach (var tile in loaded.Values.OrderBy(value => value.Id))
+            {
+                progress?.Invoke("Подготавливаем маршруты: " + (++index) + "/" + loaded.Count + "…");
+                yield return null;
+                EnsureNavigation(tile);
+            }
             RebuildLinks();
         }
 
@@ -257,6 +311,7 @@ namespace Game.Infrastructure
             foreach (var id in plan.CollisionTiles)
             {
                 if (loaded.ContainsKey(id)) continue;
+                Debug.Log("WM15_BOOT tile " + id);
                 var tile = CreateTile(id);
                 loaded.Add(id, tile);
                 if (navigationEnabled) EnsureNavigation(tile);
@@ -291,7 +346,7 @@ namespace Game.Infrastructure
             if (added || visibilityChanged) VisualTilesChanged?.Invoke();
         }
 
-        private LoadedTile CreateTile(WorldTileId id)
+        private LoadedTile CreateTile(WorldTileId id, float[,] preparedHeights = null, float[,,] preparedPaint = null)
         {
             var heightmapResolution = HeightSampler.HeightmapResolution;
             var data = new TerrainData
@@ -304,8 +359,8 @@ namespace Game.Infrastructure
                 baseMapResolution = 128,
                 terrainLayers = sourceLayers
             };
-            data.SetHeights(0, 0, HeightSampler.CreateNormalizedHeights(id, heightmapResolution));
-            if (sourceLayers.Length > 0) ApplyTerrainPaint(id, data);
+            data.SetHeights(0, 0, preparedHeights ?? HeightSampler.CreateNormalizedHeights(id, heightmapResolution));
+            if (sourceLayers.Length > 0) ApplyTerrainPaint(id, data, preparedPaint);
             if (vegetationPlan != null) ApplyVegetation(data, id);
             var root = Terrain.CreateTerrainGameObject(data);
             root.name = "P10.9 Terrain " + id;
@@ -424,9 +479,10 @@ namespace Game.Infrastructure
             return x * x + z * z;
         }
 
-        private void ApplyTerrainPaint(WorldTileId id, TerrainData data)
+        private void ApplyTerrainPaint(WorldTileId id, TerrainData data, float[,,] prepared = null)
         {
-            var weights = CreateTerrainPaint(id, data);
+            var weights = prepared ?? CreateTerrainPaint(id, data);
+            PaintRoadShoulders(id, weights);
             var used = new List<int>();
             for (var layer = 0; layer < sourceLayers.Length; layer++)
             {
@@ -449,6 +505,46 @@ namespace Game.Infrastructure
                 weights = compact;
             }
             data.SetAlphamaps(0, 0, weights);
+        }
+
+        private void PaintRoadShoulders(WorldTileId id, float[,,] weights)
+        {
+            if (roadNetworkPlan == null || weights.GetLength(2) <= (int)WorldMapTerrainPaintLayer.Soil) return;
+            var origin = Definition.TileOrigin(id);
+            var count = weights.GetLength(0);
+            var spacing = Definition.TileSizeMeters / (count - 1f);
+            var mask = new float[count,count];
+            foreach (var route in roadNetworkPlan.Routes)
+            for (var i = 1; i < route.Samples.Count; i++)
+            {
+                var a = route.Samples[i-1]; var b = route.Samples[i];
+                if (!RoadSegmentIsNavigable(a,b)) continue;
+                var halfWidth = Mathf.Max(.6f,(a.WidthMeters+b.WidthMeters)*.25f);
+                var radius = halfWidth + 2f;
+                var lowX = Mathf.Max(0,Mathf.FloorToInt((Mathf.Min(a.Position.X,b.Position.X)-radius-origin.X)/spacing));
+                var highX = Mathf.Min(count-1,Mathf.CeilToInt((Mathf.Max(a.Position.X,b.Position.X)+radius-origin.X)/spacing));
+                var lowZ = Mathf.Max(0,Mathf.FloorToInt((Mathf.Min(a.Position.Z,b.Position.Z)-radius-origin.Z)/spacing));
+                var highZ = Mathf.Min(count-1,Mathf.CeilToInt((Mathf.Max(a.Position.Z,b.Position.Z)+radius-origin.Z)/spacing));
+                var start = new Vector2(a.Position.X,a.Position.Z);
+                var delta = new Vector2(b.Position.X-a.Position.X,b.Position.Z-a.Position.Z);
+                for (var z=lowZ;z<=highZ;z++)
+                for (var x=lowX;x<=highX;x++)
+                {
+                    var point = new Vector2(origin.X+x*spacing,origin.Z+z*spacing);
+                    var t = Mathf.Clamp01(Vector2.Dot(point-start,delta)/Mathf.Max(.001f,delta.sqrMagnitude));
+                    var distance = Vector2.Distance(point,start+delta*t);
+                    var strength = .83f*(1f-Mathf.SmoothStep(0f,1f,Mathf.InverseLerp(halfWidth*.45f,radius,distance)));
+                    mask[z,x] = Mathf.Max(mask[z,x],strength);
+                }
+            }
+            for (var z=0;z<count;z++)
+            for (var x=0;x<count;x++)
+            {
+                var strength=mask[z,x];
+                if (strength<=0) continue;
+                for (var layer=0;layer<weights.GetLength(2);layer++) weights[z,x,layer]*=1f-strength;
+                weights[z,x,(int)WorldMapTerrainPaintLayer.Soil]+=strength;
+            }
         }
 
         private float[,,] CreateTerrainPaint(WorldTileId id, TerrainData data)
@@ -519,7 +615,8 @@ namespace Game.Infrastructure
 
         private GameObject CreateAuthoredLocalWater(WorldTileId id, Transform parent, TerrainData data)
         {
-            var resolution = (data.heightmapResolution - 1) * 2;
+            // A terrain-aligned grid still clips the shoreline continuously, without four times the samples.
+            var resolution = data.heightmapResolution - 1;
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
             var colors = new List<Color>();
@@ -541,8 +638,8 @@ namespace Game.Infrastructure
             {
                 var a = samples[x, z]; var b = samples[x, z + 1];
                 var c = samples[x + 1, z]; var d = samples[x + 1, z + 1];
-                AddClippedWaterTriangle(a, b, c, tileOrigin, clipped, vertices, triangles, colors);
-                AddClippedWaterTriangle(c, b, d, tileOrigin, clipped, vertices, triangles, colors);
+                AddClippedWaterTriangle(a, b, c, tileOrigin, data, clipped, vertices, triangles, colors);
+                AddClippedWaterTriangle(c, b, d, tileOrigin, data, clipped, vertices, triangles, colors);
             }
             if (triangles.Count == 0) return null;
             var water = new GameObject("World Map V2 Local Water " + id);
@@ -566,7 +663,7 @@ namespace Game.Infrastructure
         }
 
         private void AddClippedWaterTriangle(Vector4 a, Vector4 b, Vector4 c, WorldPosition origin,
-            Vector4[] polygon, List<Vector3> vertices, List<int> triangles, List<Color> colors)
+            TerrainData terrain, Vector4[] polygon, List<Vector3> vertices, List<int> triangles, List<Color> colors)
         {
             if (a.w > 0f && b.w > 0f && c.w > 0f) return;
             var count = 0;
@@ -587,7 +684,9 @@ namespace Game.Infrastructure
             {
                 var point = polygon[i];
                 vertices.Add(new Vector3(point.x, point.y + 0.025f, point.z));
-                var ground = HeightSampler.SampleHeight(origin.X + point.x, origin.Z + point.z);
+                // Depth tint follows the already-created rendered Terrain; no repeated procedural world evaluation.
+                var ground = terrain.GetInterpolatedHeight(point.x / Definition.TileSizeMeters,
+                    point.z / Definition.TileSizeMeters);
                 colors.Add(new Color(Mathf.Clamp01((point.y - ground) / 7.5f), 0f, 0f, 1f));
             }
             for (var i = 1; i + 1 < count; i++)
@@ -744,12 +843,14 @@ namespace Game.Infrastructure
                 line.generateLightingData = true;
                 line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 line.receiveShadows = false;
+                line.enabled = false;
                 var navigationRibbon = new GameObject("Navigation Ribbon");
                 navigationRibbon.transform.SetParent(routeObject.transform, false);
                 navigationRibbon.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
                 var ribbonMesh = BuildRoadRibbon(route);
                 roadMeshes.Add(ribbonMesh);
                 navigationRibbon.AddComponent<MeshFilter>().sharedMesh = ribbonMesh;
+                // The road is painted into terrain with soft shoulders. This mesh is navigation only.
                 navigationRibbon.AddComponent<MeshCollider>().sharedMesh = ribbonMesh;
                 var modifier = navigationRibbon.AddComponent<NavMeshModifier>();
                 modifier.overrideArea = true;
@@ -790,6 +891,7 @@ namespace Game.Infrastructure
             }
             var mesh = new Mesh { name = "World Map V2 Navigation Ribbon " + route.Id };
             mesh.vertices = vertices;
+            mesh.uv = vertices.Select(v => new Vector2(v.x, v.z) * .2f).ToArray();
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -1205,6 +1307,8 @@ namespace Game.Infrastructure
 
         private void OnDestroy()
         {
+            if (sourceTerrainMaterial != null && sourceTerrainMaterial.hideFlags == HideFlags.DontSave)
+                Destroy(sourceTerrainMaterial);
             foreach (var layer in artLayers) if (layer != null) Destroy(layer);
             if (ArtDirection != null) Shader.SetGlobalFloat("_WorldMapArtEnabled", 0);
             foreach (var tile in loaded.Values.ToArray()) DestroyTile(tile);

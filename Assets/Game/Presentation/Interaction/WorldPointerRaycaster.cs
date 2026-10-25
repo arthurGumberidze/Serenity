@@ -91,10 +91,13 @@ namespace Game.Presentation.Interaction
             var ray = worldCamera.ScreenPointToRay(pointerPosition);
             RaycastHit? ground = null;
             foreach (var candidate in Physics.RaycastAll(ray, maxDistance, worldLayers, QueryTriggerInteraction.Collide)
-                         .OrderBy(value => value.distance))
+                         .OrderBy(value => value.collider.GetComponentInParent<CharacterPresenter>() != null ||
+                             value.collider.GetComponentInParent<WorldMapWildlifeView>() != null ? 0 : 1)
+                         .ThenBy(value => value.distance))
             {
                 var collider = candidate.collider;
-                if (collider.GetComponentInParent<StableWorldHitProxy>() != null ||
+                if (collider.GetComponentInParent<WorldMapWildlifeView>() != null ||
+                    collider.GetComponentInParent<StableWorldHitProxy>() != null ||
                     collider.GetComponentInParent<SelectableMarker>() != null ||
                     collider.GetComponentInParent<CharacterPresenter>() != null ||
                     collider.GetComponentInParent<WorldResourcePilePresenter>() != null ||

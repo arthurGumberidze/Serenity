@@ -162,7 +162,7 @@ namespace Game.Domain.Work
             return new ContextActionAvailability(true, ContextUnavailableReason.None);
         }
 
-        private static bool SupportsTarget(ContextActionKind action, ContextCommandTarget target)
+        public static bool SupportsTarget(ContextActionKind action, ContextCommandTarget target)
         {
             switch (action)
             {

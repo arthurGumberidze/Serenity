@@ -62,6 +62,24 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void CourseClockStartsOnlyAfterArrivalAndSurvivesSaveRestore()
+        {
+            var fixture = Fixture.Create();
+            var arrived = false;
+            fixture.Training.IsAtBarracks = _ => arrived;
+            var start = fixture.Training.TryStart(fixture.Soldier.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), 0, fixture.Inventories.All.Select(x => x.Owner));
+            Assert.That(start.Started, Is.True);
+            fixture.Training.AdvanceTo(TimeSpan.FromHours(2).Ticks);
+            var travelling = fixture.Training.CaptureState();
+            fixture.Training.RestoreState(travelling);
+            Assert.That(fixture.Training.GetRank(fixture.Soldier.Id), Is.Null);
+            arrived = true;
+            Assert.That(fixture.Training.AdvanceTo(TimeSpan.FromHours(4).Ticks), Is.Zero);
+            Assert.That(fixture.Training.AdvanceTo(TimeSpan.FromHours(6).Ticks), Is.EqualTo(1));
+        }
+
+        [Test]
         public void TrainingRejectsChildInactiveBarracksRepeatWhileBusyAndMissingResources()
         {
             var fixture = Fixture.Create();

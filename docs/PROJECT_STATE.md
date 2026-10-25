@@ -1,5 +1,19 @@
 # PROJECT_STATE.md
 
+## WM15 October 25 feedback — built and focused route verified
+
+The latest eleven-point report is the active WM15 scope. See
+`docs/world_map/WM15_OCTOBER_FEEDBACK.md` for implementation and exact evidence and
+`docs/world_map/WM15_OCTOBER_ASSET_REVIEW.md` for all thirteen suggested asset links.
+Deliver Builds/WorldMapOctoberFix/Serenity.exe (build-f: exit 0, 0 errors / 69 warnings).
+Player-f completed 38/38 checks, exit 0, empty runtime error log: visible editor/world UMA, both animal
+mouse buttons/inspector/menu, dry-land placement/material delivery, four real army additions, barracks
+travel/hiding/rank/clothing, all four piers, actual chopping/mining/hunting/skinning/fishing production.
+Eight distinct focused regressions passed (7 in regression d, 1 isolated canopy picking test).
+Rendered captures confirm regional snow/pink ground and lake/pier improvements. Fine shoreline steps
+and final art acceptance remain open; loading still takes minutes despite responsive stages.
+Full 100/300/500 tests remain deferred. WM15 stays IN_PROGRESS; preserve inherited imports.
+
 ## WM15 preview Player built (2026-10-25)
 
 User authorized compilation/rebuild; prior execution prohibitions below are historical. Fixed three C#

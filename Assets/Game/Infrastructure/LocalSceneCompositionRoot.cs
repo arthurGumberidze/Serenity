@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
@@ -276,12 +277,51 @@ namespace Game.Infrastructure
                 if (inventory.Owner.Kind == InventoryOwnerKind.BuildingStorage) yield return inventory.Owner;
         }
 
+        public bool IsInitialized { get; private set; }
+        private WorldLoadingOverlay loadingOverlay;
+
         private void Awake()
         {
+            loadingOverlay = gameObject.AddComponent<WorldLoadingOverlay>();
+            StartCoroutine(InitializeGuarded());
+        }
+
+        private IEnumerator InitializeGuarded()
+        {
+            // Drive nested initialization iterators here so any stage failure replaces the loading screen.
+            var stages = new Stack<IEnumerator>();
+            stages.Push(InitializeScene());
+            while (stages.Count > 0)
+            {
+                object next = null;
+                Exception failure = null;
+                var moved = false;
+                try { moved = stages.Peek().MoveNext(); if (moved) next = stages.Peek().Current; }
+                catch (Exception exception) { failure = exception; }
+                if (failure != null)
+                {
+                    Debug.LogException(failure);
+                    loadingOverlay.Fail();
+                    yield break;
+                }
+                if (!moved) { (stages.Pop() as IDisposable)?.Dispose(); continue; }
+                if (next is IEnumerator nested) stages.Push(nested);
+                else yield return next;
+            }
+            IsInitialized = true;
+            Destroy(loadingOverlay);
+            Start();
+            Debug.Log("WM15_BOOT gameplay ready");
+        }
+
+        private IEnumerator InitializeScene()
+        {
+            yield return null;
             if (input == null || cameraController == null || pointerRaycaster == null || selectionProbe == null ||
                 characterCatalog == null || buildingCatalog == null || buildingPlacementController == null)
                 throw new InvalidOperationException("Local scene composition references must be assigned explicitly.");
 
+            Debug.Log("WM15_BOOT local composition");
             var requestedConfiguration = NewGameLaunchState.Consume(developmentWorldSimulationSeed);
             var resolvedWorldSeed = U30SoakConfig.ResolveWorldSeed(Environment.GetCommandLineArgs(),
                 requestedConfiguration.WorldSeed);
@@ -340,7 +380,8 @@ namespace Game.Infrastructure
                     volume.enabled = false;
             }
             TiledWorld = gameObject.AddComponent<TiledTerrainWorld>();
-            TiledWorld.Initialize(WorldDefinition, WorldHeight, RealisticGameplayRegion?.Terrain);
+            yield return TiledWorld.InitializeRoutine(WorldDefinition, WorldHeight, RealisticGameplayRegion?.Terrain,
+                loadingOverlay.SetStage);
             if (RealisticGameplayRegion?.WaterRenderer != null)
                 RealisticGameplayRegion.WaterRenderer.enabled = false;
             WorldPlacementSurface = FindAnyObjectByType<P102WorldPlacementSurface>() ??
@@ -407,6 +448,8 @@ namespace Game.Infrastructure
                 buildingGridSize, buildingGridOrigin, null, Inventories,
                 position => TiledWorld.ProjectToGround(position).y);
             selectionProbe.Configure(input, pointerRaycaster, InteractionMode);
+            buildingPlacementController.Configure(input, pointerRaycaster, buildingCatalog,
+                buildingGridSize, buildingGridOrigin);
             buildingPlacementController.Initialize(BuildingPlacementService, BuildingSpawner, InteractionMode,
                 Construction, FundingSources);
             buildingPlacementController.BuildingPlaced += OnBuildingPlaced;
@@ -420,7 +463,12 @@ namespace Game.Infrastructure
             SpawnDemoStorage();
             SpawnDemoShelter();
             SpawnDemoBarracks();
-            BuildNavigationSurface();
+            yield return TiledWorld.BuildNavigationRoutine(loadingOverlay.SetStage);
+            NavigationSurface = TiledWorld.PrimaryNavigationSurface;
+            if (NavigationSurface == null)
+                throw new InvalidOperationException("The starter tiled Terrain has no navigation surface.");
+            loadingOverlay.SetStage("Заселяем мир…");
+            yield return null;
 
             var playerCharacters = NewGame.PlayerCharacters.Select(Character.Restore).ToArray();
             foreach (var character in playerCharacters)
@@ -463,6 +511,7 @@ namespace Game.Infrastructure
             }
             var worksite = gameObject.AddComponent<WorksitePresentation>();
             worksite.Initialize(this);
+            gameObject.AddComponent<WorldWorkApproaches>().Initialize(this);
             WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
                 Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
@@ -683,6 +732,7 @@ namespace Game.Infrastructure
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<LivestockPresentation>().Initialize(this);
             gameObject.AddComponent<HuntingPresentation>().Initialize(this, characterCatalog.HuntingArrow);
+            gameObject.AddComponent<BarracksTrainingPresentation>().Initialize(this);
             gameObject.AddComponent<Tier1AiDebugOverlay>().Initialize(selectionProbe, AiAgents, Inventories,
                 Resources, HaulClaims, pointerRaycaster, Tiers, Clock, OffCameraSimulation);
             WorkDebug = gameObject.AddComponent<WorkDebugOverlay>();
@@ -769,7 +819,7 @@ namespace Game.Infrastructure
                     Debug.LogException(exception);
                     SessionLaunchState.ReportLoadFailure(startupSlot);
                     SceneManager.LoadScene("MainMenu", LoadSceneMode.Single);
-                    return;
+                    yield break;
                 }
             }
             PerformanceBenchmark = U29BenchmarkController.AttachIfRequested(this);
@@ -791,7 +841,7 @@ namespace Game.Infrastructure
 
         private void Start()
         {
-            if (WorldDefinition?.MapData == null || cameraController == null) return;
+            if (!IsInitialized || WorldDefinition?.MapData == null || cameraController == null) return;
             cameraController.FocusPosition(new Vector3(WorldDefinition.PlayerStart.X, 0f,
                 WorldDefinition.PlayerStart.Z), 120f);
         }
@@ -821,9 +871,36 @@ namespace Game.Infrastructure
                 WorldDefinition.TryGetTile(position.x, position.z, out var tile) && visible.Contains(tile));
         }
 
+        private void AdvanceSubmersion(GameTimeAdvance advance)
+        {
+            var minute = TimeSpan.TicksPerMinute;
+            var damage = (int)Math.Min(100, (Clock.State.CalendarTicks / minute -
+                (Clock.State.CalendarTicks - advance.CalendarDelta.Ticks) / minute) * 4);
+            if (damage <= 0) return;
+            foreach (var movement in AiRuntime.Movements)
+            {
+                var point = movement.CurrentPosition;
+                if (!WorldHeight.TrySampleWaterSurface(point.X, point.Z, out var water)) continue;
+                var character = Characters.Get(movement.CharacterId);
+                if (character.LifeState != CharacterLifeState.Alive) continue;
+                var headHeight = 1.7f;
+                var animator = movement.Presenter.Animator;
+                if (animator != null && animator.isHuman)
+                {
+                    var head = animator.GetBoneTransform(HumanBodyBones.Head);
+                    if (head != null) headHeight = Math.Max(.6f, head.position.y - point.Y + .15f);
+                }
+                character.SetHealth(Game.Domain.Health.SubmersionRules.Damage(character.Health,
+                    water - point.Y, headHeight, damage));
+                if (character.Health.Head.Value == 0 || character.Health.Torso.Value == 0)
+                    Succession.ProcessDeath(character.Id, Clock.State.BiologicalTicks, Clock.State.CalendarTicks);
+            }
+        }
+
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
             var targetCalendarTick = Clock.State.CalendarTicks;
+            AdvanceSubmersion(advance);
             ConnectedWorld?.AdvanceTo(Clock.State.CalendarTicks);
             if (ConnectedWorld != null)
                 foreach (var presenter in demoPresenters.Where(x => x != null && x.gameObject.activeInHierarchy))
@@ -1065,8 +1142,16 @@ namespace Game.Infrastructure
 
         public int AdvanceMilitaryTrainingTo(long calendarTick)
         {
+            var candidates = MilitaryTraining.Active.Select(record => record.CharacterId).ToArray();
             var completed = MilitaryTraining.AdvanceTo(calendarTick);
-            if (completed > 0) RefreshTier1AppearanceAfterLoad();
+            if (completed > 0)
+            {
+                var pending = MilitaryTraining.Active.Select(record => record.CharacterId).ToHashSet();
+                foreach (var id in candidates)
+                    if (!pending.Contains(id) && CharacterPresentations.TryGet(id, out _))
+                        Tier1Adapter.RebuildPresentation(Characters.Get(id));
+                selectionProbe.RefreshSelectedPresentations();
+            }
             return completed;
         }
 
@@ -1217,7 +1302,7 @@ namespace Game.Infrastructure
         private void Update()
         {
             // Camera inspection must materialize nearby residents even while simulation time is paused.
-            if (TierPolicy == null || Clock == null || !Clock.State.IsPaused || performanceTierPolicySuppressed ||
+            if (!IsInitialized || TierPolicy == null || Clock == null || !Clock.State.IsPaused || performanceTierPolicySuppressed ||
                 Time.unscaledTime < nextTierPolicyRefreshTime) return;
             var focus = cameraController.transform.position;
             TierPolicy.Evaluate(new WorldPosition(focus.x, focus.y, focus.z));

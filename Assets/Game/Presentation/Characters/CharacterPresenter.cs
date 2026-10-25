@@ -117,6 +117,20 @@ namespace Game.Presentation.Characters
                 var size = bounds.size;
                 var axis = size.x > size.y && size.x > size.z ? Vector3.right :
                     size.z > size.y ? Vector3.forward : Vector3.up;
+                float positiveWidth = 0, negativeWidth = 0;
+                foreach (var mesh in visual.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (mesh.sharedMesh == null || !mesh.sharedMesh.isReadable) continue;
+                    foreach (var vertex in mesh.sharedMesh.vertices)
+                    {
+                        var local = holder.transform.InverseTransformPoint(mesh.transform.TransformPoint(vertex)) - bounds.center;
+                        var along = Vector3.Dot(local,axis);
+                        var width = (local-axis*along).sqrMagnitude;
+                        if (along > 0) positiveWidth = Mathf.Max(positiveWidth,width);
+                        else negativeWidth = Mathf.Max(negativeWidth,width);
+                    }
+                }
+                if (negativeWidth > positiveWidth * 1.15f) axis = -axis;
                 var turn = Quaternion.FromToRotation(axis, Vector3.up);
                 var scale = length / Mathf.Max(0.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
                 visual.transform.localRotation = turn * visual.transform.localRotation;
@@ -314,6 +328,40 @@ namespace Game.Presentation.Characters
         }
 
         private float manualAttackUntil;
+        private Vector3 workContact;
+        private float workContactUntil;
+        private Quaternion lastWorkHandOffset = Quaternion.identity;
+        public void SetWorkContact(Vector3 point) { workContact = point; workContactUntil = Time.unscaledTime + .3f; }
+
+        private bool ApplyWorkContactPose(float time)
+        {
+            if (time > workContactUntil || (animationIntent != CharacterAnimationIntent.Chop &&
+                animationIntent != CharacterAnimationIntent.Mine)) return false;
+            var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            var tool = animationIntent == CharacterAnimationIntent.Chop ? workAxe : workPickaxe;
+            if (hand == null || tool == null || rightUpperArmBone == null || rightLowerArmBone == null) return false;
+            var length = animationIntent == CharacterAnimationIntent.Chop ? .8f : .95f;
+            var stroke = (1f - Mathf.Cos(time * 5.2f)) * .5f;
+            var head = workContact + Vector3.up * stroke * .8f - transform.forward * stroke * .25f;
+            var reach = head - rightUpperArmBone.position;
+            var grip = head - reach.normalized * length * .75f;
+            var shoulder = rightUpperArmBone.position;
+            var upper = Vector3.Distance(shoulder,rightLowerArmBone.position);
+            var lower = Vector3.Distance(rightLowerArmBone.position,hand.position);
+            var toward = grip - shoulder;
+            var distance = Mathf.Clamp(toward.magnitude,.05f,upper+lower-.015f);
+            var axis = toward.normalized;
+            var along = (upper*upper-lower*lower+distance*distance)/(2*distance);
+            var side = Vector3.Cross(axis,transform.right).normalized;
+            var elbow = shoulder + axis * along + side * Mathf.Sqrt(Mathf.Max(0,upper*upper-along*along));
+            var rotation = Quaternion.FromToRotation(rightLowerArmBone.position-shoulder,elbow-shoulder) * rightUpperArmBone.rotation;
+            ApplyOffset(rightUpperArmBone,Quaternion.Inverse(rightUpperArmBone.rotation)*rotation,ref lastRightUpperArmOffset);
+            rotation = Quaternion.FromToRotation(hand.position-rightLowerArmBone.position,grip-rightLowerArmBone.position)*rightLowerArmBone.rotation;
+            ApplyOffset(rightLowerArmBone,Quaternion.Inverse(rightLowerArmBone.rotation)*rotation,ref lastRightLowerArmOffset);
+            rotation = Quaternion.FromToRotation(tool.transform.up,head-hand.position)*hand.rotation;
+            ApplyOffset(hand,Quaternion.Inverse(hand.rotation)*rotation,ref lastWorkHandOffset);
+            return true;
+        }
 
         /// <summary>Short local feedback only. Damage is exclusively resolved by CombatService.</summary>
         public void PlayManualAttackPresentation()
@@ -337,6 +385,7 @@ namespace Game.Presentation.Characters
                 ApplyOffset(rightLowerArmBone, Quaternion.Euler(-112f, 0f, 0f), ref lastRightLowerArmOffset);
                 return;
             }
+            if (ApplyWorkContactPose(unscaledTime)) return;
             if (hasActionIntentParameter) return;
             if (animationIntent == CharacterAnimationIntent.Idle) return;
             var wave = Mathf.Sin(unscaledTime * (animationIntent == CharacterAnimationIntent.Combat ? 7.5f : 5.2f));
@@ -438,6 +487,8 @@ namespace Game.Presentation.Characters
 
         private void RemoveLastPoseOffsets()
         {
+            if (animator != null && animator.isHuman)
+                RemoveOffset(animator.GetBoneTransform(HumanBodyBones.RightHand), ref lastWorkHandOffset);
             RemoveOffset(spineBone, ref lastSpineOffset);
             RemoveOffset(rightUpperArmBone, ref lastRightUpperArmOffset);
             RemoveOffset(leftUpperArmBone, ref lastLeftUpperArmOffset);

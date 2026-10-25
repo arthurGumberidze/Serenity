@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+WM15 October 25 feedback: **IN_PROGRESS / build-f and focused route verified**.
+Builds/WorldMapOctoberFix/Serenity.exe: 0 errors / 69 warnings. Player-f: 38/38 PASS, exit 0,
+no runtime errors. Eight distinct targeted regressions passed. Final visual acceptance, fine shoreline
+polish, loading duration and earlier outstanding content remain open. See
+`docs/world_map/WM15_OCTOBER_FEEDBACK.md` for exact build/runtime evidence.
+No full 100/300/500 performance suites. Preserve inherited imports and earlier task history.
+
 WM15 preview checkpoint (2026-10-25): **IN_PROGRESS / compiled and built**. Build-e succeeded with 0 errors,
 30 warnings after C# and HLSL repairs. Deliver Builds/WorldMapArtHunting/Serenity.exe for manual inspection.
 No tests or gameplay/visual acceptance claimed; full performance gates remain deferred. See

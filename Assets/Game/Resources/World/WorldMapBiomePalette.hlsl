@@ -38,4 +38,18 @@ float WorldMapMurk(float2 world)
 {
     return WorldMapEllipse(WorldMapDesign(world), _WorldMapBiomeShapes[7]) * _WorldMapArtEnabled;
 }
+half3 WorldMapGround(half3 albedo, float3 world, float3 normal)
+{
+    float2 p = WorldMapDesign(world.xz);
+    float snow = WorldMapEllipse(p, _WorldMapBiomeShapes[2]) * smoothstep(.45, .85, normal.y);
+    float grove = WorldMapEllipse(p, _WorldMapBlossomGroves[0]);
+    float marsh = WorldMapMurk(world.xz);
+    float meadow = WorldMapEllipse(p, _WorldMapBiomeShapes[0]);
+    float luminance = dot(albedo, half3(.2126,.7152,.0722));
+    half3 result = lerp(albedo, albedo * half3(.82,1.24,.64), meadow * .7);
+    result = lerp(result, half3(.75,.38,.49) * (.55 + luminance), grove * .68);
+    result = lerp(result, half3(.13,.18,.10) * (.6 + luminance), marsh * .72);
+    result = lerp(result, half3(.83,.91,.96) * (.78 + luminance * .4), snow * .94);
+    return lerp(albedo, result, _WorldMapArtEnabled);
+}
 #endif

@@ -217,8 +217,11 @@ namespace Game.Simulation.Diagnostics
                     inventories.Add(new ResourceInventory(
                         new InventoryOwner(InventoryOwnerKind.Character, id), resources, 128));
                     appearances.GetOrCreate(character);
-                    tiers.Materialize(character, CharacterSimulationTier.Tier3,
-                        new CharacterRuntimeState(id, new WorldPosition(-10 + created.Count * 1.5f, 0, 7),
+                    combat.RegisterSide(id, side);
+                    var anchor = characters.GetAll().Where(c => c.Id != id && combat.TryGetSide(c.Id, out var owner) && owner == side && tiers.TryGetTier(c.Id, out _)).OrderBy(c => c.Id).FirstOrDefault();
+                    var spawn = anchor != null ? tiers.GetRuntimeState(anchor.Id).Position : new WorldPosition(-10, 0, 7);
+                    tiers.Materialize(character, CharacterSimulationTier.Tier1,
+                        new CharacterRuntimeState(id, new WorldPosition(spawn.X + created.Count * 1.5f, spawn.Y, spawn.Z + 2f),
                             default, false, "starter_settlement", calendarTick(), biologicalTick()));
                     training.RegisterDiagnosticGraduate(id, barracks.Id, side, rank, calendarTick());
                     Fault("army_rank_" + (int)rank);

@@ -31,7 +31,8 @@ namespace Game.Presentation.Environment
             foreach (var collider in GetComponentsInChildren<Collider>(true)) collider.enabled = false;
             var body = gameObject.AddComponent<BoxCollider>();
             body.center = transform.InverseTransformPoint(bounds.center);
-            body.size = transform.InverseTransformVector(Vector3.Max(bounds.size, Vector3.one * .6f));
+            var size = transform.InverseTransformVector(Vector3.Max(bounds.size, Vector3.one * .6f));
+            body.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z));
             body.isTrigger = true;
         }
 

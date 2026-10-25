@@ -350,7 +350,7 @@ namespace Game.Simulation.AI
         private bool approachingCorpse;
         private WorldPosition lastMovementPosition;
         private bool Hunting => job.Task.RecipeId.ToString() == "hunt_animal";
-        private float StopDistance => Hunting && production.Animals.IsAlive(job.Task.SiteId) ? 8f : .9f;
+        private float StopDistance => Hunting && production.Animals.IsAlive(job.Task.SiteId) ? 8f : .25f;
 
         public ProductionActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             ProductionService production, Tier1AiSettings settings, ProductionJob job,

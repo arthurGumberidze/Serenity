@@ -228,6 +228,8 @@ namespace Game.Infrastructure
                 ecology.Register(new NaturalNodeRegistration(site, node.Biome,
                     node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position),
                     node.RenewalPolicy != "none", recovery));
+                if (node.RecipeId == "fish_water")
+                    GetComponent<WorldWorkApproaches>()?.RegisterFish(node, site.Id);
             }
             foreach (var node in Plan.Industry)
             {
@@ -268,6 +270,7 @@ namespace Game.Infrastructure
             if (!production.TryGetSite(ResourceId(node), out var site)) return;
             if (node.RecipeId == "fish_water")
             {
+                GetComponent<WorldWorkApproaches>()?.RegisterFish(node, site.Id);
                 var school = new GameObject("Fishing school " + node.SourceZoneId + " " + node.StableIndex);
                 school.transform.SetParent(parent, false);
                 school.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y, node.VisualPosition.Z);

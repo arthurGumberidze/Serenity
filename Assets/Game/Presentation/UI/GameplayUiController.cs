@@ -444,13 +444,13 @@ namespace Game.Presentation.UI
                 CloseContextMenu();
                 return;
             }
-            // A normal RMB is a command, not a nine-row menu. Ctrl+RMB keeps all explicit actions.
+            // Ground remains a direct move; objects expose only their applicable commands.
             var primary = target.Kind == ContextTargetKind.Ground ? ContextActionKind.Move :
                 target.Kind == ContextTargetKind.ResourceSource ?
                     target.ResourceClass == ContextResourceClass.Choppable ? ContextActionKind.Chop :
                     target.ResourceClass == ContextResourceClass.Mineable ? ContextActionKind.Mine : ContextActionKind.Gather :
                 (ContextActionKind?)null;
-            if (primary.HasValue && Keyboard.current?.ctrlKey.isPressed != true &&
+            if (target.Kind == ContextTargetKind.Ground && primary.HasValue && Keyboard.current?.ctrlKey.isPressed != true &&
                 EvaluateForSelection(primary.Value, target).Enabled)
             {
                 activeContextTarget = target;
@@ -487,6 +487,13 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedCharacterIds.Count);
             foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
             {
+                if (!ContextActionRules.SupportsTarget(action, target)) continue;
+                if (target.Kind == ContextTargetKind.Building && context.Buildings.TryGet(target.EntityId, out var menuBuilding))
+                {
+                    if (action == ContextActionKind.Build && menuBuilding.IsOperational) continue;
+                    if (action == ContextActionKind.Craft && (!menuBuilding.IsOperational || !context.Production.Sites.Any(s => s.OwnerBuildingId == menuBuilding.Id))) continue;
+                    if (action == ContextActionKind.Attack && menuBuilding.OwnerSideId.Value == "player") continue;
+                }
                 var attackState = action == ContextActionKind.Attack ? EvaluateMilitaryAttack(target) : default;
                 var state = action == ContextActionKind.Attack
                     ? new ContextActionAvailability(attackState.Enabled, attackState.Enabled
@@ -494,7 +501,11 @@ namespace Game.Presentation.UI
                     : EvaluateForSelection(action, target);
                 contextActionStates[action] = state;
                 var captured = action;
-                var button = ActionButton(ContextActionName(action), () =>
+                var label = ContextActionName(action);
+                if (action == ContextActionKind.Gather && context.Production.TryGetSite(target.EntityId, out var menuSite))
+                    label = menuSite.RecipeId.ToString() == "fish_water" ? "Ловить рыбу" :
+                        menuSite.RecipeId.ToString() == "hunt_animal" ? (context.Production.Animals.IsAlive(menuSite.Id) ? "Охотиться с луком" : "Освежевать") : label;
+                var button = ActionButton(label, () =>
                 {
                     if (captured == ContextActionKind.Attack) ExecuteMilitaryAttack();
                     else ExecuteContextAction(captured, Keyboard.current != null && Keyboard.current.shiftKey.isPressed);
@@ -608,7 +619,7 @@ namespace Game.Presentation.UI
             if (target.Kind == ContextTargetKind.ResourceSource && context.Production.TryGetSite(target.EntityId, out var site))
             {
                 resourceAvailable = !site.IsDepleted && site.IsWorkAvailable;
-                technology = context.Production.IsRecipeAvailable(site.RecipeId);
+                technology = context.Production.IsRecipeAvailable(site.RecipeId, true);
             }
             else if (target.Kind == ContextTargetKind.ResourcePile && target.ResourceId.HasValue)
             {
@@ -636,7 +647,10 @@ namespace Game.Presentation.UI
             var interruptible = !busy || context.AiScheduler.CanInterruptForDirectWork(id);
             var withinDistance = !context.AiAgents.TryGet(id, out var distanceAgent) ||
                 DistanceSquared(distanceAgent.Position, target.Position) <= 250f * 250f;
-            var correctRole = context.PlayerCharacterIds().Contains(id) && HasContextRole(id, action);
+            var hunting = action == ContextActionKind.Gather && target.Kind == ContextTargetKind.ResourceSource &&
+                context.Production.TryGetSite(target.EntityId, out var huntedSite) && huntedSite.RecipeId.ToString() == "hunt_animal";
+            var correctRole = context.PlayerCharacterIds().Contains(id) &&
+                (HasContextRole(id, action) || hunting && context.Military.TryGetForMember(id, out _));
             return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
                 exists && capabilities.IsAdult, correctRole,
                 exists && targetStatusValid && (action == ContextActionKind.Move || action == ContextActionKind.Inspect ||
@@ -691,6 +705,13 @@ namespace Game.Presentation.UI
         private bool TryResolveContextTarget(RaycastHit hit, out ContextCommandTarget target)
         {
             var position = new WorldPosition(hit.point.x, hit.point.y, hit.point.z);
+            var wildlifeTarget = hit.collider.GetComponentInParent<Game.Presentation.Environment.WorldMapWildlifeView>();
+            if (wildlifeTarget != null && context.Production.TryGetSite(wildlifeTarget.StableId, out var preySite))
+            {
+                target = new ContextCommandTarget(ContextTargetKind.ResourceSource, preySite.Position, preySite.Id,
+                    new ResourceId("meat"), ContextResourceClass.Gatherable);
+                return true;
+            }
             var source = hit.collider.GetComponentInParent<Game.Presentation.Production.ProductionSourcePresenter>();
             if (source != null && source.IsBound && source.Site.Kind == ProductionSiteKind.NaturalSource)
             {
@@ -3256,6 +3277,9 @@ namespace Game.Presentation.UI
             if (context.Selection.SelectedBuildingPresenter != null) hash ^= unchecked((ulong)context.Selection.SelectedBuildingPresenter.BuildingId.GetHashCode());
             if (context.Selection.SelectedProductionSourcePresenter != null)
                 hash ^= unchecked((ulong)context.Selection.SelectedProductionSourcePresenter.Site.Id.GetHashCode());
+            if (context.Selection.SelectedWildlife != null)
+                hash ^= unchecked((ulong)context.Selection.SelectedWildlife.StableId.GetHashCode());
+            hash ^= unchecked((ulong)context.Characters.Count << 40);
             hash ^= unchecked((ulong)(context.ThirdPerson.LastAttackMessage?.GetHashCode() ?? 0));
             return hash;
         }
@@ -3466,6 +3490,7 @@ namespace Game.Presentation.UI
                 mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 156f);
             }
             var hasSelection = context != null && (context.Selection.InspectedCharacterId.HasValue ||
+                context.Selection.SelectedWildlife != null ||
                 context.Selection.SelectedBuildingPresenter != null ||
                 context.Selection.SelectedWorldResourcePilePresenter != null ||
                 context.Selection.SelectedProductionSourcePresenter != null);

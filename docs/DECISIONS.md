@@ -1795,3 +1795,30 @@ reported Succeeded with 12 shader errors in build-d. Reject that artifact and us
 0 errors / 30 warnings. Keep the preview in Builds/WorldMapArtHunting, preserve the previous build,
 and retain WM15 IN_PROGRESS. Compilation does not establish gameplay, visual or performance acceptance.
 See docs/world_map/WM15_PREVIEW_BUILD.md for exact commands and validation boundaries.
+
+## D-200 — Scene approach adapters preserve domain identities (2026-10-25)
+
+Resource work positions may be projected to reachable scene stances without changing persistent source IDs
+or canonical inventory locations. Tree work targets the trunk, stone work its visible surface, fishing a
+wooden pier at the actual shoreline. Barracks training owns the physical character while travelling/inside;
+its duration starts only after arrival. Presentation hides the trainee, while the domain advances rank and
+saved clothing. Head submersion damages existing canonical BodyHealth, with normal death/succession handling.
+Asset art does not substitute for tested navigation or gameplay. Existing imported cloth is admitted into
+owned prefabs/materials, preserving resident faces and rigs. No paid dependencies are acquired.
+
+## D-201 — Loading responsiveness and terrain shader retention (2026-10-25)
+
+Prepare the complete authored terrain/navigation before gameplay rather than during camera movement.
+Pure immutable terrain/paint calculations may run on one background task per tile; Unity object creation,
+colliders and navigation remain on the main thread. Cache immutable hydrology segment lengths and bounds
+to avoid repeated work. A serialized instanced terrain material must retain the shader variants required
+by terrains created at runtime. A successful build is insufficient: reject missing terrain, invisible
+inspectors and failed placement in the actual Player. Preserve focused evidence and keep WM15 open.
+
+## D-202 — Direct harvesting and automatic camp work are distinct (2026-10-25)
+
+Explicit player hunting/fishing orders may reserve an available natural source before an automatic-work
+camp exists. Research gates remain mandatory; automatic site selection still requires its camp. Fish is
+a gathering target, wildlife a bow-hunting/skinning target rather than a military area attack. Both mouse
+buttons use the same character/animal priority through decorative foliage. Regression checks cover the
+policy and canopy interception; an opt-in disposable Player route verifies actual navigation and work.

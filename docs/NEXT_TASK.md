@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## WM15 October 25 feedback — active
+
+Build-f is ready at Builds/WorldMapOctoberFix/Serenity.exe: 0 errors / 69 warnings. Player-f passed
+38/38 functional checks with no runtime errors; eight distinct focused regressions passed. See
+`docs/world_map/WM15_OCTOBER_FEEDBACK.md` for exact commands, captures and validation boundaries.
+Next unblocked work remains WM15: incorporate feedback on this candidate, refine shoreline/presentation
+details and loading duration. Do not repeat already passed checks without a new change or concern.
+Do not run full performance gates without authorization.
+Keep WM15 IN_PROGRESS pending user visual acceptance, White Rabbit admission and wider husbandry.
+
 ## WM15 preview delivered — next work (2026-10-25)
 
 Compilation and the requested Windows build are complete: Builds/WorldMapArtHunting/Serenity.exe,

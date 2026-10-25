@@ -234,6 +234,9 @@ namespace Game.Simulation.Production
         }
 
         public AnimalHealthRegistry Animals { get; } = new AnimalHealthRegistry();
+        public Func<StableEntityId, ProductionSite, WorldPosition> WorkPosition { get; set; }
+        private ProductionJob CreateJob(ProductionTask task, ProductionSite site) =>
+            new ProductionJob(task, WorkPosition != null ? WorkPosition(task.WorkerId, site) : site.Position);
 
         // The campaign has one founding breeding pair. Its saved identities prevent repeat grants
         // through demolishing/rebuilding a pen. Further animals come from a living male/female pair.
@@ -468,9 +471,11 @@ namespace Game.Simulation.Production
             return checked(GetCanonicalTotal(id) + ReservedOutput(id)) < target;
         }
 
-        public bool IsRecipeAvailable(ProductionRecipeId id)
+        public bool IsRecipeAvailable(ProductionRecipeId id, bool directOrder = false)
         {
             if (unlocks != null && !unlocks.IsProductionRecipeUnlocked(id)) return false;
+            // An explicit hunter/fisher can use the world source. Camps coordinate automatic production.
+            if (directOrder) return true;
             if (id.ToString() == "hunt_animal" && resources.Contains(new ResourceId("carcass")) &&
                 !buildings.All.Any(building => building.IsOperational &&
                     building.DefinitionId == new BuildingDefinitionId("hunting_camp"))) return false;
@@ -503,7 +508,7 @@ namespace Game.Simulation.Production
             {
                 if (existing.IsTerminal) return false;
                 if (!IsSiteOperational(existing.SiteId)) { Cancel(existing.Id); return false; }
-                job = new ProductionJob(existing, sites[existing.SiteId].Position);
+                job = CreateJob(existing, sites[existing.SiteId]);
                 return true;
             }
             if (!inventories.TryGet(inventories.WorkerOwner(workerId), out _)) return false;
@@ -514,7 +519,7 @@ namespace Game.Simulation.Production
                 selectedRecipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
             workerTasks.Add(workerId, task.Id);
-            job = new ProductionJob(task, selected.Position);
+            job = CreateJob(task, selected);
             return true;
         }
 
@@ -528,14 +533,14 @@ namespace Game.Simulation.Production
             if (workerTasks.TryGetValue(workerId, out var existingId) && tasks.TryGetValue(existingId, out var existing))
             {
                 if (existing.IsTerminal || existing.SiteId != siteId || !IsSiteOperational(siteId)) return false;
-                job = new ProductionJob(existing, sites[siteId].Position);
+                job = CreateJob(existing, sites[siteId]);
                 return true;
             }
             if (!inventories.TryGet(inventories.WorkerOwner(workerId), out _) ||
                 !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable ||
                 !IsSiteOperational(siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
-            if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) return false;
+            if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id, true)) return false;
             if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
               if (!HasNaturalSourceCapacity(site)) return false;
             if (site.Kind == ProductionSiteKind.BuildingWorkplace && ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers)
@@ -546,7 +551,7 @@ namespace Game.Simulation.Production
             var task = ProductionTask.Create(workerId, site.Id, site.RecipeId, kind, recipe.WorkRequiredTicks);
             tasks.Add(task.Id, task);
             workerTasks.Add(workerId, task.Id);
-            job = new ProductionJob(task, site.Position);
+            job = CreateJob(task, site);
             return true;
         }
 
@@ -559,7 +564,7 @@ namespace Game.Simulation.Production
                 sites.TryGetValue(existing.SiteId, out var existingSite) &&
                 existingSite.OwnerBuildingId == buildingId)
             {
-                job = new ProductionJob(existing, existingSite.Position);
+                job = CreateJob(existing, existingSite);
                 return true;
             }
             foreach (var site in orderedSites.Where(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&

@@ -23,7 +23,9 @@ namespace Game.Presentation.Characters
         private readonly Dictionary<StableEntityId, GameObject> residentStyles = new();
 
         private GameObject ResidentStyle(Character character) => isRuler != null && !isRuler(character)
-            ? catalog.ResolveResident(character.Sex, isChild?.Invoke(character) == true) : null;
+            ? appearances?.GetOrCreate(character).ClothingId == StoneAgeAppearanceProfiles.MilitaryClothing
+                ? catalog.ResolveTrainedResident(character.Sex) ?? catalog.ResolveResident(character.Sex,false)
+                : catalog.ResolveResident(character.Sex, isChild?.Invoke(character) == true) : null;
 
         public bool RequiresStyleRefresh(Character character) => character != null &&
             residentStyles.TryGetValue(character.Id, out var previous) && previous != ResidentStyle(character);

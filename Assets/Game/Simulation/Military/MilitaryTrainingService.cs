@@ -44,6 +44,7 @@ namespace Game.Simulation.Military
         private readonly string newUnitLocation;
         private readonly List<MilitaryTrainingRecordState> records = new List<MilitaryTrainingRecordState>();
         private ulong sequence;
+        public Func<MilitaryTrainingRecordState, bool> IsAtBarracks { get; set; }
 
         public MilitaryTrainingService(CharacterRegistry characterRegistry,
             ICharacterCapabilityProvider capabilityProvider, BuildingRegistry buildingRegistry,
@@ -116,7 +117,16 @@ namespace Game.Simulation.Military
             for (var i = 0; i < records.Count; i++)
             {
                 var record = records[i];
-                if (record.Completed || record.CompletionTick > calendarTick) continue;
+                if (record.Completed) continue;
+                if (IsAtBarracks != null && !IsAtBarracks(record))
+                {
+                    var delay = Math.Max(0, calendarTick - Math.Max(LastProcessedTick, record.StartTick));
+                    records[i] = new MilitaryTrainingRecordState(record.CharacterId, record.BarracksId,
+                        record.SideId, record.Rank, checked(record.StartTick + delay),
+                        checked(record.CompletionTick + delay), false, record.Sequence);
+                    continue;
+                }
+                if (record.CompletionTick > calendarTick) continue;
                 Complete(record);
                 records[i] = new MilitaryTrainingRecordState(record.CharacterId, record.BarracksId,
                     record.SideId, record.Rank, record.StartTick, record.CompletionTick, true, record.Sequence);

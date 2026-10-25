@@ -119,8 +119,7 @@ namespace Game.Domain.World
                         failures.Add(new Failure(0, OutsideWorld));
                         continue;
                     }
-                    if (heights.IsWater(worldX, worldZ) ||
-                        heights.SampleHeight(worldX, worldZ) <= map.Terrain.WaterLevelMeters + 0.75f)
+                    if (heights.IsWater(worldX, worldZ))
                         failures.Add(new Failure(2, Water));
 
                     var design = map.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));

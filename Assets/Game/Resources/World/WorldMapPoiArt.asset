@@ -23,12 +23,12 @@ MonoBehaviour:
     accentCount: 5
     accentRadius: 12
   - poiId: poi_stone_circle
-    primaryPrefab: {fileID: 3783172376195406270, guid: 25cbb7cd007b1f141807d65eee830da8, type: 3}
+    primaryPrefab: {fileID: 0}
     accentPrefab: {fileID: 0}
     effectPrefab: {fileID: 0}
-    visualScale: 0.8
-    primaryCount: 8
-    primaryRadius: 8.5
+    visualScale: 1
+    primaryCount: 0
+    primaryRadius: 0
     accentCount: 0
     accentRadius: 0
   - poiId: poi_abandoned_camp
@@ -41,14 +41,14 @@ MonoBehaviour:
     accentCount: 1
     accentRadius: 0
   - poiId: poi_ancient_ruins
-    primaryPrefab: {fileID: 6467388601554043688, guid: c5dc2cb2eda0d7946b9c6754360d61ed, type: 3}
-    accentPrefab: {fileID: 916115565686720363, guid: 49c1bc25c0f99f6449c9b06424b2fa75, type: 3}
+    primaryPrefab: {fileID: 0}
+    accentPrefab: {fileID: 0}
     effectPrefab: {fileID: 0}
     visualScale: 1
-    primaryCount: 1
+    primaryCount: 0
     primaryRadius: 0
-    accentCount: 4
-    accentRadius: 7
+    accentCount: 0
+    accentRadius: 0
   - poiId: poi_overlook
     primaryPrefab: {fileID: 2037994050957237548, guid: 42e6eedbf0b6e6949b28bb6810a845fa, type: 3}
     accentPrefab: {fileID: 0}

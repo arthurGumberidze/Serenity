@@ -43,7 +43,8 @@ Shader "Serenity/StarterWater"
                 half3 shallow = lerp(half3(.20,.38,.34), _WorldMapShallowWater.rgb, _WorldMapArtEnabled);
                 half3 deep = lerp(half3(.035,.16,.22), _WorldMapDeepWater.rgb, _WorldMapArtEnabled);
                 float murk = WorldMapMurk(i.world.xz);
-                half3 base = lerp(shallow, deep, saturate(i.depth));
+                float opticalDepth = smoothstep(0, .7, i.depth);
+                half3 base = lerp(shallow, deep, opticalDepth * .45);
                 // A submerged bed pattern remains visible in shallows and fades with optical depth.
                 float bed = sin(i.world.x * .64 + sin(i.world.z * .47)) * sin(i.world.z * .71);
                 base += bed * .018 * (1 - saturate(i.depth * 2)) * (1 - murk);
@@ -55,7 +56,7 @@ Shader "Serenity/StarterWater"
                 color += light.color * specular * 0.065;
                 float shore = (1 - smoothstep(0.015, 0.12, i.depth)) * (0.04 + 0.04 * wave);
                 color += half3(0.65, 0.72, 0.58) * shore;
-                float opacity = lerp(.38, .92, saturate(i.depth * 1.5));
+                float opacity = lerp(.82, .96, opticalDepth);
                 opacity = lerp(opacity, .97, murk);
                 return half4(MixFog(color, i.fog), opacity);
             }

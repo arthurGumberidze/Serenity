@@ -20,6 +20,9 @@ namespace Game.Domain.World
         private readonly long seed;
         private readonly WorldMapTerrainDefinition authoredTerrain;
         private readonly WorldMapHydrologyDefinition authoredHydrology;
+        private readonly Dictionary<WorldMapSpline, float[]> splineLengths = new();
+        private readonly Dictionary<WorldMapSpline, float> splineTotals = new();
+        private readonly Dictionary<object, float[]> waterBounds = new();
 
         public TiledWorldHeightSampler(TiledWorldDefinition worldDefinition, long worldSeed)
         {
@@ -27,6 +30,31 @@ namespace Game.Domain.World
             seed = worldSeed;
             authoredTerrain = definition.MapData?.Terrain;
             authoredHydrology = definition.MapData?.Hydrology;
+            if (authoredHydrology != null)
+            {
+                foreach (var course in EnumerateWaterCourses())
+                {
+                    var points=course.Spline.Points;
+                    var lengths=new float[points.Count-1]; var total=0f;
+                    for(var i=1;i<points.Count;i++) { lengths[i-1]=Distance(points[i-1].Position,points[i].Position); total+=lengths[i-1]; }
+                    splineLengths[course.Spline]=lengths; splineTotals[course.Spline]=total;
+                    var margin=course.Spline.MaximumWidthMeters*.5f+course.MaximumBankBlendMeters;
+                    waterBounds[course]=Bounds(points.Select(p=>p.Position),margin);
+                }
+                foreach(var lake in authoredHydrology.Lakes)
+                    waterBounds[lake]=Bounds(lake.Shoreline.Points,lake.MaximumBankBlendMeters);
+            }
+        }
+
+        private static float[] Bounds(IEnumerable<WorldMapPoint> points,float margin)
+        {
+            var p=points.ToArray();
+            return new[]{p.Min(v=>v.X)-margin,p.Max(v=>v.X)+margin,p.Min(v=>v.Z)-margin,p.Max(v=>v.Z)+margin};
+        }
+        private bool NearWater(object water,WorldMapPoint point)
+        {
+            var b=waterBounds[water];
+            return point.X>=b[0] && point.X<=b[1] && point.Z>=b[2] && point.Z<=b[3];
         }
 
         public TiledWorldDefinition Definition => definition;
@@ -269,7 +297,7 @@ namespace Game.Domain.World
                 float.IsNaN(maximumSlopeDegrees) || float.IsInfinity(maximumSlopeDegrees) ||
                 IsWater(worldX, worldZ)) return false;
             var waterLevel = authoredTerrain?.WaterLevelMeters ?? WaterLevelMeters;
-            if (SampleHeight(worldX, worldZ) <= waterLevel + 0.75f) return false;
+            if (authoredHydrology == null && SampleHeight(worldX, worldZ) <= waterLevel + 0.75f) return false;
             return SampleSlopeDegrees(worldX, worldZ) <= maximumSlopeDegrees;
         }
 
@@ -411,6 +439,7 @@ namespace Game.Domain.World
         {
             foreach (var lake in authoredHydrology.Lakes)
             {
+                if (!NearWater(lake,point)) continue;
                 var edgeDistance = DistanceToPolygon(point, lake.Shoreline);
                 if (lake.Shoreline.Contains(point))
                 {
@@ -426,6 +455,7 @@ namespace Game.Domain.World
 
             foreach (var course in EnumerateWaterCourses())
             {
+                if (!NearWater(course,point)) continue;
                 var sample = SampleSpline(point, course.Spline);
                 var halfWidth = sample.WidthMeters * 0.5f;
                 var surface = course.SurfaceLevelPolicy.Sample(sample.Progress);
@@ -450,6 +480,7 @@ namespace Game.Domain.World
         {
             foreach (var lake in authoredHydrology.Lakes)
             {
+                if (!NearWater(lake,point)) continue;
                 if (!lake.Shoreline.Contains(point)) continue;
                 var edgeDistance = DistanceToPolygon(point, lake.Shoreline);
                 var depthFactor = Smooth01(Math.Min(1f, edgeDistance /
@@ -459,6 +490,7 @@ namespace Game.Domain.World
             }
             foreach (var course in EnumerateWaterCourses())
             {
+                if (!NearWater(course,point)) continue;
                 var sample = SampleSpline(point, course.Spline);
                 var halfWidth = sample.WidthMeters * 0.5f;
                 if (sample.Distance > halfWidth) continue;
@@ -499,11 +531,10 @@ namespace Game.Domain.World
             public float WidthMeters { get; }
         }
 
-        private static SplineSample SampleSpline(WorldMapPoint point, WorldMapSpline spline)
+        private SplineSample SampleSpline(WorldMapPoint point, WorldMapSpline spline)
         {
-            var totalLength = 0f;
-            for (var index = 1; index < spline.Points.Count; index++)
-                totalLength += Distance(spline.Points[index - 1].Position, spline.Points[index].Position);
+            var totalLength = splineTotals[spline];
+            var lengths = splineLengths[spline];
             var bestSquared = float.MaxValue;
             var bestProgress = 0f;
             var bestWidth = spline.Points[0].WidthMeters;
@@ -515,7 +546,7 @@ namespace Game.Domain.World
                 var abX = b.Position.X - a.Position.X;
                 var abZ = b.Position.Z - a.Position.Z;
                 var lengthSquared = abX * abX + abZ * abZ;
-                var length = (float)Math.Sqrt(lengthSquared);
+                var length = lengths[index-1];
                 var t = lengthSquared <= 0f ? 0f :
                     ((point.X - a.Position.X) * abX + (point.Z - a.Position.Z) * abZ) / lengthSquared;
                 t = Math.Max(0f, Math.Min(1f, t));

@@ -124,7 +124,18 @@ namespace Game.Infrastructure
                         // a positive-scale authority root and preserve the model transform underneath it.
                         view = new GameObject();
                         view.transform.SetParent(viewRoot, false);
-                        WorldMapScenery.Instantiate(entry.Prefab, view.transform);
+                        var model = WorldMapScenery.Instantiate(entry.Prefab, view.transform);
+                        // Vendor prefabs contain positions from their demonstration scene.
+                        model.transform.localPosition = Vector3.zero;
+                        model.transform.localRotation = Quaternion.identity;
+                        var meshes = model.GetComponentsInChildren<Renderer>(true);
+                        if (meshes.Length > 0)
+                        {
+                            var bounds = meshes[0].bounds;
+                            foreach (var mesh in meshes) bounds.Encapsulate(mesh.bounds);
+                            model.transform.position -= new Vector3(bounds.center.x - view.transform.position.x,
+                                bounds.min.y - view.transform.position.y, bounds.center.z - view.transform.position.z);
+                        }
                         view.name = "WM08 " + state.SpeciesId + " " + state.Id;
                         view.transform.localScale *= entry.Scale;
                         foreach (var animator in view.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;

@@ -77,7 +77,8 @@ namespace Game.Infrastructure
                         {
                             material = new Material(source) { enableInstancing = true };
                             var foliage = source.HasProperty("_LeafTex");
-                            var atlas = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : source.mainTexture;
+                            var atlas = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") :
+                                source.HasProperty("_MainTex") ? source.GetTexture("_MainTex") : null;
                             material.shader = worldShader;
                             if (!foliage)
                             {
