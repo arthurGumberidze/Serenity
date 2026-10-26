@@ -374,7 +374,8 @@ namespace Game.Simulation.AI
         public AiActionPhase Phase { get; private set; }
         public bool IsFinished { get; private set; }
         public bool Succeeded { get; private set; }
-        public bool IsInterruptible => Phase == AiActionPhase.MoveToSource;
+        public bool IsInterruptible => Phase == AiActionPhase.MoveToSource ||
+            production.TryGetSite(job.Task.SiteId, out var site) && site.Continuous;
         public bool IsValid => !IsFinished && (completion.Completed || production.IsTaskActive(job.Task.Id));
 
         public void Tick(TimeSpan simulationDelta)
@@ -424,7 +425,8 @@ namespace Game.Simulation.AI
                         simulationDelta.Ticks * workRatePerThousand / 1000L)));
                     if (!completion.Completed) break;
                     if (!completion.ProducedOutput || completion.OutputOwner.Kind == InventoryOwnerKind.BuildingStorage ||
-                        completion.OutputOwner.Kind == InventoryOwnerKind.WorldPile)
+                        completion.OutputOwner.Kind == InventoryOwnerKind.WorldPile ||
+                        completion.OutputOwner.Kind == InventoryOwnerKind.ProductionOutput)
                     {
                         Finish();
                         break;

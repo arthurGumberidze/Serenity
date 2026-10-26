@@ -1,0 +1,31 @@
+PASS New game initialized without runtime errors
+PASS No generated bridge models or crossing links
+PASS Painted snow rock props removed
+PASS Palisade fixture uses valid dry placement
+PASS Gate preview accepts existing player palisade
+PASS Gate replaces exactly three wall cells
+PASS Open gate has no blocking root collider
+PASS Open gate permits direct navigation through the wall
+PASS Living wildlife available for flee route
+PASS Hunt command accepted
+PASS Real arrow hit reaches animal health authority
+PASS Damage starts canonical flee state
+PASS Wounded wildlife moves away
+PASS Fishing camp snaps to a valid real shore
+PASS Camp offers its own fishing work
+PASS Camp command availability: None
+PASS Camp worker assignment accepted
+PASS Fisher reaches camp and is hidden while working
+PASS Camp reaches its internal limit of 30 fish
+PASS Empty warehouse available near camp
+PASS Automatic carrier deposits real camp fish in warehouse
+PASS Fishing resumes after hauling frees capacity
+PASS Neighbour residents move for economic tasks
+PASS Neighbour performs canonical production jobs (output=44)
+PASS Neighbour has separate inventory authority
+PASS Neighbour gathers actual shared world sources
+PASS Neighbour schedules real construction
+PASS Neighbour production survives real save/load
+PASS Continuous camp state survives real save/load
+PASS No bridges reappear after loading
+PASS No runtime errors during functional route

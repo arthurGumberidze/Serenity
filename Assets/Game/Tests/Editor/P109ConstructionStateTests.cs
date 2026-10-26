@@ -302,6 +302,25 @@ namespace Game.Tests.Editor
             return new LogisticsFixture(resources, inventories, piles, sources, buildings, sites, work, funding, claims);
         }
 
+        [Test]
+        public void RetryDeliveryRequestsOnlyMaterialsMissingFromTheExistingBuffer()
+        {
+            var f=CreateLogisticsFixture();
+            Assert.That(f.Funding.TryConfirm(Definition(),new GridCoordinate(3,4),BuildingOrientation.North,
+                f.Sources.Select(x=>x.Owner),out var building).IsValid,Is.True);
+            Assert.That(f.Sites.Deliver(building,f.Sources[0].Owner,Wood,new ResourceQuantity(3)),Is.EqualTo(TransferFailureReason.None));
+            foreach(var job in f.Work.Jobs.Where(x=>!x.IsTerminal).ToArray())f.Work.Cancel(job.Id);
+            Assert.That(f.Funding.TryScheduleDeliveries(building,Definition(),f.Inventories.All.Select(x=>x.Owner),WorkPriority.Normal),Is.True);
+            var pending=f.Work.Jobs.Where(x=>!x.IsTerminal).ToArray();
+            Assert.That(pending.Where(x=>x.ResourceId==Wood).Sum(x=>x.Quantity.Units),Is.EqualTo(2));
+            Assert.That(pending.Where(x=>x.ResourceId==Stone).Sum(x=>x.Quantity.Units),Is.EqualTo(2));
+            foreach(var job in pending)f.Work.Cancel(job.Id);
+            f.Sites.Deliver(building,f.Sources[0].Owner,Wood,new ResourceQuantity(2));
+            f.Sites.Deliver(building,f.Sources[1].Owner,Stone,new ResourceQuantity(2));
+            Assert.That(f.Funding.TryScheduleDeliveries(building,Definition(),f.Inventories.All.Select(x=>x.Owner),WorkPriority.Normal),Is.True);
+            Assert.That(f.Work.Jobs.Any(x=>!x.IsTerminal),Is.False);
+        }
+
         private static void DeliverAll(Fixture fixture)
         {
             while (fixture.Building.ConstructionPhase != ConstructionPhase.Building)

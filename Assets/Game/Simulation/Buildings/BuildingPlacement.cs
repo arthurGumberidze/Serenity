@@ -95,6 +95,7 @@ namespace Game.Simulation.Buildings
         private readonly Dictionary<GridCoordinate, StableEntityId> occupied = new Dictionary<GridCoordinate, StableEntityId>();
         public int OccupiedCellCount => occupied.Count;
         public bool IsOccupied(GridCoordinate coordinate) => occupied.ContainsKey(coordinate);
+        public bool TryGetOwner(GridCoordinate cell,out StableEntityId owner) => occupied.TryGetValue(cell,out owner);
         public void Reserve(IEnumerable<GridCoordinate> cells, StableEntityId buildingId, bool allowsOverlap)
         {
             if (!buildingId.IsValid) throw new ArgumentException("A valid building ID is required.", nameof(buildingId));
@@ -114,11 +115,19 @@ namespace Game.Simulation.Buildings
     public sealed class BuildingPlacementService
     {
         private const int MaximumAuthoredCells = 4096;
+        private readonly Dictionary<StableEntityId,List<(Building wall,GridCoordinate[] cells)>> gateCuts = new();
+        private bool ReplaceableWall(GridCoordinate cell,BuildingDefinition definition)
+            => definition.Id.ToString()=="gate" && occupancy.TryGetOwner(cell,out var id) &&
+                registry.TryGet(id,out var wall) && wall.DefinitionId.ToString()=="palisade" &&
+                wall.OwnerSideId.Value=="player" && wall.IsOperational;
+
         private readonly BuildingRegistry registry;
         private readonly BuildingOccupancyGrid occupancy;
         private readonly BuildingGridBounds bounds;
         private Func<IReadOnlyList<GridCoordinate>, bool> environmentAllows;
         private Func<PlacementRuleContext, PlacementFailureReason> ruleEvaluator;
+        private Func<PlacementRuleContext, bool> requestEnvironment;
+        public void ConfigureRequestEnvironment(Func<PlacementRuleContext, bool> evaluator) => requestEnvironment = evaluator;
         private SettlementTerritoryRegistry territories;
 
         public BuildingPlacementService(BuildingRegistry registry, BuildingOccupancyGrid occupancy, BuildingGridBounds bounds)
@@ -135,7 +144,7 @@ namespace Game.Simulation.Buildings
             if (definition.PlacementMode != BuildingPlacementMode.Grid) return Invalid(PlacementFailureReason.UnsupportedPlacementMode);
             if (!TryResolveCells(request, out var cells)) return Invalid(PlacementFailureReason.InvalidShape);
             if (cells.Any(cell => !bounds.Contains(cell))) return Invalid(PlacementFailureReason.OutsideBuildableBounds, cells);
-            if (!definition.AllowsOverlap && cells.Any(occupancy.IsOccupied)) return Invalid(PlacementFailureReason.Occupied, cells);
+            if (!definition.AllowsOverlap && cells.Any(cell=>occupancy.IsOccupied(cell) && !ReplaceableWall(cell,definition))) return Invalid(PlacementFailureReason.Occupied, cells);
             var constraints = definition.Placement.Constraints;
             if ((constraints & BuildingPlacementConstraint.OwnedTerritory) != 0)
             {
@@ -147,7 +156,7 @@ namespace Game.Simulation.Buildings
                 .Where(cell => (constraints & BuildingPlacementConstraint.OwnedTerritory) == 0 || territories.Contains(request.SettlementId.Value, cell)).ToArray();
             if ((constraints & BuildingPlacementConstraint.ReachableApproach) != 0 && approach.Length == 0)
                 return Invalid(PlacementFailureReason.NoReachableApproach, cells, approach);
-            if (environmentAllows != null && !environmentAllows(cells)) return Invalid(PlacementFailureReason.TerrainBlocked, cells, approach);
+            if (requestEnvironment != null ? !requestEnvironment(new PlacementRuleContext(request,cells,approach)) : environmentAllows != null && !environmentAllows(cells)) return Invalid(PlacementFailureReason.TerrainBlocked, cells, approach);
             if (ruleEvaluator != null)
             {
                 var failure = ruleEvaluator(new PlacementRuleContext(request, cells, approach));
@@ -170,8 +179,22 @@ namespace Game.Simulation.Buildings
             var owner = ownerSideId.IsValid ? ownerSideId : new CombatSideId("player");
             var building = Building.CreateNew(request.Definition, request.Anchor, request.Orientation, owner,
                 evaluation.Cells, request.SettlementId, stableId);
-            occupancy.Reserve(evaluation.Cells, building.Id, request.Definition.AllowsOverlap);
-            try { registry.Add(building); } catch { occupancy.Release(evaluation.Cells, building.Id); throw; }
+            var cuts=new List<(Building wall,GridCoordinate[] cells)>();
+            if(request.Definition.Id.ToString()=="gate")
+            {
+                foreach(var wall in registry.All.Where(x=>x.DefinitionId.ToString()=="palisade" &&
+                    x.PlacementCells.Any(evaluation.Cells.Contains)).ToArray())
+                {
+                    var old=wall.PlacementCells.ToArray(); cuts.Add((wall,old));
+                    occupancy.Release(old,wall.Id);
+                    wall.ReplacePalisadeCells(old.Except(evaluation.Cells));
+                    if(wall.PlacementCells.Count==0) registry.Remove(wall);
+                    else occupancy.Reserve(wall.PlacementCells,wall.Id,false);
+                }
+                gateCuts[building.Id]=cuts;
+            }
+            try { occupancy.Reserve(evaluation.Cells, building.Id, request.Definition.AllowsOverlap); registry.Add(building); }
+            catch { occupancy.Release(evaluation.Cells, building.Id); RestoreGateCut(building.Id); throw; }
             return building;
         }
         public void Rollback(Building building, BuildingDefinition definition)
@@ -179,6 +202,19 @@ namespace Game.Simulation.Buildings
             if (building == null || definition == null || building.DefinitionId != definition.Id) throw new ArgumentException("Matching building and definition required.");
             if (!registry.Remove(building)) throw new InvalidOperationException("Building transaction is not registered.");
             occupancy.Release(building.PlacementCells.Count == 0 ? definition.Footprint.EnumerateCells(building.Coordinate, building.Orientation) : building.PlacementCells, building.Id);
+            RestoreGateCut(building.Id);
+        }
+
+        private void RestoreGateCut(StableEntityId gate)
+        {
+            if(!gateCuts.Remove(gate,out var cuts))return;
+            foreach(var item in cuts)
+            {
+                occupancy.Release(item.wall.PlacementCells,item.wall.Id);
+                item.wall.ReplacePalisadeCells(item.cells);
+                if(!registry.TryGet(item.wall.Id,out _))registry.Add(item.wall);
+                occupancy.Reserve(item.cells,item.wall.Id,false);
+            }
         }
 
         private static PlacementEvaluation Invalid(PlacementFailureReason reason, IReadOnlyList<GridCoordinate> cells = null,

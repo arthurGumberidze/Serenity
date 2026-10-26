@@ -874,13 +874,13 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - gathering
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 8
+    footprintDepth: 6
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 6
-    maximumHeightDeltaMillimetres: 750
+    maximumHeightDeltaMillimetres: 3000
     approachClearanceMillimetres: 750
     prefab: {fileID: 4450261199759727127, guid: 2a63c8154b026c04d8f7716a25a6d5b3, type: 3}
     constructionCost:
@@ -893,10 +893,11 @@ MonoBehaviour:
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
     housingCapacity: 0
-    maximumWorkers: 4
-    productionRecipeIds: []
-    productionInputCapacity: 0
-    productionOutputCapacity: 0
+    maximumWorkers: 1
+    productionRecipeIds:
+    - fish_camp
+    productionInputCapacity: 1
+    productionOutputCapacity: 30
     wearIntervalHours: 0
     wearPerInterval: 0
     repairCost:
@@ -1098,11 +1099,11 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 1
+    footprintWidth: 3
     footprintDepth: 1
     placementMode: 0
     allowsOverlap: 0
-    spatialForm: 2
+    spatialForm: 0
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750

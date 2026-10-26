@@ -8,12 +8,18 @@ namespace Game.Infrastructure
     [Serializable]
     public sealed class AnimalHuntingConfig
     {
-        [Serializable] public sealed class Species { public string id; public int health; }
+        [Serializable] public sealed class Species { public string id; public int health; public float fleeSpeed = 3f, fleeDistance = 18f, fleeGameSeconds = 360f; }
         public int arrowDamage;
         public float drawGameSeconds, flightGameSeconds, rangeMeters;
         public int accuracyPermille;
         public int pastureCapacity, livestockMaturityDays, livestockBirthDays;
         public Species[] species;
+        public static System.Collections.Generic.IReadOnlyDictionary<string, WildlifeEscapePolicy> LoadEscape()
+        {
+            var data = JsonUtility.FromJson<AnimalHuntingConfig>(Resources.Load<TextAsset>("World/AnimalHunting").text);
+            return data.species.ToDictionary(x=>x.id,x=>new WildlifeEscapePolicy(x.fleeSpeed,x.fleeDistance,
+                TimeSpan.FromSeconds(x.fleeGameSeconds).Ticks));
+        }
         public static AnimalHuntingPolicy Load()
         {
             var asset = Resources.Load<TextAsset>("World/AnimalHunting");

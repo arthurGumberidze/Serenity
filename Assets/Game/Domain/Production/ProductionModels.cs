@@ -265,6 +265,10 @@ namespace Game.Domain.Production
                         new ResourceAmount(wood, new ResourceQuantity(1)) },
                     new[] { new ResourceAmount(cookedBerries, new ResourceQuantity(3)) },
                     TimeSpan.FromMinutes(20), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(fish))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_camp"), "Fishing Camp",
+                    Array.Empty<ResourceAmount>(), new[] { new ResourceAmount(fish, new ResourceQuantity(1)) },
+                    TimeSpan.FromMinutes(4), ProductionSiteKind.BuildingWorkplace));
             return new ProductionCatalog(recipes, resources);
         }
     }
@@ -274,7 +278,7 @@ namespace Game.Domain.Production
         public ProductionSiteState(StableEntityId id, ProductionRecipeId recipeId, ProductionSiteKind kind,
             WorldPosition position, long remainingAmount, long sourceCapacity, CropPlotPhase cropPhase,
             long growthProgressTicks, long growthRequiredTicks, StableEntityId ownerBuildingId = default,
-            int queuedBatches = 0, bool paused = false, int maximumWorkers = 1)
+            int queuedBatches = 0, bool paused = false, int maximumWorkers = 1, bool continuous = false)
         {
             if (!id.IsValid) throw new ArgumentException("Production site identity required.", nameof(id));
             if (!recipeId.IsValid) throw new ArgumentException("Production recipe identity required.", nameof(recipeId));
@@ -300,6 +304,7 @@ namespace Game.Domain.Production
             QueuedBatches = queuedBatches;
             Paused = paused;
             MaximumWorkers = maximumWorkers;
+            Continuous = continuous;
         }
 
         public StableEntityId Id { get; }
@@ -315,6 +320,7 @@ namespace Game.Domain.Production
         public int QueuedBatches { get; }
         public bool Paused { get; }
         public int MaximumWorkers { get; }
+        public bool Continuous { get; }
     }
 
     public sealed class ProductionSite
@@ -334,6 +340,7 @@ namespace Game.Domain.Production
             QueuedBatches = state.QueuedBatches;
             Paused = state.Paused;
             MaximumWorkers = state.MaximumWorkers;
+            Continuous = state.Continuous;
         }
 
         public StableEntityId Id { get; }
@@ -349,9 +356,11 @@ namespace Game.Domain.Production
         public int QueuedBatches { get; private set; }
         public bool Paused { get; private set; }
         public int MaximumWorkers { get; }
+        public bool Continuous { get; private set; }
+        public void SetContinuous(bool enabled) { Continuous = enabled; }
         public bool IsDepleted => Kind == ProductionSiteKind.NaturalSource && RemainingAmount == 0;
         public bool IsWorkAvailable => Kind == ProductionSiteKind.NaturalSource ? RemainingAmount > 0 :
-            Kind == ProductionSiteKind.BuildingWorkplace ? QueuedBatches > 0 && !Paused :
+            Kind == ProductionSiteKind.BuildingWorkplace ? (Continuous || QueuedBatches > 0) && !Paused :
             CropPhase == CropPlotPhase.Unplanted || CropPhase == CropPlotPhase.Ready;
 
         public static ProductionSite CreateNatural(ProductionRecipeId recipeId, WorldPosition position, long amount)
@@ -398,9 +407,9 @@ namespace Game.Domain.Production
         {
             if (Kind == ProductionSiteKind.BuildingWorkplace)
             {
-                if (taskKind != ProductionTaskKind.Craft || QueuedBatches <= 0)
+                if (taskKind != ProductionTaskKind.Craft || !Continuous && QueuedBatches <= 0)
                     throw new InvalidOperationException("Building workplace cannot complete this task.");
-                QueuedBatches--;
+                if (!Continuous) QueuedBatches--;
                 return;
             }
             if (Kind == ProductionSiteKind.NaturalSource)
@@ -469,7 +478,7 @@ namespace Game.Domain.Production
 
         public ProductionSiteState CaptureState() => new ProductionSiteState(Id, RecipeId, Kind, Position,
             RemainingAmount, SourceCapacity, CropPhase, GrowthProgressTicks, GrowthRequiredTicks,
-            OwnerBuildingId, QueuedBatches, Paused, MaximumWorkers);
+            OwnerBuildingId, QueuedBatches, Paused, MaximumWorkers, Continuous);
     }
 
     public readonly struct ProductionTaskState
@@ -549,6 +558,13 @@ namespace Game.Domain.Production
             if (Status != ProductionTaskStatus.Active || AccumulatedWorkTicks != RequiredWorkTicks)
                 throw new InvalidOperationException("Only a fully worked active task can complete.");
             Status = ProductionTaskStatus.Completed;
+        }
+
+        public void BeginNextCycle()
+        {
+            if (IsTerminal || AccumulatedWorkTicks != RequiredWorkTicks)
+                throw new InvalidOperationException("Only a worked active task can start its next cycle.");
+            AccumulatedWorkTicks = 0;
         }
 
         public void Cancel()

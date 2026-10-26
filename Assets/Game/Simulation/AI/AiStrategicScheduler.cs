@@ -59,6 +59,7 @@ namespace Game.Simulation.AI
         public IReadOnlyList<StableEntityId> Residents { get; }
         public GridCoordinate ConstructionOrigin { get; set; } = new GridCoordinate(18, 18);
         public MilitaryTrainingService Training { get; set; }
+        public bool UsesWorkScheduler { get; set; }
         public long FoundedTick { get; set; }
         private readonly Dictionary<string, int> relations = new Dictionary<string, int>();
         public IReadOnlyDictionary<string, int> Relations => relations;
@@ -349,13 +350,13 @@ namespace Game.Simulation.AI
                     string.Equals(unit.AbstractLocationId, homeLocation, StringComparison.Ordinal);
             }).ToArray();
             faction.Production.Population = faction.Residents.Count(id => characters.TryGet(id, out var c) && c.LifeState == CharacterLifeState.Alive);
-            faction.Production.AdvanceTo(tick, workers);
+            faction.Production.AdvanceTo(tick, faction.UsesWorkScheduler ? Array.Empty<StableEntityId>() : workers);
             // Civilian research progresses independently of military strategic decisions.
             EnsureResearchProject(faction);
             var workerSet = new HashSet<StableEntityId>(workers);
             var researchers = Eligible(faction, x => x.CanResearch).Where(workerSet.Contains).Take(2).ToArray();
             faction.Research.AssignWorkers(researchers);
-            faction.Research.AdvanceWorkersTo(tick, researchers);
+            if (!faction.UsesWorkScheduler) faction.Research.AdvanceWorkersTo(tick, researchers);
         }
 
         private void AdvanceTraining(AiFactionRuntime faction, long tick)
@@ -654,7 +655,7 @@ namespace Game.Simulation.AI
                 var settlement = map.Settlements.Single(x => x.Id == faction.Strategic.HomeSettlementId);
                 map.SynchronizeSettlement(settlement.Id, settlement.LocationId, settlement.OwnerSideId,
                     settlement.BuildingIds.Concat(new[] { placed.Id }), settlement.ResidentCharacterIds);
-                if (definition.Id.ToString() == "primitive_crop_plot")
+                if (!faction.UsesWorkScheduler && definition.Id.ToString() == "primitive_crop_plot")
                     faction.Production.AddSite(ProductionSite.CreateCropPlot(placed.Id,
                         new ProductionRecipeId("cultivate_berries"), new WorldPosition(coordinate.X, 0, coordinate.Z),
                         faction.Production.Settings.CropGrowthDuration));
@@ -747,12 +748,26 @@ namespace Game.Simulation.AI
 
         private BuildingDefinition SelectBuilding(AiFactionRuntime faction)
         {
-            foreach (var id in settings.BuildingPriorities)
+            if (faction.UsesWorkScheduler && buildingRegistry.All.Any(x=>x.OwnerSideId==faction.Strategic.SideId && !x.IsOperational && !x.IsDestroyed)) return null;
+            var priority = settings.BuildingPriorities.AsEnumerable();
+            var expansion = new HashSet<string>();
+            if (faction.UsesWorkScheduler)
+            {
+                var owned = buildingRegistry.All.Where(x=>x.OwnerSideId==faction.Strategic.SideId && x.IsOperational).ToArray();
+                var beds = owned.Sum(x=>faction.Buildings.TryGetValue(x.DefinitionId,out var d)?d.Housing?.ResidentCapacity ?? 0:0);
+                if (beds < faction.Residents.Count(id=>characters.TryGet(id,out var c) && c.LifeState==CharacterLifeState.Alive))
+                    expansion.Add("primitive_shelter");
+                var stores = faction.Inventories.All.Where(x=>x.Owner.Kind==InventoryOwnerKind.BuildingStorage).ToArray();
+                if (stores.Length==0 || stores.Sum(x=>x.TotalUnits)>=stores.Sum(x=>x.Capacity)*.8d)
+                    expansion.Add("storage_basket");
+                priority = new[]{"primitive_shelter","storage_basket"}.Where(expansion.Contains).Concat(priority).Distinct();
+            }
+            foreach (var id in priority)
             {
                 var key = new BuildingDefinitionId(id);
                 if (!faction.Buildings.TryGetValue(key, out var definition) ||
                     !faction.Construction.IsBuildingUnlocked(key)) continue;
-                if (buildingRegistry.All.Any(x => x.OwnerSideId == faction.Strategic.SideId && x.DefinitionId == key)) continue;
+                if (!expansion.Contains(id) && buildingRegistry.All.Any(x => x.OwnerSideId == faction.Strategic.SideId && x.DefinitionId == key && !x.IsDestroyed)) continue;
                 for (var offset = 0; offset < 64; offset++)
                     if (faction.Construction.Evaluate(definition, ConstructionCoordinate(faction, offset),
                             BuildingOrientation.North, faction.Inventories.All.Select(x => x.Owner)).IsValid)

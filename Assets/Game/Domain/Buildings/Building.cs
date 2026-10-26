@@ -195,6 +195,12 @@ namespace Game.Domain.Buildings
         public int ConstructionStageCount { get; private set; }
         public IReadOnlyList<ConstructionMaterialProgress> ConstructionMaterials => constructionMaterials.AsReadOnly();
         public IReadOnlyList<GridCoordinate> PlacementCells => placementCells.AsReadOnly();
+        public void ReplacePalisadeCells(IEnumerable<GridCoordinate> cells)
+        {
+            if (DefinitionId.ToString() != "palisade") throw new InvalidOperationException("Only modular palisades can be trimmed.");
+            var values=cells.Distinct().ToArray(); placementCells.Clear(); placementCells.AddRange(values);
+        }
+
         public InventoryOwner ConstructionBufferOwner => new InventoryOwner(InventoryOwnerKind.ConstructionBuffer, Id);
         public double ConstructionProgress => ConstructionState == ConstructionState.Completed ? 1d :
             ConstructionRequiredTicks <= 0 ? 0d : (double)ConstructionWorkTicks / ConstructionRequiredTicks;

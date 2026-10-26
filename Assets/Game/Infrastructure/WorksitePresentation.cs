@@ -13,6 +13,14 @@ namespace Game.Infrastructure
     public sealed class WorksitePresentation : MonoBehaviour
     {
         private LocalSceneCompositionRoot root;
+        private IEnumerable<WorldResourcePile> AllPiles => root.StarterEnemyAi == null ? root.WorldPiles.All :
+            root.WorldPiles.All.Concat(root.StarterEnemyAi.WorldPiles.All);
+        private bool TryInventory(InventoryOwner owner,out ResourceInventory inventory)
+        {
+            if(root.Inventories.TryGet(owner,out inventory))return true;
+            return root.StarterEnemyAi != null && root.StarterEnemyAi.Inventories.TryGet(owner,out inventory);
+        }
+
         private readonly Dictionary<StableEntityId, WorldResourcePilePresenter> views = new();
         private readonly List<Material> materials = new();
         private readonly Dictionary<StableEntityId, GameObject> carriedViews = new();
@@ -54,7 +62,7 @@ namespace Game.Infrastructure
             fishTailMesh.RecalculateBounds();
             foreach (var view in FindObjectsByType<WorldResourcePilePresenter>(FindObjectsInactive.Include,
                          FindObjectsSortMode.None))
-                if (root.WorldPiles.All.Any(x => x.Id == view.PileId)) views[view.PileId] = view;
+                if (AllPiles.Any(x => x.Id == view.PileId)) views[view.PileId] = view;
         }
 
         public void CreateFish(Transform parent, Vector3 center, float radius = 2.8f, StableEntityId sourceId = default)
@@ -193,7 +201,7 @@ namespace Game.Infrastructure
             foreach (var movement in root.AiRuntime.Movements)
             {
                 var id = movement.CharacterId;
-                var hasLoad = root.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.CarryLoad, id), out var load) &&
+                var hasLoad = TryInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, id), out var load) &&
                     load.TotalUnits > 0;
                 if (!carriedViews.TryGetValue(id, out var view) || view == null)
                 {
@@ -216,13 +224,13 @@ namespace Game.Infrastructure
         {
             if (root == null) return;
             var focus = root.CameraController.transform.position;
-            foreach (var pile in root.WorldPiles.All)
+            foreach (var pile in AllPiles)
             {
-                if (!root.Inventories.TryGet(pile.InventoryOwner, out var inventory)) continue;
+                if (!TryInventory(pile.InventoryOwner, out var inventory)) continue;
                 var position = root.BuildingSpawner.GridToWorld(pile.Coordinate);
                 if (pile.ResourceId.ToString() == "fish")
                 {
-                    var index = root.WorldPiles.All.Where(x => x.ResourceId == pile.ResourceId &&
+                    var index = AllPiles.Where(x => x.ResourceId == pile.ResourceId &&
                         x.Coordinate.Equals(pile.Coordinate)).OrderBy(x => x.Id).TakeWhile(x => x.Id != pile.Id).Count();
                     position += new Vector3(0.65f + index % 3 * 0.7f, 0f, index / 3 % 3 * 0.65f);
                     position.y = root.TiledWorld.ProjectToGround(position).y;
@@ -263,7 +271,7 @@ namespace Game.Infrastructure
                 }
                 view.gameObject.SetActive(visible);
             }
-            var ids = new HashSet<StableEntityId>(root.WorldPiles.All.Select(x => x.Id));
+            var ids = new HashSet<StableEntityId>(AllPiles.Select(x => x.Id));
             foreach (var pair in views) if (!ids.Contains(pair.Key) && pair.Value != null) pair.Value.gameObject.SetActive(false);
         }
 

@@ -23,6 +23,7 @@ namespace Game.Presentation.Buildings
         private GameObject scaffold;
         private Material scaffoldMaterial;
         private BuildingConstructionStageVisual[] constructionStages;
+        private readonly System.Collections.Generic.Dictionary<Transform,Quaternion> gateClosedRotations = new();
 
         public bool IsBound => building != null;
         public Building Building => building;
@@ -48,6 +49,56 @@ namespace Game.Presentation.Buildings
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(source.Id, ContextTargetKind.Building);
             RefreshStructuralPresentation();
+            if(source.DefinitionId.ToString()=="gate") SetGateOpen(false);
+        }
+
+        public void SetGateOpen(bool open)
+        {
+            if(building?.DefinitionId.ToString()!="gate")return;
+            var collider=GetComponent<BoxCollider>();if(collider!=null)collider.enabled=!open;
+            var obstacle=GetComponent<UnityEngine.AI.NavMeshObstacle>() ?? gameObject.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            obstacle.shape=UnityEngine.AI.NavMeshObstacleShape.Box;
+            if(collider!=null){obstacle.center=collider.center;obstacle.size=collider.size;}
+            obstacle.carving=true;obstacle.carveOnlyStationary=false;obstacle.enabled=!open;
+            if(transform.Find("Gate selection")==null && collider!=null)
+            {
+                var selection=new GameObject("Gate selection");selection.transform.SetParent(transform,false);
+                var hit=selection.AddComponent<BoxCollider>();hit.center=collider.center;hit.size=collider.size;hit.isTrigger=true;
+                var leaves=GetComponentsInChildren<MeshRenderer>(true).Where(x=>x.name=="DoorL" || x.name=="DoorR").ToArray();
+                if(leaves.Length==2)
+                {
+                    var opening=new Bounds();var initialized=false;
+                    foreach(var leaf in leaves)
+                    {
+                        var b=leaf.localBounds;
+                        foreach(var x in new[]{b.min.x,b.max.x})foreach(var y in new[]{b.min.y,b.max.y})foreach(var z in new[]{b.min.z,b.max.z})
+                        {
+                            var point=transform.InverseTransformPoint(leaf.transform.TransformPoint(new Vector3(x,y,z)));
+                            if(!initialized){opening=new Bounds(point,Vector3.zero);initialized=true;}else opening.Encapsulate(point);
+                        }
+                    }
+                    var left=collider.center.x-collider.size.x*.5f;var right=collider.center.x+collider.size.x*.5f;
+                    AddGatePost("Left gate frame",left,opening.min.x,collider);
+                    AddGatePost("Right gate frame",opening.max.x,right,collider);
+                }
+            }
+            foreach(var visual in GetComponentsInChildren<Transform>(true))
+                if(visual.name.EndsWith("Gate_Wood_01_left",StringComparison.Ordinal) ||
+                    visual.name.EndsWith("Gate_Wood_01_right",StringComparison.Ordinal) || visual.name=="DoorL" || visual.name=="DoorR")
+                {
+                    if(!gateClosedRotations.ContainsKey(visual))gateClosedRotations.Add(visual,visual.localRotation);
+                    visual.localRotation=gateClosedRotations[visual]*Quaternion.Euler(0,open?(visual.name.EndsWith("_left") || visual.name=="DoorL"?-90:90):0,0);
+                }
+        }
+
+        private void AddGatePost(string name,float from,float to,BoxCollider gate)
+        {
+            if(to-from<.01f)return;
+            var post=new GameObject(name);post.transform.SetParent(transform,false);
+            var hit=post.AddComponent<BoxCollider>();hit.center=new Vector3((from+to)*.5f,gate.center.y,gate.center.z);
+            hit.size=new Vector3(to-from,gate.size.y,gate.size.z);
+            var blocker=post.AddComponent<UnityEngine.AI.NavMeshObstacle>();blocker.shape=UnityEngine.AI.NavMeshObstacleShape.Box;
+            blocker.center=hit.center;blocker.size=hit.size;blocker.carving=true;blocker.carveOnlyStationary=false;
         }
 
         public void Unbind()

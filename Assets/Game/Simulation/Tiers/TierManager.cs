@@ -57,6 +57,8 @@ namespace Game.Simulation.Tiers
                     throw new ArgumentException("An adapter is required for " + tier + ".", nameof(tierAdapters));
         }
 
+        public Func<CharacterRuntimeState,CharacterRuntimeState> RuntimeProjection { get; set; }
+        private CharacterRuntimeState Project(CharacterRuntimeState state) => RuntimeProjection?.Invoke(state) ?? state;
         public int Count => tiers.Count;
         public long Revision { get; private set; }
         public IReadOnlyList<StableEntityId> ManagedIds => orderedIds;
@@ -77,7 +79,7 @@ namespace Game.Simulation.Tiers
                 throw new InvalidOperationException("Character is already managed by this TierManager.");
             if (!adapters[tier].IsActive(characterId) || CountActiveRepresentations(characterId) != 1)
                 throw new InvalidOperationException("Exactly the declared representation must be active when registering.");
-            var state = adapters[tier].Capture(characterId);
+            var state = Project(adapters[tier].Capture(characterId));
             RequireMatchingIdentity(characterId, state);
             tiers.Add(characterId, tier);
             InsertOrdered(characterId);
@@ -148,7 +150,7 @@ namespace Game.Simulation.Tiers
         {
             var tier = GetTier(characterId);
             AssertExactlyOneActive(characterId, tier);
-            var state = adapters[tier].Capture(characterId);
+            var state = Project(adapters[tier].Capture(characterId));
             RequireMatchingIdentity(characterId, state);
             return state;
         }
@@ -245,7 +247,7 @@ namespace Game.Simulation.Tiers
                 if (target.IsActive(characterId))
                     throw new InvalidOperationException("Target representation is already active.");
 
-                var captured = source.Capture(characterId);
+                var captured = Project(source.Capture(characterId));
                 RequireMatchingIdentity(characterId, captured);
                 target.ValidateMaterialization(character, captured);
                 source.Dematerialize(characterId);

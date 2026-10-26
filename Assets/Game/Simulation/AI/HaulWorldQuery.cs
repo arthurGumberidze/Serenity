@@ -39,6 +39,7 @@ namespace Game.Simulation.AI
         private readonly float gridSize;
         private readonly WorldPosition gridOrigin;
         private readonly Func<WorldPosition, WorldPosition> groundPosition;
+        public Func<InventoryOwner, WorldPosition?> PositionOverride { get; set; }
 
         public HaulWorldQuery(ResourceInventoryRegistry inventories, WorldPileService piles, BuildingRegistry buildings,
             HaulClaimRegistry claims, float gridSize = 1f, WorldPosition gridOrigin = default,
@@ -86,7 +87,7 @@ namespace Game.Simulation.AI
                     if (destinationCapacity <= 0 || !destinationInventory.CanAdd(pile.ResourceId, new ResourceQuantity(1))) continue;
                     var units = Math.Min(maxUnits, Math.Min(characterCapacity, Math.Min(availableAtSource, destinationCapacity)));
                     if (units <= 0) continue;
-                    var destinationPosition = ToWorld(building.Coordinate);
+                    var destinationPosition = PositionOverride?.Invoke(destinationInventory.Owner) ?? ToWorld(building.Coordinate);
                     var sourceDistance = agent.Position.DistanceSquared(sourcePosition);
                     var destinationDistance = sourcePosition.DistanceSquared(destinationPosition);
                     if (!found || IsBetter(sourceDistance, destinationDistance, pile.InventoryOwner,
@@ -106,7 +107,7 @@ namespace Game.Simulation.AI
                 if (sourceInventory.Owner.Kind != InventoryOwnerKind.ProductionOutput ||
                     !buildings.TryGet(sourceInventory.Owner.Id, out var sourceBuilding) ||
                     !sourceBuilding.IsOperational) continue;
-                var sourcePosition = ToWorld(sourceBuilding.Coordinate);
+                var sourcePosition = PositionOverride?.Invoke(sourceInventory.Owner) ?? ToWorld(sourceBuilding.Coordinate);
                 foreach (var amount in sourceInventory.CaptureState().Amounts)
                 {
                     var availableAtSource = amount.Quantity.Units -
@@ -124,7 +125,7 @@ namespace Game.Simulation.AI
                         var units = Math.Min(maxUnits, Math.Min(characterCapacity,
                             Math.Min(availableAtSource, destinationCapacity)));
                         if (units <= 0) continue;
-                        var destinationPosition = ToWorld(destinationBuilding.Coordinate);
+                        var destinationPosition = PositionOverride?.Invoke(destinationInventory.Owner) ?? ToWorld(destinationBuilding.Coordinate);
                         var sourceDistance = agent.Position.DistanceSquared(sourcePosition);
                         var destinationDistance = sourcePosition.DistanceSquared(destinationPosition);
                         if (!found || IsBetter(sourceDistance, destinationDistance, sourceInventory.Owner,
@@ -200,7 +201,7 @@ namespace Game.Simulation.AI
                 if (existingClaim != null && existingClaim.Destination == inventory.Owner) reserved -= existingClaim.Quantity.Units;
                 var capacity = inventory.Capacity - inventory.TotalUnits - reserved;
                 if (capacity < units || !inventory.CanAdd(resourceId, new ResourceQuantity(units))) continue;
-                var candidatePosition = ToWorld(building.Coordinate);
+                var candidatePosition = PositionOverride?.Invoke(inventory.Owner) ?? ToWorld(building.Coordinate);
                 var distance = agent.Position.DistanceSquared(candidatePosition);
                 if (!found || distance < bestDistance ||
                     (distance.Equals(bestDistance) && string.CompareOrdinal(inventory.Owner.Id.ToString(), destination.Id.ToString()) < 0))
@@ -245,27 +246,33 @@ namespace Game.Simulation.AI
                 position = ToWorld(pile.Coordinate);
                 return true;
             }
+            if (owner.Kind == InventoryOwnerKind.Character || owner.Kind == InventoryOwnerKind.CarryLoad)
+            {
+                var point = PositionOverride?.Invoke(owner);
+                if (!point.HasValue || !inventories.TryGet(owner,out _)) return false;
+                position=point.Value; return true;
+            }
             if (!buildings.TryGet(owner.Id, out var building)) return false;
             if (owner.Kind == InventoryOwnerKind.BuildingStorage)
             {
                 if (!building.IsOperational) return false;
-                position = ToWorld(building.Coordinate);
+                position = PositionOverride?.Invoke(owner) ?? ToWorld(building.Coordinate);
                 return true;
             }
             if (owner.Kind == InventoryOwnerKind.ProductionOutput && !destination && building.IsOperational)
             {
-                position = ToWorld(building.Coordinate);
+                position = PositionOverride?.Invoke(owner) ?? ToWorld(building.Coordinate);
                 return true;
             }
             if (owner.Kind == InventoryOwnerKind.ProductionInput && destination && building.IsOperational)
             {
-                position = ToWorld(building.Coordinate);
+                position = PositionOverride?.Invoke(owner) ?? ToWorld(building.Coordinate);
                 return true;
             }
             if (owner.Kind == InventoryOwnerKind.ConstructionBuffer && destination &&
                 !building.IsOperational && building.ConstructionPhase != ConstructionPhase.Cancelled)
             {
-                position = ToWorld(building.Coordinate);
+                position = PositionOverride?.Invoke(owner) ?? ToWorld(building.Coordinate);
                 return true;
             }
             return false;

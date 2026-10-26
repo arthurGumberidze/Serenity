@@ -502,6 +502,7 @@ namespace Game.Presentation.UI
                 contextActionStates[action] = state;
                 var captured = action;
                 var label = ContextActionName(action);
+                if (action == ContextActionKind.Craft && TryGetFishingCampTarget(target, out _)) label = "Ловить рыбу";
                 if (action == ContextActionKind.Gather && context.Production.TryGetSite(target.EntityId, out var menuSite))
                     label = menuSite.RecipeId.ToString() == "fish_water" ? "Ловить рыбу" :
                         menuSite.RecipeId.ToString() == "hunt_animal" ? (context.Production.Animals.IsAlive(menuSite.Id) ? "Охотиться с луком" : "Освежевать") : label;
@@ -518,19 +519,6 @@ namespace Game.Presentation.UI
                     : state.Reason == ContextUnavailableReason.None
                         ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
-            if (TryGetFishingCampTarget(target, out var fishingTarget))
-            {
-                var state = EvaluateForSelection(ContextActionKind.Gather, fishingTarget);
-                contextActionStates[ContextActionKind.Gather] = state;
-                var fishButton = ActionButton("Ловить рыбу с пирса", () =>
-                {
-                    activeContextTarget = fishingTarget;
-                    ExecuteContextAction(ContextActionKind.Gather, Keyboard.current != null && Keyboard.current.shiftKey.isPressed);
-                }, "context-fishing-camp");
-                fishButton.SetEnabled(state.Enabled);
-                contextMenu.Add(fishButton);
-                AddMuted(contextMenu, state.Enabled ? "Доступно" : "Недоступно: " + ContextReason(state.Reason));
-            }
             AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
             PositionContextMenu(screenPosition);
             contextMenu.style.display = DisplayStyle.Flex;
@@ -543,11 +531,8 @@ namespace Game.Presentation.UI
             fishTarget = default;
             if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var camp) ||
                 camp.DefinitionId.ToString() != "fishing_camp" || !camp.IsOperational || camp.OwnerSideId.Value != "player") return false;
-            var source = context.Production.Sites.Where(s => s.RecipeId.ToString() == "fish_water" && s.IsWorkAvailable)
-                .OrderBy(s => s.Position.DistanceSquared(target.Position)).FirstOrDefault();
-            if (source == null || source.Position.DistanceSquared(target.Position) > 300f * 300f) return false;
-            fishTarget = new ContextCommandTarget(ContextTargetKind.ResourceSource, source.Position, source.Id,
-                new ResourceId("fish"), ContextResourceClass.Gatherable);
+            if (!context.Production.Sites.Any(s => s.OwnerBuildingId == camp.Id && s.RecipeId.ToString() == "fish_camp")) return false;
+            fishTarget = target;
             return true;
         }
 
@@ -556,7 +541,7 @@ namespace Game.Presentation.UI
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
             var target = activeContextTarget.Value;
             if (action == ContextActionKind.Gather && TryGetFishingCampTarget(target, out var fishingTarget))
-                target = fishingTarget;
+            { target = fishingTarget; action = ContextActionKind.Craft; }
             var roster = activeContextSelectionIds.ToArray();
             var destination = action == ContextActionKind.Haul ? FindHaulDestination() : null;
             InventoryOwner? source = null;
@@ -1667,7 +1652,7 @@ namespace Game.Presentation.UI
                     "gathering_area" => "Обозначенная площадка для организации сбора дикорастущих ресурсов.",
                     "primitive_garden" => "Зажмите ЛКМ и растяните огород: от 2×2 до 8×8 клеток.",
                     "primitive_path" => "Зажмите ЛКМ и протяните тропу, до 32 клеток за раз.",
-                    "fishing_camp" => "Ставится у берегового столбика с рыбой. При наведении привязывается к площадке.",
+                    "fishing_camp" => "Ставится прямо у берега, входом на сушу. Рыбак работает внутри; до 30 рыб ждут переноса на склад.",
                     _ => null
                 };
                 if (explanation != null) AddMuted(card, explanation);
@@ -2641,13 +2626,23 @@ namespace Game.Presentation.UI
                 {
                     var recipe = context.Production.Recipes.Get(workplaceSite.RecipeId);
                     var active = context.Production.ActiveTasks.FirstOrDefault(x => x.SiteId == workplaceSite.Id);
-                    AddLine(inspector, $"{Content("recipe", recipe.Id.ToString())}: очередь {workplaceSite.QueuedBatches} · " +
+                    if (workplaceSite.Continuous)
+                    {
+                        var reason = context.Production.GetWaitingReason(workplaceSite);
+                        AddLine(inspector, "Ловля рыбы · " + (reason == Game.Simulation.Production.ProductionWaitingReason.OutputFull ? "инвентарь заполнен" :
+                            workplaceSite.Paused ? "пауза" : active == null ? "нет работника" : "работает"));
+                        if (active != null) AddLine(inspector, $"Работник: {CharacterName(active.WorkerId)} · цикл {active.AccumulatedWorkTicks * 100 / active.RequiredWorkTicks}%");
+                    }
+                    else AddLine(inspector, $"{Content("recipe", recipe.Id.ToString())}: очередь {workplaceSite.QueuedBatches} · " +
                         (active == null ? $"ожидание: {E(context.Production.GetWaitingReason(workplaceSite))}" :
                             $"рабочий {CharacterName(active.WorkerId)} · работа {active.AccumulatedWorkTicks * 100 / active.RequiredWorkTicks}%"));
                     var capturedRecipe = recipe.Id;
                     var recipeRow = Row();
-                    recipeRow.Add(ActionButton("+1", () => TryCommand(() => QueueProduction(building, capturedRecipe, 1))));
-                    recipeRow.Add(ActionButton("+5", () => TryCommand(() => QueueProduction(building, capturedRecipe, 5))));
+                    if (!workplaceSite.Continuous)
+                    {
+                        recipeRow.Add(ActionButton("+1", () => TryCommand(() => QueueProduction(building, capturedRecipe, 1))));
+                        recipeRow.Add(ActionButton("+5", () => TryCommand(() => QueueProduction(building, capturedRecipe, 5))));
+                    }
                     recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
                         context.Production.SetWorkplacePaused(building.Id, capturedRecipe, !workplaceSite.Paused))));
                     inspector.Add(recipeRow);
@@ -2656,7 +2651,7 @@ namespace Game.Presentation.UI
             DrawDirectPriority();
             var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
                 new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
-            inspector.Add(ActionButton(building.IsOperational ? "Изготавливать" : "Строить",
+            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.ToString() == "fishing_camp" ? "Ловить рыбу" : "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
             {

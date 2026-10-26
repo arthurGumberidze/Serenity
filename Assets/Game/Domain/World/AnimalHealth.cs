@@ -84,6 +84,7 @@ namespace Game.Domain.World
             animals.Values.Where(x => x.Home == home).OrderBy(x => x.Id).ToArray();
         public AnimalHuntingPolicy Policy { get; private set; } = AnimalHuntingPolicy.Default;
         public event Action<HuntingImpact> Impact;
+        public event Action<HuntingImpact> Damaged;
         public Func<StableEntityId, StableEntityId, bool> CanHit { get; set; }
         public Func<StableEntityId, bool> CanHunt { get; set; }
         public IReadOnlyList<AnimalVitalState> States => animals.Values.OrderBy(x => x.Id).ToArray();
@@ -119,12 +120,13 @@ namespace Game.Domain.World
                 animals[id] = state.With(state.Health, 0, state.ShotSequence, state.Harvested);
         }
 
-        public int Damage(StableEntityId id, int amount)
+        public int Damage(StableEntityId id, int amount, StableEntityId source = default)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             if (!animals.TryGetValue(id, out var state) || !state.Alive) return 0;
             var damage = Math.Min(amount, state.Health);
             animals[id] = state.With(state.Health - damage, state.ShotTicks, state.ShotSequence);
+            if (damage > 0) Damaged?.Invoke(new HuntingImpact(id,source,damage));
             return damage;
         }
 
@@ -160,6 +162,7 @@ namespace Game.Domain.World
                 animal = animal.With(animal.Health - damage, 0, sequence);
                 animals[id] = animal;
                 Impact?.Invoke(new HuntingImpact(id, hunter, damage));
+                if (damage > 0) Damaged?.Invoke(new HuntingImpact(id,hunter,damage));
             }
             animals[id] = animal;
         }

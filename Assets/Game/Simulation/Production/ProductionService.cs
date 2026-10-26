@@ -311,6 +311,7 @@ namespace Game.Simulation.Production
                     site = ProductionSite.CreateBuildingWorkplace(id, buildingId, recipeId, position,
                         definition.Workplace.MaximumWorkers);
                     AddSite(site);
+                    if (recipeId.ToString() == "fish_camp") site.SetContinuous(true);
                 }
                 result.Add(site);
             }
@@ -378,7 +379,7 @@ namespace Game.Simulation.Production
                 throw new ArgumentException("Building workplace required.", nameof(site));
             if (!IsSiteOperational(site.Id)) return ProductionWaitingReason.BuildingUnavailable;
             if (site.Paused) return ProductionWaitingReason.Paused;
-            if (site.QueuedBatches == 0) return ProductionWaitingReason.QueueEmpty;
+            if (!site.Continuous && site.QueuedBatches == 0) return ProductionWaitingReason.QueueEmpty;
             var recipe = recipes.Get(site.RecipeId);
             if (!InputsAvailable(recipe, site)) return ProductionWaitingReason.MissingInputs;
             if (!CanPlaceOutputs(default, recipe, site)) return ProductionWaitingReason.OutputFull;
@@ -409,6 +410,17 @@ namespace Game.Simulation.Production
         }
 
         public bool TryGetSite(StableEntityId id, out ProductionSite site) => sites.TryGetValue(id, out site);
+        public void BindSharedNaturalSites(IEnumerable<ProductionSite> canonicalSites)
+        {
+            var shared = canonicalSites.Where(x=>x.Kind==ProductionSiteKind.NaturalSource &&
+                x.RecipeId.ToString()!="hunt_animal").ToDictionary(x=>x.Id);
+            foreach(var old in sites.Values.Where(x=>x.Kind==ProductionSiteKind.NaturalSource && !shared.ContainsKey(x.Id)).ToArray())
+            { CancelTasksForSite(old.Id); sites.Remove(old.Id); }
+            foreach(var site in shared.Values) sites[site.Id]=site;
+            orderedSites.Clear();
+            orderedSites.AddRange(sites.Values.OrderBy(x => x.Id));
+        }
+
 
         public bool TryGetActiveWorkplace(StableEntityId workerId, out Building building)
         {
@@ -579,9 +591,6 @@ namespace Game.Simulation.Production
             if (!workerId.IsValid) return false;
             if (workerTasks.TryGetValue(workerId, out var taskId) && tasks.TryGetValue(taskId, out var task) && !task.IsTerminal)
                 return true;
-            // Tier 1 keeps one physical producer at a time in this MVP slice so logistics/rest work remains observable.
-            // Aggregate Tier 2/Tier 3 workers use TryReserve directly and are not subject to this presentation policy.
-            if (tasks.Values.Any(candidate => !candidate.IsTerminal)) return false;
             return inventories.TryGet(inventories.WorkerOwner(workerId), out _) &&
                 TrySelectSite(workerId, workerPosition, out _, out _);
         }
@@ -604,6 +613,21 @@ namespace Game.Simulation.Production
             if (!tasks.TryGetValue(taskId, out var task) || task.IsTerminal) return default;
             if (!IsSiteOperational(task.SiteId)) { Cancel(task.Id); return default; }
             var workTicks = GetEffectiveWorkTicks(task, work.Ticks, calendarTick);
+            var site = sites[task.SiteId];
+            if (site.Continuous)
+            {
+                var recipe = recipes.Get(site.RecipeId);
+                // Keep the arrived worker/task while full; no extra output or work accumulates during that wait.
+                if (site.Paused || !CanPlaceOutputs(task.WorkerId, recipe, site)) return default;
+                while (workTicks > 0 && CanPlaceOutputs(task.WorkerId, recipe, site))
+                {
+                    workTicks -= task.AddWork(workTicks);
+                    if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) break;
+                    var cycle = Complete(task);
+                    if (!cycle.ProducedOutput) break;
+                }
+                return default;
+            }
             if (task.RecipeId.ToString() == "hunt_animal" && Animals.TryGet(task.SiteId, out var animal))
             {
                 if (animal.Harvested) { Cancel(task.Id); return default; }
@@ -789,6 +813,7 @@ namespace Game.Simulation.Production
                 if (site.OwnerBuildingId.IsValid) AddId(ref hash, site.OwnerBuildingId);
                 DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)site.QueuedBatches));
                 DeterministicKeyedRandom.Add(ref hash, site.Paused ? 1UL : 0UL);
+                DeterministicKeyedRandom.Add(ref hash, site.Continuous ? 1UL : 0UL);
             }
             foreach (var definition in resources.All)
             {
@@ -810,6 +835,11 @@ namespace Game.Simulation.Production
                     task = job.Task;
                 }
                 var remainingWorkTicks = task.RequiredWorkTicks - task.AccumulatedWorkTicks;
+                if (sites[task.SiteId].Continuous)
+                {
+                    AdvanceTaskAt(task.Id, TimeSpan.FromTicks(budgetTicks), calendarTick);
+                    return;
+                }
                 if (task.RecipeId.ToString() == "hunt_animal")
                 {
                     if (Animals.CanHunt != null && !Animals.CanHunt(workerId)) { Cancel(task.Id); return; }
@@ -931,9 +961,9 @@ namespace Game.Simulation.Production
                     }
                 }
             }
-            task.Complete();
-            Release(task);
-            return new ProductionCompletion(true, produced, outputId, outputUnits, outputOwner);
+            if (site.Continuous) task.BeginNextCycle();
+            else { task.Complete(); Release(task); }
+            return new ProductionCompletion(!site.Continuous, produced, outputId, outputUnits, outputOwner);
         }
 
         private void Release(ProductionTask task)

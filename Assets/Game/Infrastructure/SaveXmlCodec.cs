@@ -238,7 +238,8 @@ namespace Game.Infrastructure
                         site.OwnerBuildingId.IsValid ? site.OwnerBuildingId.ToString() : string.Empty) : null,
                     includeBuildingProduction ? new XElement("queuedBatches", site.QueuedBatches) : null,
                     includeBuildingProduction ? new XElement("paused", site.Paused) : null,
-                    includeBuildingProduction ? new XElement("maximumWorkers", site.MaximumWorkers) : null))),
+                    includeBuildingProduction ? new XElement("maximumWorkers", site.MaximumWorkers) : null,
+                    includeBuildingProduction ? new XElement("continuous", site.Continuous) : null))),
                 new XElement("tasks", state.Tasks.Select(task => new XElement("task",
                     new XElement("id", task.Id.ToString()), new XElement("workerId", task.WorkerId.ToString()),
                     new XElement("siteId", task.SiteId.ToString()), new XElement("recipeId", task.RecipeId.ToString()),
@@ -306,20 +307,24 @@ namespace Game.Infrastructure
             });
             var sites = Items(element.Element("sites"), "site", item =>
             {
+                // Faction workplaces were added after the original strategic-AI save schema.
+                var hasBuildingProduction = includeBuildingProduction || item.Element("ownerBuildingId") != null;
                 var siteFields = new List<string> { "id", "recipeId", "kind", "x", "y", "z", "remaining", "capacity",
                     "cropPhase", "growthProgress", "growthRequired" };
-                if (includeBuildingProduction) siteFields.AddRange(new[] { "ownerBuildingId", "queuedBatches", "paused", "maximumWorkers" });
+                if (hasBuildingProduction) siteFields.AddRange(new[] { "ownerBuildingId", "queuedBatches", "paused", "maximumWorkers" });
+                if (hasBuildingProduction && item.Element("continuous") != null) siteFields.Add("continuous");
                 RequireFields(item, siteFields.ToArray());
-                var ownerText = includeBuildingProduction ? Value(item, "ownerBuildingId") : string.Empty;
+                var ownerText = hasBuildingProduction ? Value(item, "ownerBuildingId") : string.Empty;
                 return new ProductionSiteState(StableEntityId.Parse(Value(item, "id")),
                     new ProductionRecipeId(Value(item, "recipeId")), (ProductionSiteKind)Int(item, "kind"),
                     new WorldPosition(XmlConvert.ToSingle(Value(item, "x")), XmlConvert.ToSingle(Value(item, "y")),
                         XmlConvert.ToSingle(Value(item, "z"))), Long(item, "remaining"), Long(item, "capacity"),
                     (CropPlotPhase)Int(item, "cropPhase"), Long(item, "growthProgress"), Long(item, "growthRequired"),
                     string.IsNullOrEmpty(ownerText) ? default : StableEntityId.Parse(ownerText),
-                    includeBuildingProduction ? Int(item, "queuedBatches") : 0,
-                    includeBuildingProduction && XmlConvert.ToBoolean(Value(item, "paused")),
-                    includeBuildingProduction ? Int(item, "maximumWorkers") : 1);
+                    hasBuildingProduction ? Int(item, "queuedBatches") : 0,
+                    hasBuildingProduction && XmlConvert.ToBoolean(Value(item, "paused")),
+                    hasBuildingProduction ? Int(item, "maximumWorkers") : 1,
+                    hasBuildingProduction && item.Element("continuous") != null && XmlConvert.ToBoolean(Value(item, "continuous")));
             });
             var tasks = Items(element.Element("tasks"), "task", item =>
             {
@@ -1228,7 +1233,7 @@ namespace Game.Infrastructure
                             new XElement("relation", new XElement("sideId", x.Key), new XElement("score", x.Value)))),
                         SerializeAiTraining(faction.Training),
                         SerializeAiDynasty(faction.Dynasty), SerializeResearch(faction.Research),
-                        SerializeProduction(faction.Production, false),
+                        SerializeProduction(faction.Production, false, true),
                         new XElement("worldPiles", faction.WorldPiles.Select(value => new XElement("pile",
                             new XElement("id", value.Id.ToString()),
                             new XElement("resourceId", value.ResourceId.ToString()),
@@ -1734,7 +1739,12 @@ namespace Game.Infrastructure
                     new XElement("x", XmlConvert.ToString(value.Position.X)),
                     new XElement("y", XmlConvert.ToString(value.Position.Y)),
                     new XElement("z", XmlConvert.ToString(value.Position.Z)),
-                    new XElement("tier", (int)value.Tier)))),
+                    new XElement("tier", (int)value.Tier),
+                    new XElement("fleeUntilTick", value.FleeUntilTick),
+                    new XElement("fleeSequence", value.FleeSequence),
+                    new XElement("threatX", XmlConvert.ToString(value.ThreatPosition.X)),
+                    new XElement("threatY", XmlConvert.ToString(value.ThreatPosition.Y)),
+                    new XElement("threatZ", XmlConvert.ToString(value.ThreatPosition.Z))))),
                 new XElement("huntingPressures", state.HuntingPressures.Select(value =>
                     new XElement("pressure", new XElement("speciesId", value.SpeciesId),
                         new XElement("regionId", value.RegionId),
@@ -1755,11 +1765,15 @@ namespace Game.Infrastructure
             var animals = Items(element.Element("animals"), "animal", item =>
             {
                 RequireFields(item, new[] { "id", "speciesId", "sex", "birthDay", "habitatNodeId",
-                    "x", "y", "z", "tier" });
+                    "x", "y", "z", "tier" }.Concat(item.Element("fleeUntilTick") == null ? Array.Empty<string>() :
+                        new[] { "fleeUntilTick", "fleeSequence", "threatX", "threatY", "threatZ" }).ToArray());
                 return new WildlifeIndividualState(StableEntityId.Parse(Value(item, "id")),
                     Value(item, "speciesId"), (WildlifeSex)Int(item, "sex"), Long(item, "birthDay"),
                     Value(item, "habitatNodeId"), new WorldPosition(Float(item, "x"), Float(item, "y"),
-                        Float(item, "z")), (CharacterSimulationTier)Int(item, "tier"));
+                        Float(item, "z")), (CharacterSimulationTier)Int(item, "tier"),
+                    item.Element("fleeUntilTick") == null ? 0 : Long(item,"fleeUntilTick"),
+                    item.Element("fleeUntilTick") == null ? default : new WorldPosition(Float(item,"threatX"),Float(item,"threatY"),Float(item,"threatZ")),
+                    item.Element("fleeUntilTick") == null ? 0 : Int(item,"fleeSequence"));
             });
             var pressures = Items(element.Element("huntingPressures"), "pressure", item =>
             {

@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 morning feedback (2026-10-26): **IN_PROGRESS / repair candidate verified**.
+Build-e: `Builds/WorldMapMorningFix/Serenity.exe`, 0 errors / 77 warnings. 41 distinct focused tests;
+Player-d 31/31 plus saved-game Player-e 6/6, no runtime exceptions. The neighbour completed a physically
+funded building after load while off camera. Fishing camp capacity/haul/resume, gates, fleeing, smooth
+shores and removal of automatic crossings/snow props verified. Temporary-model inventory delivered;
+user asset selection, art acceptance/loading and deferred full performance gates remain next work.
+See `docs/world_map/WM15_MORNING_FEEDBACK.md` and `docs/validation/WM15MorningFeedback/commands.md`.
+
 WM15 late feedback (2026-10-26): **IN_PROGRESS / build-c and focused route verified**.
 `Builds/WorldMapLateFix/Serenity.exe`: 0 errors / 71 warnings, immutable-source provenance verified.
 Player-c: 51/51 PASS, exit 0, no runtime errors; four distinct focused regressions passed. Current

@@ -27,6 +27,7 @@ namespace Game.Simulation.Work
         private readonly IWorkEligibilityPolicy eligibility;
         private readonly Dictionary<long, WorkOrder> jobs = new Dictionary<long, WorkOrder>();
         private readonly Dictionary<WorkTarget, JobId> exclusiveTargets = new Dictionary<WorkTarget, JobId>();
+        public Func<StableEntityId,WorkOrder,bool> AssignmentScope { get; set; }
         private long nextJobId = 1;
         private long nextQueueOrder = 1;
         private long nextFrontOrder = -1;
@@ -168,6 +169,7 @@ namespace Game.Simulation.Work
             var job = Get(jobId);
             if (job.Status != WorkJobStatus.Queued) return false;
             RequireEligible(characterId, job.Type);
+            if (AssignmentScope != null && !AssignmentScope(characterId,job)) return false;
             if (queuePlacement == WorkQueuePlacement.RejectWhenBusy && HasOpenJob(characterId))
                 throw new InvalidOperationException("A character cannot execute incompatible exclusive jobs simultaneously.");
             if (!job.AssignTo(characterId)) return false;
@@ -178,7 +180,8 @@ namespace Game.Simulation.Work
         public bool TryAssignNext(StableEntityId characterId, out WorkOrder job)
         {
             RequireCharacter(characterId);
-            job = jobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type))
+            job = jobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type) &&
+                    (AssignmentScope?.Invoke(characterId,x) ?? true))
                 .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).FirstOrDefault();
             return job != null && Assign(job.Id, characterId, WorkQueuePlacement.Tail);
         }

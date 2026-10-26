@@ -44,7 +44,7 @@ namespace Game.Presentation.Environment
             => EvaluateFootprint(cells, gridSize, origin).CanPlace;
 
         public PlacementSurfaceEvaluation EvaluateFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize,
-            Vector3 origin)
+            Vector3 origin, float? foundationHeightLimit = null, bool replaceOwnedPalisade = false)
         {
             if (tiledWorld == null || cells == null || cells.Count == 0)
                 return new PlacementSurfaceEvaluation(false, null, "Поверхность мира недоступна.");
@@ -83,6 +83,9 @@ namespace Game.Presentation.Environment
                 {
                     if (blocker is TerrainCollider || blocker.GetComponentInParent<BuildableGround>() != null ||
                         blocker.GetComponentInParent<CharacterPresenter>() != null) continue;
+                    var wall=blocker.GetComponentInParent<Game.Presentation.Buildings.BuildingPresenter>();
+                    if(replaceOwnedPalisade && wall!=null && wall.IsBound && wall.Building.IsOperational &&
+                        wall.Building.OwnerSideId.Value=="player" && wall.Building.DefinitionId.ToString()=="palisade")continue;
                     var poi = blocker.GetComponentInParent<WorldMapPoiProtectionVolume>();
                     if (poi != null)
                     {
@@ -106,7 +109,7 @@ namespace Game.Presentation.Environment
             if (permanentObstacle)
                 return new PlacementSurfaceEvaluation(false, clearable,
                     "Участок занят постоянным или неразрушаемым препятствием.");
-            if (high - low > maximumFoundationHeightDifference)
+            if (high - low > (foundationHeightLimit ?? maximumFoundationHeightDifference))
                 return new PlacementSurfaceEvaluation(false, clearable,
                     "Перепад высоты площадки слишком велик.");
             return new PlacementSurfaceEvaluation(true, clearable);

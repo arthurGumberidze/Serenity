@@ -116,10 +116,11 @@ namespace Game.Domain.World
     public sealed class WildlifeIndividualState
     {
         public WildlifeIndividualState(StableEntityId id, string speciesId, WildlifeSex sex, long birthDay,
-            string habitatNodeId, WorldPosition position, CharacterSimulationTier tier)
+            string habitatNodeId, WorldPosition position, CharacterSimulationTier tier, long fleeUntilTick = 0,
+            WorldPosition threatPosition = default, int fleeSequence = 0)
         {
             if (!id.IsValid || string.IsNullOrWhiteSpace(speciesId) || string.IsNullOrWhiteSpace(habitatNodeId) ||
-                birthDay < 0 || !Enum.IsDefined(typeof(CharacterSimulationTier), tier))
+                birthDay < 0 || fleeUntilTick < 0 || fleeSequence < 0 || !Enum.IsDefined(typeof(CharacterSimulationTier), tier))
                 throw new ArgumentException(nameof(id));
             Id = id;
             SpeciesId = speciesId;
@@ -127,7 +128,7 @@ namespace Game.Domain.World
             BirthDay = birthDay;
             HabitatNodeId = habitatNodeId;
             Position = position;
-            Tier = tier;
+            Tier = tier; FleeUntilTick = fleeUntilTick; ThreatPosition = threatPosition; FleeSequence = fleeSequence;
         }
 
         public StableEntityId Id { get; }
@@ -137,10 +138,18 @@ namespace Game.Domain.World
         public string HabitatNodeId { get; }
         public WorldPosition Position { get; }
         public CharacterSimulationTier Tier { get; }
+        public long FleeUntilTick { get; }
+        public WorldPosition ThreatPosition { get; }
+        public int FleeSequence { get; }
+        public bool IsFleeing(long tick) => FleeUntilTick > tick;
+        public WildlifeIndividualState Escape(WorldPosition threat, long until) =>
+            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, HabitatNodeId, Position, Tier, until, threat, checked(FleeSequence+1));
+        public WildlifeIndividualState Calm() =>
+            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, HabitatNodeId, Position, Tier, 0, ThreatPosition, FleeSequence);
         public WildlifeIndividualState At(string habitatNodeId, WorldPosition position) =>
-            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, habitatNodeId, position, Tier);
+            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, habitatNodeId, position, Tier, FleeUntilTick, ThreatPosition, FleeSequence);
         public WildlifeIndividualState InTier(CharacterSimulationTier tier) =>
-            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, HabitatNodeId, Position, tier);
+            new WildlifeIndividualState(Id, SpeciesId, Sex, BirthDay, HabitatNodeId, Position, tier, FleeUntilTick, ThreatPosition, FleeSequence);
     }
 
     public sealed class WildlifePopulationPlan
@@ -490,6 +499,18 @@ namespace Game.Domain.World
         }
 
         public bool Remove(StableEntityId id) => animals.Remove(id);
+        public bool TryGet(StableEntityId id, out WildlifeIndividualState animal) => animals.TryGetValue(id,out animal);
+        public bool BeginFlee(StableEntityId id, WorldPosition threat, long tick, WildlifeEscapePolicy policy)
+        {
+            if (!animals.TryGetValue(id,out var animal) || !IsAlive(id)) return false;
+            animals[id] = animal.Escape(threat,checked(tick+policy.DurationTicks)); return true;
+        }
+        public void CalmExpired(long tick)
+        {
+            foreach (var animal in animals.Values.Where(x=>x.FleeUntilTick>0 && (!IsAlive(x.Id) || !x.IsFleeing(tick))).ToArray())
+                animals[animal.Id] = animal.Calm();
+        }
+
 
         public bool TryMove(StableEntityId id, WorldPosition destination, float minimumSeparation = 3f)
         {
@@ -509,6 +530,7 @@ namespace Game.Domain.World
         public void AdvanceTo(long calendarTicks)
         {
             if (calendarTicks < 0) throw new ArgumentOutOfRangeException(nameof(calendarTicks));
+            CalmExpired(calendarTicks);
             var targetDay = calendarTicks / TimeSpan.TicksPerDay;
             if (targetDay < LastDay) throw new InvalidOperationException("Wildlife time cannot move backwards.");
             while (LastDay < targetDay)

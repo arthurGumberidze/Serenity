@@ -58,6 +58,13 @@ namespace Game.Presentation.AI
             new Dictionary<StableEntityId, Tier1AiAgentState>();
         private GameClock clock;
         private Tier1AiScheduler scheduler;
+        private readonly List<Tier1AiScheduler> additionalSchedulers = new();
+        public Func<StableEntityId,Tier1AiScheduler> SchedulerForCharacter { get; set; }
+        public event Action<StableEntityId> BeforeRegister;
+        public event Action<GameTimeAdvance> BeforeSimulation;
+        public void AddScheduler(Tier1AiScheduler value) { if (!additionalSchedulers.Contains(value)) additionalSchedulers.Add(value); }
+        private Tier1AiScheduler For(StableEntityId id) => SchedulerForCharacter?.Invoke(id) ?? scheduler;
+
         private Func<int> movementModifierProvider;
         private double presentationRefreshBudget;
         private int presentationRefreshCursor;
@@ -99,6 +106,8 @@ namespace Game.Presentation.AI
         public Tier1AiAgentState Register(Character character, CharacterPresenter presenter, Tier1Needs needs = null)
         {
             if (clock == null || scheduler == null) throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
+            BeforeRegister?.Invoke(character.Id);
+            var ownerScheduler = For(character.Id);
             var staleRegistrationRemoved = false;
             for (var i = movements.Count - 1; i >= 0; i--)
             {
@@ -110,13 +119,13 @@ namespace Game.Presentation.AI
             }
             if (staleRegistrationRemoved)
             {
-                scheduler.Unregister(character.Id);
+                ownerScheduler.Unregister(character.Id);
                 agentStates.Remove(character.Id);
             }
-            var movement = new NavMeshMovementDriver(presenter, scheduler.Settings.MovementSpeed);
+            var movement = new NavMeshMovementDriver(presenter, ownerScheduler.Settings.MovementSpeed);
             var position = movement.CurrentPosition;
             var state = new Tier1AiAgentState(character.Id, position, needs);
-            scheduler.Register(character, state, movement);
+            ownerScheduler.Register(character, state, movement);
             movements.Add(movement);
             agentStates.Add(character.Id, state);
             RefreshCrowdDetailLevels();
@@ -135,7 +144,7 @@ namespace Game.Presentation.AI
                 removed = true;
             }
             if (removed) RefreshCrowdDetailLevels();
-            return scheduler != null && scheduler.Unregister(characterId) || removed;
+            return scheduler != null && For(characterId).Unregister(characterId) || removed;
         }
 
         public bool TryGetMovement(StableEntityId characterId, out NavMeshMovementDriver movement)
@@ -177,7 +186,9 @@ namespace Game.Presentation.AI
             if (realDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(realDelta));
             var cursor = AllocationDiagnosticsEnabled ? GC.GetAllocatedBytesForCurrentThread() : 0L;
             var advance = clock.Advance(realDelta);
-            using (SchedulerMarker.Auto()) scheduler.Advance(advance);
+            BeforeSimulation?.Invoke(advance);
+            using (SchedulerMarker.Auto())
+            { scheduler.Advance(advance); foreach (var extra in additionalSchedulers) extra.Advance(advance); }
             if (AllocationDiagnosticsEnabled)
             {
                 var current = GC.GetAllocatedBytesForCurrentThread();
@@ -221,7 +232,7 @@ namespace Game.Presentation.AI
                 for (var i = movements.Count - 1; i >= 0; i--)
                 {
                     if (movements[i].IsAvailable) continue;
-                    scheduler.Unregister(movements[i].CharacterId);
+                    For(movements[i].CharacterId).Unregister(movements[i].CharacterId);
                     agentStates.Remove(movements[i].CharacterId);
                     movements.RemoveAt(i);
                 }
@@ -250,7 +261,7 @@ namespace Game.Presentation.AI
             {
                 var movement = movements[index];
                 if (!movement.CrowdDetailEnabled || movement.Presenter == null) continue;
-                movement.Presenter.SetActivityHidden(scheduler.ShouldHideInsideBuilding(movement.CharacterId));
+                movement.Presenter.SetActivityHidden(For(movement.CharacterId).ShouldHideInsideBuilding(movement.CharacterId));
                 var intent = ResolveAnimationIntent(movement.CharacterId);
                 movement.Presenter.SetAnimationIntent(intent);
                 movement.Presenter.RefreshActionPose(now);
@@ -260,6 +271,7 @@ namespace Game.Presentation.AI
         private void OnDestroy()
         {
             scheduler?.Reset();
+            foreach (var extra in additionalSchedulers) extra.Reset();
             movements.Clear();
             agentStates.Clear();
             if (lightweightMesh != null) Destroy(lightweightMesh);
@@ -542,9 +554,9 @@ namespace Game.Presentation.AI
                 state.Phase == AiActionPhase.MoveToDestination) return CharacterAnimationIntent.Carry;
             if (state.Phase != AiActionPhase.Working && state.Phase != AiActionPhase.Researching)
                 return CharacterAnimationIntent.Idle;
-            if (scheduler.IsFishing(characterId)) return CharacterAnimationIntent.Fish;
-            if (scheduler.IsHunting(characterId)) return CharacterAnimationIntent.Hunt;
-            if (!scheduler.TryGetAssignedWorkType(characterId, out var workType))
+            if (For(characterId).IsFishing(characterId)) return CharacterAnimationIntent.Fish;
+            if (For(characterId).IsHunting(characterId)) return CharacterAnimationIntent.Hunt;
+            if (!For(characterId).TryGetAssignedWorkType(characterId, out var workType))
                 return CharacterAnimationIntent.Gather;
             return workType switch
             {

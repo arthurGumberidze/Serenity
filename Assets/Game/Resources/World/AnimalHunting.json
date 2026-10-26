@@ -8,13 +8,61 @@
   "livestockMaturityDays": 3,
   "livestockBirthDays": 5,
   "species": [
-    { "id": "deer", "health": 120 },
-    { "id": "boar", "health": 150 },
-    { "id": "bear", "health": 300 },
-    { "id": "hare", "health": 30 },
-    { "id": "waterfowl", "health": 30 },
-    { "id": "sheep", "health": 90 },
-    { "id": "cow", "health": 180 },
-    { "id": "pig", "health": 120 }
+    {
+      "id": "deer",
+      "health": 120,
+      "fleeSpeed": 4.5,
+      "fleeDistance": 22,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "boar",
+      "health": 150,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "bear",
+      "health": 300,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "hare",
+      "health": 30,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "waterfowl",
+      "health": 30,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "sheep",
+      "health": 90,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "cow",
+      "health": 180,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "pig",
+      "health": 120,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    }
   ]
 }

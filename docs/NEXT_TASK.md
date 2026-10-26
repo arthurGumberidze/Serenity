@@ -1,5 +1,17 @@
 # NEXT_TASK.md
 
+## WM15 morning feedback — next unblocked work (2026-10-26)
+
+Repair candidate: `Builds/WorldMapMorningFix/Serenity.exe`, build-e exit 0, 0 errors / 77 warnings.
+Player-d 31/31 and saved-game Player-e 6/6 passed without runtime exceptions; 41 distinct focused tests
+passed. See `docs/world_map/WM15_MORNING_FEEDBACK.md`. Next: user review of this build and selection of
+professional replacement assets from `docs/world_map/WM15_HANDMADE_ASSET_INVENTORY.md`; then address
+remaining WM15 art/loading/content items. Keep WM15 IN_PROGRESS, do not repeat passed checks without
+new changes or concerns, and do not run full performance gates without authorization. Prior batch
+shutdown already fulfilled. Preserve user/vendor imports and unrelated materials. Historical candidates
+and shutdown statements below are superseded by this entry.
+
+
 ## WM15 late feedback — next unblocked work (2026-10-26)
 
 Current candidate: `Builds/WorldMapLateFix/Serenity.exe`, build-c 0 errors / 71 warnings.

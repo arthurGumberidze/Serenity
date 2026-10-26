@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0,5980256">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="782" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.598026" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1908" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.567300" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="37876" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1909" name="Game" fullname="Game" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.548495" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1910" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.530400" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1911" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="595" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.489923" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1474" name="P109ConstructionStateTests" fullname="Game.Tests.Editor.P109ConstructionStateTests" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.444278" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1480" name="Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" fullname="Game.Tests.Editor.P109ConstructionStateTests.Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" methodname="Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1623903746" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.187835" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1475" name="ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" methodname="ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="765102905" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.001849" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1476" name="ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" methodname="ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="587308929" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.002446" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1477" name="ConstructionWork_WaitsForAllMaterialStages" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionWork_WaitsForAllMaterialStages" methodname="ConstructionWork_WaitsForAllMaterialStages" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="649276063" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.002103" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1479" name="Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" fullname="Game.Tests.Editor.P109ConstructionStateTests.Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" methodname="Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="791888283" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.004893" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1478" name="Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" fullname="Game.Tests.Editor.P109ConstructionStateTests.Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" methodname="Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1079049788" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:29Z" duration="0.008542" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1481" name="PendingConstructionDelivery_RoundTripsWithBufferDestination" fullname="Game.Tests.Editor.P109ConstructionStateTests.PendingConstructionDelivery_RoundTripsWithBufferDestination" methodname="PendingConstructionDelivery_RoundTripsWithBufferDestination" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="864708163" result="Passed" start-time="2026-10-26 07:25:29Z" end-time="2026-10-26 07:25:30Z" duration="0.192183" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1483" name="Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" fullname="Game.Tests.Editor.P109ConstructionStateTests.Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" methodname="Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1508696883" result="Passed" start-time="2026-10-26 07:25:30Z" end-time="2026-10-26 07:25:30Z" duration="0.003416" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1482" name="Version26_RoundTripsSettlementStagesAndDeliveredBuffer" fullname="Game.Tests.Editor.P109ConstructionStateTests.Version26_RoundTripsSettlementStagesAndDeliveredBuffer" methodname="Version26_RoundTripsSettlementStagesAndDeliveredBuffer" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1789709021" result="Passed" start-time="2026-10-26 07:25:30Z" end-time="2026-10-26 07:25:30Z" duration="0.007910" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

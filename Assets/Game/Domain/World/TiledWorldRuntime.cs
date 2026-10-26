@@ -445,7 +445,7 @@ namespace Game.Domain.World
                 {
                     var depthFactor = Smooth01(Math.Min(1f, edgeDistance / Math.Max(8f,
                         lake.MaximumDepthMeters * 4f)));
-                    var depth = Lerp(0.35f, lake.MaximumDepthMeters, depthFactor);
+                    var depth = Lerp(0.35f, lake.MaximumDepthMeters, depthFactor) * Smooth01(edgeDistance / 1.5f);
                     height = Math.Min(height, lake.SurfaceY - depth);
                 }
                 else if (edgeDistance < lake.MaximumBankBlendMeters)
@@ -462,7 +462,7 @@ namespace Game.Domain.World
                 if (sample.Distance <= halfWidth)
                 {
                     var channel = 1f - sample.Distance / Math.Max(0.001f, halfWidth);
-                    var depth = Lerp(course.MinimumDepthMeters, course.MaximumDepthMeters, Smooth01(channel));
+                    var depth = Lerp(course.MinimumDepthMeters, course.MaximumDepthMeters, Smooth01(channel)) * Smooth01((halfWidth - sample.Distance) / 1.5f);
                     height = Math.Min(height, surface - depth);
                 }
                 else
@@ -486,7 +486,7 @@ namespace Game.Domain.World
                 var depthFactor = Smooth01(Math.Min(1f, edgeDistance /
                     Math.Max(8f, lake.MaximumDepthMeters * 4f)));
                 height = Math.Min(height, lake.SurfaceY -
-                    Lerp(0.35f, lake.MaximumDepthMeters, depthFactor));
+                    Lerp(0.35f, lake.MaximumDepthMeters, depthFactor) * Smooth01(edgeDistance / 1.5f));
             }
             foreach (var course in EnumerateWaterCourses())
             {
@@ -497,7 +497,7 @@ namespace Game.Domain.World
                 var channel = 1f - sample.Distance / Math.Max(0.001f, halfWidth);
                 var surface = course.SurfaceLevelPolicy.Sample(sample.Progress);
                 height = Math.Min(height, surface - Lerp(course.MinimumDepthMeters,
-                    course.MaximumDepthMeters, Smooth01(channel)));
+                    course.MaximumDepthMeters, Smooth01(channel)) * Smooth01((halfWidth - sample.Distance) / 1.5f));
             }
             return height;
         }
@@ -511,7 +511,7 @@ namespace Game.Domain.World
         private static float RaiseDryBank(float height, float surface, float distance,
             float minimumBlend, float maximumBlend)
         {
-            var dryTarget = surface + 1.1f + Math.Min(2.4f, distance * 0.12f);
+            var dryTarget = surface + .04f + Math.Min(3.4f, distance * 0.18f);
             var inner = distance <= minimumBlend ? 1f :
                 Smooth01(1f - (distance - minimumBlend) /
                     Math.Max(0.001f, maximumBlend - minimumBlend));

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="29" result="Passed" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="2,001105">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="782" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="2.001105" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1908" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="1.950082" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="35148" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1909" name="Game" fullname="Game" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="1.924297" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1910" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="778" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="1.896870" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1911" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="595" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:08Z" duration="1.840156" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1695" name="StrategicAiTests" fullname="Game.Tests.Editor.StrategicAiTests" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" testcasecount="24" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:07Z" duration="1.705624" total="24" passed="24" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U26" />
+              </properties>
+              <test-case id="1704" name="ArrivalWithoutDefenderCompletesCanonicalOccupationWithoutFabricatedBattle" fullname="Game.Tests.Editor.StrategicAiTests.ArrivalWithoutDefenderCompletesCanonicalOccupationWithoutFabricatedBattle" methodname="ArrivalWithoutDefenderCompletesCanonicalOccupationWithoutFabricatedBattle" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="247974977" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:06Z" duration="0.578824" asserts="0">
+                <properties>
+                  <property name="Category" value="U30" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1714" name="BaselineAiResearchesBuildsFightsAndCapturesThroughCanonicalSystems" fullname="Game.Tests.Editor.StrategicAiTests.BaselineAiResearchesBuildsFightsAndCapturesThroughCanonicalSystems" methodname="BaselineAiResearchesBuildsFightsAndCapturesThroughCanonicalSystems" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="677510865" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:06Z" duration="0.090415" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1711" name="BootstrapIsSeedDeterministicCanonicalAndEconomicallyIsolated" fullname="Game.Tests.Editor.StrategicAiTests.BootstrapIsSeedDeterministicCanonicalAndEconomicallyIsolated" methodname="BootstrapIsSeedDeterministicCanonicalAndEconomicallyIsolated" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1710216898" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:06Z" duration="0.017790" asserts="0">
+                <properties>
+                  <property name="Category" value="U30A" />
+                  <property name="Category" value="U31" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1717" name="CapturePrevalidationPreventsPartialOwnershipMutation" fullname="Game.Tests.Editor.StrategicAiTests.CapturePrevalidationPreventsPartialOwnershipMutation" methodname="CapturePrevalidationPreventsPartialOwnershipMutation" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1558631067" result="Passed" start-time="2026-10-26 07:19:06Z" end-time="2026-10-26 07:19:07Z" duration="0.033702" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1709" name="ClaimantLossFullyResetsProgressAndCreatesNewAttempt" fullname="Game.Tests.Editor.StrategicAiTests.ClaimantLossFullyResetsProgressAndCreatesNewAttempt" methodname="ClaimantLossFullyResetsProgressAndCreatesNewAttempt" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="320806284" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.005462" asserts="0">
+                <properties>
+                  <property name="Category" value="P7" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1710" name="DecisionSelectionUsesStableStrategicPriority" fullname="Game.Tests.Editor.StrategicAiTests.DecisionSelectionUsesStableStrategicPriority" methodname="DecisionSelectionUsesStableStrategicPriority" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1756223101" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.000804" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1696" name="DefaultPolicyDevelopsPeacefullyWithoutOpeningRaid" fullname="Game.Tests.Editor.StrategicAiTests.DefaultPolicyDevelopsPeacefullyWithoutOpeningRaid" methodname="DefaultPolicyDevelopsPeacefullyWithoutOpeningRaid" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1349893006" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.061572" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1708" name="DefenderAtCompletionWinsSameTickOrderingAndStartsRealBattle" fullname="Game.Tests.Editor.StrategicAiTests.DefenderAtCompletionWinsSameTickOrderingAndStartsRealBattle" methodname="DefenderAtCompletionWinsSameTickOrderingAndStartsRealBattle" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1090043879" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.005335" asserts="0">
+                <properties>
+                  <property name="Category" value="P7" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1697" name="DiplomaticGiftTransfersRealFoodAndChangesPersistentRelations" fullname="Game.Tests.Editor.StrategicAiTests.DiplomaticGiftTransfersRealFoodAndChangesPersistentRelations" methodname="DiplomaticGiftTransfersRealFoodAndChangesPersistentRelations" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1116786311" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.043604" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1712" name="DirectCatchUpMatchesSteppedResearchConstructionArmyAndTravel" fullname="Game.Tests.Editor.StrategicAiTests.DirectCatchUpMatchesSteppedResearchConstructionArmyAndTravel" methodname="DirectCatchUpMatchesSteppedResearchConstructionArmyAndTravel" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="699063895" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.158433" asserts="0">
+                <properties>
+                  <property name="Category" value="U30A" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[U26 deterministic digest 49|AdvanceResearch|StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,ConstructBuilding,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,ConstructBuilding,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,StartResearch,ConstructBuilding,StartResearch|1134e15206f0e1ebdf93ad53053c8d17:enemy,33775478c65bd80dae195cbf931f17c0:enemy,3ba031f0e178736b07adbe7429232277:enemy,9fc49ba699cd4c605e8a014c2129bed5:enemy|7403ea142778fc103967dfc73c8ccb09|18241635903592128482|16661793966775173056|12903455449107952576
+]]></output>
+              </test-case>
+              <test-case id="1703" name="EnemyBuildsBarracksTrainsRealResidentsAndKeepsCivilianReserve" fullname="Game.Tests.Editor.StrategicAiTests.EnemyBuildsBarracksTrainsRealResidentsAndKeepsCivilianReserve" methodname="EnemyBuildsBarracksTrainsRealResidentsAndKeepsCivilianReserve" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1270652475" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.286418" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1713" name="EstablishedEnemyContinuesResearchWhileItsArmyTravels" fullname="Game.Tests.Editor.StrategicAiTests.EstablishedEnemyContinuesResearchWhileItsArmyTravels" methodname="EstablishedEnemyContinuesResearchWhileItsArmyTravels" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="2065034602" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.066726" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1716" name="FinishedPlayerVictoryCapturesWholeStateAndDefeatsAiCoherently" fullname="Game.Tests.Editor.StrategicAiTests.FinishedPlayerVictoryCapturesWholeStateAndDefeatsAiCoherently" methodname="FinishedPlayerVictoryCapturesWholeStateAndDefeatsAiCoherently" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="42346525" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.011293" asserts="0">
+                <properties>
+                  <property name="Category" value="U30A" />
+                  <property name="Category" value="U31" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1720" name="HealthRoutesDeathsToMatchingDynastyAuthority" fullname="Game.Tests.Editor.StrategicAiTests.HealthRoutesDeathsToMatchingDynastyAuthority" methodname="HealthRoutesDeathsToMatchingDynastyAuthority" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1949312777" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.004493" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1705" name="HoldingArmyCanResolveLaterBattleAndCaptureItsOrderedTarget" fullname="Game.Tests.Editor.StrategicAiTests.HoldingArmyCanResolveLaterBattleAndCaptureItsOrderedTarget" methodname="HoldingArmyCanResolveLaterBattleAndCaptureItsOrderedTarget" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="904369726" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.101919" asserts="0">
+                <properties>
+                  <property name="Category" value="U30" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1698" name="HostileArmyWaitsForDevelopmentAndPersistedWarningThenDeparts" fullname="Game.Tests.Editor.StrategicAiTests.HostileArmyWaitsForDevelopmentAndPersistedWarningThenDeparts" methodname="HostileArmyWaitsForDevelopmentAndPersistedWarningThenDeparts" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1026784561" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.046395" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1718" name="LostExpeditionReleasesSurvivorsAndFormsDeterministicReplacement" fullname="Game.Tests.Editor.StrategicAiTests.LostExpeditionReleasesSurvivorsAndFormsDeterministicReplacement" methodname="LostExpeditionReleasesSurvivorsAndFormsDeterministicReplacement" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1558029662" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.024014" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1707" name="MidOccupationRoundTripCompletesOwnershipExactlyOnce" fullname="Game.Tests.Editor.StrategicAiTests.MidOccupationRoundTripCompletesOwnershipExactlyOnce" methodname="MidOccupationRoundTripCompletesOwnershipExactlyOnce" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1777195699" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.028551" asserts="0">
+                <properties>
+                  <property name="Category" value="P7" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1706" name="OccupationRulesAreExplicitSymmetricAndRequireNoFabricatedBattle" fullname="Game.Tests.Editor.StrategicAiTests.OccupationRulesAreExplicitSymmetricAndRequireNoFabricatedBattle" methodname="OccupationRulesAreExplicitSymmetricAndRequireNoFabricatedBattle" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="976633257" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.006298" asserts="0">
+                <properties>
+                  <property name="Category" value="P7" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1701" name="PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength" fullname="Game.Tests.Editor.StrategicAiTests.PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.033816" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1699" name="PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength(True)" fullname="Game.Tests.Editor.StrategicAiTests.PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength(True)" methodname="PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1535492737" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.012022" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1700" name="PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength(False)" fullname="Game.Tests.Editor.StrategicAiTests.PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength(False)" methodname="PreparationIsCancelledWhenRelationsImproveOrArmyLosesStrength" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1878167523" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.017746" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1715" name="SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" fullname="Game.Tests.Editor.StrategicAiTests.SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" methodname="SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="911842564" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.012400" asserts="0">
+                <properties>
+                  <property name="Category" value="U30A" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1719" name="SchedulerHostsTwoIndependentStatesWithoutSharedEconomy" fullname="Game.Tests.Editor.StrategicAiTests.SchedulerHostsTwoIndependentStatesWithoutSharedEconomy" methodname="SchedulerHostsTwoIndependentStatesWithoutSharedEconomy" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1854227966" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.007597" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1702" name="WeakHostileArmyDoesNotAttackStrongerDefenders" fullname="Game.Tests.Editor.StrategicAiTests.WeakHostileArmyDoesNotAttackStrongerDefenders" methodname="WeakHostileArmyDoesNotAttackStrongerDefenders" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="1438465449" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.043208" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1848" name="WM15MorningFeedbackTests" fullname="Game.Tests.Editor.WM15MorningFeedbackTests" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:08Z" duration="0.054301" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1853" name="AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" methodname="AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="2038470231" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.002861" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1852" name="AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" methodname="AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="1276050908" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.008127" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1851" name="EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" methodname="EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="396352760" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:07Z" duration="0.007474" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1849" name="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" methodname="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="643115937" result="Passed" start-time="2026-10-26 07:19:07Z" end-time="2026-10-26 07:19:08Z" duration="0.022641" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1850" name="GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" methodname="GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="1654243175" result="Passed" start-time="2026-10-26 07:19:08Z" end-time="2026-10-26 07:19:08Z" duration="0.010078" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

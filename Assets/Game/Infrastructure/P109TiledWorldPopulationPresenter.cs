@@ -155,7 +155,7 @@ namespace Game.Infrastructure
             var catalog = Resources.Load<WorldMapWildlifeArtCatalog>("World/WorldMapWildlifeArt");
             if (catalog == null) throw new InvalidOperationException("World Map V2 wildlife art catalog is missing.");
             wildlifePresenter = gameObject.AddComponent<WorldMapWildlifePresenter>();
-            wildlifePresenter.ConfigureHealth(production);
+            wildlifePresenter.ConfigureHealth(production, session);
             wildlifePresenter.Initialize(wildlifePopulation, tier2Runtime, catalog, WildlifeFocus());
             wildlifePresenter.AdvanceTo(calendarTicks);
         }

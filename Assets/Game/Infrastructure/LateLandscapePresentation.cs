@@ -20,35 +20,7 @@ namespace Game.Infrastructure
                 var p=new Vector3((x-map.x)/map.z,0,(z-map.y)/map.w);
                 p.y=world.HeightSampler.SampleHeight(p.x,p.z); return p;
             }
-            var snow=world.ArtDirection.regions[2];
-            for(var i=0;i<100;i++)
-            {
-                var x=snow.center.x+((float)random.NextDouble()*2-1)*snow.radius.x*.7f;
-                var z=snow.center.y+((float)random.NextDouble()*2-1)*snow.radius.y*.7f;
-                var p=Ground(x,z);
-                if(world.HeightSampler.IsWater(p.x,p.z) || world.HeightSampler.IsBuildable(p.x,p.z,30f)) continue;
-                var view=WorldMapScenery.Instantiate(art.SnowRocks[i%art.SnowRocks.Length],transform);
-                view.transform.position=p-Vector3.up*.25f;
-                view.transform.rotation=Quaternion.Euler(0,(float)random.NextDouble()*360,0);
-                view.transform.localScale*=.7f+(float)random.NextDouble()*.65f; SnowSceneryCount++;
-            }
-            foreach(var lake in world.Definition.MapData.Hydrology.Lakes)
-            {
-                if(lake.Id!="lake_mountain") continue;
-                var center=world.Definition.MapData.CoordinateTransform.ToUnity(lake.Center);
-                for(var i=0;i<7;i++)
-                {
-                    // A loose cluster of broad, flat floes, not identical dots in a geometric ring.
-                    var p=new Vector3(center.X+12f+(float)random.NextDouble()*18f,0,
-                        center.Z-20f+(float)random.NextDouble()*36f);
-                    if(!world.HeightSampler.TrySampleWaterSurface(p.x,p.z,out var y))continue;
-                    var view=WorldMapScenery.Instantiate(art.IceFloe,transform);
-                    view.transform.position=new Vector3(p.x,y-.2f,p.z);view.transform.rotation=Quaternion.Euler(0,i*67,0);
-                    var width=3f+(float)random.NextDouble()*3f;
-                    view.transform.localScale=Vector3.Scale(view.transform.localScale,new Vector3(width,1f,width*.8f));
-                    SnowSceneryCount++;
-                }
-            }
+            // Snow belongs to the terrain/vegetation palette, not randomly painted rock props.
             var grove=world.ArtDirection.blossomGroves[0];
             for(var i=0;i<10;i++)
             {

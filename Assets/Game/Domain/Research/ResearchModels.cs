@@ -239,6 +239,8 @@ namespace Game.Domain.Research
             };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_water")))
                 gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_camp")))
+                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_camp")));
             foreach (var id in new[] { "gather_branches", "gather_mushrooms", "gather_medicinal_plants" })
             {
                 var recipeId = new ProductionRecipeId(id);

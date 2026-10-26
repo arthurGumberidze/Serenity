@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Failed(Child)" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0,7756427">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="785" result="Failed" site="Child" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.775643" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1911" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="781" result="Failed" site="Child" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.734897" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="30468" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1912" name="Game" fullname="Game" runstate="Runnable" testcasecount="781" result="Failed" site="Child" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.715134" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1913" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="781" result="Failed" site="Child" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.690591" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1914" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="598" result="Failed" site="Child" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.646796" total="8" passed="7" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1696" name="StrategicAiTests" fullname="Game.Tests.Editor.StrategicAiTests" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" testcasecount="25" result="Passed" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.444109" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="U26" />
+              </properties>
+              <test-case id="1717" name="FactionWorkplaceOwnerAndQueueSurviveSaveRoundTrip" fullname="Game.Tests.Editor.StrategicAiTests.FactionWorkplaceOwnerAndQueueSurviveSaveRoundTrip" methodname="FactionWorkplaceOwnerAndQueueSurviveSaveRoundTrip" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="876620041" result="Passed" start-time="2026-10-26 08:18:24Z" end-time="2026-10-26 08:18:25Z" duration="0.319309" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1716" name="SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" fullname="Game.Tests.Editor.StrategicAiTests.SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" methodname="SaveV13RoundTripResumesWithoutRepeatingDecisionAndRejectsUnknownTarget" classname="Game.Tests.Editor.StrategicAiTests" runstate="Runnable" seed="237881176" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.092478" asserts="0">
+                <properties>
+                  <property name="Category" value="U30A" />
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1850" name="WM15MorningFeedbackTests" fullname="Game.Tests.Editor.WM15MorningFeedbackTests" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" testcasecount="6" result="Failed" site="Child" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.091236" total="6" passed="5" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1856" name="AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" methodname="AbstractWorkerFollowsApprovedRouteAndCannotTeleportAcrossRejectedWater" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="738925956" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.002250" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1855" name="AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" methodname="AutomaticFishHaulingUsesEntrancesAndReservesOnlyRealStock" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="747813587" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.016234" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1854" name="EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" methodname="EscapeVariesBetweenHitsPreservesTierStateAndPrefersAwayFromThreat" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="177222711" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.008255" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1852" name="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" methodname="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="144904432" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.025194" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1853" name="GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" methodname="GateCutsOnlyItsThreeWallCellsAndFailedTransactionRestoresWall" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="443966908" result="Passed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.021447" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1851" name="RebindingSharedSourcesReplacesAutomaticSelectionCache" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.RebindingSharedSourcesReplacesAutomaticSelectionCache" methodname="RebindingSharedSourcesReplacesAutomaticSelectionCache" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="170614837" result="Failed" start-time="2026-10-26 08:18:25Z" end-time="2026-10-26 08:18:25Z" duration="0.010616" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: less than 20
+  But was:  20
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.Editor.WM15MorningFeedbackTests.RebindingSharedSourcesReplacesAutomaticSelectionCache () [0x00165] in C:\serenity_game\Assets\Game\Tests\Editor\WM15MorningFeedbackTests.cs:38
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -568,6 +568,7 @@ namespace Game.Presentation.Localization
             ["content.recipe.dry_meat"] = "Высушить мясо",
             ["content.recipe.cure_hide"] = "Выделать шкуры",
             ["content.recipe.fish_water"] = "Рыбалка",
+            ["content.recipe.fish_camp"] = "Ловля рыбы",
             ["content.recipe.cultivate_berries"] = "Выращивание ягод",
             ["content.recipe.cultivate_carrot"] = "Морковь",
             ["content.recipe.cultivate_cabbage"] = "Капуста",

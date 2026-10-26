@@ -1,0 +1,6 @@
+PASS Loaded neighbour construction retains physically delivered materials
+PASS Neighbour completes its real building off camera after save/load
+PASS Camp rejects an inland footprint
+PASS Camp rejects a footprint inside a lake
+PASS Fishing production caption is translated
+PASS No runtime errors during saved construction route

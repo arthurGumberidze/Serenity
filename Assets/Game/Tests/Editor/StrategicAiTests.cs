@@ -417,6 +417,27 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void FactionWorkplaceOwnerAndQueueSurviveSaveRoundTrip()
+        {
+            var fixture=Fixture.Create(26042);
+            var site=ProductionSite.CreateBuildingWorkplace(Id(260420),Id(260421),
+                new ProductionRecipeId("cook_berries"),default,2);
+            site.QueueBatches(3);site.SetPaused(true);
+            var faction=fixture.Ai.CaptureState();
+            var production=new ProductionSaveState(0,0,0,0,null,new[]{site.CaptureState()},null,null,null);
+            var strategic=new AiStrategicSaveState(26042,0,new[]{new AiFactionSaveState(faction.Strategic,
+                faction.Dynasty,faction.Research,production)});
+            var codec=new SaveXmlCodec();
+            var snapshot=new SaveSnapshot(SaveSnapshot.CurrentVersion,Id(260422),new GameTimeState(),400,
+                strategicAi:strategic);
+            var saved=codec.Deserialize(codec.Serialize(snapshot)).StrategicAi.Factions.Single().Production.Sites.Single(x=>x.Id==site.Id);
+            Assert.That(saved.OwnerBuildingId,Is.EqualTo(Id(260421)));
+            Assert.That(saved.QueuedBatches,Is.EqualTo(3));
+            Assert.That(saved.MaximumWorkers,Is.EqualTo(2));
+            Assert.That(saved.Paused,Is.True);
+        }
+
+        [Test]
         [Category("U30A")]
         [Category("U31")]
         public void FinishedPlayerVictoryCapturesWholeStateAndDefeatsAiCoherently()

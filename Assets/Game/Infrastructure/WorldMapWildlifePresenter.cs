@@ -10,6 +10,7 @@ using Game.Simulation.Production;
 using Game.ECS.Tier2;
 using Game.Presentation.Environment;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace Game.Infrastructure
 {
@@ -26,11 +27,37 @@ namespace Game.Infrastructure
         private bool shuttingDown;
         private float movementTime;
         private ProductionService production;
-
-        public void ConfigureHealth(ProductionService service)
+        private LocalSceneCompositionRoot session;
+        private IReadOnlyDictionary<string, WildlifeEscapePolicy> escapePolicies;
+        private sealed class EscapeRoute
         {
+            public int Sequence, Attempt, Corner;
+            public float RetryAt;
+            public Vector3[] Corners;
+        }
+        private readonly Dictionary<StableEntityId, EscapeRoute> escapeRoutes = new();
+
+        public void ConfigureHealth(ProductionService service, LocalSceneCompositionRoot world = null)
+        {
+            if (production != null) production.Animals.Damaged -= OnDamaged;
             production = service;
+            session = world;
+            escapePolicies = AnimalHuntingConfig.LoadEscape();
+            production.Animals.Damaged += OnDamaged;
             if (population != null) population.IsAlive = production.Animals.IsAlive;
+        }
+
+        private void OnDamaged(HuntingImpact impact)
+        {
+            if (population == null || !population.TryGet(impact.Animal,out var state) ||
+                !escapePolicies.TryGetValue(state.SpeciesId,out var policy)) return;
+            var threat = state.Position;
+            if (session != null && session.CharacterPresentations.TryGet(impact.Hunter,out var hunter))
+            {
+                var p = hunter.transform.position; threat = new WorldPosition(p.x,p.y,p.z);
+            }
+            population.BeginFlee(impact.Animal,threat,session?.Clock.State.CalendarTicks ?? 0,policy);
+            escapeRoutes.Remove(impact.Animal);
         }
         private readonly Collider[] obstacles = new Collider[64];
 
@@ -159,6 +186,7 @@ namespace Game.Infrastructure
         {
             if (shuttingDown) return;
             shuttingDown = true;
+            if (production != null) production.Animals.Damaged -= OnDamaged;
             if (tier2 != null)
                 foreach (var id in tier2.Wildlife.ActiveIds) tier2.Wildlife.Dematerialize(id);
             foreach (var view in tier1Views.Values) if (view != null) Destroy(view);
@@ -174,11 +202,16 @@ namespace Game.Infrastructure
             if (population == null || heights == null || delta <= 0f) return;
             delta = Mathf.Min(delta, .15f);
             movementTime += delta;
+            var tick = session?.Clock.State.CalendarTicks ?? 0;
+            population.CalmExpired(tick);
+            foreach (var state in population.Animals.Where(x=>x.IsFleeing(tick) && population.IsAlive(x.Id)))
+                MoveEscape(state,delta,heights);
             foreach (var pair in tier1Views.OrderBy(value => value.Key))
             {
                 var state = population.Get(pair.Key);
                 pair.Value.GetComponent<AnimalHealthPresentation>()?.Refresh();
                 if (!population.IsAlive(state.Id)) continue;
+                if (state.IsFleeing(tick)) continue;
                 var home = population.Plan.HabitatGraph.Node(state.HabitatNodeId).Position;
                 var phase = (pair.Key.ToGuid().ToByteArray()[0] / 255f) * Mathf.PI * 2f;
                 var target = new Vector3(home.X + Mathf.Sin(movementTime * .08f + phase) * 32f, 0f,
@@ -208,6 +241,76 @@ namespace Game.Infrastructure
                     pair.Value.transform.rotation = Quaternion.RotateTowards(pair.Value.transform.rotation,
                         Quaternion.LookRotation(direction), delta * 100f);
             }
+        }
+
+        private void MoveEscape(WildlifeIndividualState state, float delta, TiledWorldHeightSampler heights)
+        {
+            if (!escapePolicies.TryGetValue(state.SpeciesId,out var policy)) return;
+            if (!escapeRoutes.TryGetValue(state.Id,out var route) || route.Sequence != state.FleeSequence)
+                escapeRoutes[state.Id] = route = new EscapeRoute { Sequence = state.FleeSequence };
+            var start = new Vector3(state.Position.X,state.Position.Y,state.Position.Z);
+            if (route.Corners == null || route.Corner >= route.Corners.Length)
+            {
+                if (movementTime < route.RetryAt) return;
+                route.RetryAt = movementTime+.4f;
+                foreach (var candidate in WildlifeEscape.Candidates(state,policy,route.Attempt++))
+                {
+                    if (!heights.Definition.ContainsClosed(candidate.X,candidate.Z) ||
+                        !heights.IsBuildable(candidate.X,candidate.Z,30f)) continue;
+                    var target = new Vector3(candidate.X,heights.SampleHeight(candidate.X,candidate.Z),candidate.Z);
+                    Vector3[] corners;
+                    if (NavMesh.SamplePosition(start,out var origin,2f,NavMesh.AllAreas) &&
+                        NavMesh.SamplePosition(target,out var destination,2f,NavMesh.AllAreas))
+                    {
+                        var path = new NavMeshPath();
+                        if (!NavMesh.CalculatePath(origin.position,destination.position,NavMesh.AllAreas,path) ||
+                            path.status != NavMeshPathStatus.PathComplete) continue;
+                        corners = path.corners;
+                    }
+                    else
+                    {
+                        // Far tiers have no NavMesh tiles. The same terrain policy still rejects water/cliffs.
+                        if (tier1Views.ContainsKey(state.Id)) continue;
+                        corners = new[] { start,target };
+                    }
+                    var valid = corners.Length>1;
+                    for (var i=1; valid && i<corners.Length; i++)
+                        valid = EscapeSegmentIsDry(corners[i-1],corners[i],heights);
+                    if (!valid) continue;
+                    route.Corners = corners; route.Corner=1; break;
+                }
+                if (route.Corners == null || route.Corner >= route.Corners.Length) return;
+            }
+            var next = Vector3.MoveTowards(start,route.Corners[route.Corner],delta*policy.Speed*
+                (session?.Clock.State.SpeedMultiplier ?? 1));
+            if (!EscapeSegmentIsDry(start,next,heights)) { route.Corners=null; return; }
+            next.y = heights.SampleHeight(next.x,next.z);
+            tier1Views.TryGetValue(state.Id,out var view);
+            var count = Physics.OverlapSphereNonAlloc(next+Vector3.up*.8f,.55f,obstacles,~0,QueryTriggerInteraction.Ignore);
+            var blocked = count == obstacles.Length;
+            for (var i=0; i<count && !blocked; i++)
+                blocked = !(obstacles[i] is TerrainCollider) && (view==null || !obstacles[i].transform.IsChildOf(view.transform));
+            if (blocked || !population.TryMove(state.Id,new WorldPosition(next.x,next.y,next.z),1.4f))
+            { route.Corners=null; return; }
+            if (view != null)
+            {
+                view.transform.position=next;
+                var direction=next-start; direction.y=0;
+                if (direction.sqrMagnitude>.00001f) view.transform.rotation=Quaternion.LookRotation(direction);
+            }
+            if (production.TryGetSite(state.Id,out var site)) site.MoveAnimal(new WorldPosition(next.x,next.y,next.z));
+            if ((next-route.Corners[route.Corner]).sqrMagnitude<.16f) route.Corner++;
+        }
+
+        private static bool EscapeSegmentIsDry(Vector3 start,Vector3 end,TiledWorldHeightSampler heights)
+        {
+            var steps=Mathf.Max(1,Mathf.CeilToInt(Vector3.Distance(start,end)/.6f));
+            for(var i=0;i<=steps;i++)
+            {
+                var point=Vector3.Lerp(start,end,i/(float)steps);
+                if(!heights.Definition.ContainsClosed(point.x,point.z) || !heights.IsBuildable(point.x,point.z,30f)) return false;
+            }
+            return true;
         }
 
         private void RequireInitialized()

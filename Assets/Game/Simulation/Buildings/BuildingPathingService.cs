@@ -24,6 +24,7 @@ namespace Game.Simulation.Buildings
             definitions = definitionResolver ?? throw new ArgumentNullException(nameof(definitionResolver));
         }
 
+        public event Action<StableEntityId,bool> GateChanged;
         public bool IsGateOpen(StableEntityId buildingId) => openGates.Contains(buildingId);
 
         public bool SetGateOpen(StableEntityId buildingId, bool open)
@@ -42,6 +43,7 @@ namespace Game.Simulation.Buildings
                 if (!openGates.Remove(buildingId)) return true;
                 occupancy.Reserve(cells, buildingId, false);
             }
+            GateChanged?.Invoke(buildingId,open);
             return true;
         }
 

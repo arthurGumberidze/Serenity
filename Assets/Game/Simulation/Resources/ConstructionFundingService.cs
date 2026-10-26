@@ -195,7 +195,11 @@ namespace Game.Simulation.Resources
             if (work.Jobs.Any(x => !x.IsTerminal && x.Type == WorkJobType.Haul && x.Destination.HasValue &&
                                    x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
                                    x.Destination.Value.EntityId == building.Id)) return true;
-            var result = Plan(definition, fundingSources, out var deductions, out _);
+            inventories.TryGet(building.ConstructionBufferOwner,out var buffer);
+            var missing = building.ConstructionMaterials.Select(x=>(id:x.ResourceId,
+                units:Math.Max(0,x.RemainingUnits-(buffer?.GetAmount(x.ResourceId).Units ?? 0))))
+                .Where(x=>x.units>0).Select(x=>new ResourceAmount(x.id,new ResourceQuantity(x.units))).ToArray();
+            var result = Plan(definition, fundingSources, out var deductions, out _, missing);
             if (result != ConstructionFailureReason.None) return false;
             CreateDeliveryJobs(building, deductions, priority, null);
             return true;
@@ -221,7 +225,7 @@ namespace Game.Simulation.Resources
         }
 
         private ConstructionFailureReason Plan(BuildingDefinition definition, IEnumerable<InventoryOwner> fundingSources,
-            out List<Deduction> deductions, out ResourceId missingResource)
+            out List<Deduction> deductions, out ResourceId missingResource, IReadOnlyList<ResourceAmount> remainingCost = null)
         {
             deductions = new List<Deduction>();
             missingResource = default;
@@ -230,10 +234,12 @@ namespace Game.Simulation.Resources
             var sources = new List<ResourceInventory>();
             foreach (var owner in owners)
             {
+                if (sites != null && owner.Kind != InventoryOwnerKind.WorldPile &&
+                    owner.Kind != InventoryOwnerKind.BuildingStorage && owner.Kind != InventoryOwnerKind.ProductionOutput) continue;
                 if (!inventories.TryGet(owner, out var inventory)) return ConstructionFailureReason.FundingSourceMissing;
                 sources.Add(inventory);
             }
-            foreach (var cost in definition.ConstructionCost)
+            foreach (var cost in remainingCost ?? definition.ConstructionCost)
             {
                 resources.Get(cost.ResourceId);
                 var remaining = cost.Quantity.Units;

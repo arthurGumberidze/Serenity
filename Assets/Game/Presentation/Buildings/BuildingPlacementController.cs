@@ -76,7 +76,7 @@ namespace Game.Presentation.Buildings
         public string SurfaceBlockedReason => surfaceEvaluation.BlockedReason;
         public IReadOnlyList<StableEntityId> LastPlacedClearanceSourceIds { get; private set; } =
             Array.Empty<StableEntityId>();
-        public Func<Vector3, Vector3?> ShoreSnap { get; set; }
+        public Func<Vector3, (Vector3 point, BuildingOrientation orientation)?> ShoreSnap { get; set; }
         public event Action<Building, BuildingPresenter> BuildingPlaced;
         public event Action BuildMenuRequested;
 
@@ -134,7 +134,7 @@ namespace Game.Presentation.Buildings
             if (activeDefinition.Id == new BuildingDefinitionId("fishing_camp"))
             {
                 var snapped = ShoreSnap?.Invoke(worldPoint);
-                if (snapped.HasValue) { worldPoint = snapped.Value; orientation = BuildingOrientation.North; }
+                if (snapped.HasValue) { worldPoint = snapped.Value.point; orientation = snapped.Value.orientation; }
             }
             if (zoneDragActive)
             {
@@ -163,7 +163,8 @@ namespace Game.Presentation.Buildings
             if (construction != null) previewEvaluation = constructionEvaluation.Placement;
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
-                : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin);
+                : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
+                    activeDefinition.Id.ToString() == "fishing_camp" ? 3f : (float?)null, activeDefinition.Id.ToString()=="gate");
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells, previewEvaluation.ApproachCells);

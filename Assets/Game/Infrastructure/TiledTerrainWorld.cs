@@ -798,6 +798,12 @@ namespace Game.Infrastructure
             var agentType = loaded.Values.Select(value => value.Navigation).First(value => value != null).agentTypeID;
             foreach (var definition in roadNetworkPlan.Links)
             {
+                if (!definition.Id.StartsWith("chokepoint:", StringComparison.Ordinal) || definition.Kind == "causeway") continue;
+                var waterCrossing = false;
+                for (var t = 0; t <= 20; t++)
+                    waterCrossing |= HeightSampler.IsWater(Mathf.Lerp(definition.Start.X, definition.End.X, t / 20f),
+                        Mathf.Lerp(definition.Start.Z, definition.End.Z, t / 20f));
+                if (waterCrossing) continue;
                 if (!Definition.TryGetTile(definition.Start.X, definition.Start.Z, out var startTile) ||
                     !Definition.TryGetTile(definition.End.X, definition.End.Z, out var endTile) ||
                     !loaded.ContainsKey(startTile) || !loaded.ContainsKey(endTile)) continue;
@@ -900,9 +906,9 @@ namespace Game.Infrastructure
                 modifier.area = NavMesh.GetAreaFromName("Walkable");
             }
 
-            foreach (var crossing in roadNetworkPlan.Crossings) BuildCrossingPresentation(crossing);
+            // Artificial crossings are player-built; generation and load create none.
             foreach (var link in roadNetworkPlan.Links.Where(value =>
-                         value.Id.StartsWith("chokepoint:", StringComparison.Ordinal)))
+                         value.Id.StartsWith("chokepoint:", StringComparison.Ordinal) && value.Kind != "causeway"))
                 BuildChokepointPresentation(link);
         }
 
@@ -943,11 +949,11 @@ namespace Game.Infrastructure
 
         private bool RoadSegmentIsNavigable(WorldMapRoadSample a, WorldMapRoadSample b)
         {
-            if (a.CrossingId.Length > 0 && a.CrossingId == b.CrossingId) return true;
+            if (a.CrossingId.Length > 0 || b.CrossingId.Length > 0) return false;
             var dx = b.Position.X - a.Position.X;
             var dz = b.Position.Z - a.Position.Z;
             var steps = Mathf.Max(1, Mathf.CeilToInt(Mathf.Sqrt(dx * dx + dz * dz) / 0.5f));
-            for (var step = 1; step < steps; step++)
+            for (var step = 0; step <= steps; step++)
             {
                 var t = step / (float)steps;
                 if (HeightSampler.IsWater(a.Position.X + dx * t, a.Position.Z + dz * t)) return false;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Resources;
 using Game.Presentation.Buildings;
@@ -49,6 +50,55 @@ namespace Game.Infrastructure.Editor
         {
             P109CompactArtAuthoring.Generate();
             Build();
+        }
+
+        public static void AuthorMorningFeedback()
+        {
+            BuildFacility(FishingCampPath,"Serenity Fishing Camp",new Vector3(8f,5f,6f),FacilityKind.Fishing);
+            BuildFacility(PalisadePath,"Serenity Palisade",new Vector3(1f,2.8f,1f),FacilityKind.Palisade);
+            BuildFacility(GatePath,"Serenity Gate",new Vector3(3f,2.8f,1f),FacilityKind.Gate);
+            var catalog = Load<BuildingPresentationCatalog>(U08BuildingFoundation.CatalogPath);
+            catalog.Entries.Single(x=>x.DefinitionId=="fishing_camp")
+                .Configure("fishing_camp","Fishing Camp",BuildingCategory.Food,8,6,Load<GameObject>(FishingCampPath))
+                .ConfigurePlacement(BuildingSpatialForm.Structure,BuildingPlacementConstraint.ReachableApproach | BuildingPlacementConstraint.Shoreline,3000)
+                .ConfigureProduction(1,new[]{"fish_camp"},1,30);
+            catalog.Entries.Single(x=>x.DefinitionId=="gate")
+                .Configure("gate","Gate",BuildingCategory.Military,3,1,Load<GameObject>(GatePath))
+                .ConfigurePlacement(BuildingSpatialForm.Structure,BuildingPlacementConstraint.OwnedTerritory);
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+            Debug.Log("WM15_MORNING_ASSETS_COMPLETE");
+        }
+
+        public static void PreviewMorningFences()
+        {
+            var paths=new[]{
+                FacilityModelPath(FacilityKind.Palisade),
+                "Assets/Polytope Studio/Lowpoly_Village/Prefabs/Modular/Fence/PT_Modular_Fence_Wood_02.prefab",
+                "Assets/Polytope Studio/Lowpoly_Village/Prefabs/Modular/Fence/PT_Modular_Fence_Wood_03.prefab",
+                "Assets/Medieval Fortification/Prefabs/Fortification_Wall.prefab",
+                FacilityModelPath(FacilityKind.Gate),PalisadePath,GatePath};
+            var directory="Artifacts/WM15MorningFeedback/fence-preview";Directory.CreateDirectory(directory);
+            foreach(var path in paths)
+            {
+                var preview=new PreviewRenderUtility();
+                var model=UnityEngine.Object.Instantiate(Load<GameObject>(path));
+                if(path.Contains("Medieval Fortification"))PrepareFortificationMaterials(model);
+                else if(path.Contains("Polytope"))foreach(var renderer in model.GetComponentsInChildren<Renderer>())
+                    renderer.sharedMaterials=renderer.sharedMaterials.Select(_=>Bark).ToArray();
+                var renderers=model.GetComponentsInChildren<Renderer>();var bounds=renderers[0].bounds;
+                foreach(var renderer in renderers.Skip(1))bounds.Encapsulate(renderer.bounds);
+                Debug.Log("FENCE_BOUNDS "+path+" "+bounds.size);
+                preview.AddSingleGO(model);preview.camera.fieldOfView=35;
+                var distance=bounds.size.magnitude*1.7f;
+                preview.camera.transform.position=bounds.center+new Vector3(.35f,.3f,-1f).normalized*distance;
+                preview.camera.transform.LookAt(bounds.center);preview.camera.nearClipPlane=.01f;preview.camera.farClipPlane=distance*4;
+                preview.lights[0].intensity=1.5f;preview.lights[0].transform.rotation=Quaternion.Euler(45,30,0);
+                preview.lights[1].intensity=.6f;preview.ambientColor=Color.gray;
+                preview.BeginStaticPreview(new Rect(0,0,800,600));preview.Render(true);
+                var image=preview.EndStaticPreview();File.WriteAllBytes(Path.Combine(directory,Path.GetFileNameWithoutExtension(path)+".png"),image.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(image);preview.Cleanup();
+            }
         }
 
         public static void Build()
@@ -213,12 +263,12 @@ namespace Game.Infrastructure.Editor
                 Zone("training_ground", "Training Ground", BuildingCategory.Military, Load<GameObject>(TrainingGroundPath),
                     "An open practice area for improving combat skill.", 55, Cost("wood_log", 6), Cost("stone", 4))
                     .ConfigureWorkplace(6),
-                Entry("fishing_camp", "Fishing Camp", BuildingCategory.Food, 4, 3, Load<GameObject>(FishingCampPath),
+                Entry("fishing_camp", "Fishing Camp", BuildingCategory.Food, 8, 6, Load<GameObject>(FishingCampPath),
                     "A shoreline base required for organized fishing.", "building_fishing_camp", 70, 3,
                     new[] { Cost("wood_log", 8), Cost("plant_fiber", 6) }, "gathering")
                     .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach |
-                        BuildingPlacementConstraint.Shoreline)
-                    .ConfigureWorkplace(4),
+                        BuildingPlacementConstraint.Shoreline, 3000)
+                    .ConfigureProduction(1, new[] { "fish_camp" }, 1, 30),
                 Zone("gathering_area", "Gathering Area", BuildingCategory.Production, Load<GameObject>(GatheringAreaPath),
                     "A managed zone over wild berry and fibre sources.", 30, Cost("wood_log", 2), Cost("plant_fiber", 2))
                     .ConfigureWorkplace(8),
@@ -295,11 +345,11 @@ namespace Game.Infrastructure.Editor
         private static BuildingPresentationCatalog.Entry Segment(string id, string name, BuildingCategory category,
             GameObject prefab, bool overlap, string description, int minutes,
             params BuildingPresentationCatalog.Entry.CostEntry[] cost) =>
-            new BuildingPresentationCatalog.Entry().Configure(id, name, category, 1, 1, prefab,
+            new BuildingPresentationCatalog.Entry().Configure(id, name, category, id == "gate" ? 3 : 1, 1, prefab,
                     BuildingPlacementMode.Grid, overlap)
                 .ConfigureMetadata(BuildingEra.StoneAge, description, "building_" + id,
                     new[] { "organized_labor" }).ConfigureConstruction(minutes, 2).ConfigureEconomy(cost)
-                .ConfigurePlacement(BuildingSpatialForm.Segment, BuildingPlacementConstraint.OwnedTerritory)
+                .ConfigurePlacement(id == "gate" ? BuildingSpatialForm.Structure : BuildingSpatialForm.Segment, BuildingPlacementConstraint.OwnedTerritory)
                 .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 1) }, 20);
 
         private static void BuildHut()
@@ -504,12 +554,12 @@ namespace Game.Infrastructure.Editor
             BuildFacility(ChiefHutPath, "Serenity Chief Hut", new Vector3(5f, 3.8f, 4f), FacilityKind.Chief);
             BuildFacility(MeetingAreaPath, "Serenity Meeting Area", new Vector3(3f, 2.4f, 3f), FacilityKind.Meeting);
             BuildFacility(TrainingGroundPath, "Serenity Training Ground", new Vector3(3f, 3f, 3f), FacilityKind.Training);
-            BuildFacility(FishingCampPath, "Serenity Fishing Camp", new Vector3(4f, 2.8f, 3f), FacilityKind.Fishing);
+            BuildFacility(FishingCampPath, "Serenity Fishing Camp", new Vector3(8f, 5f, 6f), FacilityKind.Fishing);
             BuildFacility(GatheringAreaPath, "Serenity Gathering Area", new Vector3(3f, 2f, 3f), FacilityKind.Gathering);
             BuildFacility(PrimitiveGardenPath, "Serenity Primitive Garden", new Vector3(3f, .2f, 3f), FacilityKind.Garden);
             BuildFacility(WellPath, "Serenity Well", new Vector3(3f, 2.5f, 3f), FacilityKind.Well);
             BuildFacility(PalisadePath, "Serenity Palisade", new Vector3(1f, 2.8f, 1f), FacilityKind.Palisade);
-            BuildFacility(GatePath, "Serenity Gate", new Vector3(1f, 3.2f, 1f), FacilityKind.Gate);
+            BuildFacility(GatePath, "Serenity Gate", new Vector3(3f, 2.8f, 1f), FacilityKind.Gate);
             BuildFacility(WatchtowerPath, "Serenity Watchtower", new Vector3(3f, 6f, 3f), FacilityKind.Watchtower);
             BuildFacility(PrimitivePathPath, "Serenity Primitive Path", new Vector3(1f, .08f, 1f), FacilityKind.Path);
         }
@@ -538,7 +588,12 @@ namespace Game.Infrastructure.Editor
                         new Vector3(.98f, .5f, .8f));
                     road.transform.localPosition += Vector3.up * .07f;
                 }
-                else AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), template.transform, new Vector3(1f, 2.8f, 1f));
+                else
+                {
+                    var model = AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), template.transform, new Vector3(8f, 2.8f, 2f));
+                    PrepareFortificationMaterials(model);
+                    CropWallToCell(model);
+                }
                 root.AddComponent<BuildingZoneVisual>().Configure(template, 32);
             }
             else if (kind == FacilityKind.Garden)
@@ -553,11 +608,92 @@ namespace Game.Infrastructure.Editor
             }
             else
             {
-                AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), finish,
+                var model=AddFittedModel(Load<GameObject>(FacilityModelPath(kind)), finish,
                     new Vector3(Mathf.Max(.8f, size.x * .95f), Mathf.Max(.07f, size.y * .95f),
                         Mathf.Max(.8f, size.z * .95f)));
+                if(kind==FacilityKind.Gate)
+                {
+                    PrepareFortificationMaterials(model);
+                    var renderers=model.GetComponentsInChildren<Renderer>();var bounds=renderers[0].bounds;
+                    foreach(var renderer in renderers.Skip(1))bounds.Encapsulate(renderer.bounds);
+                    model.transform.localScale=Vector3.Scale(model.transform.localScale,new Vector3(3f/bounds.size.x,2.8f/bounds.size.y,1f));
+                    bounds=renderers[0].bounds;foreach(var renderer in renderers.Skip(1))bounds.Encapsulate(renderer.bounds);
+                    model.transform.position-=new Vector3(bounds.center.x,bounds.min.y,bounds.center.z);
+                }
             }
             Save(root, path);
+        }
+
+        private static void PrepareFortificationMaterials(GameObject model)
+        {
+            const string folder="Assets/Game/Art/Materials/WM15";
+            Directory.CreateDirectory(folder);
+            foreach(var renderer in model.GetComponentsInChildren<Renderer>())
+                renderer.sharedMaterials=renderer.sharedMaterials.Select(source=>
+                {
+                    var path=folder+"/"+source.name+"_URP.mat";
+                    var material=AssetDatabase.LoadAssetAtPath<Material>(path);
+                    if(material==null)
+                    {
+                        material=new Material(Shader.Find("Universal Render Pipeline/Lit")){name=source.name+"_URP",enableInstancing=true};
+                        material.SetTexture("_BaseMap",source.GetTexture("_MainTex"));
+                        material.SetColor("_BaseColor",Color.white);
+                        material.SetFloat("_Smoothness",.12f);
+                        var normal=source.GetTexture("_BumpMap");
+                        if(normal!=null){material.SetTexture("_BumpMap",normal);material.SetFloat("_BumpScale",.55f);material.EnableKeyword("_NORMALMAP");}
+                        AssetDatabase.CreateAsset(material,path);
+                    }
+                    return material;
+                }).ToArray();
+        }
+
+        // Cut a metre-wide module from the imported log wall, preserving the source log proportions and UVs.
+        private static void CropWallToCell(GameObject model)
+        {
+            var filter=model.GetComponentInChildren<MeshFilter>();var source=filter.sharedMesh;
+            var vertices=source.vertices;var normals=source.normals;var uv=source.uv;
+            var points=new List<Vector3>();var resultNormals=new List<Vector3>();var resultUv=new List<Vector2>();
+            var submeshes=new List<int[]>();
+            var bounds=filter.GetComponent<Renderer>().bounds;
+            for(var submesh=0;submesh<source.subMeshCount;submesh++)
+            {
+                var triangles=new List<int>();var indices=source.GetTriangles(submesh);
+                for(var i=0;i<indices.Length;i+=3)
+                {
+                    var polygon=new List<(Vector3 p,Vector3 n,Vector2 uv)>();
+                    for(var j=0;j<3;j++)
+                    {
+                        var index=indices[i+j];var p=filter.transform.TransformPoint(vertices[index]);
+                        p.z=(p.z-bounds.center.z)*(.8f/bounds.size.z);
+                        polygon.Add((p,filter.transform.TransformDirection(normals[index]),uv[index]));
+                    }
+                    foreach(var sign in new[]{-1f,1f})
+                    {
+                        var clipped=new List<(Vector3 p,Vector3 n,Vector2 uv)>();
+                        for(var j=0;j<polygon.Count;j++)
+                        {
+                            var a=polygon[j];var b=polygon[(j+1)%polygon.Count];
+                            var da=.51f-sign*a.p.x;var db=.51f-sign*b.p.x;
+                            if(da>=0)clipped.Add(a);
+                            if((da>=0)!=(db>=0))
+                            {var t=da/(da-db);clipped.Add((Vector3.Lerp(a.p,b.p,t),Vector3.Lerp(a.n,b.n,t).normalized,Vector2.Lerp(a.uv,b.uv,t)));}
+                        }
+                        polygon=clipped;
+                    }
+                    for(var j=1;j+1<polygon.Count;j++)foreach(var vertex in new[]{polygon[0],polygon[j],polygon[j+1]})
+                    {triangles.Add(points.Count);points.Add(vertex.p);resultNormals.Add(vertex.n);resultUv.Add(vertex.uv);}
+                }
+                submeshes.Add(triangles.ToArray());
+            }
+            var mesh=new Mesh{name="Medieval fortification one metre section",indexFormat=UnityEngine.Rendering.IndexFormat.UInt32};
+            mesh.SetVertices(points);mesh.SetNormals(resultNormals);mesh.SetUVs(0,resultUv);mesh.subMeshCount=submeshes.Count;
+            for(var i=0;i<submeshes.Count;i++)mesh.SetTriangles(submeshes[i],i);
+            mesh.RecalculateBounds();mesh.RecalculateTangents();
+            const string path="Assets/Game/Art/Prefabs/Buildings/Serenity_PalisadeSection.asset";
+            var existing=AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if(existing==null)AssetDatabase.CreateAsset(mesh,path);else{EditorUtility.CopySerialized(mesh,existing);UnityEngine.Object.DestroyImmediate(mesh);mesh=existing;}
+            filter.sharedMesh=mesh;
+            filter.transform.localPosition=Vector3.zero;filter.transform.localRotation=Quaternion.identity;filter.transform.localScale=Vector3.one;
         }
 
         private static string FacilityModelPath(FacilityKind kind) => kind switch
@@ -571,8 +707,8 @@ namespace Game.Infrastructure.Editor
             FacilityKind.Fishing => RtsBuildings + "Dock.prefab",
             FacilityKind.Gathering => CityModels + "StorageYard.fbx",
             FacilityKind.Well => CityModels + "well.fbx",
-            FacilityKind.Palisade => RtsBuildings + "Wall_01.prefab",
-            FacilityKind.Gate => RtsBuildings + "Gate.prefab",
+            FacilityKind.Palisade => "Assets/Medieval Fortification/Prefabs/Fortification_Wall.prefab",
+            FacilityKind.Gate => "Assets/Medieval Fortification/Prefabs/Fortification_Gate.prefab",
             FacilityKind.Watchtower => RtsBuildings + "WatchTower.prefab",
             FacilityKind.Path => CityModels + "Roads/road0.fbx",
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)

@@ -136,6 +136,7 @@ namespace Game.Infrastructure
         public Tier1AiAgentRegistry AiAgents { get; private set; }
         public HaulClaimRegistry HaulClaims { get; private set; }
         public Tier1AiScheduler AiScheduler { get; private set; }
+        public NeighbourEconomyRuntime NeighbourEconomy { get; private set; }
         public Tier1AiRuntimeDriver AiRuntime { get; private set; }
         public WorkManager Work { get; private set; }
         public DirectWorkCommandService DirectWorkCommands { get; private set; }
@@ -541,6 +542,16 @@ namespace Game.Infrastructure
             var haulJobs = new HaulWorldQuery(Inventories, WorldPiles, Buildings, HaulClaims, buildingGridSize,
                 new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z),
                 point => new WorldPosition(point.X, WorldHeight.SampleHeight(point.X, point.Z) + 0.04f, point.Z));
+            haulJobs.PositionOverride=owner=>
+            {
+                if(owner.Kind==InventoryOwnerKind.Character || owner.Kind==InventoryOwnerKind.CarryLoad)
+                    return Tiers!=null && Tiers.TryGetTier(owner.Id,out _) ? Tiers.GetRuntimeState(owner.Id).Position : (WorldPosition?)null;
+                if(!Buildings.TryGet(owner.Id,out var building))return null;
+                var def=buildingCatalog.ResolveDefinition(building.DefinitionId);
+                var center=BuildingSpawner.GridToWorld(building.Coordinate,def,building.Orientation);
+                center-=Quaternion.Euler(0,building.Orientation.Degrees(),0)*Vector3.forward*(def.Footprint.Depth*buildingGridSize*.5f+1.5f);
+                return new WorldPosition(center.x,WorldHeight.SampleHeight(center.x,center.z),center.z);
+            };
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings,
                 owner =>
                 {
@@ -687,7 +698,8 @@ namespace Game.Infrastructure
                 Resources, ProductionRecipes, Technologies, strategicDefinitions, Weather,
                 position => { var p = TiledWorld.ProjectToGround(new Vector3(position.X, position.Y, position.Z));
                     return new WorldPosition(p.x, p.y, p.z); });
-            if (WorldDefinition.MapData != null) InitializeEnemyCamp();
+            if (WorldDefinition.MapData != null)
+            { InitializeEnemyCamp(); NeighbourEconomy=new NeighbourEconomyRuntime(this,buildingGridSize,buildingGridOrigin); }
             Appearances.EnsureDefaults(Characters.GetAll());
             HealthFamily.BindSuccession(StarterEnemyAi.Succession);
             BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
@@ -729,6 +741,7 @@ namespace Game.Infrastructure
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
+            NeighbourEconomy?.BindActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
             Combat.BindMovementSuppression(PlayerControl);
             Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
@@ -802,7 +815,13 @@ namespace Game.Infrastructure
                 StreamingNavigationRoutes);
             BuildingPlacementService.ConfigureEnvironment(cells =>
                 WorldPlacementSurface.AllowsFootprint(cells, buildingGridSize, buildingGridOrigin));
+            BuildingPlacementService.ConfigureRequestEnvironment(context => WorldPlacementSurface.EvaluateFootprint(
+                context.Cells,buildingGridSize,buildingGridOrigin,
+                context.Request.Definition.Id.ToString() == "fishing_camp" ? 3f : (float?)null,
+                context.Request.Definition.Id.ToString()=="gate").CanPlace);
             BuildingPlacementService.ConfigureRuleEvaluator(EvaluateSpecialPlacementRule);
+            BuildingPathing.GateChanged+=(id,open)=> { if(BuildingPresentations.TryGet(id,out var gate))gate.SetGateOpen(open); };
+
             CreateFishingLandingMarkers();
 
             if (SessionLaunchState.TryConsumeLoad(out var startupSlot))
@@ -1019,63 +1038,51 @@ namespace Game.Infrastructure
 
         private void CreateFishingLandingMarkers()
         {
+            // Snap around the cursor to an actual shoreline; no inland landing flags or fixed pads.
             var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("fishing_camp"));
-            var landings = new List<Vector3>();
-            var material = new Material(Shader.Find("Universal Render Pipeline/Unlit"))
-                { color = new Color(.12f, .7f, .9f), name = "Fishing landing marker" };
-            foreach (var lake in WorldDefinition.Zones.Where(x => x.Uses.HasFlag(WorldZoneUse.Fishing)))
-            {
-                var found = false;
-                foreach (var anchor in FishingLandingPlanner.Candidates(WorldHeight, lake, buildingGridSize,
-                             buildingGridOrigin.x, buildingGridOrigin.z))
-                {
-                    if (!BuildingPlacementService.Evaluate(definition, anchor, BuildingOrientation.North).IsValid) continue;
-                    var center = BuildingSpawner.GridToWorld(anchor, definition, BuildingOrientation.North);
-                    landings.Add(center);
-                    var marker = new GameObject("Fishing landing " + lake.Id);
-                    marker.transform.SetParent(transform, false);
-                    marker.transform.position = center;
-                    void Part(string name, Vector3 position, Vector3 scale)
-                    {
-                        var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        part.name = name; part.layer = LayerMask.NameToLayer("Ignore Raycast");
-                        part.transform.SetParent(marker.transform, false);
-                        part.transform.localPosition = position; part.transform.localScale = scale;
-                        part.GetComponent<Collider>().enabled = false;
-                        Destroy(part.GetComponent<Collider>());
-                        part.GetComponent<Renderer>().sharedMaterial = material;
-                    }
-                    Part("Shore post", new Vector3(-1.8f, 1.2f, 0f), new Vector3(.13f, 2.4f, .13f));
-                    Part("Blue fishing flag", new Vector3(-1.35f, 2.05f, 0f), new Vector3(.9f, .55f, .04f));
-                    Part("Landing front edge", new Vector3(0, .05f, -1.5f), new Vector3(4f, .06f, .08f));
-                    Part("Landing back edge", new Vector3(0, .05f, 1.5f), new Vector3(4f, .06f, .08f));
-                    Part("Landing left edge", new Vector3(-2f, .05f, 0), new Vector3(.08f, .06f, 3f));
-                    Part("Landing right edge", new Vector3(2f, .05f, 0), new Vector3(.08f, .06f, 3f));
-                    found = true;
-                    break;
-                }
-                if (!found) Debug.LogWarning("No unobstructed fishing landing found: " + lake.Id);
-            }
+            GridCoordinate? previous = null;
+            (Vector3 point, BuildingOrientation orientation)? cached = null;
             buildingPlacementController.ShoreSnap = point =>
             {
-                var nearest = landings.OrderBy(x => (new Vector2(x.x - point.x, x.z - point.z)).sqrMagnitude).FirstOrDefault();
-                return landings.Count > 0 && Vector2.Distance(new Vector2(point.x, point.z),
-                    new Vector2(nearest.x, nearest.z)) <= 9f ? nearest : (Vector3?)null;
+                var cursor = new GridCoordinate(Mathf.RoundToInt((point.x-buildingGridOrigin.x)/buildingGridSize),
+                    Mathf.RoundToInt((point.z-buildingGridOrigin.z)/buildingGridSize));
+                if (previous.HasValue && previous.Value == cursor) return cached;
+                previous = cursor; cached = null;
+                var best = float.MaxValue;
+                for (var radius = 0; radius <= 12; radius++)
+                for (var dx = -radius; dx <= radius; dx++)
+                for (var dz = -radius; dz <= radius; dz++)
+                {
+                    if (Mathf.Max(Mathf.Abs(dx),Mathf.Abs(dz)) != radius) continue;
+                    var distance = dx*dx+dz*dz;
+                    if (distance >= best) continue;
+                    foreach (BuildingOrientation facing in Enum.GetValues(typeof(BuildingOrientation)))
+                    {
+                        var footprint = definition.Footprint.Rotate(facing);
+                        var anchor = new GridCoordinate(cursor.X+dx-(footprint.Width-1)/2,
+                            cursor.Z+dz-(footprint.Depth-1)/2);
+                        if (!ShoreBuildingPlacement.IsValid(WorldHeight,anchor,definition.Footprint,facing,
+                            buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z)) continue;
+                        if (BuildingOccupancyCellsBlocked(anchor, definition, facing)) continue;
+                        best = distance; cached = (BuildingSpawner.GridToWorld(anchor,definition,facing),facing);
+                    }
+                }
+                return cached;
             };
         }
+
+        private bool BuildingOccupancyCellsBlocked(GridCoordinate anchor, BuildingDefinition definition, BuildingOrientation facing)
+            => !BuildingPlacementService.Evaluate(definition, anchor, facing).IsValid;
 
         private PlacementFailureReason EvaluateSpecialPlacementRule(PlacementRuleContext context)
         {
             var constraints = context.Request.Definition.Placement.Constraints;
             if ((constraints & BuildingPlacementConstraint.Shoreline) != 0)
             {
-                var shore = context.Cells.Any(cell =>
-                {
-                    var x = buildingGridOrigin.x + cell.X * buildingGridSize;
-                    var z = buildingGridOrigin.z + cell.Z * buildingGridSize;
-                    return FishingLandingPlanner.IsNearShore(WorldHeight, x, z);
-                });
-                if (!shore) return PlacementFailureReason.ShorelineRequired;
+                if (!ShoreBuildingPlacement.IsValid(WorldHeight,context.Request.Anchor,
+                    context.Request.Definition.Footprint,context.Request.Orientation,
+                    buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z))
+                    return PlacementFailureReason.ShorelineRequired;
             }
             if ((constraints & BuildingPlacementConstraint.Groundwater) != 0)
             {
@@ -1167,16 +1174,17 @@ namespace Game.Infrastructure
             selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
             if (WorldDefinition.MapData == null) RebindRegionResourcePresenters();
-            foreach (var building in Buildings.All)
+            foreach (var building in Buildings.All.Where(x=>x.OwnerSideId.Value=="player"))
                 ConstructionSites.RebindRestored(building);
-            ConstructionClearance?.RebindAfterLoad(Buildings.All);
+            ConstructionClearance?.RebindAfterLoad(Buildings.All.Where(x=>x.OwnerSideId.Value=="player"));
+            NeighbourEconomy?.RebindAfterLoad();
             BuildingPathing.RebindAfterLoad();
             if (WorldDefinition.MapData == null) RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
                     view.Bind(canonical, Color.white, true);
             foreach (var building in Buildings.All)
-                if ((building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
+                if (building.OwnerSideId.Value=="player" && (building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
                      building.DefinitionId == new BuildingDefinitionId("primitive_garden")) &&
                     BuildingPresentations.TryGet(building.Id, out var cropView)) RegisterCropPlot(building, cropView);
             WorldPopulation?.RebindAfterLoad();
@@ -1452,6 +1460,15 @@ namespace Game.Infrastructure
 
         private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
         {
+            if(building?.DefinitionId.ToString()=="gate")
+            {
+                foreach(var wallView in BuildingPresentations.All.Where(x=>x.IsBound && x.Building.DefinitionId.ToString()=="palisade").ToArray())
+                {
+                    var wallId=wallView.BuildingId; BuildingSpawner.Despawn(wallView);
+                    if(Buildings.TryGet(wallId,out var wall))BuildingSpawner.Spawn(wall);
+                }
+            }
+
             if (building != null && !building.IsOperational && Work != null)
                 ConstructionClearance?.Register(building,
                     buildingPlacementController.LastPlacedClearanceSourceIds, WorkPriority.Normal);
@@ -1529,6 +1546,12 @@ namespace Game.Infrastructure
             var definition = buildingCatalog.ResolveDefinition(building.DefinitionId);
             if (definition.Workplace == null || definition.Production == null) return;
             var world = BuildingSpawner.GridToWorld(building.Coordinate, definition, building.Orientation);
+            if (definition.Id.ToString() == "fishing_camp")
+            {
+                world -= Quaternion.Euler(0,building.Orientation.Degrees(),0) * Vector3.forward *
+                    (definition.Footprint.Depth * buildingGridSize * .5f + 1.5f);
+                world.y = WorldHeight.SampleHeight(world.x,world.z);
+            }
             Production.RegisterBuildingWorkplace(building.Id, definition,
                 new WorldPosition(world.x, world.y, world.z));
         }

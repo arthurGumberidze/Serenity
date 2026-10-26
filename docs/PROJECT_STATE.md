@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## WM15 morning feedback — validated repair candidate (2026-10-26)
+
+Deliver `Builds/WorldMapMorningFix/Serenity.exe`: build-e exit 0, 0 errors / 77 warnings, immutable
+source fingerprint recorded. Player-d passed 31/31; Player-e loaded its disposable save and passed 6/6,
+including real off-camera completion of the neighbour's funded shelter. Both exited 0 without runtime
+exceptions. 41 distinct focused tests passed; full 100/300/500 performance gates were not run.
+
+Fishing camps snap to actual shores, produce into a persistent 30-fish buffer and use real automatic
+hauling; work resumes when capacity is freed. Imported log palisades and matching gates replace the
+broken fence, with individual navigation blockers and a real opening. Generated crossings and painted
+snow boulders are removed; shore height transitions are smooth. Wildlife flees after actual damage.
+Neighbour residents use their own physical economy and shared canonical sources through tier changes
+and save/load. A missing faction-workplace serialization field and stale production selection cache
+were found and fixed during Player validation.
+
+See `docs/world_map/WM15_MORNING_FEEDBACK.md`, `docs/validation/WM15MorningFeedback/`, and the requested
+asset shopping list `docs/world_map/WM15_HANDMADE_ASSET_INVENTORY.md`. Temporary resource models remain
+pending the user's asset selection. WM15 stays IN_PROGRESS for art acceptance, loading duration, White
+Rabbit/full husbandry and deferred performance work. No repeated shutdown: the earlier request was
+fulfilled by the previous batch. Preserve inherited vendor imports and unrelated P3 material edits.
+
 ## WM15 late feedback — validated candidate (2026-10-26)
 
 Deliver `Builds/WorldMapLateFix/Serenity.exe`: build-c exited 0, 0 errors / 71 warnings.

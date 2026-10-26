@@ -1842,3 +1842,29 @@ editor or postprocessing scripts. Missing Arctic palette dependencies receive ex
 AQUAS wave textures may be reused now; this does not establish compatibility of its legacy GrabPass,
 reflection or underwater pipeline. A full AQUAS port remains unimplemented. See
 `docs/world_map/WM15_LATE_FEEDBACK.md` for all eleven package dispositions and validation boundaries.
+
+## D-204 — Shore workplaces, connected defences and physical neighbour economy (2026-10-26)
+
+Fishing camps use a continuous building recipe, not the finite natural fishing source. The canonical
+ProductionOutput inventory holds at most 30 fish; ordinary haulers collect from the dry entrance.
+The worker retains the workplace while its buffer is full, but needs can interrupt work. Queue-free
+continuous mode and faction workplace ownership are serialized, with optional fields for older saves.
+Placement samples the actual shore and rotates a dry 8×6 footprint toward water; no marker is required.
+
+Gates occupy three cells and cut those cells out of an owned finished palisade. The wall uses individual
+navigation blockers, so its old aggregate box cannot seal the opening. Imported Medieval Fortification
+meshes use owned URP materials; one-metre wall sections are clipped from the source mesh rather than
+compressing complete log rows. Gate leaves move independently of the permanent frame.
+
+Wildlife escape is canonical state (threat, expiry and hit sequence), with data-driven species policy.
+The presentation adapter chooses traversable routes in both visible and distant representations. Damage,
+death and resource harvesting remain domain authorities. Generated crossing visuals, roads and links
+are all removed together; continuous bank heights replace the sharp shore height discontinuity.
+
+Neighbour factions use their own production/inventory services and the same work actions as player
+residents. Shared natural sites retain canonical object identity; rebinding updates selection caches.
+An off-camera movement adapter follows validated routes, while tier transitions preserve needs/position.
+Starting materials are moved into haulable piles without minting resources. Construction delivery plans
+subtract existing site buffers and ignore zero deficits. Work assignment is scoped to the owning side.
+Full performance gates remain deferred by user instruction; targeted regressions and disposable Player
+routes are the acceptance evidence for this repair batch.
