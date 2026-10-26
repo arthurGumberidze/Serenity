@@ -120,26 +120,11 @@ namespace Game.Infrastructure
             var camera = Camera.main;
             var point = new Vector3(site.Position.X, site.Position.Y + .7f, site.Position.Z);
             if (camera == null || (camera.transform.position - point).sqrMagnitude > 160f * 160f) return;
-            var effect = new GameObject("Arrow impact blood");
+            var effect = Game.Presentation.Environment.WorldPropCatalog.Create("blood", transform);
             effect.transform.position = point;
-            var particles = effect.AddComponent<ParticleSystem>();
-            particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = particles.main;
-            main.loop = false; main.duration = .25f; main.startLifetime = .45f;
-            main.startSpeed = 1.4f; main.startSize = .045f; main.gravityModifier = .6f;
-            main.startColor = new Color(.55f, .015f, .01f); main.maxParticles = 16;
-            var emission = particles.emission; emission.rateOverTime = 0;
-            if (bloodMaterial == null)
-            {
-                var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit") ??
-                    Shader.Find("Universal Render Pipeline/Unlit");
-                if (shader == null) { Destroy(effect); return; }
-                bloodMaterial = new Material(shader);
-                bloodMaterial.SetColor("_BaseColor", new Color(.55f, .015f, .01f));
-            }
-            particles.GetComponent<ParticleSystemRenderer>().sharedMaterial = bloodMaterial;
-            particles.Play(); particles.Emit(12);
-            Destroy(effect, 1.1f);
+            effect.transform.localScale = Vector3.one * .65f;
+            foreach (var particles in effect.GetComponentsInChildren<ParticleSystem>()) particles.Play();
+            Destroy(effect, 3f);
         }
 
         private void OnDestroy()

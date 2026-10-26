@@ -197,9 +197,11 @@ namespace Game.Presentation.Weather
         private void CreateRainPresentation()
         {
             if (rainParticles != null) return;
-            var rainObject = new GameObject("P3 Rain Presentation");
+            var imported = WorldPropCatalog.Current != null && WorldPropCatalog.Current.Find("rain") != null;
+            var rainObject = imported ? WorldPropCatalog.Create("rain", transform) : new GameObject("P3 Rain Presentation");
             rainObject.transform.SetParent(transform, false);
-            rainParticles = rainObject.AddComponent<ParticleSystem>();
+            rainParticles = rainObject.GetComponent<ParticleSystem>() ?? rainObject.AddComponent<ParticleSystem>();
+            rainParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = rainParticles.main;
             main.loop = true;
             main.startLifetime = 1.4f;
@@ -226,7 +228,7 @@ namespace Game.Presentation.Weather
                 rainMaterial.color = new Color(0.68f, 0.79f, 0.9f, 0.52f);
                 ownsRainMaterial = true;
             }
-            renderer.sharedMaterial = rainMaterial;
+            if (!imported) renderer.sharedMaterial = rainMaterial;
 
             rainAudio = rainObject.AddComponent<AudioSource>();
             rainAudio.loop = true;
@@ -241,9 +243,11 @@ namespace Game.Presentation.Weather
         private void CreateSnowPresentation()
         {
             if (snowParticles != null) return;
-            var snowObject = new GameObject("P9.5 Snow Presentation");
+            var imported = WorldPropCatalog.Current != null && WorldPropCatalog.Current.Find("snow") != null;
+            var snowObject = imported ? WorldPropCatalog.Create("snow", transform) : new GameObject("P9.5 Snow Presentation");
             snowObject.transform.SetParent(transform, false);
-            snowParticles = snowObject.AddComponent<ParticleSystem>();
+            snowParticles = snowObject.GetComponent<ParticleSystem>() ?? snowObject.AddComponent<ParticleSystem>();
+            snowParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = snowParticles.main;
             main.loop = true;
             main.startLifetime = new ParticleSystem.MinMaxCurve(4.5f, 7f);
@@ -264,7 +268,7 @@ namespace Game.Presentation.Weather
             noise.frequency = 0.32f;
             var renderer = snowParticles.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            renderer.sharedMaterial = rainMaterial;
+            if (!imported) renderer.sharedMaterial = rainMaterial;
             snowObject.SetActive(false);
         }
 

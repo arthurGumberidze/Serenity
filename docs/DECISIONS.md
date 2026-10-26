@@ -1878,3 +1878,15 @@ remapped GUIDs. Most WM15 props already exist. Static fish/rods/bones can be sel
 Low Poly Asset Bundle; All Nature VFX includes a URP material package. Model availability does not imply
 compatible humanoid animation, working materials, runtime integration or visual acceptance. Keep the
 remaining search focused on those gaps; this audit changes no gameplay, assets or dependencies.
+
+## D-206 — Owned prop views over local vendor assets (2026-10-26)
+
+WorldPropCatalog is presentation-only and resolves resource aliases to sanitized prefab views. Canonical
+inventories, stable IDs, recipes and work/navigation services remain authoritative. Render geometry is
+separate from interaction colliders; rods/pier decks have explicit adapter dimensions. New package
+admission is limited to already downloaded fish/rods/bones and Nature VFX dependencies, with GUID
+remapping and base/URP path aliases to preserve references without overwriting vendor imports.
+Owned materials use URP; vendor scripts, missing scripts, lights and colliders are removed from FX views.
+Every prefab save must succeed before the catalog is accepted. Generic containers explicitly remain
+temporary substitutes for distinct raw-material art. Static fish motion is not advertised as rigged
+animation. Do not substitute the farm clothesline for a meat dryer; compose available timber/meat instead.

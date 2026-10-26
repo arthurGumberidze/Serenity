@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Presentation.Environment;
 
 namespace Game.Presentation.Characters
 {
@@ -38,16 +39,7 @@ namespace Game.Presentation.Characters
         }
         private void CreateFishingRod(Transform hand)
         {
-            fishingRod = new GameObject("Fishing rod");
-            fishingRod.transform.SetParent(hand, false);
-            var shaft = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            shaft.name = "Wooden rod shaft"; shaft.transform.SetParent(fishingRod.transform, false);
-            shaft.transform.localPosition = Vector3.up * 1.05f;
-            shaft.transform.localScale = new Vector3(.035f,1.05f,.035f);
-            Destroy(shaft.GetComponent<Collider>());
-            rodMaterial ??= new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            rodMaterial.SetColor("_BaseColor",new Color(.34f,.17f,.055f));
-            shaft.GetComponent<Renderer>().sharedMaterial = rodMaterial;
+            fishingRod = WorldPropCatalog.Create("fishing_rod", hand);
             fishingLine = CreateWorkLine("Fishing line", fishingRod.transform, .012f);
             fishingRod.SetActive(false);
         }

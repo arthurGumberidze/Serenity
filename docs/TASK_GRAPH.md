@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+WM15 asset replacement (2026-10-26): **IN_PROGRESS / replacement candidate verified**. Existing imported
+models and 52 selectively admitted local source files replace the active primitive props; remaining
+search list is in `docs/world_map/WM15_ASSET_REPLACEMENTS.md`. Focused Editor checks 17/17 pass;
+Windows WorldMapAssetReplacement build-b has 0 errors / 81 warnings. Player-b passed 29/29 with no runtime errors. Evidence in
+`docs/validation/WM15Replacement/`. Full performance gates remain deferred; user acceptance pending.
+
 WM15 asset coverage audit (2026-10-26): **IN_PROGRESS / analysis delivered**. All 11 handmade categories
 mapped to local imported assets and downloaded archives; 45 folders, 44 outer archives, 60 nested Unity
 packages indexed. Most props already exist; rod/static fish/bones and All Nature VFX URP are available

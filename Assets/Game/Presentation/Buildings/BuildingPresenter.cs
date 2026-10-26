@@ -148,25 +148,9 @@ namespace Game.Presentation.Buildings
 
         private ParticleSystem CreateFireParticles()
         {
-            var fireObject = new GameObject("Building Fire VFX");
-            fireObject.transform.SetParent(transform, false);
-            fireObject.transform.localPosition = Vector3.up * 0.75f;
-            var particles = fireObject.AddComponent<ParticleSystem>();
-            var main = particles.main;
-            main.loop = true;
-            main.startLifetime = 0.8f;
-            main.startSpeed = 0.7f;
-            main.startSize = 0.35f;
-            main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.22f, 0.02f, 0.85f),
-                new Color(1f, 0.75f, 0.05f, 0.75f));
-            main.maxParticles = 32;
-            var emission = particles.emission;
-            emission.rateOverTime = 16f;
-            var shape = particles.shape;
-            shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(1.2f, 0.1f, 1.2f);
-            ConfigureFlameRenderer(particles);
-            return particles;
+            var fireObject = Game.Presentation.Environment.WorldPropCatalog.Create("fire", transform);
+            fireObject.transform.localPosition = Vector3.up * .3f;
+            return fireObject.GetComponent<ParticleSystem>();
         }
 
         private void RefreshCampfire()
@@ -177,25 +161,10 @@ namespace Game.Presentation.Buildings
             {
                 if (campfireParticles == null)
                 {
-                    var flame = new GameObject("Campfire Flame VFX");
-                    flame.transform.SetParent(transform, false);
-                    flame.transform.localPosition = Vector3.up * 0.35f;
-                    campfireParticles = flame.AddComponent<ParticleSystem>();
-                    var main = campfireParticles.main;
-                    main.loop = true;
-                    main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.7f);
-                    main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.55f);
-                    main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.28f);
-                    main.startColor = new ParticleSystem.MinMaxGradient(
-                        new Color(1f, 0.22f, 0.01f, 0.95f), new Color(1f, 0.82f, 0.08f, 0.85f));
-                    main.maxParticles = 28;
-                    var emission = campfireParticles.emission;
-                    emission.rateOverTime = 18f;
-                    var shape = campfireParticles.shape;
-                    shape.shapeType = ParticleSystemShapeType.Cone;
-                    shape.radius = 0.16f;
-                    shape.angle = 8f;
-                    ConfigureFlameRenderer(campfireParticles);
+                    var flame = Game.Presentation.Environment.WorldPropCatalog.Create("fire", transform);
+                    flame.transform.localPosition = Vector3.up * .25f;
+                    flame.transform.localScale = Vector3.one * .55f;
+                    campfireParticles = flame.GetComponent<ParticleSystem>();
                 }
                 campfireParticles.gameObject.SetActive(true);
                 if (!campfireParticles.isPlaying) campfireParticles.Play();

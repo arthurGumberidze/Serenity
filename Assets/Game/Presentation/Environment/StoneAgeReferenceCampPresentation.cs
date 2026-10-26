@@ -141,10 +141,10 @@ namespace Game.Presentation.Environment
             fireLight.range = 9f;
             fireLight.shadows = LightShadows.Soft;
 
-            flameParticles = CreateParticles("P3 Campfire Flames", campfireAnchor, new Color(1f, 0.22f, 0.03f, 0.9f),
-                0.55f, 0.18f, 0.85f, 42f, 34, ParticleSystemShapeType.Cone, flameParticleMaterial);
-            smokeParticles = CreateParticles("P3 Campfire Smoke", campfireAnchor, new Color(0.22f, 0.24f, 0.25f, 0.34f),
-                2.8f, 0.5f, 0.7f, 8f, 22, ParticleSystemShapeType.Circle, smokeParticleMaterial);
+            flameParticles = WorldPropCatalog.Create("fire", campfireAnchor).GetComponent<ParticleSystem>();
+            flameParticles.transform.localScale=Vector3.one*.55f;
+            smokeParticles = WorldPropCatalog.Create("smoke", campfireAnchor).GetComponent<ParticleSystem>();
+            smokeParticles.transform.localScale=Vector3.one*.45f;
             var smokeMain = smokeParticles.main;
             smokeMain.startSize = new ParticleSystem.MinMaxCurve(0.25f, 0.85f);
             smokeMain.gravityModifier = -0.025f;

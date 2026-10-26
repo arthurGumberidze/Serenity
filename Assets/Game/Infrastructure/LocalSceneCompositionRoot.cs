@@ -1638,13 +1638,11 @@ namespace Game.Infrastructure
                 Industry.AddZone(id, definitions[i], new WorldPosition(position.x, position.y, position.z));
                 var pile = WorldPiles.RegisterExistingInventory(new ResourceId(resources[i]),
                     new GridCoordinate(Mathf.RoundToInt(position.x), Mathf.RoundToInt(position.z)), id);
-                var marker = GameObject.CreatePrimitive(i == 4 ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+                var marker = Game.Presentation.Environment.WorldPropCatalog.Create("pile_" + resources[i], transform);
                 marker.name = "P10.4 Industrial Zone " + definitions[i];
-                marker.transform.position = position + Vector3.up * 0.65f;
-                marker.transform.localScale = i == 4 ? new Vector3(2.8f, 0.3f, 2.8f) : new Vector3(2.4f, 1.2f, 2.4f);
-                var renderer = marker.GetComponent<Renderer>();
-                var block = new MaterialPropertyBlock(); renderer.GetPropertyBlock(block);
-                block.SetColor("_BaseColor", colors[i]); block.SetColor("_Color", colors[i]); renderer.SetPropertyBlock(block);
+                marker.transform.position = position;
+                var hit=marker.AddComponent<BoxCollider>();hit.isTrigger=true;
+                hit.center=Vector3.up*.3f;hit.size=new Vector3(1.2f,.8f,1.4f);
                 var presenter = marker.AddComponent<WorldResourcePilePresenter>();
                 presenter.Bind(pile, Inventories.Get(pile.InventoryOwner));
                 demoPilePresenters.Add(presenter);
@@ -1834,6 +1832,14 @@ namespace Game.Infrastructure
                 new ProductionRecipeId(recipeId), ProductionSiteKind.NaturalSource, position, amount, amount,
                 CropPlotPhase.Unplanted, 0, 0));
             Production.AddSite(site);
+            if (authoredView == null && (recipeId == "gather_stone" || recipeId == "gather_iron" || recipeId == "gather_gold" || recipeId == "gather_berries"))
+            {
+                authoredView = Game.Presentation.Environment.WorldPropCatalog.Create(recipeId == "gather_stone" ? "rock" :
+                    recipeId == "gather_berries" ? "berries" : "ore", transform);
+                authoredView.transform.position = new Vector3(position.X,position.Y,position.Z);
+                var hit=authoredView.AddComponent<BoxCollider>(); hit.isTrigger=true;
+                hit.center=Vector3.up*.65f;hit.size=new Vector3(1.8f,1.5f,1.8f);
+            }
             var view = authoredView != null ? authoredView : GameObject.CreatePrimitive(fallbackPrimitive);
             if (authoredView == null)
             {
@@ -1952,25 +1958,12 @@ namespace Game.Infrastructure
             var pile = WorldPiles.Create(new ResourceId(id), new ResourceQuantity(units), coordinate,
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_pile", index));
             var authoredAnchor = InhabitableRegion?.GetPileAnchor(index);
-            var view = authoredAnchor != null ? authoredAnchor.gameObject : GameObject.CreatePrimitive(PrimitiveType.Cube);
-            if (authoredAnchor != null)
-            {
-                authoredAnchor.position = ProjectToGameplayGround(buildingGridOrigin +
-                    new Vector3(coordinate.X * buildingGridSize, 0f, coordinate.Z * buildingGridSize), 0.35f);
-            }
-            else
-            {
-                view.transform.position = ProjectToGameplayGround(buildingGridOrigin +
-                    new Vector3(coordinate.X * buildingGridSize, 0f, coordinate.Z * buildingGridSize), 0.35f);
-                view.transform.localScale = new Vector3(0.75f, 0.7f, 0.75f);
-            }
-            var renderer = view.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var block = new MaterialPropertyBlock();
-                block.SetColor("_BaseColor", color);
-                renderer.SetPropertyBlock(block);
-            }
+            if (authoredAnchor != null) authoredAnchor.gameObject.SetActive(false);
+            var view = Game.Presentation.Environment.WorldPropCatalog.Create("pile_" + id, transform);
+            view.transform.position = ProjectToGameplayGround(buildingGridOrigin +
+                new Vector3(coordinate.X * buildingGridSize, 0f, coordinate.Z * buildingGridSize), 0f);
+            var hit = view.AddComponent<BoxCollider>(); hit.isTrigger = true;
+            hit.center = Vector3.up * .3f; hit.size = new Vector3(1.2f,.8f,1.4f);
             var presenter = view.GetComponent<WorldResourcePilePresenter>() ?? view.AddComponent<WorldResourcePilePresenter>();
             presenter.Bind(pile, Inventories.Get(pile.InventoryOwner));
             demoPilePresenters.Add(presenter);

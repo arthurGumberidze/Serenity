@@ -26,6 +26,7 @@ namespace Game.Infrastructure.Integration
         private readonly List<string> errors = new();
         private float deadline;
         private bool finished;
+        private bool propsOnly;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
@@ -35,6 +36,7 @@ namespace Game.Infrastructure.Integration
             var host = new GameObject("October functional smoke");
             DontDestroyOnLoad(host);
             var runner = host.AddComponent<WM15OctoberPlayerSmoke>();
+            runner.propsOnly = args.Contains("-wm15PropsOnly");
             runner.output = Path.GetFullPath(args[i+1]); Directory.CreateDirectory(runner.output);
             runner.deadline = Time.realtimeSinceStartup+900f;
             Application.runInBackground = true;
@@ -91,6 +93,8 @@ namespace Game.Infrastructure.Integration
             Check(root.CharacterPresentations.TryGet(root.MaleDemoCharacter.Id,out var ruler) &&
                 ruler.GetComponent<UmaAppearanceProjection>()?.UsesUma == true,"World ruler visible UMA");
             yield return Capture("02-start");
+
+            if(propsOnly) { yield return PropReview(root); Finish(); yield break; }
 
             var animal=FindObjectsByType<WorldMapWildlifeView>(FindObjectsSortMode.None).FirstOrDefault();
             Check(animal != null,"Wildlife materialized");
@@ -228,6 +232,43 @@ namespace Game.Infrastructure.Integration
             }
             Check(errors.Count==0,"No runtime errors"); Finish();
         }
+        private IEnumerator PropReview(LocalSceneCompositionRoot root)
+        {
+            Check(errors.Count==0,"New game with imported props initializes without exceptions");
+            var catalog=WorldPropCatalog.Current;
+            Check(catalog!=null && catalog.Entries.Count(x=>x.Key.StartsWith("pile_"))==26,"All 26 resource views present in Player");
+            var origin=root.WorldPiles.All.First().Coordinate;
+            var gallery=new List<Game.Domain.Resources.WorldResourcePile>();
+            var index=0;
+            foreach(var entry in catalog.Entries.Where(x=>x.Key.StartsWith("pile_")))
+            {
+                var coordinate=new GridCoordinate(origin.X+(index%7)*2,origin.Z+(index/7)*2+8);
+                gallery.Add(root.WorldPiles.Create(new ResourceId(entry.Key.Substring(5)),new ResourceQuantity(5),coordinate));index++;
+            }
+            var center=root.BuildingSpawner.GridToWorld(new GridCoordinate(origin.X+6,origin.Z+11));
+            root.CameraController.FocusPosition(center,22f);
+            root.GetComponent<WorksitePresentation>().RefreshPiles();yield return null;yield return null;
+            Check(gallery.All(x=>root.Inventories.Get(x.InventoryOwner).GetAmount(x.ResourceId).Units==5),"Presentation preserves canonical resource amounts");
+            yield return CaptureReadable(root,"props-resource-gallery");
+            var views=FindObjectsByType<Game.Presentation.Resources.WorldResourcePilePresenter>(FindObjectsSortMode.None);
+            Check(gallery.All(x=>views.Any(v=>v.PileId==x.Id)),"All resource gallery piles materialize");
+            // Some gallery props are behind the starter tents; exercise an actually visible pile.
+            var selectable=false;
+            foreach(var target in views.Where(v=>gallery.Any(p=>p.Id==v.PileId)))
+            {
+                var screen=Camera.main.WorldToScreenPoint(target.GetComponent<Collider>().bounds.center);
+                if(screen.z<=0)continue;
+                if(root.PointerRaycaster.TryGetContextHit(new Vector2(screen.x,screen.y),out var hit) &&
+                    hit.collider.GetComponentInParent<Game.Presentation.Resources.WorldResourcePilePresenter>()==target)
+                {selectable=true;break;}
+            }
+            Check(selectable,"Imported visible pile retains context hit target");
+            root.Diagnostics.Execute(DiagnosticCommandKind.UnlockAll); // Hunting requires its technology in a fresh world.
+            foreach(var recipe in new[]{"chop_wood","gather_stone","hunt_animal","fish_water"})yield return WorkRoute(root,recipe);
+            Check(FindObjectsByType<Transform>(FindObjectsSortMode.None).Any(x=>x.name=="Imported pier"),"Imported fishing piers used in world");
+            Check(errors.Count==0,"No runtime errors during prop interaction route");
+        }
+
         private IEnumerator WorkRoute(LocalSceneCompositionRoot root,string recipe)
         {
             var worker=root.MaleDemoCharacter.Id;
@@ -247,7 +288,7 @@ namespace Game.Infrastructure.Integration
             var resourceClass=recipe=="chop_wood"?ContextResourceClass.Choppable:recipe=="gather_stone"?ContextResourceClass.Mineable:ContextResourceClass.Gatherable;
             root.SelectionProbe.SelectCharacterIds(new[]{worker});
             Building fishingCamp=null;
-            if(recipe=="fish_water")
+            if(recipe=="fish_water" && !propsOnly)
             {
                 // A completed camp fixture exercises the building menu; the issued work still uses the real lake site.
                 fishingCamp=Building.Restore(new BuildingState(StableEntityId.NewId(),new BuildingDefinitionId("fishing_camp"),

@@ -1,0 +1,204 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62af8b5f172515543bcc06ffbadd8bb6, type: 3}
+  m_Name: WorldProps
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.WorldPropCatalog
+  Entries:
+  - Key: stone
+    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
+  - Key: logs
+    Prefab: {fileID: 3752729951852567996, guid: a0d5ca7e23a9de047af1943e225d58df, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Logs_01.prefab
+  - Key: basket
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: sack
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: berries
+    Prefab: {fileID: 907357279579689217, guid: ec8abd30e1fd3b04ea234e33cb1c5f97, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Berries.prefab
+  - Key: meat
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: bucket
+    Prefab: {fileID: 383213265765825071, guid: 63858fd58a80f0f449748a3cd356782d, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Bucket_01.prefab
+  - Key: gold
+    Prefab: {fileID: 6671055039731004298, guid: 8fd07211e5edbe747aa67db253239304, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/CrateOfGold.prefab
+  - Key: ore
+    Prefab: {fileID: 2893150836076535985, guid: 5d34c36d1a77774418f31e1491f9ae32, type: 3}
+    Source: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Rocks/PT_Ore_Rock_01.prefab
+  - Key: ore_split
+    Prefab: {fileID: 5565136225173508459, guid: 076f98217cb400d44b77c13de589b6f8, type: 3}
+    Source: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Rocks/PT_Ore_Rock_01_split.prefab
+  - Key: rock
+    Prefab: {fileID: 368637531759632043, guid: d27f6d3fd25f8e748a86743efe31af78, type: 3}
+    Source: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Rocks/PT_Generic_Rock_01.prefab
+  - Key: branches
+    Prefab: {fileID: 6906277533896617488, guid: f534edecfc60e114db8aa7d3867f6294, type: 3}
+    Source: Assets/LowPolyNatureGradientPack/Prefabs/Branch_01.prefab
+  - Key: carrot
+    Prefab: {fileID: 636031585181647538, guid: 076852364b6d85144910939c938f7287, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Plants/Carrot_01.prefab
+  - Key: cabbage
+    Prefab: {fileID: 6056181841168279605, guid: 29706d261caee8e458628621bf5c9cf1, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Plants/Cabbage_01.prefab
+  - Key: bone
+    Prefab: {fileID: 7761540457769843062, guid: 68b021425a57c7c4bab444c9d2506111, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Prefabs/Props/Bone_01.prefab
+  - Key: fish
+    Prefab: {fileID: 5346572932916183963, guid: 1cff6881d0e112048bf82a0988890d0d, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab
+  - Key: fishing_rod
+    Prefab: {fileID: 3862691078376843381, guid: a277e2469218f7e4dbdfd4508a4ac6e9, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Props/FishingRod_01.prefab
+  - Key: carry_log
+    Prefab: {fileID: 8431309533455853638, guid: c96e129bf0bd03648b96b95e7cb0c9fc, type: 3}
+    Source: Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Log_01.prefab
+  - Key: carry_basket
+    Prefab: {fileID: 5555922786569401409, guid: 92ae1fced99f3d740ab32e7b53aaf73a, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: soil
+    Prefab: {fileID: 4815153209948851724, guid: 7c14d59205c02634d87f1000a3246aa3, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Landscape/Mud_03.prefab
+  - Key: trough
+    Prefab: {fileID: 174007575922642597, guid: 512a6d6119e90814b8d732d44416436c, type: 3}
+    Source: Assets/Toon Farm Pack/Prefabs/Props/Exterior Props/TFP_Trough_01A.prefab
+  - Key: pier
+    Prefab: {fileID: 1743670906797036880, guid: 614e207a4d1009d419f002fd10ed88ae, type: 3}
+    Source: Assets/Toon Farm Pack/Prefabs/Props/Exterior Props/TFP_Wooden_Pier_01A.prefab
+  - Key: tanning
+    Prefab: {fileID: 5093782451010107685, guid: b530401a484725045b4bc3ad0787a048, type: 3}
+    Source: Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Prefabs/Props/SM_Prop_Camp_Tanning_Rack_01.prefab
+  - Key: table
+    Prefab: {fileID: 8198075088739320190, guid: 0eed5ca3cf08bcb4ca54203126b9e613, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Table_01.prefab
+  - Key: frame
+    Prefab: {fileID: 3788435374823479045, guid: 32b156d8f24b75d4ebcbda3766061bde, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Construction/Construction_House.prefab
+  - Key: foundation
+    Prefab: {fileID: 614737580209950403, guid: 23a37d0248afb7d4f91d21029b393aec, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Construction/Construction1x1_01.prefab
+  - Key: camp_ring
+    Prefab: {fileID: 1379521871665210233, guid: 4e3a235156ce2d94391a2951cc6970a6, type: 3}
+    Source: Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Prefabs/Props/SM_Prop_Camp_Fireplace_Stones_01.prefab
+  - Key: drying_frame
+    Prefab: {fileID: 7204407995142408693, guid: 2b65ceac31a9c904297b38bd2c923c9e, type: 3}
+    Source: Assembly from imported SM_Tree_Log_01
+  - Key: rain
+    Prefab: {fileID: 3521879839560747251, guid: 674d9445917e5814d825435cdf40ce82, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Rain.prefab
+  - Key: snow
+    Prefab: {fileID: 8904508348113682924, guid: 031ee573432e5a1469c7a4ab3ed5b8fa, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Snow1.prefab
+  - Key: fire
+    Prefab: {fileID: 6556315735330221426, guid: 83483604ef6af3a47ba2ac244cbde6d4, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Fire.prefab
+  - Key: fog
+    Prefab: {fileID: 2688906752164178490, guid: 8c5003e9c423ed04598ef34779a3ea04, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Fog.prefab
+  - Key: leaves
+    Prefab: {fileID: 439750568001338867, guid: 214c7207e66b43742b9dafb86e4e1614, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Leaf.prefab
+  - Key: butterfly
+    Prefab: {fileID: 546307932800404536, guid: 7020f5ff66a2bff4fad51f37126f7697, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Butterfly.prefab
+  - Key: bee
+    Prefab: {fileID: 6956246144921772888, guid: 1d5ad597eae569c42aa93b6764614816, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Bee.prefab
+  - Key: blood
+    Prefab: {fileID: 5324940772414935479, guid: f3636b6baff703e46a1ad3803373e376, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/FX/FX_Blood_Splatter_01.prefab
+  - Key: smoke
+    Prefab: {fileID: 3361291433604377439, guid: f939969fbdd88624180fad61bfcb5c69, type: 3}
+    Source: Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Prefabs/FX_Smoke_Large_01.prefab
+  - Key: pile_wood_log
+    Prefab: {fileID: 3752729951852567996, guid: a0d5ca7e23a9de047af1943e225d58df, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Logs_01.prefab
+  - Key: pile_stone
+    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
+  - Key: pile_plant_fiber
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_hide
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_carcass
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_bone
+    Prefab: {fileID: 7761540457769843062, guid: 68b021425a57c7c4bab444c9d2506111, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Prefabs/Props/Bone_01.prefab
+  - Key: pile_cured_hide
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_berries
+    Prefab: {fileID: 907357279579689217, guid: ec8abd30e1fd3b04ea234e33cb1c5f97, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Berries.prefab
+  - Key: pile_iron_ore
+    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
+  - Key: pile_gold_ore
+    Prefab: {fileID: 6671055039731004298, guid: 8fd07211e5edbe747aa67db253239304, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/CrateOfGold.prefab
+  - Key: pile_meat
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_fish
+    Prefab: {fileID: 5346572932916183963, guid: 1cff6881d0e112048bf82a0988890d0d, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab
+  - Key: pile_cooked_meat
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_cooked_fish
+    Prefab: {fileID: 5346572932916183963, guid: 1cff6881d0e112048bf82a0988890d0d, type: 3}
+    Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab
+  - Key: pile_cooked_berries
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_dried_meat
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_water
+    Prefab: {fileID: 383213265765825071, guid: 63858fd58a80f0f449748a3cd356782d, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Bucket_01.prefab
+  - Key: pile_branches
+    Prefab: {fileID: 6906277533896617488, guid: f534edecfc60e114db8aa7d3867f6294, type: 3}
+    Source: Assets/LowPolyNatureGradientPack/Prefabs/Branch_01.prefab
+  - Key: pile_mushrooms
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_medicinal_plants
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_clay
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_flint
+    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
+  - Key: pile_copper_ore
+    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
+  - Key: pile_oil
+    Prefab: {fileID: 383213265765825071, guid: 63858fd58a80f0f449748a3cd356782d, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Bucket_01.prefab
+  - Key: pile_carrot
+    Prefab: {fileID: 636031585181647538, guid: 076852364b6d85144910939c938f7287, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Plants/Carrot_01.prefab
+  - Key: pile_cabbage
+    Prefab: {fileID: 6056181841168279605, guid: 29706d261caee8e458628621bf5c9cf1, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Plants/Cabbage_01.prefab

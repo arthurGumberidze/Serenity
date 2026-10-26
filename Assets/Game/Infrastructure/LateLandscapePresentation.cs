@@ -27,6 +27,11 @@ namespace Game.Infrastructure
                 var angle=i*Mathf.PI*2/10f;
                 AddEffect(art.FallingLeaves,Ground(grove.x+Mathf.Cos(angle)*grove.z*.48f,grove.y+Mathf.Sin(angle)*grove.w*.48f)+Vector3.up*2.5f,false);
             }
+            for(var i=0;i<6;i++)
+            {
+                var point=Ground(grove.x+(i%3-1)*12f,grove.y+(i/3-.5f)*14f)+Vector3.up*.65f;
+                AddEffect(WorldPropCatalog.Current.Find("butterfly"),point,false);
+            }
             var marsh=world.ArtDirection.regions[7];
             for(var i=0;i<8;i++)
                 AddEffect(art.Fireflies,Ground(marsh.center.x+(i%4-1.5f)*25f,marsh.center.y+(i/4-.5f)*40f)+Vector3.up*.8f,true);

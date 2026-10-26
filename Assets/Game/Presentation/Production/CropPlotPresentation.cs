@@ -17,7 +17,6 @@ namespace Game.Presentation.Production
         private readonly List<Transform> plants = new();
         private float width, depth;
         private string displayedRecipe;
-        private static Material soil;
         private Game.Domain.World.AnimalHealthRegistry animals;
         public Vector3 GrazingPosition(int slot) => transform.TransformPoint(new Vector3(
             (slot % 2 == 0 ? -.25f : .25f) * width, 0f, (slot / 2 == 0 ? -.25f : .25f) * depth));
@@ -36,25 +35,18 @@ namespace Game.Presentation.Production
                 legacy = GetComponentsInChildren<Renderer>(true);
                 plot = new GameObject("Cultivated field").transform;
                 plot.SetParent(transform, false);
-                if (soil == null)
-                {
-                    soil = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                    soil.name = "Cultivated soil";
-                    soil.SetColor("_BaseColor", new Color(0.22f, 0.12f, 0.065f));
-                    soil.SetFloat("_Smoothness", 0f);
-                }
                 var rows = Mathf.Clamp(Mathf.FloorToInt(width / 0.65f), 2, 12);
                 for (var row = 0; row < rows; row++)
                 {
-                    var bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var bed = WorldPropCatalog.Create("soil", plot);
                     bed.name = "Soil row";
-                    bed.transform.SetParent(plot, false);
-                    bed.transform.localPosition = new Vector3(-width * 0.5f + (row + 0.5f) * width / rows, 0.045f, 0);
-                    bed.transform.localScale = new Vector3(width / rows * 0.7f, 0.08f, depth * 0.8f);
-                    var collider = bed.GetComponent<Collider>(); collider.enabled = false; Destroy(collider);
-                    bed.GetComponent<Renderer>().sharedMaterial = soil;
+                    bed.transform.localPosition = new Vector3(-width * .5f + (row + .5f) * width / rows, 0, 0);
+                    bed.transform.localScale = new Vector3(width / rows * .7f, 1f, depth * .8f);
                 }
                 AddFences();
+                var trough = WorldPropCatalog.Create("trough", plot);
+                trough.name = "Pasture trough";
+                trough.transform.localPosition = new Vector3(0, 0, depth * .33f);
             }
             displayedRecipe = null;
             Refresh();
@@ -69,7 +61,10 @@ namespace Game.Presentation.Production
             foreach (var renderer in legacy) if (renderer != null) renderer.enabled = false;
             var pasture = animals?.IsPasture(site.Id) == true;
             foreach (Transform child in plot)
+            {
                 if (child.name == "Soil row") child.gameObject.SetActive(!pasture);
+                if (child.name == "Pasture trough") child.gameObject.SetActive(pasture);
+            }
             if (pasture) { if (planting != null) planting.gameObject.SetActive(false); return; }
             if (displayedRecipe != site.RecipeId.ToString()) Replant();
             if (planting == null) return;

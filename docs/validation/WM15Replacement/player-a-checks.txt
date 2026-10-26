@@ -1,0 +1,25 @@
+PASS Ruler editor UMA generated
+PASS World ruler visible UMA
+PASS New game with imported props initializes without exceptions
+PASS All 26 resource views present in Player
+PASS Presentation preserves canonical resource amounts
+PASS All resource gallery piles materialize
+FAIL Imported pile retains context hit target
+PASS chop_wood direct order accepted: None
+PASS chop_wood worker reaches source and works
+PASS chop_wood production completes
+PASS chop_wood impact fragments emitted
+PASS gather_stone direct order accepted: None
+PASS gather_stone worker reaches source and works
+PASS gather_stone production completes
+PASS gather_stone impact fragments emitted
+FAIL hunt_animal direct order accepted: MissingTechnology
+PASS fish_water direct order accepted: None
+PASS Fisher physically stands on pier
+PASS Fisher holds a visible rod
+PASS Close fishing camera remains above water
+PASS Fish catch placed near pier on dry bank
+PASS fish_water worker reaches source and works
+PASS fish_water production completes
+PASS Imported fishing piers used in world
+PASS No runtime errors during prop interaction route

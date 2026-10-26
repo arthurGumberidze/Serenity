@@ -287,6 +287,8 @@ namespace Game.Infrastructure
             var reviewed = worldMapResourceArt?.PrefabFor(node.ResourceTypeId) ??
                 (node.RecipeId == "hunt_animal" ? art?.HuntingDeer :
                 node.RecipeId == "gather_stone" ? art?.StoneOutcrop : null);
+            if (node.RecipeId == "gather_stone") reviewed = WorldPropCatalog.Current.Find("rock");
+            if (node.RecipeId == "gather_iron" || node.RecipeId == "gather_gold") reviewed = WorldPropCatalog.Current.Find("ore");
             if (terrainWorld.Definition.MapData != null && reviewed == null)
             {
                 Debug.LogError("No audited World Map V2 resource prefab for " + node.ResourceTypeId);

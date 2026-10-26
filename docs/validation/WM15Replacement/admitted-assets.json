@@ -1,0 +1,314 @@
+[
+  {
+    "source": "Assets/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab",
+    "alias": "Fishing",
+    "guid": "7e1f104e1b3352418562fc20c2e91a5f"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Models/Food/Fish_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Models/Food/Fish_01.fbx",
+    "alias": "Fishing",
+    "guid": "ba94868fa59d534d8b99d79cdb052343"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Materials/LP_TropicalCity_MAIN.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Materials/LP_TropicalCity_MAIN.mat",
+    "alias": "Fishing",
+    "guid": "6319ec4552aa56d087ea6d3138dfb8a3"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Textures/TropicalCityTexture_01.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Textures/TropicalCityTexture_01.png",
+    "alias": "Fishing",
+    "guid": "d6097c7df8bd58a4b35e4ea85e84adee"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Prefabs/Props/FishingRod_02.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Props/FishingRod_02.prefab",
+    "alias": "Fishing",
+    "guid": "8623274c444853738bf45a9cfee8aa12"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Models/Props/FishingRod_02.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Models/Props/FishingRod_02.fbx",
+    "alias": "Fishing",
+    "guid": "dd321bf3abdb5a2eaa9ebf11b1d37d15"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Prefabs/Props/FishingRod_01.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Props/FishingRod_01.prefab",
+    "alias": "Fishing",
+    "guid": "895be1312e0e5309936a5203ec6c5514"
+  },
+  {
+    "source": "Assets/LowPolyTropicalCity/Models/Props/FishingRod_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Models/Props/FishingRod_01.fbx",
+    "alias": "Fishing",
+    "guid": "fdf4599fe1075931b3b5782d4cbaf4f1"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Prefabs/Props/Bone_01.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Prefabs/Props/Bone_01.prefab",
+    "alias": "Bones",
+    "guid": "6de0d8565d9650a6922fb4a73eca2605"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Models/Props/Bone_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Models/Props/Bone_01.fbx",
+    "alias": "Bones",
+    "guid": "7f83ceb231835bb4be860134f7f7a659"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Materials/Dungeons_MAIN.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Materials/Dungeons_MAIN.mat",
+    "alias": "Bones",
+    "guid": "700317b1acb456ea9c31a2d410eb36a5"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Textures/Texture_01.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Textures/Texture_01.png",
+    "alias": "Bones",
+    "guid": "c0ea8379c58755629f713d22279f222b"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Prefabs/Props/Bone_02.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Prefabs/Props/Bone_02.prefab",
+    "alias": "Bones",
+    "guid": "3e283cd32a4856758d354bd5c8877f87"
+  },
+  {
+    "source": "Assets/LowPolyDungeons/Models/Props/Bone_02.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Models/Props/Bone_02.fbx",
+    "alias": "Bones",
+    "guid": "9649dad0291e5d7eb3ca056784deafe9"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Leaf.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Leaf.prefab",
+    "alias": "NatureFX",
+    "guid": "a4075df3576a5b6d8df138bc36cd0365"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/leaf_04.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/leaf_04.fbx",
+    "alias": "NatureFX",
+    "guid": "65bb077bd4b35afd88b99489d48648ff"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/leaf_03.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/leaf_03.fbx",
+    "alias": "NatureFX",
+    "guid": "ba1bfcc525ff54d295c49ab96109c83c"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/leaf_02.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/leaf_02.fbx",
+    "alias": "NatureFX",
+    "guid": "9e2901dad62b5aae86f434dbc9a83420"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/leaf_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/leaf_01.fbx",
+    "alias": "NatureFX",
+    "guid": "70b7f9f0ea76502f8f690e448104f650"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Leaves.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Leaves.mat",
+    "alias": "NatureFX",
+    "guid": "e1a4449ccd5156858b436e17681e4475"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Butterfly.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Butterfly.prefab",
+    "alias": "NatureFX",
+    "guid": "e657d1e9d77e56a990bb99b2e26c08e4"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/butterfly_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/butterfly_01.fbx",
+    "alias": "NatureFX",
+    "guid": "8c5fa3230652500292a79e6a3289ccc5"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Fly.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Fly.mat",
+    "alias": "NatureFX",
+    "guid": "bfb05785d09e5e169d1fcfae893f9c9b"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/muha.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/muha.png",
+    "alias": "NatureFX",
+    "guid": "035259b4f6e953ddb901dddefc28b114"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Butter2.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Butter2.mat",
+    "alias": "NatureFX",
+    "guid": "e01c7d1f6dbd5709b3506f85ddc40173"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/butter2.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/butter2.png",
+    "alias": "NatureFX",
+    "guid": "5ec8ca5efc865bd39e7b9e523af1d153"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Leaf2.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Leaf2.prefab",
+    "alias": "NatureFX",
+    "guid": "aad8f2a3b4525a5089d858b7c016e89e"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Leaves2.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Leaves2.mat",
+    "alias": "NatureFX",
+    "guid": "0be0d5fd97055eaab1991be4ae90f01b"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Leaves2.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Leaves2.png",
+    "alias": "NatureFX",
+    "guid": "2f5c5e295bfa5cfc94b04164e3fd10a2"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Snow1.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Snow1.prefab",
+    "alias": "NatureFX",
+    "guid": "df0785fa39f55144a28a7cf6bae64303"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Snow_1.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Snow_1.mat",
+    "alias": "NatureFX",
+    "guid": "7bc5da91fd385821ab96ea49bac8f7be"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Snow.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Snow.png",
+    "alias": "NatureFX",
+    "guid": "a41af879b42d5f4fa5ba3a760e3b54e6"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Rain.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Rain.prefab",
+    "alias": "NatureFX",
+    "guid": "90d58c9853735fb8b321ecc84abc2e2d"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Rain.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Rain.mat",
+    "alias": "NatureFX",
+    "guid": "1bae13bfff2b50a2b5a3195df0f8a025"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Rain.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Rain.png",
+    "alias": "NatureFX",
+    "guid": "aefd3c2676775aacaa19f9c5e03c5e20"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Ripple.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Ripple.mat",
+    "alias": "NatureFX",
+    "guid": "d1ca61a0a98357398ea68992a4d8e52a"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Ripple.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Ripple.png",
+    "alias": "NatureFX",
+    "guid": "76275e02d2fa5f5085c3a52fba6d931b"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Snow2.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Snow2.prefab",
+    "alias": "NatureFX",
+    "guid": "0a55a2964f545ba5b438b341d1186648"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Fire.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Fire.prefab",
+    "alias": "NatureFX",
+    "guid": "aa6295683112529a8a42cdea5bd42881"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Fire.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Fire.mat",
+    "alias": "NatureFX",
+    "guid": "c86a8312a1ad5bdaad861503ffe11697"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Fire.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Fire.png",
+    "alias": "NatureFX",
+    "guid": "0caeeed2f7ca56a4a966191c8d62a4c5"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Snowstorm.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Snowstorm.prefab",
+    "alias": "NatureFX",
+    "guid": "9831cf598ba552ce978e6c67c9a4f2ce"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Storm.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Storm.mat",
+    "alias": "NatureFX",
+    "guid": "108bcdf172e555dbb933d9d99e531b9a"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/Blizzard.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/Blizzard.png",
+    "alias": "NatureFX",
+    "guid": "a4acd87b73eb513ea9a965203d359eb5"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Fluff.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Fluff.prefab",
+    "alias": "NatureFX",
+    "guid": "09fc6feb6d4f5be196115c1c931c22bd"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/fluff_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/fluff_01.fbx",
+    "alias": "NatureFX",
+    "guid": "6661bc07fb4052eea539392726d1281d"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Fluff.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Fluff.mat",
+    "alias": "NatureFX",
+    "guid": "5f65706d7b9a510c8c787e4f18c8269d"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Bee.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Bee.prefab",
+    "alias": "NatureFX",
+    "guid": "597bfca3a1c65fb89590f484130d9b66"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Models/fly_01.fbx",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Models/fly_01.fbx",
+    "alias": "NatureFX",
+    "guid": "82cbeb15cc115d82b3cddaf6f2f6f99e"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Materials/Butter.mat",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Materials/Butter.mat",
+    "alias": "NatureFX",
+    "guid": "046cd32e4bc651738bc51a5edd0a71ea"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Art/Textures/butter1.png",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Art/Textures/butter1.png",
+    "alias": "NatureFX",
+    "guid": "21a6fe996f775108a58ee6eb20dd9706"
+  },
+  {
+    "source": "Assets/GreenBugGames/All Nature VFX/Prefabs/Fog.prefab",
+    "destination": "Assets/Game/Art/WM15Replacement/Imported/NatureFX/GreenBugGames/All Nature VFX/Prefabs/Fog.prefab",
+    "alias": "NatureFX",
+    "guid": "6e0cba37627753c983b7a10f33a5aabb"
+  }
+]

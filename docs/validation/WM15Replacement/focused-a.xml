@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="17" result="Failed(Child)" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0,5661474">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="792" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.566147" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1920" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="788" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.518913" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="748" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1921" name="Game" fullname="Game" runstate="Runnable" testcasecount="788" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.496928" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1922" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="788" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.462181" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1923" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="605" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.430023" total="17" passed="14" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1474" name="P109ConstructionStateTests" fullname="Game.Tests.Editor.P109ConstructionStateTests" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.306771" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1480" name="Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" fullname="Game.Tests.Editor.P109ConstructionStateTests.Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" methodname="Cancellation_ReturnsDeliveredAndInstalledMaterialsToWorldPiles" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1758954677" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.112667" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1475" name="ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" methodname="ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="359699978" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.002428" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1476" name="ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" methodname="ConstructionBuffer_TransfersAndConsumesEachStageWithoutDuplicatingStock" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="2107683355" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.003733" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1477" name="ConstructionWork_WaitsForAllMaterialStages" fullname="Game.Tests.Editor.P109ConstructionStateTests.ConstructionWork_WaitsForAllMaterialStages" methodname="ConstructionWork_WaitsForAllMaterialStages" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="15740468" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.001561" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1479" name="Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" fullname="Game.Tests.Editor.P109ConstructionStateTests.Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" methodname="Funding_PreemptsUnpickedAutonomousClaimsForConstructionDeliveries" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="2041937865" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.004356" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1478" name="Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" fullname="Game.Tests.Editor.P109ConstructionStateTests.Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" methodname="Funding_QueuesPhysicalDeliveriesAndOnlyCarryingMovesStock" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="1648346019" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.009393" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1481" name="PendingConstructionDelivery_RoundTripsWithBufferDestination" fullname="Game.Tests.Editor.P109ConstructionStateTests.PendingConstructionDelivery_RoundTripsWithBufferDestination" methodname="PendingConstructionDelivery_RoundTripsWithBufferDestination" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="868081082" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.119869" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1484" name="RetryDeliveryRequestsOnlyMaterialsMissingFromTheExistingBuffer" fullname="Game.Tests.Editor.P109ConstructionStateTests.RetryDeliveryRequestsOnlyMaterialsMissingFromTheExistingBuffer" methodname="RetryDeliveryRequestsOnlyMaterialsMissingFromTheExistingBuffer" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="363371530" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.006788" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1483" name="Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" fullname="Game.Tests.Editor.P109ConstructionStateTests.Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" methodname="Version25_RemainsReadableAsLegacyConstructionWithoutGenerationRewrite" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="630789521" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.003226" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1482" name="Version26_RoundTripsSettlementStagesAndDeliveredBuffer" fullname="Game.Tests.Editor.P109ConstructionStateTests.Version26_RoundTripsSettlementStagesAndDeliveredBuffer" methodname="Version26_RoundTripsSettlementStagesAndDeliveredBuffer" classname="Game.Tests.Editor.P109ConstructionStateTests" runstate="Runnable" seed="44205784" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.011045" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1865" name="WM15PropReplacementTests" fullname="Game.Tests.Editor.WM15PropReplacementTests" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.055160" total="7" passed="4" failed="3" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1866" name="EveryCanonicalResourceHasAnImportedView" fullname="Game.Tests.Editor.WM15PropReplacementTests.EveryCanonicalResourceHasAnImportedView" methodname="EveryCanonicalResourceHasAnImportedView" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="1705108412" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.023320" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1873" name="RodGripAndPierFootprintMatchTheirInteractionAdapters" fullname="Game.Tests.Editor.WM15PropReplacementTests.RodGripAndPierFootprintMatchTheirInteractionAdapters" methodname="RodGripAndPierFootprintMatchTheirInteractionAdapters" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="70489789" result="Failed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.011187" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: 2.0999999f +/- 0.050000000000000003d
+  But was:  1.72027969f
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.Editor.WM15PropReplacementTests.RodGripAndPierFootprintMatchTheirInteractionAdapters () [0x000ce] in C:\serenity_game\Assets\Game\Tests\Editor\WM15PropReplacementTests.cs:55
+]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1872" name="ScheduledWeatherAndFireHaveRootParticleSystems" fullname="Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.007409" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <failure>
+                  <message><![CDATA[One or more child tests had errors]]></message>
+                </failure>
+                <test-case id="1868" name="ScheduledWeatherAndFireHaveRootParticleSystems(&quot;rain&quot;)" fullname="Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems(&quot;rain&quot;)" methodname="ScheduledWeatherAndFireHaveRootParticleSystems" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="1455155665" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.001921" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1869" name="ScheduledWeatherAndFireHaveRootParticleSystems(&quot;snow&quot;)" fullname="Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems(&quot;snow&quot;)" methodname="ScheduledWeatherAndFireHaveRootParticleSystems" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="2009214661" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.000419" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1870" name="ScheduledWeatherAndFireHaveRootParticleSystems(&quot;fire&quot;)" fullname="Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems(&quot;fire&quot;)" methodname="ScheduledWeatherAndFireHaveRootParticleSystems" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="995884877" result="Failed" label="Error" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.001856" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <failure>
+                    <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object.]]></message>
+                    <stack-trace><![CDATA[  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00011] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at UnityEngine.GameObject.GetComponentFastPath (System.Type type) [0x00006] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at UnityEngine.GameObject.GetComponent[T] () [0x00000] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems (System.String key) [0x00001] in C:\serenity_game\Assets\Game\Tests\Editor\WM15PropReplacementTests.cs:45 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <c5ae8a4eeb824526b5df2932bc2395e0>:0 ]]></stack-trace>
+                  </failure>
+                </test-case>
+                <test-case id="1871" name="ScheduledWeatherAndFireHaveRootParticleSystems(&quot;smoke&quot;)" fullname="Game.Tests.Editor.WM15PropReplacementTests.ScheduledWeatherAndFireHaveRootParticleSystems(&quot;smoke&quot;)" methodname="ScheduledWeatherAndFireHaveRootParticleSystems" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="2146468258" result="Passed" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.000165" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+              </test-suite>
+              <test-case id="1867" name="ViewsHaveRealMeshesAndValidUrpMaterialsWithoutVendorLogicOrCollision" fullname="Game.Tests.Editor.WM15PropReplacementTests.ViewsHaveRealMeshesAndValidUrpMaterialsWithoutVendorLogicOrCollision" methodname="ViewsHaveRealMeshesAndValidUrpMaterialsWithoutVendorLogicOrCollision" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="805776275" result="Failed" label="Error" start-time="2026-10-26 10:14:57Z" end-time="2026-10-26 10:14:57Z" duration="0.008824" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object.]]></message>
+                  <stack-trace><![CDATA[  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x00011] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at UnityEngine.GameObject.GetComponentsInternal (System.Type type, System.Boolean useSearchTypeAsArrayReturnType, System.Boolean recursive, System.Boolean includeInactive, System.Boolean reverse, System.Object resultList) [0x00006] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at UnityEngine.GameObject.GetComponentsInternal[T] (System.Boolean useSearchTypeAsArrayReturnType, System.Boolean recursive, System.Boolean includeInactive, System.Boolean reverse, System.Collections.Generic.List`1[T] resultList) [0x00017] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at UnityEngine.GameObject.GetComponentsInChildren[T] (System.Boolean includeInactive) [0x00000] in <93e6391e4688454a985ab5dc6ed6bd98>:0 
+  at Game.Tests.Editor.WM15PropReplacementTests.ViewsHaveRealMeshesAndValidUrpMaterialsWithoutVendorLogicOrCollision () [0x00048] in C:\serenity_game\Assets\Game\Tests\Editor\WM15PropReplacementTests.cs:27 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <c5ae8a4eeb824526b5df2932bc2395e0>:0 ]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -7,6 +7,7 @@ using Game.Domain.World;
 using Game.Presentation.Production;
 using Unity.AI.Navigation;
 using UnityEngine;
+using Game.Presentation.Environment;
 using UnityEngine.AI;
 
 namespace Game.Infrastructure
@@ -78,38 +79,17 @@ namespace Game.Infrastructure
                 var dock = new GameObject("Wooden fishing pier " + node.SourceZoneId);
                 dock.transform.SetParent(transform, false);
                 var forward = end - start;
-                var deck = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                deck.name = "Walkable deck"; deck.transform.SetParent(dock.transform, false);
-                deck.transform.position = (start + end) * .5f;
+                var pier = WorldPropCatalog.Create("pier", dock.transform);
+                pier.transform.position = (start + end) * .5f + Vector3.up * .18f;
+                pier.transform.rotation = Quaternion.LookRotation(forward);
+                pier.transform.localScale = new Vector3(1f, 1f, length / 9f);
+                // Navigation collision is independent of the imported decorative posts/boards.
+                var deck = new GameObject("Walkable deck");
+                deck.transform.SetParent(dock.transform, false);
+                deck.transform.position = (start + end) * .5f + Vector3.up * .07f;
                 deck.transform.rotation = Quaternion.LookRotation(forward);
-                deck.transform.localScale = new Vector3(2.4f,.22f,forward.magnitude);
-                deck.GetComponent<Renderer>().sharedMaterial = timber;
-                // Real plank seams and support posts, all sharing one material.
-                for (var d = 0f; d <= length; d += .55f)
-                {
-                    var center = Vector3.Lerp(start,end,d/length);
-                    var plank = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    plank.transform.SetParent(dock.transform,false);
-                    plank.transform.position = center + Vector3.up * .14f;
-                    plank.transform.rotation = deck.transform.rotation;
-                    plank.transform.localScale = new Vector3(2.5f,.08f,.51f);
-                    plank.GetComponent<Renderer>().sharedMaterial = timber;
-                    Destroy(plank.GetComponent<Collider>());
-                }
-                var right = Vector3.Cross(Vector3.up,direction.normalized);
-                for (var side = -1; side <= 1; side += 2)
-                for (var d = 0f; d <= length; d += 3f)
-                {
-                    var center = Vector3.Lerp(start,end,d/length) + right * side * 1.12f;
-                    var bottom = root.WorldHeight.SampleHeight(center.x,center.z) - .25f;
-                    var height = Mathf.Max(.8f,center.y - bottom + .65f);
-                    var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    post.transform.SetParent(dock.transform,false);
-                    post.transform.position = new Vector3(center.x,bottom+height*.5f,center.z);
-                    post.transform.localScale = new Vector3(.18f,height,.18f);
-                    post.GetComponent<Renderer>().sharedMaterial = timber;
-                    Destroy(post.GetComponent<Collider>());
-                }
+                var deckCollider = deck.AddComponent<BoxCollider>();
+                deckCollider.size = new Vector3(2.4f, .22f, length);
                 var surface = dock.AddComponent<NavMeshSurface>();
                 surface.collectObjects = CollectObjects.Children;
                 surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;

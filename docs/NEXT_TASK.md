@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## WM15 after local prop replacement (2026-10-26)
+
+Current candidate: `Builds/WorldMapAssetReplacement/Serenity.exe` (build-b, 0 errors / 81 warnings;
+Player-b 29/29, no runtime errors; 17 distinct focused Editor tests passed). See
+`docs/world_map/WM15_ASSET_REPLACEMENTS.md` for actual replacements and the remaining targeted asset list.
+Next unblocked work stays within WM15: user visual review, art/content refinement and loading duration.
+Do not reacquire existing general prop/nature packs. Distinct raw materials, compatible work animation,
+animated fish and dedicated impact effects are the remaining asset gaps. Keep WM15 IN_PROGRESS.
+No full 100/300/500 performance gates without authorization; no repeated shutdown. Preserve unrelated imports.
+
 ## WM15 asset selection after complete local audit (2026-10-26)
 
 Audit delivered: `docs/world_map/WM15_IMPORTED_ASSET_COVERAGE.md`. Next WM15 content work should use

@@ -1,0 +1,994 @@
+VBCSCompilerPreWarmer: watching VBCSCompiler (PID 16396)
+VBCSCompilerPreWarmer: pre-warm launched (dotnet PID 32292)
+VBCSCompiler prewarm took 27.88 ms
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Channel LicenseClient-Lenovo doesn't exist
+Built from '6000.6/staging' branch; Version is '6000.6.4f1 (12bfff696524) revision 1228799'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'ru' Physical Memory: 64840 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-10-26T10:16:27Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 11292)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Lenovo" at "2026-10-26T10:16:28.1175463Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 11292, path: "C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+C:\serenity_game
+-executeMethod
+Game.Infrastructure.Editor.WM15PropAuthoring.Generate
+-logFile
+C:\serenity_game\Artifacts\WM15Replacement\author-f.log
+Successfully changed project path to: C:\serenity_game
+C:/serenity_game
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-remapper-allocator-initial-capacity=32768"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-main-allocator-mimalloc-enabled=1"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Logging is directed to a specific file, skipping project log.
+Player connection [29136]  Target information:
+
+Player connection [29136]  * "[IP] 198.18.0.1 [Port] 55504 [Flags] 2 [Guid] 520410165 [EditorId] 520410165 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-HJ2LN4L) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [29136]  * "[IP] 192.168.0.107 [Port] 55504 [Flags] 2 [Guid] 520410165 [EditorId] 520410165 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-HJ2LN4L) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [29136] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [29136] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.3+d7ffd15
+  Session Id:              edc17dbfb78d429fb0e046210bc3672f
+  Correlation Id:          0b84e54834ec5f1e22a4e51afaa55f3f
+  External correlation Id: 6633288213783450449
+  Machine Id:              /bd0weirOj78+7uy/wuNYNnoBWA=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Lenovo" (connect: 0.25s, validation: 0.27s, handshake: 0.04s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Lenovo-notifications" at "2026-10-26T10:16:28.4305406Z"
+[Licensing::Module] Connected to LicensingClient (PId: 11292, launch time: 0.01, total connection time: 0.56s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-9A8M-YP5J-QRM3-QUCY-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: Unlimited
+[Licensing::Module] License group:
+  Id: 10170661242827-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-9A8M-YP5J-QRM3-QUCY-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: Unlimited
+[Licensing::Module] License group:
+  Id: 10170661242827-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Module] Licensing Background thread has ended after 0.61s
+[Package Manager] Connected to IPC stream "Upm-24176" after 0.3 seconds.
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-9A8M-YP5J-QRM3-QUCY-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: Unlimited
+[Licensing::Module] License group:
+  Id: 10170661242827-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+Library Redirect Path: Library/
+Launching Unity Data Store - C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Tools/Unity.DataStore.exe 
+Unity Data Store artifact dir = Library/DataStore, working dir = C:/serenity_gameUnity Data Store running and initialised
+[Physics::Module] Selected backend (deferred post-plugins).
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Initialize engine version: 6000.6.4f1 (12bfff696524)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/serenity_game/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: Intel(R) Arc(TM) Graphics (ID=0x7d55)
+    Vendor:   Intel
+    VRAM:     48456 MB
+    Driver:   32.0.101.8508
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/BCLExtensions/runtime/netstandard2.1'
+Mono path[2] = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56176
+CodeReloadManager initialized
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.6.4f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.002458 seconds.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  0.976 seconds
+Domain Reload Profiling: 1673ms
+	BeginReloadAssembly (179ms)
+		CreateAndSetChildDomain (8ms)
+	RebuildCommonClasses (8ms)
+	RebuildNativeTypeToScriptingClass (19ms)
+	initialDomainReloadingComplete (85ms)
+	LoadAllAssembliesAndSetupDomain (405ms)
+		LoadAssemblies (167ms)
+		TypeCache.Refresh (261ms)
+			TypeCache.ScanAssembly (246ms)
+		AnalyzeDomain (1ms)
+	FinalizeReload (978ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (4ms)
+			BeforeProcessingInitializeOnLoad (153ms)
+			ProcessInitializeOnLoadAttributes (198ms)
+			ProcessInitializeOnLoadMethodAttributes (256ms)
+			EditorAssembliesLoaded (3ms)
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: F4-9A8M-YP5J-QRM3-QUCY-XXXX
+  Product: Unity Personal
+  Type: ULF
+  Expiration: Unlimited
+[Licensing::Module] License group:
+  Id: 10170661242827-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 53 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.addressables@2.11.2 (location: C:\serenity_game\Library\PackageCache\com.unity.addressables@42676f2a154e)
+    com.unity.ai.navigation@2.0.12 (location: C:\serenity_game\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591)
+    com.unity.collab-proxy@2.12.4 (location: C:\serenity_game\Library\PackageCache\com.unity.collab-proxy@0b1559bcd34e)
+    com.unity.ide.rider@3.0.38 (location: C:\serenity_game\Library\PackageCache\com.unity.ide.rider@1f60b3138684)
+    com.unity.ide.visualstudio@2.0.26 (location: C:\serenity_game\Library\PackageCache\com.unity.ide.visualstudio@a99d56dec63f)
+    com.unity.inputsystem@1.20.0 (location: C:\serenity_game\Library\PackageCache\com.unity.inputsystem@7a4e1a2a8194)
+    com.unity.visualscripting@1.9.11 (location: C:\serenity_game\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.jobs@0.70.0-preview.7 (location: C:\serenity_game\Library\PackageCache\com.unity.jobs@bb63d3d025fd)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\serenity_game\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.profiling.core@1.0.3 (location: C:\serenity_game\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.scriptablebuildpipeline@3.0.3 (location: C:\serenity_game\Library\PackageCache\com.unity.scriptablebuildpipeline@61526b33bf2c)
+    com.unity.splines@2.9.1 (location: C:\serenity_game\Library\PackageCache\com.unity.splines@edbe9aefec91)
+    com.unity.searcher@4.9.5 (location: C:\serenity_game\Library\PackageCache\com.unity.searcher@a463122f2c00)
+    com.unity.settings-manager@2.1.1 (location: C:\serenity_game\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+  Built-in packages:
+    com.unity.burst@2.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.burst@626e66ab421b)
+    com.unity.cinemachine@6.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.cinemachine@f53aa49b3acc)
+    com.unity.collections@6.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.collections@10fff0607388)
+    com.unity.entities@6.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.entities@b9aca00faf13)
+    com.unity.mathematics@1.4.0 (location: C:\serenity_game\Library\PackageCache\com.unity.mathematics@8306a64d0cd6)
+    com.unity.modules.terrain@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.render-pipelines.universal@17.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.render-pipelines.universal@b0678dfc9e21)
+    com.unity.test-framework@1.8.0 (location: C:\serenity_game\Library\PackageCache\com.unity.test-framework@80f691d4262b)
+    com.unity.timeline@6.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.timeline@c56d56b0070b)
+    com.unity.ugui@2.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.ugui@0727b404f3a0)
+    com.unity.render-pipelines.core@17.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.render-pipelines.core@285af6b8c83f)
+    com.unity.shadergraph@17.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.shadergraph@58bcb150677d)
+    com.unity.modules.animation@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.physics@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.ui@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.physics2d@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.ext.nunit@2.1.0 (location: C:\serenity_game\Library\PackageCache\com.unity.ext.nunit@0198eae3b53e)
+    com.unity.render-pipelines.universal-config@17.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.render-pipelines.universal-config@561422b74439)
+    com.unity.test-framework.performance@6.6.0 (location: C:\serenity_game\Library\PackageCache\com.unity.test-framework.performance@b6023decb532)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.hierarchy@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.hierarchy)
+    com.unity.modules.ai@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.graph-authoring@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.graph-authoring@cfd2588851ee)
+    com.unity.modules.physicscore2d@1.0.0 (location: C:\serenity_game\Library\PackageCache\com.unity.modules.physicscore2d)
+  Git packages:
+    com.umasteeringgroup.uma@https://github.com/umasteeringgroup/UMA.git?path=/UMAProject/Assets/UMA#v3.1f3 (location: C:\serenity_game\Library\PackageCache\com.umasteeringgroup.uma@6088bc83cd10)
+    com.github-glitchenzo.nugetforunity@https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity#v4.5.0 (location: C:\serenity_game\Library\PackageCache\com.github-glitchenzo.nugetforunity@b8a65750503c)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.02 seconds
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.6.4f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/serenity_game
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 4s582ms
+[1157/1526  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[1518/1526  2s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Game.Infrastructure.Editor.dll (+2 others)
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(23,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(24,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(53,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(54,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(39,77): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(39,26): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P91RealisticWorldBenchmarkBuilder.cs(97,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P91RealisticWorldBenchmarkBuilder.cs(97,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(37,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(122,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(122,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P3ReferenceSceneBuilder.cs(30,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P3ReferenceSceneBuilder.cs(313,52): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(208,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(306,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(101,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P94StoneAgeSettlementBuilder.cs(49,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P94StoneAgeSettlementBuilder.cs(50,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(34,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(44,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(60,26): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(59,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(107,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(108,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(541,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(541,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(613,55): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(612,36): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(634,52): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(494,44): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+
+Assets\Game\Infrastructure\Editor\WM15FeedbackAuthoring.cs(12,21): warning UAC0005: AppDomain.GetAssemblies() in Unity may return already unloaded assemblies and result in errors or leaks. Use Unity APIs instead, such as 'CurrentAssemblies.GetLoadedAssemblies()' or 'TypeCache.GetTypesDerivedFrom()'.
+[1519/1526  2s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Game.Tests.dll (+2 others)
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(83,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(83,37): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(88,78): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(88,29): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Tests\Editor\P109IntegrationStabilizationTests.cs(21,77): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\Game\Tests\Editor\P109IntegrationStabilizationTests.cs(21,26): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\Game\Tests\Editor\P3ReferenceCampTests.cs(27,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+[1520/1526  0s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Game.Infrastructure.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Game.Infrastructure.Editor.dll, with 146 defines and 322 references
+
+processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+1 processor(s) skipped this assembly
+
+running Unity.Entities.CodeGen.EntitiesILPostProcessors
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+[1521/1526  0s] CopyFiles Library/ScriptAssemblies/Game.Infrastructure.Editor.pdb
+[1522/1526  0s] CopyFiles Library/ScriptAssemblies/Game.Infrastructure.Editor.dll
+[1523/1526  1s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Game.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Game.Tests.dll, with 146 defines and 312 references
+
+processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Entities.CodeGen.EntitiesILPostProcessors
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[1524/1526  0s] CopyFiles Library/ScriptAssemblies/Game.Tests.pdb
+[1525/1526  0s] CopyFiles Library/ScriptAssemblies/Game.Tests.dll
+*** Tundra build success (4.54 seconds), 9 items updated, 1526 evaluated
+Total cache size 267635433
+Total cache size after purge 267635433, took 00:00:00.8321746
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(23,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(24,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(53,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(54,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(39,77): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P109IntegrationStabilizer.cs(39,26): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P91RealisticWorldBenchmarkBuilder.cs(97,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P91RealisticWorldBenchmarkBuilder.cs(97,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(37,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(122,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P82NaturalRegionBuilder.cs(122,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P3ReferenceSceneBuilder.cs(30,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P3ReferenceSceneBuilder.cs(313,52): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(208,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P102ConnectedWorldBuilder.cs(306,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(101,31): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P94StoneAgeSettlementBuilder.cs(49,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P94StoneAgeSettlementBuilder.cs(50,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(34,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(44,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(60,26): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P95AtmosphereAndGlobalMapBuilder.cs(59,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(107,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(108,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(541,79): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(541,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(613,55): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(612,36): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Infrastructure\Editor\P92RealisticGameplayRegionBuilder.cs(634,52): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+Assets\Game\Infrastructure\Editor\P93PopulatedBiomeWorldBuilder.cs(494,44): warning CS0618: 'StaticEditorFlags.NavigationStatic' is obsolete: 'Enum member StaticEditorFlags.NavigationStatic has been deprecated. The precise selection of the objects is now done using NavMeshBuilder.CollectSources() and NavMeshBuildMarkup.'
+Assets\Game\Infrastructure\Editor\WM15FeedbackAuthoring.cs(12,21): warning UAC0005: AppDomain.GetAssemblies() in Unity may return already unloaded assemblies and result in errors or leaks. Use Unity APIs instead, such as 'CurrentAssemblies.GetLoadedAssemblies()' or 'TypeCache.GetTypesDerivedFrom()'.
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(83,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(83,37): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(88,78): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Tests\Editor\Tier2EcsTests.cs(88,29): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Tests\Editor\P109IntegrationStabilizationTests.cs(21,77): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\Game\Tests\Editor\P109IntegrationStabilizationTests.cs(21,26): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\Game\Tests\Editor\P3ReferenceCampTests.cs(27,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+AssetDatabase: script compilation time: 6.356023s
+Begin MonoManager ReloadAssembly
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly reference Packages/com.unity.entities/Unity.Scenes.Editor/Internals/Properties/Unity.Properties.Internals.asmref has no target assembly definition
+'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 2.71 ms, found 5 plugins.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+TypeManager.Initialize took: 170ms
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  2.425 seconds
+Domain Reload Profiling: 5192ms
+	BeginReloadAssembly (280ms)
+		DisableScriptedObjects (28ms)
+		CreateAndSetChildDomain (52ms)
+	RebuildCommonClasses (9ms)
+	RebuildNativeTypeToScriptingClass (16ms)
+	initialDomainReloadingComplete (105ms)
+	LoadAllAssembliesAndSetupDomain (2355ms)
+		LoadAssemblies (1674ms)
+		TypeCache.Refresh (323ms)
+			TypeCache.ScanAssembly (301ms)
+		AnalyzeDomain (114ms)
+			BuildScriptInfoCaches (101ms)
+			ResolveRequiredComponents (10ms)
+	FinalizeReload (2428ms)
+		SetupLoadedEditorAssemblies (0ms)
+			LogAssemblyErrors (3ms)
+			InitializePlatformSupportModulesInManaged (3ms)
+			BeforeProcessingInitializeOnLoad (141ms)
+			ProcessInitializeOnLoadAttributes (914ms)
+			ProcessInitializeOnLoadMethodAttributes (265ms)
+			AfterProcessingInitializeOnLoad (8ms)
+			EditorAssembliesLoaded (5ms)
+		AwakeInstancesAfterBackupRestoration (36ms)
+Starting new worker id: 0 with log in C:/serenity_game/Logs/AssetImportWorkerHW0.log
+Refreshing native plugins compatible for Editor in 2.55 ms, found 5 plugins.
+
+Asset Pipeline Refresh (id=3f3f8a78fda8d504c8e3194ffb9f37b3): Total: 13.903 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	(Values over 0.05ms)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=3825 ms
+		Asset DB Callback time: managed=575 ms, native=31 ms
+		Scripting: domain reloads=1, domain reload time=2886 ms, compile time=6359 ms, other=224 ms
+		Project Asset Count: scripts=3498, non-scripts=15911
+		Asset File Changes: new=0, changed=2, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 26.073ms
+	ApplyChangesToAssetFolders: 0.795ms
+	Scan: 472.530ms
+	Collect global state as custom dependencies: 19.552ms
+	OnSourceAssetsModified: 0.648ms
+	CategorizeScriptCompilationAssets: 68.560ms
+	ProcessAssetsWithTransientArtifactChanges: 160.255ms
+	CategorizeAssets: 236.483ms
+	CompileScripts: 6359.037ms
+	ImportOutOfDateAssets: 2471.169ms (2443.375ms without children)
+		ReloadNativeAssets: 0.059ms
+		UnloadImportedAssets: 4.831ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 4.265ms
+		ImportSchedulerStart: 18.630ms
+	PostProcessAllAssets: 578.192ms
+		XRBuildSystem.XRAssetImported 1.222ms
+		VCAutoAddAssetPostprocess 0.845ms
+		PostProcessCallbackCreateDeferredMaterials 0.062ms
+		MonoPostProcessAllAssets: 575.383ms
+			AssetPostprocessor.OnPostprocessAllAssets 420.125ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 50.789ms
+			ImportProcessor.OnPostprocessAllAssets 26.826ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 16.114ms
+			SyncVS.PostprocessSyncProject 6.213ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 4.867ms
+			SceneAssetPostProcessor.OnPostprocessAllAssets 4.225ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 4.060ms
+			NugetAssetPostprocessor.OnPostprocessAllAssets 3.706ms
+			AssetChangedListener.OnPostprocessAllAssets 2.636ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 2.076ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.635ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 1.577ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 1.292ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.119ms
+			EditModeScopePostprocessor.OnPostprocessAllAssets 0.858ms
+			MaterialPostprocessor.OnPostprocessAllAssets 0.766ms
+			UMAPluginDocumentationImports.OnPostprocessAllAssets 0.762ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.616ms
+			PostProcessor.OnPostprocessAllAssets 0.602ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.580ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.510ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.487ms
+			CinemachineSettings.OnPostprocessAllAssets 0.446ms
+			UMAResourceReuseImportChanges.OnPostprocessAllAssets 0.442ms
+			ShaderReflectionAssetPostProcessor.OnPostprocessAllAssets 0.437ms
+			ShaderPackagerPostProcessor.OnPostprocessAllAssets 0.392ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 0.386ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.343ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.329ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.320ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.312ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.304ms
+			AssetEvents.OnPostprocessAllAssets 0.277ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.253ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.214ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.211ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.206ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.193ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.187ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.169ms
+			ThemePostprocessor.OnPostprocessAllAssets 0.151ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.099ms
+	PostAssetChangesProfiler: 5.018ms
+	UnloadStreamsBegin: 2.633ms
+	PersistCurrentRevisions: 1.401ms
+	GenerateScriptTypeHashes: 5.271ms
+	GenerateScriptTypeSerializationHashes: 11.064ms
+	Untracked: 3493.513ms
+
+Application.AssetDatabase Initial Refresh End
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+Scanning for USB devices : 5.383ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Serenity
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: [ (91) to any virtual key
+GetVirtualKey: Could not map char: ] (93) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Unloading 63 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 10183 unused Assets / (8.5 MB). Loaded Objects now: 11216.
+Memory consumption went from 0.69 GB to 0.68 GB.
+Total: 19.618800 ms (FindLiveObjects: 0.931100 ms CreateObjectMapping: 0.630500 ms MarkObjects: 10.276700 ms  DeleteObjects: 7.393600 ms)
+
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: [ (91) to any virtual key
+GetVirtualKey: Could not map char: ] (93) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Asset Pipeline Refresh (id=01814b8ba0715a346888bbab113bda0e): Total: 0.192 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=24e4b4f29a99eee478c9ce5dfdd33648): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=5f3f96cecdb7d7a49b59c4e900cb9905): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=14ee7ccec0433964db705510536ee379): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=54df82fca40f3c046b15e0025d267975): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=5790f6870fcafbb45a12a722035c0fa3): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=9af8a63f1ef844a408f14a16eb1a8a96): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=7c50fe5bd2f74e34d8bd6c6c3a906556): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=be177bc685b0c0146b2e045a645502f0): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=4249b840d9b711741890e28643c6f56f): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=fb97c68bf5bebe449923bf6e93f46595): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Worker ready: AssetImportWorkerHW0 0
+Asset Pipeline Refresh (id=92a3372cbe80e6148a53eccd68826125): Total: 0.015 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=269e78b1d0fe75041b9d70ff9fffe6f5): Total: 0.016 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=935e4e68a2946f44d8a6ed2c88d92393): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=c25c29bd14738374583dd919794a3960): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=a0516bf16ea9c3f40987e96a5057735f): Total: 0.015 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=8894a4a965b23424fa16c5c6adbdb8ca): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: a277e2469218f7e4dbdfd4508a4ac6e9 - Path: Assets/Game/Art/WM15Replacement/Views/fishing_rod.prefab' with importer (PrefabImporter)
+Imported 'GUID: a277e2469218f7e4dbdfd4508a4ac6e9' -> (Import Result ID: 'b42926b5e6f2cf213449dbd95e2ffbdc') in 0.011 seconds [static dependencies only]. Details - ImportResultOutputID=930abe7b1d7d6225c798f7781657a77d DependenciesID=145febb87076e6541e4b14cf27e45548 StaticDependenciesID=f98088e2cdebe5f9373c126644be7406 
+Refreshing native plugins compatible for Editor in 2.10 ms, found 5 plugins.
+Asset Pipeline Refresh (id=3696d3befe7824443a41da9b988a0cc8): Total: 0.106 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=152bd9450465fea4d8779ba236937899): Total: 0.011 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=2641a76a4673bdf42a1611b9b48b0b71): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=aee40559050033e4ebeb11b12e9c0c41): Total: 0.011 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=7b47bba394f516d4a8d13976df25d9ed): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+PIER_DECK TFP_Wooden_Pier_01A_LOD0 0,2420918 bounds=(2.50, 0.34, 9.00)
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Game.Infrastructure.Editor.WM15PropAuthoring:Model (string,string,UnityEngine.Vector3,int,bool,bool,bool) (at Assets/Game/Infrastructure/Editor/WM15PropAuthoring.cs:143)
+Game.Infrastructure.Editor.WM15PropAuthoring:Generate () (at Assets/Game/Infrastructure/Editor/WM15PropAuthoring.cs:49)
+
+(Filename: Assets/Game/Infrastructure/Editor/WM15PropAuthoring.cs Line: 143)
+
+Asset Pipeline Refresh (id=640337c776c2a9a479d10197efddcb9e): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=e5488b1ac1e195a4894f7404bc3f3409): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=5a7361463e173054fa0035bcb75cb5c6): Total: 0.008 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=49c2284f4e0b9d84992a2bec080f00c1): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=7dc9db57222614a4fac61b04c2c68fd6): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=658aad640a2c6bc4caa9893cad33c057): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 2b65ceac31a9c904297b38bd2c923c9e - Path: Assets/Game/Art/WM15Replacement/Views/drying_frame.prefab' with importer (PrefabImporter)
+Imported 'GUID: 2b65ceac31a9c904297b38bd2c923c9e' -> (Import Result ID: 'd6f5d59dfb91b08e776b6deb0f4d32bf') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=2137de3309fefea020ac0f13a8a9f000 DependenciesID=31c01a61253ec10de39a62b597e2c2e6 StaticDependenciesID=3f41092af87a5ff549fb744abb0925aa 
+Importing 'GUID: 3a9661f7f2f402a41b340d52a167579f - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_DryingRack.prefab' with importer (PrefabImporter)
+Imported 'GUID: 3a9661f7f2f402a41b340d52a167579f' -> (Import Result ID: 'b0bcae82eed5200b48d17a84e25fbbdc') in 0.005 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=75d3145545e2798b4f4f51971d3dda56 DependenciesID=0ebdfaedafe9951c45c3795a89b07251 StaticDependenciesID=cecffffbf74d389aa4f1a6e86e2c233c 
+Refreshing native plugins compatible for Editor in 2.58 ms, found 5 plugins.
+Asset Pipeline Refresh (id=551a4b6c92c98a64fa6407a27238ff5a): Total: 0.094 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=62f0fd97e74f62441bcb2858e74e7aa2): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=019541a430a4bc1448f3a3480f4b9433): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 83483604ef6af3a47ba2ac244cbde6d4 - Path: Assets/Game/Art/WM15Replacement/Views/fire.prefab' with importer (PrefabImporter)
+Imported 'GUID: 83483604ef6af3a47ba2ac244cbde6d4' -> (Import Result ID: 'd91a074a222126f9c9d6c889d58b1afe') in 0.007 seconds [static dependencies only]. Details - ImportResultOutputID=1ef432a7c0f936ebe12ea454d1de46a5 DependenciesID=d4b22176f88cd025c6f62c66094c0f0d StaticDependenciesID=948f02d28c36886b5f4312beb48a2d76 
+Refreshing native plugins compatible for Editor in 2.06 ms, found 5 plugins.
+Asset Pipeline Refresh (id=cfd3752276fc6d04cb37081186fd7150): Total: 0.097 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=d3a954f385e662343888f7fc93d31d48): Total: 0.010 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=d06050a3f69a4dd4fa19b3cad3157372): Total: 0.009 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 7020f5ff66a2bff4fad51f37126f7697 - Path: Assets/Game/Art/WM15Replacement/Views/butterfly.prefab' with importer (PrefabImporter)
+Imported 'GUID: 7020f5ff66a2bff4fad51f37126f7697' -> (Import Result ID: '0cca2ca039c3bae618fa41300cc660cd') in 0.007 seconds [static dependencies only]. Details - ImportResultOutputID=b8b8d965fcb568cc2432b236ba195759 DependenciesID=b51cc31c0aacd13524eaba1843f6caa1 StaticDependenciesID=9128ecc11349754d0ba2871cd8dfab92 
+Refreshing native plugins compatible for Editor in 2.15 ms, found 5 plugins.
+Asset Pipeline Refresh (id=4b08f602ede34684b8a8d0736f58d54f): Total: 0.088 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=c320c0c0630104842beecef224c6b762): Total: 0.012 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=c8834ee395a0ff54f9728de571654c46): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=ac03392cfd89dcf429ad291afd992e25): Total: 0.011 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/1b1358db91dc38e439ff33a57805ecde'
+	Deserialize:            0.426 ms
+	Integration:            1.135 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.013 ms
+	Total Operation Time:   1.575 ms
+Importing 'GUID: 275e52a014cc0b04e9d700644f4e316a - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveShelter.prefab' with importer (PrefabImporter)
+Imported 'GUID: 275e52a014cc0b04e9d700644f4e316a' -> (Import Result ID: '5aa9cbd32615de59a8091c2c9e7ca91b') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=2b462e217c177ff5da000bcea2a7ff5b DependenciesID=e6e02cc662089b8e381f7e922784eb18 StaticDependenciesID=e960faa226cf71cb85ccd1411d428eee 
+Refreshing native plugins compatible for Editor in 2.11 ms, found 5 plugins.
+Asset Pipeline Refresh (id=66819c577ba8f804aa39c6737a756f42): Total: 0.079 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/36634d994b613504bb7a61ccc91646fa'
+	Deserialize:            0.675 ms
+	Integration:            0.903 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.025 ms
+	Total Operation Time:   1.605 ms
+Importing 'GUID: cc4a74738936e194397cd42db16388d6 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_StoneAgeHut.prefab' with importer (PrefabImporter)
+Imported 'GUID: cc4a74738936e194397cd42db16388d6' -> (Import Result ID: '0906f087a98064ebacb6f630d980306d') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=20017a7b6e18209568bbbe43fcbaa646 DependenciesID=9b6dec4e9eb00ec7b93c667f9c3208fc StaticDependenciesID=ac2e89070add21a973fb1be605388f1c 
+Refreshing native plugins compatible for Editor in 2.15 ms, found 5 plugins.
+Asset Pipeline Refresh (id=622a318514c87c0469556b2bc2b253b3): Total: 0.082 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/463b9ebfe8e4ea54a8e574f1efab9bd5'
+	Deserialize:            0.650 ms
+	Integration:            0.436 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.013 ms
+	Total Operation Time:   1.100 ms
+Importing 'GUID: 75c5f853e798d6443a2b565c786558e2 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_BuildableCampfire.prefab' with importer (PrefabImporter)
+Imported 'GUID: 75c5f853e798d6443a2b565c786558e2' -> (Import Result ID: 'be72aec05a24e84e44e92a303c87206e') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=713d083d93a1d03d04c94cd7cef3edbd DependenciesID=c6a32d50c606f7debf21f8e446249a01 StaticDependenciesID=6d50656960668dd2867ec42de1dd3b72 
+Refreshing native plugins compatible for Editor in 2.35 ms, found 5 plugins.
+Asset Pipeline Refresh (id=f64273e5f0f9efc46bca093a0c678537): Total: 0.089 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/d797b353b7e4ceb4cadd50f9475c7839'
+	Deserialize:            0.691 ms
+	Integration:            0.571 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   1.279 ms
+Importing 'GUID: 095346f27eb45cf46be465533f056d48 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_StoneToolWorkshop.prefab' with importer (PrefabImporter)
+Imported 'GUID: 095346f27eb45cf46be465533f056d48' -> (Import Result ID: '3d150daf1d706e87b716ee86a4d0062b') in 0.005 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=a4d413628add0f03572c7035065a2e5d DependenciesID=a2a5317ef525ce8cf2c1fc18bc093780 StaticDependenciesID=ad83f851a60875576f331d00f7d6950c 
+Refreshing native plugins compatible for Editor in 2.70 ms, found 5 plugins.
+Asset Pipeline Refresh (id=af9ed1feef1d0064aadb8b2c2b2cbcff): Total: 0.093 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/e93b3d2acb82312448436d74e374f466'
+	Deserialize:            0.814 ms
+	Integration:            1.094 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.023 ms
+	Total Operation Time:   1.933 ms
+Importing 'GUID: e2f3d59f1c69bdf4bba99a481a49de05 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_ButcherStation.prefab' with importer (PrefabImporter)
+Imported 'GUID: e2f3d59f1c69bdf4bba99a481a49de05' -> (Import Result ID: 'd2bb004f9d8646dd87ca07f7562eb054') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=eed3f556ef1e5675678469253815ba83 DependenciesID=cae87a0453f7d4633ae667aa1f081045 StaticDependenciesID=4cdb2f26a30b473a0c26a85398fe480a 
+Refreshing native plugins compatible for Editor in 4.97 ms, found 5 plugins.
+Asset Pipeline Refresh (id=5e8ac810cbc1cb7408610acbb1032e5d): Total: 0.086 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/c714cb1f42a4cd3478a0fcc574d4c173'
+	Deserialize:            0.488 ms
+	Integration:            0.920 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.023 ms
+	Total Operation Time:   1.434 ms
+Importing 'GUID: 9fb32eb288756fc48970206371ce4635 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_HuntingCamp.prefab' with importer (PrefabImporter)
+Imported 'GUID: 9fb32eb288756fc48970206371ce4635' -> (Import Result ID: '3ebd5db26921b9cbdb9c75b21b8ea4ed') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=54bbc505968121ee7cc05118d4a083f8 DependenciesID=68144ad020250eae9c077cfb2f8c267f StaticDependenciesID=4814e517f19d35c579057bceccfc3815 
+Refreshing native plugins compatible for Editor in 2.23 ms, found 5 plugins.
+Asset Pipeline Refresh (id=f96a19ecbe6f1504187d1a88b67585a9): Total: 0.093 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/cda44ff93fdb79c4fa92f099874b1847'
+	Deserialize:            0.677 ms
+	Integration:            0.878 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.025 ms
+	Total Operation Time:   1.582 ms
+Importing 'GUID: 39023f37b66f3474798b8f8831493cbb - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_FoodStorage.prefab' with importer (PrefabImporter)
+Imported 'GUID: 39023f37b66f3474798b8f8831493cbb' -> (Import Result ID: '3aca2cf795d22cd1eaaf5bf14de661e2') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=20d14fa2847d13ea007e410a240d00d7 DependenciesID=306c3c0de72233d935bc2f36d211d050 StaticDependenciesID=7e9fb1c521a4ec6a6f6ff11e04fd3904 
+Refreshing native plugins compatible for Editor in 2.20 ms, found 5 plugins.
+Asset Pipeline Refresh (id=e4ecb341970f33f4aa4530466f95c7fa): Total: 0.092 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/ac92d05be05a85b40b03b86f41d78eee'
+	Deserialize:            1.051 ms
+	Integration:            0.568 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.032 ms
+	Total Operation Time:   1.653 ms
+Importing 'GUID: 3a9661f7f2f402a41b340d52a167579f - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_DryingRack.prefab' with importer (PrefabImporter)
+Imported 'GUID: 3a9661f7f2f402a41b340d52a167579f' -> (Import Result ID: 'd0604e66c9c1beca83b835ee42cf5ed6') in 0.005 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=180a582cdfc93b7a42afff42cd558068 DependenciesID=674806e37fbaeacdfa159623f2e2ef76 StaticDependenciesID=0d26fe58d57b83fc532fae83b6861cc1 
+Refreshing native plugins compatible for Editor in 2.19 ms, found 5 plugins.
+Asset Pipeline Refresh (id=17543dc2b3dfe064f8d811b8829ab2c0): Total: 0.100 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/772b33db28ce0994d9b390f31ac59ed7'
+	Deserialize:            0.339 ms
+	Integration:            0.342 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.009 ms
+	Total Operation Time:   0.691 ms
+Importing 'GUID: acd72aaca4d6ada409bdf98b0c4590b8 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_HideWorkshop.prefab' with importer (PrefabImporter)
+Imported 'GUID: acd72aaca4d6ada409bdf98b0c4590b8' -> (Import Result ID: 'b78459c3dd14267a482a349dc7eaaca8') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=b10d0c824e93471a56167e6542c1c9fb DependenciesID=25ee45dcbfc2c363d986ed952cff749e StaticDependenciesID=f59f38e37f03938e45f408e35d414aa3 
+Refreshing native plugins compatible for Editor in 2.23 ms, found 5 plugins.
+Asset Pipeline Refresh (id=c773bf7c4277d854d99f7ddc2cb9bf74): Total: 0.086 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/0c94ad61a14ff2f4f9670c03a182d008'
+	Deserialize:            2.118 ms
+	Integration:            1.996 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.026 ms
+	Total Operation Time:   4.142 ms
+Loaded scene 'Library/Unused/b01752455abef3e459aba3c37e0d2b75'
+	Deserialize:            0.611 ms
+	Integration:            0.352 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.032 ms
+	Total Operation Time:   0.996 ms
+Importing 'GUID: 275e52a014cc0b04e9d700644f4e316a - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveShelter.prefab' with importer (PrefabImporter)
+Imported 'GUID: 275e52a014cc0b04e9d700644f4e316a' -> (Import Result ID: 'd74d0a64bffff9f9a5332f53cef3d2e9') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=11a90e024530dccffb27091abfc2b0fb DependenciesID=8ba50ce14d2a013fc30215c563b72416 StaticDependenciesID=7afac42c8473f6f77550cb6bf8b02f6f 
+Refreshing native plugins compatible for Editor in 2.37 ms, found 5 plugins.
+Asset Pipeline Refresh (id=9ae3a9fb5f7ed894f913be37b3a7c156): Total: 0.091 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/4fb570b8423aff14ab7473bccce732a0'
+	Deserialize:            0.631 ms
+	Integration:            0.468 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   1.138 ms
+Importing 'GUID: df02b2216d3fffe4bb9d1964cfc0d903 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_ClanHouse.prefab' with importer (PrefabImporter)
+Imported 'GUID: df02b2216d3fffe4bb9d1964cfc0d903' -> (Import Result ID: 'c34ce5d41883e4e308e10e1ea14a9468') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=083c3143a1f242a4a3ef9eabee723d40 DependenciesID=2727489e7f4af24cbb38dc15cf29b81a StaticDependenciesID=58b1673fa8a55bc3d5cde219e6faa1e4 
+Refreshing native plugins compatible for Editor in 2.65 ms, found 5 plugins.
+Asset Pipeline Refresh (id=86627360935db6f42b94125f4d48240f): Total: 0.090 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/31cb26383d9fb9c41a64376eaf8afaa4'
+	Deserialize:            0.331 ms
+	Integration:            0.876 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.022 ms
+	Total Operation Time:   1.230 ms
+Importing 'GUID: 3b345b9d1dfd1f6488492c17972809bb - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_HealerHut.prefab' with importer (PrefabImporter)
+Imported 'GUID: 3b345b9d1dfd1f6488492c17972809bb' -> (Import Result ID: 'c8318d31ddbc09a7bdd613766644c6d0') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=9313511162669686047db9677a982cc3 DependenciesID=cb254f102385e04f1eef857e2d8219e4 StaticDependenciesID=00e48ec07bfe9a61f291e00a2212bd93 
+Refreshing native plugins compatible for Editor in 2.20 ms, found 5 plugins.
+Asset Pipeline Refresh (id=ecca012b5acbee944ab761221fcc5461): Total: 0.090 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/07d086027ea314b439fcd472fe09beac'
+	Deserialize:            0.595 ms
+	Integration:            0.399 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   1.012 ms
+Importing 'GUID: c241117bb9be3f04794fd3cd06aa2e27 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_Shrine.prefab' with importer (PrefabImporter)
+Imported 'GUID: c241117bb9be3f04794fd3cd06aa2e27' -> (Import Result ID: 'ae75ad0ada759d3a3462f37d06210ef2') in 0.005 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=268671e7b97961047a251d71dcd9d2ef DependenciesID=169bc86d47010697f683d754f8d75ff9 StaticDependenciesID=3ffadd683f1532d52aad8e8fdb4b39db 
+Refreshing native plugins compatible for Editor in 2.35 ms, found 5 plugins.
+Asset Pipeline Refresh (id=f9003860d686cc94b8520b745bfcbeb4): Total: 0.090 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/9f6825b50802a6f409fa6dba1da3a462'
+	Deserialize:            0.763 ms
+	Integration:            0.878 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.025 ms
+	Total Operation Time:   1.669 ms
+Importing 'GUID: 190f4e6a1e6f3b9489ca093968075fc3 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_ChiefHut.prefab' with importer (PrefabImporter)
+Imported 'GUID: 190f4e6a1e6f3b9489ca093968075fc3' -> (Import Result ID: '97b56e75eb0a50267ea51485a374bc8a') in 0.004 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=d0f0e169318f9189086c4b3006bb7765 DependenciesID=f49dd1efdc629aa5c1599bd62c730c30 StaticDependenciesID=218dc0b106921d0140d98d44b108c9bd 
+Refreshing native plugins compatible for Editor in 2.39 ms, found 5 plugins.
+Asset Pipeline Refresh (id=08dd9ad94d96c1f43a2839969038ab16): Total: 0.082 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/4d040c55e56c5de438414959be216485'
+	Deserialize:            0.325 ms
+	Integration:            0.900 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   1.244 ms
+Importing 'GUID: afc70c37269e99048ab9cd9e77b023e6 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_MeetingArea.prefab' with importer (PrefabImporter)
+Imported 'GUID: afc70c37269e99048ab9cd9e77b023e6' -> (Import Result ID: '24ed919f2b81ec9388bc71ee431f454e') in 0.002 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=a7e88b4c4e4d96bfb5cd21ff19eaec49 DependenciesID=0f6d712d8ae384fe45f047c404370e1a StaticDependenciesID=52732935edbfb30a1c498d6d1bc62d5b 
+Refreshing native plugins compatible for Editor in 2.20 ms, found 5 plugins.
+Asset Pipeline Refresh (id=d6a159f2b10540c4f8f84b992a22026a): Total: 0.086 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/58c04db3ae56f39439f18ba7f037abbc'
+	Deserialize:            0.337 ms
+	Integration:            0.427 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.020 ms
+	Total Operation Time:   0.786 ms
+Importing 'GUID: 207e54869525ac641a0654dd230f9395 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_TrainingGround.prefab' with importer (PrefabImporter)
+Imported 'GUID: 207e54869525ac641a0654dd230f9395' -> (Import Result ID: '6a30c5b29b393b24429e54d6adf34bae') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=5058efe3057e5205dd8abf8442910160 DependenciesID=2fb57003ac2edadb020b1ae883ac5733 StaticDependenciesID=ff99299383449ecdfe4cbb37b828684c 
+Refreshing native plugins compatible for Editor in 3.91 ms, found 5 plugins.
+Asset Pipeline Refresh (id=bf55a692f43fdf14c8cd880f63db515a): Total: 0.089 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/8f5380c3260dec3468ad46e5d03e85ec'
+	Deserialize:            0.689 ms
+	Integration:            0.419 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.015 ms
+	Total Operation Time:   1.123 ms
+Importing 'GUID: 2a63c8154b026c04d8f7716a25a6d5b3 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_FishingCamp.prefab' with importer (PrefabImporter)
+Imported 'GUID: 2a63c8154b026c04d8f7716a25a6d5b3' -> (Import Result ID: '1fad7e9a51e1d96762373acb84246815') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=ac18978b2a70ca272a3582c9ad568423 DependenciesID=2d7f0cee4001c0f36a0b54e8a62beef0 StaticDependenciesID=0570feb9bb5774cf8bd13a0a02eb3ee5 
+Refreshing native plugins compatible for Editor in 3.68 ms, found 5 plugins.
+Asset Pipeline Refresh (id=adb401881a7965c43a4ab343ee9619bc): Total: 0.094 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/2428a570f6a94544a8371b8baf74433a'
+	Deserialize:            0.724 ms
+	Integration:            0.447 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   1.209 ms
+Importing 'GUID: 44fab226ded713a44875b6a281049089 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_GatheringArea.prefab' with importer (PrefabImporter)
+Imported 'GUID: 44fab226ded713a44875b6a281049089' -> (Import Result ID: '5d817c32155c94cb4d2f6be754d4da61') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=9b9421f6df88efb190e6aace7bafd527 DependenciesID=84f7847373445f45c39aec83701b4101 StaticDependenciesID=28337cfadfaf72fc3317c2faad721bf7 
+Refreshing native plugins compatible for Editor in 3.36 ms, found 5 plugins.
+Asset Pipeline Refresh (id=ddb8359c99a8a4046938f903b0cecb7d): Total: 0.086 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/5758e0fac9209ac449e3755a5079a53b'
+	Deserialize:            0.830 ms
+	Integration:            0.443 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.028 ms
+	Total Operation Time:   1.302 ms
+Importing 'GUID: 18ccd03fa58636841b0edf2dae7ea790 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_PrimitiveGarden.prefab' with importer (PrefabImporter)
+Imported 'GUID: 18ccd03fa58636841b0edf2dae7ea790' -> (Import Result ID: 'e4f36c88fcfd4eb1c8fdfec1e263db81') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=a382465fe233e7036db3ceb55780ed71 DependenciesID=c2485fdab38d9791fc6400493f22ce21 StaticDependenciesID=58df0c36d7c936d5d1ffc6a525ecf28c 
+Refreshing native plugins compatible for Editor in 2.16 ms, found 5 plugins.
+Asset Pipeline Refresh (id=ff0c4b7ab83cdea49bc41ab670a3a5d2): Total: 0.087 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/a1b5b1d7ea9d0aa46a3626fd55a2d8c1'
+	Deserialize:            0.591 ms
+	Integration:            0.463 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.030 ms
+	Total Operation Time:   1.087 ms
+Importing 'GUID: 947385125b58c1c43a20130a017a5010 - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_Well.prefab' with importer (PrefabImporter)
+Imported 'GUID: 947385125b58c1c43a20130a017a5010' -> (Import Result ID: '823625286d126de4ce9276698b688515') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=0b517909f16df139bf1cee33753b29b3 DependenciesID=e5f36e96d3d14b11669586f2b7dfc6eb StaticDependenciesID=918dfad9dbb1fbb59a432e3df4e65f6f 
+Refreshing native plugins compatible for Editor in 2.11 ms, found 5 plugins.
+Asset Pipeline Refresh (id=a2a9e2a30676089479bcd902b331215e): Total: 0.092 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/c4ac9c15b9d10c542950397943c0adee'
+	Deserialize:            0.827 ms
+	Integration:            0.787 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.034 ms
+	Total Operation Time:   1.652 ms
+Loaded scene 'Library/Unused/1dc0660ac5d1f05478ecdadba0833d9a'
+	Deserialize:            0.312 ms
+	Integration:            0.387 ms
+	Integration of assets:  0.001 ms
+	Thread Wait Time:       0.029 ms
+	Total Operation Time:   0.729 ms
+Loaded scene 'Library/Unused/6ca9227384a22c440a477ff01a93f309'
+	Deserialize:            0.534 ms
+	Integration:            0.331 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.024 ms
+	Total Operation Time:   0.890 ms
+Importing 'GUID: 42e6eedbf0b6e6949b28bb6810a845fa - Path: Assets/Game/Art/Prefabs/Buildings/Serenity_Watchtower.prefab' with importer (PrefabImporter)
+Imported 'GUID: 42e6eedbf0b6e6949b28bb6810a845fa' -> (Import Result ID: 'dd7a3d698f443049ed5cd9492ffa76a2') in 0.003 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=d901cce00152a8f6494686be0bac93f0 DependenciesID=17b63c8cff3df76d399025025ccb9576 StaticDependenciesID=3e66f8703f88b89cf21a69ef868327cc 
+Refreshing native plugins compatible for Editor in 4.03 ms, found 5 plugins.
+Asset Pipeline Refresh (id=2dc6b09cfec6fe84e90e7c22094af497): Total: 0.092 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Loaded scene 'Library/Unused/21adbdb821a7a9c48be8643eeb00b7f5'
+	Deserialize:            0.868 ms
+	Integration:            0.346 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.033 ms
+	Total Operation Time:   1.250 ms
+Importing 'GUID: 00dbca789cde9d54283f28b2815fc3b1 - Path: Assets/Game/Art/WM15Replacement/Materials/PolygonNatureBiomesMeadow_Mat_01_c6030e49.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 00dbca789cde9d54283f28b2815fc3b1' -> (Import Result ID: '8a5aa0716f86874d58524ab4570c654f') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=8e89b4dd0a414f5558809b2f067a6967 DependenciesID=321571f4ae6bc9f6f6aeda7d6f5604df StaticDependenciesID=e694bff40c417b9c8590c803658fb4e5 
+Importing 'GUID: 50910e1b396b17c49a296c7b9091d49a - Path: Assets/Game/Art/WM15Replacement/Materials/Generic_Circle_Multiply_01_19c73fd3.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 50910e1b396b17c49a296c7b9091d49a' -> (Import Result ID: '99c05252374262659ec7c147a1ac7444') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=b20aaf304d514b13891f9691e880a861 DependenciesID=00b52414a851a5ed08c0a93fcded3bba StaticDependenciesID=28e292bae94f97ea1f430fe647b63738 
+Importing 'GUID: 71657c25762664647891d3905312a06f - Path: Assets/Game/Art/WM15Replacement/Materials/Ripple_d1ca61a0.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 71657c25762664647891d3905312a06f' -> (Import Result ID: 'e3c2c2bbe746cd4ca200ccbeb8c173e9') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=6805a4a3b1f2783567c2157a4956187e DependenciesID=59fb47924150dd94a0a589ecb29e4732 StaticDependenciesID=cb14f14b662d767fd37c61283f638908 
+Importing 'GUID: d11c460e35b3e654985b719cb8fc50d7 - Path: Assets/Game/Art/WM15Replacement/Materials/Circle_FX_c6d899a9.mat' with importer (NativeFormatImporter)
+Imported 'GUID: d11c460e35b3e654985b719cb8fc50d7' -> (Import Result ID: '715cc71b4419fa036091770201c60eb5') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=74570c8d3e2f44688bfe7eccb712aaf1 DependenciesID=f8de647ee80988db3ee28b9826218814 StaticDependenciesID=befb1aa20512ab9923ea5f139e56a28c 
+Importing 'GUID: 3245273770ae707449dba6df86635e72 - Path: Assets/Game/Art/WM15Replacement/Materials/NatureGradient_MAIN_cb832667.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 3245273770ae707449dba6df86635e72' -> (Import Result ID: 'b678bb6d237d10d29aa58faed1cab4e1') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=0682c55b0fe0430d716e10994809e128 DependenciesID=657e16fb6ad65a3ab1a8971bd9d78a9d StaticDependenciesID=950fb2c7aec5914417833108707592f4 
+Importing 'GUID: c3ca736ff0563154b9c6d08b899a6214 - Path: Assets/Game/Art/WM15Replacement/Materials/LP_TropicalCity_MAIN_6319ec45.mat' with importer (NativeFormatImporter)
+Imported 'GUID: c3ca736ff0563154b9c6d08b899a6214' -> (Import Result ID: 'f7b8a070d184677fdf30e2b415e7b9d4') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=01bc73785a9c5e5fa974208515fcd483 DependenciesID=5b2a06454897b8c363c353fb69861e88 StaticDependenciesID=eb0736bc23e5b110fd77dade57d72e84 
+Importing 'GUID: 84b9ac9f05804664d96cf9bd44c71a4c - Path: Assets/Game/Art/WM15Replacement/Materials/TFP_Atlas_1A_8947ea2c.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 84b9ac9f05804664d96cf9bd44c71a4c' -> (Import Result ID: '8f27868cbcdefbb817e420fc61bf3270') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=4a01059d440adb8c0a4135723afb87ea DependenciesID=1b16e686887306793a18e964266bb044 StaticDependenciesID=803da170b4116c547f47af8450a2f6b8 
+Importing 'GUID: 56194ef0ff93c8f44aa769261ebb1d01 - Path: Assets/Game/Art/WM15Replacement/Materials/M_Building_af19245b.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 56194ef0ff93c8f44aa769261ebb1d01' -> (Import Result ID: '2cc28ad8ff0b4521c365850a63ee6869') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=77937d8661b55610be6dc4144e624b43 DependenciesID=cdafea669a8ae4b34d12f0eb60caa52e StaticDependenciesID=fa2420cdd0493261345eb675716ee233 
+Importing 'GUID: 86916d3145387bb4baaf9f0f3817a5e5 - Path: Assets/Game/Art/WM15Replacement/Materials/Generic_01_A_2a95f9ff.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 86916d3145387bb4baaf9f0f3817a5e5' -> (Import Result ID: '75598c84392826c878eddc9e539b8447') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=1a033399641d9d4fd76492e5bb05c49a DependenciesID=9a35525248e7d89392c2217bae9a4f3d StaticDependenciesID=12367388e545bb5cc1a4286e73dd4f60 
+Importing 'GUID: a6a63f7d0f4bf0e4c926adc0294af3d0 - Path: Assets/Game/Art/WM15Replacement/Materials/Leaves_e1a4449c.mat' with importer (NativeFormatImporter)
+Imported 'GUID: a6a63f7d0f4bf0e4c926adc0294af3d0' -> (Import Result ID: '3b7a2c9f898eb77eb094d540aa3f13c2') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=d69c46d052c01ffb6d5360dfa146ac28 DependenciesID=715299e96199418873ef93be524fc10a StaticDependenciesID=fab961505ec1ba17758ba2302ebf5ed4 
+Importing 'GUID: 384923f649e77714e9adc1eaa479c400 - Path: Assets/Game/Art/WM15Replacement/Materials/Snow_1_7bc5da91.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 384923f649e77714e9adc1eaa479c400' -> (Import Result ID: 'dcc2bab5d268c084e2bba1ad0d23b954') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=ccfa9a816ad4b16925a12b2254b856b5 DependenciesID=4689bf758a4dd15ef739569ca93bb8a6 StaticDependenciesID=d6923e8e1930006692eaa7a5de7978bb 
+Importing 'GUID: e864e4b36bcb5ca4687663180d70b604 - Path: Assets/Game/Art/WM15Replacement/Materials/PolygonNature_Tree_Trunk_01_9815abc3.mat' with importer (NativeFormatImporter)
+Imported 'GUID: e864e4b36bcb5ca4687663180d70b604' -> (Import Result ID: '7a161c344527a364063eaedd675880a1') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=b9a6e515c3c7d0d94b6e4c431bca1883 DependenciesID=18c2970f05d3168bcaffa28d5089ffaf StaticDependenciesID=05a9e83f9d86c7ad7ba663f549222b8d 
+Importing 'GUID: b948209e6fba13642a002c2f9ac4e438 - Path: Assets/Game/Art/WM15Replacement/Materials/Rain_1bae13bf.mat' with importer (NativeFormatImporter)
+Imported 'GUID: b948209e6fba13642a002c2f9ac4e438' -> (Import Result ID: '28e9f0ae9b665efddbd2113dd241b12f') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=29ffdf4cc7220708ba0140fa6173aaad DependenciesID=722500ec926375b13811859cfdb1dd2b StaticDependenciesID=dc145967e2efd151a3a2d4eff8d15315 
+Importing 'GUID: d9c443e8c6b3171419bc1f58278006dd - Path: Assets/Game/Art/WM15Replacement/Materials/LowPolyFarm_MAIN_4653e749.mat' with importer (NativeFormatImporter)
+Imported 'GUID: d9c443e8c6b3171419bc1f58278006dd' -> (Import Result ID: '669e288ad706a3cc9c40e6cf9de7b435') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=dd1cc4b92b9505d96e6c9405934e8987 DependenciesID=3801e2840064f25fc6eebc8044f8909b StaticDependenciesID=821be42a39e76b3cab599728a12b4582 
+Importing 'GUID: 6a29e6adb06277f42be916b20709ff40 - Path: Assets/Game/Art/WM15Replacement/Materials/Fire_c86a8312.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 6a29e6adb06277f42be916b20709ff40' -> (Import Result ID: '785977af7d8ef0032d331e435b734418') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=a02fe8ee01c14666ce508ec8356c928f DependenciesID=4bfc8b5ef9973db7dd4648eb96af6488 StaticDependenciesID=74beede543d69eb23ac72b64db311386 
+Importing 'GUID: da070f4a7ff71a64f91dff8f57833769 - Path: Assets/Game/Art/WM15Replacement/Materials/PT_Rocks_mat_93415edd.mat' with importer (NativeFormatImporter)
+Imported 'GUID: da070f4a7ff71a64f91dff8f57833769' -> (Import Result ID: '902712ec8a9e24ebb23f86506257d090') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=6d3e7a14e944072fed4ea6064ae5a7e9 DependenciesID=64d88e1e817ced0d56f89476e76f05b4 StaticDependenciesID=643ba7c8163f282582b1e2dd008fb0cf 
+Importing 'GUID: cbcd72457bc15cb41977e3f0d33d1502 - Path: Assets/Game/Art/WM15Replacement/Materials/M_BuildingT_624f616f.mat' with importer (NativeFormatImporter)
+Imported 'GUID: cbcd72457bc15cb41977e3f0d33d1502' -> (Import Result ID: '262fd57ba64613532122eded44795f68') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=0393d9ae0ff66ce72909caf8b2ff63f2 DependenciesID=886186d5e2c7b36f6c6329fe83e83822 StaticDependenciesID=8d0795fb565c6131bfa4d4c8ef4ec77f 
+Importing 'GUID: acedb700d3d27c4418fd077945030ca0 - Path: Assets/Game/Art/WM15Replacement/Materials/Storm_108bcdf1.mat' with importer (NativeFormatImporter)
+Imported 'GUID: acedb700d3d27c4418fd077945030ca0' -> (Import Result ID: 'bd83959416f37b3ced163d31e8633984') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=ba13776db2fab4d33c1e988dabd2ab66 DependenciesID=625afcc0a63d49fbb459e6bf21022c77 StaticDependenciesID=d67ce12b342f9110b0cfbe7647d2621a 
+Importing 'GUID: 8e0535fcdaa97694e9062737d1834519 - Path: Assets/Game/Art/WM15Replacement/Materials/Butter_046cd32e.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 8e0535fcdaa97694e9062737d1834519' -> (Import Result ID: '4d35c037cf57e778b649e78801dd7ec4') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=c75b031fb251318dc3e7f0ce3c0ecff3 DependenciesID=ed5955bdb793f2b39da076acd72f3117 StaticDependenciesID=fbd3608d5da5c5ac9c0013a143779095 
+Importing 'GUID: 0f6beb88a6247ef47827a310c07fed2b - Path: Assets/Game/Art/WM15Replacement/Materials/Dungeons_MAIN_700317b1.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 0f6beb88a6247ef47827a310c07fed2b' -> (Import Result ID: '4cb1d06603d840564beed1bde0b43020') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=839e663c75ea2872939bc10e9754cf58 DependenciesID=b78ba0e00a0069b06990dbd0698e53bf StaticDependenciesID=d928bf7752432c186216b0f616e84320 
+Importing 'GUID: 577772a9093db0e47917c664cde4fe44 - Path: Assets/Game/Resources/World/WorldProps.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 577772a9093db0e47917c664cde4fe44' -> (Import Result ID: '410be3341f9672467d3c239fca16f121') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=8c9671921b9ed601aea99c6ae895ba6d DependenciesID=eba163007fa8a3c3a80938674bd8cbdf StaticDependenciesID=125950a7a262275fe555ded3f70555e9 
+Refreshing native plugins compatible for Editor in 2.39 ms, found 5 plugins.
+Asset Pipeline Refresh (id=179cad0d8dcd4dd46b621eaf4efb5157): Total: 0.131 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+GPU Resident Drawer created.
+WM15_PROPS_AUTHORED entries=63
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Game.Infrastructure.Editor.WM15PropAuthoring:Generate () (at Assets/Game/Infrastructure/Editor/WM15PropAuthoring.cs:79)
+
+(Filename: Assets/Game/Infrastructure/Editor/WM15PropAuthoring.cs Line: 79)
+
+Batchmode quit successfully invoked - shutting down!
+Importing 'GUID: 00000000000000009000000000000000 - Path: ProjectSettings/QualitySettings.asset' with importer (LibraryAssetImporter)
+Imported 'GUID: 00000000000000009000000000000000' -> (Import Result ID: '8151b601d05d3e12de314c2aa1f82962') in 0.004 seconds [static dependencies only]. Details - ImportResultOutputID=2a108b3da874f726c62fbe5f12be4a8a DependenciesID=6180c49ef29638684367d2893c04e070 StaticDependenciesID=5b19720d9149525484b40148944c8e26 
+Refreshing native plugins compatible for Editor in 2.03 ms, found 5 plugins.
+Asset Pipeline Refresh (id=dbd9cdd699996f54db667c229de4a690): Total: 0.039 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+GPU Resident Drawer disposed.
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-Lenovo-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-Lenovo channel disconnected successfully.
+Lingering sessions upon destruction of worker manager
+Unity Data Store service was successfully shut down
+UDS shutting down local client system
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Exiting batchmode successfully now!
+[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 0

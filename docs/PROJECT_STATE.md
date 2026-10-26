@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## WM15 replacement assets — implementation and focused validation (2026-10-26)
+
+Replaced active primitive resource piles, carried loads, fish, rod, pier deck, fallback rock/ore views,
+crop soil/trough, construction stages and selected craft/particle effects using existing local assets.
+Admitted 52 source files with remapped GUIDs from downloaded nested packages; generated 37 clean views
+and 63 catalog keys (26 resource aliases). Raw clay/fiber/hides and some ores still share containers/rocks;
+work animations, rigged fish and dedicated impact VFX remain gaps. See `docs/world_map/WM15_ASSET_REPLACEMENTS.md`.
+17 distinct focused Editor checks passed; 7 prop checks repeated successfully after fixing a lost Synty atlas.
+Final build-b at `Builds/WorldMapAssetReplacement/Serenity.exe` exited 0, 0 errors / 81 warnings,
+immutable source fingerprint recorded. Disposable Player-b passed 29/29 checks with no runtime errors.
+Evidence in `docs/validation/WM15Replacement/`. No full performance gates. Preserve inherited vendor/P3 changes.
+WM15 remains IN_PROGRESS for visual acceptance, loading/content work and deferred gates; no shutdown.
+
 ## WM15 local asset coverage audit (2026-10-26)
 
 Analysis-only follow-up complete: compared all 11 handmade categories with the complete Assets path
