@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## WM15 asset selection after complete local audit (2026-10-26)
+
+Audit delivered: `docs/world_map/WM15_IMPORTED_ASSET_COVERAGE.md`. Next WM15 content work should use
+the already imported props first, then selectively admit the rod/static fish/bone models and All Nature
+VFX URP content already present in local archives. Do not ask the user to download duplicate general
+nature/resource/pier packs. Distinguish missing compatible animations and specialized raw resources
+from model availability. This turn only analyzed and documented; no import/replacement/build/testing.
+Keep WM15 IN_PROGRESS and preserve vendor imports/unrelated material edits. User visual acceptance,
+loading/content tasks and deferred performance gates remain open. No repeated shutdown.
+
 ## WM15 morning feedback — next unblocked work (2026-10-26)
 
 Repair candidate: `Builds/WorldMapMorningFix/Serenity.exe`, build-e exit 0, 0 errors / 77 warnings.

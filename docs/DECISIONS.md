@@ -1868,3 +1868,13 @@ Starting materials are moved into haulable piles without minting resources. Cons
 subtract existing site buffers and ignore zero deficits. Work assignment is scoped to the owning side.
 Full performance gates remain deferred by user instruction; targeted regressions and disposable Player
 routes are the acceptance evidence for this repair batch.
+
+
+## D-205 — Local asset coverage before additional acquisition (2026-10-26)
+
+The handmade-model inventory describes replacement targets, not missing purchases. Asset selection
+first checks imported prefabs and downloaded nested Unity packages, including previous copies with
+remapped GUIDs. Most WM15 props already exist. Static fish/rods/bones can be selectively admitted from
+Low Poly Asset Bundle; All Nature VFX includes a URP material package. Model availability does not imply
+compatible humanoid animation, working materials, runtime integration or visual acceptance. Keep the
+remaining search focused on those gaps; this audit changes no gameplay, assets or dependencies.

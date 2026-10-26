@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+WM15 asset coverage audit (2026-10-26): **IN_PROGRESS / analysis delivered**. All 11 handmade categories
+mapped to local imported assets and downloaded archives; 45 folders, 44 outer archives, 60 nested Unity
+packages indexed. Most props already exist; rod/static fish/bones and All Nature VFX URP are available
+for selective admission. Remaining searches narrowed to work animations, animated fish, distinct raw
+materials and impact VFX. No game changes or new runtime validation. See
+`docs/world_map/WM15_IMPORTED_ASSET_COVERAGE.md`. Prior build evidence remains unchanged.
+
 WM15 morning feedback (2026-10-26): **IN_PROGRESS / repair candidate verified**.
 Build-e: `Builds/WorldMapMorningFix/Serenity.exe`, 0 errors / 77 warnings. 41 distinct focused tests;
 Player-d 31/31 plus saved-game Player-e 6/6, no runtime exceptions. The neighbour completed a physically

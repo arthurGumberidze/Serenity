@@ -1,0 +1,92 @@
+[
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "Carry",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "Chop",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "TownCarry",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "TownChop",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "TownWork",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderTown\\Models\\TownWalker.fbx.meta",
+    "clip": "Work",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Weapons\\Animations\\PT_Longbow_02_anim.fbx.meta",
+    "clip": "PT_Longbow_02_anim",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Weapons\\Animations\\PT_Crossbow_02_anim.fbx.meta",
+    "clip": "PT_Crossbow_02_anim",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Weapons\\Animations\\PT_Bow_04_anim.fbx.meta",
+    "clip": "PT_Bow_04_anim",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Weapons\\Animations\\PT_Bow_02_anim.fbx.meta",
+    "clip": "PT_Bow_02_anim",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Weapons\\Animations\\PT_Bow_01_anim.fbx.meta",
+    "clip": "PT_Bow_01_anim",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Walkers\\Walker.fbx.meta",
+    "clip": "Armature|Carry",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Walkers\\Walker.fbx.meta",
+    "clip": "Armature|Work",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Props\\Tree.fbx.meta",
+    "clip": "Dark Wood",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Props\\BushC.fbx.meta",
+    "clip": "Dark Wood",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Props\\BushB.fbx.meta",
+    "clip": "Dark Wood",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\SoftLeitner\\CityBuilderThree\\Models\\Props\\BushA.fbx.meta",
+    "clip": "Dark Wood",
+    "animationType": "2"
+  },
+  {
+    "path": "Assets\\RTSToonBuildings\\Animations\\Animation_AttackArcher.fbx.meta",
+    "clip": "AttackArcher",
+    "animationType": "3"
+  }
+]

@@ -1,5 +1,17 @@
 # PROJECT_STATE.md
 
+## WM15 local asset coverage audit (2026-10-26)
+
+Analysis-only follow-up complete: compared all 11 handmade categories with the complete Assets path
+inventory (27,603 paths, 45 top-level folders), 44 outer archives and 60 nested Unity packages.
+Most replacement props are already imported. Low Poly Asset Bundle additionally contains unimported
+fishing rods, static fish and bones; All Nature VFX contains its own URP material package. Remaining
+search priorities are compatible work animations, animated fish, distinct raw-material props and
+specialized impact VFX. See `docs/world_map/WM15_IMPORTED_ASSET_COVERAGE.md` and
+`docs/validation/WM15AssetCoverage/`. Corrected the old inventory's implication that everything must
+be downloaded. No asset/code changes, Unity run, tests, build or performance runs in this audit.
+WM15 remains IN_PROGRESS; the previous WorldMapMorningFix build is unchanged.
+
 ## WM15 morning feedback — validated repair candidate (2026-10-26)
 
 Deliver `Builds/WorldMapMorningFix/Serenity.exe`: build-e exit 0, 0 errors / 77 warnings, immutable

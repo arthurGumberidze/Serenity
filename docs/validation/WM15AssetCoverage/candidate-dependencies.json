@@ -1,0 +1,382 @@
+[
+  {
+    "path": "Assets\\RTSToonBuildings\\Prefabs\\Props\\StonePile.prefab",
+    "references": [
+      {
+        "guid": "96a0a0c60f4599446b2989c7727f4a2f",
+        "path": "Assets/RTSToonBuildings/Models/Props/P_StonePile.fbx",
+        "material_dependencies": []
+      },
+      {
+        "guid": "af19245b0f55b20478aa4b382a2f497e",
+        "path": "Assets/RTSToonBuildings/Materials/M_Building.mat",
+        "material_dependencies": [
+          {
+            "guid": "639247ca83abc874e893eb93af2b5e44",
+            "path": null
+          },
+          {
+            "guid": "830f371ef8c7c3d4c84cbe9e5272c837",
+            "path": "Assets/RTSToonBuildings/Materials/ToonBuildingsAtlas.png"
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "path": "Assets\\RTSToonBuildings\\Prefabs\\Props\\Berries.prefab",
+    "references": [
+      {
+        "guid": "624f616f7511328409e34f1ebbbb0aba",
+        "path": "Assets/RTSToonBuildings/Materials/M_BuildingT.mat",
+        "material_dependencies": [
+          {
+            "guid": "639247ca83abc874e893eb93af2b5e44",
+            "path": null
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "acb0f44b80f95e4479771cacfc4c62ff",
+            "path": "Assets/RTSToonBuildings/Materials/ToonBuildingsAtlasT.png"
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      },
+      {
+        "guid": "fd13f965d817c754eb5316fb56fbb4c0",
+        "path": "Assets/RTSToonBuildings/Models/Props/P_Berries.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\RTSToonBuildings\\Prefabs\\Props\\CrateOfStone.prefab",
+    "references": [
+      {
+        "guid": "6bd286cdda76a6c4bb966382b8bb8498",
+        "path": "Assets/RTSToonBuildings/Models/Props/P_CrateOfStone.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\Synty\\PolygonGeneric\\Prefabs\\Props\\SM_Gen_Prop_Food_Meat_01.prefab",
+    "references": [
+      {
+        "guid": "2a95f9ff80948c643a57b9e94a98eb3f",
+        "path": "Assets/Synty/PolygonGeneric/Materials/Alts/Generic_01_A.mat",
+        "material_dependencies": [
+          {
+            "guid": "1d5b43adc546b284ca4ce3bcc2d32918",
+            "path": "Assets/Synty/PolygonGeneric/Textures/Generic_Normals_01.png"
+          },
+          {
+            "guid": "3fc3c11290504854c9e76317f3f97045",
+            "path": "Assets/Synty/PolygonGeneric/Textures/Alts/Generic_01_A.png"
+          },
+          {
+            "guid": "639247ca83abc874e893eb93af2b5e44",
+            "path": null
+          },
+          {
+            "guid": "72b622c5994ac7c439dad9af23ecb947",
+            "path": "Assets/Synty/PolygonGeneric/Textures/Emissive/Generic_Emissive_01_A.png"
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      },
+      {
+        "guid": "62179a974b8b1f746a163ac58f9583e6",
+        "path": null,
+        "material_dependencies": []
+      },
+      {
+        "guid": "631b6f58e89f1af419b83b22a0753b90",
+        "path": "Assets/Synty/PolygonGeneric/Models/SM_Gen_Prop_Food_Meat_01.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\PolygonNatureBiomes\\PNB_Meadow_Forest\\Prefabs\\Props\\SM_Prop_Camp_Tanning_Rack_01.prefab",
+    "references": [
+      {
+        "guid": "06e7f6fc79025f148a8ee8f3988b2aa8",
+        "path": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Models/SM_Prop_Camp_Tanning_Rack_01_Convex 1.asset",
+        "material_dependencies": []
+      },
+      {
+        "guid": "9bdde5843d3f965449edcf5956b5b70a",
+        "path": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Models/SM_Prop_Camp_Tanning_Rack_01.fbx",
+        "material_dependencies": []
+      },
+      {
+        "guid": "c6030e4939d206544a563fc12dc8518f",
+        "path": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Materials/PolygonNatureBiomesMeadow_Mat_01.mat",
+        "material_dependencies": [
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "aee5584f2e9e3244c86e5b57a887ca0e",
+            "path": "Assets/PolygonNatureBiomes/PNB_Meadow_Forest/Textures/PolygonNatureBiomes_Meadow_Texture_01.png"
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "path": "Assets\\Toon Farm Pack\\Prefabs\\Props\\Exterior Props\\TFP_Wooden_Pier_01A.prefab",
+    "references": [
+      {
+        "guid": "8947ea2c73d7b334785955d3d7321641",
+        "path": "Assets/Toon Farm Pack/Models/Materials/TFP_Atlas_1A.mat",
+        "material_dependencies": [
+          {
+            "guid": "41d01fe6e8db970449385e7f43d4aa06",
+            "path": null
+          },
+          {
+            "guid": "4ad8c21978cf8a842bba8230cf956f9a",
+            "path": "Assets/Toon Farm Pack/Textures/TFP_Toon_Ramp_1F.psd"
+          },
+          {
+            "guid": "522fcb2b5717c7640b460ee9ff73a78a",
+            "path": "Assets/Toon Farm Pack/Textures/TFP_Atlas_1A.psd"
+          },
+          {
+            "guid": "5ecee978a3e3f334f9f54c5495df40ff",
+            "path": null
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "b436518e905e95c4eb1fd5a8886288b3",
+            "path": "Assets/Toon Farm Pack/Textures/Brighter_Atlas.psd"
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      },
+      {
+        "guid": "9cd7f86768abac84fb44f6f9c5bfa1bd",
+        "path": "Assets/Toon Farm Pack/Models/TFP_Wooden_Pier_01A.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Environments\\Prefabs\\Rocks\\PT_Ore_Rock_01.prefab",
+    "references": [
+      {
+        "guid": "93415edde47040648869ae6638d33ced",
+        "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Materials/PT_Rocks_mat.mat",
+        "material_dependencies": [
+          {
+            "guid": "156ea07b03c16924ab629ae8749a4c9e",
+            "path": null
+          },
+          {
+            "guid": "3b5961066e60bbe45a9ed0e091a6863a",
+            "path": null
+          },
+          {
+            "guid": "a195a893970f3ab4990bd06e18a0b308",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Textures/PT_Rocks_01.png"
+          },
+          {
+            "guid": "cd18bd550ff6630468660d0150eed511",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Shaders/PT_Rock_Shader.shader"
+          },
+          {
+            "guid": "d329461fd2714384088c78ea5f4c2765",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Textures/PT_Runes_02.png"
+          }
+        ]
+      },
+      {
+        "guid": "a9129ae83f8faf646961b70c4b103833",
+        "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Meshes/Rocks/PT_Ore_Rock_01.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\Polytope Studio\\Lowpoly_Environments\\Prefabs\\Rocks\\PT_Ore_Rock_01_split.prefab",
+    "references": [
+      {
+        "guid": "93415edde47040648869ae6638d33ced",
+        "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Materials/PT_Rocks_mat.mat",
+        "material_dependencies": [
+          {
+            "guid": "156ea07b03c16924ab629ae8749a4c9e",
+            "path": null
+          },
+          {
+            "guid": "3b5961066e60bbe45a9ed0e091a6863a",
+            "path": null
+          },
+          {
+            "guid": "a195a893970f3ab4990bd06e18a0b308",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Textures/PT_Rocks_01.png"
+          },
+          {
+            "guid": "cd18bd550ff6630468660d0150eed511",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Shaders/PT_Rock_Shader.shader"
+          },
+          {
+            "guid": "d329461fd2714384088c78ea5f4c2765",
+            "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Textures/PT_Runes_02.png"
+          }
+        ]
+      },
+      {
+        "guid": "e011a827265c38e44baeae9310a2a9e2",
+        "path": "Assets/Polytope Studio/Lowpoly_Environments/Sources/Meshes/Rocks/PT_Ore_Rock_01_split.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\LowPolyFarm\\Prefabs\\Plants\\Garden_01.prefab",
+    "references": [
+      {
+        "guid": "08e26a5e98eea2d498855262f953f651",
+        "path": "Assets/LowPolyFarm/Prefabs/Plants/Cabbage_02.prefab",
+        "material_dependencies": []
+      },
+      {
+        "guid": "3e0110adf5eefbd4d91daa245630df4f",
+        "path": "Assets/LowPolyFarm/Models/Landscape/Mud_03.fbx",
+        "material_dependencies": []
+      },
+      {
+        "guid": "4653e7496c618dd428006dd2cedba140",
+        "path": "Assets/LowPolyFarm/Materials/LowPolyFarm_MAIN.mat",
+        "material_dependencies": [
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          },
+          {
+            "guid": "da692e001514ec24dbc4cca1949ff7e8",
+            "path": null
+          },
+          {
+            "guid": "e43eb286c19cc8646864d00caf8e2c8d",
+            "path": "Assets/LowPolyFarm/Textures/LowPolyFarm_Texture_01.png"
+          }
+        ]
+      },
+      {
+        "guid": "7840ac7891e305b418375140040dfbc2",
+        "path": "Assets/LowPolyFarm/Prefabs/Plants/Cabbage_04.prefab",
+        "material_dependencies": []
+      },
+      {
+        "guid": "bf10f7099236a5a48864bc10970098b6",
+        "path": "Assets/LowPolyFarm/Prefabs/Plants/Cabbage_03.prefab",
+        "material_dependencies": []
+      },
+      {
+        "guid": "f0e763d1915fcc942b5f6fab689fa2dd",
+        "path": "Assets/LowPolyFarm/Prefabs/Plants/Cabbage_01.prefab",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\RTSToonBuildings\\Prefabs\\Construction\\Construction_Storehouse.prefab",
+    "references": [
+      {
+        "guid": "af19245b0f55b20478aa4b382a2f497e",
+        "path": "Assets/RTSToonBuildings/Materials/M_Building.mat",
+        "material_dependencies": [
+          {
+            "guid": "639247ca83abc874e893eb93af2b5e44",
+            "path": null
+          },
+          {
+            "guid": "830f371ef8c7c3d4c84cbe9e5272c837",
+            "path": "Assets/RTSToonBuildings/Materials/ToonBuildingsAtlas.png"
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      },
+      {
+        "guid": "fe1034c79b5c3b4489a0c4d7520780be",
+        "path": "Assets/RTSToonBuildings/Models/Buildings/Construction/B_Construction_Lumberyard.fbx",
+        "material_dependencies": []
+      }
+    ]
+  },
+  {
+    "path": "Assets\\PolygonNatureBiomes\\PNB_Tropical_Jungle\\FX\\FX_Prefabs\\FX_Fish_Small_01.prefab",
+    "references": [
+      {
+        "guid": "0000000000000000f000000000000000",
+        "path": null,
+        "material_dependencies": []
+      },
+      {
+        "guid": "804bcd514610b9344a8a0bed08c72546",
+        "path": "Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Materials/Fish_01.mat",
+        "material_dependencies": [
+          {
+            "guid": "83560de9c6e282a4ea0d81b02cc59feb",
+            "path": "Assets/PolygonNatureBiomes/PNB_Tropical_Jungle/FX/FX_Textures/Fish_01.png"
+          },
+          {
+            "guid": "933532a4fcc9baf4fa0491de14d08ed7",
+            "path": null
+          },
+          {
+            "guid": "d0353a89b1f911e48b9e16bdc9f2e058",
+            "path": null
+          }
+        ]
+      }
+    ]
+  }
+]
