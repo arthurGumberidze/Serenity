@@ -16,15 +16,17 @@ namespace Game.Presentation.Production
         private Transform plot, planting;
         private readonly List<Transform> plants = new();
         private float width, depth;
+        private bool dedicatedPasture;
         private string displayedRecipe;
         private Game.Domain.World.AnimalHealthRegistry animals;
         public Vector3 GrazingPosition(int slot) => transform.TransformPoint(new Vector3(
-            (slot % 2 == 0 ? -.25f : .25f) * width, 0f, (slot / 2 == 0 ? -.25f : .25f) * depth));
+            ((slot % 4 + .5f) / 4f - .5f) * width * .75f, 0f,
+            ((slot / 4 + .5f) / 4f - .5f) * depth * .75f));
 
         public void Configure(ProductionSite source, float widthMeters, float depthMeters,
-            Game.Domain.World.AnimalHealthRegistry animalRegistry = null)
+            Game.Domain.World.AnimalHealthRegistry animalRegistry = null, bool pastureBuilding = false)
         {
-            site = source;
+            site = source; dedicatedPasture = pastureBuilding;
             animals = animalRegistry;
             building = GetComponent<BuildingPresenter>();
             art = UnityEngine.Resources.Load<CropArtCatalog>("World/CropArt");
@@ -48,6 +50,12 @@ namespace Game.Presentation.Production
                 trough.name = "Pasture trough";
                 trough.transform.localPosition = new Vector3(0, 0, depth * .33f);
             }
+            if (dedicatedPasture && plot.Find("Pasture shelter") == null && art?.PastureShelter != null)
+            {
+                var shelter = WorldMapScenery.Instantiate(art.PastureShelter,plot); shelter.name="Pasture shelter";
+                Fit(shelter,new Vector3(width*.45f,3.5f,depth*.4f),false);
+                shelter.transform.localPosition += new Vector3(0,0,depth*.25f);
+            }
             displayedRecipe = null;
             Refresh();
         }
@@ -59,7 +67,7 @@ namespace Game.Presentation.Production
             plot.gameObject.SetActive(active);
             if (!active) return;
             foreach (var renderer in legacy) if (renderer != null) renderer.enabled = false;
-            var pasture = animals?.IsPasture(site.Id) == true;
+            var pasture = dedicatedPasture || animals?.IsPasture(site.Id) == true;
             foreach (Transform child in plot)
             {
                 if (child.name == "Soil row") child.gameObject.SetActive(!pasture);
@@ -93,8 +101,19 @@ namespace Game.Presentation.Production
                 holder.localPosition = new Vector3(-width * 0.5f + (x + 0.5f) * width / rows, 0.09f,
                     (-depth * 0.5f + (z + 0.5f) * depth / columns) * 0.8f);
                 var view = WorldMapScenery.Instantiate(prefab, holder);
+                // Tiny crops must not inherit the vendor's tree-sized LOD/culling thresholds.
+                foreach (var lod in view.GetComponentsInChildren<LODGroup>(true))
+                {
+                    var levels = lod.GetLODs();
+                    foreach (var level in levels)
+                        foreach (var renderer in level.renderers) if (renderer != null) renderer.enabled = false;
+                    if (levels.Length > 0)
+                        foreach (var renderer in levels[0].renderers) if (renderer != null) renderer.enabled = true;
+                    Destroy(lod);
+                }
+                view.SetActive(true);
                 Fit(view, new Vector3(width / rows * 0.62f,
-                    displayedRecipe == "cultivate_cabbage" ? 0.32f : 0.55f, depth / columns * 0.62f), false);
+                    displayedRecipe == "cultivate_cabbage" ? 0.48f : 0.9f, depth / columns * 0.62f), false);
                 plants.Add(holder);
             }
         }

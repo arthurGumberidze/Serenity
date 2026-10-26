@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## WM15 evening feedback — verified repair candidate (2026-10-27)
+
+Current candidate: `Builds/WorldMapEveningFix/Serenity.exe`, build-i exit 0, 0 errors / 82 warnings.
+Source fingerprint 773907AF0100D6F418E7DA17725FCE5CCF8D38AE9F16F9D1E164639B36489010.
+Player-g: 31/31 checks, exit 0, no gameplay runtime errors; shore choices 5/5/4/5 and actual camp
+construction accepted on every lake, worst preview call 41.7 ms. Eleven focused Editor checks pass;
+earlier Player-c verified four growing crops, dedicated pasture, female hunting/skinning and chopping.
+Finite shared fish stock, camp breeding, dry-bank fishing, looping boar motion, mountain cattle/snow,
+larger facilities/pasture, crop growth and corpse approaches are implemented. Navigation arrival now
+checks the actual requested endpoint, preventing remote fishing after a job switch.
+See `docs/world_map/WM15_EVENING_FEEDBACK.md`. Building menus remain explicitly deferred; questions:
+`docs/world_map/WM15_BUILDING_ACTION_QUESTIONS.md`. Use a new game; old saves were preserved.
+WM15 stays IN_PROGRESS for visual acceptance, slow initial loading and remaining content/performance
+work. Full 100/300/500 gates not run. Existing two-Persistent-allocation shutdown warning remains.
+No repeated shutdown. Inherited vendor imports and four unrelated P3 material edits remain untouched.
+
+
 ## WM15 afternoon feedback — verified repair candidate (2026-10-26)
 
 Current candidate: `Builds/WorldMapAfternoonFix/Serenity.exe`, build-f succeeded with 0 errors / 82 warnings,

@@ -229,7 +229,11 @@ namespace Game.Infrastructure
                     node.RecipeId == "fish_water" ? new[] { node.Position } : RespawnCandidates(node.Position),
                     node.RenewalPolicy != "none", recovery));
                 if (node.RecipeId == "fish_water")
+                {
+                    production.RegisterFishWater(node.SourceZoneId,site.Id);
+                    GetComponent<WorksitePresentation>().CreateWaterBodyFish(node.SourceZoneId,site.Id);
                     GetComponent<WorldWorkApproaches>()?.RegisterFish(node, site.Id);
+                }
             }
             foreach (var node in Plan.Industry)
             {
@@ -271,23 +275,15 @@ namespace Game.Infrastructure
             if (node.RecipeId == "fish_water")
             {
                 GetComponent<WorldWorkApproaches>()?.RegisterFish(node, site.Id);
-                var school = new GameObject("Fishing school " + node.SourceZoneId + " " + node.StableIndex);
-                school.transform.SetParent(parent, false);
-                school.transform.position = new Vector3(node.VisualPosition.X, node.VisualPosition.Y, node.VisualPosition.Z);
-                var lake = terrainWorld.Definition.Zones.FirstOrDefault(x => x.Id == node.SourceZoneId);
-                var radius = lake == null ? 2.8f : Mathf.Min(2.8f, Mathf.Min(lake.RadiusX, lake.RadiusZ) * 0.17f);
-                GetComponent<WorksitePresentation>().CreateFish(school.transform, school.transform.position, radius, site.Id);
-                var hit = school.AddComponent<BoxCollider>();
-                hit.isTrigger = true;
-                hit.size = new Vector3(radius * 2.6f, 1.6f, radius * 2.6f);
-                school.AddComponent<ProductionSourcePresenter>().Bind(site, Color.white, true);
+                GetComponent<WorksitePresentation>().CreateWaterBodyFish(node.SourceZoneId,site.Id);
                 return;
             }
             GameObject view;
             var reviewed = worldMapResourceArt?.PrefabFor(node.ResourceTypeId) ??
                 (node.RecipeId == "hunt_animal" ? art?.HuntingDeer :
                 node.RecipeId == "gather_stone" ? art?.StoneOutcrop : null);
-            if (node.RecipeId == "gather_stone") reviewed = WorldPropCatalog.Current.Find("rock");
+            if (node.RecipeId == "gather_stone") reviewed = node.SourceZoneId == "res_ridge_stone"
+                ? worldMapResourceArt.PrefabFor("stone_quarry") : WorldPropCatalog.Current.Find("rock");
             if (node.RecipeId == "gather_iron" || node.RecipeId == "gather_gold") reviewed = WorldPropCatalog.Current.Find("ore");
             if (terrainWorld.Definition.MapData != null && reviewed == null)
             {
@@ -297,6 +293,13 @@ namespace Game.Infrastructure
             if (reviewed != null)
             {
                 view = WorldMapScenery.Instantiate(reviewed, parent);
+                if(node.SourceZoneId=="res_ridge_stone" && node.RecipeId=="gather_stone")
+                {
+                    var renderers=view.GetComponentsInChildren<Renderer>();
+                    if(renderers.Length>0)
+                    {var b=renderers[0].bounds;foreach(var r in renderers)b.Encapsulate(r.bounds);
+                     view.transform.localScale*=2.2f/Mathf.Max(b.size.x,b.size.y,b.size.z);}
+                }
                 var collider = view.AddComponent<BoxCollider>();
                 collider.isTrigger = true;
                 collider.center = Vector3.up * 0.8f;

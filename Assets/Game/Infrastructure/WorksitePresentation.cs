@@ -25,7 +25,7 @@ namespace Game.Infrastructure
         private readonly Dictionary<StableEntityId, WorldResourcePilePresenter> views = new();
         private readonly List<Material> materials = new();
         private readonly Dictionary<StableEntityId, GameObject> carriedViews = new();
-        private Material rippleMaterial;
+
         private readonly Dictionary<StableEntityId, string> carriedKinds = new();
         private float nextRefresh;
         private readonly List<FishSchool> schools = new();
@@ -36,7 +36,7 @@ namespace Game.Infrastructure
             public Transform[] Fish;
             public Animator[] Animators;
             public Vector3 Center;
-            public float Radius;
+            public float Radius, Phase;
             public StableEntityId SourceId;
         }
         public int FishSchoolCount => schools.Count(x => x.Parent != null);
@@ -44,62 +44,68 @@ namespace Game.Infrastructure
         public void Initialize(LocalSceneCompositionRoot composition)
         {
             root = composition;
-            rippleMaterial = NewMaterial(new Color(0.48f, 0.72f, 0.74f));
             foreach (var view in FindObjectsByType<WorldResourcePilePresenter>(FindObjectsInactive.Include,
                          FindObjectsSortMode.None))
                 if (AllPiles.Any(x => x.Id == view.PileId)) views[view.PileId] = view;
         }
 
-        public void CreateFish(Transform parent, Vector3 center, float radius = 2.8f, StableEntityId sourceId = default)
+        private readonly HashSet<StableEntityId> fisheryViews = new();
+        public void CreateWaterBodyFish(string waterId, StableEntityId sourceId)
         {
-            var fish = new Transform[10];
-            for (var i = 0; i < fish.Length; i++)
+            if (!fisheryViews.Add(sourceId)) return;
+            StartCoroutine(PrepareWaterBodyFish(waterId,sourceId));
+        }
+        private System.Collections.IEnumerator PrepareWaterBodyFish(string waterId,StableEntityId sourceId)
+        {
+            var timer=System.Diagnostics.Stopwatch.StartNew();
+            var world = root.WorldDefinition;
+            var seed = new System.Random(sourceId.GetHashCode());
+            // Each school owns a disjoint swimming cell. Coverage is uniform; motions are independently phased.
+            for (var x = world.Origin.X + 10; x < world.Origin.X + world.Columns * world.TileSizeMeters; x += 20)
+            for (var z = world.Origin.Z + 10; z < world.Origin.Z + world.Rows * world.TileSizeMeters; z += 20)
             {
-                var body = MakeFish(parent);
-                body.name = "Swimming fish " + i;
-                fish[i] = body;
+                if(timer.Elapsed.TotalMilliseconds>2){yield return null;timer.Restart();}
+                if (root.WorldHeight.NearestWaterBodyId(x,z)!=waterId ||
+                    root.WorldHeight.WaterBoundaryDistance(x,z,out var surface)>-6f) continue;
+                var holder = new GameObject("Free swimming school").transform;
+                holder.SetParent(transform,false);
+                var center = new Vector3(x,surface-.08f,z);
+                holder.gameObject.SetActive(false);
+                var school = new FishSchool { Parent=holder,Center=center,Radius=2.8f,
+                    Phase=(float)seed.NextDouble()*6.28f,SourceId=sourceId };
+                schools.Add(school); RefreshFish(school);
             }
-            var ripple = new GameObject("Fishing circle").AddComponent<LineRenderer>();
-            ripple.transform.SetParent(parent, false);
-            ripple.useWorldSpace = false;
-            ripple.loop = true;
-            ripple.positionCount = 48;
-            ripple.widthMultiplier = 0.045f;
-            ripple.sharedMaterial = rippleMaterial;
-            ripple.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            for (var i = 0; i < 48; i++)
-            {
-                var angle = i * Mathf.PI * 2 / 48;
-                ripple.SetPosition(i, new Vector3(Mathf.Sin(angle) * radius * 1.15f, 0.02f,
-                    Mathf.Cos(angle) * radius * 1.15f));
-            }
-            var school = new FishSchool { Parent = parent, Fish = fish, Center = center, Radius = radius,
-                Animators = fish.Select(x => x.GetComponentInChildren<Animator>()).ToArray(),
-                SourceId = sourceId };
-            schools.Add(school);
-            RefreshFish(school);
         }
 
         private Transform MakeFish(Transform parent) => WorldPropCatalog.Create("fish_swimming", parent).transform;
 
         private void RefreshFish(FishSchool school)
         {
-            var count = school.Fish.Length;
-            if (school.SourceId.IsValid && root.Production.TryGetSite(school.SourceId, out var site))
-                count = (int)Math.Min(count, site.RemainingAmount);
-            for (var i = 0; i < school.Fish.Length; i++)
+            var visible = Camera.main != null && (Camera.main.transform.position-school.Center).sqrMagnitude < 220f*220f;
+            var count=6;
+            if(visible && school.Fish==null)
             {
-                school.Fish[i].gameObject.SetActive(i < count);
-                if (i >= count) continue;
-                // Fixed phase separation prevents different speeds bunching all fish together.
-                var phase = fishTime * 0.3f + i * Mathf.PI * 2 / school.Fish.Length;
-                var jumpPhase = Mathf.Repeat(fishTime + i * 3.1f, 32f);
-                var jump = jumpPhase < 0.8f ? Mathf.Sin(jumpPhase / 0.8f * Mathf.PI) * 0.35f : 0f;
-                var radius = school.Radius * (i % 2 == 0 ? 0.64f : 0.9f);
-                school.Fish[i].position = school.Center + new Vector3(Mathf.Sin(phase) * radius,
-                    0.04f + jump, Mathf.Cos(phase) * radius);
-                school.Fish[i].rotation = Quaternion.Euler(-jump * 30f, phase * Mathf.Rad2Deg + 90f, 0f);
-                if (school.Animators[i] != null) school.Animators[i].speed = root.Clock == null || root.Clock.IsPaused ? 0f : 1f;
+                school.Fish=new Transform[count];school.Animators=new Animator[count];
+                for(var n=0;n<count;n++)
+                { school.Fish[n]=MakeFish(school.Parent);school.Fish[n].name="Swimming fish "+n;school.Animators[n]=school.Fish[n].GetComponentInChildren<Animator>(); }
+            }
+            if(root.Production.TryGetSite(school.SourceId,out var stock) && stock.SourceCapacity>0)
+                count=(int)Math.Ceiling(count*(double)stock.RemainingAmount/stock.SourceCapacity);
+            school.Parent.gameObject.SetActive(visible && count>0);
+            if(!visible)return;
+            var t=fishTime*(.18f+.025f*Mathf.Sin(school.Phase))+school.Phase;
+            var drift=new Vector3(Mathf.Sin(t)*2.1f,0,Mathf.Cos(t*.73f+school.Phase)*2.1f);
+            var heading=new Vector3(Mathf.Cos(t),0,-Mathf.Sin(t*.73f+school.Phase)*.73f).normalized;
+            var side=Vector3.Cross(Vector3.up,heading);
+            for(var i=0;i<school.Fish.Length;i++)
+            {
+                school.Fish[i].gameObject.SetActive(i<count); if(i>=count)continue;
+                // Staggered neighbours remain over one fish length apart; cells never overlap.
+                var lateral=(i%2==0?-.6f:.6f)+Mathf.Sin(t*1.3f+i*2f)*.12f;
+                var trailing=(i/2-1)*1.05f+(i%2)*.25f;
+                school.Fish[i].position=school.Center+drift+side*lateral+heading*trailing;
+                school.Fish[i].rotation=Quaternion.LookRotation(heading+side*Mathf.Sin(t+i)*.12f);
+                if(school.Animators[i]!=null)school.Animators[i].speed=root.Clock==null || root.Clock.IsPaused?0:1;
             }
         }
 
@@ -110,7 +116,6 @@ namespace Game.Infrastructure
             schools.RemoveAll(x => x.Parent == null);
             foreach (var school in schools)
             {
-                if (!school.Parent.gameObject.activeInHierarchy) continue;
                 RefreshFish(school);
             }
             if (Time.unscaledTime < nextRefresh) return;

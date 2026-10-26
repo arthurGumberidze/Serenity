@@ -1908,3 +1908,27 @@ search fails. All resource and crop commands still use canonical production/inve
 New source assets remain owned, remapped copies: KayKit CC0 ores, Zsky attributed hide, joyfulsquirrel
 CC0 rigged fish, and local Human Crafting animations. Preserve licenses beside assets and Player.
 Regional petals are bounded presentation-only particles; no world entity or per-petal Update.
+
+## D-208 — Finite fisheries, larger facilities and deferred building actions (2026-10-26)
+
+User-approved: one finite saved fish stock per water body; replenishment only via fishing-camp breeding.
+The existing ProductionSite quantity is authoritative. Manual/camp work consumes the same stock;
+breeding recovers it without inventory output. Workplaces store mutually exclusive mode using existing
+saved pause flags. Immutable water-body/site associations are rebuilt from world data. A new game is
+required for old fish-node layout and changed building footprints; no automatic save deletion.
+
+Manual fishing uses a dry bank work stance and ground output, camp production uses its 30-unit buffer.
+Fish schools are presentation-only, occupy disjoint swimming areas and are instantiated near the camera.
+Shore candidates and immutable terrain/mask cells are prepared on a worker thread during loading,
+then snapped nearby; physical/canonical placement rules remain authoritative. The task owns its pure
+height sampler, and only completed results reach the Unity main thread. Larger facility views also enlarge placement footprints. A distinct pasture uses
+existing zone and saved livestock systems, with an imported shelter and area-limited capacity up to 16.
+
+General building context-menu redesign is explicitly deferred by the user. Do not infer approval of the
+proposed per-building commands; collect questions in WM15_BUILDING_ACTION_QUESTIONS.md. Fishery mode
+controls are separately approved. Full population performance gates and repeated shutdown remain off.
+
+D-208 validation follow-up (2026-10-27): navigation arrival must be near the current requested endpoint,
+not merely a zero remaining distance from an old path. Partial paths cannot start production. Manual
+fishing additionally checks its bank stance before advancing work. This keeps work location rules in
+the production action while Unity reports physical movement.

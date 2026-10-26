@@ -1,5 +1,17 @@
 # NEXT_TASK.md
 
+## WM15 evening feedback — next unblocked work (2026-10-27)
+
+Candidate: `Builds/WorldMapEveningFix/Serenity.exe`, build-i 0 errors / 82 warnings, Player-g 31/31,
+exit 0 with no gameplay runtime errors; eleven focused Editor regressions passed. See
+`docs/world_map/WM15_EVENING_FEEDBACK.md`. Ask the user to review a new game; preserve old saves.
+Continue WM15 visual/content refinement and initial loading work from user feedback. General building
+context menus are deferred until answers to `docs/world_map/WM15_BUILDING_ACTION_QUESTIONS.md`.
+Finite fish stocks replenish only through camp breeding. Do not rerun passed checks without new changes
+or concerns, and do not run full 100/300/500 gates without authorization. WM15 remains IN_PROGRESS.
+Preserve inherited imports/P3 materials. No repeated shutdown.
+
+
 ## WM15 afternoon feedback — current work (2026-10-26)
 
 Candidate: `Builds/WorldMapAfternoonFix/Serenity.exe` (build-f 0 errors / 82 warnings; Player-d 47/47, exit 0,

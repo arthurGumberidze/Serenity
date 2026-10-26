@@ -1,0 +1,31 @@
+PASS Ruler editor UMA generated
+PASS World ruler visible UMA
+PASS lake_south_forest has shared finite fish stock
+PASS Free schools cover water bodies
+PASS lake_south_forest accepts fishing camp construction
+PASS lake_south_forest offers >=4 easily found shoreline previews (5)
+PASS lake_south_forest preview worst call 32,5 ms
+PASS lake_west_grove has shared finite fish stock
+PASS Free schools cover water bodies
+PASS lake_west_grove accepts fishing camp construction
+PASS lake_west_grove offers >=4 easily found shoreline previews (5)
+PASS lake_west_grove preview worst call 38,8 ms
+PASS lake_mountain has shared finite fish stock
+PASS Free schools cover water bodies
+PASS lake_mountain accepts fishing camp construction
+PASS lake_mountain offers >=4 easily found shoreline previews (4)
+PASS lake_mountain preview worst call 24,6 ms
+PASS lake_central_east has shared finite fish stock
+PASS Free schools cover water bodies
+PASS lake_central_east accepts fishing camp construction
+PASS lake_central_east offers >=4 easily found shoreline previews (5)
+PASS lake_central_east preview worst call 41,7 ms
+PASS boar exists in canonical population
+PASS cow exists in canonical population
+PASS fish_water direct order accepted: None
+PASS Fisher physically reaches its dry work stance (0,00 m)
+PASS Fisher holds a visible rod
+PASS Fish catch placed near pier on dry bank
+PASS fish_water worker reaches source and works
+PASS fish_water production completes
+PASS No runtime errors during evening review

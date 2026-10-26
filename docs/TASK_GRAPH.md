@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 evening feedback (2026-10-27): **IN_PROGRESS / build-i and Player-g verified**.
+Eleven focused Editor checks passed. Final build: 0 errors / 82 warnings; Player-g: 31/31, exit 0,
+no gameplay runtime errors. All four lakes accept camp construction; preview worst call 41.7 ms.
+Earlier Player-c validated crops/pasture/hunting/skinning/chopping. General building menus are deferred
+by user; questions delivered. User visual acceptance, initial loading and full population gates remain open.
+See `docs/world_map/WM15_EVENING_FEEDBACK.md`.
+
+
 WM15 afternoon feedback (2026-10-26): **IN_PROGRESS / build-f and Player-d verified**.
 19 distinct focused Editor checks passed. Build-f: 0 errors / 82 warnings. Player-d: 47/47, exit 0, no runtime
 errors. Shore preview worst call 43.0 ms; full gates deferred. Pier, cultivation, rotation,

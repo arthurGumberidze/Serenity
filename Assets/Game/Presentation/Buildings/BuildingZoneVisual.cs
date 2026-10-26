@@ -30,8 +30,8 @@ namespace Game.Presentation.Buildings
                 instance.name = "Placement cell visual";
                 instances.Add(instance);
             }
-            var centerX = (ordered.Min(x => x.X) + ordered.Max(x => x.X)) * .5f;
-            var centerZ = (ordered.Min(x => x.Z) + ordered.Max(x => x.Z)) * .5f;
+            var centerX = (cells.Min(x => x.X) + cells.Max(x => x.X)) * .5f;
+            var centerZ = (cells.Min(x => x.Z) + cells.Max(x => x.Z)) * .5f;
             for (var i = 0; i < instances.Count; i++)
             {
                 var active = i < ordered.Length;
@@ -47,8 +47,8 @@ namespace Game.Presentation.Buildings
             var box = GetComponent<BoxCollider>();
             if (box == null) return;
             var size = box.size;
-            size.x = (ordered.Max(x => x.X) - ordered.Min(x => x.X) + 1) * gridSize;
-            size.z = (ordered.Max(x => x.Z) - ordered.Min(x => x.Z) + 1) * gridSize;
+            size.x = (cells.Max(x => x.X) - cells.Min(x => x.X) + 1) * gridSize;
+            size.z = (cells.Max(x => x.Z) - cells.Min(x => x.Z) + 1) * gridSize;
             box.size = size;
             if(maximumVisualCells==32 && !box.isTrigger)
             {

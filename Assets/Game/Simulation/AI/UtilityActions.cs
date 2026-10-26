@@ -393,10 +393,18 @@ namespace Game.Simulation.AI
                     (Phase == AiActionPhase.MoveToSource && prey.Position.DistanceSquared(lastSourceTarget) > 4f))
                 {
                     approachingCorpse = !alive;
-                    lastSourceTarget = prey.Position;
+                    lastSourceTarget = !alive && production.WorkPosition != null
+                        ? production.WorkPosition(agent.CharacterId,prey) : prey.Position;
                     SetPhase(AiActionPhase.MoveToSource);
                     movement.MoveTo(lastSourceTarget, StopDistance);
                 }
+            }
+            if (job.Task.RecipeId.ToString()=="fish_water" && !completion.Completed &&
+                (Phase==AiActionPhase.Working || movement.State==MovementState.Arrived) &&
+                movement.CurrentPosition.DistanceSquared(lastSourceTarget)>1.5f*1.5f)
+            {
+                SetPhase(AiActionPhase.MoveToSource);
+                movement.MoveTo(lastSourceTarget,StopDistance);
             }
             if ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
                 movement.CurrentPosition.DistanceSquared(lastMovementPosition) > .04f)

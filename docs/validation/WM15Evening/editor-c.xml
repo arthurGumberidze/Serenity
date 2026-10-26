@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Failed(Child)" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0,5439091">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="806" result="Failed" site="Child" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0.543909" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1937" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0.491929" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="34644" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1938" name="Game" fullname="Game" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0.464635" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1939" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0.416400" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1940" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="619" result="Failed" site="Child" start-time="2026-10-26 18:56:34Z" end-time="2026-10-26 18:56:35Z" duration="0.355644" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1863" name="WM15EveningFeedbackTests" fullname="Game.Tests.Editor.WM15EveningFeedbackTests" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 18:56:35Z" end-time="2026-10-26 18:56:35Z" duration="0.185792" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1865" name="FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" fullname="Game.Tests.Editor.WM15EveningFeedbackTests.FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" methodname="FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" seed="925898341" result="Passed" start-time="2026-10-26 18:56:35Z" end-time="2026-10-26 18:56:35Z" duration="0.166037" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1867" name="WM15MorningFeedbackTests" fullname="Game.Tests.Editor.WM15MorningFeedbackTests" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" testcasecount="6" result="Failed" site="Child" start-time="2026-10-26 18:56:35Z" end-time="2026-10-26 18:56:35Z" duration="0.074259" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1869" name="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" fullname="Game.Tests.Editor.WM15MorningFeedbackTests.FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" methodname="FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork" classname="Game.Tests.Editor.WM15MorningFeedbackTests" runstate="Runnable" seed="836049049" result="Failed" label="Error" start-time="2026-10-26 18:56:35Z" end-time="2026-10-26 18:56:35Z" duration="0.070278" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.InvalidOperationException : Sequence contains more than one element]]></message>
+                  <stack-trace><![CDATA[  at System.Linq.Enumerable.Single[TSource] (System.Collections.Generic.IEnumerable`1[T] source) [0x00070] in <f1b392d8fe224ca2b1f9fab1000b77eb>:0
+  at Game.Tests.Editor.WM15MorningFeedbackTests.FishingCampCapsAtThirtyResumesAfterTransferAndPersistsContinuousWork () [0x003f0] in C:\serenity_game\Assets\Game\Tests\Editor\WM15MorningFeedbackTests.cs:78
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <c5ae8a4eeb824526b5df2932bc2395e0>:0 ]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

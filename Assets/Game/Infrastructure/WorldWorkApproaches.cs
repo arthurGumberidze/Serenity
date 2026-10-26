@@ -21,6 +21,9 @@ namespace Game.Infrastructure
         private readonly Dictionary<StableEntityId, Vector3> fishTargets = new();
         private readonly Dictionary<string, Vector3> catches = new();
         private readonly Dictionary<StableEntityId, Vector3> fishOutputs = new();
+        private readonly Dictionary<(StableEntityId worker,StableEntityId site),Vector3> bankStances = new();
+        private readonly Dictionary<(StableEntityId worker,StableEntityId site),Vector3> bankTargets = new();
+        private readonly Dictionary<(StableEntityId worker,StableEntityId site),StableEntityId> bankTasks = new();
         private Material timber;
         private Material chipMaterial, stoneMaterial;
         private Mesh fragmentMesh;
@@ -44,10 +47,12 @@ namespace Game.Infrastructure
         public void Initialize(LocalSceneCompositionRoot session)
         {
             root = session;
+            root.Production.WaterBodyAt = p => root.WorldHeight.NearestWaterBodyId(p.X,p.Z);
+            root.Production.IsWaterAt = p => root.WorldHeight.IsWater(p.X,p.Z);
             timber = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             timber.SetColor("_BaseColor", new Color(.34f,.19f,.085f));
             root.Production.WorkPosition = Resolve;
-            root.Production.OutputPosition = (worker, site) => fishOutputs.TryGetValue(site.Id, out var p)
+            root.Production.OutputPosition = (worker, site) => bankStances.TryGetValue((worker,site.Id),out var p) || fishOutputs.TryGetValue(site.Id, out p)
                 ? new WorldPosition(p.x, p.y, p.z) : site.Position;
         }
         public void RegisterFish(TiledWorldResourceNode node, StableEntityId id)
@@ -110,8 +115,67 @@ namespace Game.Infrastructure
         }
         private WorldPosition Resolve(StableEntityId worker, ProductionSite site)
         {
-            if (site.RecipeId.ToString() == "fish_water" && fishStances.TryGetValue(site.Id,out var dock))
-                return new WorldPosition(dock.x,dock.y,dock.z);
+            if (site.RecipeId.ToString() == "fish_water")
+            {
+                var taskId=root.Production.ActiveTasks.FirstOrDefault(x=>x.WorkerId==worker && x.SiteId==site.Id)?.Id ?? default;
+                if (!bankStances.TryGetValue((worker,site.Id),out var bank) || !bankTasks.TryGetValue((worker,site.Id),out var previousTask) || previousTask!=taskId)
+                {
+                    var from=root.Tiers.GetRuntimeState(worker).Position;
+                    var waterId=root.Production.WaterBodyAt(site.Position);
+                    var lake=root.WorldDefinition.MapData.Hydrology.Lakes.FirstOrDefault(x=>x.Id==waterId);
+                    var best=float.PositiveInfinity; bank=new Vector3(site.Position.X,site.Position.Y,site.Position.Z);
+                    var target=fishTargets.TryGetValue(site.Id,out var known)?known:bank;
+                    if(lake!=null)
+                    foreach(var shorePoint in lake.Shoreline.Points)
+                    {
+                        var shore=root.WorldDefinition.MapData.CoordinateTransform.ToUnity(shorePoint);
+                        var center=root.WorldDefinition.MapData.CoordinateTransform.ToUnity(lake.Center);
+                        var outward=new Vector3(shore.X-center.X,0,shore.Z-center.Z).normalized;
+                        var candidate=new Vector3(shore.X,shore.Y,shore.Z)+outward*2f;
+                        if(!root.WorldDefinition.ContainsClosed(candidate.x,candidate.z))continue;
+                        candidate.y=root.WorldHeight.SampleHeight(candidate.x,candidate.z);
+                        if(root.WorldHeight.IsWater(candidate.x,candidate.z) || !NavMesh.SamplePosition(candidate,out var hit,2,NavMesh.AllAreas))continue;
+                        if(root.WorldHeight.IsWater(hit.position.x,hit.position.z))continue;
+                        var distance=(hit.position-new Vector3(from.X,from.Y,from.Z)).sqrMagnitude;
+                        if(distance>=best)continue;
+                        best=distance;bank=hit.position;target=new Vector3(shore.X,root.WorldHeight.WaterSurfaceLevel(lake.Id),shore.Z)-outward*2;
+                    }
+                    if(lake==null)
+                    foreach(var river in new[]{root.WorldDefinition.MapData.Hydrology.MainRiver}.Concat(root.WorldDefinition.MapData.Hydrology.Tributaries))
+                    for(var i=1;i<river.Spline.Points.Count;i++)
+                    {
+                        var a=root.WorldDefinition.MapData.CoordinateTransform.ToUnity(river.Spline.Points[i-1].Position);
+                        var b=root.WorldDefinition.MapData.CoordinateTransform.ToUnity(river.Spline.Points[i].Position);
+                        var begin=new Vector3(a.X,0,a.Z);var finish=new Vector3(b.X,0,b.Z);
+                        var normal=Vector3.Cross((finish-begin).normalized,Vector3.up);
+                        var count=Mathf.Max(1,Mathf.CeilToInt(Vector3.Distance(begin,finish)/12));
+                        for(var j=0;j<=count;j++)for(var sign=-1;sign<=1;sign+=2)
+                        {
+                            var progress=(float)j/count;var middle=Vector3.Lerp(begin,finish,progress);
+                            var width=Mathf.Lerp(river.Spline.Points[i-1].WidthMeters,river.Spline.Points[i].WidthMeters,progress);
+                            var candidate=middle+normal*sign*(width*.5f+2);
+                            if(!root.WorldDefinition.ContainsClosed(candidate.x,candidate.z))continue;
+                        candidate.y=root.WorldHeight.SampleHeight(candidate.x,candidate.z);
+                            var distance=(candidate-new Vector3(from.X,from.Y,from.Z)).sqrMagnitude;
+                            if(distance>=best || root.WorldHeight.IsWater(candidate.x,candidate.z) || !NavMesh.SamplePosition(candidate,out var hit,2,NavMesh.AllAreas))continue;
+                            if(root.WorldHeight.IsWater(hit.position.x,hit.position.z))continue;
+                            best=distance;bank=hit.position;
+                            root.WorldHeight.WaterBoundaryDistance(middle.x,middle.z,out var surface);target=new Vector3(middle.x,surface,middle.z);
+                        }
+                    }
+                    bankTasks[(worker,site.Id)]=taskId;
+                    bankStances[(worker,site.Id)]=bank;bankTargets[(worker,site.Id)]=target;
+                }
+                return new WorldPosition(bank.x,bank.y,bank.z);
+            }
+            if (site.RecipeId.ToString() == "hunt_animal" && root.Production.Animals.TryGet(site.Id,out var animal) && !animal.Alive)
+            {
+                var from = root.Tiers.GetRuntimeState(worker).Position;
+                var away = new Vector3(from.X-site.Position.X,0,from.Z-site.Position.Z).normalized;
+                if (away.sqrMagnitude < .01f) away = Vector3.forward;
+                var stance = new Vector3(site.Position.X,site.Position.Y,site.Position.Z)+away*.9f;
+                return new WorldPosition(stance.x,root.WorldHeight.SampleHeight(stance.x,stance.z),stance.z);
+            }
             if (site.RecipeId.ToString() == "hunt_animal" || site.Kind != ProductionSiteKind.NaturalSource)
                 return site.Position;
             if (!root.CharacterPresentations.TryGet(worker,out var person)) return site.Position;
@@ -148,18 +212,8 @@ namespace Game.Infrastructure
                 if (movement == null || !root.AiAgents.TryGet(task.WorkerId,out var agent) || agent.Phase != AiActionPhase.Working ||
                     !root.Production.TryGetSite(task.SiteId,out var site)) continue;
                 var direction = new Vector3(site.Position.X,0,site.Position.Z)-movement.Presenter.transform.position;
-                if (fishTargets.TryGetValue(site.Id,out var fishTarget)) direction = fishTarget-movement.Presenter.transform.position;
-                if (fishTargets.TryGetValue(site.Id,out fishTarget)) movement.Presenter.SetFishingTarget(fishTarget);
-                if (fishStances.TryGetValue(site.Id, out var stance) &&
-                    Vector2.Distance(new Vector2(stance.x, stance.z), new Vector2(movement.Presenter.transform.position.x,
-                        movement.Presenter.transform.position.z)) < 1.5f &&
-                    NavMesh.SamplePosition(stance, out var deckPoint, .35f, NavMesh.AllAreas))
-                {
-                    // Keep the work stance on the elevated deck, including after a crowd-detail transition.
-                    if (movement.Agent != null && movement.Agent.enabled && movement.Agent.isOnNavMesh)
-                        movement.Agent.Warp(deckPoint.position);
-                    else movement.Presenter.transform.position = deckPoint.position;
-                }
+                if (bankTargets.TryGetValue((task.WorkerId,site.Id),out var fishTarget))
+                { direction=fishTarget-movement.Presenter.transform.position; movement.Presenter.SetFishingTarget(fishTarget); }
                 direction.y = 0;
                 if (direction.sqrMagnitude > .01f) movement.Presenter.transform.rotation = Quaternion.LookRotation(direction);
                 if (task.RecipeId.ToString() == "chop_wood" || task.RecipeId.ToString() == "gather_stone")

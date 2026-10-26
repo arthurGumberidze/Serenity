@@ -23,6 +23,8 @@ namespace Game.Infrastructure
         {
             if (root?.Production == null || Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + .15f;
+            foreach(var penBuilding in root.Buildings.All.Where(x=>x.IsOperational && x.DefinitionId.ToString()=="animal_pasture"))
+                root.Production.EstablishSheepPasture(penBuilding.Id,penBuilding.OwnerSideId);
             var states = root.Production.Animals.States.Where(x => x.Domestic && !x.Harvested).ToArray();
             var ids = new HashSet<StableEntityId>(states.Select(x => x.Id));
             foreach (var id in views.Keys.Where(x => !ids.Contains(x)).ToArray())
@@ -67,6 +69,11 @@ namespace Game.Infrastructure
                         site.MoveAnimal(new WorldPosition(position.x, position.y, position.z));
                     }
                     view.transform.position = new Vector3(site.Position.X, site.Position.Y, site.Position.Z);
+                    // A dead animal is an interaction target, not a navigation obstacle blocking its own butcher.
+                    var body = view.GetComponent<CapsuleCollider>();
+                    if (body != null) body.isTrigger = !animal.Alive;
+                    var blocker = view.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+                    if (blocker != null) blocker.enabled = animal.Alive;
                     var source = view.GetComponent<ProductionSourcePresenter>();
                     if (!ReferenceEquals(source.Site, site)) source.Bind(site, Color.white, true);
                     view.GetComponent<AnimalHealthPresentation>().Refresh();

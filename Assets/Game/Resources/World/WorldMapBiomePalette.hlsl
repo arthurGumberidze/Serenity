@@ -41,7 +41,10 @@ float WorldMapMurk(float2 world)
 half3 WorldMapGround(half3 albedo, float3 world, float3 normal)
 {
     float2 p = WorldMapDesign(world.xz);
-    float snow = WorldMapEllipse(p, _WorldMapBiomeShapes[2]) * smoothstep(.45, .85, normal.y);
+    // Snow blankets the ridge's shelves; only near-vertical faces retain exposed stone.
+    float2 ridge = (p - _WorldMapBiomeShapes[2].xy) / (_WorldMapBiomeShapes[2].zw * 1.3);
+    float ridgeMask = 1 - smoothstep(.72, 1.0, length(ridge));
+    float snow = ridgeMask * smoothstep(.18, .65, normal.y);
     float grove = WorldMapEllipse(p, _WorldMapBlossomGroves[0]);
     float marsh = WorldMapMurk(world.xz);
     float meadow = WorldMapEllipse(p, _WorldMapBiomeShapes[0]);
@@ -49,7 +52,8 @@ half3 WorldMapGround(half3 albedo, float3 world, float3 normal)
     half3 result = lerp(albedo, albedo * half3(.82,1.24,.64), meadow * .7);
     result = lerp(result, half3(.75,.38,.49) * (.55 + luminance), grove * .68);
     result = lerp(result, half3(.13,.18,.10) * (.6 + luminance), marsh * .72);
-    result = lerp(result, half3(.83,.91,.96) * (.78 + luminance * .4), snow * .94);
+    float fineSnow = .97 + .03 * sin(world.x * 4.1) * sin(world.z * 3.7);
+    result = lerp(result, half3(.91,.96,1.0) * fineSnow, snow);
     return lerp(albedo, result, _WorldMapArtEnabled);
 }
 #endif

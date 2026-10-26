@@ -49,37 +49,32 @@ namespace Game.Tests.Editor
         public void PlannerCreatesStableDryReachableLandingsWithWaterVisuals()
         {
             var nodes = plan.Resources.Where(value => value.ResourceTypeId == "fish").ToArray();
-            Assert.That(nodes, Has.Length.EqualTo(24));
-            Assert.That(nodes.Select(value => value.StableKey).Distinct().Count(), Is.EqualTo(24));
+            Assert.That(nodes, Has.Length.EqualTo(5));
+            Assert.That(nodes.Select(value => value.StableKey).Distinct().Count(), Is.EqualTo(5));
             Assert.That(nodes.Select(value => value.CreateStableId(Seed, world.GenerationId)).Distinct().Count(),
-                Is.EqualTo(24));
+                Is.EqualTo(5));
             foreach (var node in nodes)
             {
                 Assert.That(heights.IsWater(node.Position.X, node.Position.Z), Is.False, node.StableKey);
                 Assert.That(heights.IsBuildable(node.Position.X, node.Position.Z, 30f), Is.True, node.StableKey);
                 Assert.That(HasDryApproach(node.Position), Is.True, node.StableKey);
                 Assert.That(heights.IsWater(node.VisualPosition.X, node.VisualPosition.Z), Is.True, node.StableKey);
-                Assert.That(node.Capacity, Is.InRange(20, 50), node.StableKey);
-                Assert.That(node.CarryingCapacityGrowthPermillePerDay, Is.InRange(1, 1000), node.StableKey);
-                Assert.That(node.MinimumRecoveryUnits, Is.GreaterThan(0), node.StableKey);
+                Assert.That(node.Capacity, Is.GreaterThanOrEqualTo(2000), node.StableKey);
+                Assert.That(node.CarryingCapacityGrowthPermillePerDay, Is.Zero, node.StableKey);
+                Assert.That(node.MinimumRecoveryUnits, Is.Zero, node.StableKey);
             }
         }
 
         [Test]
-        public void EveryAuthoredLakeLandingIsRepresentedByItsCanonicalPopulation()
+        public void EveryLakeHasExactlyOneSharedCanonicalPopulation()
         {
-            var nodes = plan.Resources.Where(value => value.ResourceTypeId == "fish").ToArray();
-            foreach (var lake in world.MapData.Hydrology.Lakes)
-            foreach (var landing in lake.FishingLandings)
-            {
-                var runtime = world.MapData.CoordinateTransform.ToUnity(landing);
-                Assert.That(nodes.Where(value => value.SourceZoneId == lake.Id).Any(value =>
-                    DistanceSquared(value.Position, runtime) <= 900f), Is.True, lake.Id + ":" + landing);
-            }
+            var nodes=plan.Resources.Where(value=>value.ResourceTypeId=="fish").ToArray();
+            foreach(var lake in world.MapData.Hydrology.Lakes)
+                Assert.That(nodes.Count(value=>value.SourceZoneId==lake.Id),Is.EqualTo(1),lake.Id);
         }
 
         [Test]
-        public void CarryingCapacityRecoveryIsGradualAndNeverExceedsCapacity()
+        public void FiniteFishStockDoesNotRegenerateWithCalendarTime()
         {
             var node = plan.Resources.First(value => value.ResourceTypeId == "fish");
             var site = ProductionSite.Restore(new ProductionSiteState(
@@ -89,16 +84,14 @@ namespace Game.Tests.Editor
             for (var i = 0; i < 12; i++) site.CompleteWork(ProductionTaskKind.Gather);
             var depletedAmount = site.RemainingAmount;
             var ecology = new ResourceEcologyService();
-            ecology.Register(new NaturalNodeRegistration(site, node.Biome, new[] { node.Position }, true,
-                NaturalRecoveryPolicy.CarryingCapacity(node.CarryingCapacityGrowthPermillePerDay,
-                    node.MinimumRecoveryUnits)));
+            ecology.Register(new NaturalNodeRegistration(site, node.Biome, new[] { node.Position }, false));
             ecology.AdvanceTo(0, new FreeSurface());
             ecology.AdvanceTo(TimeSpan.TicksPerDay, new FreeSurface());
-            Assert.That(site.RemainingAmount, Is.GreaterThan(depletedAmount).And.LessThan(node.Capacity));
+            Assert.That(site.RemainingAmount, Is.EqualTo(depletedAmount));
             ecology.AdvanceTo(TimeSpan.TicksPerDay * 200L, new FreeSurface());
-            Assert.That(site.RemainingAmount, Is.EqualTo(node.Capacity));
+            Assert.That(site.RemainingAmount, Is.EqualTo(depletedAmount));
             ecology.AdvanceTo(TimeSpan.TicksPerDay * 201L, new FreeSurface());
-            Assert.That(site.RemainingAmount, Is.EqualTo(node.Capacity));
+            Assert.That(site.RemainingAmount, Is.EqualTo(depletedAmount));
         }
 
         [Test]

@@ -133,11 +133,12 @@ namespace Game.Presentation.Characters
                         else negativeWidth = Mathf.Max(negativeWidth,width);
                     }
                 }
-                if (negativeWidth > positiveWidth * 1.15f) axis = -axis;
+                if (label != "Hunting bow" && negativeWidth > positiveWidth * 1.15f) axis = -axis;
                 var turn = Quaternion.FromToRotation(axis, Vector3.up);
                 var scale = length / Mathf.Max(0.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
                 visual.transform.localRotation = turn * visual.transform.localRotation;
                 visual.transform.localScale *= scale;
+                if(label=="Hunting bow") visual.transform.localRotation=Quaternion.Euler(0,180,0)*visual.transform.localRotation;
                 visual.transform.localPosition = turn * (visual.transform.localPosition - bounds.center) * scale +
                     Vector3.up * length * (label == "Hunting bow" ? 0f : 0.25f);
             }
@@ -348,7 +349,22 @@ namespace Game.Presentation.Characters
             var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
             var tool = animationIntent == CharacterAnimationIntent.Chop ? workAxe : workPickaxe;
             if (hand == null || tool == null || rightUpperArmBone == null || rightLowerArmBone == null) return false;
-            var length = animationIntent == CharacterAnimationIntent.Chop ? .8f : .95f;
+            if(animationIntent==CharacterAnimationIntent.Chop)
+            {
+                var phase=Mathf.Repeat(workPoseClock,1.45f)/1.45f;
+                var raise=phase<.55f ? Mathf.SmoothStep(0,1,phase/.55f) :
+                    phase<.76f ? 1-Mathf.SmoothStep(0,1,(phase-.55f)/.21f) : 0;
+                var chopHead=workContact+Vector3.up*raise*.85f-transform.forward*raise*.4f+transform.right*raise*.18f;
+                var chopGrip=chopHead-(transform.forward*.55f+Vector3.up*.12f);
+                PoseArm(false,chopGrip);PoseArm(true,chopGrip-transform.forward*.2f);
+                var chopAxis=(chopHead-hand.position).normalized;
+                var desired=Quaternion.LookRotation(transform.right,chopAxis)*Quaternion.Inverse(tool.transform.localRotation);
+                ApplyOffset(hand,Quaternion.Inverse(hand.rotation)*desired,ref lastWorkHandOffset);
+                var contactCycle=Mathf.FloorToInt(workPoseClock/1.45f-.76f);
+                if(contactCycle>lastWorkImpactCycle){WorkImpactSequence++;lastWorkImpactCycle=contactCycle;}
+                return true;
+            }
+            var length = .95f;
             var stroke = (1f - Mathf.Cos(workPoseClock * 5.2f)) * .5f;
             var head = workContact + Vector3.up * stroke * .8f - transform.forward * stroke * .25f;
             var reach = head - rightUpperArmBone.position;

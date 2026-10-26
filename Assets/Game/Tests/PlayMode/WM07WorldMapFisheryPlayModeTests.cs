@@ -28,7 +28,7 @@ namespace Game.Tests.PlayMode
             var heights = new TiledWorldHeightSampler(world, Seed);
             var nodes = new TiledWorldPopulationPlanner(world, heights, Seed).Create().Resources
                 .Where(value => value.ResourceTypeId == "fish").ToArray();
-            Assert.That(nodes, Has.Length.EqualTo(24));
+            Assert.That(nodes, Has.Length.EqualTo(5));
             Assert.That(nodes.All(value => !heights.IsWater(value.Position.X, value.Position.Z)), Is.True);
             Assert.That(nodes.All(value => heights.IsWater(value.VisualPosition.X, value.VisualPosition.Z)), Is.True);
 
@@ -52,7 +52,7 @@ namespace Game.Tests.PlayMode
             var restored = CreateAuthority(nodes, world.GenerationId);
             restored.Service.RestoreState(decoded.Production);
             Assert.That(restored.Service.Sites.Count(value => value.RecipeId == new ProductionRecipeId("fish_water")),
-                Is.EqualTo(24));
+                Is.EqualTo(5));
             Assert.That(restored.Service.TryGetSite(targetId, out var loaded), Is.True);
             Assert.That(loaded.RemainingAmount, Is.EqualTo(savedAmount));
             restored.Service.AdvanceTo(TimeSpan.TicksPerDay, Array.Empty<StableEntityId>());
@@ -62,7 +62,7 @@ namespace Game.Tests.PlayMode
             restored.Service.AdvanceTo(TimeSpan.TicksPerDay * 2L, Array.Empty<StableEntityId>());
             restored.Ecology.AdvanceTo(TimeSpan.TicksPerDay * 2L, new FreeSurface());
             var nextDayAmount = loaded.RemainingAmount;
-            Assert.That(nextDayAmount, Is.GreaterThan(savedAmount).And.LessThanOrEqualTo(target.Capacity));
+            Assert.That(nextDayAmount, Is.EqualTo(savedAmount));
             restored.Ecology.AdvanceTo(TimeSpan.TicksPerDay * 2L, new FreeSurface());
             Assert.That(loaded.RemainingAmount, Is.EqualTo(nextDayAmount), "same tick must not recover twice");
             yield return null;
@@ -92,9 +92,7 @@ namespace Game.Tests.PlayMode
                     ProductionSiteKind.NaturalSource, node.Position, node.Capacity, node.Capacity,
                     CropPlotPhase.Unplanted, 0, 0));
                 service.AddSite(site);
-                ecology.Register(new NaturalNodeRegistration(site, node.Biome, new[] { node.Position }, true,
-                    NaturalRecoveryPolicy.CarryingCapacity(node.CarryingCapacityGrowthPermillePerDay,
-                        node.MinimumRecoveryUnits)));
+                ecology.Register(new NaturalNodeRegistration(site, node.Biome, new[] { node.Position }, false));
             }
             return new Authority(service, ecology);
         }

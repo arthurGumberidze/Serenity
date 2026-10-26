@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Failed(Child)" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2,7194393">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="807" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.719439" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1938" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="803" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.658921" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="31560" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1939" name="Game" fullname="Game" runstate="Runnable" testcasecount="803" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.598299" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1940" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="803" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.562619" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1941" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="620" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.450769" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1813" name="WM07WorldMapFisheryTests" fullname="Game.Tests.Editor.WM07WorldMapFisheryTests" classname="Game.Tests.Editor.WM07WorldMapFisheryTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-10-26 19:33:38Z" end-time="2026-10-26 19:33:41Z" duration="2.230411" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="WM07" />
+              </properties>
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1816" name="EveryLakeHasExactlyOneSharedCanonicalPopulation" fullname="Game.Tests.Editor.WM07WorldMapFisheryTests.EveryLakeHasExactlyOneSharedCanonicalPopulation" methodname="EveryLakeHasExactlyOneSharedCanonicalPopulation" classname="Game.Tests.Editor.WM07WorldMapFisheryTests" runstate="Runnable" seed="2024265170" result="Passed" start-time="2026-10-26 19:33:41Z" end-time="2026-10-26 19:33:41Z" duration="0.027190" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1817" name="FiniteFishStockDoesNotRegenerateWithCalendarTime" fullname="Game.Tests.Editor.WM07WorldMapFisheryTests.FiniteFishStockDoesNotRegenerateWithCalendarTime" methodname="FiniteFishStockDoesNotRegenerateWithCalendarTime" classname="Game.Tests.Editor.WM07WorldMapFisheryTests" runstate="Runnable" seed="1137486838" result="Failed" label="Error" start-time="2026-10-26 19:33:41Z" end-time="2026-10-26 19:33:41Z" duration="0.013519" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[System.ArgumentOutOfRangeException : Small natural node capacity must be 20-50 units.
+Parameter name: site]]></message>
+                  <stack-trace><![CDATA[  at Game.Domain.Production.NaturalNodeRegistration..ctor (Game.Domain.Production.ProductionSite site, Game.Domain.Production.NaturalResourceBiome biome, System.Collections.Generic.IEnumerable`1[T] candidates, System.Boolean renewable, Game.Domain.Production.NaturalRecoveryPolicy recoveryPolicy) [0x00058] in C:\serenity_game\Assets\Game\Domain\Production\NaturalResourceModels.cs:95
+  at Game.Tests.Editor.WM07WorldMapFisheryTests.FiniteFishStockDoesNotRegenerateWithCalendarTime () [0x000bb] in C:\serenity_game\Assets\Game\Tests\Editor\WM07WorldMapFisheryTests.cs:87
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <c5ae8a4eeb824526b5df2932bc2395e0>:0 ]]></stack-trace>
+                </failure>
+              </test-case>
+              <test-case id="1815" name="PlannerCreatesStableDryReachableLandingsWithWaterVisuals" fullname="Game.Tests.Editor.WM07WorldMapFisheryTests.PlannerCreatesStableDryReachableLandingsWithWaterVisuals" methodname="PlannerCreatesStableDryReachableLandingsWithWaterVisuals" classname="Game.Tests.Editor.WM07WorldMapFisheryTests" runstate="Runnable" seed="1502294983" result="Passed" start-time="2026-10-26 19:33:41Z" end-time="2026-10-26 19:33:41Z" duration="0.027460" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

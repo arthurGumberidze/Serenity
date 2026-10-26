@@ -21,15 +21,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - shelter_construction
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 6
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+    prefab: {fileID: 6020301749951858396, guid: 17d3a54273d688a4fa75d3c31d9a2985, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -66,15 +66,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - shelter_construction
-    footprintWidth: 4
-    footprintDepth: 4
+    footprintWidth: 6
+    footprintDepth: 6
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4497993395105743423, guid: cc4a74738936e194397cd42db16388d6, type: 3}
+    prefab: {fileID: 6026977427686837025, guid: b98206e26272a404a85c7b203ce0f6dc, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -124,15 +124,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - controlled_fire
-    footprintWidth: 2
-    footprintDepth: 2
+    footprintWidth: 3
+    footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6771108735984779082, guid: 75c5f853e798d6443a2b565c786558e2, type: 3}
+    prefab: {fileID: 8442274345890546975, guid: 54aaedb05cdb6fd44929843ee2c59925, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -172,15 +172,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - woodworking
-    footprintWidth: 2
-    footprintDepth: 1
+    footprintWidth: 3
+    footprintDepth: 2
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
+    prefab: {fileID: 5390090074364081083, guid: bfbf3c0671095bd4785d8e9f5f726bef, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -217,15 +217,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - stone_tools
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 9
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4137803262028555564, guid: 095346f27eb45cf46be465533f056d48, type: 3}
+    prefab: {fileID: 3666886777720691616, guid: 64f056fee7a59d04c8ebdca3013fb280, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 10
@@ -264,15 +264,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - hunting
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 7
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 1651891879297022418, guid: e2f3d59f1c69bdf4bba99a481a49de05, type: 3}
+    prefab: {fileID: 554918179454836520, guid: 2db09792fd3acaa4fbcc1f75af544079, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 7
@@ -312,15 +312,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - hunting
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 9
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 7559929419030301708, guid: 9fb32eb288756fc48970206371ce4635, type: 3}
+    prefab: {fileID: 9134539697367151152, guid: c59c451f882a2e74a984f269df2850e3, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 9
@@ -359,15 +359,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - food_preservation
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 9
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 5338887291422888517, guid: 39023f37b66f3474798b8f8831493cbb, type: 3}
+    prefab: {fileID: 4778409533155753075, guid: dbb30605de222d64cb281c0f08f6f874, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 10
@@ -406,15 +406,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - food_preservation
-    footprintWidth: 3
-    footprintDepth: 2
+    footprintWidth: 5
+    footprintDepth: 3
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6389391837826904269, guid: 3a9661f7f2f402a41b340d52a167579f, type: 3}
+    prefab: {fileID: 4461124910238994978, guid: fa289410dc5b84f4d9612a641f5ba370, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 6
@@ -452,15 +452,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - food_preservation
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 6
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 413966355839806363, guid: acd72aaca4d6ada409bdf98b0c4590b8, type: 3}
+    prefab: {fileID: 6906795649072908986, guid: 5284af77cf941fd45badc0ef71b6f45d, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 9
@@ -545,15 +545,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 4
-    footprintDepth: 3
+    footprintWidth: 9
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8919281241274719754, guid: 3eb694ab6d973df4e89633d8bfec42f2, type: 3}
+    prefab: {fileID: 1952880212967659674, guid: 5e429b191858b6a4681ce0fcf4396a07, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -590,15 +590,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 6
-    footprintDepth: 5
+    footprintWidth: 9
+    footprintDepth: 8
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 5488585577479961829, guid: df02b2216d3fffe4bb9d1964cfc0d903, type: 3}
+    prefab: {fileID: 6784412478882880119, guid: bb2e94e0320293647bf7024c863aab4d, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 26
@@ -639,15 +639,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 4
-    footprintDepth: 4
+    footprintWidth: 6
+    footprintDepth: 6
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 7471284310444944688, guid: 3b345b9d1dfd1f6488492c17972809bb, type: 3}
+    prefab: {fileID: 2118826900536930943, guid: 416b7153be48e5f48a576d208f4237bf, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -688,15 +688,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 5
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 896245607924915164, guid: c241117bb9be3f04794fd3cd06aa2e27, type: 3}
+    prefab: {fileID: 1653422843458564076, guid: 4360de6069514924c9369626836b9301, type: 3}
     constructionCost:
     - resourceId: stone
       quantity: 10
@@ -735,15 +735,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 5
-    footprintDepth: 4
+    footprintWidth: 8
+    footprintDepth: 6
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 3973969917360199081, guid: 190f4e6a1e6f3b9489ca093968075fc3, type: 3}
+    prefab: {fileID: 1304236380665108879, guid: 9e148b00a8dddf5439486f93cabfbabc, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 20
@@ -784,15 +784,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 5
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 1
     spatialForm: 1
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 684172229593271832, guid: afc70c37269e99048ab9cd9e77b023e6, type: 3}
+    prefab: {fileID: 6957147231757536318, guid: 2566e9262573a5f4da3fe047beb5b493, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -829,15 +829,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 7
+    footprintDepth: 7
     placementMode: 0
     allowsOverlap: 1
     spatialForm: 1
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 3641555035118272229, guid: 207e54869525ac641a0654dd230f9395, type: 3}
+    prefab: {fileID: 7148911299455921401, guid: 59699cafa07b81e4c99742f5a442a7f9, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 6
@@ -874,15 +874,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - gathering
-    footprintWidth: 8
-    footprintDepth: 6
+    footprintWidth: 12
+    footprintDepth: 9
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 6
-    maximumHeightDeltaMillimetres: 3000
+    maximumHeightDeltaMillimetres: 4500
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4450261199759727127, guid: 2a63c8154b026c04d8f7716a25a6d5b3, type: 3}
+    prefab: {fileID: 919761741365604557, guid: fc20b74e1ad419d4d828768b3f6d5f29, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -896,6 +896,7 @@ MonoBehaviour:
     maximumWorkers: 1
     productionRecipeIds:
     - fish_camp
+    - fish_breed
     productionInputCapacity: 1
     productionOutputCapacity: 30
     wearIntervalHours: 0
@@ -920,15 +921,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 5
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 1
     spatialForm: 1
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4931938157932219821, guid: 44fab226ded713a44875b6a281049089, type: 3}
+    prefab: {fileID: 833765296135993209, guid: 65219d94b4904204085366a9e0fe9f3f, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 2
@@ -1010,15 +1011,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - advanced_stonecraft
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 5
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 11
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8147308935518625590, guid: 947385125b58c1c43a20130a017a5010, type: 3}
+    prefab: {fileID: 7697045599409717030, guid: 5bb87ad383c0fb941b8e7080299f64d3, type: 3}
     constructionCost:
     - resourceId: stone
       quantity: 12
@@ -1144,15 +1145,15 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - organized_labor
-    footprintWidth: 3
-    footprintDepth: 3
+    footprintWidth: 5
+    footprintDepth: 5
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 2037994050957237548, guid: 42e6eedbf0b6e6949b28bb6810a845fa, type: 3}
+    prefab: {fileID: 3925498612068996842, guid: 5092e3b3f7b1b784093b9596b7f1c677, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 14
@@ -1218,6 +1219,50 @@ MonoBehaviour:
     - resourceId: wood_log
       quantity: 1
     repairWorkMinutes: 20
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: animal_pasture
+    displayName: "\u0417\u0430\u0433\u043E\u043D \u0434\u043B\u044F \u0441\u043A\u043E\u0442\u0430"
+    description: "\u041F\u0440\u043E\u0441\u0442\u043E\u0440\u043D\u044B\u0439 \u0437\u0430\u0433\u043E\u043D \u0441 \u043D\u0430\u0432\u0435\u0441\u043E\u043C \u0438 \u043A\u043E\u0440\u043C\u0443\u0448\u043A\u043E\u0439. \u0420\u0430\u0441\u0442\u044F\u043D\u0438\u0442\u0435 \u043E\u0442 8\xD78 \u0434\u043E 24\xD724 \u043A\u043B\u0435\u0442\u043E\u043A."
+    iconKey: building_primitive_garden
+    category: 5
+    era: 0
+    requiredTechnologyIds: []
+    footprintWidth: 8
+    footprintDepth: 8
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 4500
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4217031356742583598, guid: 18ccd03fa58636841b0edf2dae7ea790, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 4
+    - resourceId: plant_fiber
+      quantity: 5
+    constructionWorkMinutes: 60
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 4
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500

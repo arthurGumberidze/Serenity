@@ -53,7 +53,7 @@ namespace Game.Presentation.Environment
         public string DisplayName => SpeciesId switch
         {
             "deer" => "Олень", "boar" => "Кабан", "hare" => "Заяц", "fox" => "Лиса",
-            "wolf" => "Волк", "bear" => "Медведь", "waterfowl" => "Водоплавающая птица", _ => "Дикое животное"
+            "cow" => "Дикая корова", "wolf" => "Волк", "bear" => "Медведь", "waterfowl" => "Водоплавающая птица", _ => "Дикое животное"
         };
 
         public void Bind(StableEntityId stableId, string speciesId)

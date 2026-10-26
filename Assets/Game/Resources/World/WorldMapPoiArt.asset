@@ -68,7 +68,7 @@ MonoBehaviour:
     accentCount: 0
     accentRadius: 0
   - poiId: poi_cave
-    primaryPrefab: {fileID: 1965262673095252, guid: b02415e50456dea469f21d4618a16267, type: 3}
+    primaryPrefab: {fileID: 5944184636029015688, guid: 4ffb5b6a586bed849ad43854fa2194e3, type: 3}
     accentPrefab: {fileID: 0}
     effectPrefab: {fileID: 0}
     visualScale: 1.2

@@ -91,7 +91,7 @@ namespace Game.Domain.Production
             Site = site ?? throw new ArgumentNullException(nameof(site));
             if (site.Kind != ProductionSiteKind.NaturalSource)
                 throw new ArgumentException("Natural lifecycle requires a natural production site.", nameof(site));
-            if (site.SourceCapacity < 20 || site.SourceCapacity > 50)
+            if (site.SourceCapacity < 20 || site.SourceCapacity > 50 && site.RecipeId.ToString() != "fish_water")
                 throw new ArgumentOutOfRangeException(nameof(site), "Small natural node capacity must be 20-50 units.");
             if (!Enum.IsDefined(typeof(NaturalResourceBiome), biome)) throw new ArgumentOutOfRangeException(nameof(biome));
             respawnCandidates = (candidates ?? throw new ArgumentNullException(nameof(candidates))).Distinct().ToArray();

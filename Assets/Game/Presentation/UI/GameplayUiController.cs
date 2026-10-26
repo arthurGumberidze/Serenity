@@ -772,6 +772,12 @@ namespace Game.Presentation.UI
             }
             if (hit.collider.GetComponentInParent<BuildableGround>() != null || hit.collider is TerrainCollider)
             {
+                if (context.Production.IsWaterAt?.Invoke(position)==true && context.Production.FishStockAt(position) is { } fish)
+                {
+                    target = new ContextCommandTarget(ContextTargetKind.ResourceSource,fish.Position,fish.Id,
+                        new ResourceId("fish"),ContextResourceClass.Gatherable);
+                    return true;
+                }
                 target = new ContextCommandTarget(ContextTargetKind.Ground, position);
                 return true;
             }
@@ -2637,6 +2643,15 @@ namespace Game.Presentation.UI
                 x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id).ToArray();
             if (workplaceSites.Length > 0)
             {
+                if (building.DefinitionId.ToString()=="fishing_camp")
+                {
+                    var stock = context.Production.FishStockAt(workplaceSites[0].Position);
+                    AddLine(inspector,stock == null ? "Нет доступного водоёма" : $"Рыба в водоёме: {stock.RemainingAmount}/{stock.SourceCapacity}");
+                    var mode = new DropdownField("Режим",new List<string>{"Ловля рыбы","Разведение"},
+                        workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused)?1:0);
+                    mode.RegisterValueChangedCallback(_=>TryCommand(()=>context.Production.SetFisheryBreeding(building.Id,mode.index==1)));
+                    inspector.Add(mode);
+                }
                 var inputOwner = context.Production.InputOwner(building.Id);
                 var outputOwner = context.Production.OutputOwner(building.Id);
                 if (context.Inventories.TryGet(inputOwner, out var input))
@@ -2650,7 +2665,7 @@ namespace Game.Presentation.UI
                     if (workplaceSite.Continuous)
                     {
                         var reason = context.Production.GetWaitingReason(workplaceSite);
-                        AddLine(inspector, "Ловля рыбы · " + (reason == Game.Simulation.Production.ProductionWaitingReason.OutputFull ? "инвентарь заполнен" :
+                        AddLine(inspector, (workplaceSite.RecipeId.ToString()=="fish_breed" ? "Разведение · " : "Ловля рыбы · ") + (reason == Game.Simulation.Production.ProductionWaitingReason.OutputFull ? "нет свободного запаса или места" :
                             workplaceSite.Paused ? "пауза" : active == null ? "нет работника" : "работает"));
                         if (active != null) AddLine(inspector, $"Работник: {CharacterName(active.WorkerId)} · цикл {active.AccumulatedWorkTicks * 100 / active.RequiredWorkTicks}%");
                     }
@@ -2664,7 +2679,7 @@ namespace Game.Presentation.UI
                         recipeRow.Add(ActionButton("+1", () => TryCommand(() => QueueProduction(building, capturedRecipe, 1))));
                         recipeRow.Add(ActionButton("+5", () => TryCommand(() => QueueProduction(building, capturedRecipe, 5))));
                     }
-                    recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
+                    if (building.DefinitionId.ToString() != "fishing_camp") recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
                         context.Production.SetWorkplacePaused(building.Id, capturedRecipe, !workplaceSite.Paused))));
                     inspector.Add(recipeRow);
                 }
@@ -2672,7 +2687,7 @@ namespace Game.Presentation.UI
             DrawDirectPriority();
             var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
                 new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
-            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.ToString() == "fishing_camp" ? "Ловить рыбу" : "Изготавливать" : "Строить",
+            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
             {
@@ -2827,7 +2842,7 @@ namespace Game.Presentation.UI
             var characterCount = PlayerCharacterIds().Count;
             var aliveCount = PlayerAliveCount();
             var dynastyCount = context.Dynasty.History.Count;
-            var conditionCount = context.Health.Conditions.Count;
+            var conditionCount = context.Health.Conditions.Count(x=>PlayerCharacterIds().Contains(x.TargetId));
             var buildingHistory = context.Buildings.All.Sum(x => x.History.Count);
             var battleEvents = context.Battles.Battles.Sum(x => x.BattleHistory.Count);
             var travelCount = context.GlobalMap.Travels.Count;
@@ -2861,7 +2876,8 @@ namespace Game.Presentation.UI
                     new NotificationTarget { CharacterId = context.Dynasty.CurrentMonarchId, Panel = GameplayPanel.Dynasty });
                 if (conditionCount > knownConditionCount)
                 {
-                    var condition = context.Health.Conditions.Last();
+                    var condition = context.Health.Conditions.LastOrDefault(x => PlayerCharacterIds().Contains(x.TargetId));
+                    if (condition != null)
                     AddNotification(T("ui.notification.condition"),
                         new NotificationTarget { CharacterId = condition.TargetId });
                 }
@@ -3280,6 +3296,8 @@ namespace Game.Presentation.UI
                 if (context.Presentations.TryGet(target.CharacterId.Value, out var presenter) && presenter != null)
                     context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
                         presenter.transform.position.z));
+                else if (context.Tiers.TryGetTier(target.CharacterId.Value, out _))
+                    context.FocusWorld(context.Tiers.GetRuntimeState(target.CharacterId.Value).Position);
             }
             else if (target.BuildingId.HasValue)
             {

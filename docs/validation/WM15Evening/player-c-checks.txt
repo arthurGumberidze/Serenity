@@ -1,0 +1,45 @@
+PASS Ruler editor UMA generated
+PASS World ruler visible UMA
+PASS primitive_garden has a placeable construction footprint
+PASS Review construction receives plant_fiber
+PASS Review construction receives wood_log
+PASS cultivate_carrot sprouts render after sowing
+PASS cultivate_carrot reaches full visible size
+PASS cultivate_cabbage sprouts render after sowing
+PASS cultivate_cabbage reaches full visible size
+PASS cultivate_plant_fiber sprouts render after sowing
+PASS cultivate_plant_fiber reaches full visible size
+PASS cultivate_berries sprouts render after sowing
+PASS cultivate_berries reaches full visible size
+PASS animal_pasture has a placeable construction footprint
+PASS Review construction receives plant_fiber
+PASS Review construction receives wood_log
+PASS Dedicated pen receives founding breeding pair
+PASS Pen uses imported separate shelter
+PASS lake_south_forest has shared finite fish stock
+PASS Free schools cover water bodies
+FAIL lake_south_forest offers >=4 easily found shoreline previews (0)
+PASS lake_west_grove has shared finite fish stock
+PASS Free schools cover water bodies
+FAIL lake_west_grove offers >=4 easily found shoreline previews (0)
+PASS lake_mountain has shared finite fish stock
+PASS Free schools cover water bodies
+FAIL lake_mountain offers >=4 easily found shoreline previews (1)
+PASS lake_central_east has shared finite fish stock
+PASS Free schools cover water bodies
+FAIL lake_central_east offers >=4 easily found shoreline previews (0)
+PASS boar exists in canonical population
+PASS cow exists in canonical population
+PASS hunt_animal direct order accepted: None
+PASS Bow string and hands draw before release
+PASS hunt_animal worker reaches source and works
+PASS hunt_animal production completes
+PASS Bow impacts reduce animal health before skinning
+PASS chop_wood direct order accepted: None
+PASS chop_wood worker reaches source and works
+PASS chop_wood production completes
+PASS chop_wood impact fragments emitted
+PASS fish_water direct order accepted: None
+FAIL fish_water worker reaches source and works
+FAIL fish_water production completes
+FAIL No runtime errors during evening review

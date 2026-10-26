@@ -370,6 +370,26 @@ namespace Game.Domain.World
             return best;
         }
 
+        public string NearestWaterBodyId(float worldX,float worldZ)
+        {
+            if (authoredHydrology == null) return null;
+            var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX,0,worldZ));
+            string id = null; var best = float.PositiveInfinity;
+            foreach (var lake in authoredHydrology.Lakes)
+            {
+                if (lake.Shoreline.Contains(point)) return lake.Id;
+                var distance = DistanceToPolygon(point,lake.Shoreline);
+                if (distance < best) { best = distance; id = lake.Id; }
+            }
+            foreach (var course in EnumerateWaterCourses())
+            {
+                var sample = SampleSpline(point,course.Spline);
+                var distance = sample.Distance-sample.WidthMeters*.5f;
+                if (distance < best) { best = distance; id = authoredHydrology.MainRiver.Id; }
+            }
+            return id;
+        }
+
         public float DistanceToRiver(float worldX, float worldZ)
         {
             if (authoredHydrology != null)

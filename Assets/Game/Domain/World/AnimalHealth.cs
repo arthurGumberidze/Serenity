@@ -42,7 +42,7 @@ namespace Game.Domain.World
         {
             if (arrowDamage <= 0 || drawTicks <= 0 || flightTicks <= 0 || range <= 0f ||
                 accuracyPermille < 1 || accuracyPermille > 1000 || health == null || health.Any(p => p.Value <= 0) ||
-                pastureCapacity < 2 || pastureCapacity > 4 || livestockMaturityDays < 1 || livestockBirthDays < 1)
+                pastureCapacity < 2 || pastureCapacity > 16 || livestockMaturityDays < 1 || livestockBirthDays < 1)
                 throw new ArgumentException("Invalid hunting policy.");
             ArrowDamage = arrowDamage; DrawTicks = drawTicks; FlightTicks = flightTicks;
             Range = range; AccuracyPermille = accuracyPermille; Health = health;

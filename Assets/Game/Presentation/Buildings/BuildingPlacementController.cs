@@ -147,7 +147,7 @@ namespace Game.Presentation.Buildings
             if (zoneDragActive)
             {
                 authoredPlacementCells = IsDragSegment() ? CreateSegmentCells(zoneDragAnchor, WorldToCell(worldPoint)) :
-                    CreateRectangularZoneCells(zoneDragAnchor, WorldToCell(worldPoint), GardenMinimumSide, GardenMaximumSide);
+                    CreateRectangularZoneCells(zoneDragAnchor, WorldToCell(worldPoint), IsPastureZone() ? 8 : GardenMinimumSide, IsPastureZone() ? 24 : GardenMaximumSide);
                 return EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, worldPoint);
             }
             connectedWorldSurface ??= FindAnyObjectByType<P102WorldPlacementSurface>();
@@ -172,7 +172,7 @@ namespace Game.Presentation.Buildings
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
                 : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
-                    activeDefinition.Id.ToString() == "fishing_camp" ? 3f : (float?)null, activeDefinition.Id.ToString()=="gate",
+                    activeDefinition.Id.ToString() == "fishing_camp" ? 4.5f : (float?)null, activeDefinition.Id.ToString()=="gate",
                     activeDefinition.Id.ToString() == "fishing_camp");
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
@@ -370,7 +370,7 @@ namespace Game.Presentation.Buildings
                 zoneDragAnchor = WorldToCell(hit.point);
                 zoneDragActive = true;
                 authoredPlacementCells = IsDragSegment() ? CreateSegmentCells(zoneDragAnchor, zoneDragAnchor) :
-                    CreateRectangularZoneCells(zoneDragAnchor, zoneDragAnchor, GardenMinimumSide, GardenMaximumSide);
+                    CreateRectangularZoneCells(zoneDragAnchor, zoneDragAnchor, IsPastureZone() ? 8 : GardenMinimumSide, IsPastureZone() ? 24 : GardenMaximumSide);
                 EvaluatePreview(authoredPlacementCells[0], authoredPlacementCells, hit.point);
                 return;
             }
@@ -418,7 +418,8 @@ namespace Game.Presentation.Buildings
         }
 
         private bool IsVariableGarden() => activeDefinition != null &&
-            activeDefinition.Id == new BuildingDefinitionId("primitive_garden");
+            (activeDefinition.Id == new BuildingDefinitionId("primitive_garden") || IsPastureZone());
+        private bool IsPastureZone() => activeDefinition?.Id.ToString() == "animal_pasture";
 
         private bool IsDragSegment() => activeDefinition != null &&
             (activeDefinition.Id == new BuildingDefinitionId("palisade") ||

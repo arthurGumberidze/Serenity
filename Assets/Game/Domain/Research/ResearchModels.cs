@@ -241,6 +241,8 @@ namespace Game.Domain.Research
                 gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
             if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_camp")))
                 gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_camp")));
+            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_breed")))
+                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_breed")));
             foreach (var id in new[] { "gather_branches", "gather_mushrooms", "gather_medicinal_plants" })
             {
                 var recipeId = new ProductionRecipeId(id);
@@ -315,6 +317,7 @@ namespace Game.Domain.Research
                             ? TechnologyUnlock.Building(new BuildingDefinitionId("primitive_garden"))
                             : TechnologyUnlock.Capability(new CapabilityId("basic_survival")),
                         TechnologyUnlock.Recipe(new ProductionRecipeId("cultivate_berries")) }
+                        .Concat(availableBuildingIds.Where(id=>id.ToString()=="animal_pasture").Select(TechnologyUnlock.Building))
                         .Concat(production.All.Where(recipe => recipe.SiteKind == ProductionSiteKind.PrimitiveCropPlot &&
                             recipe.Id != new ProductionRecipeId("cultivate_berries"))
                             .Select(recipe => TechnologyUnlock.Recipe(recipe.Id)))),

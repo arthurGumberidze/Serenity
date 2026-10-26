@@ -95,6 +95,22 @@
         8
       ],
       "activity": "day"
+    },
+    {
+      "id": "cow",
+      "name": "Дикая корова",
+      "suitableBiomes": [
+        "alpine_scrub"
+      ],
+      "targetPopulation": [
+        8,
+        12
+      ],
+      "groupSize": [
+        2,
+        4
+      ],
+      "activity": "day"
     }
   ],
   "concentrationZones": [

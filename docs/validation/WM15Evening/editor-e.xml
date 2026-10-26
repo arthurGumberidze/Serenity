@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0,5361362">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="807" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.536136" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1938" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="803" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.436655" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="12560" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1939" name="Game" fullname="Game" runstate="Runnable" testcasecount="803" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.382124" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1940" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="803" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.320996" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1941" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="620" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.260280" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1863" name="WM15EveningFeedbackTests" fullname="Game.Tests.Editor.WM15EveningFeedbackTests" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.187277" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1864" name="NewContentIsAvailableThroughResearchWithoutCheats" fullname="Game.Tests.Editor.WM15EveningFeedbackTests.NewContentIsAvailableThroughResearchWithoutCheats" methodname="NewContentIsAvailableThroughResearchWithoutCheats" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" seed="845479750" result="Passed" start-time="2026-10-26 19:05:00Z" end-time="2026-10-26 19:05:00Z" duration="0.155005" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -10,6 +10,8 @@ namespace Game.Presentation.Production
     {
         public static void Play(GameObject source, bool tree)
         {
+            // Rock depletion already produces mined resources and impact fragments; no shrinking duplicate.
+            if (!tree) return;
             var root = new GameObject(tree ? "Falling harvested tree" : "Breaking harvested rock");
             root.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
             var renderers = new HashSet<Renderer>(source.GetComponentsInChildren<MeshRenderer>(true));

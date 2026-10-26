@@ -26,6 +26,7 @@ namespace Game.Infrastructure.Integration
         private readonly List<string> errors = new();
         private float deadline;
         private bool finished;
+        private bool startupFailed;
         private bool propsOnly;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -53,9 +54,11 @@ namespace Game.Infrastructure.Integration
         {
             if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
                 errors.Add(text+"\n"+stack);
+            if(type==LogType.Exception && stack.Contains("InitializeGuarded"))startupFailed=true;
         }
         private void Update()
         {
+            if(!finished && startupFailed){Check(false,"World initialization failed; see errors.txt");Finish();return;}
             if (!finished && Time.realtimeSinceStartup > deadline) { Check(false,"Timed out"); Finish(); }
         }
         private IEnumerator Capture(string name)
@@ -94,6 +97,8 @@ namespace Game.Infrastructure.Integration
                 ruler.GetComponent<UmaAppearanceProjection>()?.UsesUma == true,"World ruler visible UMA");
             yield return Capture("02-start");
 
+            if (Environment.GetCommandLineArgs().Contains("-wm15Evening"))
+            { propsOnly = true; yield return EveningReview(root); Finish(); yield break; }
             if (Environment.GetCommandLineArgs().Contains("-wm15Afternoon"))
             { propsOnly = true; yield return AfternoonReview(root); Finish(); yield break; }
             if(propsOnly) { yield return PropReview(root); Finish(); yield break; }
@@ -274,7 +279,7 @@ namespace Game.Infrastructure.Integration
         private IEnumerator WorkRoute(LocalSceneCompositionRoot root,string recipe)
         {
             var worker=root.MaleDemoCharacter.Id;
-            if(recipe=="chop_wood" || recipe=="fish_water")
+            if(recipe=="chop_wood" || recipe=="fish_water" || recipe=="hunt_animal" && Environment.GetCommandLineArgs().Contains("-wm15Evening"))
                 worker=root.Characters.GetAll().First(c=>root.CanCommandResident(c.Id) &&
                     c.Id!=root.MaleDemoCharacter.Id && c.Id!=root.FemaleDemoCharacter.Id &&
                     !c.Name.ToString().StartsWith("Diag ") && root.CharacterPresentations.TryGet(c.Id,out _) &&
@@ -351,7 +356,8 @@ namespace Game.Infrastructure.Integration
                     if(recipe=="fish_water")
                     {
                         var p=root.Production.WorkPosition(worker,site);
-                        Check((person.transform.position-new Vector3(p.X,p.Y,p.Z)).magnitude<1.5f,"Fisher physically stands on pier");
+                        var stanceDistance=(person.transform.position-new Vector3(p.X,p.Y,p.Z)).magnitude;
+                        Check(stanceDistance<1.5f,"Fisher physically reaches its dry work stance ("+stanceDistance.ToString("F2")+" m)");
                         if (Array.IndexOf(Environment.GetCommandLineArgs(),"-wm15Afternoon") >= 0)
                         {
                             Check(Mathf.Abs(person.transform.position.y-p.Y)<.12f,"Fisher root matches deck height");

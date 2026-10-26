@@ -151,7 +151,7 @@ namespace Game.Simulation.Production
     /// Canonical engine-free production authority. Natural sources, crop progress, task reservations,
     /// recipe commits, food consumption and target-stock policy all advance from explicit game time.
     /// </summary>
-    public sealed class ProductionService
+    public sealed partial class ProductionService
     {
         private readonly ProductionCatalog recipes;
         private readonly ResourceCatalog resources;
@@ -270,7 +270,7 @@ namespace Game.Simulation.Production
                     !sites.TryGetValue(home, out var site)) continue;
                 var herd = Animals.AtHome(home);
                 var alive = herd.Where(x => x.Alive).ToArray();
-                if (herd.Count(x => !x.Harvested) >= Animals.Policy.PastureCapacity || herd.Count == 0 ||
+                if (herd.Count(x => !x.Harvested) >= Math.Min(Animals.Policy.PastureCapacity, Math.Max(4,building.PlacementCells.Count/8)) || herd.Count == 0 ||
                     tick - herd.Max(x => x.BornTick) < TimeSpan.TicksPerDay * Animals.Policy.LivestockBirthDays) continue;
                 var mature = alive.Where(x => tick - x.BornTick >= TimeSpan.TicksPerDay * Animals.Policy.LivestockMaturityDays).ToArray();
                 if (!mature.Any(x => x.Male) || !mature.Any(x => !x.Male)) continue;
@@ -312,6 +312,7 @@ namespace Game.Simulation.Production
                         definition.Workplace.MaximumWorkers);
                     AddSite(site);
                     if (recipeId.ToString() == "fish_camp") site.SetContinuous(true);
+                    if (recipeId.ToString() == "fish_breed") { site.SetContinuous(true); site.SetPaused(true); }
                 }
                 result.Add(site);
             }
@@ -624,7 +625,7 @@ namespace Game.Simulation.Production
                     workTicks -= task.AddWork(workTicks);
                     if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) break;
                     var cycle = Complete(task);
-                    if (!cycle.ProducedOutput) break;
+                    if (!cycle.ProducedOutput && task.RecipeId.ToString() != "fish_breed") break;
                 }
                 return default;
             }
@@ -694,20 +695,18 @@ namespace Game.Simulation.Production
             var firstStep = LastCalendarTick / settings.FixedStep.Ticks + 1L;
             var finalStep = targetCalendarTick / settings.FixedStep.Ticks;
             // No production boundary was crossed. Preserve the checkpoint, without preparing an unused roster.
-            if (firstStep > finalStep) { LastCalendarTick = targetCalendarTick; return; }
+            if (firstStep > finalStep) { AdvanceCropGrowth(LastCalendarTick,targetCalendarTick); LastCalendarTick = targetCalendarTick; return; }
             orderedWorkerBuffer.Clear();
             orderedWorkerBuffer.AddRange(abstractWorkers);
             orderedWorkerBuffer.Sort();
             RemoveAdjacentDuplicates(orderedWorkerBuffer);
+            var growthCursor=LastCalendarTick;
             for (var step = firstStep; step <= finalStep; step++)
             {
+                var boundary=checked(step*settings.FixedStep.Ticks);
+                AdvanceCropGrowth(growthCursor,boundary);growthCursor=boundary;
                 var stepStartTick = checked((step - 1L) * settings.FixedStep.Ticks);
                 AdvanceLivestock(stepStartTick);
-                var cropModifier = weather == null ? 1000 :
-                    weather.GetWeatherAtCalendarTick(stepStartTick).Modifiers.CropGrowthPerThousand;
-                var growthTicks = checked(settings.FixedStep.Ticks * cropModifier / 1000L);
-                foreach (var site in orderedSites)
-                    if (IsSiteOperational(site.Id)) site.AdvanceGrowth(growthTicks);
                 Food.Advance(settings.FixedStep, Population);
                 stepTotals = new Dictionary<ResourceId, long>();
                 foreach (var definition in resources.All) stepTotals.Add(definition.Id, GetCanonicalTotal(definition.Id));
@@ -718,7 +717,22 @@ namespace Game.Simulation.Production
                 }
                 finally { stepTotals = null; }
             }
+            AdvanceCropGrowth(growthCursor,targetCalendarTick);
             LastCalendarTick = targetCalendarTick;
+        }
+
+        private void AdvanceCropGrowth(long from,long target)
+        {
+            // Interleave growth with abstract work, so a planted/harvested field changes on the same
+            // boundary whether the caller advances one day or several days in a single call.
+            while(from<target)
+            {
+                var end=Math.Min(target,(from/TimeSpan.TicksPerDay+1)*TimeSpan.TicksPerDay);
+                var modifier=weather==null?1000:weather.GetWeatherAtCalendarTick(from).Modifiers.CropGrowthPerThousand;
+                var growth=checked((end-from)*modifier/1000L);
+                foreach(var site in orderedSites) if(IsSiteOperational(site.Id)) site.AdvanceGrowth(growth);
+                from=end;
+            }
         }
 
         private static void RemoveAdjacentDuplicates(List<StableEntityId> values)
@@ -915,6 +929,16 @@ namespace Game.Simulation.Production
             }
             var recipe = recipes.Get(task.RecipeId);
             var outputs = recipe.OutputsFor(site);
+            var fishStock = FishStockFor(site);
+            if (task.RecipeId.ToString() == "fish_camp" && (fishStock == null || fishStock.IsDepleted)) return default;
+            if (task.RecipeId.ToString() == "fish_breed")
+            {
+                if (fishStock == null || fishStock.RemainingAmount >= fishStock.SourceCapacity) return default;
+                site.CompleteWork(task.Kind);
+                fishStock.RecoverNatural(outputs.Sum(value=>value.Quantity.Units));
+                if (site.Continuous) task.BeginNextCycle(); else { task.Complete(); Release(task); }
+                return default;
+            }
             if (task.RecipeId.ToString() == "hunt_animal" && Animals.TryGet(site.Id, out var hunted) &&
                 (hunted.Alive || hunted.Harvested)) return default;
             var outputOwner = site.Kind == ProductionSiteKind.BuildingWorkplace
@@ -927,6 +951,7 @@ namespace Game.Simulation.Production
                 !TrySelectOutputOwner(task.WorkerId, outputs, out outputOwner))
                 return default;
             if (!TryConsumeInputs(recipe, site)) return default;
+            if (task.RecipeId.ToString() == "fish_camp") fishStock.CompleteWork(ProductionTaskKind.Gather);
             site.CompleteWork(task.Kind, recipe.HarvestEntireSource || task.RecipeId.ToString() == "hunt_animal");
             if (task.RecipeId.ToString() == "hunt_animal") Animals.Harvest(site.Id);
             var produced = false;
@@ -1028,6 +1053,9 @@ namespace Game.Simulation.Production
 
         private bool CanPlaceOutputs(StableEntityId workerId, ProductionRecipe recipe, ProductionSite site)
         {
+            if (recipe.Id.ToString() == "fish_breed")
+            { var stock = FishStockFor(site); return stock != null && stock.RemainingAmount < stock.SourceCapacity; }
+            if (recipe.Id.ToString() == "fish_camp" && FishStockFor(site)?.RemainingAmount is not > 0) return false;
             if (site.Kind == ProductionSiteKind.BuildingWorkplace)
                 return inventories.TryGet(OutputOwner(site.OwnerBuildingId), out var output) &&
                     CanAddAll(output, recipe.OutputsFor(site));

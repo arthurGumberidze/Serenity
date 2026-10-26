@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53,3250687">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="808" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.325069" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1940" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="804" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.289034" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="33388" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1941" name="Game" fullname="Game" runstate="Runnable" testcasecount="804" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.250138" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1942" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="804" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.225649" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1943" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="621" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.180786" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1892" name="WM15ShorePlacementTests" fullname="Game.Tests.Editor.WM15ShorePlacementTests" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.141894" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1893" name="EnlargedCampHasAtLeastFourDrySitesPerLake" fullname="Game.Tests.Editor.WM15ShorePlacementTests.EnlargedCampHasAtLeastFourDrySitesPerLake" methodname="EnlargedCampHasAtLeastFourDrySitesPerLake" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" seed="482275349" result="Passed" start-time="2026-10-26 20:23:14Z" end-time="2026-10-26 20:24:07Z" duration="53.120429" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[lake_south_forest valid=39 blocked=Строительство на воде или затопленном грунте запрещено.:10
+lake_west_grove valid=37 blocked=Строительство на воде или затопленном грунте запрещено.:9
+lake_mountain valid=20 blocked=Строительство на воде или затопленном грунте запрещено.:10;Уникальная точка интереса защищена от строительства и автоматической расчистки.:7
+lake_central_east valid=32 blocked=Строительство на воде или затопленном грунте запрещено.:9
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

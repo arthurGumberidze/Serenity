@@ -548,7 +548,7 @@ namespace Game.Domain.World
     {
         public WorldMapFisheryDefinition(IEnumerable<WorldMapFishPopulationDefinition> populations,
             string growthModel, float minimumBankWorkPointOffsetMeters, int dailyGrowthPermille,
-            int minimumRecoveryUnits)
+            int minimumRecoveryUnits, int minimumSharedStockUnits = 2000, int sharedStockMultiplier = 10)
         {
             var values = (populations ?? throw new ArgumentNullException(nameof(populations))).ToArray();
             if (values.Length != 24 || values.Any(value => value == null) ||
@@ -560,6 +560,8 @@ namespace Game.Domain.World
                 minimumBankWorkPointOffsetMeters <= 0f || dailyGrowthPermille <= 0 ||
                 dailyGrowthPermille > 1000 || minimumRecoveryUnits <= 0)
                 throw new ArgumentOutOfRangeException(nameof(dailyGrowthPermille));
+            if(minimumSharedStockUnits<1 || sharedStockMultiplier<1)throw new ArgumentOutOfRangeException(nameof(minimumSharedStockUnits));
+            MinimumSharedStockUnits=minimumSharedStockUnits;SharedStockMultiplier=sharedStockMultiplier;
             Populations = Array.AsReadOnly(values.OrderBy(value => value.Id, StringComparer.Ordinal).ToArray());
             GrowthModel = growthModel;
             MinimumBankWorkPointOffsetMeters = minimumBankWorkPointOffsetMeters;
@@ -572,6 +574,8 @@ namespace Game.Domain.World
         public float MinimumBankWorkPointOffsetMeters { get; }
         public int DailyGrowthPermille { get; }
         public int MinimumRecoveryUnits { get; }
+        public int MinimumSharedStockUnits { get; }
+        public int SharedStockMultiplier { get; }
     }
 
     /// <summary>Canonical WM06 masks and visibility policy; it contains no mutable depletion state.</summary>

@@ -1144,7 +1144,10 @@
     "model": "logistic_growth_with_harvest_pressure",
     "minimumBankWorkPointOffsetMeters": 12,
     "dailyGrowthPermille": 120,
-    "minimumRecoveryUnits": 1
+    "minimumRecoveryUnits": 1,
+    "minimumSharedStockUnits": 2000,
+    "sharedStockMultiplier": 10,
+    "runtimeStockPolicy": "finite_replenished_by_camp_breeding_only"
   },
   "hydrologyValidation": {
     "allLakesConnectedBySurfaceDrainage": true,

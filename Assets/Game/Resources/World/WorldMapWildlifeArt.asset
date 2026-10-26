@@ -28,3 +28,6 @@ MonoBehaviour:
   - speciesId: waterfowl
     prefab: {fileID: 3331907636935331907, guid: 099bbdbc5190e964cb5918c27903acd8, type: 3}
     scale: 0.8
+  - speciesId: cow
+    prefab: {fileID: 1217302036275882627, guid: 192ec79fb671e5849abb0b43f65cb3ac, type: 3}
+    scale: 1

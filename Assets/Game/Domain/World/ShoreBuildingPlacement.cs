@@ -6,7 +6,7 @@ namespace Game.Domain.World
     /// <summary>A shore building stays on dry ground; its front faces water and its rear is a dry entrance.</summary>
     public static class ShoreBuildingPlacement
     {
-        public const float MaximumSlopeDegrees = 32f;
+        public const float MaximumSlopeDegrees = 36f;
         public static bool IsValid(TiledWorldHeightSampler heights, GridCoordinate anchor,
             BuildingFootprint footprint, BuildingOrientation orientation, float gridSize, float originX, float originZ)
         {
@@ -18,7 +18,7 @@ namespace Game.Domain.World
                 if (!heights.Definition.ContainsClosed(x,z) || !heights.IsBuildable(x,z,MaximumSlopeDegrees)) return false;
                 var y = heights.SampleHeight(x,z); low = Math.Min(low,y); high = Math.Max(high,y);
             }
-            return high - low <= 3f;
+            return high - low <= 4.5f;
         }
 
         public static bool HasWaterfront(TiledWorldHeightSampler heights, GridCoordinate anchor,
@@ -30,9 +30,9 @@ namespace Game.Domain.World
             var angle = orientation.Degrees() * Math.PI / 180;
             var fx = (float)Math.Sin(angle); var fz = (float)Math.Cos(angle);
             // Leave room for the short working platform at a curved bank: the full building stays dry.
-            var front = footprint.Depth * gridSize * .5f + 2.4f;
-            // Three water samples across the working face exclude a corner merely near a pond.
-            for (var side = -1; side <= 1; side++)
+            var front = footprint.Depth * gridSize * .5f + 4.5f;
+            // The central working platform may reach water across a curved bank.
+            const int side = 0;
             {
                 var x = cx + fx * front + fz * side * footprint.Width * gridSize * .25f;
                 var z = cz + fz * front - fx * side * footprint.Width * gridSize * .25f;

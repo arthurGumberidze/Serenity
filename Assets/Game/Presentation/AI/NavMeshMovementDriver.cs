@@ -119,8 +119,12 @@ namespace Game.Presentation.AI
                 if (state != MovementState.Moving) return state;
                 if (!UsesNavMeshAgent) return state;
                 if (agent.pathPending) return MovementState.Moving;
-                if (agent.pathStatus == NavMeshPathStatus.PathInvalid) return MovementState.Failed;
-                if (agent.remainingDistance <= agent.stoppingDistance + 0.05f && agent.velocity.sqrMagnitude <= 0.04f)
+                if (agent.pathStatus != NavMeshPathStatus.PathComplete) return MovementState.Failed;
+                // SetDestination can briefly retain the previous path's zero remainingDistance.
+                // Arrival must refer to this request, not a previous job's endpoint.
+                var actualDistance = Vector3.Distance(presenter.transform.position,requestedDestination);
+                if (hasRequestedDestination && actualDistance <= requestedStoppingDistance + .2f &&
+                    agent.remainingDistance <= agent.stoppingDistance + 0.05f && agent.velocity.sqrMagnitude <= 0.04f)
                     return MovementState.Arrived;
                 return MovementState.Moving;
             }

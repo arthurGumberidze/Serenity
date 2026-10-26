@@ -715,7 +715,9 @@ namespace Game.Infrastructure
             var population = water.Object("fishPopulation");
             var fishery = new WorldMapFisheryDefinition(populations, population.String("model"),
                 population.Float("minimumBankWorkPointOffsetMeters"),
-                population.Int("dailyGrowthPermille"), population.Int("minimumRecoveryUnits"));
+                population.Int("dailyGrowthPermille"), population.Int("minimumRecoveryUnits"),
+                population.Has("minimumSharedStockUnits")?population.Int("minimumSharedStockUnits"):2000,
+                population.Has("sharedStockMultiplier")?population.Int("sharedStockMultiplier"):10);
             var lakeIds = new HashSet<string>(lakes.Select(value => value.Id), StringComparer.Ordinal);
             if (fishery.Populations.Count(value => !value.IsRiver) != 16 ||
                 fishery.Populations.Count(value => value.IsRiver) != 8 ||

@@ -18,7 +18,9 @@ namespace Game.Domain.World
         {
             if (stableIndex < 0) throw new ArgumentOutOfRangeException(nameof(stableIndex));
             if (string.IsNullOrWhiteSpace(recipeId)) throw new ArgumentException(nameof(recipeId));
-            if (capacity < 20 || capacity > 50) throw new ArgumentOutOfRangeException(nameof(capacity));
+            // Fish represents a whole water body; other nodes retain their small local deposits.
+            if (capacity < 20 || capacity > 50 && recipeId != "fish_water")
+                throw new ArgumentOutOfRangeException(nameof(capacity));
             if (hidden && string.IsNullOrWhiteSpace(unlockTechnologyId))
                 throw new ArgumentException("Hidden deposits require an unlock technology.", nameof(unlockTechnologyId));
             if (carryingCapacityGrowthPermillePerDay < 0 || carryingCapacityGrowthPermillePerDay > 1000 ||
@@ -255,8 +257,9 @@ namespace Game.Domain.World
         {
             var fishery = definition.MapData.Resources.Fishery;
             var fishType = definition.MapData.Resources.Type("fish");
-            foreach (var population in fishery.Populations.OrderBy(value => value.Id, StringComparer.Ordinal))
+            foreach (var waterGroup in fishery.Populations.GroupBy(value => value.WaterBodyId).OrderBy(value => value.Key,StringComparer.Ordinal))
             {
+                var population = waterGroup.OrderBy(value=>value.Id,StringComparer.Ordinal).First();
                 WorldPosition bank;
                 WorldPosition water;
                 float habitatCapacityIndex;
@@ -277,11 +280,11 @@ namespace Game.Domain.World
                 var dailyGrowth = Math.Max(1, (int)Math.Round(fishery.DailyGrowthPermille *
                     habitatCapacityIndex, MidpointRounding.AwayFromZero));
                 target.Add(new TiledWorldResourceNode(stableIndex++, tile, "fish_water",
-                    NaturalResourceBiome.Lake, bank, population.CarryingCapacityUnits,
+                    NaturalResourceBiome.Lake, bank, Math.Max(fishery.MinimumSharedStockUnits,waterGroup.Sum(value=>value.CarryingCapacityUnits)*fishery.SharedStockMultiplier),
                     population.WaterBodyId, water, "fish", false, string.Empty,
-                    fishType.DepletionPolicy, fishType.RenewalPolicy,
+                    fishType.DepletionPolicy, "none",
                     definition.MapData.MapVersion + ":fish:" + population.Id,
-                    dailyGrowth, fishery.MinimumRecoveryUnits));
+                    0, 0));
                 occupied.Add(bank);
             }
         }

@@ -55,6 +55,8 @@ namespace Game.Tests.Editor
             var worker=Id(2);inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character,worker),resources,10));
             var transfers=new ResourceTransferService(inventories);
             var production=new ProductionService(ProductionCatalog.CreateStoneAge(resources),resources,inventories,buildings,transfers);
+            var stock=ProductionSite.CreateNatural(new ProductionRecipeId("fish_water"),default,10000);
+            production.AddSite(stock);production.WaterBodyAt=_=>"lake";production.RegisterFishWater("lake",stock.Id);
             production.RegisterBuildingWorkplace(building.Id,definition,new WorldPosition(0,0,-4));
             Assert.That(production.TryReserveAtBuilding(worker,building.Id,out var job),Is.True);
             production.AdvanceTask(job.Task.Id,TimeSpan.FromDays(1));
@@ -73,8 +75,8 @@ namespace Game.Tests.Editor
             var snapshot=new SaveSnapshot(SaveSnapshot.CurrentVersion,Id(99),new GameTimeState(),400,production.CaptureState());
             var decoded=new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
             production.RestoreState(decoded.Production);
-            Assert.That(production.Sites.Single().Continuous,Is.True);
-            Assert.That(production.Sites.Single().Paused,Is.True);
+            Assert.That(production.Sites.Single(x=>x.RecipeId.ToString()=="fish_camp").Continuous,Is.True);
+            Assert.That(production.Sites.Single(x=>x.RecipeId.ToString()=="fish_camp").Paused,Is.True);
         }
 
         [Test]

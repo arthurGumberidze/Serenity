@@ -88,7 +88,7 @@ namespace Game.Infrastructure
                         var size = bounds.size;
                         var axis = size.x > size.y && size.x > size.z ? Vector3.right :
                             size.y > size.z ? Vector3.up : Vector3.forward;
-                        var turn = Quaternion.FromToRotation(axis, Vector3.forward);
+                        var turn = Quaternion.FromToRotation(-axis, Vector3.forward);
                         var scale = .72f / Mathf.Max(.01f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
                         model.transform.localRotation = turn * model.transform.localRotation;
                         model.transform.localScale *= scale;

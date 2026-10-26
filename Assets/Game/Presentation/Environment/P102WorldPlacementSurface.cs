@@ -43,12 +43,19 @@ namespace Game.Presentation.Environment
         private sealed class StaticCell { public string Blocked; public float Low, High; }
         private readonly Dictionary<(GridCoordinate cell,float size,Vector3 origin,bool shore),StaticCell> staticCells = new();
 
+        public void ImportShoreCells(IReadOnlyDictionary<GridCoordinate,ShorePlacementIndex.Cell> cells,float gridSize,Vector3 origin)
+        {
+            foreach(var pair in cells)
+                staticCells[(pair.Key,gridSize,origin,true)]=new StaticCell
+                { Blocked=pair.Value.Blocked==null?null:AuthoredBlockedReason(pair.Value.Blocked),Low=pair.Value.Low,High=pair.Value.High };
+        }
+
         // Terrain and authored masks are immutable for this world; physical blockers are always checked again.
         public bool PrepareFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize, Vector3 origin,
             bool shorelineFacility, double budgetMilliseconds = 2)
         {
             if (tiledWorld == null) return true;
-            if (staticCells.Count + cells.Count >= 16384) staticCells.Clear();
+            if (staticCells.Count + cells.Count >= 65536) staticCells.Clear();
             var timer = System.Diagnostics.Stopwatch.StartNew(); var computed = 0;
             foreach (var cell in cells)
             {

@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b096237cb6d5b468d65f228c8bad92f, type: 3}
   m_Name: CropArt
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Production.CropArtCatalog
-  Carrot: {fileID: 8391472377501456876, guid: a8e7da1417c156f8b8658af31152ef43, type: 3}
-  Cabbage: {fileID: 8692519690814794534, guid: fc7f1d30a28b52289ce3be05396111f2, type: 3}
-  Fiber: {fileID: 2872438262598781205, guid: 01910a8bf5475cd7b7f7c363b6959092, type: 3}
+  Carrot: {fileID: 4487409927736141900, guid: 7a8175b40eb0b3147b217ba775d1c4ee, type: 3}
+  Cabbage: {fileID: 3939458191549622593, guid: 9076658cc9b22154a897dc9083b145e1, type: 3}
+  Fiber: {fileID: 7964625166799338357, guid: 791d9d1400ed2034283bf7d1ee6d3554, type: 3}
   Fence: {fileID: 5811258600280286245, guid: 8f45e37f062f53a5b0dcd385109f35b1, type: 3}
-  Berries: {fileID: 8807064048693953627, guid: c06ecca5c3d565e42808724839b39b6f, type: 3}
+  Berries: {fileID: 5939604151763433457, guid: 73a773a45303aed419559edb9a9f9b78, type: 3}
   Sheep: {fileID: 3255867418874246156, guid: b3a8a85f683a528785af26487380e76c, type: 3}
+  PastureShelter: {fileID: 2352506623103967401, guid: 771d9e74dc9756049bf636e1081276e3, type: 3}

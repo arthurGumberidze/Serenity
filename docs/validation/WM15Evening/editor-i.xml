@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="149,1543387">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="809" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="149.154339" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1941" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="805" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="149.110391" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="43236" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1942" name="Game" fullname="Game" runstate="Runnable" testcasecount="805" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="149.067387" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1943" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="805" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="149.024740" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1944" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="622" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="148.963372" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1892" name="WM15ShorePlacementTests" fullname="Game.Tests.Editor.WM15ShorePlacementTests" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="148.919828" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1893" name="PreparedIndexOffersFourNearbyChoicesPerLakeWithoutTerrainRecalculation" fullname="Game.Tests.Editor.WM15ShorePlacementTests.PreparedIndexOffersFourNearbyChoicesPerLakeWithoutTerrainRecalculation" methodname="PreparedIndexOffersFourNearbyChoicesPerLakeWithoutTerrainRecalculation" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" seed="1282724733" result="Passed" start-time="2026-10-26 21:00:10Z" end-time="2026-10-26 21:02:39Z" duration="148.896731" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Prepared candidates=213 cached cells=18702
+lake_south_forest nearby shore choices=5
+lake_west_grove nearby shore choices=5
+lake_mountain nearby shore choices=4
+lake_central_east nearby shore choices=5
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

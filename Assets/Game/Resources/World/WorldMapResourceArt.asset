@@ -34,4 +34,4 @@ MonoBehaviour:
   - resourceTypeId: fish
     prefab: {fileID: 4882420744396746434, guid: f9b7b5ac5f540044484fbe573a7a8de8, type: 3}
   - resourceTypeId: stone_quarry
-    prefab: {fileID: 3221855698279360271, guid: 27a1325a3ab431d48a2d2e02dca34e99, type: 3}
+    prefab: {fileID: 3272783919055443103, guid: a3a777a2713162344bd32e7533b85e3d, type: 3}

@@ -4,7 +4,7 @@
   "flightGameSeconds": 24,
   "rangeMeters": 18,
   "accuracyPermille": 850,
-  "pastureCapacity": 4,
+  "pastureCapacity": 16,
   "livestockMaturityDays": 3,
   "livestockBirthDays": 5,
   "species": [

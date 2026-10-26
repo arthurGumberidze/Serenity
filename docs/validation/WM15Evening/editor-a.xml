@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Failed(Child)" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 18:49:39Z" end-time="2026-10-26 18:49:40Z" duration="0,6059057">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="806" result="Failed" site="Child" start-time="2026-10-26 18:49:39Z" end-time="2026-10-26 18:49:40Z" duration="0.605906" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1937" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.545964" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="28268" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1938" name="Game" fullname="Game" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.511339" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1939" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="802" result="Failed" site="Child" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.470759" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestSuite" id="1940" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="619" result="Failed" site="Child" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.433266" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-suite type="TestFixture" id="1863" name="WM15EveningFeedbackTests" fullname="Game.Tests.Editor.WM15EveningFeedbackTests" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.372785" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <failure>
+                <message><![CDATA[One or more child tests had errors]]></message>
+              </failure>
+              <test-case id="1864" name="BoarWalkMovesBonesAfterSeveralCycles" fullname="Game.Tests.Editor.WM15EveningFeedbackTests.BoarWalkMovesBonesAfterSeveralCycles" methodname="BoarWalkMovesBonesAfterSeveralCycles" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" seed="361492106" result="Passed" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.145351" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1866" name="CropGrowthAdvancesWithinDayAndSurvivesRestore" fullname="Game.Tests.Editor.WM15EveningFeedbackTests.CropGrowthAdvancesWithinDayAndSurvivesRestore" methodname="CropGrowthAdvancesWithinDayAndSurvivesRestore" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" seed="804598927" result="Passed" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.093213" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1865" name="FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" fullname="Game.Tests.Editor.WM15EveningFeedbackTests.FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" methodname="FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt" classname="Game.Tests.Editor.WM15EveningFeedbackTests" runstate="Runnable" seed="131788681" result="Failed" start-time="2026-10-26 18:49:40Z" end-time="2026-10-26 18:49:40Z" duration="0.105190" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <failure>
+                  <message><![CDATA[  Expected: 6
+  But was:  0
+]]></message>
+                  <stack-trace><![CDATA[at Game.Tests.Editor.WM15EveningFeedbackTests.FishingUsesFiniteSharedStockAndOnlyBreedingRestoresIt () [0x00321] in C:\serenity_game\Assets\Game\Tests\Editor\WM15EveningFeedbackTests.cs:58
+]]></stack-trace>
+                </failure>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -10,6 +10,7 @@ namespace Game.Presentation.Production
         public GameObject Fence;
         public GameObject Berries;
         public GameObject Sheep;
+        public GameObject PastureShelter;
 
         public GameObject For(string recipe) => recipe switch
         {

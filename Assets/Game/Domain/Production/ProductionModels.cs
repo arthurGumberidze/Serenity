@@ -122,8 +122,9 @@ namespace Game.Domain.Production
             return new ProductionCatalog(CreateStoneAge(resources).All.Select(recipe =>
             {
                 if (recipe.Id.ToString() == "fish_water")
-                    return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs, recipe.Outputs,
-                        TimeSpan.FromMinutes(20), recipe.SiteKind, recipe.Enabled, recipe.WeatherExposure);
+                    return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs,
+                        new[] { new ResourceAmount(new ResourceId("fish"),new ResourceQuantity(1)) },
+                        TimeSpan.FromMinutes(12), recipe.SiteKind, recipe.Enabled, recipe.WeatherExposure);
                 if (!durations.TryGetValue(recipe.Id.ToString(), out var minutes)) return recipe;
                 return new ProductionRecipe(recipe.Id, recipe.DisplayName, recipe.Inputs,
                     recipe.Outputs.Select(x => new ResourceAmount(x.ResourceId, new ResourceQuantity(1))),
@@ -238,7 +239,7 @@ namespace Game.Domain.Production
                     TimeSpan.FromHours(3), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_water"), "Fish Water", null,
-                    new[] { new ResourceAmount(fish, new ResourceQuantity(4)) }, TimeSpan.FromHours(8),
+                    new[] { new ResourceAmount(fish, new ResourceQuantity(1)) }, TimeSpan.FromMinutes(12),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
             if (resources.Contains(water))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("draw_water"), "Draw Water", null,
@@ -265,6 +266,10 @@ namespace Game.Domain.Production
                         new ResourceAmount(wood, new ResourceQuantity(1)) },
                     new[] { new ResourceAmount(cookedBerries, new ResourceQuantity(3)) },
                     TimeSpan.FromMinutes(20), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(fish))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_breed"), "Разведение рыбы",
+                    Array.Empty<ResourceAmount>(), new[] { new ResourceAmount(fish, new ResourceQuantity(6)) },
+                    TimeSpan.FromMinutes(24), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_camp"), "Fishing Camp",
                     Array.Empty<ResourceAmount>(), new[] { new ResourceAmount(fish, new ResourceQuantity(1)) },
