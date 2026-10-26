@@ -155,18 +155,13 @@ namespace Game.Infrastructure
                         // Vendor prefabs contain positions from their demonstration scene.
                         model.transform.localPosition = Vector3.zero;
                         model.transform.localRotation = Quaternion.identity;
-                        var meshes = model.GetComponentsInChildren<Renderer>(true);
-                        if (meshes.Length > 0)
-                        {
-                            var bounds = meshes[0].bounds;
-                            foreach (var mesh in meshes) bounds.Encapsulate(mesh.bounds);
-                            model.transform.position -= new Vector3(bounds.center.x - view.transform.position.x,
-                                bounds.min.y - view.transform.position.y, bounds.center.z - view.transform.position.z);
-                        }
+                        WorldMapWildlifeView.AlignVisibleGeometry(model, view.transform.position);
                         view.name = "WM08 " + state.SpeciesId + " " + state.Id;
                         view.transform.localScale *= entry.Scale;
                         foreach (var animator in view.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;
-                        view.AddComponent<WorldMapWildlifeView>().Bind(state.Id, state.SpeciesId);
+                        var animalView = view.AddComponent<WorldMapWildlifeView>();
+                        animalView.Bind(state.Id, state.SpeciesId);
+                        animalView.ConfigureGrounding(model.transform);
                         if (production != null) view.AddComponent<AnimalHealthPresentation>().Bind(
                             production.Animals, state.Id, model.transform);
                         tier1Views.Add(state.Id, view);
@@ -197,9 +192,20 @@ namespace Game.Infrastructure
 
         private void OnDestroy() { if (!shuttingDown) Shutdown(); }
 
+        private void LateUpdate()
+        {
+            if (population == null) return;
+            foreach (var pair in tier1Views)
+                if (population.IsAlive(pair.Key))
+                    pair.Value.GetComponent<WorldMapWildlifeView>().GroundAnimatedFeet(pair.Value.transform.position.y);
+        }
+
         public void MoveVisible(float delta, TiledWorldHeightSampler heights)
         {
-            if (population == null || heights == null || delta <= 0f) return;
+            if (population == null || heights == null) return;
+            foreach (var view in tier1Views.Values)
+                view.GetComponent<WorldMapWildlifeView>().SetLocomotion(0f, delta <= 0f);
+            if (delta <= 0f) return;
             delta = Mathf.Min(delta, .15f);
             movementTime += delta;
             var tick = session?.Clock.State.CalendarTicks ?? 0;
@@ -234,6 +240,7 @@ namespace Game.Infrastructure
                 }
                 if (blocked || !population.TryMove(pair.Key, new WorldPosition(next.x, next.y, next.z))) continue;
                 pair.Value.transform.position = next;
+                pair.Value.GetComponent<WorldMapWildlifeView>().SetLocomotion(Vector3.Distance(previous, next) / delta);
                 if (production != null && production.TryGetSite(pair.Key, out var site))
                     site.MoveAnimal(new WorldPosition(next.x, next.y, next.z));
                 var direction = next - previous; direction.y = 0f;
@@ -295,6 +302,7 @@ namespace Game.Infrastructure
             if (view != null)
             {
                 view.transform.position=next;
+                view.GetComponent<WorldMapWildlifeView>().SetLocomotion(Vector3.Distance(start, next) / delta);
                 var direction=next-start; direction.y=0;
                 if (direction.sqrMagnitude>.00001f) view.transform.rotation=Quaternion.LookRotation(direction);
             }

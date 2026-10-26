@@ -1,0 +1,1373 @@
+Mono path[0] = 'C:/serenity_game/Builds/WorldMapAfternoonFix/Serenity_Data/Managed'
+Mono config path = 'C:/serenity_game/Builds/WorldMapAfternoonFix/MonoBleedingEdge/etc'
+CodeReloadManager initialized
+Found 3 interfaces on host : 0) 172.16.11.42 1) 198.18.0.1 2) 192.168.0.107
+Player connection [40688]  Target information:
+
+Player connection [40688]  * "[IP] 172.16.11.42 [Port] 55000 [Flags] 2 [Guid] 3260304480 [EditorId] 2049629874 [Version] 1048832 [Id] WindowsPlayer(2,DESKTOP-HJ2LN4L) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] Serenity" 
+
+Player connection [40688]  * "[IP] 198.18.0.1 [Port] 55000 [Flags] 2 [Guid] 3260304480 [EditorId] 2049629874 [Version] 1048832 [Id] WindowsPlayer(2,DESKTOP-HJ2LN4L) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] Serenity" 
+
+Player connection [40688]  * "[IP] 192.168.0.107 [Port] 55000 [Flags] 2 [Guid] 3260304480 [EditorId] 2049629874 [Version] 1048832 [Id] WindowsPlayer(2,DESKTOP-HJ2LN4L) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] Serenity" 
+
+Player connection [40688] Started UDP target info broadcast (1) on [225.0.0.222:54997].
+
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.6.4f1 (12bfff696524)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/serenity_game/Builds/WorldMapAfternoonFix/Serenity_Data/UnitySubsystems
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: Intel(R) Arc(TM) Graphics (ID=0x7d55)
+    Vendor:   Intel
+    VRAM:     48456 MB
+    Driver:   32.0.101.8508
+Begin MonoManager ReloadAssembly
+- Finished resetting the current domain, in  0.012 seconds
+[Physics::Module] Selected backend (deferred post-plugins).
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+Using Windows.Gaming.Input
+UnloadTime: 5.025600 ms
+ICU Data not available: falling back to minimal text segmentation (basic line breaking rules only, emoji sequences may not render correctly). The data is automatically assigned to the PanelSettings in the editor if the advanced text option is enabled in the project settings. It will not be present on PanelSettings created at runtime, so make sure the build contains at least one PanelSettings asset to get full international text support.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:LogWarning (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:223)
+UnityEngine.UIElements.UITKTextHandle:GetICUAsset () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:419)
+UnityEngine.TextCore.Text.TextHandle:InitTextLib () (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextHandle.cs:746)
+UnityEngine.UIElements.UITKTextHandle:EnsureIsReadyForJobs () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:192)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareTextElementForJobsOnMainThread (UnityEngine.UIElements.TextElement) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:113)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:168)
+UnityEngine.UIElements.TextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/TextJobSystem.cs:25)
+UnityEngine.UIElements.VisualTreeLayoutUpdater:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeLayoutUpdater.cs:245)
+UnityEngine.UIElements.VisualTreeUpdater:UpdateVisualTreePhase (UnityEngine.UIElements.VisualTreeUpdatePhase) (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeUpdater.cs:146)
+UnityEngine.UIElements.Panel:ValidateLayout () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:1662)
+UnityEngine.UIElements.BaseRuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:2014)
+UnityEngine.UIElements.RuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/GameObjects/RuntimePanel.cs:335)
+UnityEngine.UIElements.UIElementsRuntimeUtility:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/UIElementsRuntimeUtility.cs:349)
+UnityEngine.UIElements.UIElementsRuntimeUtilityNative:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/Native/UIElementsUtility.bindings.cs:18)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 223)
+
+No ICU data provided. Falling back to minimal text segmentation (basic line breaking rules only, emoji sequences may not render correctly).
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.TextCore.Text.TextLib:GetInstance (byte[])
+UnityEngine.TextCore.Text.TextLib:.ctor (byte[]) (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextGenerator/TextLib.bindings.cs:23)
+UnityEngine.TextCore.Text.TextHandle:InitTextLib () (at C:/build/output/unity/unity/Modules/TextCoreTextEngine/Managed/TextHandle.cs:747)
+UnityEngine.UIElements.UITKTextHandle:EnsureIsReadyForJobs () (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextHandle.cs:192)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareTextElementForJobsOnMainThread (UnityEngine.UIElements.TextElement) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:113)
+UnityEngine.UIElements.ATGTextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/ATGTextJobSystem.cs:168)
+UnityEngine.UIElements.TextJobSystem:PrepareShapingBeforeLayout (UnityEngine.UIElements.BaseVisualElementPanel) (at C:/build/output/unity/unity/Modules/UIElements/Core/Text/TextJobSystem.cs:25)
+UnityEngine.UIElements.VisualTreeLayoutUpdater:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeLayoutUpdater.cs:245)
+UnityEngine.UIElements.VisualTreeUpdater:UpdateVisualTreePhase (UnityEngine.UIElements.VisualTreeUpdatePhase) (at C:/build/output/unity/unity/Modules/UIElements/Core/VisualTreeUpdater.cs:146)
+UnityEngine.UIElements.Panel:ValidateLayout () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:1662)
+UnityEngine.UIElements.BaseRuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/Panel.cs:2014)
+UnityEngine.UIElements.RuntimePanel:Update () (at C:/build/output/unity/unity/Modules/UIElements/Core/GameObjects/RuntimePanel.cs:335)
+UnityEngine.UIElements.UIElementsRuntimeUtility:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/UIElementsRuntimeUtility.cs:349)
+UnityEngine.UIElements.UIElementsRuntimeUtilityNative:UpdatePanels () (at C:/build/output/unity/unity/Modules/UIElements/Core/Native/UIElementsUtility.bindings.cs:18)
+
+[C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs line 23]
+
+Shader 'Hidden/Universal Render Pipeline/GaussianDepthOfField' is not supported or has been stripped from the build (in 'GaussianDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldGaussianPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldGaussianPostProcessPass.cs:24)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:56)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/GaussianDepthOfField' is not supported or has been stripped from the build (in 'GaussianDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldGaussianPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldGaussianPostProcessPass.cs:25)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:56)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/BokehDepthOfField' is not supported or has been stripped from the build (in 'BokehDepthOfField'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.DepthOfFieldBokehPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/DepthOfFieldBokehProcessPass.cs:26)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:57)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+Shader 'Hidden/Universal Render Pipeline/PaniniProjection' is not supported or has been stripped from the build (in 'PaniniProjection'). PostProcessing render passes will not execute.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Rendering.Universal.PostProcessUtils:LoadShader (UnityEngine.Shader,string,UnityEngine.LogType) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs:28)
+UnityEngine.Rendering.Universal.PaniniProjectionPostProcessPass:.ctor (UnityEngine.Shader) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Passes/PostProcess/PaniniProjectionPostProcessPass.cs:19)
+UnityEngine.Rendering.Universal.PostProcess:.ctor (UnityEngine.Rendering.Universal.PostProcessData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcess.cs:64)
+UnityEngine.Rendering.Universal.UniversalRenderer:.ctor (UnityEngine.Rendering.Universal.UniversalRendererData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRenderer.cs:427)
+UnityEngine.Rendering.Universal.UniversalRendererData:Create () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/UniversalRendererData.cs:166)
+UnityEngine.Rendering.Universal.ScriptableRendererData:InternalCreateRenderer () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/ScriptableRendererData.cs:67)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreateRenderers () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:862)
+UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset:CreatePipeline () (at ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/Data/UniversalRenderPipelineAsset.cs:809)
+UnityEngine.Rendering.RenderPipelineAsset:InternalCreatePipeline () (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineAsset.cs:15)
+UnityEngine.Rendering.RenderPipelineManager:TryPrepareRenderPipeline (UnityEngine.Rendering.RenderPipelineAsset) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:172)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object) (at C:/build/output/unity/unity/Runtime/Export/RenderPipeline/RenderPipelineManager.cs:146)
+
+(Filename: ./Library/PackageCache/com.unity.render-pipelines.universal@b0678dfc9e21/Runtime/PostProcessUtils.cs Line: 28)
+
+GPU Resident Drawer created.
+OCTOBER_SMOKE PASS Ruler editor UMA generated
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<Run>d__14:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:83)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+Unloading 6 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 2.318900 ms
+Unloading 12 unused Assets / (6.0 MB). Loaded Objects now: 30418.
+Memory consumption went from 0.56 GB to 0.55 GB.
+Total: 13.329400 ms (FindLiveObjects: 1.920300 ms CreateObjectMapping: 0.396700 ms MarkObjects: 10.384900 ms  DeleteObjects: 0.267100 ms)
+
+WM15_BOOT local composition
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeScene>d__586:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:325)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем рельеф и растительность…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:116)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT terrain setup
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:123)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем обзор карты…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:198)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT strategic overview
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:200)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT roads and terrain tiles
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:202)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 1/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 2/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 3/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 4/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 5/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 6/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 7/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 8/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 9/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 10/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 11/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 12/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 13/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 14/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 15/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Создаём рельеф и воду: 16/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:209)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Соединяем берега и дороги…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:222)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT terrain ready
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.TiledTerrainWorld/<InitializeRoutine>d__81:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:231)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 1/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 2/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 3/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 4/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 5/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 6/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 7/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 8/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 9/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 10/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 11/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 12/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 13/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 14/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 15/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Подготавливаем маршруты: 16/16…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.TiledTerrainWorld/<BuildNavigationRoutine>d__87:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/TiledTerrainWorld.cs:289)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT Заселяем мир…
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.WorldLoadingOverlay:SetStage (string) (at C:/serenity_game/Assets/Game/Infrastructure/WorldLoadingOverlay.cs:14)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeScene>d__586:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:473)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:300)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+WM15_BOOT gameplay ready
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.LocalSceneCompositionRoot/<InitializeGuarded>d__585:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/LocalSceneCompositionRoot.cs:315)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS World ruler visible UMA
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<Run>d__14:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:93)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Garden can be placed on clear starting ground
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:32)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Review construction receives plant_fiber
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:CompleteReviewBuilding (Game.Infrastructure.LocalSceneCompositionRoot,Game.Domain.Buildings.Building) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:150)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:35)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Review construction receives wood_log
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:CompleteReviewBuilding (Game.Infrastructure.LocalSceneCompositionRoot,Game.Domain.Buildings.Building) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:150)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:35)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Garden menu exposes cultivation
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:42)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Garden cultivation issues a canonical production order
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:44)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Worker physically plants the garden
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:51)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS stone_age_hut rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS healer_hut rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS butcher_station rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS military_barracks rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS palisade rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS gate rotates 90 degrees
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:60)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Starting camp contains a campfire to inspect at night
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:64)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Operational campfire has warm local lighting
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:68)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Western lake has bounded floating petals
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:75)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Fishing camp places at mountain lake through normal preview/confirmation
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:107)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Shore preview calls bounded: worst 43,0 ms
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:108)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Review construction receives plant_fiber
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:CompleteReviewBuilding (Game.Infrastructure.LocalSceneCompositionRoot,Game.Domain.Buildings.Building) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:150)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:109)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Review construction receives wood_log
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:CompleteReviewBuilding (Game.Infrastructure.LocalSceneCompositionRoot,Game.Domain.Buildings.Building) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:150)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:109)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS fish_water direct order accepted: None
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:305)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Fisher physically stands on pier
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:354)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Fisher root matches deck height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:357)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Animated fisher feet remain above the boards
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:359)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Fisher holds a visible rod
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:361)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Close fishing camera remains above water
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:363)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Fish catch placed near pier on dry bank
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:365)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS fish_water worker reaches source and works
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:377)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS fish_water production completes
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<WorkRoute>d__16:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:378)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS At least one deer walks in the loaded world
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:115)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Moving deer uses imported walk animation
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:121)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Deer skeleton changes pose while walking
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:124)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boars materialize near their habitat
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:132)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS Boar hooves stay at terrain height
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:136)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+OCTOBER_SMOKE PASS No runtime errors during afternoon reproduction
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke:Check (bool,string) (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15OctoberPlayerSmoke.cs:50)
+Game.Infrastructure.Integration.WM15OctoberPlayerSmoke/<AfternoonReview>d__0:MoveNext () (at C:/serenity_game/Assets/Game/Infrastructure/Integration/WM15AfternoonPlayerSmoke.cs:139)
+UnityEngine.SetupCoroutine:InvokeMoveNext (System.Collections.IEnumerator,intptr) (at C:/build/output/unity/unity/Runtime/Export/Scripting/Coroutines.cs:17)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+GPU Resident Drawer disposed.
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+CodeReloadManager destroyed
+Leak Detected : Persistent allocates 2 individual allocations. To find out more, run with the command line argument '-native-leak-detection EnabledWithStackTrace' and reproduce the leak again.
+PlayerConnection::Cleanup##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1793025353960,"processId":20908,"allocatedMemory":1613922,"memoryLabels":[{"Default":17144},{"Thread":6144},{"Manager":1024667},{"GfxDevice":72},{"GfxThread":18480},{"Animation":236400},{"Serialization":17208},{"Input":2440},{"TextLib":39162},{"ScriptingNativeRuntime":443848},{"BaseObject":4512},{"Renderer":8},{"File":1056},{"String":947},{"Utility":32768},{"PoolAlloc":1680},{"ScriptManager":5696},{"CodeReload":440},{"CloudService":288},{"VR":1928},{"Video":144},{"NativeArray":462},{"Subsystems":96},{"Gui":364},{"CoreBusinessMetrics":128}]}

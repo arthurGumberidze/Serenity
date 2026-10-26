@@ -61,9 +61,6 @@ MonoBehaviour:
   - Key: fish
     Prefab: {fileID: 5346572932916183963, guid: 1cff6881d0e112048bf82a0988890d0d, type: 3}
     Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Food/Fish_01.prefab
-  - Key: fishing_rod
-    Prefab: {fileID: 3862691078376843381, guid: a277e2469218f7e4dbdfd4508a4ac6e9, type: 3}
-    Source: Assets/Game/Art/WM15Replacement/Imported/Fishing/LowPolyTropicalCity/Prefabs/Props/FishingRod_01.prefab
   - Key: carry_log
     Prefab: {fileID: 8431309533455853638, guid: c96e129bf0bd03648b96b95e7cb0c9fc, type: 3}
     Source: Assets/Synty/PolygonNature/Prefabs/Trees/SM_Tree_Log_01.prefab
@@ -133,27 +130,15 @@ MonoBehaviour:
   - Key: pile_plant_fiber
     Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
     Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
-  - Key: pile_hide
-    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
-    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
   - Key: pile_carcass
     Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
     Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
   - Key: pile_bone
     Prefab: {fileID: 7761540457769843062, guid: 68b021425a57c7c4bab444c9d2506111, type: 3}
     Source: Assets/Game/Art/WM15Replacement/Imported/Bones/LowPolyDungeons/Prefabs/Props/Bone_01.prefab
-  - Key: pile_cured_hide
-    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
-    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
   - Key: pile_berries
     Prefab: {fileID: 907357279579689217, guid: ec8abd30e1fd3b04ea234e33cb1c5f97, type: 3}
     Source: Assets/RTSToonBuildings/Prefabs/Props/Berries.prefab
-  - Key: pile_iron_ore
-    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
-    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
-  - Key: pile_gold_ore
-    Prefab: {fileID: 6671055039731004298, guid: 8fd07211e5edbe747aa67db253239304, type: 3}
-    Source: Assets/RTSToonBuildings/Prefabs/Props/CrateOfGold.prefab
   - Key: pile_meat
     Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
     Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
@@ -190,9 +175,6 @@ MonoBehaviour:
   - Key: pile_flint
     Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
     Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
-  - Key: pile_copper_ore
-    Prefab: {fileID: 4765162682275174478, guid: 6c31a5f90bf095f4fb186933f372b6e5, type: 3}
-    Source: Assets/RTSToonBuildings/Prefabs/Props/StonePile.prefab
   - Key: pile_oil
     Prefab: {fileID: 383213265765825071, guid: 63858fd58a80f0f449748a3cd356782d, type: 3}
     Source: Assets/LowPolyFarm/Prefabs/Props/Bucket_01.prefab
@@ -202,3 +184,24 @@ MonoBehaviour:
   - Key: pile_cabbage
     Prefab: {fileID: 6056181841168279605, guid: 29706d261caee8e458628621bf5c9cf1, type: 3}
     Source: Assets/LowPolyFarm/Prefabs/Plants/Cabbage_01.prefab
+  - Key: pile_iron_ore
+    Prefab: {fileID: 8016403752514592586, guid: a867fff80d65be64a9204c042109a7c7, type: 3}
+    Source: KayKit Resource Bits CC0
+  - Key: pile_copper_ore
+    Prefab: {fileID: 2780095199761992318, guid: cc3bb4b154e22f046939271f8d51ad27, type: 3}
+    Source: KayKit Resource Bits CC0
+  - Key: pile_gold_ore
+    Prefab: {fileID: 2961760995215837711, guid: 0697999c5aa91a7409822e920084c28e, type: 3}
+    Source: KayKit Resource Bits CC0
+  - Key: pile_hide
+    Prefab: {fileID: 6816199963068569836, guid: 5b994e24718f9ec4798ed2aeeea2ff8a, type: 3}
+    Source: Animal Hide by Zsky, CC BY
+  - Key: pile_cured_hide
+    Prefab: {fileID: 6816199963068569836, guid: 5b994e24718f9ec4798ed2aeeea2ff8a, type: 3}
+    Source: Animal Hide by Zsky, CC BY
+  - Key: fishing_rod
+    Prefab: {fileID: 1809175751448756647, guid: cb25deb29b00f8041a604c7b934ac55c, type: 3}
+    Source: Human Crafting Animations FREE, Kevin Iglesias
+  - Key: fish_swimming
+    Prefab: {fileID: 8597353877994938740, guid: 06f401c86e76bd8449b9c5c546bc1d6d, type: 3}
+    Source: Fish by joyfulsquirrel, CC0, Swim animation

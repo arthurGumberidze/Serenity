@@ -1,5 +1,20 @@
 # PROJECT_STATE.md
 
+## WM15 afternoon feedback — verified repair candidate (2026-10-26)
+
+Current candidate: `Builds/WorldMapAfternoonFix/Serenity.exe`, build-f succeeded with 0 errors / 82 warnings,
+source fingerprint 4437037EF45749A528AECD8794EC1555804138EE7C36BBA7B2C171EC6B4FA31C.
+19 distinct focused Editor checks passed. Player-d exited 0: 47/47 checks, no runtime errors; shore preview
+worst call 43.0 ms. Earlier Player-c failures corrected. Two Persistent allocations warned on Unity exit
+remain undiagnosed; initial world loading remains slow. Exact failing user POI seed is unknown.
+Changes: physical pier work datum, garden cultivation action, 90-degree rotation, campfire night light,
+bounded/cached shore search, proportional huts and distinct barracks, imported work/animal/fish animation,
+ore/hide/rod props, western lake blossom ring and floating petals. User-log POI route and stale inventory
+exceptions are addressed; live boar hooves use actual animated geometry. See
+`docs/world_map/WM15_AFTERNOON_FEEDBACK.md` and `docs/validation/WM15Afternoon/`.
+WM15 remains IN_PROGRESS for user acceptance, loading duration and deferred content/performance work.
+No full 100/300/500 gates, no shutdown. Preserve inherited vendor and P3 modifications.
+
 ## WM15 replacement assets — implementation and focused validation (2026-10-26)
 
 Replaced active primitive resource piles, carried loads, fish, rod, pier deck, fallback rock/ore views,

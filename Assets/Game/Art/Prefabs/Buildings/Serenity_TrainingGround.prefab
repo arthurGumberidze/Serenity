@@ -144,7 +144,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1447206196392536698}
+  - {fileID: 2278565185153369699}
   m_Father: {fileID: 5475865864012870950}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1114810164419658036
@@ -160,7 +160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Buildings.BuildingConstructionStageVisual
   requiredStage: 1
---- !u!1001 &3141668184677484677
+--- !u!1001 &2311444166455993500
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -225,10 +225,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 23a37d0248afb7d4f91d21029b393aec, type: 3}
---- !u!4 &1447206196392536698 stripped
+--- !u!4 &2278565185153369699 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4579299695685378815, guid: 23a37d0248afb7d4f91d21029b393aec, type: 3}
-  m_PrefabInstance: {fileID: 3141668184677484677}
+  m_PrefabInstance: {fileID: 2311444166455993500}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3269750456769911369
 PrefabInstance:

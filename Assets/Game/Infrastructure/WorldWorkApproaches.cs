@@ -93,6 +93,9 @@ namespace Game.Infrastructure
                 var surface = dock.AddComponent<NavMeshSurface>();
                 surface.collectObjects = CollectObjects.Children;
                 surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+                surface.overrideVoxelSize = true;
+                surface.voxelSize = .08f;
+                surface.minRegionArea = 0;
                 Physics.SyncTransforms(); surface.BuildNavMesh();
                 var link = dock.AddComponent<NavMeshLink>();
                 link.startPoint = new Vector3(start.x,start.y-.12f,start.z)-direction.normalized;
@@ -147,6 +150,16 @@ namespace Game.Infrastructure
                 var direction = new Vector3(site.Position.X,0,site.Position.Z)-movement.Presenter.transform.position;
                 if (fishTargets.TryGetValue(site.Id,out var fishTarget)) direction = fishTarget-movement.Presenter.transform.position;
                 if (fishTargets.TryGetValue(site.Id,out fishTarget)) movement.Presenter.SetFishingTarget(fishTarget);
+                if (fishStances.TryGetValue(site.Id, out var stance) &&
+                    Vector2.Distance(new Vector2(stance.x, stance.z), new Vector2(movement.Presenter.transform.position.x,
+                        movement.Presenter.transform.position.z)) < 1.5f &&
+                    NavMesh.SamplePosition(stance, out var deckPoint, .35f, NavMesh.AllAreas))
+                {
+                    // Keep the work stance on the elevated deck, including after a crowd-detail transition.
+                    if (movement.Agent != null && movement.Agent.enabled && movement.Agent.isOnNavMesh)
+                        movement.Agent.Warp(deckPoint.position);
+                    else movement.Presenter.transform.position = deckPoint.position;
+                }
                 direction.y = 0;
                 if (direction.sqrMagnitude > .01f) movement.Presenter.transform.rotation = Quaternion.LookRotation(direction);
                 if (task.RecipeId.ToString() == "chop_wood" || task.RecipeId.ToString() == "gather_stone")

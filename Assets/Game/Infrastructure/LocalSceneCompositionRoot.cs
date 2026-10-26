@@ -818,7 +818,8 @@ namespace Game.Infrastructure
             BuildingPlacementService.ConfigureRequestEnvironment(context => WorldPlacementSurface.EvaluateFootprint(
                 context.Cells,buildingGridSize,buildingGridOrigin,
                 context.Request.Definition.Id.ToString() == "fishing_camp" ? 3f : (float?)null,
-                context.Request.Definition.Id.ToString()=="gate").CanPlace);
+                context.Request.Definition.Id.ToString()=="gate",
+                context.Request.Definition.Id.ToString()=="fishing_camp").CanPlace);
             BuildingPlacementService.ConfigureRuleEvaluator(EvaluateSpecialPlacementRule);
             BuildingPathing.GateChanged+=(id,open)=> { if(BuildingPresentations.TryGet(id,out var gate))gate.SetGateOpen(open); };
 
@@ -1042,30 +1043,49 @@ namespace Game.Infrastructure
             var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("fishing_camp"));
             GridCoordinate? previous = null;
             (Vector3 point, BuildingOrientation orientation)? cached = null;
-            buildingPlacementController.ShoreSnap = point =>
+            IEnumerator<(GridCoordinate anchor, BuildingOrientation facing)> search = null;
+            (GridCoordinate anchor, BuildingOrientation facing)? pending = null;
+            IEnumerable<(GridCoordinate, BuildingOrientation)> Candidates(GridCoordinate cursor)
             {
-                var cursor = new GridCoordinate(Mathf.RoundToInt((point.x-buildingGridOrigin.x)/buildingGridSize),
-                    Mathf.RoundToInt((point.z-buildingGridOrigin.z)/buildingGridSize));
-                if (previous.HasValue && previous.Value == cursor) return cached;
-                previous = cursor; cached = null;
-                var best = float.MaxValue;
                 for (var radius = 0; radius <= 12; radius++)
                 for (var dx = -radius; dx <= radius; dx++)
                 for (var dz = -radius; dz <= radius; dz++)
                 {
-                    if (Mathf.Max(Mathf.Abs(dx),Mathf.Abs(dz)) != radius) continue;
-                    var distance = dx*dx+dz*dz;
-                    if (distance >= best) continue;
-                    foreach (BuildingOrientation facing in Enum.GetValues(typeof(BuildingOrientation)))
+                    if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dz)) != radius) continue;
+                    for (var i = 0; i < 4; i++)
                     {
+                        var facing = (BuildingOrientation)i;
                         var footprint = definition.Footprint.Rotate(facing);
-                        var anchor = new GridCoordinate(cursor.X+dx-(footprint.Width-1)/2,
-                            cursor.Z+dz-(footprint.Depth-1)/2);
-                        if (!ShoreBuildingPlacement.IsValid(WorldHeight,anchor,definition.Footprint,facing,
-                            buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z)) continue;
-                        if (BuildingOccupancyCellsBlocked(anchor, definition, facing)) continue;
-                        best = distance; cached = (BuildingSpawner.GridToWorld(anchor,definition,facing),facing);
+                        yield return (new GridCoordinate(cursor.X + dx - (footprint.Width - 1) / 2,
+                            cursor.Z + dz - (footprint.Depth - 1) / 2), facing);
                     }
+                }
+            }
+            buildingPlacementController.ShoreSnap = point =>
+            {
+                var cursor = new GridCoordinate(Mathf.RoundToInt((point.x-buildingGridOrigin.x)/buildingGridSize),
+                    Mathf.RoundToInt((point.z-buildingGridOrigin.z)/buildingGridSize));
+                if (!previous.HasValue || previous.Value != cursor)
+                {
+                    search?.Dispose();
+                    previous = cursor; cached = null; pending = null; search = Candidates(cursor).GetEnumerator();
+                }
+                if (search == null) return cached;
+                // Height/hydrology evaluation is expensive. Never scan the whole shore in one UI frame.
+                var timer = System.Diagnostics.Stopwatch.StartNew();
+                for (var examined = 0; examined < 48 && timer.Elapsed.TotalMilliseconds < 2; examined++)
+                {
+                    if (!pending.HasValue && !search.MoveNext()) { search.Dispose(); search = null; break; }
+                    var candidate = pending ?? search.Current; pending = null;
+                    if (!ShoreBuildingPlacement.HasWaterfront(WorldHeight, candidate.anchor, definition.Footprint,
+                        candidate.facing, buildingGridSize, buildingGridOrigin.x, buildingGridOrigin.z)) continue;
+                    var cells = definition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
+                    if (!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true))
+                    { pending = candidate; break; }
+                    if (BuildingOccupancyCellsBlocked(candidate.anchor, definition, candidate.facing)) continue;
+                    // The placement service already checks footprint geometry, protection and occupancy.
+                    cached = (BuildingSpawner.GridToWorld(candidate.anchor, definition, candidate.facing), candidate.facing);
+                    search.Dispose(); search = null; break;
                 }
                 return cached;
             };

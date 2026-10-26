@@ -17,6 +17,7 @@ namespace Game.Presentation.Buildings
         private ResourceInventory storageInventory;
         private ParticleSystem fireParticles;
         private ParticleSystem campfireParticles;
+        private Light campfireLight;
         private MaterialPropertyBlock propertyBlock;
         private Renderer[] originalRenderers;
         private bool[] originalVisibility;
@@ -159,6 +160,19 @@ namespace Game.Presentation.Buildings
                 building.IsOperational && !building.IsDestroyed;
             if (shouldBurn)
             {
+                if (campfireLight == null)
+                {
+                    var glow = new GameObject("Campfire illumination");
+                    glow.transform.SetParent(transform, false);
+                    glow.transform.localPosition = Vector3.up * 1.1f;
+                    campfireLight = glow.AddComponent<Light>();
+                    campfireLight.type = LightType.Point;
+                    campfireLight.color = new Color(1f, .53f, .22f);
+                    campfireLight.range = 12f;
+                    campfireLight.intensity = 5f;
+                    campfireLight.shadows = LightShadows.None;
+                }
+                campfireLight.enabled = true;
                 if (campfireParticles == null)
                 {
                     var flame = Game.Presentation.Environment.WorldPropCatalog.Create("fire", transform);
@@ -171,6 +185,7 @@ namespace Game.Presentation.Buildings
             }
             else if (campfireParticles != null)
             {
+                if (campfireLight != null) campfireLight.enabled = false;
                 campfireParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 campfireParticles.gameObject.SetActive(false);
             }

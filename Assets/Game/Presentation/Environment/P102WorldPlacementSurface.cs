@@ -40,26 +40,62 @@ namespace Game.Presentation.Environment
         private WorldMapBuildabilityEvaluator worldMapBuildability;
         [SerializeField] private float maximumFoundationHeightDifference = 0.75f;
 
+        private sealed class StaticCell { public string Blocked; public float Low, High; }
+        private readonly Dictionary<(GridCoordinate cell,float size,Vector3 origin,bool shore),StaticCell> staticCells = new();
+
+        // Terrain and authored masks are immutable for this world; physical blockers are always checked again.
+        public bool PrepareFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize, Vector3 origin,
+            bool shorelineFacility, double budgetMilliseconds = 2)
+        {
+            if (tiledWorld == null) return true;
+            if (staticCells.Count + cells.Count >= 16384) staticCells.Clear();
+            var timer = System.Diagnostics.Stopwatch.StartNew(); var computed = 0;
+            foreach (var cell in cells)
+            {
+                var key = (cell,gridSize,origin,shorelineFacility);
+                if (staticCells.TryGetValue(key,out var existing)) { if (existing.Blocked != null) return true; continue; }
+                if (computed > 0 && budgetMilliseconds > 0 && timer.Elapsed.TotalMilliseconds >= budgetMilliseconds) return false;
+                var center = origin + new Vector3(cell.X*gridSize,0,cell.Z*gridSize);
+                var value = new StaticCell { Low = float.PositiveInfinity, High = float.NegativeInfinity };
+                if (worldMapBuildability != null)
+                {
+                    var policy = worldMapBuildability.EvaluateFootprint(new[] { new WorldMapFootprintCell(center.x,center.z,gridSize*.5f) },shorelineFacility);
+                    if (!policy.CanPlace) value.Blocked = AuthoredBlockedReason(policy.Reason);
+                }
+                if (value.Blocked == null)
+                for (var z=-1;z<=1;z++)
+                for (var x=-1;x<=1;x++)
+                {
+                    var point = center + new Vector3(x*gridSize*.5f,0,z*gridSize*.5f);
+                    if (worldMapBuildability == null && !IsSuitable(point)) value.Blocked = "Слишком крутой склон, вода или неподходящий грунт.";
+                    var height = tiledWorld.SampleHeight(point.x,point.z);
+                    value.Low = Mathf.Min(value.Low,height); value.High = Mathf.Max(value.High,height);
+                }
+                staticCells[key] = value; computed++;
+                if (value.Blocked != null) return true;
+            }
+            return true;
+        }
+
         public bool AllowsFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize, Vector3 origin)
             => EvaluateFootprint(cells, gridSize, origin).CanPlace;
 
         public PlacementSurfaceEvaluation EvaluateFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize,
-            Vector3 origin, float? foundationHeightLimit = null, bool replaceOwnedPalisade = false)
+            Vector3 origin, float? foundationHeightLimit = null, bool replaceOwnedPalisade = false,
+            bool shorelineFacility = false)
         {
             if (tiledWorld == null || cells == null || cells.Count == 0)
                 return new PlacementSurfaceEvaluation(false, null, "Поверхность мира недоступна.");
             var low = float.PositiveInfinity;
             var high = float.NegativeInfinity;
             var clearable = new HashSet<StableEntityId>();
-            if (worldMapBuildability != null)
+            if (!PrepareFootprint(cells,gridSize,origin,shorelineFacility,shorelineFacility ? 2 : 0))
+                return new PlacementSurfaceEvaluation(false,null,"Подготавливаем береговую площадку…");
+            foreach (var cell in cells)
             {
-                var authored = worldMapBuildability.EvaluateFootprint(cells.Select(cell =>
-                {
-                    var center = origin + new Vector3(cell.X * gridSize, 0f, cell.Z * gridSize);
-                    return new WorldMapFootprintCell(center.x, center.z, gridSize * 0.5f);
-                }));
-                if (!authored.CanPlace)
-                    return new PlacementSurfaceEvaluation(false, null, AuthoredBlockedReason(authored.Reason));
+                var cached = staticCells[(cell,gridSize,origin,shorelineFacility)];
+                if (cached.Blocked != null) return new PlacementSurfaceEvaluation(false,null,cached.Blocked);
+                low = Mathf.Min(low,cached.Low); high = Mathf.Max(high,cached.High);
             }
             var protectedPoi = false;
             var permanentObstacle = false;
@@ -67,16 +103,6 @@ namespace Game.Presentation.Environment
             foreach (var cell in cells)
             {
                 var center = origin + new Vector3(cell.X * gridSize, 0, cell.Z * gridSize);
-                for (var z = -1; z <= 1; z++)
-                for (var x = -1; x <= 1; x++)
-                {
-                    var point = center + new Vector3(x * gridSize * 0.5f, 0, z * gridSize * 0.5f);
-                    if (worldMapBuildability == null && !IsSuitable(point))
-                        return new PlacementSurfaceEvaluation(false, clearable,
-                            "Слишком крутой склон, вода или неподходящий грунт.");
-                    var height = tiledWorld.SampleHeight(point.x, point.z);
-                    low = Mathf.Min(low, height); high = Mathf.Max(high, height);
-                }
                 center.y = tiledWorld.SampleHeight(center.x, center.z) + 1.1f;
                 foreach (var blocker in Physics.OverlapBox(center, new Vector3(gridSize * 0.49f, 1f, gridSize * 0.49f),
                              Quaternion.identity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
@@ -125,6 +151,7 @@ namespace Game.Presentation.Environment
         }
         public void Configure(Terrain value, float water, float maximumSlope)
         {
+            staticCells.Clear();
             terrain = value;
             tiledWorld = null;
             worldMapBuildability = null;
@@ -133,6 +160,7 @@ namespace Game.Presentation.Environment
         }
         public void Configure(TiledWorldHeightSampler value, float maximumSlope = 32f)
         {
+            staticCells.Clear();
             tiledWorld = value;
             terrain = null;
             waterLevel = TiledWorldHeightSampler.WaterLevelMeters;

@@ -1890,3 +1890,21 @@ Owned materials use URP; vendor scripts, missing scripts, lights and colliders a
 Every prefab save must succeed before the catalog is accepted. Generic containers explicitly remain
 temporary substitutes for distinct raw-material art. Static fish motion is not advertised as rigged
 animation. Do not substitute the farm clothesline for a meat dryer; compose available timber/meat instead.
+
+
+## D-207 — Shore work surfaces, animation adapters and owned content (2026-10-26)
+
+Pier navigation/work height follows the dominant upward board geometry, not decorative post bounds.
+Live boar grounding follows animated hoof transforms in one scene LateUpdate; skin animation envelopes
+are not ground datums. Humanoid imported work clips suppress only their matching procedural hand pose;
+unsupported actions keep the existing fallback. Animal animation speed follows actual displacement.
+
+Shore previews retain an incremental candidate search and cache immutable terrain/mask cells; physical
+blockers and canonical occupancy are rechecked. Mountain shore facilities alone may use a 32-degree
+slope allowance, 3 m foundation delta and a 2.4 m water-facing reach while their full footprint remains
+dry. Protected POIs and marsh restrictions remain. POI routes retry a finer grid only when coarse
+search fails. All resource and crop commands still use canonical production/inventory state.
+
+New source assets remain owned, remapped copies: KayKit CC0 ores, Zsky attributed hide, joyfulsquirrel
+CC0 rigged fish, and local Human Crafting animations. Preserve licenses beside assets and Player.
+Regional petals are bounded presentation-only particles; no world entity or per-petal Update.

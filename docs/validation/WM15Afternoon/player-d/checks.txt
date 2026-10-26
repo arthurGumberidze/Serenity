@@ -1,0 +1,47 @@
+PASS Ruler editor UMA generated
+PASS World ruler visible UMA
+PASS Garden can be placed on clear starting ground
+PASS Review construction receives plant_fiber
+PASS Review construction receives wood_log
+PASS Garden menu exposes cultivation
+PASS Garden cultivation issues a canonical production order
+PASS Worker physically plants the garden
+PASS stone_age_hut rotates 90 degrees
+PASS healer_hut rotates 90 degrees
+PASS butcher_station rotates 90 degrees
+PASS military_barracks rotates 90 degrees
+PASS palisade rotates 90 degrees
+PASS gate rotates 90 degrees
+PASS Starting camp contains a campfire to inspect at night
+PASS Operational campfire has warm local lighting
+PASS Western lake has bounded floating petals
+PASS Fishing camp places at mountain lake through normal preview/confirmation
+PASS Shore preview calls bounded: worst 43,0 ms
+PASS Review construction receives plant_fiber
+PASS Review construction receives wood_log
+PASS fish_water direct order accepted: None
+PASS Fisher physically stands on pier
+PASS Fisher root matches deck height
+PASS Animated fisher feet remain above the boards
+PASS Fisher holds a visible rod
+PASS Close fishing camera remains above water
+PASS Fish catch placed near pier on dry bank
+PASS fish_water worker reaches source and works
+PASS fish_water production completes
+PASS At least one deer walks in the loaded world
+PASS Moving deer uses imported walk animation
+PASS Deer skeleton changes pose while walking
+PASS Boars materialize near their habitat
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS Boar hooves stay at terrain height
+PASS No runtime errors during afternoon reproduction

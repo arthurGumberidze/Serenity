@@ -97,6 +97,12 @@ namespace Game.Presentation.Characters
             var direction = (transform.forward + Vector3.up*.45f).normalized;
             var desired = Quaternion.LookRotation(transform.right,direction) * Quaternion.Inverse(fishingRod.transform.localRotation);
             ApplyOffset(hand,Quaternion.Inverse(hand.rotation)*desired,ref lastWorkHandOffset);
+            UpdateFishingLine();
+        }
+
+        private void UpdateFishingLine()
+        {
+            if (fishingRod == null || fishingLine == null) return;
             var tip = fishingRod.transform.position+fishingRod.transform.up*2.1f;
             var end = fishingTarget == Vector3.zero ? tip+transform.forward*.8f-Vector3.up : fishingTarget;
             fishingLine.SetPosition(0,tip);

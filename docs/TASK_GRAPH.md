@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+WM15 afternoon feedback (2026-10-26): **IN_PROGRESS / build-f and Player-d verified**.
+19 distinct focused Editor checks passed. Build-f: 0 errors / 82 warnings. Player-d: 47/47, exit 0, no runtime
+errors. Shore preview worst call 43.0 ms; full gates deferred. Pier, cultivation, rotation,
+lighting, shore search, animations and selected 26102026 assets are integrated; user-log startup and boar
+height fixes included. See `docs/world_map/WM15_AFTERNOON_FEEDBACK.md`. Deferred full gates unchanged.
+
 WM15 asset replacement (2026-10-26): **IN_PROGRESS / replacement candidate verified**. Existing imported
 models and 52 selectively admitted local source files replace the active primitive props; remaining
 search list is in `docs/world_map/WM15_ASSET_REPLACEMENTS.md`. Focused Editor checks 17/17 pass;

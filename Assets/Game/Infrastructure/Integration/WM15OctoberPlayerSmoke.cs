@@ -19,7 +19,7 @@ using UnityEngine.UIElements;
 namespace Game.Infrastructure.Integration
 {
     // Opt-in functional reproduction in a disposable new game. No performance workload or save writes.
-    public sealed class WM15OctoberPlayerSmoke : MonoBehaviour
+    public sealed partial class WM15OctoberPlayerSmoke : MonoBehaviour
     {
         private string output;
         private readonly List<string> results = new();
@@ -94,6 +94,8 @@ namespace Game.Infrastructure.Integration
                 ruler.GetComponent<UmaAppearanceProjection>()?.UsesUma == true,"World ruler visible UMA");
             yield return Capture("02-start");
 
+            if (Environment.GetCommandLineArgs().Contains("-wm15Afternoon"))
+            { propsOnly = true; yield return AfternoonReview(root); Finish(); yield break; }
             if(propsOnly) { yield return PropReview(root); Finish(); yield break; }
 
             var animal=FindObjectsByType<WorldMapWildlifeView>(FindObjectsSortMode.None).FirstOrDefault();
@@ -350,6 +352,12 @@ namespace Game.Infrastructure.Integration
                     {
                         var p=root.Production.WorkPosition(worker,site);
                         Check((person.transform.position-new Vector3(p.X,p.Y,p.Z)).magnitude<1.5f,"Fisher physically stands on pier");
+                        if (Array.IndexOf(Environment.GetCommandLineArgs(),"-wm15Afternoon") >= 0)
+                        {
+                            Check(Mathf.Abs(person.transform.position.y-p.Y)<.12f,"Fisher root matches deck height");
+                            var foot = person.Animator != null && person.Animator.isHuman ? person.Animator.GetBoneTransform(HumanBodyBones.LeftFoot) : null;
+                            Check(foot != null && foot.position.y >= p.Y-.08f && foot.position.y < p.Y+.35f,"Animated fisher feet remain above the boards");
+                        }
                         Check(person.HasFishingRod,"Fisher holds a visible rod");
                         if(root.WorldHeight.TrySampleWaterSurface(person.transform.position.x,person.transform.position.z,out var water))
                             Check(Camera.main.transform.position.y>water,"Close fishing camera remains above water");

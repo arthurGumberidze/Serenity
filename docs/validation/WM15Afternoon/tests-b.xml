@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0,8230098">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="798" result="Passed" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0.823010" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1927" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="794" result="Passed" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0.747635" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="40636" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1928" name="Game" fullname="Game" runstate="Runnable" testcasecount="794" result="Passed" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0.712007" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1929" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="794" result="Passed" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0.626094" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1930" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="611" result="Passed" start-time="2026-10-26 12:48:01Z" end-time="2026-10-26 12:48:02Z" duration="0.564956" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1850" name="WM15AfternoonFeedbackTests" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.398159" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1856" name="BarracksNoLongerSharesStarterShelterAndBuildingsHaveHumanScale" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.BarracksNoLongerSharesStarterShelterAndBuildingsHaveHumanScale" methodname="BarracksNoLongerSharesStarterShelterAndBuildingsHaveHumanScale" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="307666857" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.116623" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1853" name="EveryWildlifeSpeciesHasWalkAndIdleRatherThanAnIdleOnlyController" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.EveryWildlifeSpeciesHasWalkAndIdleRatherThanAnIdleOnlyController" methodname="EveryWildlifeSpeciesHasWalkAndIdleRatherThanAnIdleOnlyController" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="1749799774" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.096080" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1852" name="ImportedWorkStatesUseHumanoidClips" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.ImportedWorkStatesUseHumanoidClips" methodname="ImportedWorkStatesUseHumanoidClips" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="2103131992" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.055325" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1854" name="LiveFishHasBonesAndSwimWhileResourcePilesRemainStatic" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.LiveFishHasBonesAndSwimWhileResourcePilesRemainStatic" methodname="LiveFishHasBonesAndSwimWhileResourcePilesRemainStatic" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="1388462854" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.078462" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1855" name="OreAndHideNoLongerAliasStoneOrSacks" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.OreAndHideNoLongerAliasStoneOrSacks" methodname="OreAndHideNoLongerAliasStoneOrSacks" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="32442658" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.001638" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1851" name="PierFootDatumIsItsBoardSurfaceRatherThanThePosts" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.PierFootDatumIsItsBoardSurfaceRatherThanThePosts" methodname="PierFootDatumIsItsBoardSurfaceRatherThanThePosts" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="747977246" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.007308" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1872" name="WM15PropReplacementTests" fullname="Game.Tests.Editor.WM15PropReplacementTests" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.018386" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1880" name="RodGripAndPierFootprintMatchTheirInteractionAdapters" fullname="Game.Tests.Editor.WM15PropReplacementTests.RodGripAndPierFootprintMatchTheirInteractionAdapters" methodname="RodGripAndPierFootprintMatchTheirInteractionAdapters" classname="Game.Tests.Editor.WM15PropReplacementTests" runstate="Runnable" seed="257110012" result="Passed" start-time="2026-10-26 12:48:02Z" end-time="2026-10-26 12:48:02Z" duration="0.004576" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -85,14 +85,16 @@ namespace Game.Domain.World
 
         public WorldMapBuildabilityDefinition Definition => definition;
 
-        public WorldMapBuildabilityResult EvaluateFootprint(IEnumerable<WorldMapFootprintCell> footprint)
+        public WorldMapBuildabilityResult EvaluateFootprint(IEnumerable<WorldMapFootprintCell> footprint,
+            bool shorelineFacility = false)
         {
             var cells = (footprint ?? throw new ArgumentNullException(nameof(footprint)))
                 .OrderBy(value => value.WorldZ).ThenBy(value => value.WorldX).ToArray();
             if (cells.Length == 0) throw new ArgumentException("A footprint needs at least one cell.", nameof(footprint));
 
             var zones = new HashSet<string>(StringComparer.Ordinal);
-            var maximumSlope = WorldMapBuildabilityDefinition.OrdinaryBuildingMaximumSlopeDegrees;
+            var maximumSlope = shorelineFacility ? ShoreBuildingPlacement.MaximumSlopeDegrees :
+                WorldMapBuildabilityDefinition.OrdinaryBuildingMaximumSlopeDegrees;
             var failures = new SortedSet<Failure>(FailureComparer.Instance);
             foreach (var cell in cells)
             {
@@ -128,13 +130,17 @@ namespace Game.Domain.World
                     foreach (var mask in matching)
                     {
                         zones.Add(mask.Id);
-                        if (string.Equals(mask.Category, "restricted", StringComparison.Ordinal))
+                        // A dry fishing landing may serve the mountain lake. POI, water, slope and
+                        // marsh restrictions still apply; the caller separately validates its water-facing frontage.
+                        if (string.Equals(mask.Category, "restricted", StringComparison.Ordinal) &&
+                            !(shorelineFacility && mask.Id == "build_ridge_restricted"))
                             failures.Add(new Failure(3, RestrictedMask + ":" + mask.Id));
                     }
                     var pointSlope = matching.Where(value => !string.Equals(value.Category, "restricted",
                             StringComparison.Ordinal) && value.SlopeMaxDegrees > 0f)
                         .Select(value => value.SlopeMaxDegrees)
                         .DefaultIfEmpty(WorldMapBuildabilityDefinition.OrdinaryBuildingMaximumSlopeDegrees).Min();
+                    if (shorelineFacility) pointSlope = Math.Max(pointSlope,ShoreBuildingPlacement.MaximumSlopeDegrees);
                     maximumSlope = Math.Min(maximumSlope, pointSlope);
                     if (heights.SampleSlopeDegrees(worldX, worldZ) > pointSlope + 0.001f)
                         failures.Add(new Failure(4, ExcessiveSlope));

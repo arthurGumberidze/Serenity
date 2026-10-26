@@ -14,17 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.WorldMapWildlifeArtCatalog
   entries:
   - speciesId: deer
-    prefab: {fileID: 5161562144378933552, guid: 5a886efd813d9bb488b6dd699aee4f1c, type: 3}
+    prefab: {fileID: 2759049470919301298, guid: 8f224d56620898e4485240114073844d, type: 3}
     scale: 1
   - speciesId: boar
-    prefab: {fileID: 8081539737464727849, guid: a684c8b44ebcfc445a0184dfc08f8928, type: 3}
+    prefab: {fileID: 9188460153972701310, guid: c9c96b96c448f9144a68ce864ca0a1e5, type: 3}
     scale: 1
   - speciesId: hare
-    prefab: {fileID: 6397291155531275063, guid: 44a0de0f766c9634eb66f1d56b7edc9d, type: 3}
+    prefab: {fileID: 7360922347329510915, guid: 95b7db26c772c6b42b4842c5c89e8a3d, type: 3}
     scale: 0.55
   - speciesId: bear
-    prefab: {fileID: 7962199819078159310, guid: f5b41ba4c79702547a89de7544b80656, type: 3}
+    prefab: {fileID: 4262624954144511003, guid: b7965cdf2ce97894dbadc3604732b8c0, type: 3}
     scale: 1
   - speciesId: waterfowl
-    prefab: {fileID: 8002368642800288763, guid: f51c6f8219f34d140946e3611ee4df71, type: 3}
+    prefab: {fileID: 3331907636935331907, guid: 099bbdbc5190e964cb5918c27903acd8, type: 3}
     scale: 0.8

@@ -34,6 +34,7 @@ namespace Game.Infrastructure
         {
             public Transform Parent;
             public Transform[] Fish;
+            public Animator[] Animators;
             public Vector3 Center;
             public float Radius;
             public StableEntityId SourceId;
@@ -73,12 +74,13 @@ namespace Game.Infrastructure
                     Mathf.Cos(angle) * radius * 1.15f));
             }
             var school = new FishSchool { Parent = parent, Fish = fish, Center = center, Radius = radius,
+                Animators = fish.Select(x => x.GetComponentInChildren<Animator>()).ToArray(),
                 SourceId = sourceId };
             schools.Add(school);
             RefreshFish(school);
         }
 
-        private Transform MakeFish(Transform parent) => WorldPropCatalog.Create("fish", parent).transform;
+        private Transform MakeFish(Transform parent) => WorldPropCatalog.Create("fish_swimming", parent).transform;
 
         private void RefreshFish(FishSchool school)
         {
@@ -97,7 +99,7 @@ namespace Game.Infrastructure
                 school.Fish[i].position = school.Center + new Vector3(Mathf.Sin(phase) * radius,
                     0.04f + jump, Mathf.Cos(phase) * radius);
                 school.Fish[i].rotation = Quaternion.Euler(-jump * 30f, phase * Mathf.Rad2Deg + 90f, 0f);
-                // Static imported fish follows the shared school scheduler; no fabricated tail mesh.
+                if (school.Animators[i] != null) school.Animators[i].speed = root.Clock == null || root.Clock.IsPaused ? 0f : 1f;
             }
         }
 

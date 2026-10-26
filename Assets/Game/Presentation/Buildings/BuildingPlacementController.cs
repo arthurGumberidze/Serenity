@@ -51,6 +51,9 @@ namespace Game.Presentation.Buildings
         private GridCoordinate zoneDragAnchor;
         private bool zoneDragActive;
         private int lastCancelledFrame = -1;
+        private Vector3 lastPreviewPoint;
+        private float nextPreviewRefresh;
+        private int shoreRotationOffset;
         private const int GardenMinimumSide = 2;
         private const int GardenMaximumSide = 8;
 
@@ -123,6 +126,7 @@ namespace Game.Presentation.Buildings
             activeDefinition = definition;
             LastConstructionFailure = ConstructionFailureReason.None;
             orientation = BuildingOrientation.North;
+            shoreRotationOffset = 0;
             interactionMode.EnterBuildingPlacement();
             CreatePreview();
             return true;
@@ -134,7 +138,11 @@ namespace Game.Presentation.Buildings
             if (activeDefinition.Id == new BuildingDefinitionId("fishing_camp"))
             {
                 var snapped = ShoreSnap?.Invoke(worldPoint);
-                if (snapped.HasValue) { worldPoint = snapped.Value.point; orientation = snapped.Value.orientation; }
+                if (snapped.HasValue)
+                {
+                    worldPoint = snapped.Value.point; orientation = snapped.Value.orientation;
+                    for (var turn = 0; turn < shoreRotationOffset; turn++) orientation = orientation.RotateClockwise();
+                }
             }
             if (zoneDragActive)
             {
@@ -164,7 +172,8 @@ namespace Game.Presentation.Buildings
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
                 : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
-                    activeDefinition.Id.ToString() == "fishing_camp" ? 3f : (float?)null, activeDefinition.Id.ToString()=="gate");
+                    activeDefinition.Id.ToString() == "fishing_camp" ? 3f : (float?)null, activeDefinition.Id.ToString()=="gate",
+                    activeDefinition.Id.ToString() == "fishing_camp");
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells, previewEvaluation.ApproachCells);
@@ -189,9 +198,10 @@ namespace Game.Presentation.Buildings
         public void RotatePreview()
         {
             if (!IsActive) return;
-            if (IsVariableGarden() || IsDragSegment()) return; // World-grid drag defines orientation.
+            if (zoneDragActive) return; // An active drag owns its world-grid direction.
             var center = previewObject != null ? previewObject.transform.position : spawner.GridToWorld(previewCoordinate);
             orientation = orientation.RotateClockwise();
+            if (activeDefinition.Id.ToString() == "fishing_camp") shoreRotationOffset = (shoreRotationOffset + 1) % 4;
             TryMovePreviewToWorldPoint(center);
         }
 
@@ -271,7 +281,15 @@ namespace Game.Presentation.Buildings
         {
             if (!IsActive || inputSource == null || raycaster == null) return;
             if (raycaster.TryGetGroundHit(inputSource.PointerPosition, out var hit))
-                TryMovePreviewToWorldPoint(hit.point);
+            {
+                // Revalidate stationary previews periodically; confirmation always validates synchronously.
+                if (Time.unscaledTime >= nextPreviewRefresh || (lastPreviewPoint - hit.point).sqrMagnitude > .25f)
+                {
+                    lastPreviewPoint = hit.point;
+                    nextPreviewRefresh = Time.unscaledTime + .12f;
+                    TryMovePreviewToWorldPoint(hit.point);
+                }
+            }
             else
             {
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.OutsideBuildableBounds,

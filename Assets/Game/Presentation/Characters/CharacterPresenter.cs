@@ -26,6 +26,7 @@ namespace Game.Presentation.Characters
         private bool hasSpeedParameter;
         private bool hasMovingParameter;
         private bool hasActionIntentParameter;
+        private bool hasAuthoredWork;
         private float displayedMovementSpeed = float.NaN;
         private bool? displayedMoving;
         private bool? displayedPaused;
@@ -326,7 +327,7 @@ namespace Game.Presentation.Characters
             }
             // Procedural drawing/fishing owns the arms; the generic labour clip bends the torso and
             // raises a hand as if striking, fighting those poses. Keep a neutral base stance instead.
-            var baseIntent = intent == CharacterAnimationIntent.Hunt || intent == CharacterAnimationIntent.Fish
+            var baseIntent = intent == CharacterAnimationIntent.Hunt || intent == CharacterAnimationIntent.Fish && !hasAuthoredWork
                 ? CharacterAnimationIntent.Idle : intent;
             animator.SetInteger(ActionIntentParameter, (int)baseIntent);
             if (Application.isPlaying && intent == CharacterAnimationIntent.Idle &&
@@ -392,6 +393,18 @@ namespace Game.Presentation.Characters
             if (animationIntent == CharacterAnimationIntent.Hunt)
             {
                 ApplyBowDrawPose();
+                return;
+            }
+            if (hasAuthoredWork && (animationIntent == CharacterAnimationIntent.Fish ||
+                animationIntent == CharacterAnimationIntent.Mine || animationIntent == CharacterAnimationIntent.Gather ||
+                animationIntent == CharacterAnimationIntent.Build))
+            {
+                if (animationIntent == CharacterAnimationIntent.Fish) UpdateFishingLine();
+                if (animationIntent == CharacterAnimationIntent.Mine)
+                {
+                    var cycle = Mathf.FloorToInt(animator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+                    if (cycle != lastWorkImpactCycle) { WorkImpactSequence++; lastWorkImpactCycle = cycle; }
+                }
                 return;
             }
             if (animationIntent == CharacterAnimationIntent.Fish) { ApplyFishingPose(); return; }
@@ -465,6 +478,7 @@ namespace Game.Presentation.Characters
             hasSpeedParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == SpeedParameter);
             hasMovingParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == MovingParameter);
             hasActionIntentParameter = animator != null && animator.parameters.Any(parameter => parameter.nameHash == ActionIntentParameter);
+            hasAuthoredWork = animator != null && animator.parameters.Any(parameter => parameter.name == "AuthoredWork");
         }
 
         private void CacheHumanoidBones()

@@ -76,7 +76,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8084511744882949925}
+  - {fileID: 4702492060087715488}
   m_Father: {fileID: 7728862714953190273}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3116085938107724099
@@ -122,7 +122,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3220453955179426732}
+  - {fileID: 2687583528258456657}
   m_Father: {fileID: 7728862714953190273}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6886187808642100131
@@ -207,7 +207,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 4, y: 3.2, z: 3}
   m_Center: {x: 0, y: 1.6, z: 0}
---- !u!1001 &1386450080392352083
+--- !u!1001 &1927758573117959854
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -272,10 +272,10 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 23a37d0248afb7d4f91d21029b393aec, type: 3}
---- !u!4 &3220453955179426732 stripped
+--- !u!4 &2687583528258456657 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4579299695685378815, guid: 23a37d0248afb7d4f91d21029b393aec, type: 3}
-  m_PrefabInstance: {fileID: 1386450080392352083}
+  m_PrefabInstance: {fileID: 1927758573117959854}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2202117588209644261
 PrefabInstance:
@@ -351,7 +351,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a8dbc8358c844b3408f1b18e773ac2bb, type: 3}
   m_PrefabInstance: {fileID: 2202117588209644261}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &7516770346151332634
+--- !u!1001 &6423120197945488031
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -408,8 +408,8 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 32b156d8f24b75d4ebcbda3766061bde, type: 3}
---- !u!4 &8084511744882949925 stripped
+--- !u!4 &4702492060087715488 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1756714281299276863, guid: 32b156d8f24b75d4ebcbda3766061bde, type: 3}
-  m_PrefabInstance: {fileID: 7516770346151332634}
+  m_PrefabInstance: {fileID: 6423120197945488031}
   m_PrefabAsset: {fileID: 0}

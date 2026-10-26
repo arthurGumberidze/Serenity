@@ -75,11 +75,11 @@ namespace Game.Infrastructure.Editor
             if(catalog==null) { catalog=ScriptableObject.CreateInstance<WorldPropCatalog>(); AssetDatabase.CreateAsset(catalog,path); }
             catalog.Entries=entries.ToArray(); EditorUtility.SetDirty(catalog);
             UpgradeBuildings(); AssetDatabase.SaveAssets();
-            Preview();
+            if (SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null) Preview();
             Debug.Log("WM15_PROPS_AUTHORED entries="+entries.Count);
         }
 
-        private static Material OwnedMaterial(Material source, bool particle = false)
+        internal static Material OwnedMaterial(Material source, bool particle = false)
         {
             if(source==null) throw new InvalidDataException("Source prop has a missing material");
             if(materials.TryGetValue(source,out var existing))return existing;
@@ -155,12 +155,36 @@ namespace Game.Infrastructure.Editor
             var floor=centered?b.center.y:b.min.y;
             if(pier)
             {
-                var deck=model.GetComponentsInChildren<MeshRenderer>().OrderByDescending(x=>x.bounds.size.x*x.bounds.size.z/Mathf.Max(.08f,x.bounds.size.y)).First();
-                floor=deck.bounds.max.y;
-                Debug.Log("PIER_DECK "+deck.name+" "+floor+" bounds="+b.size);
+                // Posts and rails can share the board renderer. Its bounding-box top is not the deck.
+                floor = DeckSurfaceHeight(model);
             }
             model.transform.position-=new Vector3(b.center.x,floor,b.center.z);
             Save(key,path,root);Object.DestroyImmediate(root);
+        }
+        public static float DeckSurfaceHeight(GameObject model)
+        {
+            var areas = new Dictionary<int, float>();
+            var heights = new Dictionary<int, float>();
+            foreach (var filter in model.GetComponentsInChildren<MeshFilter>())
+            {
+                var mesh = filter.sharedMesh;
+                var vertices = mesh.vertices; var triangles = mesh.triangles;
+                for (var i = 0; i < triangles.Length; i += 3)
+                {
+                    var a = filter.transform.TransformPoint(vertices[triangles[i]]);
+                    var b = filter.transform.TransformPoint(vertices[triangles[i + 1]]);
+                    var c = filter.transform.TransformPoint(vertices[triangles[i + 2]]);
+                    var normal = Vector3.Cross(b - a, c - a);
+                    if (normal.sqrMagnitude < .000001f || normal.normalized.y < .85f) continue;
+                    var y = (a.y + b.y + c.y) / 3f; var band = Mathf.RoundToInt(y / .05f);
+                    areas.TryGetValue(band, out var area); heights.TryGetValue(band, out var height);
+                    areas[band] = area + normal.magnitude;
+                    heights[band] = height + y * normal.magnitude;
+                }
+            }
+            if (areas.Count == 0) throw new InvalidDataException("Pier has no upward deck faces");
+            var deck = areas.OrderByDescending(x => x.Value).First();
+            return heights[deck.Key] / deck.Value;
         }
         private static void Effect(string key,string path)
         {

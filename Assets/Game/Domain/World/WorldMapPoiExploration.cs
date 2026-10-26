@@ -117,16 +117,16 @@ namespace Game.Domain.World
             return new WorldMapPoiPlan(entries);
         }
 
-        private ApproachResult FindApproach(WorldMapPointOfInterest definition, WorldPosition target)
+        private ApproachResult FindApproach(WorldMapPointOfInterest definition, WorldPosition target, float grid = ApproachGridMeters)
         {
-            var columns = (int)Math.Floor((world.WidthMeters - 0.001f) / ApproachGridMeters) + 1;
-            var rows = (int)Math.Floor((world.DepthMeters - 0.001f) / ApproachGridMeters) + 1;
+            var columns = (int)Math.Floor((world.WidthMeters - 0.001f) / grid) + 1;
+            var rows = (int)Math.Floor((world.DepthMeters - 0.001f) / grid) + 1;
             var sourceRoutes = new Dictionary<GridNode, string>();
             foreach (var route in roads.Routes.OrderBy(value => value.Id, StringComparer.Ordinal))
             foreach (var sample in route.Samples.Where(value => !value.IsWater))
             {
-                var node = ToNode(sample.Position, columns, rows);
-                if (!IsTraversable(node, columns, rows)) continue;
+                var node = ToNode(sample.Position, columns, rows, grid);
+                if (!IsTraversable(node, columns, rows, grid)) continue;
                 if (!sourceRoutes.TryGetValue(node, out var previous) ||
                     string.Compare(route.Id, previous, StringComparison.Ordinal) < 0) sourceRoutes[node] = route.Id;
             }
@@ -144,7 +144,7 @@ namespace Game.Domain.World
             {
                 cost[source.Key] = 0f;
                 rootRoute[source.Key] = source.Value;
-                open.Add(new OpenNode(source.Key, Heuristic(source.Key, target), sequence++));
+                open.Add(new OpenNode(source.Key, Heuristic(source.Key, target, grid), sequence++));
             }
 
             GridNode? reached = null;
@@ -155,7 +155,7 @@ namespace Game.Domain.World
                 var current = currentOpen.Node;
                 if (!cost.TryGetValue(current, out var currentCost)) continue;
                 if (!closed.Add(current)) continue;
-                var currentPosition = Position(current);
+                var currentPosition = Position(current, grid);
                 if (Distance2D(currentPosition, target) <= arrivalRadius)
                 {
                     reached = current;
@@ -163,17 +163,19 @@ namespace Game.Domain.World
                 }
                 foreach (var next in Neighbours(current, columns, rows))
                 {
-                    if (!IsTraversable(next, columns, rows) || !SegmentTraversable(current, next)) continue;
+                    if (!IsTraversable(next, columns, rows, grid) || !SegmentTraversable(current, next, grid)) continue;
                     var step = current.X != next.X && current.Z != next.Z
-                        ? ApproachGridMeters * 1.41421356f : ApproachGridMeters;
+                        ? grid * 1.41421356f : grid;
                     var nextCost = currentCost + step;
                     if (cost.TryGetValue(next, out var existing) && nextCost >= existing - 0.001f) continue;
                     cost[next] = nextCost;
                     parent[next] = current;
                     rootRoute[next] = rootRoute[current];
-                    open.Add(new OpenNode(next, nextCost + Heuristic(next, target), sequence++));
+                    open.Add(new OpenNode(next, nextCost + Heuristic(next, target, grid), sequence++));
                 }
             }
+            if (!reached.HasValue && grid > 2f)
+                return FindApproach(definition, target, grid * .5f); // Resolve narrow dry passages missed by the coarse planning lattice.
             if (!reached.HasValue)
                 throw new InvalidOperationException("No dry WM09 approach could be found for POI " + definition.Id);
 
@@ -186,7 +188,7 @@ namespace Game.Domain.World
                 nodes.Add(cursor);
             }
             nodes.Reverse();
-            var points = nodes.Select(Position).ToArray();
+            var points = nodes.Select(node => Position(node, grid)).ToArray();
             if (points.Length == 1)
             {
                 var source = points[0];
@@ -208,29 +210,29 @@ namespace Game.Domain.World
             return new ApproachResult(rootRoute[reached.Value], points);
         }
 
-        private GridNode ToNode(WorldPosition value, int columns, int rows) => new GridNode(
-            Math.Max(0, Math.Min(columns - 1, (int)Math.Round((value.X - world.Origin.X) / ApproachGridMeters))),
-            Math.Max(0, Math.Min(rows - 1, (int)Math.Round((value.Z - world.Origin.Z) / ApproachGridMeters))));
+        private GridNode ToNode(WorldPosition value, int columns, int rows, float grid) => new GridNode(
+            Math.Max(0, Math.Min(columns - 1, (int)Math.Round((value.X - world.Origin.X) / grid))),
+            Math.Max(0, Math.Min(rows - 1, (int)Math.Round((value.Z - world.Origin.Z) / grid))));
 
-        private WorldPosition Position(GridNode node)
+        private WorldPosition Position(GridNode node, float grid)
         {
-            var x = world.Origin.X + node.X * ApproachGridMeters;
-            var z = world.Origin.Z + node.Z * ApproachGridMeters;
+            var x = world.Origin.X + node.X * grid;
+            var z = world.Origin.Z + node.Z * grid;
             return new WorldPosition(x, heights.SampleHeight(x, z) + 0.1f, z);
         }
 
-        private bool IsTraversable(GridNode node, int columns, int rows)
+        private bool IsTraversable(GridNode node, int columns, int rows, float grid)
         {
             if (node.X < 0 || node.Z < 0 || node.X >= columns || node.Z >= rows) return false;
-            var position = Position(node);
+            var position = Position(node, grid);
             return !heights.IsWater(position.X, position.Z) &&
                    heights.SampleSlopeDegrees(position.X, position.Z) <= MaximumApproachSlopeDegrees + 0.001f;
         }
 
-        private bool SegmentTraversable(GridNode first, GridNode second)
+        private bool SegmentTraversable(GridNode first, GridNode second, float grid)
         {
-            var a = Position(first);
-            var b = Position(second);
+            var a = Position(first, grid);
+            var b = Position(second, grid);
             var mx = (a.X + b.X) * 0.5f;
             var mz = (a.Z + b.Z) * 0.5f;
             if (heights.IsWater(mx, mz) || heights.SampleSlopeDegrees(mx, mz) > MaximumApproachSlopeDegrees + 0.001f)
@@ -251,10 +253,10 @@ namespace Game.Domain.World
             }
         }
 
-        private WorldPosition FlatPosition(GridNode node) => new WorldPosition(
-            world.Origin.X + node.X * ApproachGridMeters, 0f,
-            world.Origin.Z + node.Z * ApproachGridMeters);
-        private float Heuristic(GridNode node, WorldPosition target) => Distance2D(FlatPosition(node), target);
+        private WorldPosition FlatPosition(GridNode node, float grid) => new WorldPosition(
+            world.Origin.X + node.X * grid, 0f,
+            world.Origin.Z + node.Z * grid);
+        private float Heuristic(GridNode node, WorldPosition target, float grid) => Distance2D(FlatPosition(node, grid), target);
         private static float Distance2D(WorldPosition a, WorldPosition b)
         {
             var dx = a.X - b.X;

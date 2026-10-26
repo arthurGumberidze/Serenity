@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="5" result="Passed" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-26 13:25:23Z" end-time="2026-10-26 13:25:47Z" duration="23,6340682">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="802" result="Passed" start-time="2026-10-26 13:25:23Z" end-time="2026-10-26 13:25:47Z" duration="23.634068" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1932" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="798" result="Passed" start-time="2026-10-26 13:25:23Z" end-time="2026-10-26 13:25:47Z" duration="23.600117" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="11228" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1933" name="Game" fullname="Game" runstate="Runnable" testcasecount="798" result="Passed" start-time="2026-10-26 13:25:23Z" end-time="2026-10-26 13:25:47Z" duration="23.565834" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1934" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="798" result="Passed" start-time="2026-10-26 13:25:23Z" end-time="2026-10-26 13:25:47Z" duration="23.541754" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1935" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="615" result="Passed" start-time="2026-10-26 13:25:24Z" end-time="2026-10-26 13:25:47Z" duration="23.485016" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1834" name="WM11WorldMapPoiExplorationTests" fullname="Game.Tests.Editor.WM11WorldMapPoiExplorationTests" classname="Game.Tests.Editor.WM11WorldMapPoiExplorationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-26 13:25:24Z" end-time="2026-10-26 13:25:30Z" duration="6.534216" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Category" value="WM11" />
+              </properties>
+              <test-case id="1836" name="EveryPointHasDrySlopeBoundedApproachFromReachableWm09Route" fullname="Game.Tests.Editor.WM11WorldMapPoiExplorationTests.EveryPointHasDrySlopeBoundedApproachFromReachableWm09Route" methodname="EveryPointHasDrySlopeBoundedApproachFromReachableWm09Route" classname="Game.Tests.Editor.WM11WorldMapPoiExplorationTests" runstate="Runnable" seed="1981254234" result="Passed" start-time="2026-10-26 13:25:30Z" end-time="2026-10-26 13:25:30Z" duration="0.035270" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1850" name="WM15AfternoonFeedbackTests" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-26 13:25:30Z" end-time="2026-10-26 13:25:47Z" duration="16.802365" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1855" name="AnimatedBoarHoovesDoNotUseItsOversizedSkinBoundsAsGround" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.AnimatedBoarHoovesDoNotUseItsOversizedSkinBoundsAsGround" methodname="AnimatedBoarHoovesDoNotUseItsOversizedSkinBoundsAsGround" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="274687347" result="Passed" start-time="2026-10-26 13:25:30Z" end-time="2026-10-26 13:25:30Z" duration="0.040605" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-suite type="ParameterizedMethod" id="1854" name="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-26 13:25:30Z" end-time="2026-10-26 13:25:47Z" duration="16.756287" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+                <properties />
+                <test-case id="1851" name="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(20261026L)" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(20261026L)" methodname="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="1907956363" result="Passed" start-time="2026-10-26 13:25:30Z" end-time="2026-10-26 13:25:36Z" duration="5.348534" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1852" name="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(1220639287L)" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(1220639287L)" methodname="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="1626645182" result="Passed" start-time="2026-10-26 13:25:36Z" end-time="2026-10-26 13:25:41Z" duration="5.606991" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                </test-case>
+                <test-case id="1853" name="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(1380062136L)" fullname="Game.Tests.Editor.WM15AfternoonFeedbackTests.NewWorldPoiApproachesStayDryAcrossReportedWorldKeys(1380062136L)" methodname="NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" classname="Game.Tests.Editor.WM15AfternoonFeedbackTests" runstate="Runnable" seed="1676713734" result="Passed" start-time="2026-10-26 13:25:41Z" end-time="2026-10-26 13:25:47Z" duration="5.798417" asserts="0">
+                  <properties>
+                    <property name="retryIteration" value="0" />
+                    <property name="repeatIteration" value="0" />
+                  </properties>
+                  <output><![CDATA[Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+                </test-case>
+              </test-suite>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

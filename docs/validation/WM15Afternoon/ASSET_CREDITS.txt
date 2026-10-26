@@ -1,0 +1,18 @@
+New assets used by the WM15 afternoon candidate
+
+Animal Hide by Zsky
+https://poly.pizza/m/GaurgMNrWC
+Creative Commons Attribution, as identified by the original asset page.
+Changes: converted to Unity prefab, scaled, URP material and hide/cured-hide variants.
+
+Fish by joyfulsquirrel
+https://opengameart.org/content/fish-1
+CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Changes: Blender-to-FBX conversion retaining rig/swim, scale and Unity URP material.
+
+KayKit Resource Bits FREE by Kay Lousberg
+CC0; original license is included in Assets/Game/Art/WM15Afternoon/Imported/KayKit/License.txt.
+
+Human Crafting Animations FREE by Kevin Iglesias and existing Unity Asset Store packs
+are used under their original Asset Store licenses. Models/animations are incorporated into
+the game; those proprietary source packages are not separately redistributed in the player.

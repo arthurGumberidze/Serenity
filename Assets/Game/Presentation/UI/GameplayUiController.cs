@@ -487,7 +487,9 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedCharacterIds.Count);
             foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
             {
-                if (!ContextActionRules.SupportsTarget(action, target)) continue;
+                var actionTarget = action == ContextActionKind.Gather && TryGetCropTarget(target, out var cropTarget)
+                    ? cropTarget : target;
+                if (!ContextActionRules.SupportsTarget(action, actionTarget)) continue;
                 if (target.Kind == ContextTargetKind.Building && context.Buildings.TryGet(target.EntityId, out var menuBuilding))
                 {
                     if (action == ContextActionKind.Build && menuBuilding.IsOperational) continue;
@@ -498,10 +500,11 @@ namespace Game.Presentation.UI
                 var state = action == ContextActionKind.Attack
                     ? new ContextActionAvailability(attackState.Enabled, attackState.Enabled
                         ? ContextUnavailableReason.None : ContextUnavailableReason.WrongRole)
-                    : EvaluateForSelection(action, target);
+                    : EvaluateForSelection(action, actionTarget);
                 contextActionStates[action] = state;
                 var captured = action;
                 var label = ContextActionName(action);
+                if (action == ContextActionKind.Gather && TryGetCropTarget(target, out _)) label = "Выращивать / собрать урожай";
                 if (action == ContextActionKind.Craft && TryGetFishingCampTarget(target, out _)) label = "Ловить рыбу";
                 if (action == ContextActionKind.Gather && context.Production.TryGetSite(target.EntityId, out var menuSite))
                     label = menuSite.RecipeId.ToString() == "fish_water" ? "Ловить рыбу" :
@@ -526,6 +529,18 @@ namespace Game.Presentation.UI
 
         public ContextCommandResult LastContextCommandResult { get; private set; }
 
+        public bool TryGetCropTarget(ContextCommandTarget target, out ContextCommandTarget cropTarget)
+        {
+            cropTarget = default;
+            if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var garden) ||
+                !garden.IsOperational || garden.OwnerSideId.Value != "player" ||
+                !context.Production.TryGetSite(garden.Id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot)
+                return false;
+            cropTarget = new ContextCommandTarget(ContextTargetKind.ResourceSource, site.Position,
+                site.Id, resourceClass: ContextResourceClass.Gatherable);
+            return true;
+        }
+
         public bool TryGetFishingCampTarget(ContextCommandTarget target, out ContextCommandTarget fishTarget)
         {
             fishTarget = default;
@@ -540,6 +555,7 @@ namespace Game.Presentation.UI
         {
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
             var target = activeContextTarget.Value;
+            if (action == ContextActionKind.Gather && TryGetCropTarget(target, out var cropTarget)) target = cropTarget;
             if (action == ContextActionKind.Gather && TryGetFishingCampTarget(target, out var fishingTarget))
             { target = fishingTarget; action = ContextActionKind.Craft; }
             var roster = activeContextSelectionIds.ToArray();
@@ -1630,6 +1646,7 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, T("ui.build.title") + " · " + BuildCategoryLabel(buildCategory));
             AddLine(mainPanel, T("ui.build.instructions"));
+            mainPanel.Add(ActionButton("Повернуть постройку на 90° (R)", () => context.BuildingPlacement.RotatePreview(), "rotate-building"));
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
                 // Retain the legacy ID for existing scenes/saves, not as a second player option.
@@ -2323,7 +2340,11 @@ namespace Game.Presentation.UI
                     DrawIndustrialZone(pile, zone);
                     return;
                 }
-                var inventory = context.Inventories.Get(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId));
+                if (!context.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.WorldPile, pile.PileId), out var inventory))
+                {
+                    AddMuted(inspector, "Эта куча ресурсов уже убрана или недоступна.");
+                    return;
+                }
                 AddLine(inspector, T("ui.selection.resource_pile"));
                 AddLine(inspector, Content("resource", pile.ResourceId.ToString()) + ": " +
                     inventory.GetAmount(pile.ResourceId).Units);

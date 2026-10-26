@@ -1,5 +1,13 @@
 # NEXT_TASK.md
 
+## WM15 afternoon feedback — current work (2026-10-26)
+
+Candidate: `Builds/WorldMapAfternoonFix/Serenity.exe` (build-f 0 errors / 82 warnings; Player-d 47/47, exit 0,
+no runtime errors; 19 focused Editor checks). See `docs/world_map/WM15_AFTERNOON_FEEDBACK.md`.
+Next unblocked work stays WM15: user visual review, initial loading and remaining content. Ore, hide,
+rod and rigged fish are now available; do not ask for duplicate general packs. Keep WM15 IN_PROGRESS.
+No full performance gates and no repeated shutdown. Preserve inherited imports and unrelated materials.
+
 ## WM15 after local prop replacement (2026-10-26)
 
 Current candidate: `Builds/WorldMapAssetReplacement/Serenity.exe` (build-b, 0 errors / 81 warnings;

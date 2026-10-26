@@ -11,6 +11,7 @@ namespace Game.Presentation.AI
             destination = default;
             if (!NavMesh.SamplePosition(origin, out var start, 4f, NavMesh.AllAreas)) return false;
             var path = new NavMeshPath();
+            if (TryCandidate(start.position, target, target, .35f, path, out destination)) return true;
             if (TryCandidate(start.position, target, target, 3f, path, out destination)) return true;
             for (var ring = 1; ring <= 3; ring++)
             for (var direction = 0; direction < 12; direction++)

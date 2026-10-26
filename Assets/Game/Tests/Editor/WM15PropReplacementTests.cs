@@ -56,7 +56,7 @@ namespace Game.Tests.Editor
                     var renderers=instance.GetComponentsInChildren<Renderer>();var b=renderers[0].bounds;
                     foreach(var renderer in renderers.Skip(1))b.Encapsulate(renderer.bounds);
                     if(key=="fishing_rod") {Assert.That(b.min.y,Is.EqualTo(0).Within(.02));Assert.That(b.max.y,Is.EqualTo(2.1f).Within(.05));}
-                    else {Assert.That(b.size.x,Is.EqualTo(2.5f).Within(.02));Assert.That(b.size.z,Is.EqualTo(9f).Within(.02));Assert.That(b.max.y,Is.EqualTo(0).Within(.02));}
+                    else {Assert.That(b.size.x,Is.EqualTo(2.5f).Within(.02));Assert.That(b.size.z,Is.EqualTo(9f).Within(.02));Assert.That(b.min.y,Is.LessThan(0)); /* Deck contact is checked by raycast in WM15AfternoonFeedbackTests. */}
                 }
                 finally{Object.DestroyImmediate(instance);}
             }
