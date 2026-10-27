@@ -1952,3 +1952,19 @@ Harvest and Ready reports 100%, never a natural-source 0/0 amount. Winter, petal
 campfire, wildlife facing/habitat and NavMesh retry changes remain disposable presentation/navigation
 adapters. Unity batchmode validation on this workstation must execute outside the filesystem sandbox; the
 sandbox produces a different licensing machine identity and cannot resolve `com.unity.editor.headless`.
+
+## D-210 — Adaptive piers, player-founded herds and accumulation snow (2026-10-27)
+
+The small fishing pier is distinct from the large fishing camp. Its 4×4 footprint may conform to steep dry
+banks and the shore index exposes all water-facing candidates rather than reserving only six cleared pads.
+Water, protected/restricted masks other than the approved ridge exception, physical occupancy, ownership and
+reachable approach remain authoritative blockers. The camp retains its six stable non-overlapping pads.
+
+Animal pasture buildings begin empty. The founding pair is created only by an explicit player species choice
+and is persisted as ordinary domestic animal identity; each pasture can choose one of the configured domestic
+species once. Presentation must identify an empty pasture as livestock infrastructure, never derive its label
+or menu from the placeholder crop recipe.
+
+Mountain snow is presentation-only and derived from world height, upward normal and bounded procedural breakup.
+Gentle high shelves accumulate bright textured snow while steep faces retain the existing rock material. Fish
+stock remains canonical: smooth school steering and solitary silver fish are bounded visual adapters only.

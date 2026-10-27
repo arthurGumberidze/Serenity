@@ -8,21 +8,24 @@ namespace Game.Domain.World
     {
         public const float MaximumSlopeDegrees = 36f;
         public static bool IsValid(TiledWorldHeightSampler heights, GridCoordinate anchor,
-            BuildingFootprint footprint, BuildingOrientation orientation, float gridSize, float originX, float originZ)
+            BuildingFootprint footprint, BuildingOrientation orientation, float gridSize, float originX, float originZ,
+            bool terrainAdaptive = false)
         {
-            if (!HasWaterfront(heights,anchor,footprint,orientation,gridSize,originX,originZ)) return false;
+            if (!HasWaterfront(heights,anchor,footprint,orientation,gridSize,originX,originZ,terrainAdaptive)) return false;
             var low = float.MaxValue; var high = float.MinValue;
             foreach (var cell in footprint.EnumerateCells(anchor,orientation))
             {
                 var x = originX + cell.X * gridSize; var z = originZ + cell.Z * gridSize;
-                if (!heights.Definition.ContainsClosed(x,z) || !heights.IsBuildable(x,z,MaximumSlopeDegrees)) return false;
+                if (!heights.Definition.ContainsClosed(x,z) || heights.IsWater(x,z) ||
+                    (!terrainAdaptive && !heights.IsBuildable(x,z,MaximumSlopeDegrees))) return false;
                 var y = heights.SampleHeight(x,z); low = Math.Min(low,y); high = Math.Max(high,y);
             }
-            return high - low <= 4.5f;
+            return high - low <= (terrainAdaptive ? 20f : 4.5f);
         }
 
         public static bool HasWaterfront(TiledWorldHeightSampler heights, GridCoordinate anchor,
-            BuildingFootprint footprint, BuildingOrientation orientation, float gridSize, float originX, float originZ)
+            BuildingFootprint footprint, BuildingOrientation orientation, float gridSize, float originX, float originZ,
+            bool terrainAdaptive = false)
         {
             var rotated = footprint.Rotate(orientation);
             var cx = originX + (anchor.X + (rotated.Width - 1) * .5f) * gridSize;
@@ -40,8 +43,8 @@ namespace Game.Domain.World
             }
             var entranceX = cx - fx * (front + .6f);
             var entranceZ = cz - fz * (front + .6f);
-            if (!heights.Definition.ContainsClosed(entranceX,entranceZ) ||
-                !heights.IsBuildable(entranceX,entranceZ,MaximumSlopeDegrees)) return false;
+            if (!heights.Definition.ContainsClosed(entranceX,entranceZ) || heights.IsWater(entranceX,entranceZ) ||
+                (!terrainAdaptive && !heights.IsBuildable(entranceX,entranceZ,MaximumSlopeDegrees))) return false;
             return true;
         }
     }

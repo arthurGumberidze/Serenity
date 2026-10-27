@@ -9,7 +9,9 @@ using Game.Domain.Resources;
 using Game.Domain.World;
 using Game.Simulation.Production;
 using Game.Simulation.Resources;
+using Game.Infrastructure;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Game.Tests.Editor
 {
@@ -45,7 +47,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void PastureStartsWithYoungPairsAndBirthsSurviveRestoreWithoutRepeatedGrant()
+        public void PastureStartsEmptyAndPlayerChoosesOneYoungPair()
         {
             var service = Service(out var buildings, out _);
             var home = StableEntityId.NewId();
@@ -53,9 +55,11 @@ namespace Game.Tests.Editor
                 default, BuildingOrientation.North, ConstructionState.Completed)));
             service.AddSite(ProductionSite.CreateCropPlot(home, new ProductionRecipeId("cultivate_berries"),
                 default, TimeSpan.FromDays(2)));
-            Assert.That(service.EstablishSheepPasture(home, new CombatSideId("player")), Is.True);
+            Assert.That(service.Animals.AtHome(home), Is.Empty);
+            Assert.That(service.EstablishPasture(home, new CombatSideId("player"), "horse"), Is.True);
             var initial = service.Animals.AtHome(home);
-            Assert.That(initial.Count, Is.EqualTo(service.Animals.Policy.DomesticSpecies.Count * 2));
+            Assert.That(initial.Count, Is.EqualTo(2));
+            Assert.That(initial.All(x => x.Species == "horse"), Is.True);
             foreach (var species in initial.GroupBy(x => x.Species))
             {
                 Assert.That(species.Count(), Is.EqualTo(2));
@@ -70,7 +74,7 @@ namespace Game.Tests.Editor
             var before = service.Animals.AtHome(home).Select(x => (x.Id, x.Species, x.BornTick)).ToArray();
             service.RestoreState(service.CaptureState());
             Assert.That(service.Animals.AtHome(home).Select(x => (x.Id, x.Species, x.BornTick)), Is.EqualTo(before));
-            Assert.That(service.EstablishSheepPasture(home, new CombatSideId("player")), Is.False);
+            Assert.That(service.EstablishPasture(home, new CombatSideId("player"), "cow"), Is.False);
         }
 
         [Test]
@@ -82,7 +86,7 @@ namespace Game.Tests.Editor
                 default, BuildingOrientation.North, ConstructionState.Completed)));
             service.AddSite(ProductionSite.CreateCropPlot(home, new ProductionRecipeId("cultivate_berries"),
                 default, TimeSpan.FromDays(2)));
-            service.EstablishSheepPasture(home, new CombatSideId("player"));
+            service.EstablishPasture(home, new CombatSideId("player"), "cow");
             foreach (var animal in service.Animals.AtHome(home).Where(x => x.Male))
                 service.Animals.Damage(animal.Id, animal.Maximum);
             var initial = service.Animals.AtHome(home).Count;
@@ -99,6 +103,16 @@ namespace Game.Tests.Editor
             Assert.That(animal.GrowthFraction(born + TimeSpan.FromHours(12).Ticks, 3), Is.EqualTo(1d / 6d).Within(.00001));
             Assert.That(animal.GrowthFraction(born + TimeSpan.FromDays(1.5).Ticks, 3), Is.EqualTo(.5));
             Assert.That(animal.GrowthFraction(born + TimeSpan.FromDays(30).Ticks, 3), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void FishRotationCannotSnapNinetyDegreesInOneFrame()
+        {
+            var current=Quaternion.LookRotation(Vector3.forward);
+            var target=Vector3.right;
+            var next=WorksitePresentation.SmoothSwimmingRotation(current,target,1f/30f,38f);
+            Assert.That(Quaternion.Angle(current,next),Is.LessThanOrEqualTo(38f/30f+.001f));
+            Assert.That(Quaternion.Angle(next,Quaternion.LookRotation(target)),Is.GreaterThan(80f));
         }
     }
 }

@@ -1322,13 +1322,13 @@ MonoBehaviour:
     era: 0
     requiredTechnologyIds:
     - gathering
-    footprintWidth: 12
-    footprintDepth: 9
+    footprintWidth: 4
+    footprintDepth: 4
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
     placementConstraints: 7
-    maximumHeightDeltaMillimetres: 4500
+    maximumHeightDeltaMillimetres: 20000
     approachClearanceMillimetres: 750
     prefab: {fileID: 3333274376847922217, guid: f273bf103e0c39a43959d3a30e17c032, type: 3}
     constructionCost:

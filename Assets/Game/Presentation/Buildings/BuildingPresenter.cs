@@ -170,7 +170,8 @@ namespace Game.Presentation.Buildings
                     campfireLight.type = LightType.Point;
                     campfireLight.color = new Color(1f, .53f, .22f);
                     campfireLight.range = torch ? 12f : 18f;
-                    campfireLight.intensity = torch ? 6f : 15f;
+                    // Keep the falloff radius stable while increasing the requested emitted light.
+                    campfireLight.intensity = torch ? 12f : 45f;
                     campfireLight.shadows = LightShadows.None;
                 }
                 campfireLight.enabled = true;

@@ -27,11 +27,19 @@ namespace Game.Presentation.Production
             var source = proxy.GetComponent<ProductionSourcePresenter>();
             if (source != null && source.IsBound)
             {
-                var recipe = production.Recipes.Get(source.Site.RecipeId);
-                label = string.Join(" + ", System.Linq.Enumerable.Select(recipe.Outputs,
-                    x => RussianTextCatalog.Content("resource", x.ResourceId.ToString()))) +
-                    "  " + (source.Site.Kind == Game.Domain.Production.ProductionSiteKind.PrimitiveCropPlot
-                        ? CropGrowthLabel(source.Site) : $"{source.RemainingAmount}/{source.SourceCapacity}");
+                if (production.IsPastureSite(source.Site.Id))
+                {
+                    var herd = production.Animals.AtHome(source.Site.Id).Count(x => x.Alive);
+                    label = herd == 0 ? "Загон для скота · пуст" : $"Загон для скота · животных: {herd}";
+                }
+                else
+                {
+                    var recipe = production.Recipes.Get(source.Site.RecipeId);
+                    label = string.Join(" + ", System.Linq.Enumerable.Select(recipe.Outputs,
+                        x => RussianTextCatalog.Content("resource", x.ResourceId.ToString()))) +
+                        "  " + (source.Site.Kind == Game.Domain.Production.ProductionSiteKind.PrimitiveCropPlot
+                            ? CropGrowthLabel(source.Site) : $"{source.RemainingAmount}/{source.SourceCapacity}");
+                }
             }
             else
             {

@@ -32,7 +32,7 @@ namespace Game.Domain.World
         public IReadOnlyList<Candidate> Candidates=>candidates;
 
         public static ShorePlacementIndex Create(TiledWorldDefinition world,long seed,BuildingFootprint footprint,
-            float gridSize,float originX,float originZ)
+            float gridSize,float originX,float originZ,bool terrainAdaptive = false)
         {
             var result=new ShorePlacementIndex();
             var heights=new TiledWorldHeightSampler(world,seed);
@@ -47,7 +47,7 @@ namespace Game.Domain.World
                 var rotated=footprint.Rotate(facing);
                 var anchor=new GridCoordinate((int)Math.Round((bank.x+bank.dx*distance-originX)/gridSize-(rotated.Width-1)*.5f),
                     (int)Math.Round((bank.z+bank.dz*distance-originZ)/gridSize-(rotated.Depth-1)*.5f));
-                if(!seen.Add((anchor,facing)) || !ShoreBuildingPlacement.IsValid(heights,anchor,footprint,facing,gridSize,originX,originZ))continue;
+                if(!seen.Add((anchor,facing)) || !ShoreBuildingPlacement.IsValid(heights,anchor,footprint,facing,gridSize,originX,originZ,terrainAdaptive))continue;
                 var low=float.MaxValue;var high=float.MinValue;var blocked=false;
                 foreach(var cell in footprint.EnumerateCells(anchor,facing))
                 {
@@ -59,12 +59,17 @@ namespace Game.Domain.World
                         if(verdict.CanPlace)
                             for(var dz=-1;dz<=1;dz++)for(var dx=-1;dx<=1;dx++)
                             {var h=heights.SampleHeight(x+dx*gridSize*.5f,z+dz*gridSize*.5f);cellLow=Math.Min(cellLow,h);cellHigh=Math.Max(cellHigh,h);}
-                        cached=new Cell(verdict.CanPlace?null:verdict.Reason,cellLow,cellHigh);result.cells.Add(cell,cached);
+                        var blockReason=verdict.CanPlace || terrainAdaptive && verdict.Reason==WorldMapBuildabilityEvaluator.ExcessiveSlope
+                            ? null : verdict.Reason;
+                        if(blockReason==null && float.IsPositiveInfinity(cellLow))
+                            for(var dz=-1;dz<=1;dz++)for(var dx=-1;dx<=1;dx++)
+                            {var h=heights.SampleHeight(x+dx*gridSize*.5f,z+dz*gridSize*.5f);cellLow=Math.Min(cellLow,h);cellHigh=Math.Max(cellHigh,h);}
+                        cached=new Cell(blockReason,cellLow,cellHigh);result.cells.Add(cell,cached);
                     }
                     if(cached.Blocked!=null){blocked=true;break;}
                     low=Math.Min(low,cached.Low);high=Math.Max(high,cached.High);
                 }
-                if(blocked || high-low>4.5f)continue;
+                if(blocked || high-low>(terrainAdaptive?20f:4.5f))continue;
                 var cx=originX+(anchor.X+(rotated.Width-1)*.5f)*gridSize;
                 var cz=originZ+(anchor.Z+(rotated.Depth-1)*.5f)*gridSize;
                 result.candidates.Add(new Candidate(anchor,facing,cx,heights.SampleHeight(cx,cz),cz,bank.id));
@@ -73,6 +78,13 @@ namespace Game.Domain.World
             // candidates so the player can choose a river bank freely.
             var all = result.candidates.ToArray();
             result.candidates.Clear();
+            // The compact pier conforms to the bank rather than reserving a large prepared pad,
+            // so expose every dry water-facing candidate instead of six construction clearings.
+            if (terrainAdaptive)
+            {
+                result.candidates.AddRange(all);
+                return result;
+            }
             var lakeIds = new HashSet<string>(world.MapData.Hydrology.Lakes.Select(x=>x.Id));
             result.candidates.AddRange(all.Where(x => !lakeIds.Contains(x.WaterBodyId)));
             foreach (var lake in world.MapData.Hydrology.Lakes)

@@ -2028,3 +2028,34 @@ The U16A gate passed focused U16A, full EditMode/PlayMode, U05/U08/U09/U10/U11/U
 `DomesticService` now owns stable-ID homes, closed/habitable indoor bounds, resident access, assigned beds, occupancy, independent mutual consent and family-interaction records. Tier1 sleep moves to the assigned indoor bed before recovery and reuses the existing safe P10.3 cancel/requeue boundary; protected carry/direct control stays non-interruptible. Adult-only family interaction delegates to U18 relationship/pregnancy and is presented only as fade/skip. Snapshot v23 appends domestic plus representation-neutral tier/position/needs continuity while retaining full v22 appearance/work/health/connected-world state. P10 saves use `Serenity/P10/Saves`; gameplay rejects pre-v20/wrong-generation saves; legacy P9 v1–19 files appear only as read-only metadata.
 
 Focused EditMode passed 5/5, focused PlayMode 2/2, affected P10.3–P10.6 PlayMode 10/10 and U29 save observation 1/1. The visible 1920×1080 D3D11 Player route passed all 13 telemetry gates with inspected domestic/fade/after-load screenshots. Broad diagnostics recorded 552 passing EditMode tests plus one unchanged P8.2 geography failure, and 144/167 PlayMode with known suite-isolation/GPU-runner failures; exact evidence and commands are in `P106_HANDOFF.md`. P10.3/P10.4 and P8.6/U29/U30/U31 status remain unchanged. P10.7 is active.
+
+## WM15 requested visual/gameplay corrections — 2026-10-27
+
+- Added Russian names for the fishing pier and ground torch. The pier now uses a compact 4×4 adaptive dry
+  footprint and every water-facing bank candidate; the large camp alone retains six prepared lake pads.
+- Campfire intensity is 45 (further ×3) and ground-torch intensity is 12 (×2), with unchanged falloff radii.
+- A pasture starts empty, presents itself as livestock rather than berries and lets the player settle one
+  chosen domestic species as a persisted male/female pair. Automatic mixed-herd grants were removed.
+- Mountain snow uses altitude, slope and procedural breakup for bright shelf/summit accumulation while steep
+  rock stays exposed. Fish rotations are rate-limited and solitary silver metallic fish accompany schools.
+
+Validation commands/results:
+
+`Unity.exe -batchmode -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter Game.Tests.Editor.WM15CurrentFeedbackTests;Game.Tests.Editor.WM15CurrentPresentationTests;Game.Tests.Editor.WM15ShorePlacementTests -testResults C:\serenity_game\Artifacts\WM15Current\editor-f.xml -logFile C:\serenity_game\Artifacts\WM15Current\editor-f.log`
+
+- 10/11 passed; the only failure was the new test demanding 24 adaptive candidates at the mountain lake,
+  where all 21 valid dry candidates were retained. After correcting the non-contractual lower bound to 18,
+  `CompactAdaptivePierOffersManyDryPlacesPerLakeAcrossSteepBanks` passed 1/1 in `editor-g.xml`. Production
+  code was unchanged between these two runs; effective focused result is 11/11.
+
+`Unity.exe -batchmode -nographics -projectPath C:\serenity_game -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/WorldMapCurrentFix/Serenity.exe -quit -logFile C:\serenity_game\Artifacts\WM15Current\build-e.log`
+
+- succeeded with 0 errors / 82 warnings; GUID `7b04788a7032443fa98021ac3e9d1f95`, source fingerprint
+  `6E6A82877C9DE5BADFB01832B01F514B76E468C3573AEF1FB622DDAD6A524FA4`.
+
+`Builds\WorldMapCurrentFix\Serenity.exe -screen-fullscreen 0 -screen-width 1440 -screen-height 900 -wm15OctoberSmoke C:\serenity_game\Artifacts\WM15Current\player-b -wm15Evening -logFile C:\serenity_game\Artifacts\WM15Current\player-b.log`
+
+- hidden disposable Player passed 55 checks, including pasture construction/founding pair, all lake fish/shore
+  routes and manual pier fishing; `No runtime errors` passed. Two unrelated historical hunt timing assertions
+  failed (bow draw sampling and hunt completion) while damage, wood and fish routes passed. Full population
+  gates remain deferred and subjective snow/lighting acceptance remains with the user.

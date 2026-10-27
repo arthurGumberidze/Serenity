@@ -55,7 +55,7 @@ namespace Game.Infrastructure.Integration
                 }
                 else
                 {
-                    root.Production.EstablishSheepPasture(building.Id,building.OwnerSideId);yield return new WaitForSecondsRealtime(.4f);
+                    root.Production.EstablishPasture(building.Id,building.OwnerSideId,"sheep");yield return new WaitForSecondsRealtime(.4f);
                     Check(root.Production.Animals.AtHome(building.Id).Count>=2,"Dedicated pen receives founding breeding pair");
                     Check(view.GetComponentsInChildren<Transform>().Any(x=>x.name=="Pasture shelter"),"Pen uses imported separate shelter");
                     yield return CaptureReadable(root,"evening-pasture");

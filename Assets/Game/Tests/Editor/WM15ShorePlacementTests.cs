@@ -93,5 +93,25 @@ namespace Game.Tests.Editor
             }
             finally { UnityEngine.Object.DestroyImmediate(surfaceHost); }
         }
+
+        [Test] public void CompactAdaptivePierOffersManyDryPlacesPerLakeAcrossSteepBanks()
+        {
+            var world=TiledWorldDefinitionLoader.LoadProposedWorldMap();
+            var heights=new TiledWorldHeightSampler(world,1380062136);
+            var origin=new TiledWorldPopulationPlanner(world,heights,1380062136).Create().StartTerritory.Center;
+            var definition=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>("Assets/Game/Art/Config/BuildingPresentationCatalog.asset")
+                .ResolveDefinition(new BuildingDefinitionId("fishing_pier"));
+            Assert.That(definition.Footprint.Width,Is.EqualTo(4));
+            Assert.That(definition.Footprint.Depth,Is.EqualTo(4));
+            var index=ShorePlacementIndex.Create(world,1380062136,definition.Footprint,1,origin.X,origin.Z,true);
+            foreach(var lake in world.MapData.Hydrology.Lakes)
+            {
+                var candidates=index.Candidates.Where(x=>x.WaterBodyId==lake.Id).ToArray();
+                Assert.That(candidates.Length,Is.GreaterThanOrEqualTo(18),lake.Id);
+                foreach(var candidate in candidates)
+                    Assert.That(ShoreBuildingPlacement.IsValid(heights,candidate.Anchor,definition.Footprint,
+                        candidate.Facing,1,origin.X,origin.Z,true),Is.True,lake.Id);
+            }
+        }
     }
 }

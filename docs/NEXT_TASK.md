@@ -2,13 +2,17 @@
 
 ## WM15 current feedback — next unblocked work (2026-10-27)
 
-Candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Build-batch-c exited 0 with 0 errors / 30 warnings;
-focused EditMode passed 9/9; disposable Player-a passed 32/32 with no runtime errors. See
-`docs/world_map/WM15_CURRENT_FEEDBACK.md`. Ask the user to review a **new game**, especially manual pier
-fishing, livestock ages/models, winter/sakura appearance, campfire/ground torches, crop Grow/Harvest UI and
-resident navigation. Preserve old saves and inherited vendor/P3 changes. WM15 remains IN_PROGRESS for
+Candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Latest build-e succeeded with 0 errors / 82 warnings
+and focused verification is effectively 11/11
+(editor-f 10/11 contained only an over-strict candidate-count assertion; corrected case editor-g passed 1/1).
+Player-b passed 55 checks including the requested pasture/fish/shore routes and reported no runtime errors;
+two unrelated historical hunt-animation/completion timing assertions failed. See
+`docs/world_map/WM15_CURRENT_FEEDBACK.md`. Ask the user to review a **new game**, especially adaptive pier
+placement, chosen single-species pasture, mountain snow, brighter campfire/torch and smooth/silver fish.
+Preserve old saves and inherited vendor/P3 changes. WM15 remains IN_PROGRESS for
 visual acceptance, slow loading and deferred full 100/300/500 gates. Run Unity batchmode only as a hidden
-process outside the sandbox so the local Unity Personal profile is available; do not use GUI automation.
+process outside the sandbox so the local Unity Personal profile is available; GPU-backed hidden batchmode is
+required because UMA's startup window hangs under `-nographics`. Do not use GUI automation.
 
 
 ## WM15 evening feedback — next unblocked work (2026-10-27)

@@ -41,25 +41,25 @@ namespace Game.Presentation.Environment
         [SerializeField] private float maximumFoundationHeightDifference = 0.75f;
 
         private sealed class StaticCell { public string Blocked; public float Low, High; }
-        private readonly Dictionary<(GridCoordinate cell,float size,Vector3 origin,bool shore),StaticCell> staticCells = new();
+        private readonly Dictionary<(GridCoordinate cell,float size,Vector3 origin,bool shore,bool adaptive),StaticCell> staticCells = new();
 
         public void ImportShoreCells(IReadOnlyDictionary<GridCoordinate,ShorePlacementIndex.Cell> cells,float gridSize,Vector3 origin)
         {
             foreach(var pair in cells)
-                staticCells[(pair.Key,gridSize,origin,true)]=new StaticCell
+                staticCells[(pair.Key,gridSize,origin,true,false)]=new StaticCell
                 { Blocked=pair.Value.Blocked==null?null:AuthoredBlockedReason(pair.Value.Blocked),Low=pair.Value.Low,High=pair.Value.High };
         }
 
         // Terrain and authored masks are immutable for this world; physical blockers are always checked again.
         public bool PrepareFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize, Vector3 origin,
-            bool shorelineFacility, double budgetMilliseconds = 2)
+            bool shorelineFacility, double budgetMilliseconds = 2, bool terrainAdaptive = false)
         {
             if (tiledWorld == null) return true;
             if (staticCells.Count + cells.Count >= 65536) staticCells.Clear();
             var timer = System.Diagnostics.Stopwatch.StartNew(); var computed = 0;
             foreach (var cell in cells)
             {
-                var key = (cell,gridSize,origin,shorelineFacility);
+                var key = (cell,gridSize,origin,shorelineFacility,terrainAdaptive);
                 if (staticCells.TryGetValue(key,out var existing)) { if (existing.Blocked != null) return true; continue; }
                 if (computed > 0 && budgetMilliseconds > 0 && timer.Elapsed.TotalMilliseconds >= budgetMilliseconds) return false;
                 var center = origin + new Vector3(cell.X*gridSize,0,cell.Z*gridSize);
@@ -67,14 +67,16 @@ namespace Game.Presentation.Environment
                 if (worldMapBuildability != null)
                 {
                     var policy = worldMapBuildability.EvaluateFootprint(new[] { new WorldMapFootprintCell(center.x,center.z,gridSize*.5f) },shorelineFacility);
-                    if (!policy.CanPlace) value.Blocked = AuthoredBlockedReason(policy.Reason);
+                    if (!policy.CanPlace && !(terrainAdaptive && policy.Reason == WorldMapBuildabilityEvaluator.ExcessiveSlope))
+                        value.Blocked = AuthoredBlockedReason(policy.Reason);
                 }
                 if (value.Blocked == null)
                 for (var z=-1;z<=1;z++)
                 for (var x=-1;x<=1;x++)
                 {
                     var point = center + new Vector3(x*gridSize*.5f,0,z*gridSize*.5f);
-                    if (worldMapBuildability == null && !IsSuitable(point)) value.Blocked = "Слишком крутой склон, вода или неподходящий грунт.";
+                    if (worldMapBuildability == null && !IsSuitable(point) && !terrainAdaptive)
+                        value.Blocked = "Слишком крутой склон, вода или неподходящий грунт.";
                     var height = tiledWorld.SampleHeight(point.x,point.z);
                     value.Low = Mathf.Min(value.Low,height); value.High = Mathf.Max(value.High,height);
                 }
@@ -89,18 +91,18 @@ namespace Game.Presentation.Environment
 
         public PlacementSurfaceEvaluation EvaluateFootprint(IReadOnlyList<GridCoordinate> cells, float gridSize,
             Vector3 origin, float? foundationHeightLimit = null, bool replaceOwnedPalisade = false,
-            bool shorelineFacility = false)
+            bool shorelineFacility = false, bool terrainAdaptive = false)
         {
             if (tiledWorld == null || cells == null || cells.Count == 0)
                 return new PlacementSurfaceEvaluation(false, null, "Поверхность мира недоступна.");
             var low = float.PositiveInfinity;
             var high = float.NegativeInfinity;
             var clearable = new HashSet<StableEntityId>();
-            if (!PrepareFootprint(cells,gridSize,origin,shorelineFacility,shorelineFacility ? 2 : 0))
+            if (!PrepareFootprint(cells,gridSize,origin,shorelineFacility,shorelineFacility ? 2 : 0,terrainAdaptive))
                 return new PlacementSurfaceEvaluation(false,null,"Подготавливаем береговую площадку…");
             foreach (var cell in cells)
             {
-                var cached = staticCells[(cell,gridSize,origin,shorelineFacility)];
+                var cached = staticCells[(cell,gridSize,origin,shorelineFacility,terrainAdaptive)];
                 if (cached.Blocked != null) return new PlacementSurfaceEvaluation(false,null,cached.Blocked);
                 low = Mathf.Min(low,cached.Low); high = Mathf.Max(high,cached.High);
             }

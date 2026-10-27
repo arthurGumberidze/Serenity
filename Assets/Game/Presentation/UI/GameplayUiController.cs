@@ -2671,14 +2671,38 @@ namespace Game.Presentation.UI
             if (context.Production.Sites.FirstOrDefault(x => x.Id == building.Id) is ProductionSite site)
             {
                 AddLine(inspector, F("ui.building.production", building.IsOperational ? T("ui.building.operational") : T("common.unavailable")));
-                if (context.Production.Animals.IsPasture(site.Id))
+                if (context.Production.IsPastureSite(site.Id))
                 {
                     var herd = context.Production.Animals.AtHome(site.Id);
                     var policy = context.Production.Animals.Policy;
                     AddLine(inspector, $"Загон · живых животных: {herd.Count(x => x.Alive)}/{policy.PastureCapacity}");
-                    AddMuted(inspector, $"Для приплода нужны взрослые самец и самка. Взросление — {policy.LivestockMaturityDays} дн., приплод — раз в {policy.LivestockBirthDays} дн. при свободном месте.");
-                    foreach (var sheep in herd.Where(x => !x.Harvested))
-                        AddLine(inspector, $"{DomesticAnimalName(sheep.Species)} · {(sheep.Male ? "самец" : "самка")}: {sheep.Health}/{sheep.Maximum} HP");
+                    if (herd.Count == 0)
+                    {
+                        AddMuted(inspector, "Загон пуст. Выберите один вид животных для заселения первой пары.");
+                        var species = policy.DomesticSpecies.ToArray();
+                        var selector = new DropdownField("Вид животных",
+                            species.Select(DomesticAnimalName).ToList(), 0);
+                        selector.SetEnabled(building.OwnerSideId == new CombatSideId("player") && building.IsOperational);
+                        inspector.Add(selector);
+                        var settle = ActionButton("Заселить пару", () => TryCommand(() =>
+                        {
+                            var index = selector.index;
+                            if (index < 0 || index >= species.Length) return;
+                            var established = context.Production.EstablishPasture(site.Id,
+                                new CombatSideId("player"), species[index]);
+                            SetStatus(established
+                                ? $"В загон заселена пара: {DomesticAnimalName(species[index])}."
+                                : "Заселить этот загон сейчас нельзя.");
+                        }), "pasture-settle-pair");
+                        settle.SetEnabled(building.OwnerSideId == new CombatSideId("player") && building.IsOperational);
+                        inspector.Add(settle);
+                    }
+                    else
+                    {
+                        AddMuted(inspector, $"Для приплода нужны взрослые самец и самка. Взросление — {policy.LivestockMaturityDays} дн., приплод — раз в {policy.LivestockBirthDays} дн. при свободном месте.");
+                        foreach (var animal in herd.Where(x => !x.Harvested))
+                            AddLine(inspector, $"{DomesticAnimalName(animal.Species)} · {(animal.Male ? "самец" : "самка")}: {animal.Health}/{animal.Maximum} HP");
+                    }
                 }
                 else if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
                 {

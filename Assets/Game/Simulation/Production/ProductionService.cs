@@ -240,24 +240,24 @@ namespace Game.Simulation.Production
         private ProductionJob CreateJob(ProductionTask task, ProductionSite site) =>
             new ProductionJob(task, WorkPosition != null ? WorkPosition(task.WorkerId, site) : site.Position);
 
-        // The campaign has one founding mixed herd. Its saved identities prevent repeat grants
-        // through demolishing/rebuilding a pen. Further animals come from a living male/female pair.
-        public bool EstablishSheepPasture(StableEntityId id, Game.Domain.Combat.CombatSideId requester)
+        // Each completed pen starts empty. The player chooses exactly one founding species;
+        // its saved identities make the choice permanent for that particular pen.
+        public bool EstablishPasture(StableEntityId id, Game.Domain.Combat.CombatSideId requester, string species)
         {
-            if (Animals.States.Any(x => x.Domestic) || !buildings.TryGet(id, out var building) ||
+            if (!Animals.Policy.DomesticSpecies.Contains(species) || Animals.AtHome(id).Count > 0 ||
+                !buildings.TryGet(id, out var building) ||
                 building.DefinitionId.ToString()!="animal_pasture" ||
                 building.OwnerSideId != requester || !building.IsOperational ||
                 !sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
                 site.CropPhase != CropPlotPhase.Unplanted || tasks.Values.Any(x => !x.IsTerminal && x.SiteId == id))
                 return false;
-            var species = Animals.Policy.DomesticSpecies;
-            for (var i=0;i<species.Count;i++)
-            {
-                AddLivestock(id,site.Position,species[i],true,LastCalendarTick,i*2);
-                AddLivestock(id,site.Position,species[i],false,LastCalendarTick,i*2+1);
-            }
+            AddLivestock(id,site.Position,species,true,LastCalendarTick,0);
+            AddLivestock(id,site.Position,species,false,LastCalendarTick,1);
             return true;
         }
+
+        public bool IsPastureSite(StableEntityId id) => buildings.TryGet(id, out var building) &&
+            building.DefinitionId.ToString() == "animal_pasture";
 
         private void AddLivestock(StableEntityId home, WorldPosition position, string species, bool male, long tick, int sequence)
         {

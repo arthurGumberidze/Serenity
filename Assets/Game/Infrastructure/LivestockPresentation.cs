@@ -29,8 +29,6 @@ namespace Game.Infrastructure
         {
             if (root?.Production == null || Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + .15f;
-            foreach(var penBuilding in root.Buildings.All.Where(x=>x.IsOperational && x.DefinitionId.ToString()=="animal_pasture"))
-                root.Production.EstablishSheepPasture(penBuilding.Id,penBuilding.OwnerSideId);
             var states = root.Production.Animals.States.Where(x => x.Domestic && !x.Harvested).ToArray();
             var ids = new HashSet<StableEntityId>(states.Select(x => x.Id));
             foreach (var id in views.Keys.Where(x => !ids.Contains(x)).ToArray())

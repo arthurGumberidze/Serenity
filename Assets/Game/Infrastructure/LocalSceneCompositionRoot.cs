@@ -818,9 +818,11 @@ namespace Game.Infrastructure
                 WorldPlacementSurface.AllowsFootprint(cells, buildingGridSize, buildingGridOrigin));
             BuildingPlacementService.ConfigureRequestEnvironment(context => WorldPlacementSurface.EvaluateFootprint(
                 context.Cells,buildingGridSize,buildingGridOrigin,
-                IsShoreFacility(context.Request.Definition.Id) ? 4.5f : (float?)null,
+                context.Request.Definition.Id.ToString()=="fishing_pier" ? 20f :
+                    IsShoreFacility(context.Request.Definition.Id) ? 4.5f : (float?)null,
                 context.Request.Definition.Id.ToString()=="gate",
-                IsShoreFacility(context.Request.Definition.Id)).CanPlace);
+                IsShoreFacility(context.Request.Definition.Id),
+                context.Request.Definition.Id.ToString()=="fishing_pier").CanPlace);
             BuildingPlacementService.ConfigureRuleEvaluator(EvaluateSpecialPlacementRule);
             BuildingPathing.GateChanged+=(id,open)=> { if(BuildingPresentations.TryGet(id,out var gate))gate.SetGateOpen(open); };
 
@@ -1041,22 +1043,29 @@ namespace Game.Infrastructure
             }
         }
 
-        private System.Threading.Tasks.Task<ShorePlacementIndex> shoreIndexTask;
+        private System.Threading.Tasks.Task<ShorePlacementIndex[]> shoreIndexTask;
         private Action completeShoreIndex;
         private readonly HashSet<(GridCoordinate,BuildingOrientation)> preparedShoreAnchors=new();
         private void CreateFishingLandingMarkers()
         {
             var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("fishing_camp"));
-            var pads = new List<(GridCoordinate anchor, BuildingOrientation facing, Vector3 center)>();
+            var pierDefinition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("fishing_pier"));
+            var campPads = new List<(GridCoordinate anchor, BuildingOrientation facing, Vector3 center)>();
+            var pierPads = new List<(GridCoordinate anchor, BuildingOrientation facing, Vector3 center)>();
             var world=WorldDefinition;var seed=ActiveNewGameConfiguration.WorldSeed;
             var size=buildingGridSize;var origin=buildingGridOrigin;var footprint=definition.Footprint;
-            shoreIndexTask=System.Threading.Tasks.Task.Run(()=>ShorePlacementIndex.Create(world,seed,footprint,size,origin.x,origin.z));
+            shoreIndexTask=System.Threading.Tasks.Task.Run(() => new[]
+            {
+                ShorePlacementIndex.Create(world,seed,footprint,size,origin.x,origin.z),
+                ShorePlacementIndex.Create(world,seed,pierDefinition.Footprint,size,origin.x,origin.z,true)
+            });
             completeShoreIndex=()=>
             {
-                var index=shoreIndexTask.GetAwaiter().GetResult();
+                var indices=shoreIndexTask.GetAwaiter().GetResult(); var index=indices[0]; var pierIndex=indices[1];
                 WorldPlacementSurface.ImportShoreCells(index.Cells,size,origin);
                 foreach(var candidate in index.Candidates)preparedShoreAnchors.Add((candidate.Anchor,candidate.Facing));
-                pads.AddRange(index.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
+                campPads.AddRange(index.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
+                pierPads.AddRange(pierIndex.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
                 var lakeIds=new HashSet<string>(world.MapData.Hydrology.Lakes.Select(x=>x.Id));
                 foreach(var candidate in index.Candidates.Where(x=>lakeIds.Contains(x.WaterBodyId)))
                 {
@@ -1066,16 +1075,23 @@ namespace Game.Infrastructure
                     marker.transform.localScale*=.22f;
                     marker.transform.rotation=Quaternion.Euler(0,candidate.Facing.Degrees(),0);
                 }
-                Debug.Log("WM15 shoreline candidates prepared: "+pads.Count);
+                Debug.Log($"WM15 shoreline candidates prepared: camps={campPads.Count}, adaptive piers={pierPads.Count}");
             };
             (Vector3 point,BuildingOrientation orientation)? cached=null;
             Vector3 lastCursor=Vector3.positiveInfinity;
             int cursorIndex=0;
+            string lastShoreDefinition=string.Empty;
             List<(GridCoordinate anchor, BuildingOrientation facing, Vector3 center)> near=new();
             var knownCount=-1;
             var reportedRejections = new HashSet<string>();
             buildingPlacementController.ShoreSnap=point=>
             {
+                var activeDefinitionId=buildingPlacementController.ActiveDefinitionId?.ToString() ?? string.Empty;
+                var adaptivePier=activeDefinitionId=="fishing_pier";
+                var activeDefinition=adaptivePier?pierDefinition:definition;
+                var pads=adaptivePier?pierPads:campPads;
+                if(lastShoreDefinition!=activeDefinitionId)
+                { lastShoreDefinition=activeDefinitionId;cached=null;lastCursor=Vector3.positiveInfinity; }
                 if((point-lastCursor).sqrMagnitude>64 || (!cached.HasValue && cursorIndex>=near.Count && knownCount!=pads.Count))
                 {
                     lastCursor=point;knownCount=pads.Count;cursorIndex=0;cached=null;
@@ -1087,15 +1103,16 @@ namespace Game.Infrastructure
                 while(cursorIndex<near.Count && timer.Elapsed.TotalMilliseconds<2)
                 {
                     var candidate=near[cursorIndex];
-                    var cells=definition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
-                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true))return null;
+                    var cells=activeDefinition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
+                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,adaptivePier))return null;
                     cursorIndex++;
-                    var verdict=BuildingPlacementService.Evaluate(definition,candidate.anchor,candidate.facing);
+                    var verdict=BuildingPlacementService.Evaluate(activeDefinition,candidate.anchor,candidate.facing);
                     if(!verdict.IsValid)
                     {
                         if(System.Environment.GetCommandLineArgs().Contains("-wm15Evening"))
                         {
-                            var surface=WorldPlacementSurface.EvaluateFootprint(cells,buildingGridSize,buildingGridOrigin,4.5f,false,true);
+                            var surface=WorldPlacementSurface.EvaluateFootprint(cells,buildingGridSize,buildingGridOrigin,
+                                adaptivePier?20f:4.5f,false,true,adaptivePier);
                             var reason=verdict.FailureReason+" "+surface.BlockedReason;
                             if(reportedRejections.Add(reason))Debug.Log("WM15_SHORE_CANDIDATE "+reason+" at "+candidate.center);
                         }
@@ -1126,10 +1143,11 @@ namespace Game.Infrastructure
                     WorldDefinition.MapData.Hydrology.Lakes.Any(x=>x.Id==body) &&
                     !preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation)))
                     return PlacementFailureReason.ShorelineRequired;
+                var adaptivePier=context.Request.Definition.Id.ToString()=="fishing_pier";
                 if (!(IsShoreFacility(context.Request.Definition.Id) && preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation))) &&
                     !ShoreBuildingPlacement.IsValid(WorldHeight,context.Request.Anchor,
                     context.Request.Definition.Footprint,context.Request.Orientation,
-                    buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z))
+                    buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z,adaptivePier))
                     return PlacementFailureReason.ShorelineRequired;
             }
             if ((constraints & BuildingPlacementConstraint.Groundwater) != 0)
@@ -1607,8 +1625,6 @@ namespace Game.Infrastructure
                 depth = (building.PlacementCells.Max(cell => cell.Z) - building.PlacementCells.Min(cell => cell.Z) + 1) * buildingGridSize;
                 if (building.Orientation.Degrees() % 180 != 0) (width, depth) = (depth, width);
             }
-            if (building.DefinitionId.ToString()=="animal_pasture" && building.IsOperational)
-                Production.EstablishSheepPasture(building.Id,building.OwnerSideId);
             visual.Configure(site, width, depth, Production.Animals, building.DefinitionId.ToString()=="animal_pasture");
             var presenter = buildingPresenter.GetComponent<ProductionSourcePresenter>() ??
                 buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();

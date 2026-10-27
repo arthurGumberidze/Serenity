@@ -6,21 +6,26 @@ acceptance, slow initial loading and deferred population/performance gates. Cand
 
 ## Implemented feedback
 
-- Manual fishing now requires a completed player-built fishing pier. Removing the last valid pier cancels
-  active manual fishing without consuming stock. The prepared shoreline index exposes six non-overlapping
-  fixed places per lake and also supports the main river.
-- Visible free fish form separated randomized schools of 6–15 fish, with multiple fish appearances rather
-  than one circular formation. Canonical finite fish stock remains authoritative.
+- Manual fishing requires a completed player-built fishing pier. The pier is now a compact 4×4 adaptive
+  footprint and exposes every dry water-facing bank candidate, including steep banks up to a 20 m local
+  foundation delta; water, protected areas, occupancy and access remain hard blockers. The large fishing
+  camp retains its six prepared non-overlapping pads per lake.
+- Visible free fish form separated randomized schools of 6–15 fish. Rotation is rate-limited instead of
+  snapping to a new heading, and additional solitary fish use a silver metallic presentation. Canonical
+  finite fish stock remains authoritative.
 - The boar rig faces its travel direction. Wild cattle placement is restricted to the lake/mountain-foot
   habitat instead of forest ravines.
-- Winter terrain uses owned snow albedo, normal and height data plus additional snow rocks. Sakura petals
-  are brighter while remaining bounded presentation effects.
+- Winter terrain uses owned snow albedo, normal and height data plus additional snow rocks. The mountain
+  snow mask now combines altitude, slope and two-frequency breakup: summit shelves accumulate bright snow,
+  while steep faces remain dark exposed rock instead of receiving one broad grey ellipse.
 - Movement endpoint selection and retry handling were tightened so residents do not remain stuck on an old
   or unreachable NavMesh point.
-- Campfire illumination is three times stronger. Prepared ground torches provide additional local light.
-- A pasture contains sheep, cattle, pigs, goats, ducks, chickens and horses rather than sheep only. Initial
-  pairs and later births are young; saved birth tick and sex drive gradual three-day growth. Breeding requires
-  a living adult male/female pair and cannot repeatedly grant the initial animals after restore.
+- Campfire illumination is a further three times stronger (intensity 45); ground torches are twice as bright
+  (intensity 12). Their falloff radii remain unchanged.
+- A completed pasture starts empty and is never presented as a berry plot. Its inspector lets the player
+  choose sheep, cattle, pigs, goats, ducks, chickens or horses and explicitly settle one male/female pair.
+  Each pen keeps its one chosen species and cannot grant another pair after restore. Saved birth tick and sex
+  continue to drive gradual three-day growth and reproduction from a living adult pair.
 - Crop interaction separates Grow and Harvest actions. Crop hover text reports lifecycle growth, including
   ready `100%`, instead of the natural-source `0/0` representation.
 
@@ -65,3 +70,15 @@ functional evidence, not subjective visual acceptance of every new animal, winte
 
 Durable summaries are under `docs/validation/WM15Current/`; complete local logs and captures remain under
 `Artifacts/WM15Current/`. Full 100/300/500 resident gates were not run.
+
+## Latest correction validation (2026-10-27)
+
+- `editor-f.xml`: 10/11; only the newly added adaptive-pier count threshold failed (21 actual versus an
+  arbitrary 24 expected at `lake_mountain`). The corrected exact case passed 1/1 in `editor-g.xml`; no
+  production code changed between the runs. Effective requested regression result: 11/11.
+- `build-e.log`: Windows Development build succeeded with 0 errors / 82 warnings. GUID
+  `7b04788a7032443fa98021ac3e9d1f95`; fingerprint
+  `6E6A82877C9DE5BADFB01832B01F514B76E468C3573AEF1FB622DDAD6A524FA4`.
+- `player-b.log`: 55 passed checks and `No runtime errors`, including pasture, lake/fish/shore and manual
+  fishing routes. Two old hunt-route timing assertions failed outside this correction (bow-draw sample and
+  hunt completion); damage, wood and fish completion still passed. This does not replace user visual review.

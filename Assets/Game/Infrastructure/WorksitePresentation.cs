@@ -39,8 +39,10 @@ namespace Game.Infrastructure
             public float Phase;
             public StableEntityId SourceId;
             public int SchoolSize;
+            public bool Solitary;
         }
-        public int FishSchoolCount => schools.Count(x => x.Parent != null);
+        public int FishSchoolCount => schools.Count(x => x.Parent != null && !x.Solitary);
+        public int SolitaryFishCount => schools.Count(x => x.Parent != null && x.Solitary);
 
         public void Initialize(LocalSceneCompositionRoot composition)
         {
@@ -75,6 +77,15 @@ namespace Game.Infrastructure
                 var school = new FishSchool { Parent=holder,Center=center,
                     Phase=(float)seed.NextDouble()*6.28f,SourceId=sourceId,SchoolSize=seed.Next(6,16) };
                 schools.Add(school); RefreshFish(school);
+                if (seed.Next(0,3)==0)
+                {
+                    var singleHolder = new GameObject("Solitary silver fish").transform;
+                    singleHolder.SetParent(transform,false); singleHolder.gameObject.SetActive(false);
+                    var single = new FishSchool { Parent=singleHolder,
+                        Center=center+new Vector3(seed.Next(-3,4),-.03f,seed.Next(-3,4)),
+                        Phase=(float)seed.NextDouble()*6.28f,SourceId=sourceId,SchoolSize=1,Solitary=true };
+                    schools.Add(single); RefreshFish(single);
+                }
             }
         }
 
@@ -85,6 +96,27 @@ namespace Game.Infrastructure
             return view;
         }
 
+        private static void MakeSilver(Transform fish)
+        {
+            var block = new MaterialPropertyBlock();
+            foreach (var renderer in fish.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.GetPropertyBlock(block);
+                var silver = new Color(.68f,.76f,.82f,1f);
+                block.SetColor("_BaseColor",silver); block.SetColor("_Color",silver);
+                block.SetFloat("_Metallic",.7f); block.SetFloat("_Smoothness",.78f);
+                renderer.SetPropertyBlock(block);
+            }
+        }
+
+        public static Quaternion SmoothSwimmingRotation(Quaternion current, Vector3 heading,
+            float deltaSeconds, float degreesPerSecond = 38f)
+        {
+            if (heading.sqrMagnitude < .0001f) return current;
+            return Quaternion.RotateTowards(current,Quaternion.LookRotation(heading.normalized,Vector3.up),
+                Mathf.Max(0,deltaSeconds)*degreesPerSecond);
+        }
+
         private void RefreshFish(FishSchool school)
         {
             var visible = Camera.main != null && (Camera.main.transform.position-school.Center).sqrMagnitude < 220f*220f;
@@ -93,15 +125,22 @@ namespace Game.Infrastructure
             {
                 school.Fish=new Transform[count];school.Animators=new Animator[count];
                 for(var n=0;n<count;n++)
-                { school.Fish[n]=MakeFish(school.Parent,n+(int)(school.Phase*10));school.Fish[n].name="Swimming fish "+n;school.Animators[n]=school.Fish[n].GetComponentInChildren<Animator>(); }
+                {
+                    school.Fish[n]=MakeFish(school.Parent,n+(int)(school.Phase*10));
+                    school.Fish[n].name=school.Solitary?"Solitary silver fish":"Swimming fish "+n;
+                    if(school.Solitary)MakeSilver(school.Fish[n]);
+                    school.Animators[n]=school.Fish[n].GetComponentInChildren<Animator>();
+                }
             }
             if(root.Production.TryGetSite(school.SourceId,out var stock) && stock.SourceCapacity>0)
                 count=(int)Math.Ceiling(count*(double)stock.RemainingAmount/stock.SourceCapacity);
             school.Parent.gameObject.SetActive(visible && count>0);
             if(!visible)return;
-            var t=fishTime*(.18f+.025f*Mathf.Sin(school.Phase))+school.Phase;
-            var drift=new Vector3(Mathf.Sin(t)*2.1f,0,Mathf.Cos(t*.73f+school.Phase)*2.1f);
-            var heading=new Vector3(Mathf.Cos(t),0,-Mathf.Sin(t*.73f+school.Phase)*.73f).normalized;
+            var speed=school.Solitary?.135f:(.18f+.025f*Mathf.Sin(school.Phase));
+            var t=fishTime*speed+school.Phase;
+            var radius=school.Solitary?3.1f:2.1f;
+            var drift=new Vector3(Mathf.Sin(t)*radius,0,Mathf.Cos(t*.83f+school.Phase)*radius);
+            var heading=new Vector3(Mathf.Cos(t),0,-Mathf.Sin(t*.83f+school.Phase)*.83f).normalized;
             var side=Vector3.Cross(Vector3.up,heading);
             for(var i=0;i<school.Fish.Length;i++)
             {
@@ -110,7 +149,10 @@ namespace Game.Infrastructure
                 var lateral=(i%2==0?-1f:1f)+Mathf.Sin(t*1.3f+i*2f)*.18f;
                 var trailing=(i/2-(school.SchoolSize+1)/4f)*1.25f+(i%2)*.3f;
                 school.Fish[i].position=school.Center+drift+side*lateral+heading*trailing;
-                school.Fish[i].rotation=Quaternion.LookRotation(heading+side*Mathf.Sin(t+i)*.12f);
+                var desired=heading+side*Mathf.Sin(t+i)*.12f;
+                var turnDelta=root.Clock!=null && root.Clock.IsPaused?0f:Time.unscaledDeltaTime;
+                school.Fish[i].rotation=SmoothSwimmingRotation(school.Fish[i].rotation,desired,turnDelta,
+                    school.Solitary?26f:38f);
                 if(school.Animators[i]!=null)school.Animators[i].speed=root.Clock==null || root.Clock.IsPaused?0:1;
             }
         }
