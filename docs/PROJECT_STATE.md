@@ -1,5 +1,23 @@
 # PROJECT_STATE.md
 
+## WM15 current feedback — verified repair candidate (2026-10-27)
+
+Current candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Final build-batch-c exited 0 with 0 errors /
+30 warnings; build GUID `3deaf406f85b4bf6b489f0ab9f11fa6b`, immutable source fingerprint
+`FC12B7EA6B56F91CA06A66CB815409C55E302A48C65281D5F817556DDD333607`. Focused EditMode passed 9/9.
+Disposable Player-a passed 32/32 and exited 0 with no gameplay runtime errors.
+
+Manual fishing requires a completed player-built pier; each lake has six non-overlapping prepared places
+and the river remains supported. Fish schools are varied and separated. Mixed livestock uses persisted sex
+and birth tick, young initial/born animals, gradual growth and adult-pair breeding. Crop Grow/Harvest and
+100% hover state, boar orientation, cattle habitat, winter/sakura presentation, movement retries, stronger
+campfire and ground torches are implemented. See `docs/world_map/WM15_CURRENT_FEEDBACK.md`.
+
+WM15 remains IN_PROGRESS for user visual acceptance, slow initial loading and deferred full gates. Use a
+new game; old saves were preserved. Unity batchmode must run outside the sandbox as a hidden process so the
+normal local Unity Personal profile is available. Preserve inherited vendor imports and unrelated P3 edits.
+
+
 ## WM15 evening feedback — verified repair candidate (2026-10-27)
 
 Current candidate: `Builds/WorldMapEveningFix/Serenity.exe`, build-i exit 0, 0 errors / 82 warnings.

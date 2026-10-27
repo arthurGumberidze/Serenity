@@ -17,13 +17,14 @@ namespace Game.Domain.World
         }
         public readonly struct Candidate
         {
-            public Candidate(GridCoordinate anchor, BuildingOrientation facing, float x, float y, float z)
-            { Anchor=anchor; Facing=facing; X=x; Y=y; Z=z; }
+            public Candidate(GridCoordinate anchor, BuildingOrientation facing, float x, float y, float z, string waterBodyId)
+            { Anchor=anchor; Facing=facing; X=x; Y=y; Z=z; WaterBodyId=waterBodyId; }
             public GridCoordinate Anchor { get; }
             public BuildingOrientation Facing { get; }
             public float X { get; }
             public float Y { get; }
             public float Z { get; }
+            public string WaterBodyId { get; }
         }
         private readonly Dictionary<GridCoordinate,Cell> cells=new();
         private readonly List<Candidate> candidates=new();
@@ -66,11 +67,41 @@ namespace Game.Domain.World
                 if(blocked || high-low>4.5f)continue;
                 var cx=originX+(anchor.X+(rotated.Width-1)*.5f)*gridSize;
                 var cz=originZ+(anchor.Z+(rotated.Depth-1)*.5f)*gridSize;
-                result.candidates.Add(new Candidate(anchor,facing,cx,heights.SampleHeight(cx,cz),cz));
+                result.candidates.Add(new Candidate(anchor,facing,cx,heights.SampleHeight(cx,cz),cz,bank.id));
+            }
+            // Lakes get six stable, evenly spaced construction places. Keep all river
+            // candidates so the player can choose a river bank freely.
+            var all = result.candidates.ToArray();
+            result.candidates.Clear();
+            var lakeIds = new HashSet<string>(world.MapData.Hydrology.Lakes.Select(x=>x.Id));
+            result.candidates.AddRange(all.Where(x => !lakeIds.Contains(x.WaterBodyId)));
+            foreach (var lake in world.MapData.Hydrology.Lakes)
+            {
+                var center = world.MapData.CoordinateTransform.ToUnity(lake.Center);
+                var options = all.Where(x => x.WaterBodyId == lake.Id).ToArray();
+                var chosen = new HashSet<(GridCoordinate,BuildingOrientation)>();
+                var occupied = new HashSet<GridCoordinate>();
+                for (var slot=0; slot<6; slot++)
+                {
+                    var angle = slot * Math.PI / 3d;
+                    var target = angle;
+                    var candidate = options.Where(x => !chosen.Contains((x.Anchor,x.Facing)))
+                        .Where(x => !footprint.EnumerateCells(x.Anchor,x.Facing).Any(occupied.Contains))
+                        .OrderBy(x => AngularDistance(Math.Atan2(x.Z-center.Z,x.X-center.X),target))
+                        .ThenBy(x => DistanceSquared(x.X,x.Z,center.X,center.Z)).FirstOrDefault();
+                    if (candidate.WaterBodyId == null) continue;
+                    chosen.Add((candidate.Anchor,candidate.Facing));
+                    foreach (var cell in footprint.EnumerateCells(candidate.Anchor,candidate.Facing)) occupied.Add(cell);
+                    result.candidates.Add(candidate);
+                }
             }
             return result;
         }
-        private static IEnumerable<(float x,float z,float dx,float dz)> Banks(TiledWorldDefinition world)
+        private static double AngularDistance(double a,double b)
+        { var d=Math.Abs(a-b)%(Math.PI*2); return Math.Min(d,Math.PI*2-d); }
+        private static double DistanceSquared(double x,double z,double cx,double cz)
+        { var dx=x-cx;var dz=z-cz;return dx*dx+dz*dz; }
+        private static IEnumerable<(float x,float z,float dx,float dz,string id)> Banks(TiledWorldDefinition world)
         {
             var water=world.MapData.Hydrology;var transform=world.MapData.CoordinateTransform;
             foreach(var lake in water.Lakes)
@@ -80,7 +111,7 @@ namespace Game.Domain.World
                 {
                     var p=transform.ToUnity(point);var dx=p.X-center.X;var dz=p.Z-center.Z;
                     var length=(float)Math.Sqrt(dx*dx+dz*dz);
-                    if(length>0)yield return(p.X,p.Z,dx/length,dz/length);
+                    if(length>0)yield return(p.X,p.Z,dx/length,dz/length,lake.Id);
                 }
             }
             foreach(var river in new[]{water.MainRiver}.Concat(water.Tributaries))
@@ -92,7 +123,7 @@ namespace Game.Domain.World
                 for(var j=0;j<count;j++)for(var sign=-1;sign<=1;sign+=2)
                 {
                     var t=(float)j/count;var width=river.Spline.Points[i-1].WidthMeters*(1-t)+river.Spline.Points[i].WidthMeters*t;
-                    yield return(a.X+dx*t+nx*sign*width*.5f,a.Z+dz*t+nz*sign*width*.5f,nx*sign,nz*sign);
+                    yield return(a.X+dx*t+nx*sign*width*.5f,a.Z+dz*t+nz*sign*width*.5f,nx*sign,nz*sign,river.Id);
                 }
             }
         }

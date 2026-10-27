@@ -137,8 +137,8 @@ namespace Game.Presentation.Environment
             fireLight = lightObject.AddComponent<Light>();
             fireLight.type = LightType.Point;
             fireLight.color = new Color(1f, 0.42f, 0.12f);
-            fireLight.intensity = 2.2f;
-            fireLight.range = 9f;
+            fireLight.intensity = 6.6f;
+            fireLight.range = 13.5f;
             fireLight.shadows = LightShadows.Soft;
 
             flameParticles = WorldPropCatalog.Create("fire", campfireAnchor).GetComponent<ParticleSystem>();

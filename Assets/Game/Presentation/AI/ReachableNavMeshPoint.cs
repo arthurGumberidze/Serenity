@@ -13,12 +13,13 @@ namespace Game.Presentation.AI
             var path = new NavMeshPath();
             if (TryCandidate(start.position, target, target, .35f, path, out destination)) return true;
             if (TryCandidate(start.position, target, target, 3f, path, out destination)) return true;
+            // Search around narrow approaches, keeping the final endpoint within work range.
             for (var ring = 1; ring <= 3; ring++)
-            for (var direction = 0; direction < 12; direction++)
+            for (var direction = 0; direction < 16; direction++)
             {
-                var angle = direction * Mathf.PI / 6f;
+                var angle = direction * Mathf.PI / 8f;
                 var candidate = target + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * ring;
-                if (TryCandidate(start.position, candidate, target, 0.75f, path, out destination)) return true;
+                if (TryCandidate(start.position, candidate, target, 1.5f, path, out destination)) return true;
             }
             return false;
         }

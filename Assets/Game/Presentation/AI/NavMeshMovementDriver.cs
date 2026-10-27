@@ -133,6 +133,7 @@ namespace Game.Presentation.AI
         public void MoveTo(WorldPosition target, float stoppingDistance)
         {
             if (authority == Tier1MovementAuthority.DirectPlayer) return;
+            if(UsesNavMeshAgent && agent!=null && !agent.isOnNavMesh)EnableAgentAtPresenter();
             if (!IsAvailable || stoppingDistance < 0f ||
                 !ReachableNavMeshPoint.TryFind(presenter.transform.position,
                     new Vector3(target.X, target.Y, target.Z), out var destination))

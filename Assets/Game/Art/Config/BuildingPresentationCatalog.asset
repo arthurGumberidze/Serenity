@@ -1271,5 +1271,91 @@ MonoBehaviour:
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
+  - definitionId: ground_torch
+    displayName: "\u041D\u0430\u0437\u0435\u043C\u043D\u044B\u0439 \u0444\u0430\u043A\u0435\u043B"
+    description: "\u0423\u043B\u0438\u0447\u043D\u044B\u0439 \u0444\u0430\u043A\u0435\u043B \u0434\u043B\u044F \u043E\u0441\u0432\u0435\u0449\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u0435\u043B\u0435\u043D\u0438\u044F."
+    iconKey: building_campfire
+    category: 9
+    era: 0
+    requiredTechnologyIds:
+    - controlled_fire
+    footprintWidth: 1
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 3
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5869031642470115000, guid: 79a1b09628a04b24aa6122f08bc8b5ee, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 2
+    constructionWorkMinutes: 5
+    constructionStageCount: 1
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost: []
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: fishing_pier
+    displayName: "\u0420\u044B\u0431\u0430\u0446\u043A\u0438\u0439 \u043F\u0438\u0440\u0441"
+    description: "\u041F\u0438\u0440\u0441 \u0434\u043B\u044F \u043C\u0435\u0434\u043B\u0435\u043D\u043D\u043E\u0439 \u0440\u0443\u0447\u043D\u043E\u0439 \u0440\u044B\u0431\u0430\u043B\u043A\u0438 \u043D\u0430 \u043E\u0437\u0435\u0440\u0435 \u0438\u043B\u0438 \u0440\u0435\u043A\u0435. \u0423\u043B\u043E\u0432 \u0436\u0434\u0451\u0442 \u043F\u0435\u0440\u0435\u043D\u043E\u0441\u043A\u0438 \u043D\u0430 \u0431\u0435\u0440\u0435\u0433\u0443."
+    iconKey: building_fishing_camp
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - gathering
+    footprintWidth: 12
+    footprintDepth: 9
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 7
+    maximumHeightDeltaMillimetres: 4500
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3333274376847922217, guid: f273bf103e0c39a43959d3a30e17c032, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 30
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost: []
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   defaultDefinitionId: primitive_shelter
   resourceCatalog: {fileID: 11400000, guid: 3eaad5da612fe13489ff4dbb118b2eef, type: 2}

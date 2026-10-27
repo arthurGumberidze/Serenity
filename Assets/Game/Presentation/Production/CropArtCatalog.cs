@@ -10,7 +10,20 @@ namespace Game.Presentation.Production
         public GameObject Fence;
         public GameObject Berries;
         public GameObject Sheep;
+        public GameObject SheepBaby, Cow, Pig, Goat, GoatBaby, Duck, DuckBaby, Chicken, Horse;
         public GameObject PastureShelter;
+
+        public GameObject Animal(string species, bool baby) => species switch
+        {
+            "sheep" => baby && SheepBaby != null ? SheepBaby : Sheep,
+            "cow" => Cow,
+            "pig" => Pig,
+            "goat" => baby && GoatBaby != null ? GoatBaby : Goat,
+            "duck" => baby && DuckBaby != null ? DuckBaby : Duck,
+            "chicken" => Chicken,
+            "horse" => Horse,
+            _ => Sheep
+        };
 
         public GameObject For(string recipe) => recipe switch
         {

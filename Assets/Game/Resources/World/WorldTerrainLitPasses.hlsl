@@ -463,6 +463,7 @@ void SplatmapFragment(
     InputData inputData;
     InitializeInputData(IN, normalTS, inputData);
     SetupTerrainDebugTextureData(inputData, IN.uvMainAndLM.xy);
+    inputData.normalWS = WorldMapSnowSurfaceNormal(inputData.positionWS,inputData.normalWS);
     albedo = WorldMapGround(albedo, inputData.positionWS, inputData.normalWS);
 
 #if defined(_DBUFFER)

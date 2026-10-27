@@ -236,30 +236,36 @@ namespace Game.Simulation.Production
         public AnimalHealthRegistry Animals { get; } = new AnimalHealthRegistry();
         public Func<StableEntityId, ProductionSite, WorldPosition> WorkPosition { get; set; }
         public Func<StableEntityId, ProductionSite, WorldPosition> OutputPosition { get; set; }
+        public Func<StableEntityId,bool> ManualFishingAccess { get; set; }
         private ProductionJob CreateJob(ProductionTask task, ProductionSite site) =>
             new ProductionJob(task, WorkPosition != null ? WorkPosition(task.WorkerId, site) : site.Position);
 
-        // The campaign has one founding breeding pair. Its saved identities prevent repeat grants
+        // The campaign has one founding mixed herd. Its saved identities prevent repeat grants
         // through demolishing/rebuilding a pen. Further animals come from a living male/female pair.
         public bool EstablishSheepPasture(StableEntityId id, Game.Domain.Combat.CombatSideId requester)
         {
             if (Animals.States.Any(x => x.Domestic) || !buildings.TryGet(id, out var building) ||
+                building.DefinitionId.ToString()!="animal_pasture" ||
                 building.OwnerSideId != requester || !building.IsOperational ||
                 !sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
                 site.CropPhase != CropPlotPhase.Unplanted || tasks.Values.Any(x => !x.IsTerminal && x.SiteId == id))
                 return false;
-            AddSheep(id, site.Position, true, LastCalendarTick, 0);
-            AddSheep(id, site.Position, false, LastCalendarTick, 1);
+            var species = Animals.Policy.DomesticSpecies;
+            for (var i=0;i<species.Count;i++)
+            {
+                AddLivestock(id,site.Position,species[i],true,LastCalendarTick,i*2);
+                AddLivestock(id,site.Position,species[i],false,LastCalendarTick,i*2+1);
+            }
             return true;
         }
 
-        private void AddSheep(StableEntityId home, WorldPosition position, bool male, long tick, int sequence)
+        private void AddLivestock(StableEntityId home, WorldPosition position, string species, bool male, long tick, int sequence)
         {
             var id = DeterministicStableId.Create(0, "livestock:" + home, sequence);
-            Animals.RegisterDomestic(id, "sheep", home, male, tick);
+            Animals.RegisterDomestic(id, species, home, male, tick);
             var site = ProductionSite.Restore(new ProductionSiteState(id, new ProductionRecipeId("hunt_animal"),
                 ProductionSiteKind.NaturalSource, position, 1, 1, CropPlotPhase.Unplanted, 0, 0));
-            AddSite(site, "sheep", true);
+            AddSite(site, species, true);
         }
 
         private void AdvanceLivestock(long tick)
@@ -270,11 +276,18 @@ namespace Game.Simulation.Production
                     !sites.TryGetValue(home, out var site)) continue;
                 var herd = Animals.AtHome(home);
                 var alive = herd.Where(x => x.Alive).ToArray();
-                if (herd.Count(x => !x.Harvested) >= Math.Min(Animals.Policy.PastureCapacity, Math.Max(4,building.PlacementCells.Count/8)) || herd.Count == 0 ||
-                    tick - herd.Max(x => x.BornTick) < TimeSpan.TicksPerDay * Animals.Policy.LivestockBirthDays) continue;
-                var mature = alive.Where(x => tick - x.BornTick >= TimeSpan.TicksPerDay * Animals.Policy.LivestockMaturityDays).ToArray();
-                if (!mature.Any(x => x.Male) || !mature.Any(x => !x.Male)) continue;
-                AddSheep(home, site.Position, herd.Count % 2 == 0, tick, herd.Count);
+                var capacity=Math.Min(Animals.Policy.PastureCapacity,Math.Max(16,building.PlacementCells.Count/8));
+                if(herd.Count(x=>!x.Harvested)>=capacity || herd.Count==0)continue;
+                foreach(var group in alive.GroupBy(x=>x.Species))
+                {
+                    var groupAnimals=group.ToArray();
+                    if(tick-groupAnimals.Max(x=>x.BornTick)<TimeSpan.TicksPerDay*Animals.Policy.LivestockBirthDays)continue;
+                    var mature=groupAnimals.Where(x=>tick-x.BornTick>=TimeSpan.TicksPerDay*Animals.Policy.LivestockMaturityDays).ToArray();
+                    if(!mature.Any(x=>x.Male)||!mature.Any(x=>!x.Male))continue;
+                    var sequence=herd.Count;
+                    AddLivestock(home,site.Position,group.Key,groupAnimals.Length%2==0,tick,sequence);
+                    break;
+                }
             }
         }
 
@@ -555,6 +568,7 @@ namespace Game.Simulation.Production
                 !IsSiteOperational(siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id, true)) return false;
+            if(site.RecipeId.ToString()=="fish_water" && ManualFishingAccess!=null && !ManualFishingAccess(site.Id))return false;
             if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
               if (!HasNaturalSourceCapacity(site)) return false;
             if (site.Kind == ProductionSiteKind.BuildingWorkplace && ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers)
@@ -615,6 +629,8 @@ namespace Game.Simulation.Production
             if (!IsSiteOperational(task.SiteId)) { Cancel(task.Id); return default; }
             var workTicks = GetEffectiveWorkTicks(task, work.Ticks, calendarTick);
             var site = sites[task.SiteId];
+            if (site.RecipeId.ToString() == "fish_water" && ManualFishingAccess != null && !ManualFishingAccess(site.Id))
+            { Cancel(task.Id); return default; }
             if (site.Continuous)
             {
                 var recipe = recipes.Get(site.RecipeId);
@@ -1016,6 +1032,7 @@ namespace Game.Simulation.Production
             foreach (var site in orderedSites)
             {
                 if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
+                if(site.RecipeId.ToString()=="fish_water" && ManualFishingAccess!=null && !ManualFishingAccess(site.Id))continue;
                 if (Animals.IsPasture(site.Id)) continue;
                 if (site.RecipeId.ToString() == "hunt_animal" &&
                     (Animals.CanHunt != null && !Animals.CanHunt(workerId) ||

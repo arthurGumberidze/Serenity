@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Game.Presentation.Environment;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace Game.Infrastructure
         private readonly List<(GameObject view,bool night)> effects = new();
         private float nextRefresh;
         private Material petalMaterial;
+        private Material iceMaterial;
         public int FloatingPetalCount { get; private set; }
         public int SnowSceneryCount { get; private set; }
         public void Initialize(TiledTerrainWorld world,LateLandscapeCatalog art)
@@ -22,7 +24,7 @@ namespace Game.Infrastructure
                 var p=new Vector3((x-map.x)/map.z,0,(z-map.y)/map.w);
                 p.y=world.HeightSampler.SampleHeight(p.x,p.z); return p;
             }
-            // Snow belongs to the terrain/vegetation palette, not randomly painted rock props.
+            AddMountainScenery(world,art,random);
             var grove=world.ArtDirection.blossomGroves[0];
             AddFloatingPetals(world, art.FallingLeaves, grove, random);
             for(var i=0;i<10;i++)
@@ -56,7 +58,7 @@ namespace Game.Infrastructure
             var system = view.AddComponent<ParticleSystem>();
             system.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = system.main;
-            main.playOnAwake = false; main.loop = false; main.maxParticles = 900;
+            main.playOnAwake = false; main.loop = false; main.maxParticles = 1800;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.cullingMode = ParticleSystemCullingMode.Pause;
             main.startSpeed = 0; main.gravityModifier = 0;
@@ -67,7 +69,7 @@ namespace Game.Infrastructure
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var particles = new List<ParticleSystem.Particle>();
             var map = world.ArtWorldToDesign;
-            for (var i = 0; i < 7000 && particles.Count < 900; i++)
+            for (var i = 0; i < 14000 && particles.Count < 1800; i++)
             {
                 var x = (grove.x + ((float)random.NextDouble() * 2 - 1) * 90 - map.x) / map.z;
                 var z = (grove.y + ((float)random.NextDouble() * 2 - 1) * 75 - map.y) / map.w;
@@ -76,8 +78,8 @@ namespace Game.Infrastructure
                 if (distance >= -1f || distance < -23f || Mathf.Sin(x*.11f + z*.13f) < -.15f) continue;
                 particles.Add(new ParticleSystem.Particle {
                     position = new Vector3(x,surface+.055f,z), startLifetime = float.MaxValue,
-                    remainingLifetime = float.MaxValue, startSize = .35f + (float)random.NextDouble()*.30f,
-                    startColor = Color.Lerp(new Color(.98f,.47f,.64f),new Color(1f,.78f,.85f),(float)random.NextDouble()),
+                    remainingLifetime = float.MaxValue, startSize = .45f + (float)random.NextDouble()*.45f,
+                    startColor = Color.Lerp(new Color(1f,.16f,.48f),new Color(1f,.48f,.68f),(float)random.NextDouble()),
                     rotation = (float)random.NextDouble()*360f
                 });
             }
@@ -87,7 +89,46 @@ namespace Game.Infrastructure
             system.Pause();
             FloatingPetalCount = particles.Count;
         }
-        private void OnDestroy() { if (petalMaterial != null) Destroy(petalMaterial); }
+        private void AddMountainScenery(TiledTerrainWorld world,LateLandscapeCatalog art,System.Random random)
+        {
+            var map=world.ArtWorldToDesign;
+            var ridge=world.ArtDirection.regions[2];
+            if(art.SnowRocks?.Length>0)
+                for(var i=0;i<45;i++)
+                {
+                    var angle=(float)random.NextDouble()*Mathf.PI*2;
+                    var radius=Mathf.Sqrt((float)random.NextDouble())*.78f;
+                    var x=(ridge.center.x+Mathf.Cos(angle)*ridge.radius.x*radius-map.x)/map.z;
+                    var z=(ridge.center.y+Mathf.Sin(angle)*ridge.radius.y*radius-map.y)/map.w;
+                    if(!world.Definition.ContainsClosed(x,z)||world.HeightSampler.IsWater(x,z)||world.HeightSampler.SampleSlopeDegrees(x,z)>32f)continue;
+                    var snow=WorldMapScenery.Instantiate(art.SnowRocks[i%art.SnowRocks.Length],transform);
+                    snow.name="Wind packed mountain snow";
+                    snow.transform.position=new Vector3(x,world.HeightSampler.SampleHeight(x,z)-.5f,z);
+                    snow.transform.rotation=Quaternion.Euler(0,(float)random.NextDouble()*360,0);
+                    var scale=1.3f+(float)random.NextDouble()*1.2f;
+                    snow.transform.localScale=Vector3.Scale(snow.transform.localScale,new Vector3(scale,scale*.4f,scale));
+                    SnowSceneryCount++;
+                }
+            var lake=world.Definition.MapData.Hydrology.Lakes.FirstOrDefault(x=>x.Id=="lake_mountain");
+            if(lake==null||art.IceFloe==null)return;
+            var points=lake.Shoreline.Points.Select(x=>world.Definition.MapData.CoordinateTransform.ToUnity(x)).ToArray();
+            iceMaterial=new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            iceMaterial.SetColor("_BaseColor",new Color(.68f,.83f,.92f));iceMaterial.SetFloat("_Smoothness",.78f);
+            iceMaterial.SetFloat("_Metallic",.08f);
+            for(var x=points.Min(p=>p.X)+4;x<points.Max(p=>p.X)-4;x+=8)
+            for(var z=points.Min(p=>p.Z)+4;z<points.Max(p=>p.Z)-4;z+=8)
+            {
+                if(random.NextDouble()>.62 || world.HeightSampler.NearestWaterBodyId(x,z)!=lake.Id ||
+                    world.HeightSampler.WaterBoundaryDistance(x,z,out var water)>-3)continue;
+                var ice=WorldMapScenery.Instantiate(art.IceFloe,transform);ice.name="Mountain lake ice";
+                ice.transform.position=new Vector3(x,water+.025f,z);
+                ice.transform.rotation=Quaternion.Euler(0,(float)random.NextDouble()*360,0);
+                var size=1.7f+(float)random.NextDouble()*1.4f;
+                ice.transform.localScale=Vector3.Scale(ice.transform.localScale,new Vector3(size,.25f,size));
+                foreach(var renderer in ice.GetComponentsInChildren<Renderer>())renderer.sharedMaterials=renderer.sharedMaterials.Select(_=>iceMaterial).ToArray();
+            }
+        }
+        private void OnDestroy() { if (petalMaterial != null) Destroy(petalMaterial);if(iceMaterial!=null)Destroy(iceMaterial); }
         private void Update()
         {
             if(Time.unscaledTime<nextRefresh)return;nextRefresh=Time.unscaledTime+.5f;

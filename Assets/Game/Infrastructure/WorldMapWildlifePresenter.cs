@@ -219,9 +219,12 @@ namespace Game.Infrastructure
                 if (!population.IsAlive(state.Id)) continue;
                 if (state.IsFleeing(tick)) continue;
                 var home = population.Plan.HabitatGraph.Node(state.HabitatNodeId).Position;
+                if(state.SpeciesId=="cow")
+                    home=population.Plan.Individuals.FirstOrDefault(x=>x.Id==state.Id)?.Position ?? home;
                 var phase = (pair.Key.ToGuid().ToByteArray()[0] / 255f) * Mathf.PI * 2f;
-                var target = new Vector3(home.X + Mathf.Sin(movementTime * .08f + phase) * 32f, 0f,
-                    home.Z + Mathf.Cos(movementTime * .07f + phase) * 32f);
+                var roam=state.SpeciesId=="cow"?8f:32f;
+                var target = new Vector3(home.X + Mathf.Sin(movementTime * .08f + phase) * roam, 0f,
+                    home.Z + Mathf.Cos(movementTime * .07f + phase) * roam);
                 var previous = pair.Value.transform.position;
                 target.y = previous.y;
                 var next = Vector3.MoveTowards(previous, target, delta * .7f);

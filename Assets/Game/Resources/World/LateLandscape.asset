@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Environment.LateLandscapeCatalog
   SnowTree: {fileID: 398570720220517038, guid: 9c4eb796b7ff9534fb366204424239b0, type: 3}
   SnowRocks:
-  - {fileID: 3441233942126680077, guid: 911fb2e1cfd393948b77a4dca4d4f438, type: 3}
-  - {fileID: 9029350230317761030, guid: a1f657e0f0aee3242b1fc296bcadebee, type: 3}
-  - {fileID: 111072760437077779, guid: 1d214b34383adb44bb0aa99b27749a35, type: 3}
+  - {fileID: 5560160798350175084, guid: ccb541e5632a0554eb5f1a48aef7bdc6, type: 3}
+  - {fileID: 7448070668743371330, guid: 689f9fe065b699e4ca0d5bebf13dfc99, type: 3}
   Flowers:
   - {fileID: 4113220790408712802, guid: b1b33096923930847a271abc0889a828, type: 3}
   - {fileID: 6793379823314433865, guid: c5a9923ecff729442a03168a4cc3ac3c, type: 3}
@@ -35,3 +34,6 @@ MonoBehaviour:
   Pebbles: {fileID: 2800000, guid: e89b0066580a594b890642f92b8dfacd, type: 3}
   PebblesNormal: {fileID: 2800000, guid: 7203a77323385305ac2cbade15aa2e54, type: 3}
   WaterWaves: {fileID: 2800000, guid: b71c145756a656169c453d5f605dfdf2, type: 3}
+  SnowAlbedo: {fileID: 2800000, guid: 4fba9215c57f6adffe03247b41e79a8a, type: 3}
+  SnowNormal: {fileID: 2800000, guid: fef1b94693b1d7f2b199428cf8857fa5, type: 3}
+  SnowHeight: {fileID: 2800000, guid: d15d506ead1294f8d68698014775dd29, type: 3}

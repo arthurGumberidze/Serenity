@@ -16,6 +16,7 @@ Shader "Serenity/SnowProps"
    #pragma multi_compile_fog
    #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+   #include "WorldMapBiomePalette.hlsl"
    CBUFFER_START(UnityPerMaterial)
    half4 _BaseColor, _SnowColor;
    float _Tree;
@@ -36,7 +37,10 @@ Shader "Serenity/SnowProps"
     float snow=smoothstep(.15,.65,normal.y+grain);
     half3 baseColor=_BaseColor.rgb;
     if(_Tree>.5) {baseColor=lerp(half3(.22,.13,.075),half3(.10,.24,.20),saturate(i.height*.8));snow*=saturate(i.height*.6);}
-    half3 albedo=lerp(baseColor,_SnowColor.rgb,snow);
+    half3 snowColor=_SnowColor.rgb;
+    if(_WorldMapSnowTextures>.5)
+      snowColor*=SAMPLE_TEXTURE2D(_WorldMapSnowAlbedo,sampler_WorldMapSnowAlbedo,i.positionWS.xz/7.0).rgb;
+    half3 albedo=lerp(baseColor,snowColor,snow);
     Light light=GetMainLight(TransformWorldToShadowCoord(i.positionWS));
     half3 lighting=SampleSH(normal)+light.color*saturate(dot(normal,light.direction))*light.shadowAttenuation;
     return half4(MixFog(albedo*lighting,i.fog),1);

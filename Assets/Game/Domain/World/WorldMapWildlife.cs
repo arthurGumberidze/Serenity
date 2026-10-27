@@ -374,6 +374,25 @@ namespace Game.Domain.World
         private WorldPosition Jitter(WorldPosition origin, string speciesId, int ordinal,
             IReadOnlyList<WildlifeIndividualState> placed)
         {
+            if(speciesId=="cow")
+            {
+                var lake=world.MapData.Hydrology.Lakes.FirstOrDefault(x=>x.Id=="lake_mountain");
+                if(lake!=null)
+                {
+                    var center=world.MapData.CoordinateTransform.ToUnity(lake.Center);
+                    for(var attempt=0;attempt<lake.Shoreline.Points.Count;attempt++)
+                    {
+                        var p=world.MapData.CoordinateTransform.ToUnity(lake.Shoreline.Points[(ordinal*7+attempt)%lake.Shoreline.Points.Count]);
+                        var dx=p.X-center.X;var dz=p.Z-center.Z;var length=(float)Math.Sqrt(dx*dx+dz*dz);
+                        if(length<1)continue;
+                        var spread=ordinal%2==0?7f:28f;
+                        var x=p.X+dx/length*spread;var z=p.Z+dz/length*spread;
+                        if(!world.ContainsClosed(x,z)||!heights.IsBuildable(x,z,26f))continue;
+                        if(placed.Any(a=>(a.Position.X-x)*(a.Position.X-x)+(a.Position.Z-z)*(a.Position.Z-z)<16f))continue;
+                        return new WorldPosition(x,heights.SampleHeight(x,z),z);
+                    }
+                }
+            }
             var salt = StableHash(speciesId);
             for (var attempt = 0; attempt < 512; attempt++)
             {

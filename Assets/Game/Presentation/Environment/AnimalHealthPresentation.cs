@@ -23,10 +23,13 @@ namespace Game.Presentation.Environment
             standing = body != null ? body.localRotation : Quaternion.identity;
             animators = GetComponentsInChildren<Animator>(true);
             legacyAnimations = GetComponentsInChildren<Animation>(true);
-            var text = new GameObject("Animal health");
-            text.transform.SetParent(transform, false);
-            text.transform.localPosition = Vector3.up * 1.8f;
-            label = text.AddComponent<TextMesh>();
+            if (label == null)
+            {
+                var text = new GameObject("Animal health");
+                text.transform.SetParent(transform, false);
+                text.transform.localPosition = Vector3.up * 1.8f;
+                label = text.AddComponent<TextMesh>();
+            }
             label.anchor = TextAnchor.MiddleCenter; label.alignment = TextAlignment.Center;
             label.characterSize = .065f; label.fontSize = 32;
             Refresh();

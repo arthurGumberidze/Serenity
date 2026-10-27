@@ -19,6 +19,8 @@ namespace Game.Presentation.Environment
         public void ConfigureGrounding(Transform model)
         {
             visual = model;
+            // The imported boar rig's forward axis points backwards relative to other rigs.
+            if (SpeciesId == "boar") model.localRotation = Quaternion.Euler(0f, 180f, 0f);
             feet = SpeciesId == "boar" ? model.GetComponentsInChildren<Transform>(true)
                 .Where(x => x.name.StartsWith("foot.") || x.name.StartsWith("front_foot.")).ToArray() : null;
         }

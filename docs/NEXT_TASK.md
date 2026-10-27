@@ -1,5 +1,16 @@
 # NEXT_TASK.md
 
+## WM15 current feedback — next unblocked work (2026-10-27)
+
+Candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Build-batch-c exited 0 with 0 errors / 30 warnings;
+focused EditMode passed 9/9; disposable Player-a passed 32/32 with no runtime errors. See
+`docs/world_map/WM15_CURRENT_FEEDBACK.md`. Ask the user to review a **new game**, especially manual pier
+fishing, livestock ages/models, winter/sakura appearance, campfire/ground torches, crop Grow/Harvest UI and
+resident navigation. Preserve old saves and inherited vendor/P3 changes. WM15 remains IN_PROGRESS for
+visual acceptance, slow loading and deferred full 100/300/500 gates. Run Unity batchmode only as a hidden
+process outside the sandbox so the local Unity Personal profile is available; do not use GUI automation.
+
+
 ## WM15 evening feedback — next unblocked work (2026-10-27)
 
 Candidate: `Builds/WorldMapEveningFix/Serenity.exe`, build-i 0 errors / 82 warnings, Player-g 31/31,

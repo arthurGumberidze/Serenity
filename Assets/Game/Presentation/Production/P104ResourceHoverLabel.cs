@@ -30,7 +30,8 @@ namespace Game.Presentation.Production
                 var recipe = production.Recipes.Get(source.Site.RecipeId);
                 label = string.Join(" + ", System.Linq.Enumerable.Select(recipe.Outputs,
                     x => RussianTextCatalog.Content("resource", x.ResourceId.ToString()))) +
-                    $"  {source.RemainingAmount}/{source.SourceCapacity}";
+                    "  " + (source.Site.Kind == Game.Domain.Production.ProductionSiteKind.PrimitiveCropPlot
+                        ? CropGrowthLabel(source.Site) : $"{source.RemainingAmount}/{source.SourceCapacity}");
             }
             else
             {
@@ -45,6 +46,13 @@ namespace Game.Presentation.Production
             var pointer = Mouse.current?.position.ReadValue() ?? Vector2.zero;
             var gui = WorldPointerRaycaster.ScreenToGuiPoint(pointer);
             GUI.Box(new Rect(gui.x + 14f, gui.y + 14f, 230f, 30f), label, style);
+        }
+
+        public static string CropGrowthLabel(Game.Domain.Production.ProductionSite site)
+        {
+            var growth=site.CropPhase==Game.Domain.Production.CropPlotPhase.Ready ? 1d :
+                site.GrowthRequiredTicks<=0 ? 0d : System.Math.Clamp((double)site.GrowthProgressTicks/site.GrowthRequiredTicks,0d,1d);
+            return "Рост " + RussianTextCatalog.Percent(growth);
         }
 
         private void DrawWorkProgress()

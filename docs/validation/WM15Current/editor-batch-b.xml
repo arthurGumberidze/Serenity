@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="9" result="Passed" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="154,1402863">
+  <test-suite type="TestSuite" id="1000" name="Serenity" fullname="Serenity" runstate="Runnable" testcasecount="816" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="154.140286" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1951" name="Game.Tests.dll" fullname="C:/serenity_game/Library/ScriptAssemblies/Game.Tests.dll" runstate="Runnable" testcasecount="812" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="154.078262" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="28024" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1952" name="Game" fullname="Game" runstate="Runnable" testcasecount="812" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="154.012737" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1953" name="Tests" fullname="Game.Tests" runstate="Runnable" testcasecount="812" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="153.969317" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1954" name="Editor" fullname="Game.Tests.Editor" runstate="Runnable" testcasecount="629" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 18:01:48Z" duration="153.866212" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1864" name="WM15CurrentFeedbackTests" fullname="Game.Tests.Editor.WM15CurrentFeedbackTests" classname="Game.Tests.Editor.WM15CurrentFeedbackTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:14Z" duration="0.311159" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1867" name="LivestockCannotBreedWithoutLivingAdultPair" fullname="Game.Tests.Editor.WM15CurrentFeedbackTests.LivestockCannotBreedWithoutLivingAdultPair" methodname="LivestockCannotBreedWithoutLivingAdultPair" classname="Game.Tests.Editor.WM15CurrentFeedbackTests" runstate="Runnable" seed="2050909038" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:14Z" duration="0.167237" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1865" name="ManualFishingRequiresPierAndStopsWhenLastPierIsRemoved" fullname="Game.Tests.Editor.WM15CurrentFeedbackTests.ManualFishingRequiresPierAndStopsWhenLastPierIsRemoved" methodname="ManualFishingRequiresPierAndStopsWhenLastPierIsRemoved" classname="Game.Tests.Editor.WM15CurrentFeedbackTests" runstate="Runnable" seed="1381475555" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:14Z" duration="0.020401" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1866" name="PastureStartsWithYoungPairsAndBirthsSurviveRestoreWithoutRepeatedGrant" fullname="Game.Tests.Editor.WM15CurrentFeedbackTests.PastureStartsWithYoungPairsAndBirthsSurviveRestoreWithoutRepeatedGrant" methodname="PastureStartsWithYoungPairsAndBirthsSurviveRestoreWithoutRepeatedGrant" classname="Game.Tests.Editor.WM15CurrentFeedbackTests" runstate="Runnable" seed="564012677" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:14Z" duration="0.082178" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1868" name="SavedAgeGrowsGraduallyAndClampsAtAdultSize" fullname="Game.Tests.Editor.WM15CurrentFeedbackTests.SavedAgeGrowsGraduallyAndClampsAtAdultSize" methodname="SavedAgeGrowsGraduallyAndClampsAtAdultSize" classname="Game.Tests.Editor.WM15CurrentFeedbackTests" runstate="Runnable" seed="1956386848" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:14Z" duration="0.003027" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1869" name="WM15CurrentPresentationTests" fullname="Game.Tests.Editor.WM15CurrentPresentationTests" classname="Game.Tests.Editor.WM15CurrentPresentationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:15Z" duration="0.859559" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1871" name="BoarAnatomyFacesTravelDirectionAfterRigAdapter" fullname="Game.Tests.Editor.WM15CurrentPresentationTests.BoarAnatomyFacesTravelDirectionAfterRigAdapter" methodname="BoarAnatomyFacesTravelDirectionAfterRigAdapter" classname="Game.Tests.Editor.WM15CurrentPresentationTests" runstate="Runnable" seed="23670037" result="Passed" start-time="2026-10-27 17:59:14Z" end-time="2026-10-27 17:59:15Z" duration="0.120411" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1872" name="CurrentLivestockAndWinterHavePreparedOwnedAssets" fullname="Game.Tests.Editor.WM15CurrentPresentationTests.CurrentLivestockAndWinterHavePreparedOwnedAssets" methodname="CurrentLivestockAndWinterHavePreparedOwnedAssets" classname="Game.Tests.Editor.WM15CurrentPresentationTests" runstate="Runnable" seed="290544872" result="Passed" start-time="2026-10-27 17:59:15Z" end-time="2026-10-27 17:59:15Z" duration="0.713191" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1870" name="ReadyCropHoverShowsGrowthInsteadOfNaturalSourceZeroOverZero" fullname="Game.Tests.Editor.WM15CurrentPresentationTests.ReadyCropHoverShowsGrowthInsteadOfNaturalSourceZeroOverZero" methodname="ReadyCropHoverShowsGrowthInsteadOfNaturalSourceZeroOverZero" classname="Game.Tests.Editor.WM15CurrentPresentationTests" runstate="Runnable" seed="506722395" result="Passed" start-time="2026-10-27 17:59:15Z" end-time="2026-10-27 17:59:15Z" duration="0.019334" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1902" name="WM15ShorePlacementTests" fullname="Game.Tests.Editor.WM15ShorePlacementTests" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-27 17:59:15Z" end-time="2026-10-27 18:01:48Z" duration="152.450659" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1904" name="EnlargedCampHasAtLeastFourDrySitesPerLake" fullname="Game.Tests.Editor.WM15ShorePlacementTests.EnlargedCampHasAtLeastFourDrySitesPerLake" methodname="EnlargedCampHasAtLeastFourDrySitesPerLake" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" seed="1697630455" result="Passed" start-time="2026-10-27 17:59:15Z" end-time="2026-10-27 18:00:12Z" duration="56.280703" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[lake_south_forest valid=39 blocked=Строительство на воде или затопленном грунте запрещено.:10
+lake_west_grove valid=37 blocked=Строительство на воде или затопленном грунте запрещено.:9
+lake_mountain valid=20 blocked=Строительство на воде или затопленном грунте запрещено.:10;Уникальная точка интереса защищена от строительства и автоматической расчистки.:7
+lake_central_east valid=32 blocked=Строительство на воде или затопленном грунте запрещено.:9
+]]></output>
+              </test-case>
+              <test-case id="1903" name="PreparedIndexOffersSixIndependentPlacesPerLakeWithoutTerrainRecalculation" fullname="Game.Tests.Editor.WM15ShorePlacementTests.PreparedIndexOffersSixIndependentPlacesPerLakeWithoutTerrainRecalculation" methodname="PreparedIndexOffersSixIndependentPlacesPerLakeWithoutTerrainRecalculation" classname="Game.Tests.Editor.WM15ShorePlacementTests" runstate="Runnable" seed="1183135067" result="Passed" start-time="2026-10-27 18:00:12Z" end-time="2026-10-27 18:01:48Z" duration="96.159709" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Prepared candidates=109 cached cells=18702
+lake_south_forest nearby shore choices=5
+lake_west_grove nearby shore choices=5
+lake_mountain nearby shore choices=4
+lake_central_east nearby shore choices=5
+Saving results to: C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

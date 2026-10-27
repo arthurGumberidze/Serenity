@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 current feedback (2026-10-27): **IN_PROGRESS / build-batch-c and Player-a verified**.
+Focused EditMode passed 9/9. Final build: exit 0, 0 errors / 30 warnings; Player-a: 32/32, exit 0,
+no gameplay runtime errors. Manual-pier fishing, six lake places plus river support, mixed growing
+livestock, crop actions/labels, navigation, wildlife orientation/habitat, winter/petals and lighting are
+implemented. User visual acceptance, slow initial loading and full population gates remain open. See
+`docs/world_map/WM15_CURRENT_FEEDBACK.md`.
+
+
 WM15 evening feedback (2026-10-27): **IN_PROGRESS / build-i and Player-g verified**.
 Eleven focused Editor checks passed. Final build: 0 errors / 82 warnings; Player-g: 31/31, exit 0,
 no gameplay runtime errors. All four lakes accept camp construction; preview worst call 41.7 ms.

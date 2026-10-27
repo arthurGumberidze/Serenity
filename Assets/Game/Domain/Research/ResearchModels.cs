@@ -249,7 +249,7 @@ namespace Game.Domain.Research
                 if (production.All.Any(x => x.Id == recipeId))
                     gatheringUnlocks.Add(TechnologyUnlock.Recipe(recipeId));
             }
-            foreach (var id in new[] { "fishing_camp", "gathering_area" })
+            foreach (var id in new[] { "fishing_camp", "fishing_pier", "gathering_area" })
             {
                 var buildingId = new BuildingDefinitionId(id);
                 if (availableBuildingIds.Contains(buildingId)) gatheringUnlocks.Add(TechnologyUnlock.Building(buildingId));
@@ -292,6 +292,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("controlled_fire"), "Controlled Fire", new[] { T("basic_survival") }, TimeSpan.FromDays(2),
                     availableBuildingIds.Contains(new BuildingDefinitionId("campfire"))
                         ? new[] { C("controlled_fire"), TechnologyUnlock.Building(new BuildingDefinitionId("campfire")) }
+                            .Concat(availableBuildingIds.Where(id=>id.ToString()=="ground_torch").Select(TechnologyUnlock.Building))
                         : new[] { C("controlled_fire") }),
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
                     availableBuildingIds.Contains(new BuildingDefinitionId("stone_age_hut"))

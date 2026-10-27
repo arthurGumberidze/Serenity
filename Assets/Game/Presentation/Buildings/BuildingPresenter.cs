@@ -156,7 +156,8 @@ namespace Game.Presentation.Buildings
 
         private void RefreshCampfire()
         {
-            var shouldBurn = building.DefinitionId == new BuildingDefinitionId("campfire") &&
+            var torch = building.DefinitionId.ToString() == "ground_torch";
+            var shouldBurn = (building.DefinitionId == new BuildingDefinitionId("campfire") || torch) &&
                 building.IsOperational && !building.IsDestroyed;
             if (shouldBurn)
             {
@@ -164,20 +165,20 @@ namespace Game.Presentation.Buildings
                 {
                     var glow = new GameObject("Campfire illumination");
                     glow.transform.SetParent(transform, false);
-                    glow.transform.localPosition = Vector3.up * 1.1f;
+                    glow.transform.localPosition = Vector3.up * (torch ? 1.65f : 1.1f);
                     campfireLight = glow.AddComponent<Light>();
                     campfireLight.type = LightType.Point;
                     campfireLight.color = new Color(1f, .53f, .22f);
-                    campfireLight.range = 12f;
-                    campfireLight.intensity = 5f;
+                    campfireLight.range = torch ? 12f : 18f;
+                    campfireLight.intensity = torch ? 6f : 15f;
                     campfireLight.shadows = LightShadows.None;
                 }
                 campfireLight.enabled = true;
                 if (campfireParticles == null)
                 {
                     var flame = Game.Presentation.Environment.WorldPropCatalog.Create("fire", transform);
-                    flame.transform.localPosition = Vector3.up * .25f;
-                    flame.transform.localScale = Vector3.one * .55f;
+                    flame.transform.localPosition = Vector3.up * (torch ? 1.5f : .25f);
+                    flame.transform.localScale = Vector3.one * (torch ? .22f : .55f);
                     campfireParticles = flame.GetComponent<ParticleSystem>();
                 }
                 campfireParticles.gameObject.SetActive(true);

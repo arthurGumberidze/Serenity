@@ -818,9 +818,9 @@ namespace Game.Infrastructure
                 WorldPlacementSurface.AllowsFootprint(cells, buildingGridSize, buildingGridOrigin));
             BuildingPlacementService.ConfigureRequestEnvironment(context => WorldPlacementSurface.EvaluateFootprint(
                 context.Cells,buildingGridSize,buildingGridOrigin,
-                context.Request.Definition.Id.ToString() == "fishing_camp" ? 4.5f : (float?)null,
+                IsShoreFacility(context.Request.Definition.Id) ? 4.5f : (float?)null,
                 context.Request.Definition.Id.ToString()=="gate",
-                context.Request.Definition.Id.ToString()=="fishing_camp").CanPlace);
+                IsShoreFacility(context.Request.Definition.Id)).CanPlace);
             BuildingPlacementService.ConfigureRuleEvaluator(EvaluateSpecialPlacementRule);
             BuildingPathing.GateChanged+=(id,open)=> { if(BuildingPresentations.TryGet(id,out var gate))gate.SetGateOpen(open); };
 
@@ -1057,6 +1057,15 @@ namespace Game.Infrastructure
                 WorldPlacementSurface.ImportShoreCells(index.Cells,size,origin);
                 foreach(var candidate in index.Candidates)preparedShoreAnchors.Add((candidate.Anchor,candidate.Facing));
                 pads.AddRange(index.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
+                var lakeIds=new HashSet<string>(world.MapData.Hydrology.Lakes.Select(x=>x.Id));
+                foreach(var candidate in index.Candidates.Where(x=>lakeIds.Contains(x.WaterBodyId)))
+                {
+                    var marker=WorldPropCatalog.Create("logs",transform);
+                    marker.name="Fishing landing place "+candidate.WaterBodyId;
+                    marker.transform.position=new Vector3(candidate.X,candidate.Y+.03f,candidate.Z);
+                    marker.transform.localScale*=.22f;
+                    marker.transform.rotation=Quaternion.Euler(0,candidate.Facing.Degrees(),0);
+                }
                 Debug.Log("WM15 shoreline candidates prepared: "+pads.Count);
             };
             (Vector3 point,BuildingOrientation orientation)? cached=null;
@@ -1096,7 +1105,11 @@ namespace Game.Infrastructure
                 }
                 return cached;
             };
+            buildingPlacementController.BuildingPlaced+=(_,__)=>{cached=null;lastCursor=Vector3.positiveInfinity;};
         }
+
+        private static bool IsShoreFacility(BuildingDefinitionId id) =>
+            id.ToString()=="fishing_camp" || id.ToString()=="fishing_pier";
 
         private bool BuildingOccupancyCellsBlocked(GridCoordinate anchor, BuildingDefinition definition, BuildingOrientation facing)
             => !BuildingPlacementService.Evaluate(definition, anchor, facing).IsValid;
@@ -1106,7 +1119,14 @@ namespace Game.Infrastructure
             var constraints = context.Request.Definition.Placement.Constraints;
             if ((constraints & BuildingPlacementConstraint.Shoreline) != 0)
             {
-                if (!(context.Request.Definition.Id.ToString()=="fishing_camp" && preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation))) &&
+                var centerX=buildingGridOrigin.x+context.Request.Anchor.X*buildingGridSize;
+                var centerZ=buildingGridOrigin.z+context.Request.Anchor.Z*buildingGridSize;
+                var body=WorldHeight.NearestWaterBodyId(centerX,centerZ);
+                if (context.Request.Definition.Id.ToString()=="fishing_camp" &&
+                    WorldDefinition.MapData.Hydrology.Lakes.Any(x=>x.Id==body) &&
+                    !preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation)))
+                    return PlacementFailureReason.ShorelineRequired;
+                if (!(IsShoreFacility(context.Request.Definition.Id) && preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation))) &&
                     !ShoreBuildingPlacement.IsValid(WorldHeight,context.Request.Anchor,
                     context.Request.Definition.Footprint,context.Request.Orientation,
                     buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z))

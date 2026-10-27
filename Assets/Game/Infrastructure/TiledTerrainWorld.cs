@@ -156,6 +156,14 @@ namespace Game.Infrastructure
                     designOrigin.Z - definition.Origin.Z * sz, sx, sz);
                 ArtDirection.ApplyShaderGlobals(ArtWorldToDesign);
                 natureCatalog.RuntimeLate = Resources.Load<LateLandscapeCatalog>("World/LateLandscape");
+                var winter=natureCatalog.RuntimeLate;
+                Shader.SetGlobalFloat("_WorldMapSnowTextures",winter?.SnowAlbedo!=null?1f:0f);
+                if(winter?.SnowAlbedo!=null)
+                {
+                    Shader.SetGlobalTexture("_WorldMapSnowAlbedo",winter.SnowAlbedo);
+                    Shader.SetGlobalTexture("_WorldMapSnowNormal",winter.SnowNormal);
+                    Shader.SetGlobalTexture("_WorldMapSnowHeight",winter.SnowHeight);
+                }
                 if (natureCatalog.RuntimeLate?.WaterWaves != null) natureCatalog.WaterRipples = natureCatalog.RuntimeLate.WaterWaves;
                 natureCatalog.RuntimeWorldToDesign = ArtWorldToDesign;
                 var snowRegion = ArtDirection.regions[2];

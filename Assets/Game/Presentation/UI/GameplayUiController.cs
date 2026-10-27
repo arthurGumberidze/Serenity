@@ -485,10 +485,12 @@ namespace Game.Presentation.UI
             AddTitle(contextMenu, "Контекстные действия");
             AddMuted(contextMenu, ContextTargetName(target) + " · жителей: " +
                 context.Selection.SelectedCharacterIds.Count);
+            var isCropTarget = TryGetCropTarget(target, out var cropTarget);
+            var isPierTarget = TryGetFishingPierTarget(target,out var pierTarget);
             foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
             {
-                var actionTarget = action == ContextActionKind.Gather && TryGetCropTarget(target, out var cropTarget)
-                    ? cropTarget : target;
+                if (action == ContextActionKind.Gather && isCropTarget) continue;
+                var actionTarget = action==ContextActionKind.Gather && isPierTarget ? pierTarget : target;
                 if (!ContextActionRules.SupportsTarget(action, actionTarget)) continue;
                 if (target.Kind == ContextTargetKind.Building && context.Buildings.TryGet(target.EntityId, out var menuBuilding))
                 {
@@ -504,7 +506,7 @@ namespace Game.Presentation.UI
                 contextActionStates[action] = state;
                 var captured = action;
                 var label = ContextActionName(action);
-                if (action == ContextActionKind.Gather && TryGetCropTarget(target, out _)) label = "Выращивать / собрать урожай";
+                if(action==ContextActionKind.Gather && isPierTarget)label="Ловить рыбу";
                 if (action == ContextActionKind.Craft && TryGetFishingCampTarget(target, out _)) label = "Ловить рыбу";
                 if (action == ContextActionKind.Gather && context.Production.TryGetSite(target.EntityId, out var menuSite))
                     label = menuSite.RecipeId.ToString() == "fish_water" ? "Ловить рыбу" :
@@ -522,9 +524,64 @@ namespace Game.Presentation.UI
                     : state.Reason == ContextUnavailableReason.None
                         ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
+            if (isCropTarget) AddCropActions(cropTarget);
             AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
             PositionContextMenu(screenPosition);
             contextMenu.style.display = DisplayStyle.Flex;
+        }
+
+        private void AddCropActions(ContextCommandTarget cropTarget)
+        {
+            if (!context.Production.TryGetSite(cropTarget.EntityId, out var site)) return;
+            var availability = EvaluateForSelection(ContextActionKind.Gather, cropTarget);
+            var canPlant = site.CropPhase == CropPlotPhase.Unplanted && availability.Enabled;
+            var canHarvest = site.CropPhase == CropPlotPhase.Ready && availability.Enabled;
+            contextActionStates[ContextActionKind.Gather] = new ContextActionAvailability(
+                site.CropPhase == CropPlotPhase.Unplanted ? canPlant : canHarvest,
+                availability.Enabled ? ContextUnavailableReason.None : availability.Reason);
+            var plant = ActionButton("Выращивать", () => ExecuteCropContextAction(site.Id,CropPlotPhase.Unplanted), "context-crop-plant");
+            plant.SetEnabled(canPlant);
+            if (canPlant) plant.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+            contextMenu.Add(plant);
+            AddMuted(contextMenu, site.CropPhase == CropPlotPhase.Unplanted
+                ? (canPlant ? "Доступно" : "Недоступно: " + ContextReason(availability.Reason))
+                : "Доступно только на незасеянном поле");
+            var harvest = ActionButton("Собрать урожай", () => ExecuteCropContextAction(site.Id,CropPlotPhase.Ready), "context-crop-harvest");
+            harvest.SetEnabled(canHarvest);
+            if (canHarvest) harvest.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+            contextMenu.Add(harvest);
+            AddMuted(contextMenu, site.CropPhase == CropPlotPhase.Ready
+                ? (canHarvest ? "Урожай созрел · " + CropPercent(site) : "Недоступно: " + ContextReason(availability.Reason))
+                : "Сбор доступен при созревании: " + CropPercent(site));
+        }
+
+        private static string CropPercent(ProductionSite site) =>
+            site.CropPhase == CropPlotPhase.Ready ? "100%" : site.GrowthRequiredTicks <= 0 ? "0%" :
+                RussianTextCatalog.Percent(Math.Clamp((double)site.GrowthProgressTicks / site.GrowthRequiredTicks,0d,1d));
+
+        private void ExecuteCropContextAction(StableEntityId id,CropPlotPhase expectedPhase)
+        {
+            if(!context.Production.TryGetSite(id,out var current)||current.CropPhase!=expectedPhase)return;
+            ExecuteContextAction(ContextActionKind.Gather,Keyboard.current!=null && Keyboard.current.shiftKey.isPressed);
+        }
+
+        private static string DomesticAnimalName(string species) => species switch
+        {
+            "cow"=>"Корова", "pig"=>"Свинья", "goat"=>"Коза", "duck"=>"Утка",
+            "chicken"=>"Курица", "horse"=>"Лошадь", _=>"Овца"
+        };
+
+        private void DrawCropWorkButtons(ProductionSite site)
+        {
+            var canCommand=context.Buildings.TryGet(site.Id,out var owner) && owner.OwnerSideId.Value=="player" && owner.IsOperational;
+            var plant=ActionButton("Выращивать",()=>TryCommand(()=>IssueDirect(WorkJobType.Farm,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite,site.Id,site.Position))),"crop-plant");
+            plant.SetEnabled(canCommand && site.CropPhase==CropPlotPhase.Unplanted);
+            inspector.Add(plant);
+            var harvest=ActionButton("Собрать урожай",()=>TryCommand(()=>IssueDirect(WorkJobType.Farm,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite,site.Id,site.Position))),"crop-harvest");
+            harvest.SetEnabled(canCommand && site.CropPhase==CropPlotPhase.Ready);
+            inspector.Add(harvest);
         }
 
         public ContextCommandResult LastContextCommandResult { get; private set; }
@@ -534,6 +591,7 @@ namespace Game.Presentation.UI
             cropTarget = default;
             if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var garden) ||
                 !garden.IsOperational || garden.OwnerSideId.Value != "player" ||
+                garden.DefinitionId.ToString()=="animal_pasture" ||
                 !context.Production.TryGetSite(garden.Id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot)
                 return false;
             cropTarget = new ContextCommandTarget(ContextTargetKind.ResourceSource, site.Position,
@@ -551,11 +609,24 @@ namespace Game.Presentation.UI
             return true;
         }
 
+        private bool TryGetFishingPierTarget(ContextCommandTarget target,out ContextCommandTarget fishTarget)
+        {
+            fishTarget=default;
+            if(target.Kind!=ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId,out var pier) ||
+                pier.DefinitionId.ToString()!="fishing_pier" || !pier.IsOperational || pier.OwnerSideId.Value!="player")return false;
+            var stock=context.Production.FishStockAt(target.Position);
+            if(stock==null)return false;
+            fishTarget=new ContextCommandTarget(ContextTargetKind.ResourceSource,stock.Position,stock.Id,
+                new ResourceId("fish"),ContextResourceClass.Gatherable);
+            return true;
+        }
+
         public ContextCommandResult ExecuteContextAction(ContextActionKind action, bool append)
         {
             if (!activeContextTarget.HasValue) throw new InvalidOperationException("Контекстная цель не выбрана.");
             var target = activeContextTarget.Value;
             if (action == ContextActionKind.Gather && TryGetCropTarget(target, out var cropTarget)) target = cropTarget;
+            if (action == ContextActionKind.Gather && TryGetFishingPierTarget(target, out var pierTarget)) target = pierTarget;
             if (action == ContextActionKind.Gather && TryGetFishingCampTarget(target, out var fishingTarget))
             { target = fishingTarget; action = ContextActionKind.Craft; }
             var roster = activeContextSelectionIds.ToArray();
@@ -645,10 +716,14 @@ namespace Game.Presentation.UI
             var technology = true;
             var capacity = true;
             var targetStatusValid = true;
+            var pathTarget = target.Position;
             if (target.Kind == ContextTargetKind.ResourceSource && context.Production.TryGetSite(target.EntityId, out var site))
             {
                 resourceAvailable = !site.IsDepleted && site.IsWorkAvailable;
                 technology = context.Production.IsRecipeAvailable(site.RecipeId, true);
+                if(context.Production.WorkPosition!=null)pathTarget=context.Production.WorkPosition(id,site);
+                if(site.RecipeId.ToString()=="fish_water" && context.Production.ManualFishingAccess!=null)
+                    resourceAvailable &= context.Production.ManualFishingAccess(site.Id);
             }
             else if (target.Kind == ContextTargetKind.ResourcePile && target.ResourceId.HasValue)
             {
@@ -684,7 +759,7 @@ namespace Game.Presentation.UI
                 exists && capabilities.IsAdult, correctRole,
                 exists && targetStatusValid && (action == ContextActionKind.Move || action == ContextActionKind.Inspect ||
                            capabilities.CanPerformOrdinaryWork),
-                true, technology, withinDistance, HasContextPath(id, target.Position), resourceAvailable,
+                true, technology, withinDistance, HasContextPath(id, pathTarget), resourceAvailable,
                 capacity, busy, true, criticalNeed, interruptible);
         }
 
@@ -717,8 +792,10 @@ namespace Game.Presentation.UI
         private bool HasContextPath(StableEntityId id, WorldPosition target)
         {
             if (!context.AiAgents.TryGet(id, out var agent)) return true;
+            var origin=new Vector3(agent.Position.X,agent.Position.Y,agent.Position.Z);
+            if(context.Presentations.TryGet(id,out var presenter))origin=presenter.transform.position;
             return Game.Presentation.AI.ReachableNavMeshPoint.TryFind(
-                new Vector3(agent.Position.X, agent.Position.Y, agent.Position.Z),
+                origin,
                 new Vector3(target.X, target.Y, target.Z), out _);
         }
 
@@ -1634,8 +1711,7 @@ namespace Game.Presentation.UI
             foreach (var site in context.Production.Sites)
             {
                 var status = site.Kind == ProductionSiteKind.PrimitiveCropPlot
-                    ? F("ui.economy.crop", E(site.CropPhase), site.GrowthRequiredTicks == 0 ? string.Empty :
-                        RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks))
+                    ? F("ui.economy.crop", E(site.CropPhase), CropPercent(site))
                     : F("ui.economy.source", site.RemainingAmount, site.SourceCapacity);
                 if (context.Buildings.TryGet(site.Id, out var building) && !building.IsOperational)
                     status += " · " + F("ui.economy.disabled", E(building.StructuralStatus));
@@ -2370,12 +2446,14 @@ namespace Game.Presentation.UI
                         (prey.Alive ? "Охота с луком" : "Туша готова к разделке"));
                     if (prey.Domestic)
                     {
-                        AddLine(inspector, "Домашняя овца · " + (prey.Male ? "самец" : "самка"));
+                        AddLine(inspector, DomesticAnimalName(prey.Species) + " · " + (prey.Male ? "самец" : "самка"));
                         if (!context.Buildings.TryGet(prey.Home, out var home) || home.OwnerSideId.Value != "player")
                         { AddMuted(inspector, "Животное принадлежит другому поместью."); return; }
                     }
                 }
-                AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
+                if(source.Site.Kind==ProductionSiteKind.PrimitiveCropPlot)
+                    AddLine(inspector,"Рост: "+CropPercent(source.Site));
+                else AddLine(inspector, F("ui.selection.source_remaining", source.RemainingAmount, source.SourceCapacity));
                 AddLine(inspector, string.Join(" + ", recipe.OutputsFor(source.Site).Select(x =>
                     Content("resource", x.ResourceId.ToString()) + " ×" + x.Quantity.Units)));
                 var harvest = context.Production.ActiveTasks.FirstOrDefault(x => x.SiteId == source.Site.Id);
@@ -2385,6 +2463,11 @@ namespace Game.Presentation.UI
                 if (recipe.HarvestEntireSource)
                     AddMuted(inspector, "Один приказ — весь источник. Добытое попадает в инвентарь работника или свободный склад.");
                 DrawDirectPriority();
+                if(source.Site.Kind==ProductionSiteKind.PrimitiveCropPlot)
+                {
+                    DrawCropWorkButtons(source.Site);
+                    return;
+                }
                 inspector.Add(ActionButton(prey != null ? (prey.Alive ? "Охотиться с луком" : "Освежевать") :
                     source.Site.Kind == ProductionSiteKind.NaturalSource ? "Собирать" : "Обрабатывать",
                     () => TryCommand(() => IssueDirect(source.Site.Kind == ProductionSiteKind.NaturalSource
@@ -2592,25 +2675,15 @@ namespace Game.Presentation.UI
                 {
                     var herd = context.Production.Animals.AtHome(site.Id);
                     var policy = context.Production.Animals.Policy;
-                    AddLine(inspector, $"Овечий загон · живых животных: {herd.Count(x => x.Alive)}/{policy.PastureCapacity}");
+                    AddLine(inspector, $"Загон · живых животных: {herd.Count(x => x.Alive)}/{policy.PastureCapacity}");
                     AddMuted(inspector, $"Для приплода нужны взрослые самец и самка. Взросление — {policy.LivestockMaturityDays} дн., приплод — раз в {policy.LivestockBirthDays} дн. при свободном месте.");
                     foreach (var sheep in herd.Where(x => !x.Harvested))
-                        AddLine(inspector, $"{(sheep.Male ? "Самец" : "Самка")}: {sheep.Health}/{sheep.Maximum} HP");
+                        AddLine(inspector, $"{DomesticAnimalName(sheep.Species)} · {(sheep.Male ? "самец" : "самка")}: {sheep.Health}/{sheep.Maximum} HP");
                 }
                 else if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
                 {
-                    if (building.OwnerSideId.Value == "player" && building.IsOperational &&
-                        site.CropPhase == CropPlotPhase.Unplanted && !context.Production.Animals.States.Any(x => x.Domestic))
-                    {
-                        AddMuted(inspector, "Первое пустое поле можно отдать стартовой паре овец. Пара доступна один раз; дальше стадо размножается.");
-                        inspector.Add(ActionButton("Сделать овечий загон", () => TryCommand(() =>
-                        {
-                            var changed = context.Production.EstablishSheepPasture(site.Id, new CombatSideId("player"));
-                            SetStatus(changed ? "В загон заселены самец и самка." : "Нужно свободное поле без выполняемых работ.");
-                        })));
-                    }
-                    AddLine(inspector, F("ui.building.crop", E(site.CropPhase),
-                        site.GrowthRequiredTicks == 0 ? "—" : RussianTextCatalog.Percent((double)site.GrowthProgressTicks / site.GrowthRequiredTicks)));
+                    AddLine(inspector, F("ui.building.crop", E(site.CropPhase), CropPercent(site)));
+                    DrawCropWorkButtons(site);
                     AddLine(inspector, "Культура: " + Content("recipe", site.RecipeId.ToString()));
                     var crops = context.Production.Recipes.All.Where(recipe =>
                         recipe.SiteKind == ProductionSiteKind.PrimitiveCropPlot &&
@@ -3479,7 +3552,7 @@ namespace Game.Presentation.UI
                 BuildPaletteCategory.Food => Has("garden", "farm", "crop", "fishing", "kitchen", "campfire"),
                 BuildPaletteCategory.Storage => Has("storage", "basket", "warehouse", "stockpile"),
                 BuildPaletteCategory.Defense => Has("palisade", "gate", "tower", "barracks", "training"),
-                BuildPaletteCategory.Infrastructure => Has("path", "road", "meeting", "well", "bridge", "dock", "assembly"),
+                BuildPaletteCategory.Infrastructure => Has("path", "road", "meeting", "well", "bridge", "dock", "assembly", "torch", "pier"),
                 _ => true
             };
         }

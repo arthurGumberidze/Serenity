@@ -1932,3 +1932,23 @@ D-208 validation follow-up (2026-10-27): navigation arrival must be near the cur
 not merely a zero remaining distance from an old path. Partial paths cannot start production. Manual
 fishing additionally checks its bank stance before advancing work. This keeps work location rules in
 the production action while Unity reports physical movement.
+
+## D-209 — Built-pier fishing, prepared shore capacity and livestock lifecycle (2026-10-27)
+
+Manual fishing access is a production-domain policy supplied by composition: a completed player-owned
+fishing pier must serve the stock, and losing the final valid pier cancels work before stock is consumed.
+The pure prepared shore index owns deterministic terrain candidates: exactly six non-overlapping places
+per lake plus river candidates. Runtime placement still rechecks physical occupancy and current blockers.
+Fish-school count, spacing, appearance and movement are presentation only; finite saved stock stays canonical.
+
+Domestic animal identity now includes persisted biological sex and birth tick. A pasture may contain the
+configured mixed species; initial pairs and births begin young, grow continuously to adult scale over three
+game days, and reproduce only from a living adult male/female pair. Establishment remains exactly once per
+pasture across restore. Visual prefabs/controllers, scale and animation do not replace health or lifecycle
+authority. Older save defaults remain accepted; use a new game for the changed initial presentation/content.
+
+Crop lifecycle actions and labels are derived from the canonical ProductionSite state: Grow is distinct from
+Harvest and Ready reports 100%, never a natural-source 0/0 amount. Winter, petals, ground torches, stronger
+campfire, wildlife facing/habitat and NavMesh retry changes remain disposable presentation/navigation
+adapters. Unity batchmode validation on this workstation must execute outside the filesystem sandbox; the
+sandbox produces a different licensing machine identity and cannot resolve `com.unity.editor.headless`.

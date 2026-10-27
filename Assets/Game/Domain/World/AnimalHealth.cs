@@ -30,6 +30,9 @@ namespace Game.Domain.World
         public StableEntityId Home { get; }
         public bool Male { get; }
         public long BornTick { get; }
+        public double GrowthFraction(long calendarTick, int maturityDays) =>
+            Math.Max(0d, Math.Min(1d, (double)(calendarTick - BornTick) /
+                (TimeSpan.TicksPerDay * Math.Max(1, maturityDays))));
         public AnimalVitalState With(int health, long shotTicks, int sequence, bool harvested = false) =>
             new AnimalVitalState(Id, Species, Maximum, health, Domestic, shotTicks, sequence, harvested, Home, Male, BornTick);
     }
@@ -37,8 +40,9 @@ namespace Game.Domain.World
     public sealed class AnimalHuntingPolicy
     {
         public AnimalHuntingPolicy(int arrowDamage, long drawTicks, long flightTicks, float range,
-            int accuracyPermille, IReadOnlyDictionary<string, int> health, int pastureCapacity = 4,
-            int livestockMaturityDays = 3, int livestockBirthDays = 5)
+            int accuracyPermille, IReadOnlyDictionary<string, int> health, int pastureCapacity = 16,
+            int livestockMaturityDays = 3, int livestockBirthDays = 5,
+            IEnumerable<string> domesticSpecies = null)
         {
             if (arrowDamage <= 0 || drawTicks <= 0 || flightTicks <= 0 || range <= 0f ||
                 accuracyPermille < 1 || accuracyPermille > 1000 || health == null || health.Any(p => p.Value <= 0) ||
@@ -48,6 +52,8 @@ namespace Game.Domain.World
             Range = range; AccuracyPermille = accuracyPermille; Health = health;
             PastureCapacity = pastureCapacity; LivestockMaturityDays = livestockMaturityDays;
             LivestockBirthDays = livestockBirthDays;
+            DomesticSpecies = Array.AsReadOnly((domesticSpecies ?? new[] { "sheep", "cow", "pig", "goat", "duck", "chicken", "horse" })
+                .Where(health.ContainsKey).Distinct().ToArray());
         }
         public int ArrowDamage { get; }
         public long DrawTicks { get; }
@@ -58,10 +64,12 @@ namespace Game.Domain.World
         public int PastureCapacity { get; }
         public int LivestockMaturityDays { get; }
         public int LivestockBirthDays { get; }
+        public IReadOnlyList<string> DomesticSpecies { get; }
         public static AnimalHuntingPolicy Default => new AnimalHuntingPolicy(30,
             TimeSpan.TicksPerSecond * 60, TimeSpan.TicksPerSecond * 24, 18f, 850,
             new Dictionary<string, int> { ["deer"] = 120, ["boar"] = 150, ["bear"] = 300,
-                ["hare"] = 30, ["waterfowl"] = 30, ["sheep"] = 90, ["cow"] = 180, ["pig"] = 120 });
+                ["hare"] = 30, ["waterfowl"] = 30, ["sheep"] = 90, ["cow"] = 180,
+                ["pig"] = 120, ["goat"] = 100, ["duck"] = 35, ["chicken"] = 25, ["horse"] = 200 });
     }
 
     public readonly struct HuntingImpact

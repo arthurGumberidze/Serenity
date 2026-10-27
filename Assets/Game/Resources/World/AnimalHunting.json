@@ -7,6 +7,15 @@
   "pastureCapacity": 16,
   "livestockMaturityDays": 3,
   "livestockBirthDays": 5,
+  "domesticSpecies": [
+    "sheep",
+    "cow",
+    "pig",
+    "goat",
+    "duck",
+    "chicken",
+    "horse"
+  ],
   "species": [
     {
       "id": "deer",
@@ -62,6 +71,34 @@
       "health": 120,
       "fleeSpeed": 3.2,
       "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "goat",
+      "health": 100,
+      "fleeSpeed": 3.2,
+      "fleeDistance": 15,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "duck",
+      "health": 35,
+      "fleeSpeed": 2.2,
+      "fleeDistance": 10,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "chicken",
+      "health": 25,
+      "fleeSpeed": 2.2,
+      "fleeDistance": 10,
+      "fleeGameSeconds": 360
+    },
+    {
+      "id": "horse",
+      "health": 200,
+      "fleeSpeed": 5,
+      "fleeDistance": 20,
       "fleeGameSeconds": 360
     }
   ]

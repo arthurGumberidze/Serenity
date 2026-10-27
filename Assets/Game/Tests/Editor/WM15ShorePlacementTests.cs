@@ -14,7 +14,7 @@ namespace Game.Tests.Editor
 {
     public sealed class WM15ShorePlacementTests
     {
-        [Test] public void PreparedIndexOffersFourNearbyChoicesPerLakeWithoutTerrainRecalculation()
+        [Test] public void PreparedIndexOffersSixIndependentPlacesPerLakeWithoutTerrainRecalculation()
         {
             var world=TiledWorldDefinitionLoader.LoadProposedWorldMap();
             var heights=new TiledWorldHeightSampler(world,1380062136);
@@ -29,6 +29,12 @@ namespace Game.Tests.Editor
             {
                 foreach(var lake in world.MapData.Hydrology.Lakes)
                 {
+                    var fixedPlaces=index.Candidates.Where(x=>x.WaterBodyId==lake.Id).ToArray();
+                    Assert.That(fixedPlaces.Length,Is.EqualTo(6),lake.Id);
+                    var occupied=new HashSet<GridCoordinate>();
+                    foreach(var place in fixedPlaces)
+                        foreach(var cell in definition.Footprint.EnumerateCells(place.Anchor,place.Facing))
+                            Assert.That(occupied.Add(cell),Is.True,"Overlapping fishing places on "+lake.Id);
                     var found=0;
                     foreach(var point in lake.Shoreline.Points.Where((_,i)=>i%8==0))
                     {
@@ -43,6 +49,7 @@ namespace Game.Tests.Editor
                     TestContext.WriteLine(lake.Id+" nearby shore choices="+found);
                     Assert.That(found,Is.GreaterThanOrEqualTo(4),lake.Id);
                 }
+                Assert.That(index.Candidates.Any(x=>x.WaterBodyId==world.MapData.Hydrology.MainRiver.Id),Is.True);
             }
             finally{UnityEngine.Object.DestroyImmediate(host);}
         }

@@ -83,6 +83,9 @@ namespace Game.Presentation.Buildings
         public event Action<Building, BuildingPresenter> BuildingPlaced;
         public event Action BuildMenuRequested;
 
+        private bool IsShoreFacility() => activeDefinition != null &&
+            (activeDefinition.Id.ToString()=="fishing_camp" || activeDefinition.Id.ToString()=="fishing_pier");
+
         public void Configure(LocalGameplayInputSource source, WorldPointerRaycaster worldRaycaster,
             BuildingPresentationCatalog presentationCatalog, float configuredGridSize, Vector3 origin)
         {
@@ -135,7 +138,7 @@ namespace Game.Presentation.Buildings
         public bool TryMovePreviewToWorldPoint(Vector3 worldPoint)
         {
             if (!IsActive) return false;
-            if (activeDefinition.Id == new BuildingDefinitionId("fishing_camp"))
+            if (IsShoreFacility())
             {
                 var snapped = ShoreSnap?.Invoke(worldPoint);
                 if (snapped.HasValue)
@@ -172,8 +175,8 @@ namespace Game.Presentation.Buildings
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
                 : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
-                    activeDefinition.Id.ToString() == "fishing_camp" ? 4.5f : (float?)null, activeDefinition.Id.ToString()=="gate",
-                    activeDefinition.Id.ToString() == "fishing_camp");
+                    IsShoreFacility() ? 4.5f : (float?)null, activeDefinition.Id.ToString()=="gate",
+                    IsShoreFacility());
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells, previewEvaluation.ApproachCells);
@@ -201,7 +204,7 @@ namespace Game.Presentation.Buildings
             if (zoneDragActive) return; // An active drag owns its world-grid direction.
             var center = previewObject != null ? previewObject.transform.position : spawner.GridToWorld(previewCoordinate);
             orientation = orientation.RotateClockwise();
-            if (activeDefinition.Id.ToString() == "fishing_camp") shoreRotationOffset = (shoreRotationOffset + 1) % 4;
+            if (IsShoreFacility()) shoreRotationOffset = (shoreRotationOffset + 1) % 4;
             TryMovePreviewToWorldPoint(center);
         }
 

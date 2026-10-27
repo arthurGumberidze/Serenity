@@ -19,6 +19,8 @@ namespace Game.Presentation.Production
         private bool dedicatedPasture;
         private string displayedRecipe;
         private Game.Domain.World.AnimalHealthRegistry animals;
+        public float WidthMeters => width;
+        public float DepthMeters => depth;
         public Vector3 GrazingPosition(int slot) => transform.TransformPoint(new Vector3(
             ((slot % 4 + .5f) / 4f - .5f) * width * .75f, 0f,
             ((slot / 4 + .5f) / 4f - .5f) * depth * .75f));

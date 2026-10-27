@@ -14,6 +14,7 @@ namespace Game.Infrastructure
         public int accuracyPermille;
         public int pastureCapacity, livestockMaturityDays, livestockBirthDays;
         public Species[] species;
+        public string[] domesticSpecies;
         public static System.Collections.Generic.IReadOnlyDictionary<string, WildlifeEscapePolicy> LoadEscape()
         {
             var data = JsonUtility.FromJson<AnimalHuntingConfig>(Resources.Load<TextAsset>("World/AnimalHunting").text);
@@ -28,7 +29,7 @@ namespace Game.Infrastructure
             return new AnimalHuntingPolicy(data.arrowDamage, TimeSpan.FromSeconds(data.drawGameSeconds).Ticks,
                 TimeSpan.FromSeconds(data.flightGameSeconds).Ticks, data.rangeMeters, data.accuracyPermille,
                 data.species.ToDictionary(x => x.id, x => x.health), data.pastureCapacity,
-                data.livestockMaturityDays, data.livestockBirthDays);
+                data.livestockMaturityDays, data.livestockBirthDays, data.domesticSpecies);
         }
     }
 }
