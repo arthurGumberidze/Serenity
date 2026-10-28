@@ -92,7 +92,8 @@ namespace Game.Domain.Buildings
     public sealed class BuildingWorldSaveState
     {
         public BuildingWorldSaveState(IEnumerable<BuildingState> buildings,
-            IEnumerable<WorldResourcePileState> worldPiles, long lastFireTick)
+            IEnumerable<WorldResourcePileState> worldPiles, long lastFireTick,
+            SettlementFacilitySaveState facilities = null)
         {
             if (lastFireTick < 0) throw new ArgumentOutOfRangeException(nameof(lastFireTick));
             var buildingArray = (buildings ?? Array.Empty<BuildingState>()).OrderBy(x => x.Id).ToArray();
@@ -104,9 +105,14 @@ namespace Game.Domain.Buildings
             Buildings = new ReadOnlyCollection<BuildingState>(buildingArray);
             WorldPiles = new ReadOnlyCollection<WorldResourcePileState>(pileArray);
             LastFireTick = lastFireTick;
+            Facilities = facilities;
         }
         public IReadOnlyList<BuildingState> Buildings { get; }
         public IReadOnlyList<WorldResourcePileState> WorldPiles { get; }
         public long LastFireTick { get; }
+        public SettlementFacilitySaveState Facilities { get; }
+
+        public BuildingWorldSaveState WithFacilities(SettlementFacilitySaveState facilities) =>
+            new BuildingWorldSaveState(Buildings, WorldPiles, LastFireTick, facilities);
     }
 }

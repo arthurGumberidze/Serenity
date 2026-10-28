@@ -120,6 +120,12 @@ namespace Game.Presentation.Buildings
         {
             EnsureInitialized();
             CancelPlacement();
+            // Deprecated prototype content is not a player-buildable Stone Age option.
+            if (definitionId.ToString() == "primitive_shelter")
+            {
+                LastConstructionFailure = ConstructionFailureReason.LockedByResearch;
+                return false;
+            }
             var definition = catalog.ResolveDefinition(definitionId);
             if (construction != null && !construction.IsBuildingUnlocked(definition.Id))
             {

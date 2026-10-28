@@ -172,6 +172,56 @@ namespace Game.Simulation.AI
         public void Cancel() => IsFinished = true;
     }
 
+    internal sealed class DrinkActionExecution : IUtilityActionExecution
+    {
+        private readonly Tier1AiAgentState agent;
+        private readonly ITier1MovementDriver movement;
+        private readonly TimeSpan timeout;
+        private TimeSpan elapsed;
+
+        public DrinkActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
+            WorldPosition well, TimeSpan movementTimeout)
+        {
+            this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
+            this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
+            timeout = movementTimeout;
+            agent.SetAction(UtilityActionKind.Drink, AiActionPhase.MoveToTarget);
+            movement.MoveTo(well, 0.9f);
+        }
+
+        public UtilityActionKind Kind => UtilityActionKind.Drink;
+        public AiActionPhase Phase { get; private set; } = AiActionPhase.MoveToTarget;
+        public bool IsFinished { get; private set; }
+        public bool Succeeded { get; private set; }
+        public bool IsInterruptible => true;
+        public bool IsValid => !IsFinished && movement.IsAvailable;
+
+        public void Tick(TimeSpan simulationDelta)
+        {
+            if (IsFinished) return;
+            elapsed += simulationDelta;
+            agent.UpdatePosition(movement.CurrentPosition);
+            if (movement.State == MovementState.Failed || elapsed >= timeout) { Finish(false); return; }
+            if (movement.State != MovementState.Arrived) return;
+            movement.Stop();
+            Phase = AiActionPhase.Drinking;
+            agent.SetPhase(Phase);
+            agent.Needs.SatisfyThirst(1d);
+            Finish(true);
+        }
+
+        public void Cancel() => Finish(false);
+
+        private void Finish(bool success)
+        {
+            movement.Stop();
+            IsFinished = true;
+            Succeeded = success;
+            Phase = success ? AiActionPhase.Completed : AiActionPhase.Failed;
+            agent.SetPhase(Phase);
+        }
+    }
+
     internal sealed class HaulActionExecution : IUtilityActionExecution
     {
         private readonly Tier1AiAgentState agent;
@@ -428,6 +478,14 @@ namespace Game.Simulation.AI
                     }
                     break;
                 case AiActionPhase.Working:
+                    if (job.Task.RecipeId.ToString() == "fish_water" &&
+                        production.ManualFishingAccess != null &&
+                        !production.ManualFishingAccess(job.Task.SiteId))
+                    {
+                        production.Cancel(job.Task.Id);
+                        Finish();
+                        break;
+                    }
                     completion = production.AdvanceTask(job.Task.Id, TimeSpan.FromTicks(checked(
                         Hunting && production.Animals.IsAlive(job.Task.SiteId) ? simulationDelta.Ticks :
                         simulationDelta.Ticks * workRatePerThousand / 1000L)));

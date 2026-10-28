@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Game.Presentation.Buildings;
 using Game.Domain.Buildings;
+using Game.Domain.Resources;
 using Game.Presentation.Environment;
 using Game.Presentation.Production;
 using UnityEditor;
@@ -88,13 +89,19 @@ namespace Game.Infrastructure.Editor
             crops.PastureShelter=Save(CleanModel("Assets/RTSToonBuildings/Prefabs/Buildings/Stables.prefab","Pasture shelter"),"PastureShelter");
             EditorUtility.SetDirty(crops);
             var catalog=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(U08BuildingFoundation.CatalogPath);
-            if(catalog.Entries.Any(x=>x.DefinitionId=="animal_pasture"))return;
             var garden=catalog.Entries.First(x=>x.DefinitionId=="primitive_garden");
-            var entry=JsonUtility.FromJson<BuildingPresentationCatalog.Entry>(JsonUtility.ToJson(garden));
+            var entry=catalog.Entries.FirstOrDefault(x=>x.DefinitionId=="animal_pasture") ??
+                JsonUtility.FromJson<BuildingPresentationCatalog.Entry>(JsonUtility.ToJson(garden));
             entry.Configure("animal_pasture","Загон для скота",BuildingCategory.Food,8,8,garden.Prefab,BuildingPlacementMode.Grid,true)
                 .ConfigureMetadata(BuildingEra.StoneAge,"Просторный загон с навесом и кормушкой. Растяните от 8×8 до 24×24 клеток.","building_primitive_garden")
-                .ConfigurePlacement(BuildingSpatialForm.Zone,BuildingPlacementConstraint.OwnedTerritory,4500);
-            catalog.Configure(catalog.Entries.Concat(new[]{entry}),catalog.DefaultDefinitionId.ToString());EditorUtility.SetDirty(catalog);
+                .ConfigurePlacement(BuildingSpatialForm.Zone,BuildingPlacementConstraint.OwnedTerritory,4500)
+                .ConfigureEconomy(new[]
+                {
+                    new BuildingPresentationCatalog.Entry.CostEntry().Configure("wood_log", 8),
+                    new BuildingPresentationCatalog.Entry.CostEntry().Configure("plant_fiber", 6)
+                }, 256, new[] { ResourceCategory.Food, ResourceCategory.Other })
+                .ConfigureWorkplace(2);
+            catalog.Configure(catalog.Entries.Where(x=>x.DefinitionId!="animal_pasture").Concat(new[]{entry}),catalog.DefaultDefinitionId.ToString());EditorUtility.SetDirty(catalog);
         }
         public static void PrepareMountainArt()
         {

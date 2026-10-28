@@ -13,12 +13,6 @@ MonoBehaviour:
   m_Name: ResourceCatalog
   m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Resources.ResourceCatalogAsset
   entries:
-  - id: carrot
-    displayName: Carrot
-    category: 1
-  - id: cabbage
-    displayName: Cabbage
-    category: 1
   - id: wood_log
     displayName: Wood Logs
     category: 0
@@ -34,6 +28,15 @@ MonoBehaviour:
   - id: carcass
     displayName: Animal Carcass
     category: 2
+  - id: dressed_carcass
+    displayName: Dressed Carcass
+    category: 2
+  - id: field_dressed_carcass
+    displayName: Field-Dressed Carcass
+    category: 2
+  - id: raw_hide
+    displayName: Raw Hide
+    category: 2
   - id: bone
     displayName: Bone
     category: 2
@@ -42,6 +45,12 @@ MonoBehaviour:
     category: 2
   - id: berries
     displayName: Berries
+    category: 1
+  - id: carrot
+    displayName: Carrot
+    category: 1
+  - id: cabbage
+    displayName: Cabbage
     category: 1
   - id: iron_ore
     displayName: Iron Ore
@@ -67,6 +76,45 @@ MonoBehaviour:
   - id: dried_meat
     displayName: Dried Meat
     category: 1
+  - id: spoiled_food
+    displayName: Spoiled Food
+    category: 2
+  - id: wheat
+    displayName: Wheat
+    category: 1
+  - id: wool
+    displayName: Wool
+    category: 2
+  - id: milk
+    displayName: Milk
+    category: 1
+  - id: eggs
+    displayName: Eggs
+    category: 1
+  - id: feathers
+    displayName: Feathers
+    category: 2
+  - id: animal_feed
+    displayName: Animal Feed
+    category: 2
+  - id: medicine
+    displayName: Herbal Medicine
+    category: 2
+  - id: leather_clothing
+    displayName: Leather Clothing
+    category: 2
+  - id: stone_spear
+    displayName: Stone Spear
+    category: 2
+  - id: wooden_shield
+    displayName: Wooden Shield
+    category: 2
+  - id: combat_bow
+    displayName: Combat Bow
+    category: 2
+  - id: arrows
+    displayName: Arrows
+    category: 2
   - id: water
     displayName: Water
     category: 1

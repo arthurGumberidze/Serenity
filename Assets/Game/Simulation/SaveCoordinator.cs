@@ -55,6 +55,7 @@ namespace Game.Simulation
         private readonly MilitaryAttackCommandService militaryAttack;
         private readonly DiagnosticService diagnostics;
         private readonly WildlifePopulationService wildlife;
+        private readonly SettlementFacilityService facilities;
         private readonly string expectedWorldGenerationId;
         private readonly string expectedSaveGenerationId;
         public StableEntityId SessionId { get; private set; }
@@ -73,7 +74,8 @@ namespace Game.Simulation
             TierManager tierManager = null, MilitaryTrainingService militaryTrainingService = null,
             SettlementFlagCaptureService settlementCaptureService = null,
             MilitaryAttackCommandService militaryAttackService = null, DiagnosticService diagnosticService = null,
-            string requiredSaveGenerationId = null, WildlifePopulationService wildlifePopulationService = null)
+            string requiredSaveGenerationId = null, WildlifePopulationService wildlifePopulationService = null,
+            SettlementFacilityService settlementFacilityService = null)
         {
             if (!sessionId.IsValid) throw new ArgumentException("Invalid session ID.", nameof(sessionId));
             SessionId = sessionId;
@@ -102,6 +104,7 @@ namespace Game.Simulation
             militaryAttack = militaryAttackService;
             diagnostics = diagnosticService;
             wildlife = wildlifePopulationService;
+            facilities = settlementFacilityService;
             expectedWorldGenerationId = connectedWorldService?.Layout.GenerationId ??
                 ConnectedWorldContract.GenerationId;
             expectedSaveGenerationId = requiredSaveGenerationId;
@@ -119,10 +122,13 @@ namespace Game.Simulation
         public SaveSnapshot Capture()
         {
             var version = wildlife == null ? SaveSnapshot.CurrentVersion : SaveSnapshot.WorldMapV2Version;
+            var buildingWorld = buildingDamage?.CaptureState();
+            if (buildingWorld != null && facilities != null)
+                buildingWorld = buildingWorld.WithFacilities(facilities.CaptureState());
             var snapshot = new SaveSnapshot(version, SessionId, Clock.State,
                 Clock.BiologicalMultiplier, production?.CaptureState(), research?.CaptureState(),
                 succession?.CaptureState(), healthFamily?.CaptureState(), weather?.CaptureState(), combat?.CaptureState(),
-                military?.CaptureState(), playerControl?.CaptureState(), buildingDamage?.CaptureState(),
+                military?.CaptureState(), playerControl?.CaptureState(), buildingWorld,
                 globalMap?.CaptureState(), strategicAi?.CaptureState(), events?.CaptureState(), campaign?.CaptureState(),
                 appearance?.CaptureState(), work?.CaptureState(), connectedWorld?.CaptureState(),
                 domestic?.CaptureState(), CaptureCharacterRuntime(), CaptureMilitaryCampaign(), diagnostics?.CaptureState(),
@@ -188,6 +194,10 @@ namespace Game.Simulation
             if (snapshot.BuildingWorld != null && buildingDamage == null)
                 throw new InvalidOperationException("This save contains building state but no building-damage service is attached.");
             if (snapshot.BuildingWorld != null) buildingDamage.RestoreState(snapshot.BuildingWorld);
+            if (snapshot.BuildingWorld?.Facilities != null && facilities == null)
+                throw new InvalidOperationException("This save contains facility state but no facility service is attached.");
+            if (snapshot.BuildingWorld?.Facilities != null) facilities.RestoreState(snapshot.BuildingWorld.Facilities);
+            else facilities?.ReconcileHousing();
             if (snapshot.GlobalMap != null && globalMap == null)
                 throw new InvalidOperationException("This save contains global-map state but no global-map service is attached.");
             if (snapshot.GlobalMap != null) globalMap.RestoreState(snapshot.GlobalMap);

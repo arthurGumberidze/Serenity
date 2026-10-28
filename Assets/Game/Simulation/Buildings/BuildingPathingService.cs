@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
 using Game.Domain.Buildings;
+using Game.Domain.Combat;
 
 namespace Game.Simulation.Buildings
 {
@@ -14,6 +15,9 @@ namespace Game.Simulation.Buildings
         private readonly BuildingOccupancyGrid occupancy;
         private readonly Func<BuildingDefinitionId, BuildingDefinition> definitions;
         private readonly HashSet<StableEntityId> openGates = new HashSet<StableEntityId>();
+        private readonly Dictionary<StableEntityId, GateAccessMode> gateModes = new Dictionary<StableEntityId, GateAccessMode>();
+        private readonly Dictionary<StableEntityId, StableEntityId> detainedTravelers = new Dictionary<StableEntityId, StableEntityId>();
+        private readonly HashSet<StableEntityId> allowedTravelersOnce = new HashSet<StableEntityId>();
         private readonly HashSet<StableEntityId> releasedDestroyed = new HashSet<StableEntityId>();
 
         public BuildingPathingService(BuildingRegistry buildingRegistry, BuildingOccupancyGrid occupancyGrid,
@@ -26,6 +30,52 @@ namespace Game.Simulation.Buildings
 
         public event Action<StableEntityId,bool> GateChanged;
         public bool IsGateOpen(StableEntityId buildingId) => openGates.Contains(buildingId);
+        public IReadOnlyDictionary<StableEntityId, StableEntityId> DetainedTravelers => detainedTravelers;
+        public Func<CombatSideId, CombatSideId, bool> AreAllied { get; set; }
+
+        public GateAccessMode GetGateAccessMode(StableEntityId buildingId) =>
+            gateModes.TryGetValue(buildingId, out var mode) ? mode : GateAccessMode.Closed;
+
+        public bool SetGateAccessMode(StableEntityId buildingId, GateAccessMode mode)
+        {
+            if (!Enum.IsDefined(typeof(GateAccessMode), mode) ||
+                !buildings.TryGet(buildingId, out var building) || building.DefinitionId != GateDefinition ||
+                !building.IsOperational) return false;
+            gateModes[buildingId] = mode;
+            return SetGateOpen(buildingId, mode == GateAccessMode.Open || mode == GateAccessMode.AlliesOnly);
+        }
+
+        public GatePassageResult EvaluatePassage(StableEntityId buildingId, StableEntityId travelerId,
+            CombatSideId? travelerSide)
+        {
+            if (!travelerId.IsValid || !buildings.TryGet(buildingId, out var gate) ||
+                gate.DefinitionId != GateDefinition || !gate.IsOperational) return GatePassageResult.Denied;
+            if (allowedTravelersOnce.Remove(travelerId)) return GatePassageResult.Allowed;
+            switch (GetGateAccessMode(buildingId))
+            {
+                case GateAccessMode.Open:
+                    return GatePassageResult.Allowed;
+                case GateAccessMode.Closed:
+                case GateAccessMode.Nobody:
+                    return GatePassageResult.Denied;
+                case GateAccessMode.AlliesOnly:
+                    if (travelerSide.HasValue && (travelerSide.Value == gate.OwnerSideId ||
+                        (AreAllied?.Invoke(gate.OwnerSideId, travelerSide.Value) ?? false)))
+                        return GatePassageResult.Allowed;
+                    if (travelerSide.HasValue) return GatePassageResult.Denied;
+                    detainedTravelers[travelerId] = buildingId;
+                    return GatePassageResult.DetainedAwaitingPlayer;
+                default:
+                    throw new InvalidOperationException("Unsupported gate access mode.");
+            }
+        }
+
+        public GatePassageResult ResolveDetention(StableEntityId travelerId, bool allowPass)
+        {
+            if (!detainedTravelers.Remove(travelerId)) return GatePassageResult.Denied;
+            if (allowPass) allowedTravelersOnce.Add(travelerId);
+            return allowPass ? GatePassageResult.Allowed : GatePassageResult.Denied;
+        }
 
         public bool SetGateOpen(StableEntityId buildingId, bool open)
         {
@@ -56,6 +106,9 @@ namespace Game.Simulation.Buildings
             {
                 if (releasedDestroyed.Add(building.Id)) occupancy.Release(cells, building.Id);
                 openGates.Remove(building.Id);
+                gateModes.Remove(building.Id);
+                foreach (var traveler in detainedTravelers.Where(x => x.Value == building.Id).Select(x => x.Key).ToArray())
+                    detainedTravelers.Remove(traveler);
                 return;
             }
             releasedDestroyed.Remove(building.Id);
@@ -67,6 +120,10 @@ namespace Game.Simulation.Buildings
         {
             openGates.RemoveWhere(id => !buildings.TryGet(id, out var building) || !building.IsOperational ||
                 building.DefinitionId != GateDefinition);
+            foreach (var id in gateModes.Keys.Where(id => !buildings.TryGet(id, out var building) ||
+                         !building.IsOperational || building.DefinitionId != GateDefinition).ToArray()) gateModes.Remove(id);
+            detainedTravelers.Clear();
+            allowedTravelersOnce.Clear();
             releasedDestroyed.Clear();
             foreach (var building in buildings.All.OrderBy(x => x.Id)) Reconcile(building);
         }

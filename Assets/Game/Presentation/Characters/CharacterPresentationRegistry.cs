@@ -11,6 +11,7 @@ namespace Game.Presentation.Characters
             new Dictionary<StableEntityId, CharacterPresenter>();
 
         public int Count => presenters.Count;
+        public IEnumerable<CharacterPresenter> Active => presenters.Values;
 
         public void Register(StableEntityId characterId, CharacterPresenter presenter)
         {

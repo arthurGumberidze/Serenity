@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## D-214 — Living buildings use persistent assignments and bounded autonomous policies (2026-10-29)
+
+Building behavior is canonical domain/simulation state, not presentation-only MonoBehaviour state.
+`Work` establishes a persistent profession/workplace; direct orders are temporary and return the resident to
+that profession. Housing relocates an awaiting family atomically only when one home can hold every living
+member. Production buildings own targets/policies and internal buffers, while residents and haulers execute
+physical work. New saves persist these policies; compatibility with pre-feature saves is not a requirement.
+
+Gate passage is side-aware: own/allied travelers pass `AlliesOnly`, hostiles are denied, and neutral travelers
+are detained until the player chooses once. Doctors are deterministically distributed across opposing shifts.
+Horse riding is a derived one-to-one assignment from living adults and mature horses, avoiding redundant save
+state. Rank changes only maximum military health/damage; current body-part HP never rises during promotion.
+Concrete building upgrade chains remain intentionally paused and are not synthesized from incomplete design.
+Further startup optimization was stopped at the user's request and is not part of this completion claim.
+
 ## D-213 — Asset availability, static references and runtime use are distinct (2026-10-28)
 
 The full library audit records archive presence, imported GUID/path matches, project references and
@@ -8,6 +23,22 @@ WM15 copies selected art with remapped GUIDs, preprocesses heightmaps and resolv
 No new runtime architecture or dependency is approved by this review. Existing building/prop libraries
 are the first candidates; late-era assets and alternative pipelines remain deferred. See
 docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md. WM15 acceptance and validation gates are unchanged.
+
+## D-211 — Alpine terrain uses authored StampIT data and bounded Winter Environment presentation (2026-10-28)
+
+The canonical world height sampler remains pure C# and deterministic. A generated, compact 129×129 sample
+of the approved StampIT `Alpine Mountains 23` heightfield supplies the alpine landmark; runtime Unity APIs
+and Asset Store objects do not become domain dependencies. Snow coverage, footprints, vegetation, scanned
+rocks, fog and snowfall remain bounded presentation adapters over canonical terrain and navigation.
+
+Winter Environment is admitted in full as user-approved content, with its supplied URP template selected
+for this URP project. Props are instantiated once during world loading and use no per-object gameplay
+rules. The scenic outer shell is still non-canonical and collider-free; it is lowered behind the hero
+mountain and receives the same triplanar rock/snow language to avoid a visible world-edge wall.
+
+Visual capture is an Editor-only one-shot route, not a test or Player build. The user explicitly requires
+visual approval before validation/build work, so WM15 remains IN_PROGRESS and no completion is claimed.
+
 
 ## D-190 WM15 foliage repair reuses mesh LODs without changing world density (2026-10-24)
 
@@ -1977,3 +2008,48 @@ or menu from the placeholder crop recipe.
 Mountain snow is presentation-only and derived from world height, upward normal and bounded procedural breakup.
 Gentle high shelves accumulate bright textured snow while steep faces retain the existing rock material. Fish
 stock remains canonical: smooth school steering and solitary silver fish are bounded visual adapters only.
+
+## D-212 — Profiled imported water and composite alpine presentation (2026-10-28)
+
+The approved Procedural Water Shader URP variant replaces the project-authored StarterWater material for local
+water and the horizon sea. One terrain-clipped water mesh may expose river, ordinary lake, mountain lake and
+marsh submeshes with separate disposable materials; classification reads the existing water-body identity and
+art-region projection. Hydrology polygons, surface levels, fish stocks, shoreline placement, deep-water
+navigation exclusions and saves remain unchanged. The imported WebGPU system is retained but is not a second
+active water authority; only its Unity 6000.6 integer query-key compatibility was repaired.
+
+The alpine presentation is composite: the existing StampIT-derived playable terrain remains collision and
+walking authority, while Snow Mountain and Winter Mountains & Stamps meshes are collider-free visual massifs
+converted to URP materials. Generated ice-floe props are removed rather than treated as water or navigation.
+All of this remains a visual candidate; tests and Player build await explicit user acceptance.
+
+## D-213 — Selective Terrain Sample ridges and continuous wetland blending (2026-10-28)
+
+The user-provided Unity `Terrain Asset Pack | Terrain Sample` is an approved WM15 source, but its 1.7 GB
+package is not a blanket runtime import. Retain the original archive and selectively admit only the heightmaps
+used by the candidate: `Ridge05`, `Ridge06` and `Mountain06`. Generate small deterministic pure-domain sample
+grids from those licensed sources and composite them over the established StampIT alpine base. The Unity
+Terrain remains collision, walking, placement and snow-track authority; decorative mountain meshes remain
+collider-free. Preserve the mountain-lake bowl and walkable snow apron rather than replacing the whole region.
+
+Marsh appearance is a continuous presentation field, not a hydrology subdivision. Store a normalized wetland
+coefficient in generated water vertex color and interpolate the Procedural Water shader's color, absorption,
+opacity, refraction, reflection, specular response and wave strength. Do not create visible material rings or
+alter water-body identity, levels, fishing stock, navigation exclusion or save data. Increase lake absorption
+and minimum alpha enough to avoid globally transparent water while retaining depth readability.
+
+Visual approval remains separate from validation. The hidden Editor-only capture may stop after the completed
+terrain projection and does not need later gameplay catalogs; this prevents the unrelated current `draw_water`
+catalog mismatch from blocking art review. Tests and a Player build still wait for explicit user approval.
+
+## D-214 — Accepted alpine lock and scoped ordinary-water correction (2026-10-28)
+
+The user accepts the Terrain Sample alpine mountain and its mountain lake. Freeze their height composition,
+snow treatment, camera-review silhouette and `MountainLake` water profile during the remaining WM15 water
+work. Ordinary lakes and marsh water remain independently adjustable presentation profiles.
+
+For the current Procedural Water shader, increasing `_RefractionStrength` blends toward authored water colour;
+lowering it exposes more scene colour and can read as greater transparency. Correct ordinary lakes with that
+actual shader meaning plus higher absorption/minimum alpha. Retain the continuous per-vertex wetland field,
+but make its core distinctly dark olive and opaque and widen its smooth river transition. Do not restore
+discrete submesh/material bands. No Unity process, test, capture or build may run until the user authorizes it.

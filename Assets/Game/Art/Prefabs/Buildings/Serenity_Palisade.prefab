@@ -310,18 +310,6 @@ PrefabInstance:
       value: Finished authored model
       objectReference: {fileID: 0}
     - target: {fileID: 4557720791066418, guid: c6b771275223a97468bae7983cd0d365, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4557720791066418, guid: c6b771275223a97468bae7983cd0d365, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4557720791066418, guid: c6b771275223a97468bae7983cd0d365, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4557720791066418, guid: c6b771275223a97468bae7983cd0d365, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}

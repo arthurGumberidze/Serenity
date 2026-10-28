@@ -310,6 +310,7 @@ namespace Game.Infrastructure
                 else yield return next;
             }
             IsInitialized = true;
+            TiledWorld?.BeginBackgroundTilePreparation();
             Destroy(loadingOverlay);
             Start();
             Debug.Log("WM15_BOOT gameplay ready");
@@ -480,16 +481,26 @@ namespace Game.Infrastructure
                 Characters.Add(character);
                 Inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad, character.Id), Resources, 12));
             }
+            loadingOverlay.SetStage("Заселяем семьи…");
+            yield return null;
             Appearances.RestoreState(NewGame.Appearances);
             MaleDemoCharacter = Characters.Get(NewGame.MonarchId);
             FemaleDemoCharacter = Characters.Get(NewGame.SpouseId);
             FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
-            Domestic = new DomesticService(Characters, Buildings, HealthFamily);
+            Domestic = new DomesticService(Characters, Buildings, HealthFamily, new[]
+            {
+                new BuildingDefinitionId("stone_age_hut"),
+                new BuildingDefinitionId("clan_house"),
+                new BuildingDefinitionId("chief_hut")
+            });
             Facilities = new SettlementFacilityService(Characters, Buildings,
-                id => buildingCatalog.ResolveDefinition(id), HealthFamily);
+                id => buildingCatalog.ResolveDefinition(id), HealthFamily, Inventories);
+            Facilities.SetRulingDynasty(MaleDemoCharacter.DynastyId);
             RegisterStarterDomestic();
             SpawnDemoPile("berries", 60, new GridCoordinate(-8, -4), new Color(0.6f, 0.12f, 0.18f), 4);
+            loadingOverlay.SetStage("Создаём жителей…");
+            yield return null;
             demoPresenters.Add(CharacterSpawner.Spawn(MaleDemoCharacter,
                 StartingResidentPosition(0, new Vector3(-3f, 0f, 0f)), Quaternion.identity));
             demoPresenters.Add(CharacterSpawner.Spawn(FemaleDemoCharacter,
@@ -499,6 +510,17 @@ namespace Game.Infrastructure
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
+            Production.BuildingWorkAllowed = (id, tick) =>
+            {
+                var policy = Facilities.GetPolicy(id);
+                if (policy.WorkPaused) return false;
+                var hour = (int)((tick % TimeSpan.TicksPerDay) / TimeSpan.TicksPerHour);
+                return policy.Shift == WorkShiftKind.Day ? hour >= 6 && hour < 18 : hour < 6 || hour >= 18;
+            };
+            Production.BuildingWorkPriority = id => (int)Facilities.GetPolicy(id).Priority;
+            Production.BuildingHasAssignedWorker = id => Facilities.WorkplaceAssignments.Values.Contains(id);
+            Production.AssignedWorkplace = id => Facilities.WorkplaceAssignments.TryGetValue(id, out var workplace)
+                ? workplace : (StableEntityId?)null;
             Production.Animals.Configure(AnimalHuntingConfig.Load());
             Production.UseGroundOutputs(WorldPiles, position => new GridCoordinate(
                 Mathf.RoundToInt((position.X - buildingGridOrigin.x) / buildingGridSize),
@@ -516,9 +538,13 @@ namespace Game.Infrastructure
             var worksite = gameObject.AddComponent<WorksitePresentation>();
             worksite.Initialize(this);
             gameObject.AddComponent<WorldWorkApproaches>().Initialize(this);
+            loadingOverlay.SetStage("Расселяем животных и ресурсы…");
+            yield return null;
             WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
                 Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
+            loadingOverlay.SetStage("Подключаем жителей к работам…");
+            yield return null;
             if (WorldDefinition.MapData == null)
             {
                 RegisterStarterTrees();
@@ -560,12 +586,24 @@ namespace Game.Infrastructure
                         Buildings.TryGet(owner.Id, out var construction))
                         ConstructionSites.NotifyDelivery(construction);
                 });
+            aiWorld.DrinkingWell = origin => Buildings.All.Where(x => x.IsOperational &&
+                    x.DefinitionId == new BuildingDefinitionId("well"))
+                .Select(x =>
+                {
+                    var definition = buildingCatalog.ResolveDefinition(x.DefinitionId);
+                    var point = BuildingSpawner.GridToWorld(x.Coordinate, definition, x.Orientation);
+                    return new WorldPosition(point.x, WorldHeight.SampleHeight(point.x, point.z), point.z);
+                })
+                .OrderBy(x => x.DistanceSquared(origin)).Cast<WorldPosition?>().FirstOrDefault();
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily, domesticService: Domestic);
             AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.NeedsOnly);
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler, () =>
                 Weather.GetWeatherAtCalendarTick(Clock.State.CalendarTicks).Modifiers.MovementPerThousand);
+            Production.ReconcileHorseRiders(Characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive)
+                .Select(x => x.Id));
+            AiRuntime.SetIndividualMovementModifierProvider(Production.GetResidentMovementPerThousand);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.8d));
             ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
@@ -635,6 +673,7 @@ namespace Game.Infrastructure
             Combat = new CombatService(Characters, HealthFamily, new Tier1CombatPositionProvider(AiRuntime),
                 worldSeed, Tiers);
             AiRuntime.SetCombatActivityProvider(characterId => Combat.TryGetCombatant(characterId, out _));
+            AiRuntime.SetMovementRouteValidator(GateAllowsMovement);
             foreach (var character in playerCharacters) Combat.RegisterSide(character.Id, new CombatSideId("player"));
             CombatCommands = new CombatCommandService(Combat, CanCommandResident);
             HealthFamily.ChildBorn += OnChildBorn;
@@ -713,10 +752,25 @@ namespace Game.Infrastructure
                 newUnitRepresentation: MilitaryUnitRepresentationMode.Aggregate, newUnitLocation: "enemy_settlement");
             MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
                 MilitaryUnits, Appearances, worldSeed);
+            MilitaryTraining.IsRuler = id => PlayerRealm.CurrentRulerId == id;
+            Func<MilitaryTrainingRecordState, bool> canTrain = record =>
+                Buildings.TryGet(record.BarracksId, out var trainingBuilding) && trainingBuilding.IsOperational &&
+                trainingBuilding.OwnerSideId == record.SideId &&
+                Characters.TryGet(record.CharacterId, out var trainee) && trainee.LifeState == CharacterLifeState.Alive &&
+                !HealthFamily.GetCapabilities(record.CharacterId).IsIncapacitated;
+            MilitaryTraining.IsAtBarracks = canTrain;
+            StarterEnemyAi.Training.IsAtBarracks = canTrain;
             MilitaryAttack = new MilitaryAttackCommandService(Characters, Buildings, MilitaryUnits,
                 MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed, CanCommandResident);
             SettlementCapture = new SettlementFlagCaptureService(worldSeed, GlobalMap, Buildings, BuildingDamage,
                 Characters, MilitaryUnits);
+            SettlementCapture.BindCapturedSoldiers((ids, barracksId, winner, tick) =>
+            {
+                MilitaryTraining.RemoveMilitaryHistory(ids);
+                StarterEnemyAi.Training.RemoveMilitaryHistory(ids);
+                var destination = winner.Value == "player" ? MilitaryTraining : StarterEnemyAi.Training;
+                destination.RegisterCapturedPrivates(ids, barracksId, winner, tick);
+            });
             Diagnostics = new DiagnosticService(worldSeed, Research, Resources, Inventories, Buildings,
                 Characters, Appearances, HealthFamily, Domestic, MilitaryUnits, MilitaryTraining, Tiers, Combat,
                 () => Clock.State.CalendarTicks, () => Clock.State.BiologicalTicks,
@@ -744,7 +798,9 @@ namespace Game.Infrastructure
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
             NeighbourEconomy?.BindActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
             Combat.BindMovementSuppression(PlayerControl);
-            Combat.BindCombatModifier(MilitaryUnits.ConsumeCombatSupplyForCharacter);
+            Combat.BindCombatModifier((characterId, tick) => Math.Min(2000,
+                MilitaryUnits.ConsumeCombatSupplyForCharacter(characterId, tick) *
+                MilitaryTraining.GetDamagePerThousand(characterId) / 1000));
             AiRuntime.SimulationAdvanced += OnSimulationAdvanced;
             gameObject.AddComponent<LivestockPresentation>().Initialize(this);
             gameObject.AddComponent<HuntingPresentation>().Initialize(this, characterCatalog.HuntingArrow);
@@ -785,7 +841,7 @@ namespace Game.Infrastructure
                 HealthFamily, Weather, Combat, MilitaryUnits, PlayerControl, BuildingDamage, GlobalMap, StrategicAi,
                 Events, CampaignProgress, Appearances, Work, ConnectedWorld, Domestic, Tiers,
                 MilitaryTraining, SettlementCapture, MilitaryAttack, Diagnostics,
-                saveProfile.SaveGenerationId, WorldPopulation?.WildlifePopulation);
+                saveProfile.SaveGenerationId, WorldPopulation?.WildlifePopulation, Facilities);
             PlayerSaves = new LocalGameplaySaveFacade(this, Saves, saveStore,
                 saveProfile.SaveGenerationId);
             var legacyOverlays = GetComponents<Behaviour>().Where(component =>
@@ -808,6 +864,8 @@ namespace Game.Infrastructure
                      BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi),
                 pointerRaycaster, input);
             ManualMoveInput.EnableContextMenus();
+            gameObject.AddComponent<SnowTrackPresentation>().Initialize(WorldHeight, CharacterPresentations,
+                TiledWorld.ArtWorldToDesign);
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
@@ -950,11 +1008,14 @@ namespace Game.Infrastructure
             Tier2Runtime.ConsumeProductionWorkers(tier2WorkerBuffer);
             RefreshTier3WorkerCache();
             MergeSortedDistinct(tier2WorkerBuffer, tier3WorkerCache, abstractWorkerBuffer);
+            var currentWeather = Weather.GetWeatherAtCalendarTick(targetCalendarTick);
+            Production.AdvanceFireFuel(targetCalendarTick, currentWeather.TemperatureCelsius);
             if (targetCalendarTick >= nextWeatherRosterRefreshTick)
             {
                 outdoorWorkerBuffer.Clear();
                 Production.CollectActiveWorkerIds(outdoorWorkerBuffer);
                 outdoorWorkerBuffer.AddRange(abstractWorkerBuffer);
+                RemoveWarmResidents(outdoorWorkerBuffer);
                 // Exposure changes only at completed-day boundaries. A deterministic one-game-minute roster
                 // cadence still catches new outdoor workers long before the next boundary without rescanning
                 // every canonical resident on every rendered frame.
@@ -976,13 +1037,20 @@ namespace Game.Infrastructure
             CampaignProgress.AdvanceTo(targetCalendarTick);
             Events.AdvanceTo(targetCalendarTick, false);
             HealthFamily.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks, false);
+            Facilities.AdvanceClinics(targetCalendarTick);
             foreach (var character in Characters.GetAll())
                 if (CharacterSpawner.RequiresStyleRefresh(character) &&
                     CharacterPresentations.TryGet(character.Id, out _)) Tier1Adapter.RebuildPresentation(character);
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             BuildingLifecycle.AdvanceWearTo(targetCalendarTick);
             Production.Population = CountAbstractPlayerPopulation();
+            Production.MaintainFisheryModes();
+            Production.AdvanceHuntingPopulation(targetCalendarTick);
+            Production.MaintainContinuousDeliveries(Work);
+            Production.MaintainLivingBuildingLogistics(Work);
             Production.AdvanceTo(targetCalendarTick, abstractWorkerBuffer);
+            Production.ReconcileHorseRiders(Characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive)
+                .Select(x => x.Id));
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
@@ -997,6 +1065,23 @@ namespace Game.Infrastructure
                 nextTierPolicyRefreshTime = Time.unscaledTime + TierPolicyRefreshIntervalSeconds;
             }
             PerformanceBenchmark?.RecordPresentationAndTierPolicyAllocation();
+        }
+
+        private void RemoveWarmResidents(List<StableEntityId> candidates)
+        {
+            candidates.RemoveAll(id => Facilities.HomeAssignments.ContainsKey(id));
+            foreach (var fireId in Production.HeatedBuildings.OrderBy(x => x))
+            {
+                if (!Buildings.TryGet(fireId, out var fire)) continue;
+                var definition = buildingCatalog.ResolveDefinition(fire.DefinitionId);
+                var point = BuildingSpawner.GridToWorld(fire.Coordinate, definition, fire.Orientation);
+                var center = new WorldPosition(point.x, point.y, point.z);
+                var warmed = candidates.Where(id => Tiers.TryGetTier(id, out _) &&
+                        Tiers.GetRuntimeState(id).Position.DistanceSquared(center) <= 64f)
+                    .OrderBy(id => Tiers.GetRuntimeState(id).Position.DistanceSquared(center))
+                    .ThenBy(id => id).Take(5).ToArray();
+                foreach (var id in warmed) candidates.Remove(id);
+            }
         }
 
         private void RefreshTier3WorkerCache()
@@ -1187,6 +1272,31 @@ namespace Game.Infrastructure
             return Combat != null && Combat.TryGetSide(id, out var side) && side == new CombatSideId("player");
         }
 
+        private bool GateAllowsMovement(StableEntityId characterId, WorldPosition from, WorldPosition to)
+        {
+            foreach (var gate in Buildings.All.Where(x => x.IsOperational &&
+                         x.DefinitionId == new BuildingDefinitionId("gate")).OrderBy(x => x.Id))
+            {
+                var definition = buildingCatalog.ResolveDefinition(gate.DefinitionId);
+                var center = BuildingSpawner.GridToWorld(gate.Coordinate, definition, gate.Orientation);
+                if (DistanceToSegmentSquared(center.x, center.z, from.X, from.Z, to.X, to.Z) > 9f) continue;
+                CombatSideId? side = Combat.TryGetSide(characterId, out var combatSide) ? combatSide : null;
+                if (BuildingPathing.EvaluatePassage(gate.Id, characterId, side) != GatePassageResult.Allowed)
+                    return false;
+            }
+            return true;
+        }
+
+        private static float DistanceToSegmentSquared(float px, float pz, float ax, float az, float bx, float bz)
+        {
+            var dx = bx - ax; var dz = bz - az;
+            var length = dx * dx + dz * dz;
+            var t = length <= 0.0001f ? 0f : Mathf.Clamp01(((px - ax) * dx + (pz - az) * dz) / length);
+            var x = ax + dx * t; var z = az + dz * t;
+            var ex = px - x; var ez = pz - z;
+            return ex * ex + ez * ez;
+        }
+
         public void SynchronizeStarterSettlement()
         {
             if (GlobalMap == null) return;
@@ -1245,6 +1355,9 @@ namespace Game.Infrastructure
             ConstructionClearance?.RebindAfterLoad(Buildings.All.Where(x=>x.OwnerSideId.Value=="player"));
             NeighbourEconomy?.RebindAfterLoad();
             BuildingPathing.RebindAfterLoad();
+            foreach (var gate in Buildings.All.Where(x => x.IsOperational &&
+                         x.DefinitionId == new BuildingDefinitionId("gate")))
+                BuildingPathing.SetGateAccessMode(gate.Id, Facilities.GetPolicy(gate.Id).GateAccess);
             if (WorldDefinition.MapData == null) RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
@@ -1415,7 +1528,7 @@ namespace Game.Infrastructure
                 buildingGridSize, buildingGridOrigin, null, StarterEnemyAi.Inventories,
                 position => TiledWorld.ProjectToGround(position).y);
             var ids = new List<StableEntityId>();
-            var definitions = new[] { "primitive_shelter", "primitive_shelter", "storage_basket", "campfire" };
+            var definitions = new[] { "stone_age_hut", "stone_age_hut", "storage_basket", "campfire" };
             var offsets = new[] { new GridCoordinate(-8, 6), new GridCoordinate(3, 6),
                 new GridCoordinate(7, -5), new GridCoordinate(-2, -6) };
             var storage = new StorageService(StarterEnemyAi.Inventories, Resources);
@@ -1471,14 +1584,20 @@ namespace Game.Infrastructure
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 0));
             var inventory = Storage.Attach(DemoStorageBuilding, definition);
             if (inventory != null && Resources.Contains(new ResourceId("cooked_berries")))
-                inventory.TryAdd(new ResourceId("cooked_berries"), new ResourceQuantity(8));
+                inventory.TryAdd(new ResourceId("cooked_berries"), new ResourceQuantity(24));
+            if (inventory != null)
+                foreach (var starter in new[] { "stone_spear", "wooden_shield", "combat_bow", "arrows", "leather_clothing" })
+                {
+                    var id = new ResourceId(starter);
+                    if (Resources.Contains(id)) inventory.TryAdd(id, new ResourceQuantity(starter == "arrows" ? 24 : 4));
+                }
             DemoStorageBuilding.MarkCompleted();
             DemoStoragePresenter = BuildingSpawner.Spawn(DemoStorageBuilding);
         }
 
         private void SpawnDemoShelter()
         {
-            var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("primitive_shelter"));
+            var definition = buildingCatalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut"));
             DemoShelterBuilding = BuildingPlacementService.Confirm(definition, new GridCoordinate(-7, 4),
                 BuildingOrientation.South, new CombatSideId("player"),
                 DeterministicStableId.Create(ActiveNewGameConfiguration.WorldSeed, "player_start_building", 2));
@@ -1503,7 +1622,8 @@ namespace Game.Infrastructure
             {
                 var main = settlement.BuildingIds.Select(id => Buildings.TryGet(id, out var value) ? value : null)
                     .Where(x => x != null && !x.IsDestroyed)
-                    .OrderByDescending(x => x.DefinitionId == new BuildingDefinitionId("primitive_shelter"))
+                    .OrderByDescending(x => x.DefinitionId == new BuildingDefinitionId("chief_hut"))
+                    .ThenByDescending(x => x.DefinitionId == new BuildingDefinitionId("stone_age_hut"))
                     .ThenBy(x => x.Id).FirstOrDefault();
                 if (main != null) SettlementCapture.Register(settlement.Id, main.Id, Clock.State.CalendarTicks);
             }
@@ -1590,7 +1710,10 @@ namespace Game.Infrastructure
         private void OnBuildingChanged(Building building)
         {
             BuildingPathing?.Reconcile(building);
-            if (building != null && building.IsDestroyed) Facilities?.RemoveBuildingAssignments(building.Id);
+            if (building != null && (building.IsDestroyed || building.OwnerSideId != new CombatSideId("player")))
+                Facilities?.RemoveBuildingAssignments(building.Id);
+            else if (building != null && building.IsOperational)
+                Facilities?.ReconcileHousing();
             if (building != null && BuildingPresentations.TryGet(building.Id, out var presenter))
                 {
                 if (building.DefinitionId.ToString()=="animal_pasture" && building.IsOperational)

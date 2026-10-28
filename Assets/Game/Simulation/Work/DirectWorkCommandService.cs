@@ -126,8 +126,8 @@ namespace Game.Simulation.Work
             var group = work.Groups.All.FirstOrDefault(x => x.Role == role);
             if (group == null) return Array.Empty<WorkCandidateDiagnostic>();
             return group.Members.Select(id => Diagnose(id, role, target))
-                .OrderBy(x => x.DistanceSquared).ThenByDescending(x => x.Suitability)
-                .ThenBy(x => x.CharacterId).ToArray();
+                .OrderByDescending(x => x.Suitability).ThenBy(x => x.DistanceSquared)
+                .ThenBy(x => DeterministicTieBreak(x.CharacterId, 0)).ToArray();
         }
 
         private bool AssignBest(WorkOrder job, bool allowSafeInterruption)
@@ -137,8 +137,8 @@ namespace Game.Simulation.Work
                 .Where(x => allowSafeInterruption
                     ? scheduler.CanInterruptForDirectWork(x.CharacterId)
                     : x.Available)
-                .OrderBy(x => x.DistanceSquared).ThenByDescending(x => x.Suitability)
-                .ThenBy(x => x.CharacterId).ToArray();
+                .OrderByDescending(x => x.Suitability).ThenBy(x => x.DistanceSquared)
+                .ThenBy(x => DeterministicTieBreak(x.CharacterId, job.Id.Value)).ToArray();
             if (candidates.Length == 0) return false;
             var selected = candidates[0].CharacterId;
             if (work.HasOpenJob(selected))
@@ -183,6 +183,7 @@ namespace Game.Simulation.Work
                 case WorkGroupRole.Warriors: return text.Contains("war") || text.Contains("soldier");
                 case WorkGroupRole.Builders: return text.Contains("build");
                 case WorkGroupRole.Crafters: return text.Contains("craft");
+                case WorkGroupRole.Caregivers: return text.Contains("heal") || text.Contains("medic");
                 default: return text.Contains("worker");
             }
         }
@@ -199,6 +200,13 @@ namespace Game.Simulation.Work
                 case WorkGroupRole.Caregivers: return "medicine";
                 default: return null;
             }
+        }
+
+        private static ulong DeterministicTieBreak(StableEntityId id, long salt)
+        {
+            var hash = unchecked(1469598103934665603UL ^ (ulong)salt);
+            foreach (var value in id.ToGuid().ToByteArray()) hash = unchecked((hash ^ value) * 1099511628211UL);
+            return hash;
         }
 
         private static WorkGroupId DeterministicGroupId(WorkGroupRole role) => new WorkGroupId(

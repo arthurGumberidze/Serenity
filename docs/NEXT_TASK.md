@@ -1,11 +1,52 @@
 # NEXT_TASK.md
 
+## Resume parallel WM15 visual/water work (2026-10-29)
+
+The living-buildings scope is complete and verified; do not reopen it unless a new defect is reported.
+Continue the already active WM15 visual/water task in the neighbouring chat. The user explicitly stopped
+additional startup optimization for this delivery. Preserve all imported assets and the shared dirty-tree
+work. The building-upgrade table/mechanics, Ollama-controlled neighbouring settlements and further mountain
+graphics stay paused in `docs/PAUSED_TASKS.md` until the user starts one of those tasks.
+
+## WM15 ordinary lakes and marsh — awaiting permission to render (2026-10-28)
+
+The accepted mountain and mountain-lake profiles are frozen. Ordinary-lake opacity and the visible marsh core
+have been corrected in source, retaining a broad continuous river-to-marsh blend. Do not launch Unity, tests,
+visual capture or a Player build without the user's explicit permission. When permission is given, capture the
+ordinary lake and marsh first and request visual approval; only after approval proceed to focused validation
+and the next WM15 Player candidate. Preserve old saves and unrelated dirty/vendor changes.
+
+## WM15 Terrain Sample ridge and water transition review — next unblocked work (2026-10-28)
+
+Await the user's review of `Artifacts/WM15EnvironmentReview3/`. The current source selectively uses three
+approved Terrain Asset Pack heightmaps for the alpine ridge, makes lake water less transparent, and replaces
+the stepped marsh material boundary with continuous per-vertex shader blending. Do not run tests or produce
+a Player build until the user approves this visual direction. On approval, resolve the unrelated current
+`draw_water` catalog mismatch, run focused validation and build the next WM15 candidate. Preserve old saves,
+the original package archives, selectively admitted art and unrelated dirty/vendor changes.
+
 ## WM15 after full asset-library audit (2026-10-28)
 
 The requested audit is complete; see docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md. Recommended next
 content pass: 6–8 existing buildings and their work-site props, then terrain/shore consistency.
 This is a recommendation, not a new import authorization. Keep WM15 active and preserve the existing
 visual-approval gate before tests/new Player build. No asset deletion or bulk import is scheduled.
+
+## WM15 river/lake/mountain/marsh review — superseded by Terrain Sample review (2026-10-28)
+
+The older four PNGs remain in `Artifacts/WM15EnvironmentReview/`. That candidate removed
+lake ice, uses the approved Procedural Water Shader URP asset with river/lake/mountain-lake/marsh profiles, and
+uses Snow Mountain plus Winter Mountains & Stamps for the alpine landmark. Its review gate is now represented
+by the newer `WM15EnvironmentReview3` candidate above.
+
+## WM15 winter mountain — next unblocked work (2026-10-28)
+
+Await the user's yes/no review of `Artifacts/WM15MountainReview/winter-environment-final.png`. The source
+now uses StampIT terrain plus Winter Environment URP scenery/weather for the alpine region and surrounding
+world. Do not run tests or produce a new Player build until the user approves this visual direction. On
+approval, perform focused compilation/visual checks and build the next WM15 review candidate. Preserve the
+full imported Winter Environment, the user's StampIT import, old saves and unrelated dirty/vendor changes.
+
 
 ## WM15 current feedback — next unblocked work (2026-10-27)
 

@@ -296,8 +296,7 @@ namespace Game.Domain.Research
                         : new[] { C("controlled_fire") }),
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
                     availableBuildingIds.Contains(new BuildingDefinitionId("stone_age_hut"))
-                        ? new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")),
-                            TechnologyUnlock.Building(new BuildingDefinitionId("stone_age_hut")) }
+                        ? new[] { TechnologyUnlock.Building(new BuildingDefinitionId("stone_age_hut")) }
                         : new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")) }),
                 new TechnologyDefinition(T("stone_tools"), "Stone Tools", new[] { T("gathering") }, TimeSpan.FromDays(3),
                     stoneToolUnlocks, startingKnowledge: startsWithStoneTools),
@@ -327,8 +326,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("advanced_stonecraft"), "Advanced Stonecraft",
                     new[] { T("stone_tools"), T("woodworking"), T("hunting") }, TimeSpan.FromDays(5),
                     availableBuildingIds.Contains(new BuildingDefinitionId("well"))
-                        ? new[] { C("advanced_stonecraft"), TechnologyUnlock.Building(new BuildingDefinitionId("well")),
-                            TechnologyUnlock.Recipe(new ProductionRecipeId("draw_water")) }
+                        ? new[] { C("advanced_stonecraft"), TechnologyUnlock.Building(new BuildingDefinitionId("well")) }
                         : new[] { C("advanced_stonecraft") }),
                 new TechnologyDefinition(T("industrial_extraction"), "Industrial Extraction",
                     new[] { T("advanced_stonecraft"), T("organized_labor") }, TimeSpan.FromDays(5),

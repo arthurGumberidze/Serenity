@@ -6,7 +6,6 @@ namespace Game.Domain.Work
 {
     public enum ContextActionKind
     {
-        Inspect = 0,
         Gather = 1,
         Mine = 2,
         Chop = 3,
@@ -142,7 +141,7 @@ namespace Game.Domain.Work
                 return Disabled(ContextUnavailableReason.WrongTargetType);
             if (!facts.Alive || !facts.ValidStatus)
                 return Disabled(ContextUnavailableReason.InvalidStatus);
-            if (action != ContextActionKind.Move && action != ContextActionKind.Inspect && !facts.Adult)
+            if (action != ContextActionKind.Move && !facts.Adult)
                 return Disabled(ContextUnavailableReason.TooYoung);
             if (!facts.CorrectRole) return Disabled(ContextUnavailableReason.WrongRole);
             if (!facts.HasTool) return Disabled(ContextUnavailableReason.MissingTool);
@@ -166,9 +165,6 @@ namespace Game.Domain.Work
         {
             switch (action)
             {
-                case ContextActionKind.Inspect:
-                    return target.Kind == ContextTargetKind.Character || target.Kind == ContextTargetKind.ResourcePile ||
-                           target.Kind == ContextTargetKind.ResourceSource || target.Kind == ContextTargetKind.Building;
                 case ContextActionKind.Gather:
                     return target.Kind == ContextTargetKind.ResourceSource &&
                            target.ResourceClass == ContextResourceClass.Gatherable;

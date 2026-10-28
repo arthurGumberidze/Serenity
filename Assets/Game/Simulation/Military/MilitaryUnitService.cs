@@ -90,6 +90,8 @@ namespace Game.Simulation.Military
     /// </summary>
     public sealed class MilitaryUnitService
     {
+        public const int MaximumSquadMembers = 50;
+
         private sealed class Unit
         {
             public MilitaryUnitId Id;
@@ -117,6 +119,7 @@ namespace Game.Simulation.Military
         private readonly Dictionary<MilitaryUnitId, Unit> units = new Dictionary<MilitaryUnitId, Unit>();
         private readonly Dictionary<StableEntityId, MilitaryUnitId> activeMembership =
             new Dictionary<StableEntityId, MilitaryUnitId>();
+        private readonly Dictionary<StableEntityId, MilitaryArmyState> armies = new();
         private readonly MilitarySupplySettings supplySettings;
 
         public MilitaryUnitService(CharacterRegistry characterRegistry, ICharacterCapabilityProvider capabilityProvider,
@@ -130,6 +133,52 @@ namespace Game.Simulation.Military
         public MilitarySupplySettings SupplySettings => supplySettings;
 
         public IReadOnlyList<MilitaryUnitState> Units => units.Values.OrderBy(x => x.Id).Select(Capture).ToArray();
+        public IReadOnlyList<MilitaryArmyState> Armies => armies.Values.OrderBy(x => x.Id).ToArray();
+
+        public MilitaryArmyState CreateArmy(MilitarySideId sideId, StableEntityId commanderId,
+            IEnumerable<MilitaryUnitId> squadIds)
+        {
+            characters.Get(commanderId);
+            if (activeMembership.ContainsKey(commanderId))
+                throw new InvalidOperationException("An army commander is a separate member and cannot remain in a squad.");
+            if (armies.Values.Count(x => x.OwnerSideId == sideId) >= 2)
+                throw new InvalidOperationException("A military side cannot field more than two armies.");
+            var squads = (squadIds ?? throw new ArgumentNullException(nameof(squadIds))).Distinct().OrderBy(x => x).ToArray();
+            if (squads.Length == 0 || squads.Length > 10)
+                throw new InvalidOperationException("An army requires one to ten squads.");
+            foreach (var squadId in squads)
+            {
+                var squad = Get(squadId);
+                if (squad.OwnerSideId != sideId || squad.Status == MilitaryUnitStatus.Disbanded)
+                    throw new InvalidOperationException("Every army squad must be an active unit of the same side.");
+                if (armies.Values.Any(x => x.SquadIds.Contains(squadId)))
+                    throw new InvalidOperationException("A squad cannot belong to two armies.");
+            }
+            var id = StableEntityId.NewId();
+            var army = new MilitaryArmyState(id, sideId, commanderId, squads);
+            armies.Add(id, army);
+            return army;
+        }
+
+        public bool AssignArmyCommander(StableEntityId armyId, StableEntityId commanderId)
+        {
+            if (!armies.TryGetValue(armyId, out var army)) return false;
+            characters.Get(commanderId);
+            if (activeMembership.ContainsKey(commanderId)) return false;
+            armies[armyId] = new MilitaryArmyState(army.Id, army.OwnerSideId, commanderId, army.SquadIds);
+            return true;
+        }
+
+        public bool AddSquadToArmy(StableEntityId armyId, MilitaryUnitId squadId)
+        {
+            if (!armies.TryGetValue(armyId, out var army) || army.SquadIds.Count >= 10 ||
+                armies.Values.Any(x => x.SquadIds.Contains(squadId))) return false;
+            var squad = Get(squadId);
+            if (squad.OwnerSideId != army.OwnerSideId || squad.Status == MilitaryUnitStatus.Disbanded) return false;
+            armies[armyId] = new MilitaryArmyState(army.Id, army.OwnerSideId, army.CommanderId,
+                army.SquadIds.Concat(new[] { squadId }));
+            return true;
+        }
 
         public MilitaryUnitState Create(MilitarySideId sideId, IEnumerable<StableEntityId> roster,
             StableEntityId captainId) => Create(MilitaryUnitId.NewId(), sideId, roster, captainId);
@@ -146,6 +195,8 @@ namespace Game.Simulation.Military
                 throw new ArgumentOutOfRangeException(nameof(representation));
             var members = OrderedDistinctRequired(roster);
             if (members.Length == 0) throw new ArgumentException("A military unit requires at least one member.", nameof(roster));
+            if (members.Length > MaximumSquadMembers)
+                throw new InvalidOperationException("A squad cannot contain more than 50 soldiers including its commander.");
             foreach (var memberId in members)
             {
                 characters.Get(memberId);
@@ -313,6 +364,8 @@ namespace Game.Simulation.Military
         public void AddMember(MilitaryUnitId id, StableEntityId characterId)
         {
             var unit = Require(id);
+            if (unit.Roster.Values.Count(x => x.IsActive) >= MaximumSquadMembers)
+                throw new InvalidOperationException("A squad cannot contain more than 50 soldiers including its commander.");
             characters.Get(characterId);
             if (activeMembership.ContainsKey(characterId))
                 throw new InvalidOperationException("A character cannot belong to two active military units.");
@@ -474,7 +527,7 @@ namespace Game.Simulation.Military
         public MilitaryUnitSaveState CaptureState()
         {
             foreach (var unit in units.Values.OrderBy(x => x.Id)) RefreshCaptain(unit);
-            return new MilitaryUnitSaveState(Units);
+            return new MilitaryUnitSaveState(Units, Armies);
         }
 
         public void RestoreState(MilitaryUnitSaveState state, CombatService combat = null)
@@ -519,6 +572,16 @@ namespace Game.Simulation.Military
             foreach (var pair in restored) units.Add(pair.Key, pair.Value);
             activeMembership.Clear();
             foreach (var pair in memberships) activeMembership.Add(pair.Key, pair.Value);
+            armies.Clear();
+            foreach (var army in state.Armies)
+            {
+                characters.Get(army.CommanderId);
+                if (memberships.ContainsKey(army.CommanderId))
+                    throw new ArgumentException("Saved army commander cannot also be a squad member.", nameof(state));
+                if (army.SquadIds.Any(id => !units.TryGetValue(id, out var unit) || unit.Side != army.OwnerSideId))
+                    throw new ArgumentException("Saved army references unavailable or foreign squads.", nameof(state));
+                armies.Add(army.Id, army);
+            }
         }
 
         public ulong ComputeStateHash()

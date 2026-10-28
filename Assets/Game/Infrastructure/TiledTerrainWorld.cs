@@ -20,8 +20,12 @@ namespace Game.Infrastructure
     public sealed class TiledTerrainWorld : MonoBehaviour
     {
         public const int HeightmapResolution = 257;
+        private const int TerrainPaintResolution = 64;
         private const float RefreshIntervalSeconds = 0.5f;
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
+        private readonly Dictionary<WorldTileId, (float[,] heights, float[,,] paint)> preparedTileData = new();
+        private readonly Dictionary<WorldTileId, Task<(float[,] heights, float[,,] paint)>> pendingTilePreparations = new();
+        private readonly HashSet<WorldTileId> deferredTilePreparations = new();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
         private readonly List<GameObject> linkObjects = new List<GameObject>();
         private readonly List<Mesh> roadMeshes = new List<Mesh>();
@@ -46,7 +50,7 @@ namespace Game.Infrastructure
         private Material overviewGroundMaterial;
         private Material overviewWaterMaterial;
         private Texture2D overviewGroundTexture;
-        private Material localWaterMaterial;
+        private Material[] localWaterMaterials;
         private bool strategicMode;
         private WorldPosition lastCameraFocus;
         private GameObject roadPresentationRoot;
@@ -164,6 +168,13 @@ namespace Game.Infrastructure
                     Shader.SetGlobalTexture("_WorldMapSnowNormal",winter.SnowNormal);
                     Shader.SetGlobalTexture("_WorldMapSnowHeight",winter.SnowHeight);
                 }
+                Shader.SetGlobalFloat("_WorldMapAlpineRockTextures",winter?.AlpineRockAlbedo!=null?1f:0f);
+                if(winter?.AlpineRockAlbedo!=null)
+                {
+                    Shader.SetGlobalTexture("_WorldMapAlpineRockAlbedo",winter.AlpineRockAlbedo);
+                    Shader.SetGlobalTexture("_WorldMapAlpineRockNormal",winter.AlpineRockNormal);
+                    Shader.SetGlobalTexture("_WorldMapAlpineRockAo",winter.AlpineRockAo);
+                }
                 if (natureCatalog.RuntimeLate?.WaterWaves != null) natureCatalog.WaterRipples = natureCatalog.RuntimeLate.WaterWaves;
                 natureCatalog.RuntimeWorldToDesign = ArtWorldToDesign;
                 var snowRegion = ArtDirection.regions[2];
@@ -211,20 +222,45 @@ namespace Game.Infrastructure
             if (roadNetworkPlan != null) BuildRoadPresentation();
             if (definition.MapData != null)
             {
-                var tileIndex = 0;
-                foreach (var id in definition.Tiles)
+                var ids = definition.Tiles.OrderBy(id => id).ToArray();
+                var initialTiles = planner.CreatePlan(definition.PlayerStart, Array.Empty<WorldPosition>(),
+                    Array.Empty<Tuple<WorldPosition, WorldPosition>>()).CollisionTiles;
+                foreach (var tileId in initialTiles)
                 {
-                    progress?.Invoke("Создаём рельеф и воду: " + (++tileIndex) + "/" + definition.Tiles.Count + "…");
+                    var captured = tileId;
+                    pendingTilePreparations[captured] = Task.Run(() =>
+                    {
+                        var heights = HeightSampler.CreateNormalizedHeights(captured, HeightSampler.HeightmapResolution);
+                        return (heights, paint: terrainPaintSampler?.CreateTileWeights(captured,
+                            TerrainPaintResolution, heights));
+                    });
+                }
+                var initialPreparations = initialTiles.Select(id => pendingTilePreparations[id]).ToArray();
+                var initialPrepared = Task.WhenAll(initialPreparations);
+                progress?.Invoke("Рассчитываем ближайший рельеф и воду: 0/" + initialTiles.Count + "…");
+                var lastReady = 0;
+                while (!initialPrepared.IsCompleted)
+                {
+                    var ready = initialPreparations.Count(task => task.IsCompleted);
+                    if (ready != lastReady)
+                    {
+                        lastReady = ready;
+                        progress?.Invoke("Рассчитываем ближайший рельеф и воду: " + ready + "/" +
+                                         initialTiles.Count + "…");
+                    }
                     yield return null;
-                    // Compute only pure domain arrays off the Unity thread. Keep pumping the loading UI;
-                    // Terrain, Mesh, colliders and navigation are still created on the main thread.
-                    var tileId = id;
-                    var preparation = Task.Run(() => (
-                        heights: HeightSampler.CreateNormalizedHeights(tileId,HeightSampler.HeightmapResolution),
-                        paint: terrainPaintSampler?.CreateTileWeights(tileId,128)));
-                    while (!preparation.IsCompleted) yield return null;
-                    var prepared = preparation.GetAwaiter().GetResult();
-                    loaded.Add(id, CreateTile(id,prepared.heights,prepared.paint));
+                }
+                initialPrepared.GetAwaiter().GetResult();
+                CollectPreparedTileData();
+                foreach (var tileId in ids.Where(id => !initialTiles.Contains(id)))
+                    deferredTilePreparations.Add(tileId);
+                for (var index = 0; index < initialTiles.Count; index++)
+                {
+                    var id = initialTiles[index];
+                    progress?.Invoke("Создаём ближайший рельеф и воду: " + (index + 1) + "/" +
+                                     initialTiles.Count + "…");
+                    yield return null;
+                    loaded.Add(id, CreateTile(id));
                 }
             }
             progress?.Invoke("Соединяем берега и дороги…");
@@ -237,6 +273,21 @@ namespace Game.Infrastructure
                 gameObject.AddComponent<LateLandscapePresentation>().Initialize(this, natureCatalog.RuntimeLate);
             }
             Debug.Log("WM15_BOOT terrain ready");
+        }
+
+        public void BeginBackgroundTilePreparation()
+        {
+            foreach (var tileId in deferredTilePreparations.OrderBy(id => id).ToArray())
+            {
+                var captured = tileId;
+                pendingTilePreparations[captured] = Task.Run(() =>
+                {
+                    var heights = HeightSampler.CreateNormalizedHeights(captured, HeightSampler.HeightmapResolution);
+                    return (heights, paint: terrainPaintSampler?.CreateTileWeights(captured,
+                        TerrainPaintResolution, heights));
+                });
+                deferredTilePreparations.Remove(captured);
+            }
         }
 
         public void ConfigureStreaming(Func<WorldPosition> cameraFocus,
@@ -254,12 +305,8 @@ namespace Game.Infrastructure
         {
             if (Definition == null) throw new InvalidOperationException("The tiled world is not initialized.");
             lastCameraFocus = cameraFocus;
-            // Prepare and retain the complete authored world during loading. Camera movement must
-            // never generate terrain, bake navigation or instantiate population tiles.
-            var plan = Definition.MapData != null || (Definition.WidthMeters <= 1000 && Definition.DepthMeters <= 1000)
-                ? new TiledWorldStreamingPlan(Definition.Tiles, Definition.Tiles)
-                : planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
-                    navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
+            var plan = planner.CreatePlan(cameraFocus, physicalPositions ?? Array.Empty<WorldPosition>(),
+                navigationRoutes ?? Array.Empty<Tuple<WorldPosition, WorldPosition>>());
             ApplyPlan(plan);
         }
 
@@ -329,12 +376,15 @@ namespace Game.Infrastructure
 
         private void ApplyPlan(TiledWorldStreamingPlan plan)
         {
+            CollectPreparedTileData();
             var visibilityChanged = !visual.SetEquals(plan.VisualTiles);
             var required = new HashSet<WorldTileId>(plan.CollisionTiles);
             var added = false;
             foreach (var id in plan.CollisionTiles)
             {
                 if (loaded.ContainsKey(id)) continue;
+                if (Definition.MapData != null && (pendingTilePreparations.ContainsKey(id) ||
+                    deferredTilePreparations.Contains(id))) continue;
                 Debug.Log("WM15_BOOT tile " + id);
                 var tile = CreateTile(id);
                 loaded.Add(id, tile);
@@ -370,8 +420,22 @@ namespace Game.Infrastructure
             if (added || visibilityChanged) VisualTilesChanged?.Invoke();
         }
 
+        private void CollectPreparedTileData()
+        {
+            foreach (var pair in pendingTilePreparations.Where(x => x.Value.IsCompleted).ToArray())
+            {
+                preparedTileData[pair.Key] = pair.Value.GetAwaiter().GetResult();
+                pendingTilePreparations.Remove(pair.Key);
+            }
+        }
+
         private LoadedTile CreateTile(WorldTileId id, float[,] preparedHeights = null, float[,,] preparedPaint = null)
         {
+            if (preparedHeights == null && preparedTileData.TryGetValue(id, out var prepared))
+            {
+                preparedHeights = prepared.heights;
+                preparedPaint = prepared.paint;
+            }
             var heightmapResolution = HeightSampler.HeightmapResolution;
             var data = new TerrainData
             {
@@ -379,7 +443,7 @@ namespace Game.Infrastructure
                 heightmapResolution = heightmapResolution,
                 size = new Vector3(Definition.TileSizeMeters, HeightSampler.MaximumTerrainHeightMeters,
                     Definition.TileSizeMeters),
-                alphamapResolution = 128,
+                alphamapResolution = TerrainPaintResolution,
                 baseMapResolution = 128,
                 terrainLayers = sourceLayers
             };
@@ -628,12 +692,9 @@ namespace Game.Infrastructure
             mesh.SetVertices(vertices); mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             water.AddComponent<MeshFilter>().sharedMesh = mesh;
-            localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
-                { name = "Starter shoreline water" };
-            var nature = Resources.Load<Game.Presentation.Environment.StarterNatureCatalog>("World/StarterNature");
-            if (nature != null && nature.WaterRipples != null)
-                localWaterMaterial.SetTexture("_Ripples", nature.WaterRipples);
-            water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
+            EnsureLocalWaterMaterials();
+            water.AddComponent<MeshRenderer>().sharedMaterial =
+                localWaterMaterials[(int)WorldWaterProfile.Lake];
             return water;
         }
 
@@ -642,7 +703,7 @@ namespace Game.Infrastructure
             // A terrain-aligned grid still clips the shoreline continuously, without four times the samples.
             var resolution = data.heightmapResolution - 1;
             var vertices = new List<Vector3>();
-            var triangles = new List<int>();
+            var triangles = new[] { new List<int>(),new List<int>(),new List<int>(),new List<int>() };
             var colors = new List<Color>();
             var tileOrigin = Definition.TileOrigin(id);
             var step = Definition.TileSizeMeters / (float)resolution;
@@ -665,19 +726,18 @@ namespace Game.Infrastructure
                 AddClippedWaterTriangle(a, b, c, tileOrigin, data, clipped, vertices, triangles, colors);
                 AddClippedWaterTriangle(c, b, d, tileOrigin, data, clipped, vertices, triangles, colors);
             }
-            if (triangles.Count == 0) return null;
+            if (triangles.All(value => value.Count == 0)) return null;
             var water = new GameObject("World Map V2 Local Water " + id);
             water.transform.SetParent(parent, false);
             var mesh = new Mesh { name = "World Map V2 Local Water Mesh " + id,
                 indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-            mesh.SetVertices(vertices); mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
+            mesh.SetVertices(vertices); mesh.SetColors(colors); mesh.subMeshCount = triangles.Length;
+            for (var profile = 0; profile < triangles.Length; profile++)
+                mesh.SetTriangles(triangles[profile],profile,false);
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             water.AddComponent<MeshFilter>().sharedMesh = mesh;
-            localWaterMaterial ??= new Material(Resources.Load<Shader>("World/StarterWater"))
-                { name = "Starter shoreline water" };
-            if (natureCatalog != null && natureCatalog.WaterRipples != null)
-                localWaterMaterial.SetTexture("_Ripples", natureCatalog.WaterRipples);
-            water.AddComponent<MeshRenderer>().sharedMaterial = localWaterMaterial;
+            EnsureLocalWaterMaterials();
+            water.AddComponent<MeshRenderer>().sharedMaterials = localWaterMaterials;
             // Water is not a physical floor. Block the submerged terrain volume, not just a thin
             // surface triangle; bridge and pier decks above the surface remain navigable.
             AddDeepWaterExclusions(water.transform, tileOrigin, data);
@@ -714,7 +774,8 @@ namespace Game.Infrastructure
         }
 
         private void AddClippedWaterTriangle(Vector4 a, Vector4 b, Vector4 c, WorldPosition origin,
-            TerrainData terrain, Vector4[] polygon, List<Vector3> vertices, List<int> triangles, List<Color> colors)
+            TerrainData terrain, Vector4[] polygon, List<Vector3> vertices, List<int>[] profileTriangles,
+            List<Color> colors)
         {
             if (a.w > 0f && b.w > 0f && c.w > 0f) return;
             var count = 0;
@@ -730,6 +791,7 @@ namespace Game.Infrastructure
                 polygon[count++] = edge;
             }
             if (count < 3) return;
+            var triangles = profileTriangles[(int)ClassifyWaterProfile(a,b,c,origin)];
             var first = vertices.Count;
             for (var i = 0; i < count; i++)
             {
@@ -738,7 +800,8 @@ namespace Game.Infrastructure
                 // Depth tint follows the already-created rendered Terrain; no repeated procedural world evaluation.
                 var ground = terrain.GetInterpolatedHeight(point.x / Definition.TileSizeMeters,
                     point.z / Definition.TileSizeMeters);
-                colors.Add(new Color(Mathf.Clamp01((point.y - ground) / 7.5f), 0f, 0f, 1f));
+                colors.Add(new Color(Mathf.Clamp01((point.y - ground) / 7.5f),
+                    SampleMarshBlend(origin.X+point.x,origin.Z+point.z),0f,1f));
             }
             for (var i = 1; i + 1 < count; i++)
             {
@@ -747,6 +810,45 @@ namespace Game.Infrastructure
                 if (Vector3.Cross(left, right).sqrMagnitude < 0.00000001f) continue;
                 triangles.Add(first); triangles.Add(first + i); triangles.Add(first + i + 1);
             }
+        }
+
+        private WorldWaterProfile ClassifyWaterProfile(Vector4 a,Vector4 b,Vector4 c,WorldPosition origin)
+        {
+            var worldX = origin.X + (a.x+b.x+c.x)/3f;
+            var worldZ = origin.Z + (a.z+b.z+c.z)/3f;
+            var waterId = HeightSampler.NearestWaterBodyId(worldX,worldZ);
+            if (string.Equals(waterId,"lake_mountain",StringComparison.Ordinal))
+                return WorldWaterProfile.MountainLake;
+            if (!string.IsNullOrEmpty(waterId) && waterId.StartsWith("lake_",StringComparison.Ordinal))
+                return WorldWaterProfile.Lake;
+            return WorldWaterProfile.River;
+        }
+
+        private void EnsureLocalWaterMaterials()
+        {
+            if (localWaterMaterials != null) return;
+            localWaterMaterials = new[]
+            {
+                WorldWaterProfileMaterials.Create(WorldWaterProfile.River),
+                WorldWaterProfileMaterials.Create(WorldWaterProfile.Lake),
+                WorldWaterProfileMaterials.Create(WorldWaterProfile.MountainLake),
+                WorldWaterProfileMaterials.Create(WorldWaterProfile.Marsh)
+            };
+        }
+
+        private float SampleMarshBlend(float worldX,float worldZ)
+        {
+            var marsh=ArtDirection?.regions?.FirstOrDefault(value=>value!=null&&value.id=="H");
+            if(marsh==null)return 0f;
+            var designX=ArtWorldToDesign.x+worldX*ArtWorldToDesign.z;
+            var designZ=ArtWorldToDesign.y+worldZ*ArtWorldToDesign.w;
+            var dx=(designX-marsh.center.x)/Mathf.Max(1f,marsh.radius.x);
+            var dz=(designZ-marsh.center.y)/Mathf.Max(1f,marsh.radius.y);
+            var distance=Mathf.Sqrt(dx*dx+dz*dz);
+            // Keep a clearly identifiable opaque wetland core, then blend it into the clean river
+            // over a broad annulus.  The coefficient is continuous per vertex, so there is no
+            // material seam even though the visual character remains unmistakably marshy.
+            return 1f-Mathf.SmoothStep(.66f,1.36f,distance);
         }
 
         private static void AddWaterTriangle(Vector3 a, Vector3 b, Vector3 c,
@@ -1373,7 +1475,8 @@ namespace Game.Infrastructure
             if (overviewGroundMaterial != null) Destroy(overviewGroundMaterial);
             if (overviewWaterMaterial != null) Destroy(overviewWaterMaterial);
             if (overviewGroundTexture != null) Destroy(overviewGroundTexture);
-            if (localWaterMaterial != null) Destroy(localWaterMaterial);
+            if (localWaterMaterials != null)
+                foreach (var material in localWaterMaterials) if (material != null) Destroy(material);
             foreach (var mesh in roadMeshes) if (mesh != null) Destroy(mesh);
             roadMeshes.Clear();
             vegetationColliders.Clear();

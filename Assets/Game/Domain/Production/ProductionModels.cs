@@ -144,6 +144,9 @@ namespace Game.Domain.Production
             var hide = new ResourceId("hide");
             var meat = new ResourceId("meat");
             var carcass = new ResourceId("carcass");
+            var dressedCarcass = new ResourceId("dressed_carcass");
+            var fieldDressedCarcass = new ResourceId("field_dressed_carcass");
+            var rawHide = new ResourceId("raw_hide");
             var bone = new ResourceId("bone");
             var curedHide = new ResourceId("cured_hide");
             var driedMeat = new ResourceId("dried_meat");
@@ -154,6 +157,10 @@ namespace Game.Domain.Production
             var medicinalPlants = new ResourceId("medicinal_plants");
             var clay = new ResourceId("clay");
             var flint = new ResourceId("flint");
+            var wheat = new ResourceId("wheat");
+            var animalFeed = new ResourceId("animal_feed");
+            var medicine = new ResourceId("medicine");
+            var feathers = new ResourceId("feathers");
             var recipes = new List<ProductionRecipe>
             {
                 new ProductionRecipe(new ProductionRecipeId("gather_berries"), "Gather Berries", null,
@@ -210,41 +217,62 @@ namespace Game.Domain.Production
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("gather_gold"), "Gather Gold Ore", null,
                     new[] { new ResourceAmount(gold, new ResourceQuantity(2)) }, TimeSpan.FromHours(16), ProductionSiteKind.NaturalSource,
                     weatherExposure: ProductionWeatherExposure.Outdoor));
-            if (resources.Contains(hide) && resources.Contains(meat))
-                recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt and Skin Animal", null,
-                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
-                        new ResourceAmount(meat, new ResourceQuantity(4)) }, TimeSpan.FromMinutes(20),
-                    ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
-            else if (resources.Contains(carcass))
+            if (resources.Contains(carcass))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("hunt_animal"), "Hunt Animal", null,
                     new[] { new ResourceAmount(carcass, new ResourceQuantity(1)) }, TimeSpan.FromHours(12),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
-            if (resources.Contains(carcass) && resources.Contains(hide) && resources.Contains(meat) && resources.Contains(bone))
-                recipes.Add(new ProductionRecipe(new ProductionRecipeId("butcher_carcass"), "Butcher Carcass",
+            if (resources.Contains(carcass) && resources.Contains(dressedCarcass) && resources.Contains(rawHide))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("dress_carcass"), "Dress Carcass",
                     new[] { new ResourceAmount(carcass, new ResourceQuantity(1)) },
+                    new[] { new ResourceAmount(dressedCarcass, new ResourceQuantity(1)),
+                        new ResourceAmount(rawHide, new ResourceQuantity(1)) },
+                    TimeSpan.FromMinutes(30), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(dressedCarcass) && resources.Contains(meat) && resources.Contains(bone))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("butcher_carcass"), "Butcher Carcass",
+                    new[] { new ResourceAmount(dressedCarcass, new ResourceQuantity(1)) },
                     new[] { new ResourceAmount(meat, new ResourceQuantity(5)),
-                        new ResourceAmount(hide, new ResourceQuantity(2)),
                         new ResourceAmount(bone, new ResourceQuantity(3)) },
                     TimeSpan.FromMinutes(45), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(fieldDressedCarcass) && resources.Contains(meat) && resources.Contains(bone))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("butcher_field_carcass"), "Butcher Field-Dressed Carcass",
+                    new[] { new ResourceAmount(fieldDressedCarcass, new ResourceQuantity(1)) },
+                    new[] { new ResourceAmount(meat, new ResourceQuantity(3)),
+                        new ResourceAmount(bone, new ResourceQuantity(1)) },
+                    TimeSpan.FromMinutes(35), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(meat) && resources.Contains(driedMeat))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("dry_meat"), "Dry Meat",
                     new[] { new ResourceAmount(meat, new ResourceQuantity(3)) },
                     new[] { new ResourceAmount(driedMeat, new ResourceQuantity(2)) },
                     TimeSpan.FromHours(2), ProductionSiteKind.BuildingWorkplace));
-            if (resources.Contains(hide) && resources.Contains(curedHide))
+            if (resources.Contains(rawHide) && resources.Contains(curedHide))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("cure_hide"), "Cure Hide",
-                    new[] { new ResourceAmount(hide, new ResourceQuantity(2)),
+                    new[] { new ResourceAmount(rawHide, new ResourceQuantity(1)),
                         new ResourceAmount(fiber, new ResourceQuantity(1)) },
-                    new[] { new ResourceAmount(curedHide, new ResourceQuantity(2)) },
+                    new[] { new ResourceAmount(curedHide, new ResourceQuantity(1)) },
                     TimeSpan.FromHours(3), ProductionSiteKind.BuildingWorkplace));
+            var leatherClothing = new ResourceId("leather_clothing");
+            if (resources.Contains(rawHide) && resources.Contains(leatherClothing))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("make_leather_clothing"), "Make Leather Clothing",
+                    new[] { new ResourceAmount(rawHide, new ResourceQuantity(2)),
+                        new ResourceAmount(fiber, new ResourceQuantity(2)) },
+                    new[] { new ResourceAmount(leatherClothing, new ResourceQuantity(1)) },
+                    TimeSpan.FromHours(5), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(wheat) && resources.Contains(animalFeed))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("make_animal_feed"), "Prepare Concentrated Feed",
+                    new[] { new ResourceAmount(wheat, new ResourceQuantity(1)),
+                        new ResourceAmount(fiber, new ResourceQuantity(1)) },
+                    new[] { new ResourceAmount(animalFeed, new ResourceQuantity(6)) },
+                    TimeSpan.FromMinutes(30), ProductionSiteKind.BuildingWorkplace));
+            if (resources.Contains(medicinalPlants) && resources.Contains(medicine))
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId("prepare_medicine"), "Prepare Herbal Medicine",
+                    new[] { new ResourceAmount(medicinalPlants, new ResourceQuantity(2)) },
+                    new[] { new ResourceAmount(medicine, new ResourceQuantity(1)) },
+                    TimeSpan.FromHours(1), ProductionSiteKind.BuildingWorkplace));
+            AddStoneAgeEquipmentRecipes(recipes, resources, wood, stone, fiber, curedHide, feathers);
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_water"), "Fish Water", null,
                     new[] { new ResourceAmount(fish, new ResourceQuantity(1)) }, TimeSpan.FromMinutes(12),
                     ProductionSiteKind.NaturalSource, weatherExposure: ProductionWeatherExposure.Outdoor));
-            if (resources.Contains(water))
-                recipes.Add(new ProductionRecipe(new ProductionRecipeId("draw_water"), "Draw Water", null,
-                    new[] { new ResourceAmount(water, new ResourceQuantity(4)) }, TimeSpan.FromMinutes(30),
-                    ProductionSiteKind.BuildingWorkplace));
             var cookedMeat = new ResourceId("cooked_meat");
             var cookedFish = new ResourceId("cooked_fish");
             var cookedBerries = new ResourceId("cooked_berries");
@@ -268,13 +296,47 @@ namespace Game.Domain.Production
                     TimeSpan.FromMinutes(20), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_breed"), "Разведение рыбы",
-                    Array.Empty<ResourceAmount>(), new[] { new ResourceAmount(fish, new ResourceQuantity(6)) },
+                    resources.Contains(wheat)
+                        ? new[] { new ResourceAmount(wheat, new ResourceQuantity(1)) }
+                        : Array.Empty<ResourceAmount>(),
+                    new[] { new ResourceAmount(fish, new ResourceQuantity(6)) },
                     TimeSpan.FromMinutes(24), ProductionSiteKind.BuildingWorkplace));
             if (resources.Contains(fish))
                 recipes.Add(new ProductionRecipe(new ProductionRecipeId("fish_camp"), "Fishing Camp",
                     Array.Empty<ResourceAmount>(), new[] { new ResourceAmount(fish, new ResourceQuantity(1)) },
                     TimeSpan.FromMinutes(4), ProductionSiteKind.BuildingWorkplace));
             return new ProductionCatalog(recipes, resources);
+        }
+
+        private static void AddStoneAgeEquipmentRecipes(ICollection<ProductionRecipe> recipes,
+            ResourceCatalog resources, ResourceId wood, ResourceId stone, ResourceId fiber,
+            ResourceId curedHide, ResourceId feathers)
+        {
+            void Add(string recipe, string name, ResourceId output, ResourceAmount[] inputs, long units = 1)
+            {
+                if (!resources.Contains(output) || inputs.Any(x => !resources.Contains(x.ResourceId))) return;
+                recipes.Add(new ProductionRecipe(new ProductionRecipeId(recipe), name, inputs,
+                    new[] { new ResourceAmount(output, new ResourceQuantity(units)) },
+                    TimeSpan.FromHours(2), ProductionSiteKind.BuildingWorkplace));
+            }
+            Add("craft_stone_spear", "Craft Stone Spear", new ResourceId("stone_spear"), new[]
+            {
+                new ResourceAmount(wood, new ResourceQuantity(1)), new ResourceAmount(stone, new ResourceQuantity(1)),
+                new ResourceAmount(fiber, new ResourceQuantity(1))
+            });
+            Add("craft_wooden_shield", "Craft Wooden Shield", new ResourceId("wooden_shield"), new[]
+            {
+                new ResourceAmount(wood, new ResourceQuantity(3)), new ResourceAmount(curedHide, new ResourceQuantity(1))
+            });
+            Add("craft_combat_bow", "Craft Combat Bow", new ResourceId("combat_bow"), new[]
+            {
+                new ResourceAmount(wood, new ResourceQuantity(2)), new ResourceAmount(fiber, new ResourceQuantity(2))
+            });
+            Add("craft_arrows", "Craft Arrows", new ResourceId("arrows"), new[]
+            {
+                new ResourceAmount(wood, new ResourceQuantity(1)), new ResourceAmount(stone, new ResourceQuantity(1)),
+                new ResourceAmount(feathers, new ResourceQuantity(1))
+            }, 6);
         }
     }
 
@@ -594,6 +656,74 @@ namespace Game.Domain.Production
         public long Target { get; }
     }
 
+    public sealed class LivestockPenPolicyState
+    {
+        public LivestockPenPolicyState(StableEntityId buildingId, string species,
+            Game.Domain.Buildings.LivestockOperationMode mode, int populationLimit,
+            long lastProductTick = 0, long waterUnits = 0)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Pasture building ID is required.", nameof(buildingId));
+            if (string.IsNullOrWhiteSpace(species)) throw new ArgumentException("Livestock species is required.", nameof(species));
+            if (!Enum.IsDefined(typeof(Game.Domain.Buildings.LivestockOperationMode), mode))
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            if (populationLimit < 4 || populationLimit > 256) throw new ArgumentOutOfRangeException(nameof(populationLimit));
+            if (lastProductTick < 0) throw new ArgumentOutOfRangeException(nameof(lastProductTick));
+            if (waterUnits < 0) throw new ArgumentOutOfRangeException(nameof(waterUnits));
+            BuildingId = buildingId;
+            Species = species;
+            Mode = mode;
+            PopulationLimit = populationLimit;
+            LastProductTick = lastProductTick;
+            WaterUnits = waterUnits;
+        }
+
+        public StableEntityId BuildingId { get; }
+        public string Species { get; }
+        public Game.Domain.Buildings.LivestockOperationMode Mode { get; }
+        public int PopulationLimit { get; }
+        public long LastProductTick { get; }
+        /// <summary>Abstract internal drinking-water reserve. Water is never a warehouse resource.</summary>
+        public long WaterUnits { get; }
+    }
+
+    public sealed class HuntingLodgePolicyState
+    {
+        public HuntingLodgePolicyState(StableEntityId buildingId,
+            Game.Domain.Buildings.HuntingOperationMode mode, long targetCarcasses = 0,
+            long lastRestorationTick = 0)
+        {
+            if (!buildingId.IsValid) throw new ArgumentException("Hunting building ID is required.", nameof(buildingId));
+            if (!Enum.IsDefined(typeof(Game.Domain.Buildings.HuntingOperationMode), mode))
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            if (targetCarcasses < 0) throw new ArgumentOutOfRangeException(nameof(targetCarcasses));
+            if (lastRestorationTick < 0) throw new ArgumentOutOfRangeException(nameof(lastRestorationTick));
+            BuildingId = buildingId;
+            Mode = mode;
+            TargetCarcasses = targetCarcasses;
+            LastRestorationTick = lastRestorationTick;
+        }
+
+        public StableEntityId BuildingId { get; }
+        public Game.Domain.Buildings.HuntingOperationMode Mode { get; }
+        public long TargetCarcasses { get; }
+        public long LastRestorationTick { get; }
+    }
+
+    public sealed class FoodSpoilageState
+    {
+        public FoodSpoilageState(InventoryOwner owner, ResourceId resourceId, long accumulatedTicks)
+        {
+            if (!owner.Id.IsValid || !resourceId.IsValid) throw new ArgumentException("Spoilage references are required.");
+            if (accumulatedTicks < 0) throw new ArgumentOutOfRangeException(nameof(accumulatedTicks));
+            Owner = owner;
+            ResourceId = resourceId;
+            AccumulatedTicks = accumulatedTicks;
+        }
+        public InventoryOwner Owner { get; }
+        public ResourceId ResourceId { get; }
+        public long AccumulatedTicks { get; }
+    }
+
     public sealed class ProductionSaveState
     {
         public ProductionSaveState(long lastCalendarTick, long foodRemainderTicks, long foodConsumed,
@@ -601,7 +731,10 @@ namespace Game.Domain.Production
             IEnumerable<ProductionTaskState> tasks, IEnumerable<ResourceAmount> producedTotals,
             IEnumerable<ResourceInventoryState> inventories,
             IEnumerable<NaturalNodeLifecycleState> naturalLifecycles = null,
-            IndustrialSaveState industry = null, IEnumerable<Game.Domain.World.AnimalVitalState> animals = null)
+            IndustrialSaveState industry = null, IEnumerable<Game.Domain.World.AnimalVitalState> animals = null,
+            IEnumerable<LivestockPenPolicyState> livestockPolicies = null,
+            IEnumerable<HuntingLodgePolicyState> huntingPolicies = null,
+            IEnumerable<FoodSpoilageState> foodSpoilage = null)
         {
             if (lastCalendarTick < 0 || foodRemainderTicks < 0 || foodConsumed < 0 || foodShortage < 0)
                 throw new ArgumentOutOfRangeException(nameof(lastCalendarTick));
@@ -619,6 +752,12 @@ namespace Game.Domain.Production
                 .OrderBy(x => x.SiteId).ToArray());
             Industry = industry;
             Animals = Array.AsReadOnly((animals ?? Array.Empty<Game.Domain.World.AnimalVitalState>()).OrderBy(x => x.Id).ToArray());
+            LivestockPolicies = Array.AsReadOnly((livestockPolicies ?? Array.Empty<LivestockPenPolicyState>())
+                .OrderBy(x => x.BuildingId).ToArray());
+            HuntingPolicies = Array.AsReadOnly((huntingPolicies ?? Array.Empty<HuntingLodgePolicyState>())
+                .OrderBy(x => x.BuildingId).ToArray());
+            FoodSpoilage = Array.AsReadOnly((foodSpoilage ?? Array.Empty<FoodSpoilageState>())
+                .OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id).ThenBy(x => x.ResourceId).ToArray());
         }
 
         public long LastCalendarTick { get; }
@@ -633,5 +772,8 @@ namespace Game.Domain.Production
         public IReadOnlyList<NaturalNodeLifecycleState> NaturalLifecycles { get; }
         public IndustrialSaveState Industry { get; }
         public IReadOnlyList<Game.Domain.World.AnimalVitalState> Animals { get; }
+        public IReadOnlyList<LivestockPenPolicyState> LivestockPolicies { get; }
+        public IReadOnlyList<HuntingLodgePolicyState> HuntingPolicies { get; }
+        public IReadOnlyList<FoodSpoilageState> FoodSpoilage { get; }
     }
 }

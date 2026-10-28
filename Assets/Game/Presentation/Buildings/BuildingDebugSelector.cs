@@ -32,6 +32,7 @@ namespace Game.Presentation.Buildings
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (research == null) throw new ArgumentNullException(nameof(research));
             return catalog.Entries.Select(entry => entry.CreateDefinition())
+                .Where(definition => definition.Id.ToString() != "primitive_shelter")
                 .OrderBy(definition => definition.Id.ToString(), StringComparer.Ordinal)
                 .Select(definition => CreateOption(definition, research))
                 .ToArray();

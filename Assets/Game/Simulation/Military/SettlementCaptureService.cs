@@ -26,6 +26,7 @@ namespace Game.Simulation.Military
         private readonly MilitaryUnitService units;
         private readonly Dictionary<SettlementId, SettlementCaptureState> states =
             new Dictionary<SettlementId, SettlementCaptureState>();
+        private Action<IReadOnlyCollection<StableEntityId>, StableEntityId, CombatSideId, long> capturedSoldiers;
 
         public SettlementFlagCaptureService(long seed, GlobalMapService globalMap, BuildingRegistry buildingRegistry,
             BuildingDamageService damageService, CharacterRegistry characterRegistry,
@@ -40,6 +41,10 @@ namespace Game.Simulation.Military
         }
 
         public IReadOnlyList<SettlementCaptureState> States => states.Values.OrderBy(x => x.SettlementId).ToArray();
+
+        public void BindCapturedSoldiers(
+            Action<IReadOnlyCollection<StableEntityId>, StableEntityId, CombatSideId, long> handler) =>
+            capturedSoldiers = handler ?? throw new ArgumentNullException(nameof(handler));
 
         public SettlementCaptureState Register(SettlementId settlementId, StableEntityId mainBuildingId,
             long initialTick, long requiredTicks = DefaultRequiredTicks)
@@ -225,6 +230,9 @@ namespace Game.Simulation.Military
                 if (units.TryGet(unit.Id, out var remaining) && remaining.ActiveMemberIds.Any(joined.Contains))
                     units.TransferOwnership(unit.Id, new MilitarySideId(winner.Value));
             }
+            if (joined.Count > 0)
+                capturedSoldiers?.Invoke(joined, state.ActiveBarracksId ?? state.MainBuildingId,
+                    winner, calendarTick);
             map.SynchronizeSettlement(settlement.Id, settlement.LocationId, winner,
                 settlement.BuildingIds, settlement.ResidentCharacterIds);
             return new SettlementCaptureOutcomeState(winner, state.Seed, joined, executed, transfer,

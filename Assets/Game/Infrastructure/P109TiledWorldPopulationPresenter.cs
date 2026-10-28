@@ -86,8 +86,11 @@ namespace Game.Infrastructure
             art = Resources.Load<CompactWorldArtCatalog>("World/CompactWorldArt");
             worldMapResourceArt = Resources.Load<WorldMapResourceArtCatalog>("World/WorldMapResourceArt");
             poiArt = Resources.Load<WorldMapPoiArtCatalog>("World/WorldMapPoiArt");
+            Debug.Log("WM15_BOOT population ambience");
             CreateForestAmbience();
+            Debug.Log("WM15_BOOT population templates");
             IndexTemplates(authoredBiome);
+            Debug.Log("WM15_BOOT population plan");
             Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
             if (world.Definition.MapData != null)
             {
@@ -100,7 +103,9 @@ namespace Game.Infrastructure
             if (world.Definition.MapData?.Wildlife != null)
                 wildlifePopulation = new WildlifePopulationService(
                     new WorldMapWildlifePlanner(world.Definition, world.HeightSampler, worldSeed).Create(), worldSeed);
+            Debug.Log("WM15_BOOT population canonical resources");
             RegisterCanonicalPopulation();
+            Debug.Log("WM15_BOOT population tree resources");
             if (terrainWorld.VegetationPlan != null)
             {
                 var treeIds = new HashSet<StableEntityId>(terrainWorld.VegetationPlan.Instances
@@ -120,7 +125,9 @@ namespace Game.Infrastructure
                 }, () => production.Sites.Where(site => site.IsDepleted && treeIds.Contains(site.Id)).Select(site => site.Id));
             }
             terrainWorld.VisualTilesChanged += RefreshViews;
+            Debug.Log("WM15_BOOT population visible views");
             RefreshViews();
+            Debug.Log("WM15_BOOT population ready");
         }
 
         public void RefreshViews()

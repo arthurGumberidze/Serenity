@@ -845,8 +845,8 @@ namespace Game.Simulation.Combat
         {
             var value = stats.Get(characterId, weaponId);
             var modifier = combatModifier?.Invoke(characterId, calendarTick) ?? 1000;
-            if (modifier < 1 || modifier > 1000)
-                throw new InvalidOperationException("Combat modifier must be in 1..1000 per-thousand.");
+            if (modifier < 1 || modifier > 2000)
+                throw new InvalidOperationException("Combat modifier must be in 1..2000 per-thousand.");
               var skillModifier = CharacterSkillRules.WorkRatePerThousand(
                   characters.Get(characterId), CharacterSkillRules.Combat);
               return modifier == 1000 && skillModifier == 1000 ? value : new CombatStats(

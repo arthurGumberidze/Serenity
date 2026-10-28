@@ -459,10 +459,11 @@ namespace Game.Domain.World
                 var radius = poi.ProtectionRadiusMeters + 2f;
                 if (dx * dx + dz * dz < radius * radius) return false;
             }
-            // The start-zone list is an authored gameplay guarantee. Terrain paint is cosmetic and seed-driven;
-            // it must not make a required resource impossible after all physical exclusions have passed.
-            if (zone.Id == "res_start_basics" && StartMinimums.ContainsKey(resourceId)) return true;
-            return PaintAffinity(resourceId, paint.SampleWeights(worldX, worldZ)) >= 0.07f;
+            // Resource zones are authored semantic placement contracts. Terrain paint is a disposable visual
+            // projection and used to be sampled for every random candidate, turning population planning into
+            // minutes of repeated height/slope/biome work. Once shape, water, slope, routes, POIs and prepared
+            // corridors accept a point, the zone itself is sufficient authority for the resource type.
+            return true;
         }
 
         private static float PaintAffinity(string resourceId, IReadOnlyList<float> weights)

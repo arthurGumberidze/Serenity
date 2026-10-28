@@ -145,7 +145,8 @@ namespace Game.Infrastructure
         private CharacterRuntimeState Project(CharacterRuntimeState state)
         {
             if(!abstractMoves.TryGetValue(state.CharacterId,out var movement) || !root.AiAgents.TryGet(state.CharacterId,out var agent))return state;
-            return state.WithTier1State(movement.CurrentPosition,agent.Needs.Hunger,agent.Needs.Energy,agent.Needs.Mood);
+            return state.WithTier1State(movement.CurrentPosition,agent.Needs.Hunger,agent.Needs.Energy,
+                agent.Needs.Mood,agent.Needs.Thirst);
         }
         private void Advance(GameTimeAdvance advance)
         {
@@ -163,7 +164,7 @@ namespace Game.Infrastructure
                     movement=new OffCameraWorkMovement(id,state.Position,Scheduler.Settings.MovementSpeed,FindRoute);
                     abstractMoves.Add(id,movement);
                     Scheduler.Register(character,new Tier1AiAgentState(id,state.Position,
-                        new Tier1Needs(state.Hunger,state.Energy,state.Mood)),movement);
+                        new Tier1Needs(state.Hunger,state.Energy,state.Mood,state.Thirst)),movement);
                 }
                 movement.Advance(advance.CalendarDelta);
             }

@@ -8,9 +8,11 @@ namespace Game.Domain.Resources
     {
         private readonly ResourceAmount[] amounts;
         private readonly ResourceCategory[] acceptedCategories;
+        private readonly ResourceId[] acceptedResources;
 
         public ResourceInventoryState(InventoryOwner owner, long capacity, IEnumerable<ResourceCategory> acceptedCategories,
-            IEnumerable<ResourceAmount> amounts)
+            IEnumerable<ResourceAmount> amounts, IEnumerable<ResourceId> acceptedResources = null,
+            bool issuanceLocked = false)
         {
             if (!owner.Id.IsValid) throw new ArgumentException("Owner required.", nameof(owner));
             if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
@@ -21,12 +23,20 @@ namespace Game.Domain.Resources
             if (this.acceptedCategories.Any(x => !Enum.IsDefined(typeof(ResourceCategory), x)))
                 throw new ArgumentOutOfRangeException(nameof(acceptedCategories));
             this.amounts = (amounts ?? throw new ArgumentNullException(nameof(amounts))).ToArray();
+            AcceptsAllResources = acceptedResources == null;
+            this.acceptedResources = (acceptedResources ?? Array.Empty<ResourceId>()).Distinct().OrderBy(x => x).ToArray();
+            if (this.acceptedResources.Any(x => !x.IsValid))
+                throw new ArgumentException("Accepted resource IDs must be valid.", nameof(acceptedResources));
+            IssuanceLocked = issuanceLocked;
         }
 
         public InventoryOwner Owner { get; }
         public long Capacity { get; }
         public bool AcceptsAllCategories { get; }
         public IReadOnlyList<ResourceCategory> AcceptedCategories => Array.AsReadOnly(acceptedCategories);
+        public bool AcceptsAllResources { get; }
+        public IReadOnlyList<ResourceId> AcceptedResources => Array.AsReadOnly(acceptedResources);
+        public bool IssuanceLocked { get; }
         public IReadOnlyList<ResourceAmount> Amounts => Array.AsReadOnly(amounts);
     }
 
@@ -34,11 +44,13 @@ namespace Game.Domain.Resources
     {
         private readonly ResourceCatalog catalog;
         private readonly Dictionary<ResourceId, long> amounts = new Dictionary<ResourceId, long>();
-        private readonly HashSet<ResourceCategory> acceptedCategories;
+        private HashSet<ResourceCategory> acceptedCategories;
+        private HashSet<ResourceId> acceptedResources;
         private long totalUnits;
 
         public ResourceInventory(InventoryOwner owner, ResourceCatalog catalog, long capacity,
-            IEnumerable<ResourceCategory> acceptedCategories = null)
+            IEnumerable<ResourceCategory> acceptedCategories = null,
+            IEnumerable<ResourceId> acceptedResources = null, bool issuanceLocked = false)
         {
             if (!owner.Id.IsValid) throw new ArgumentException("Owner required.", nameof(owner));
             if (capacity < 0) throw new ArgumentOutOfRangeException(nameof(capacity));
@@ -48,17 +60,44 @@ namespace Game.Domain.Resources
             this.acceptedCategories = acceptedCategories == null ? null : new HashSet<ResourceCategory>(acceptedCategories);
             if (this.acceptedCategories != null && this.acceptedCategories.Any(x => !Enum.IsDefined(typeof(ResourceCategory), x)))
                 throw new ArgumentOutOfRangeException(nameof(acceptedCategories));
+            this.acceptedResources = acceptedResources == null ? null : new HashSet<ResourceId>(acceptedResources);
+            if (this.acceptedResources != null)
+                foreach (var resourceId in this.acceptedResources) catalog.Get(resourceId);
+            IssuanceLocked = issuanceLocked;
         }
 
         public InventoryOwner Owner { get; }
         public long Capacity { get; private set; }
         public long TotalUnits => totalUnits;
+        public bool AcceptsAllCategories => acceptedCategories == null;
+        public bool AcceptsAllResources => acceptedResources == null;
+        public IReadOnlyCollection<ResourceCategory> AcceptedCategories => acceptedCategories == null
+            ? Array.Empty<ResourceCategory>() : acceptedCategories.OrderBy(x => x).ToArray();
+        public IReadOnlyCollection<ResourceId> AcceptedResources => acceptedResources == null
+            ? Array.Empty<ResourceId>() : acceptedResources.OrderBy(x => x).ToArray();
+        public bool IssuanceLocked { get; private set; }
 
         public bool Accepts(ResourceId id)
         {
             var definition = catalog.Get(id);
-            return acceptedCategories == null || acceptedCategories.Contains(definition.Category);
+            return (acceptedCategories == null || acceptedCategories.Contains(definition.Category)) &&
+                (acceptedResources == null || acceptedResources.Contains(id));
         }
+
+        public void ConfigureAcceptance(IEnumerable<ResourceCategory> categories,
+            IEnumerable<ResourceId> resources)
+        {
+            var categorySet = categories == null ? null : new HashSet<ResourceCategory>(categories);
+            if (categorySet != null && categorySet.Any(x => !Enum.IsDefined(typeof(ResourceCategory), x)))
+                throw new ArgumentOutOfRangeException(nameof(categories));
+            var resourceSet = resources == null ? null : new HashSet<ResourceId>(resources);
+            if (resourceSet != null)
+                foreach (var resourceId in resourceSet) catalog.Get(resourceId);
+            acceptedCategories = categorySet;
+            acceptedResources = resourceSet;
+        }
+
+        public void SetIssuanceLocked(bool locked) => IssuanceLocked = locked;
 
         public void EnsureCapacity(long minimumCapacity)
         {
@@ -72,6 +111,11 @@ namespace Game.Domain.Resources
             if (state.Owner != Owner) throw new ArgumentException("Inventory owner cannot change.", nameof(state));
             var restored = Restore(state, catalog);
             Capacity = restored.Capacity;
+            acceptedCategories = restored.acceptedCategories == null
+                ? null : new HashSet<ResourceCategory>(restored.acceptedCategories);
+            acceptedResources = restored.acceptedResources == null
+                ? null : new HashSet<ResourceId>(restored.acceptedResources);
+            IssuanceLocked = restored.IssuanceLocked;
             amounts.Clear();
             foreach (var amount in restored.amounts) amounts.Add(amount.Key, amount.Value);
             totalUnits = restored.totalUnits;
@@ -86,29 +130,36 @@ namespace Game.Domain.Resources
         {
             var definition = catalog.Get(id);
             if (!quantity.IsPositive) return false;
-            if (acceptedCategories != null && !acceptedCategories.Contains(definition.Category)) return false;
+            if (!Accepts(id)) return false;
             return quantity.Units <= Capacity - totalUnits &&
                 (!amounts.TryGetValue(id, out var old) || quantity.Units <= long.MaxValue - old);
         }
 
-        public bool CanRemove(ResourceId id, ResourceQuantity quantity)
+        public bool CanRemove(ResourceId id, ResourceQuantity quantity, bool ignoreIssuanceLock = false)
         {
             catalog.Get(id);
-            return quantity.IsPositive && amounts.TryGetValue(id, out var old) && old >= quantity.Units;
+            return (ignoreIssuanceLock || !IssuanceLocked) && quantity.IsPositive &&
+                amounts.TryGetValue(id, out var old) && old >= quantity.Units;
         }
 
-        public bool TryAdd(ResourceId id, ResourceQuantity quantity)
+        public bool TryAdd(ResourceId id, ResourceQuantity quantity, bool ignoreAcceptance = false)
         {
-            if (!CanAdd(id, quantity)) return false;
+            if (ignoreAcceptance)
+            {
+                catalog.Get(id);
+                if (!quantity.IsPositive || quantity.Units > Capacity - totalUnits ||
+                    amounts.TryGetValue(id, out var current) && quantity.Units > long.MaxValue - current) return false;
+            }
+            else if (!CanAdd(id, quantity)) return false;
             amounts.TryGetValue(id, out var old);
             amounts[id] = old + quantity.Units;
             totalUnits += quantity.Units;
             return true;
         }
 
-        public bool TryRemove(ResourceId id, ResourceQuantity quantity)
+        public bool TryRemove(ResourceId id, ResourceQuantity quantity, bool ignoreIssuanceLock = false)
         {
-            if (!CanRemove(id, quantity)) return false;
+            if (!CanRemove(id, quantity, ignoreIssuanceLock)) return false;
             var remaining = amounts[id] - quantity.Units;
             if (remaining == 0) amounts.Remove(id);
             else amounts[id] = remaining;
@@ -118,17 +169,25 @@ namespace Game.Domain.Resources
 
         public ResourceInventoryState CaptureState() => new ResourceInventoryState(Owner, Capacity,
             acceptedCategories,
-            amounts.OrderBy(x => x.Key).Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))));
+            amounts.OrderBy(x => x.Key).Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))),
+            acceptedResources, IssuanceLocked);
 
         public static ResourceInventory Restore(ResourceInventoryState state, ResourceCatalog catalog)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             var inventory = new ResourceInventory(state.Owner, catalog, state.Capacity,
-                state.AcceptsAllCategories ? null : state.AcceptedCategories);
+                state.AcceptsAllCategories ? null : state.AcceptedCategories,
+                state.AcceptsAllResources ? null : state.AcceptedResources, state.IssuanceLocked);
             var seen = new HashSet<ResourceId>();
             foreach (var amount in state.Amounts)
-                if (!seen.Add(amount.ResourceId) || !inventory.TryAdd(amount.ResourceId, amount.Quantity))
+            {
+                catalog.Get(amount.ResourceId);
+                if (!amount.Quantity.IsPositive || !seen.Add(amount.ResourceId) ||
+                    amount.Quantity.Units > state.Capacity - inventory.totalUnits)
                     throw new ArgumentException("Inventory snapshot contains invalid, duplicate or over-capacity resource amounts.", nameof(state));
+                inventory.amounts.Add(amount.ResourceId, amount.Quantity.Units);
+                inventory.totalUnits += amount.Quantity.Units;
+            }
             return inventory;
         }
     }

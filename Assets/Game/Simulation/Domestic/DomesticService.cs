@@ -33,7 +33,7 @@ namespace Game.Simulation.Domestic
             buildings = buildingRegistry ?? throw new ArgumentNullException(nameof(buildingRegistry));
             healthFamily = healthAndFamilyService ?? throw new ArgumentNullException(nameof(healthAndFamilyService));
             homeDefinitions = new HashSet<BuildingDefinitionId>(eligibleHomeDefinitions ??
-                new[] { new BuildingDefinitionId("primitive_shelter") });
+                new[] { new BuildingDefinitionId("stone_age_hut") });
             if (homeDefinitions.Count == 0 || homeDefinitions.Any(x => !x.IsValid))
                 throw new ArgumentException("At least one valid home definition is required.");
         }

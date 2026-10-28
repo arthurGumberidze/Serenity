@@ -6,6 +6,7 @@ using Game.Domain.AI;
 using Game.Domain.Characters;
 using Game.Domain.Resources;
 using Game.Domain.Work;
+using Game.Domain.Buildings;
 
 namespace Game.Simulation.Work
 {
@@ -84,6 +85,8 @@ namespace Game.Simulation.Work
             RequireCharacter(characterId);
             Groups.Get(groupId).SetCommander(characterId);
         }
+
+        public void SetGroupShift(WorkGroupId groupId, WorkShiftKind shift) => Groups.Get(groupId).SetShift(shift);
 
         public WorkOrder CreateMoveJob(StableEntityId? assigneeId, WorldPosition target, WorkPriority priority,
             WorkGroupId? groupId = null, bool exclusiveTarget = false,
@@ -186,6 +189,21 @@ namespace Game.Simulation.Work
             return job != null && Assign(job.Id, characterId, WorkQueuePlacement.Tail);
         }
 
+        public bool TryAssignNext(StableEntityId characterId, long calendarTick, out WorkOrder job)
+        {
+            RequireCharacter(characterId);
+            if (!IsOnShift(characterId, calendarTick)) { job = null; return false; }
+            return TryAssignNext(characterId, out job);
+        }
+
+        public bool IsOnShift(StableEntityId characterId, long calendarTick)
+        {
+            if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (!Groups.TryGetForMember(characterId, out var group)) return true;
+            var hour = (int)((calendarTick % TimeSpan.TicksPerDay) / TimeSpan.TicksPerHour);
+            return group.Shift == WorkShiftKind.Day ? hour >= 6 && hour < 18 : hour < 6 || hour >= 18;
+        }
+
         public bool TryGetAssigned(StableEntityId characterId, out WorkOrder job)
         {
             job = jobs.Values.Where(x => x.AssigneeId == characterId &&
@@ -251,6 +269,7 @@ namespace Game.Simulation.Work
             {
                 var group = AddGroup(WorkGroup.CreateWithId(groupState.Id, groupState.DisplayName, groupState.Role),
                     groupState.MemberIds);
+                group.SetShift(groupState.Shift);
                 if (groupState.CommanderId.HasValue) group.SetCommander(groupState.CommanderId.Value);
             }
             foreach (var saved in state.Jobs.OrderBy(x => x.Id))

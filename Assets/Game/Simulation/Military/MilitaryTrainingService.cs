@@ -45,6 +45,7 @@ namespace Game.Simulation.Military
         private readonly List<MilitaryTrainingRecordState> records = new List<MilitaryTrainingRecordState>();
         private ulong sequence;
         public Func<MilitaryTrainingRecordState, bool> IsAtBarracks { get; set; }
+        public Func<StableEntityId, bool> IsRuler { get; set; }
 
         public MilitaryTrainingService(CharacterRegistry characterRegistry,
             ICharacterCapabilityProvider capabilityProvider, BuildingRegistry buildingRegistry,
@@ -73,6 +74,7 @@ namespace Game.Simulation.Military
 
         public MilitaryRank? GetRank(StableEntityId characterId)
         {
+            if (IsRuler?.Invoke(characterId) == true) return MilitaryRank.Generalissimo;
             var completed = records.Where(x => x.CharacterId == characterId && x.Completed)
                 .OrderByDescending(x => x.Rank).FirstOrDefault();
             return completed?.Rank;
@@ -81,33 +83,100 @@ namespace Game.Simulation.Military
         public MilitaryTrainingLevelDefinition GetNextLevel(StableEntityId characterId) =>
             catalog.TryGetNext(GetRank(characterId), out var value) ? value : null;
 
+        public int GetMaximumHealth(StableEntityId characterId)
+        {
+            var rank = GetRank(characterId);
+            var own = rank.HasValue ? catalog.Get(rank.Value).HealthBonus : 0;
+            var command = CommanderLevel(characterId);
+            return 100 + own + (command?.HealthBonus ?? 0) / 2 + CommanderCombatSkill(characterId) / 10;
+        }
+
+        public int GetDamagePerThousand(StableEntityId characterId)
+        {
+            var rank = GetRank(characterId);
+            var own = rank.HasValue ? catalog.Get(rank.Value).DamagePerThousand : 1000;
+            var command = CommanderLevel(characterId);
+            return Math.Min(2000, own + ((command?.DamagePerThousand ?? 1000) - 1000) / 2 +
+                CommanderCombatSkill(characterId) * 2);
+        }
+
+        private MilitaryTrainingLevelDefinition CommanderLevel(StableEntityId characterId)
+        {
+            if (!units.TryGetForMember(characterId, out var unit) || !unit.CaptainId.HasValue ||
+                !characters.TryGet(unit.CaptainId.Value, out var captain) ||
+                captain.LifeState != CharacterLifeState.Alive || !capabilities.GetCapabilities(captain.Id).CanFight)
+                return null;
+            var rank = GetRank(captain.Id);
+            return rank.HasValue && rank.Value >= MilitaryRank.Lieutenant ? catalog.Get(rank.Value) : null;
+        }
+
+        private int CommanderCombatSkill(StableEntityId characterId)
+        {
+            if (CommanderLevel(characterId) == null || !units.TryGetForMember(characterId, out var unit) ||
+                !unit.CaptainId.HasValue || !characters.TryGet(unit.CaptainId.Value, out var captain)) return 0;
+            return captain.TryGetSkill(CombatSkillId, out var skill) ? skill.Level.Value : 0;
+        }
+
         public bool IsExternallyControlled(StableEntityId characterId) =>
             records.Any(x => x.CharacterId == characterId && !x.Completed);
 
         public MilitaryTrainingStartResult TryStart(StableEntityId characterId, StableEntityId barracksId,
             CombatSideId sideId, long calendarTick, IEnumerable<InventoryOwner> fundingSources)
         {
-            if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
-            if (!characters.TryGet(characterId, out var character) || character.LifeState != CharacterLifeState.Alive)
-                return Fail(MilitaryTrainingStartFailure.MissingCharacter);
-            var capability = capabilities.GetCapabilities(characterId);
-            if (!capability.IsAdult) return Fail(MilitaryTrainingStartFailure.NotAdult);
-            if (capability.IsIncapacitated) return Fail(MilitaryTrainingStartFailure.Incapacitated);
-            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId != BarracksDefinitionId)
-                return Fail(MilitaryTrainingStartFailure.MissingBarracks);
-            if (!barracks.IsOperational) return Fail(MilitaryTrainingStartFailure.BarracksInactive);
-            if (!sideId.IsValid || barracks.OwnerSideId != sideId)
-                return Fail(MilitaryTrainingStartFailure.WrongOwner);
-            if (IsExternallyControlled(characterId)) return Fail(MilitaryTrainingStartFailure.AlreadyTraining);
-            if (!catalog.TryGetNext(GetRank(characterId), out var definition))
-                return Fail(MilitaryTrainingStartFailure.MaximumRank);
-            if (!TryPay(definition.Cost, fundingSources))
+            var sources = (fundingSources ?? throw new ArgumentNullException(nameof(fundingSources))).ToArray();
+            var failure = CheckStart(characterId, barracksId, sideId, calendarTick, sources);
+            if (failure != MilitaryTrainingStartFailure.None) return Fail(failure);
+            catalog.TryGetNext(GetRank(characterId), out var definition);
+            if (!TryPay(definition.Cost, sources))
                 return Fail(MilitaryTrainingStartFailure.InsufficientResources);
+            if (!GetRank(characterId).HasValue)
+                characters.Get(characterId).AssignProfession(new ProfessionId("military"));
             var record = new MilitaryTrainingRecordState(characterId, barracksId, sideId, definition.Rank,
                 calendarTick, checked(calendarTick + definition.DurationTicks), false, ++sequence);
             records.Add(record);
             if (calendarTick > LastProcessedTick) LastProcessedTick = calendarTick;
             return new MilitaryTrainingStartResult(MilitaryTrainingStartFailure.None, record);
+        }
+
+        public MilitaryTrainingStartFailure CheckStart(StableEntityId characterId, StableEntityId barracksId,
+            CombatSideId sideId, long calendarTick, IEnumerable<InventoryOwner> fundingSources)
+        {
+            if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            if (!characters.TryGet(characterId, out var character) || character.LifeState != CharacterLifeState.Alive)
+                return MilitaryTrainingStartFailure.MissingCharacter;
+            var capability = capabilities.GetCapabilities(characterId);
+            if (!capability.IsAdult) return MilitaryTrainingStartFailure.NotAdult;
+            if (capability.IsIncapacitated) return MilitaryTrainingStartFailure.Incapacitated;
+            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId != BarracksDefinitionId)
+                return MilitaryTrainingStartFailure.MissingBarracks;
+            if (!barracks.IsOperational) return MilitaryTrainingStartFailure.BarracksInactive;
+            if (!sideId.IsValid || barracks.OwnerSideId != sideId)
+                return MilitaryTrainingStartFailure.WrongOwner;
+            if (IsExternallyControlled(characterId)) return MilitaryTrainingStartFailure.AlreadyTraining;
+            if (!catalog.TryGetNext(GetRank(characterId), out var definition))
+                return MilitaryTrainingStartFailure.MaximumRank;
+            if (records.Count(x => !x.Completed && x.BarracksId == barracksId) >= 6)
+                return MilitaryTrainingStartFailure.BarracksFull;
+            if (definition.Rank == MilitaryRank.Generalissimo)
+                return MilitaryTrainingStartFailure.ReservedForRuler;
+            if (definition.Rank == MilitaryRank.ColonelGeneral &&
+                records.Count(x => x.SideId == sideId && x.Rank == MilitaryRank.ColonelGeneral) >= 2)
+                return MilitaryTrainingStartFailure.RankLimitReached;
+            var currentRank = GetRank(characterId);
+            if (currentRank.HasValue)
+            {
+                var lastPromotion = records.Where(x => x.CharacterId == characterId && x.Completed)
+                    .OrderByDescending(x => x.CompletionTick).ThenByDescending(x => x.Sequence).First();
+                if (calendarTick - lastPromotion.CompletionTick < definition.MinimumServiceTicks)
+                    return MilitaryTrainingStartFailure.InsufficientService;
+                var requiredCombatSkill = Math.Min(SkillLevel.Maximum,
+                    catalog.Get(currentRank.Value).CombatSkillLevel + definition.RequiredBattleExperience);
+                if (CharacterSkillRules.Level(character, CombatSkillId) < requiredCombatSkill)
+                    return MilitaryTrainingStartFailure.InsufficientBattleExperience;
+            }
+            return CanPay(definition.Cost, fundingSources)
+                ? MilitaryTrainingStartFailure.None
+                : MilitaryTrainingStartFailure.InsufficientResources;
         }
 
         public int AdvanceTo(long calendarTick)
@@ -118,6 +187,13 @@ namespace Game.Simulation.Military
             {
                 var record = records[i];
                 if (record.Completed) continue;
+                if (!characters.TryGet(record.CharacterId, out var trainee) ||
+                    trainee.LifeState != CharacterLifeState.Alive)
+                {
+                    // Death is the only terminal interruption: the paid course is lost and grants no rank.
+                    records.RemoveAt(i--);
+                    continue;
+                }
                 if (IsAtBarracks != null && !IsAtBarracks(record))
                 {
                     var delay = Math.Max(0, calendarTick - Math.Max(LastProcessedTick, record.StartTick));
@@ -171,12 +247,41 @@ namespace Game.Simulation.Military
             if (state == null) throw new ArgumentNullException(nameof(state));
             foreach (var record in state.Records)
             {
-                if (!characters.TryGet(record.CharacterId, out _) || !buildings.TryGet(record.BarracksId, out var barracks) ||
-                    barracks.DefinitionId != BarracksDefinitionId)
+                if (!characters.TryGet(record.CharacterId, out _) || !buildings.TryGet(record.BarracksId, out _))
                     throw new ArgumentException("Training save references unavailable canonical state.", nameof(state));
             }
             records.Clear(); records.AddRange(state.Records); sequence = state.Sequence;
             LastProcessedTick = state.LastProcessedTick;
+        }
+
+        /// <summary>Removes the former side's rank authority before a captured soldier joins another side.</summary>
+        public int RemoveMilitaryHistory(IEnumerable<StableEntityId> characterIds)
+        {
+            var ids = new HashSet<StableEntityId>(characterIds ?? Array.Empty<StableEntityId>());
+            return records.RemoveAll(x => ids.Contains(x.CharacterId));
+        }
+
+        /// <summary>
+        /// Registers surviving captured soldiers as privates of the winning side. Combat skill is retained:
+        /// captivity removes command rank, not learned battle experience.
+        /// </summary>
+        public int RegisterCapturedPrivates(IEnumerable<StableEntityId> characterIds, StableEntityId barracksId,
+            CombatSideId newSide, long calendarTick)
+        {
+            if (!barracksId.IsValid || !newSide.IsValid) throw new ArgumentException("Capture authority is required.");
+            if (calendarTick < LastProcessedTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
+            var added = 0;
+            foreach (var id in (characterIds ?? Array.Empty<StableEntityId>()).Distinct().OrderBy(x => x))
+            {
+                if (!characters.TryGet(id, out var character) || character.LifeState != CharacterLifeState.Alive) continue;
+                records.RemoveAll(x => x.CharacterId == id);
+                records.Add(new MilitaryTrainingRecordState(id, barracksId, newSide, MilitaryRank.Private,
+                    calendarTick, calendarTick, true, ++sequence));
+                appearances.SetClothing(id, StoneAgeAppearanceProfiles.MilitaryClothing);
+                added++;
+            }
+            LastProcessedTick = Math.Max(LastProcessedTick, calendarTick);
+            return added;
         }
 
         public ulong ComputeStateHash()
@@ -196,23 +301,74 @@ namespace Game.Simulation.Military
         {
             var character = characters.Get(record.CharacterId);
             var level = catalog.Get(record.Rank);
-            character.SetSkill(new SkillState(CombatSkillId, new SkillLevel(level.CombatSkillLevel)));
+            character.SetSkill(new SkillState(CombatSkillId, new SkillLevel(Math.Max(
+                CharacterSkillRules.Level(character, CombatSkillId), level.CombatSkillLevel))));
             appearances.SetClothing(record.CharacterId, StoneAgeAppearanceProfiles.MilitaryClothing);
-            if (units.TryGetForMember(record.CharacterId, out _)) return;
             var side = new MilitarySideId(record.SideId.Value);
+            if (units.TryGetForMember(record.CharacterId, out _))
+            {
+                ReconcileArmies(side, record);
+                return;
+            }
             var target = units.Units.FirstOrDefault(x => x.OwnerSideId == side &&
-                x.Status != MilitaryUnitStatus.Disbanded && !x.ActiveEncounterId.HasValue);
+                x.Status != MilitaryUnitStatus.Disbanded && !x.ActiveEncounterId.HasValue &&
+                x.ActiveMemberIds.Count < MilitaryUnitService.MaximumSquadMembers);
             if (target != null) units.AddMember(target.Id, record.CharacterId);
-            else units.Create(new MilitaryUnitId(DeterministicStableId.Create(worldSeed,
-                    "trained_unit:" + record.CharacterId)), side,
-                new[] { record.CharacterId }, record.CharacterId, newUnitRepresentation, newUnitLocation);
+            else if (record.Rank >= MilitaryRank.Lieutenant)
+            {
+                var unit = units.Create(new MilitaryUnitId(DeterministicStableId.Create(worldSeed,
+                        "trained_unit:" + record.CharacterId)), side,
+                    new[] { record.CharacterId }, record.CharacterId, newUnitRepresentation, newUnitLocation);
+                foreach (var graduate in records.Where(x => x.Completed && x.SideId == record.SideId &&
+                             x.CharacterId != record.CharacterId && x.Rank < MilitaryRank.Lieutenant)
+                             .OrderBy(x => x.Sequence).Take(MilitaryUnitService.MaximumSquadMembers - 1))
+                    if (!units.TryGetForMember(graduate.CharacterId, out _))
+                        units.AddMember(unit.Id, graduate.CharacterId);
+            }
+            ReconcileArmies(side, record);
+        }
+
+        private void ReconcileArmies(MilitarySideId side, MilitaryTrainingRecordState completing)
+        {
+            var colonelGenerals = records.Where(x => (x.Completed || x.Sequence == completing.Sequence) &&
+                    x.SideId.Value == side.Value &&
+                    x.Rank == MilitaryRank.ColonelGeneral)
+                .OrderBy(x => x.Sequence).Select(x => x.CharacterId).Take(2).ToArray();
+            foreach (var commander in colonelGenerals)
+                if (units.TryGetForMember(commander, out var squad) && !squad.ActiveEncounterId.HasValue)
+                    units.RemoveMember(squad.Id, commander);
+            var availableSquads = units.Units.Where(x => x.OwnerSideId == side &&
+                    x.Status != MilitaryUnitStatus.Disbanded &&
+                    !units.Armies.SelectMany(a => a.SquadIds).Contains(x.Id))
+                .OrderBy(x => x.Id).ToArray();
+            var armies = units.Armies.Where(x => x.OwnerSideId == side).OrderBy(x => x.Id).ToArray();
+            if (armies.Length > 0 && colonelGenerals.Length > 0 &&
+                GetRank(armies[0].CommanderId) != MilitaryRank.ColonelGeneral)
+                units.AssignArmyCommander(armies[0].Id, colonelGenerals[0]);
+            for (var index = 0; index < availableSquads.Length; index++)
+            {
+                armies = units.Armies.Where(x => x.OwnerSideId == side).OrderBy(x => x.Id).ToArray();
+                var open = armies.FirstOrDefault(x => x.SquadIds.Count < 10);
+                if (open != null) { units.AddSquadToArmy(open.Id, availableSquads[index].Id); continue; }
+                var armyIndex = armies.Length;
+                StableEntityId commander;
+                if (armyIndex < colonelGenerals.Length) commander = colonelGenerals[armyIndex];
+                else if (armyIndex == 0)
+                {
+                    commander = characters.GetAll().Where(x => IsRuler?.Invoke(x.Id) == true)
+                        .Select(x => x.Id).FirstOrDefault();
+                    if (!commander.IsValid) break;
+                }
+                else break;
+                units.CreateArmy(side, commander, new[] { availableSquads[index].Id });
+            }
         }
 
         private bool TryPay(IReadOnlyList<ResourceAmount> cost, IEnumerable<InventoryOwner> sources)
         {
             var inventoriesInOrder = (sources ?? throw new ArgumentNullException(nameof(sources))).Distinct()
                 .OrderBy(x => x.Kind).ThenBy(x => x.Id).Select(x => inventories.TryGet(x, out var found) ? found : null)
-                .Where(x => x != null).ToArray();
+                .Where(x => x != null && !x.IssuanceLocked).ToArray();
             foreach (var amount in cost)
                 if (inventoriesInOrder.Sum(x => x.GetAmount(amount.ResourceId).Units) < amount.Quantity.Units) return false;
             var charged = new List<Tuple<ResourceInventory, ResourceId, long>>();
@@ -239,6 +395,14 @@ namespace Game.Simulation.Military
                     charged[i].Item1.TryAdd(charged[i].Item2, new ResourceQuantity(charged[i].Item3));
                 throw;
             }
+        }
+
+        private bool CanPay(IReadOnlyList<ResourceAmount> cost, IEnumerable<InventoryOwner> sources)
+        {
+            var available = (sources ?? throw new ArgumentNullException(nameof(sources))).Distinct()
+                .Select(x => inventories.TryGet(x, out var found) ? found : null)
+                .Where(x => x != null && !x.IssuanceLocked).ToArray();
+            return cost.All(amount => available.Sum(x => x.GetAmount(amount.ResourceId).Units) >= amount.Quantity.Units);
         }
 
         private static MilitaryTrainingStartResult Fail(MilitaryTrainingStartFailure failure) =>

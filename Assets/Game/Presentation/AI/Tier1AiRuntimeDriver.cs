@@ -66,6 +66,8 @@ namespace Game.Presentation.AI
         private Tier1AiScheduler For(StableEntityId id) => SchedulerForCharacter?.Invoke(id) ?? scheduler;
 
         private Func<int> movementModifierProvider;
+        private Func<StableEntityId, int> individualMovementModifierProvider;
+        private Func<StableEntityId, WorldPosition, WorldPosition, bool> movementRouteValidator;
         private double presentationRefreshBudget;
         private int presentationRefreshCursor;
         private double animationRefreshBudget;
@@ -103,6 +105,15 @@ namespace Game.Presentation.AI
         public void SetCombatActivityProvider(Func<StableEntityId, bool> provider) =>
             combatActivityProvider = provider;
 
+        public void SetIndividualMovementModifierProvider(Func<StableEntityId, int> provider) =>
+            individualMovementModifierProvider = provider;
+
+        public void SetMovementRouteValidator(Func<StableEntityId, WorldPosition, WorldPosition, bool> validator)
+        {
+            movementRouteValidator = validator;
+            foreach (var movement in movements) movement.RouteValidator = validator;
+        }
+
         public Tier1AiAgentState Register(Character character, CharacterPresenter presenter, Tier1Needs needs = null)
         {
             if (clock == null || scheduler == null) throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
@@ -123,6 +134,7 @@ namespace Game.Presentation.AI
                 agentStates.Remove(character.Id);
             }
             var movement = new NavMeshMovementDriver(presenter, ownerScheduler.Settings.MovementSpeed);
+            movement.RouteValidator = movementRouteValidator;
             var position = movement.CurrentPosition;
             var state = new Tier1AiAgentState(character.Id, position, needs);
             ownerScheduler.Register(character, state, movement);
@@ -319,7 +331,12 @@ namespace Game.Presentation.AI
             for (var i = 0; i < updates; i++)
             {
                 if (presentationRefreshCursor >= movements.Count) presentationRefreshCursor = 0;
-                movements[presentationRefreshCursor].UpdatePresentation(clock.IsPaused, (int)clock.Speed, movementModifier);
+                var movement = movements[presentationRefreshCursor];
+                var individual = individualMovementModifierProvider?.Invoke(movement.CharacterId) ?? 1000;
+                if (individual < 0 || individual > 2000)
+                    throw new InvalidOperationException("Individual movement modifier provider returned an invalid value.");
+                var combined = Math.Min(2000, movementModifier * individual / 1000);
+                movement.UpdatePresentation(clock.IsPaused, (int)clock.Speed, combined);
                 presentationRefreshCursor++;
             }
         }

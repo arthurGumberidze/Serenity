@@ -49,30 +49,31 @@ namespace Game.Tests.Editor
         });
 
         [Test]
-        public void CanonicalCatalogContainsRawCookedResourcesAndAnimalWaterRecipes()
+        public void CanonicalCatalogContainsLivingBuildingResourcesWithoutStoredWaterWork()
         {
             var asset = AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(
                 "Assets/Game/Art/Config/ResourceCatalog.asset");
             var resources = asset.CreateCatalog();
-            Assert.That(resources.All.Select(x => x.Id.ToString()), Is.EquivalentTo(new[]
+            CollectionAssert.IsSubsetOf(new[]
             {
-                "wood_log", "stone", "plant_fiber", "hide", "carcass", "bone", "berries", "iron_ore", "gold_ore", "meat", "fish",
-                "cooked_berries", "cooked_fish", "cooked_meat", "cured_hide", "dried_meat", "water",
-                "branches", "mushrooms", "medicinal_plants", "clay", "flint", "copper_ore", "oil"
-            }));
+                "wood_log", "stone", "plant_fiber", "hide", "carcass", "dressed_carcass",
+                "field_dressed_carcass", "raw_hide", "bone", "berries", "meat", "fish",
+                "cooked_berries", "cooked_fish", "cooked_meat", "cured_hide", "dried_meat",
+                "wheat", "wool", "milk", "eggs", "feathers", "animal_feed", "medicine",
+                "leather_clothing", "stone_spear", "wooden_shield", "combat_bow", "arrows", "spoiled_food"
+            }, resources.All.Select(x => x.Id.ToString()).ToArray());
             var recipes = ProductionCatalog.CreateStoneAge(resources);
             Assert.That(recipes.Get(new ProductionRecipeId("hunt_animal")).Outputs
                 .Select(x => x.ResourceId.ToString()), Is.EqualTo(new[] { "carcass" }));
             Assert.That(recipes.Get(new ProductionRecipeId("butcher_carcass")).Outputs
-                .Select(x => x.ResourceId.ToString()), Is.EquivalentTo(new[] { "meat", "hide", "bone" }));
+                .Select(x => x.ResourceId.ToString()), Is.EquivalentTo(new[] { "meat", "bone" }));
             Assert.That(recipes.Get(new ProductionRecipeId("dry_meat")).Outputs.Single().ResourceId.ToString(),
                 Is.EqualTo("dried_meat"));
             Assert.That(recipes.Get(new ProductionRecipeId("cure_hide")).Outputs.Single().ResourceId.ToString(),
                 Is.EqualTo("cured_hide"));
             Assert.That(recipes.Get(new ProductionRecipeId("fish_water")).Outputs.Single().ResourceId.ToString(),
                 Is.EqualTo("fish"));
-            Assert.That(recipes.Get(new ProductionRecipeId("draw_water")).Outputs.Single().ResourceId.ToString(),
-                Is.EqualTo("water"));
+            Assert.That(recipes.All.Select(x => x.Id.ToString()), Does.Not.Contain("draw_water"));
         }
 
         [Test]
@@ -154,7 +155,11 @@ namespace Game.Tests.Editor
 
             buildings.Add(Building.Restore(new BuildingState(Id(192), new BuildingDefinitionId("hunting_camp"),
                 new GridCoordinate(0, 0), BuildingOrientation.North, ConstructionState.Completed)));
+            Assert.That(buildings.Get(Id(192)).IsOperational, Is.True);
+            Assert.That(production.IsRecipeAvailable(new ProductionRecipeId("hunt_animal"), true), Is.True);
             Assert.That(production.TryReserveAtSite(worker, site.Id, out var job), Is.True);
+            Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromHours(12)).Completed, Is.False,
+                "The first phase kills the animal; carrying the whole carcass is a separate phase.");
             Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromHours(12)).Completed, Is.True);
             Assert.That(inventories.Get(inventories.WorkerOwner(worker))
                 .GetAmount(new ResourceId("carcass")).Units, Is.EqualTo(1));

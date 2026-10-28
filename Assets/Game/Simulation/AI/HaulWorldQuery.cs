@@ -321,5 +321,6 @@ namespace Game.Simulation.AI
         public BuildingRegistry Buildings { get; }
         public Game.Simulation.Buildings.BuildingLifecycleService BuildingLifecycle { get; set; }
         public Action<InventoryOwner> ResourceDelivered { get; }
+        public Func<WorldPosition, WorldPosition?> DrinkingWell { get; set; }
     }
 }

@@ -49,16 +49,18 @@ namespace Game.Presentation.Characters
             var hunger = 0d;
             var energy = 1d;
             var mood = 1d;
+            var thirst = 0d;
             if (aiAgents.TryGet(characterId, out var agent))
             {
                 hunger = agent.Needs.Hunger;
                 energy = agent.Needs.Energy;
                 mood = agent.Needs.Mood;
+                thirst = agent.Needs.Thirst;
             }
             var basis = continuity.TryGetValue(characterId, out var retained)
                 ? retained
                 : new CharacterRuntimeState(characterId, position, default, false);
-            var state = basis.WithTier1State(position, hunger, energy, mood);
+            var state = basis.WithTier1State(position, hunger, energy, mood, thirst);
             continuity[characterId] = state;
             return state;
         }
@@ -79,8 +81,9 @@ namespace Game.Presentation.Characters
             var presenter = spawner.Spawn(character, position, Quaternion.identity);
             try
             {
-                aiRuntime.Register(character, presenter, new Tier1Needs(state.Hunger, state.Energy, state.Mood));
-                continuity[character.Id] = state.WithTier1State(state.Position, state.Hunger, state.Energy, state.Mood);
+                aiRuntime.Register(character, presenter, new Tier1Needs(state.Hunger, state.Energy, state.Mood, state.Thirst));
+                continuity[character.Id] = state.WithTier1State(state.Position, state.Hunger, state.Energy,
+                    state.Mood, state.Thirst);
             }
             catch
             {
@@ -111,7 +114,8 @@ namespace Game.Presentation.Characters
                 new Vector3(state.Position.X, state.Position.Y, state.Position.Z), Quaternion.identity);
             try
             {
-                aiRuntime.Register(character, replacement, new Tier1Needs(state.Hunger, state.Energy, state.Mood));
+                aiRuntime.Register(character, replacement, new Tier1Needs(state.Hunger, state.Energy,
+                    state.Mood, state.Thirst));
                 continuity[character.Id] = state;
                 return replacement;
             }

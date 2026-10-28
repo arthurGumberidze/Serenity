@@ -19,9 +19,15 @@ namespace Game.Tests.Editor
     {
         private static ProductionService Service(out BuildingRegistry buildings, out StableEntityId worker)
         {
-            var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries", "fish", "meat", "hide" }
+            return Service(out buildings, out worker, out _);
+        }
+
+        private static ProductionService Service(out BuildingRegistry buildings, out StableEntityId worker,
+            out ResourceInventoryRegistry inventories)
+        {
+            var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries", "fish", "meat", "hide", "carcass" }
                 .Select(x => new ResourceDefinition(new ResourceId(x), x, ResourceCategory.Food)));
-            var inventories = new ResourceInventoryRegistry();
+            inventories = new ResourceInventoryRegistry();
             worker = StableEntityId.NewId();
             inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, worker), resources, 100));
             buildings = new BuildingRegistry();
@@ -47,28 +53,50 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void PastureStartsEmptyAndPlayerChoosesOneYoungPair()
+        public void PastureStartsEmptyAndPlayerChoosesFoundingBreedingGroup()
         {
-            var service = Service(out var buildings, out _);
+            var service = Service(out var buildings, out _, out var inventories);
             var home = StableEntityId.NewId();
-            buildings.Add(Building.Restore(new BuildingState(home, new BuildingDefinitionId("animal_pasture"),
+            var definition = new BuildingDefinition(new BuildingDefinitionId("animal_pasture"), "Pasture",
+                BuildingCategory.Food, new BuildingFootprint(8, 8));
+            var pasture = Building.CreateNew(definition, default, BuildingOrientation.North,
+                new CombatSideId("player"), definition.Footprint.EnumerateCells(default, BuildingOrientation.North),
+                id: home);
+            pasture.MarkCompleted();
+            buildings.Add(pasture);
+            buildings.Add(Building.Restore(new BuildingState(StableEntityId.NewId(), new BuildingDefinitionId("well"),
                 default, BuildingOrientation.North, ConstructionState.Completed)));
             service.AddSite(ProductionSite.CreateCropPlot(home, new ProductionRecipeId("cultivate_berries"),
                 default, TimeSpan.FromDays(2)));
             Assert.That(service.Animals.AtHome(home), Is.Empty);
             Assert.That(service.EstablishPasture(home, new CombatSideId("player"), "horse"), Is.True);
             var initial = service.Animals.AtHome(home);
-            Assert.That(initial.Count, Is.EqualTo(2));
+            Assert.That(initial.Count, Is.EqualTo(4));
             Assert.That(initial.All(x => x.Species == "horse"), Is.True);
             foreach (var species in initial.GroupBy(x => x.Species))
             {
-                Assert.That(species.Count(), Is.EqualTo(2));
-                Assert.That(species.Count(x => x.Male), Is.EqualTo(1));
+                Assert.That(species.Count(), Is.EqualTo(4));
+                Assert.That(species.Count(x => x.Male), Is.EqualTo(2));
                 Assert.That(species.All(x => x.GrowthFraction(0, 3) == 0), Is.True);
             }
-            service.AdvanceTo(TimeSpan.FromDays(3).Ticks, Array.Empty<StableEntityId>());
+            var penStock = inventories.Get(new InventoryOwner(InventoryOwnerKind.BuildingStorage, home));
+            Assert.That(penStock.TryAdd(new ResourceId("plant_fiber"), new ResourceQuantity(60)), Is.True);
+            Assert.That(service.LivestockPolicies.Single().PopulationLimit, Is.EqualTo(8));
+            service.BuildingHasAssignedWorker = _ => true;
+            var work = new Game.Simulation.Work.WorkManager(new Game.Domain.Characters.CharacterRegistry());
+            for (var day = 1; day <= 3; day++)
+            {
+                service.MaintainLivingBuildingLogistics(work);
+                service.AdvanceTo(TimeSpan.FromDays(day).Ticks, Array.Empty<StableEntityId>());
+            }
             Assert.That(service.Animals.AtHome(home).Count, Is.EqualTo(initial.Count));
-            service.AdvanceTo(TimeSpan.FromDays(7).Ticks, Array.Empty<StableEntityId>());
+            for (var day = 4; day <= 7; day++)
+            {
+                service.MaintainLivingBuildingLogistics(work);
+                service.AdvanceTo(TimeSpan.FromDays(day).Ticks, Array.Empty<StableEntityId>());
+            }
+            Assert.That(service.Animals.AtHome(home).All(x => x.Health == x.Maximum), Is.True);
+            Assert.That(service.LivestockPolicies.Single().WaterUnits, Is.GreaterThan(0));
             Assert.That(service.Animals.AtHome(home).Count, Is.GreaterThan(initial.Count));
             Assert.That(service.Animals.AtHome(home).Any(x => x.BornTick >= TimeSpan.FromDays(5).Ticks), Is.True);
             var before = service.Animals.AtHome(home).Select(x => (x.Id, x.Species, x.BornTick)).ToArray();

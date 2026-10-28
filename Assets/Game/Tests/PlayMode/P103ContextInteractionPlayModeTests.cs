@@ -24,7 +24,15 @@ namespace Game.Tests.PlayMode
         public IEnumerator LoadLocal()
         {
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
-            yield return null;
+            var deadline = Time.realtimeSinceStartup + 900f;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            while (root == null || !root.IsInitialized)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline),
+                    "LocalGameplay did not finish asynchronous WM15 initialization in fifteen minutes.");
+                yield return null;
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            }
         }
 
         [UnityTest]
@@ -72,8 +80,7 @@ namespace Game.Tests.PlayMode
                 Is.EquivalentTo(System.Enum.GetValues(typeof(ContextActionKind))));
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True,
                 root.GameplayUi.ContextActionStates[ContextActionKind.Move].Reason.ToString());
-            Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Inspect].Reason,
-                Is.EqualTo(ContextUnavailableReason.WrongTargetType));
+            Assert.That(System.Enum.GetNames(typeof(ContextActionKind)), Does.Not.Contain("Inspect"));
             // A normal Player click can be observed by SelectionProbe in the same frame that UI Toolkit
             // closes the menu. The menu must execute against its captured stable roster and restore it.
             root.SelectionProbe.ClearSelection();

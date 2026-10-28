@@ -63,13 +63,15 @@ namespace Game.Infrastructure
                 root.Add(SerializeCombat(snapshot.Combat, snapshot.FormatVersion >= SaveSnapshot.BattleVersion,
                     snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryVersion)
-                root.Add(SerializeMilitary(snapshot.Military, snapshot.FormatVersion >= SaveSnapshot.CampaignVersion));
+                root.Add(SerializeMilitary(snapshot.Military, snapshot.FormatVersion >= SaveSnapshot.CampaignVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.WorldMapV2Version));
             if (snapshot.FormatVersion >= SaveSnapshot.PlayerControlVersion)
                 root.Add(SerializePlayerControl(snapshot.PlayerControl));
             if (snapshot.FormatVersion >= SaveSnapshot.BuildingVersion)
                 root.Add(SerializeBuildingWorld(snapshot.BuildingWorld,
                     snapshot.FormatVersion >= SaveSnapshot.BuildingConstructionVersion,
-                    snapshot.FormatVersion >= SaveSnapshot.BuildingPlacementVersion));
+                    snapshot.FormatVersion >= SaveSnapshot.BuildingPlacementVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion));
             if (snapshot.FormatVersion >= SaveSnapshot.GlobalMapVersion)
                 root.Add(SerializeGlobalMap(snapshot.GlobalMap,
                     snapshot.FormatVersion >= SaveSnapshot.OccupationVersion));
@@ -91,7 +93,8 @@ namespace Game.Infrastructure
             {
                 root.Add(SerializeDomestic(snapshot.Domestic));
                 root.Add(SerializeCharacterRuntime(snapshot.CharacterRuntime,
-                    snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion));
+                    snapshot.FormatVersion >= SaveSnapshot.NeedsMoodVersion,
+                    snapshot.FormatVersion >= SaveSnapshot.WorldMapV2Version));
             }
             if (snapshot.FormatVersion >= SaveSnapshot.MilitaryCampaignVersion)
                 root.Add(SerializeMilitaryCampaign(snapshot.MilitaryCampaign));
@@ -164,7 +167,8 @@ namespace Game.Infrastructure
                         ? DeserializeCombat(root.Element("combat"), version >= SaveSnapshot.BattleVersion,
                             version >= SaveSnapshot.NeedsMoodVersion) : null;
                     var military = version >= SaveSnapshot.MilitaryVersion
-                        ? DeserializeMilitary(root.Element("military"), version >= SaveSnapshot.CampaignVersion) : null;
+                        ? DeserializeMilitary(root.Element("military"), version >= SaveSnapshot.CampaignVersion,
+                            version >= SaveSnapshot.WorldMapV2Version) : null;
                     var playerControl = version >= SaveSnapshot.PlayerControlVersion
                         ? DeserializePlayerControl(root.Element("playerControl")) : null;
                     var buildingWorld = version >= SaveSnapshot.BuildingVersion
@@ -190,7 +194,8 @@ namespace Game.Infrastructure
                         ? DeserializeDomestic(root.Element("domestic")) : null;
                     var characterRuntime = version >= SaveSnapshot.DomesticVersion
                         ? DeserializeCharacterRuntime(root.Element("characterRuntime"),
-                            version >= SaveSnapshot.NeedsMoodVersion) : null;
+                            version >= SaveSnapshot.NeedsMoodVersion,
+                            version >= SaveSnapshot.WorldMapV2Version) : null;
                     var militaryCampaign = version >= SaveSnapshot.MilitaryCampaignVersion
                         ? DeserializeMilitaryCampaign(root.Element("militaryCampaign")) : null;
                     var diagnostics = version >= SaveSnapshot.DiagnosticVersion
@@ -253,7 +258,23 @@ namespace Game.Infrastructure
                     new XElement("domestic", animal.Domestic), new XElement("shotTicks", animal.ShotTicks),
                     new XElement("shotSequence", animal.ShotSequence), new XElement("harvested", animal.Harvested),
                     new XElement("home", animal.Home.IsValid ? animal.Home.ToString() : string.Empty),
-                    new XElement("male", animal.Male), new XElement("bornTick", animal.BornTick)))));
+                    new XElement("male", animal.Male), new XElement("bornTick", animal.BornTick)))),
+                new XElement("livestockPolicies", state.LivestockPolicies.Select(policy => new XElement("pen",
+                    new XElement("buildingId", policy.BuildingId.ToString()),
+                    new XElement("species", policy.Species), new XElement("mode", (int)policy.Mode),
+                    new XElement("populationLimit", policy.PopulationLimit),
+                    new XElement("lastProductTick", policy.LastProductTick),
+                    new XElement("waterUnits", policy.WaterUnits)))),
+                new XElement("huntingPolicies", state.HuntingPolicies.Select(policy => new XElement("lodge",
+                    new XElement("buildingId", policy.BuildingId.ToString()),
+                    new XElement("mode", (int)policy.Mode),
+                    new XElement("targetCarcasses", policy.TargetCarcasses),
+                    new XElement("lastRestorationTick", policy.LastRestorationTick)))),
+                new XElement("foodSpoilage", state.FoodSpoilage.Select(item => new XElement("clock",
+                    new XElement("ownerKind", (int)item.Owner.Kind),
+                    new XElement("ownerId", item.Owner.Id.ToString()),
+                    new XElement("resourceId", item.ResourceId.ToString()),
+                    new XElement("ticks", item.AccumulatedTicks)))));
             if (includeNaturalResources)
             {
                 element.Add(new XElement("naturalLifecycles", state.NaturalLifecycles.Select(item =>
@@ -281,6 +302,9 @@ namespace Game.Infrastructure
             new XElement("ownerKind", (int)state.Owner.Kind), new XElement("ownerId", state.Owner.Id.ToString()),
             new XElement("capacity", state.Capacity), new XElement("acceptsAll", state.AcceptsAllCategories),
             new XElement("categories", state.AcceptedCategories.Select(category => new XElement("category", (int)category))),
+            new XElement("acceptsAllResources", state.AcceptsAllResources),
+            new XElement("resources", state.AcceptedResources.Select(resource => new XElement("resource", resource.ToString()))),
+            new XElement("issuanceLocked", state.IssuanceLocked),
             new XElement("amounts", state.Amounts.Select(SerializeAmount)));
 
         private static XElement SerializeAmount(ResourceAmount amount) => new XElement("amount",
@@ -299,6 +323,9 @@ namespace Game.Infrastructure
                 "targets", "sites", "tasks", "producedTotals", "inventories" };
             if (includeNaturalResources) fields.AddRange(new[] { "naturalLifecycles", "industry" });
             if (element.Element("animals") != null) fields.Add("animals");
+            if (element.Element("livestockPolicies") != null) fields.Add("livestockPolicies");
+            if (element.Element("huntingPolicies") != null) fields.Add("huntingPolicies");
+            if (element.Element("foodSpoilage") != null) fields.Add("foodSpoilage");
             RequireFields(element, fields.ToArray());
             var targets = Items(element.Element("targets"), "target", item =>
             {
@@ -341,10 +368,18 @@ namespace Game.Infrastructure
                 var acceptsAll = XmlConvert.ToBoolean(Value(item, "acceptsAll"));
                 var categories = Items(item.Element("categories"), "category",
                     category => (ResourceCategory)XmlConvert.ToInt32(category.Value));
+                var acceptsAllResources = item.Element("acceptsAllResources") == null ||
+                    XmlConvert.ToBoolean(Value(item, "acceptsAllResources"));
+                var acceptedResources = item.Element("resources") == null
+                    ? Array.Empty<ResourceId>()
+                    : Items(item.Element("resources"), "resource", resource => new ResourceId(resource.Value));
+                var issuanceLocked = item.Element("issuanceLocked") != null &&
+                    XmlConvert.ToBoolean(Value(item, "issuanceLocked"));
                 var amounts = Items(item.Element("amounts"), "amount", DeserializeAmount);
                 return new ResourceInventoryState(new InventoryOwner((InventoryOwnerKind)Int(item, "ownerKind"),
                     StableEntityId.Parse(Value(item, "ownerId"))), Long(item, "capacity"),
-                    acceptsAll ? null : categories, amounts);
+                    acceptsAll ? null : categories, amounts,
+                    acceptsAllResources ? null : acceptedResources, issuanceLocked);
             });
             var natural = includeNaturalResources
                 ? Items(element.Element("naturalLifecycles"), "node", item =>
@@ -387,6 +422,37 @@ namespace Game.Infrastructure
                             StableEntityId.Parse(Value(item, "home")),
                         item.Element("male") != null && XmlConvert.ToBoolean(Value(item, "male")),
                         item.Element("bornTick") == null ? 0 : Long(item, "bornTick"));
+                }),
+                element.Element("livestockPolicies") == null ? null :
+                Items(element.Element("livestockPolicies"), "pen", item =>
+                {
+                    var fields = item.Element("waterUnits") == null
+                        ? new[] { "buildingId", "species", "mode", "populationLimit", "lastProductTick" }
+                        : new[] { "buildingId", "species", "mode", "populationLimit", "lastProductTick", "waterUnits" };
+                    RequireFields(item, fields);
+                    return new LivestockPenPolicyState(StableEntityId.Parse(Value(item, "buildingId")),
+                        Value(item, "species"), (LivestockOperationMode)Int(item, "mode"),
+                        Int(item, "populationLimit"), Long(item, "lastProductTick"),
+                        item.Element("waterUnits") == null ? 0 : Long(item, "waterUnits"));
+                }),
+                element.Element("huntingPolicies") == null ? null :
+                Items(element.Element("huntingPolicies"), "lodge", item =>
+                {
+                    var fields = item.Element("lastRestorationTick") == null
+                        ? new[] { "buildingId", "mode", "targetCarcasses" }
+                        : new[] { "buildingId", "mode", "targetCarcasses", "lastRestorationTick" };
+                    RequireFields(item, fields);
+                    return new HuntingLodgePolicyState(StableEntityId.Parse(Value(item, "buildingId")),
+                        (HuntingOperationMode)Int(item, "mode"), Long(item, "targetCarcasses"),
+                        item.Element("lastRestorationTick") == null ? 0 : Long(item, "lastRestorationTick"));
+                }),
+                element.Element("foodSpoilage") == null ? null :
+                Items(element.Element("foodSpoilage"), "clock", item =>
+                {
+                    RequireFields(item, new[] { "ownerKind", "ownerId", "resourceId", "ticks" });
+                    return new FoodSpoilageState(new InventoryOwner((InventoryOwnerKind)Int(item, "ownerKind"),
+                        StableEntityId.Parse(Value(item, "ownerId"))), new ResourceId(Value(item, "resourceId")),
+                        Long(item, "ticks"));
                 }));
         }
 
@@ -811,7 +877,8 @@ namespace Game.Infrastructure
             return new CombatSaveState(Long(element, "worldSeed"), Long(element, "lastCalendarTick"), encounters);
         }
 
-        private static XElement SerializeMilitary(MilitaryUnitSaveState state, bool includeSupply)
+        private static XElement SerializeMilitary(MilitaryUnitSaveState state, bool includeSupply,
+            bool includeArmies)
         {
             var element = new XElement("military");
             if (state == null) return element;
@@ -851,10 +918,16 @@ namespace Game.Infrastructure
                         new XElement("key", value.Key), new XElement("requiredUnits", value.RequiredUnits),
                         new XElement("consumedUnits", value.ConsumedUnits),
                         new XElement("modifierPerThousand", value.ModifierPerThousand))))) : null))));
+            if (includeArmies) element.Add(new XElement("armies", state.Armies.Select(army => new XElement("army",
+                new XElement("id", army.Id.ToString()),
+                new XElement("ownerSideId", army.OwnerSideId.ToString()),
+                new XElement("commanderId", army.CommanderId.ToString()),
+                new XElement("squads", army.SquadIds.Select(id => new XElement("squadId", id.ToString())))))));
             return element;
         }
 
-        private static MilitaryUnitSaveState DeserializeMilitary(XElement element, bool includeSupply)
+        private static MilitaryUnitSaveState DeserializeMilitary(XElement element, bool includeSupply,
+            bool includeArmies)
         {
             if (element == null) throw new FormatException("Missing military state.");
             if (!element.HasElements)
@@ -862,7 +935,8 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty military state.");
                 return null;
             }
-            RequireFields(element, new[] { "units" });
+            RequireFields(element, includeArmies && element.Element("armies") != null
+                ? new[] { "units", "armies" } : new[] { "units" });
             var units = Items(element.Element("units"), "unit", unit =>
             {
                 var unitFields = new[] { "id", "ownerSideId", "captainId", "status", "representation",
@@ -912,7 +986,17 @@ namespace Game.Infrastructure
                     Value(unit, "abstractLocationId"), Int(unit, "morale"), Int(unit, "cohesion"), orderState,
                     OptionalStableId(unit, "activeEncounterId"), ULong(unit, "revision"), supply);
             });
-            return new MilitaryUnitSaveState(units);
+            var armies = !includeArmies || element.Element("armies") == null ? Array.Empty<MilitaryArmyState>() :
+                Items(element.Element("armies"), "army", army =>
+                {
+                    RequireFields(army, new[] { "id", "ownerSideId", "commanderId", "squads" });
+                    var squads = Items(army.Element("squads"), "squadId", value =>
+                        MilitaryUnitId.Parse(Scalar(value)));
+                    return new MilitaryArmyState(StableEntityId.Parse(Value(army, "id")),
+                        new MilitarySideId(Value(army, "ownerSideId")),
+                        StableEntityId.Parse(Value(army, "commanderId")), squads);
+                });
+            return new MilitaryUnitSaveState(units, armies);
         }
 
         private static XElement SerializePlayerControl(PlayerControlSaveState state)
@@ -939,7 +1023,7 @@ namespace Game.Infrastructure
         }
 
         private static XElement SerializeBuildingWorld(BuildingWorldSaveState state, bool includeConstruction,
-            bool includePlacement)
+            bool includePlacement, bool includeFacilities)
         {
             var element = new XElement("buildingWorld");
             if (state == null) return element;
@@ -991,7 +1075,33 @@ namespace Game.Infrastructure
                 new XElement("worldPiles", state.WorldPiles.Select(value => new XElement("pile",
                     new XElement("id", value.Id.ToString()), new XElement("resourceId", value.ResourceId.ToString()),
                     new XElement("x", value.Coordinate.X), new XElement("z", value.Coordinate.Z),
-                    new XElement("level", value.Coordinate.Level)))));
+                    new XElement("level", value.Coordinate.Level)))),
+                includeFacilities ? SerializeFacilities(state.Facilities) : null);
+            return element;
+        }
+
+        private static XElement SerializeFacilities(SettlementFacilitySaveState state)
+        {
+            var element = new XElement("facilities");
+            if (state == null) return element;
+            element.Add(new XElement("homes", state.Homes.Select(x => new XElement("assignment",
+                    new XElement("characterId", x.CharacterId.ToString()),
+                    new XElement("buildingId", x.BuildingId.ToString())))),
+                new XElement("workplaces", state.Workplaces.Select(x => new XElement("assignment",
+                    new XElement("characterId", x.CharacterId.ToString()),
+                    new XElement("buildingId", x.BuildingId.ToString())))),
+                new XElement("waitingFamilies", state.WaitingFamilyIds.Select(x =>
+                    new XElement("familyId", x.ToString()))),
+                new XElement("rulingDynastyId", state.RulingDynastyId.HasValue
+                    ? state.RulingDynastyId.Value.ToString() : string.Empty),
+                new XElement("policies", state.Policies.Select(x => new XElement("policy",
+                    new XElement("buildingId", x.BuildingId.ToString()),
+                    new XElement("priority", (int)x.Priority), new XElement("shift", (int)x.Shift),
+                    new XElement("workPaused", x.WorkPaused), new XElement("gateAccess", (int)x.GateAccess)))),
+                new XElement("clinicPatients", state.ClinicPatients.Select(x => new XElement("patient",
+                    new XElement("patientId", x.PatientId.ToString()),
+                    new XElement("clinicId", x.ClinicId.ToString()), new XElement("severity", x.Severity),
+                    new XElement("admittedTick", x.AdmittedTick), new XElement("completionTick", x.CompletionTick)))));
             return element;
         }
 
@@ -1004,7 +1114,9 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty building-world state.");
                 return null;
             }
-            RequireFields(element, new[] { "lastFireTick", "buildings", "worldPiles" });
+            var worldFields = new List<string> { "lastFireTick", "buildings", "worldPiles" };
+            if (element.Element("facilities") != null) worldFields.Add("facilities");
+            RequireFields(element, worldFields.ToArray());
             var buildings = Items(element.Element("buildings"), "building", item =>
             {
                 var fields = new[] { "id", "definitionId", "x", "z", "level", "orientation",
@@ -1072,7 +1184,44 @@ namespace Game.Infrastructure
                     new ResourceId(Value(item, "resourceId")),
                     new GridCoordinate(Int(item, "x"), Int(item, "z"), Int(item, "level")));
             });
-            return new BuildingWorldSaveState(buildings, piles, Long(element, "lastFireTick"));
+            var facilities = DeserializeFacilities(element.Element("facilities"));
+            return new BuildingWorldSaveState(buildings, piles, Long(element, "lastFireTick"), facilities);
+        }
+
+        private static SettlementFacilitySaveState DeserializeFacilities(XElement element)
+        {
+            if (element == null || !element.HasElements) return null;
+            var fields = new List<string> { "homes", "workplaces", "waitingFamilies", "rulingDynastyId", "policies" };
+            if (element.Element("clinicPatients") != null) fields.Add("clinicPatients");
+            RequireFields(element, fields.ToArray());
+            var homes = Items(element.Element("homes"), "assignment", DeserializeFacilityAssignment);
+            var workplaces = Items(element.Element("workplaces"), "assignment", DeserializeFacilityAssignment);
+            var waiting = Items(element.Element("waitingFamilies"), "familyId", x => StableEntityId.Parse(Scalar(x)));
+            var dynastyText = Value(element, "rulingDynastyId");
+            var policies = Items(element.Element("policies"), "policy", item =>
+            {
+                RequireFields(item, new[] { "buildingId", "priority", "shift", "workPaused", "gateAccess" });
+                return new LivingBuildingPolicyState(StableEntityId.Parse(Value(item, "buildingId")),
+                    (BuildingWorkPriority)Int(item, "priority"), (WorkShiftKind)Int(item, "shift"),
+                    XmlConvert.ToBoolean(Value(item, "workPaused")), (GateAccessMode)Int(item, "gateAccess"));
+            });
+            var patients = element.Element("clinicPatients") == null ? Array.Empty<ClinicPatientState>() :
+                Items(element.Element("clinicPatients"), "patient", item =>
+                {
+                    RequireFields(item, new[] { "patientId", "clinicId", "severity", "admittedTick", "completionTick" });
+                    return new ClinicPatientState(StableEntityId.Parse(Value(item, "patientId")),
+                        StableEntityId.Parse(Value(item, "clinicId")), Int(item, "severity"),
+                        Long(item, "admittedTick"), Long(item, "completionTick"));
+                });
+            return new SettlementFacilitySaveState(homes, workplaces, waiting,
+                string.IsNullOrEmpty(dynastyText) ? (StableEntityId?)null : StableEntityId.Parse(dynastyText), policies, patients);
+        }
+
+        private static FacilityAssignmentState DeserializeFacilityAssignment(XElement item)
+        {
+            RequireFields(item, new[] { "characterId", "buildingId" });
+            return new FacilityAssignmentState(StableEntityId.Parse(Value(item, "characterId")),
+                StableEntityId.Parse(Value(item, "buildingId")));
         }
 
         private static XElement SerializeGlobalMap(GlobalMapSaveState state, bool includeOccupation)
@@ -1606,7 +1755,8 @@ namespace Game.Infrastructure
                     new XElement("nextFrontOrder", state.NextFrontOrder));
             element.Add(new XElement("groups", state.Groups.Select(group => new XElement("group",
                 new XElement("id", group.Id.ToString()), new XElement("name", group.DisplayName),
-                new XElement("role", (int)group.Role), OptionalId("commanderId", group.CommanderId),
+                new XElement("role", (int)group.Role), new XElement("shift", (int)group.Shift),
+                OptionalId("commanderId", group.CommanderId),
                 new XElement("members", group.MemberIds.Select(id => new XElement("member", id.ToString())))))));
             element.Add(new XElement("jobs", state.Jobs.Select(job =>
             {
@@ -1643,7 +1793,8 @@ namespace Game.Infrastructure
                 RequireFields(value, new[] { "id", "name", "role", "commanderId", "members" });
                 return new WorkGroupState(new WorkGroupId(StableEntityId.Parse(Value(value, "id"))),
                     Value(value, "name"), Items(value.Element("members"), "member", x => StableEntityId.Parse(Scalar(x))),
-                    OptionalStableId(value, "commanderId"), (WorkGroupRole)Int(value, "role"));
+                    OptionalStableId(value, "commanderId"), (WorkGroupRole)Int(value, "role"),
+                    value.Element("shift") == null ? WorkShiftKind.Day : (WorkShiftKind)Int(value, "shift"));
             });
             var jobs = Items(element.Element("jobs"), "job", value =>
             {
@@ -1880,7 +2031,8 @@ namespace Game.Infrastructure
             return new DomesticWorldSaveState(homes, beds, consents, interactions);
         }
 
-        private static XElement SerializeCharacterRuntime(CharacterRuntimeWorldSaveState state, bool includeMood)
+        private static XElement SerializeCharacterRuntime(CharacterRuntimeWorldSaveState state, bool includeMood,
+            bool includeThirst)
         {
             var element = new XElement("characterRuntime");
             if (state == null) return element;
@@ -1899,6 +2051,7 @@ namespace Game.Infrastructure
                 new XElement("hunger", XmlConvert.ToString(entry.State.Hunger)),
                 new XElement("energy", XmlConvert.ToString(entry.State.Energy)),
                 includeMood ? new XElement("mood", XmlConvert.ToString(entry.State.Mood)) : null,
+                includeThirst ? new XElement("thirst", XmlConvert.ToString(entry.State.Thirst)) : null,
                 new XElement("lastCalendar", entry.State.LastSimulationCalendarTick),
                 new XElement("lastBiological", entry.State.LastSimulationBiologicalTick),
                 new XElement("offCameraSteps", entry.State.OffCameraStepCount),
@@ -1907,7 +2060,8 @@ namespace Game.Infrastructure
             return element;
         }
 
-        private static CharacterRuntimeWorldSaveState DeserializeCharacterRuntime(XElement element, bool includeMood)
+        private static CharacterRuntimeWorldSaveState DeserializeCharacterRuntime(XElement element, bool includeMood,
+            bool includeThirst)
         {
             if (element == null) throw new FormatException("Missing character runtime state.");
             if (!element.HasElements)
@@ -1920,6 +2074,7 @@ namespace Game.Infrastructure
                 var fields = new List<string> { "id", "tier", "x", "y", "z", "velocityX", "velocityY", "velocityZ", "moving", "location",
                     "processedCalendar", "processedBiological", "stepCount", "hunger", "energy" };
                 if (includeMood) fields.Add("mood");
+                if (includeThirst) fields.Add("thirst");
                 fields.AddRange(new[] { "lastCalendar", "lastBiological", "offCameraSteps", "deterministicAccumulator", "activityProgress" });
                 RequireFields(item, fields.ToArray());
                 var state = new CharacterRuntimeState(StableEntityId.Parse(Value(item, "id")),
@@ -1930,7 +2085,8 @@ namespace Game.Infrastructure
                     checked((uint)ULong(item, "stepCount")), Double(item, "hunger"), Double(item, "energy"),
                     Long(item, "lastCalendar"), Long(item, "lastBiological"), ULong(item, "offCameraSteps"),
                     ULong(item, "deterministicAccumulator"), Long(item, "activityProgress"),
-                    includeMood ? Double(item, "mood") : 1d);
+                    includeMood ? Double(item, "mood") : 1d,
+                    includeThirst ? Double(item, "thirst") : 0d);
                 return new CharacterRuntimeSaveEntry((CharacterSimulationTier)Int(item, "tier"), state);
             }).ToArray();
             return new CharacterRuntimeWorldSaveState(entries);

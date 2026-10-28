@@ -433,15 +433,16 @@ namespace Game.Presentation.UI
         {
             if (context.BuildingPlacement.WasCancelledThisFrame) return;
             if (DeveloperUiVisible || IsTextInputFocused() || context.BuildingPlacement.IsActive) return;
-            if (context.Selection.SelectedCharacterIds.Count == 0)
-            {
-                CloseContextMenu();
-                return;
-            }
             if (!raycaster.TryGetContextHit(input.PointerPosition, out var hit) ||
                 !TryResolveContextTarget(hit, out var target))
             {
                 CloseContextMenu();
+                return;
+            }
+            if (context.Selection.SelectedCharacterIds.Count == 0)
+            {
+                if (target.Kind == ContextTargetKind.Building) OpenContextMenu(target, input.PointerPosition);
+                else CloseContextMenu();
                 return;
             }
             // Ground remains a direct move; objects expose only their applicable commands.
@@ -485,6 +486,14 @@ namespace Game.Presentation.UI
             AddTitle(contextMenu, "Контекстные действия");
             AddMuted(contextMenu, ContextTargetName(target) + " · жителей: " +
                 context.Selection.SelectedCharacterIds.Count);
+            if (context.Selection.SelectedCharacterIds.Count == 0)
+            {
+                if (target.Kind == ContextTargetKind.Building && context.Buildings.TryGet(target.EntityId, out var settingsBuilding))
+                    AddBuildingSettingsContext(settingsBuilding);
+                PositionContextMenu(screenPosition);
+                contextMenu.style.display = DisplayStyle.Flex;
+                return;
+            }
             var isCropTarget = TryGetCropTarget(target, out var cropTarget);
             var isPierTarget = TryGetFishingPierTarget(target,out var pierTarget);
             foreach (ContextActionKind action in Enum.GetValues(typeof(ContextActionKind)))
@@ -497,6 +506,7 @@ namespace Game.Presentation.UI
                     if (action == ContextActionKind.Build && menuBuilding.IsOperational) continue;
                     if (action == ContextActionKind.Craft && (!menuBuilding.IsOperational || !context.Production.Sites.Any(s => s.OwnerBuildingId == menuBuilding.Id))) continue;
                     if (action == ContextActionKind.Attack && menuBuilding.OwnerSideId.Value == "player") continue;
+                    if (action == ContextActionKind.Guard && !CanGuardAt(menuBuilding)) continue;
                 }
                 var attackState = action == ContextActionKind.Attack ? EvaluateMilitaryAttack(target) : default;
                 var state = action == ContextActionKind.Attack
@@ -524,6 +534,10 @@ namespace Game.Presentation.UI
                     : state.Reason == ContextUnavailableReason.None
                         ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
             }
+            if (target.Kind == ContextTargetKind.Building &&
+                context.Buildings.TryGet(target.EntityId, out var actionBuilding) &&
+                actionBuilding.DefinitionId == MilitaryTrainingService.BarracksDefinitionId)
+                AddBarracksTrainingContext(actionBuilding);
             if (isCropTarget) AddCropActions(cropTarget);
             AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
             PositionContextMenu(screenPosition);
@@ -555,6 +569,146 @@ namespace Game.Presentation.UI
                 : "Сбор доступен при созревании: " + CropPercent(site));
         }
 
+        private void AddBuildingSettingsContext(Building building)
+        {
+            AddMuted(contextMenu, "Здание 1 уровня");
+            AddBuildingPolicyControls(contextMenu, building);
+            var storageOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id);
+            if (context.Inventories.TryGet(storageOwner, out var storage))
+            {
+                var issuance = ActionButton(storage.IssuanceLocked ? "Разрешить выдачу" : "Запретить выдачу", () =>
+                    TryCommand(() => storage.SetIssuanceLocked(!storage.IssuanceLocked)), "building-storage-issuance");
+                contextMenu.Add(issuance);
+            }
+            var open = ActionButton("Открыть карточку здания", () =>
+            {
+                var presenter = FindObjectsByType<Game.Presentation.Buildings.BuildingPresenter>(FindObjectsInactive.Exclude)
+                    .FirstOrDefault(x => x.IsBound && x.BuildingId == building.Id);
+                if (presenter != null) context.Selection.SelectBuilding(presenter);
+                CloseContextMenu();
+                RefreshNow();
+            }, "building-open-settings");
+            contextMenu.Add(open);
+            AddMuted(contextMenu, "Ремонт и демонтаж находятся в карточке здания.");
+        }
+
+        private void AddBarracksTrainingContext(Building barracks)
+        {
+            var side = new CombatSideId("player");
+            var sources = context.Inventories.All.Select(x => x.Owner).ToArray();
+            var roster = activeContextSelectionIds.OrderBy(x => x).ToArray();
+            var failures = roster.ToDictionary(id => id, id => context.MilitaryTraining.CheckStart(
+                id, barracks.Id, side, context.Clock().State.CalendarTicks, sources));
+            var button = ActionButton("Стать военным / обучаться", () => TryCommand(() =>
+            {
+                var started = 0;
+                foreach (var id in roster)
+                {
+                    var result = context.MilitaryTraining.TryStart(id, barracks.Id, side,
+                        context.Clock().State.CalendarTicks, sources);
+                    if (!result.Started) continue;
+                    if (context.Work.Groups.TryGetForMember(id, out var group))
+                        context.Work.RemoveMember(group.Id, id);
+                    context.Facilities.UnassignWorkplace(id);
+                    started++;
+                }
+                SetStatus($"Начали курс: {started}. Свободных мест в казарме: {Math.Max(0, 6 - context.MilitaryTraining.Active.Count)}.");
+                CloseContextMenu();
+                RefreshNow();
+            }), "barracks-train-selection");
+            button.SetEnabled(failures.Values.Any(x => x == MilitaryTrainingStartFailure.None));
+            contextMenu.Add(button);
+            var firstFailure = failures.Values.FirstOrDefault(x => x != MilitaryTrainingStartFailure.None);
+            if (!button.enabledSelf && roster.Length > 0)
+                AddMuted(contextMenu, "Обучение недоступно: " + MilitaryTrainingFailureText(firstFailure));
+        }
+
+        private void AddBuildingPolicyControls(VisualElement parent, Building building)
+        {
+            if (context.Facilities == null) return;
+            var policy = context.Facilities.GetPolicy(building.Id);
+            AddMuted(parent, "Приоритет работы");
+            var priorityRow = Row();
+            foreach (var value in new[] { BuildingWorkPriority.Low, BuildingWorkPriority.Normal,
+                         BuildingWorkPriority.High, BuildingWorkPriority.Emergency })
+            {
+                var captured = value;
+                var button = ActionButton(policy.Priority == value ? "●" : "○", () =>
+                    TryCommand(() => context.Facilities.SetPolicy(building.Id, captured, policy.Shift,
+                        policy.WorkPaused, policy.GateAccess)), "building-priority-" + value.ToString().ToLowerInvariant());
+                button.tooltip = value == BuildingWorkPriority.Low ? "Низкий приоритет" :
+                    value == BuildingWorkPriority.Normal ? "Обычный приоритет" :
+                    value == BuildingWorkPriority.High ? "Высокий приоритет" : "Аварийный приоритет";
+                button.style.color = value == BuildingWorkPriority.Low ? new StyleColor(new Color(.45f, .75f, 1f)) :
+                    value == BuildingWorkPriority.Normal ? new StyleColor(new Color(.55f, .9f, .55f)) :
+                    value == BuildingWorkPriority.High ? new StyleColor(new Color(1f, .78f, .3f)) :
+                    new StyleColor(new Color(1f, .3f, .25f));
+                SerenityUiDesign.SetSelected(button, policy.Priority == value);
+                priorityRow.Add(button);
+            }
+            parent.Add(priorityRow);
+            var shiftRow = Row();
+            foreach (var value in new[] { WorkShiftKind.Day, WorkShiftKind.Night })
+            {
+                var captured = value;
+                var button = ActionButton((policy.Shift == value ? "✓ " : string.Empty) +
+                    (value == WorkShiftKind.Day ? "День" : "Ночь"), () =>
+                    TryCommand(() => context.Facilities.SetPolicy(building.Id, policy.Priority, captured,
+                        policy.WorkPaused, policy.GateAccess)), "building-shift-" + value.ToString().ToLowerInvariant());
+                SerenityUiDesign.SetSelected(button, policy.Shift == value);
+                shiftRow.Add(button);
+            }
+            parent.Add(shiftRow);
+            parent.Add(ActionButton(policy.WorkPaused ? "Возобновить работу" : "Остановить работу", () =>
+                TryCommand(() => context.Facilities.SetPolicy(building.Id, policy.Priority, policy.Shift,
+                    !policy.WorkPaused, policy.GateAccess)), "building-work-toggle"));
+
+            if (building.DefinitionId == new BuildingDefinitionId("gate"))
+            {
+                AddMuted(parent, "Режим ворот");
+                foreach (var value in new[] { GateAccessMode.Open, GateAccessMode.Closed,
+                             GateAccessMode.AlliesOnly, GateAccessMode.Nobody })
+                {
+                    var captured = value;
+                    var label = value == GateAccessMode.Open ? "Открыто" : value == GateAccessMode.Closed
+                        ? "Закрыто" : value == GateAccessMode.AlliesOnly ? "Пропуск своих" : "Запрет всем";
+                    var button = ActionButton((policy.GateAccess == value ? "✓ " : string.Empty) + label, () =>
+                        TryCommand(() =>
+                        {
+                            context.Facilities.SetPolicy(building.Id, policy.Priority, policy.Shift,
+                                policy.WorkPaused, captured);
+                            context.BuildingPathing?.SetGateAccessMode(building.Id, captured);
+                        }), "gate-access-" + value.ToString().ToLowerInvariant());
+                    SerenityUiDesign.SetSelected(button, policy.GateAccess == value);
+                    parent.Add(button);
+                }
+                var detained = context.BuildingPathing?.DetainedTravelers
+                    .Where(x => x.Value == building.Id).OrderBy(x => x.Key).ToArray();
+                if (detained != null && detained.Length > 0)
+                {
+                    AddMuted(parent, "Задержаны у ворот: " + detained.Length);
+                    foreach (var traveler in detained)
+                    {
+                        var capturedTraveler = traveler.Key;
+                        var row = Row();
+                        row.Add(ActionButton("Пропустить", () => TryCommand(() =>
+                            context.BuildingPathing.ResolveDetention(capturedTraveler, true))));
+                        row.Add(ActionButton("Не пропускать", () => TryCommand(() =>
+                            context.BuildingPathing.ResolveDetention(capturedTraveler, false))));
+                        parent.Add(row);
+                    }
+                }
+            }
+        }
+
+        private bool CanGuardAt(Building building)
+        {
+            var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
+            return building.DefinitionId == new BuildingDefinitionId("gate") ||
+                building.DefinitionId == new BuildingDefinitionId("chief_hut") ||
+                definition.Category == BuildingCategory.Military;
+        }
+
         private static string CropPercent(ProductionSite site) =>
             site.CropPhase == CropPlotPhase.Ready ? "100%" : site.GrowthRequiredTicks <= 0 ? "0%" :
                 RussianTextCatalog.Percent(Math.Clamp((double)site.GrowthProgressTicks / site.GrowthRequiredTicks,0d,1d));
@@ -569,6 +723,13 @@ namespace Game.Presentation.UI
         {
             "cow"=>"Корова", "pig"=>"Свинья", "goat"=>"Коза", "duck"=>"Утка",
             "chicken"=>"Курица", "horse"=>"Лошадь", _=>"Овца"
+        };
+
+        private static string LivestockModeName(LivestockOperationMode mode) => mode switch
+        {
+            LivestockOperationMode.Breeding => "Разведение",
+            LivestockOperationMode.Products => "Продукция",
+            _ => "Сбалансированный"
         };
 
         private void DrawCropWorkButtons(ProductionSite site)
@@ -757,7 +918,7 @@ namespace Game.Presentation.UI
                 (HasContextRole(id, action) || hunting && context.Military.TryGetForMember(id, out _));
             return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
                 exists && capabilities.IsAdult, correctRole,
-                exists && targetStatusValid && (action == ContextActionKind.Move || action == ContextActionKind.Inspect ||
+                exists && targetStatusValid && (action == ContextActionKind.Move ||
                            capabilities.CanPerformOrdinaryWork),
                 true, technology, withinDistance, HasContextPath(id, pathTarget), resourceAvailable,
                 capacity, busy, true, criticalNeed, interruptible);
@@ -765,6 +926,10 @@ namespace Game.Presentation.UI
 
         private bool HasContextRole(StableEntityId id, ContextActionKind action)
         {
+            if (context.MilitaryTraining.GetRank(id).HasValue &&
+                action != ContextActionKind.Move && action != ContextActionKind.Attack &&
+                action != ContextActionKind.Guard)
+                return false;
             if (!context.Work.Groups.TryGetForMember(id, out var group)) return true;
             WorkGroupRole required;
             switch (action)
@@ -885,7 +1050,6 @@ namespace Game.Presentation.UI
         {
             switch (action)
             {
-                case ContextActionKind.Inspect: return "Осмотреть";
                 case ContextActionKind.Gather: return "Собрать";
                 case ContextActionKind.Mine: return "Добывать";
                 case ContextActionKind.Chop: return "Рубить";
@@ -897,6 +1061,24 @@ namespace Game.Presentation.UI
                 case ContextActionKind.Attack: return "Напасть";
                 default: return action.ToString();
             }
+        }
+
+        private static string MilitaryRankName(MilitaryRank rank)
+        {
+            return (int)rank switch
+            {
+                1 => "Рядовой",
+                2 => "Сержант",
+                3 => "Прапорщик",
+                4 => "Лейтенант",
+                5 => "Капитан",
+                6 => "Майор",
+                7 => "Подполковник",
+                8 => "Полковник",
+                9 => "Генерал-полковник",
+                10 => "Генералиссимус",
+                _ => rank.ToString()
+            };
         }
 
         private static string MilitaryAttackReason(MilitaryAttackDisabledReason reason)
@@ -1230,8 +1412,8 @@ namespace Game.Presentation.UI
         private void ObserveOnboardingSignals()
         {
             var berries = new ResourceId("berries");
-            var shelter = context.Buildings.All.Any(x => x.DefinitionId == new BuildingDefinitionId("primitive_shelter") &&
-                                                          x.IsOperational);
+            var shelter = context.Buildings.All.Any(x =>
+                x.DefinitionId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
             var storage = context.Buildings.All.Any(x => x.DefinitionId == new BuildingDefinitionId("storage_basket") &&
                                                           x.IsOperational && context.Inventories.TryGet(
                                                               new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
@@ -1667,7 +1849,7 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, T("ui.economy.title"));
             var shelterReady = context.Buildings.All.Any(x =>
-                x.DefinitionId == new BuildingDefinitionId("primitive_shelter") && x.IsOperational);
+                x.DefinitionId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
             var storageReady = context.Buildings.All.Any(x =>
                 x.DefinitionId == new BuildingDefinitionId("storage_basket") && x.IsOperational &&
                 context.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
@@ -1732,7 +1914,7 @@ namespace Game.Presentation.UI
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
                 // Retain the legacy ID for existing scenes/saves, not as a second player option.
-                if (entry.DefinitionId == "primitive_crop_plot") continue;
+                if (entry.DefinitionId == "primitive_crop_plot" || entry.DefinitionId == "primitive_shelter") continue;
                 var definition = entry.CreateDefinition();
                 if (!MatchesBuildCategory(definition, buildCategory)) continue;
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
@@ -2095,31 +2277,49 @@ namespace Game.Presentation.UI
                 var rank = context.MilitaryTraining.GetRank(traineeId.Value);
                 var next = context.MilitaryTraining.GetNextLevel(traineeId.Value);
                 AddLine(mainPanel, CharacterName(traineeId) + " · звание: " +
-                    (rank.HasValue ? rank.Value.ToString() : "нет"));
+                    (rank.HasValue ? MilitaryRankName(rank.Value) : "нет"));
                 if (context.MilitaryTraining.IsExternallyControlled(traineeId.Value))
                 {
                     var active = context.MilitaryTraining.Active.Single(x => x.CharacterId == traineeId.Value);
-                    AddLine(mainPanel, "Обучение: " + active.Rank + " · осталось " +
+                    AddLine(mainPanel, "Обучение: " + MilitaryRankName(active.Rank) + " · осталось " +
                         FormatDuration(Math.Max(0, active.CompletionTick - context.Clock().State.CalendarTicks)));
                 }
                 else if (next == null) AddMuted(mainPanel, "Достигнуто высшее утверждённое звание.");
                 else
                 {
-                    AddLine(mainPanel, "Следующий курс: " + next.Rank + " · " + FormatDuration(next.DurationTicks));
+                    AddLine(mainPanel, "Следующий курс: " + MilitaryRankName(next.Rank) + " · " + FormatDuration(next.DurationTicks));
+                    if (next.MinimumServiceTicks > 0)
+                        AddMuted(mainPanel, "Требуемая выслуга после прошлого звания: " + FormatDuration(next.MinimumServiceTicks));
+                    if (next.RequiredBattleExperience > 0)
+                        AddMuted(mainPanel, "Требуемый боевой опыт: " + next.RequiredBattleExperience + " успешных атак после прошлого повышения.");
                     AddMuted(mainPanel, "Цена: " + string.Join(", ", next.Cost.Select(x =>
                         x.Quantity.Units + " " + Content("resource", x.ResourceId.ToString()))));
+                    var trainingAvailability = barracks == null
+                        ? MilitaryTrainingStartFailure.MissingBarracks
+                        : context.MilitaryTraining.CheckStart(traineeId.Value, barracks.Id,
+                            new CombatSideId("player"), context.Clock().State.CalendarTicks,
+                            context.Inventories.All.Select(x => x.Owner));
                     var train = ActionButton("Начать обучение", () => TryCommand(() =>
                     {
                         if (barracks == null) throw new PlayerFacingException("Нет действующих казарм.");
                         var result = context.MilitaryTraining.TryStart(traineeId.Value, barracks.Id,
                             new CombatSideId("player"), context.Clock().State.CalendarTicks,
                             context.Inventories.All.Select(x => x.Owner));
-                        if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " + result.Failure);
+                        if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " +
+                            MilitaryTrainingFailureText(result.Failure));
                     }), "military-train");
-                    train.SetEnabled(barracks != null && context.Health.GetCapabilities(traineeId.Value).IsAdult);
+                    train.SetEnabled(trainingAvailability == MilitaryTrainingStartFailure.None);
                     mainPanel.Add(train);
+                    if (trainingAvailability != MilitaryTrainingStartFailure.None)
+                        AddMuted(mainPanel, "Недоступно: " + MilitaryTrainingFailureText(trainingAvailability));
                 }
             }
+            AddSection(mainPanel, "Армии");
+            if (context.Military.Armies.Count == 0)
+                AddMuted(mainPanel, "Армия формируется из отрядов: до 10 отрядов, отдельный командир армии.");
+            foreach (var army in context.Military.Armies)
+                AddLine(mainPanel, "Армия · командир " + CharacterName(army.CommanderId) +
+                    " · отрядов " + army.SquadIds.Count + "/10");
             var index = 1;
             foreach (var unit in context.Military.Units)
             {
@@ -2179,6 +2379,28 @@ namespace Game.Presentation.UI
                         (double)capture.ProgressTicks / capture.RequiredTicks));
                 AddMuted(mainPanel, "Главное здание: " + capture.MainBuildingId + " · главные казармы: " +
                     (capture.ActiveBarracksId?.ToString() ?? "нет — нужен только флаг главного здания"));
+            }
+        }
+
+        private static string MilitaryTrainingFailureText(MilitaryTrainingStartFailure failure)
+        {
+            switch (failure)
+            {
+                case MilitaryTrainingStartFailure.MissingCharacter: return "житель недоступен";
+                case MilitaryTrainingStartFailure.NotAdult: return "требуется взрослый житель";
+                case MilitaryTrainingStartFailure.Incapacitated: return "житель тяжело ранен";
+                case MilitaryTrainingStartFailure.MissingBarracks: return "нет действующей казармы";
+                case MilitaryTrainingStartFailure.BarracksInactive: return "казарма не работает";
+                case MilitaryTrainingStartFailure.WrongOwner: return "чужая казарма";
+                case MilitaryTrainingStartFailure.AlreadyTraining: return "курс уже идёт";
+                case MilitaryTrainingStartFailure.MaximumRank: return "достигнуто высшее звание";
+                case MilitaryTrainingStartFailure.InsufficientResources: return "не хватает доступного снаряжения или ресурсов";
+                case MilitaryTrainingStartFailure.BarracksFull: return "все шесть мест заняты";
+                case MilitaryTrainingStartFailure.RankLimitReached: return "достигнут государственный лимит звания";
+                case MilitaryTrainingStartFailure.ReservedForRuler: return "генералиссимусом является правящий вождь";
+                case MilitaryTrainingStartFailure.InsufficientService: return "не завершён срок службы в текущем звании";
+                case MilitaryTrainingStartFailure.InsufficientBattleExperience: return "не хватает боевого опыта";
+                default: return failure.ToString();
             }
         }
 
@@ -2554,7 +2776,8 @@ namespace Game.Presentation.UI
             var hitPoints = new[] { body.Head.Value, body.Torso.Value, body.LeftArm.Value, body.RightArm.Value,
                 body.LeftLeg.Value, body.RightLeg.Value };
             var healthPoints = character.LifeState == CharacterLifeState.Dead ? 0 : hitPoints.Sum() / hitPoints.Length;
-            AddLine(inspector, $"Жизнь: {healthPoints}/100 · минимум части тела {hitPoints.Min()}/100");
+            var maximumHealth = context.MilitaryTraining.GetMaximumHealth(id);
+            AddLine(inspector, $"Жизнь: {healthPoints}/{maximumHealth} · минимум части тела {hitPoints.Min()}/{maximumHealth}");
             AddLine(inspector, $"Любимое занятие: {CharacterSkillRules.Favorite(character)}");
             AddMuted(inspector, "Навыки: " + string.Join(", ", character.CaptureState().Skills
                 .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
@@ -2563,7 +2786,7 @@ namespace Game.Presentation.UI
             if (context.AiAgents.TryGet(id, out var agent))
                 AddLine(inspector, F("ui.character.needs", RussianTextCatalog.Percent(agent.Needs.Hunger),
                     RussianTextCatalog.Percent(agent.Needs.Energy), E(agent.CurrentAction), E(agent.Phase)) +
-                    $" · настроение {agent.Needs.Mood:P0}");
+                    $" · жажда {agent.Needs.Thirst:P0} · настроение {agent.Needs.Mood:P0}");
             else AddMuted(inspector, T("ui.character.offcamera"));
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
                 x.State != HealthConditionState.Recovered).ToArray();
@@ -2633,7 +2856,9 @@ namespace Game.Presentation.UI
         {
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
             AddSection(inspector, Content("building", definition.Id.ToString()));
+            AddLine(inspector, "Уровень здания: 1");
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
+            if (building.IsOperational) AddBuildingPolicyControls(inspector, building);
             if (!building.IsOperational && building.ConstructionRequiredTicks > 0)
                 AddLine(inspector, $"Строительство: {building.ConstructionProgress:P0} · требуется работа строителя");
             if (!building.IsOperational && context.ConstructionClearance != null &&
@@ -2667,7 +2892,50 @@ namespace Game.Presentation.UI
                 ? F("ui.building.fire_intensity", building.FireIntensity) : string.Empty));
             var owner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id);
             if (context.Inventories.TryGet(owner, out var storage))
+            {
                 AddLine(inspector, F("ui.building.storage", storage.TotalUnits, storage.Capacity, InventoryText(storage)));
+                var issueButton = ActionButton(storage.IssuanceLocked ? "Разрешить выдачу" : "Запретить выдачу",
+                    () => TryCommand(() => storage.SetIssuanceLocked(!storage.IssuanceLocked)), "storage-issuance-lock");
+                SerenityUiDesign.SetSelected(issueButton, storage.IssuanceLocked);
+                inspector.Add(issueButton);
+                var categoryFilters = new Foldout { text = "Фильтр категорий", value = false };
+                foreach (ResourceCategory category in Enum.GetValues(typeof(ResourceCategory)))
+                {
+                    var captured = category;
+                    var accepted = storage.AcceptsAllCategories || storage.AcceptedCategories.Contains(category);
+                    var toggle = ActionButton((accepted ? "✓ " : "✕ ") + E(category), () => TryCommand(() =>
+                    {
+                        var selected = storage.AcceptsAllCategories
+                            ? Enum.GetValues(typeof(ResourceCategory)).Cast<ResourceCategory>().ToHashSet()
+                            : storage.AcceptedCategories.ToHashSet();
+                        if (!selected.Add(captured)) selected.Remove(captured);
+                        storage.ConfigureAcceptance(selected.Count == Enum.GetValues(typeof(ResourceCategory)).Length
+                            ? null : selected, storage.AcceptsAllResources ? null : storage.AcceptedResources);
+                    }), "storage-category-" + category.ToString().ToLowerInvariant());
+                    SerenityUiDesign.SetSelected(toggle, accepted);
+                    categoryFilters.Add(toggle);
+                }
+                inspector.Add(categoryFilters);
+                var resourceFilters = new Foldout { text = "Фильтр ресурсов", value = false };
+                foreach (var resource in context.Resources.All)
+                {
+                    var captured = resource.Id;
+                    var accepted = storage.AcceptsAllResources || storage.AcceptedResources.Contains(captured);
+                    var toggle = ActionButton((accepted ? "✓ " : "✕ ") + Content("resource", captured.ToString()),
+                        () => TryCommand(() =>
+                        {
+                            var selected = storage.AcceptsAllResources
+                                ? context.Resources.All.Select(x => x.Id).ToHashSet()
+                                : storage.AcceptedResources.ToHashSet();
+                            if (!selected.Add(captured)) selected.Remove(captured);
+                            storage.ConfigureAcceptance(storage.AcceptsAllCategories ? null : storage.AcceptedCategories,
+                                selected.Count == context.Resources.All.Count ? null : selected);
+                        }), "storage-resource-" + captured);
+                    SerenityUiDesign.SetSelected(toggle, accepted);
+                    resourceFilters.Add(toggle);
+                }
+                inspector.Add(resourceFilters);
+            }
             if (context.Production.Sites.FirstOrDefault(x => x.Id == building.Id) is ProductionSite site)
             {
                 AddLine(inspector, F("ui.building.production", building.IsOperational ? T("ui.building.operational") : T("common.unavailable")));
@@ -2684,14 +2952,14 @@ namespace Game.Presentation.UI
                             species.Select(DomesticAnimalName).ToList(), 0);
                         selector.SetEnabled(building.OwnerSideId == new CombatSideId("player") && building.IsOperational);
                         inspector.Add(selector);
-                        var settle = ActionButton("Заселить пару", () => TryCommand(() =>
+                        var settle = ActionButton("Заселить основное стадо (2♂ + 2♀)", () => TryCommand(() =>
                         {
                             var index = selector.index;
                             if (index < 0 || index >= species.Length) return;
                             var established = context.Production.EstablishPasture(site.Id,
                                 new CombatSideId("player"), species[index]);
                             SetStatus(established
-                                ? $"В загон заселена пара: {DomesticAnimalName(species[index])}."
+                                ? $"В загон заселено основное стадо: {DomesticAnimalName(species[index])}, 2 самца и 2 самки."
                                 : "Заселить этот загон сейчас нельзя.");
                         }), "pasture-settle-pair");
                         settle.SetEnabled(building.OwnerSideId == new CombatSideId("player") && building.IsOperational);
@@ -2699,9 +2967,52 @@ namespace Game.Presentation.UI
                     }
                     else
                     {
+                        var pen = context.Production.LivestockPolicies.FirstOrDefault(x => x.BuildingId == site.Id);
+                        if (pen != null)
+                        {
+                            AddLine(inspector, $"Режим: {LivestockModeName(pen.Mode)} · предел {pen.PopulationLimit}");
+                            AddLine(inspector, $"Внутренний запас воды: {pen.WaterUnits} · пополняет назначенный работник из колодца");
+                            var modes = Row();
+                            foreach (var mode in new[] { LivestockOperationMode.Breeding,
+                                         LivestockOperationMode.Products, LivestockOperationMode.Balanced })
+                            {
+                                var captured = mode;
+                                modes.Add(ActionButton((pen.Mode == mode ? "✓ " : string.Empty) + LivestockModeName(mode),
+                                    () => TryCommand(() => context.Production.SetLivestockPolicy(site.Id,
+                                        captured, pen.PopulationLimit))));
+                            }
+                            inspector.Add(modes);
+                            var limit = Row();
+                            limit.Add(ActionButton("Предел −", () => TryCommand(() =>
+                                context.Production.SetLivestockPolicy(site.Id, pen.Mode,
+                                    Math.Max(4, pen.PopulationLimit - 1)))));
+                            limit.Add(ActionButton("Предел +", () => TryCommand(() =>
+                                context.Production.SetLivestockPolicy(site.Id, pen.Mode,
+                                    pen.PopulationLimit + 1))));
+                            inspector.Add(limit);
+                            var species = policy.DomesticSpecies.ToArray();
+                            var selector = new DropdownField("Сменить вид",
+                                species.Select(DomesticAnimalName).ToList(),
+                                Math.Max(0, Array.IndexOf(species, pen.Species)));
+                            inspector.Add(selector);
+                            inspector.Add(ActionButton("Сменить вид (сначала забить текущее стадо)", () =>
+                                TryCommand(() => context.Production.ChangeLivestockSpecies(site.Id,
+                                    species[Math.Max(0, selector.index)]))));
+                        }
                         AddMuted(inspector, $"Для приплода нужны взрослые самец и самка. Взросление — {policy.LivestockMaturityDays} дн., приплод — раз в {policy.LivestockBirthDays} дн. при свободном месте.");
                         foreach (var animal in herd.Where(x => !x.Harvested))
-                            AddLine(inspector, $"{DomesticAnimalName(animal.Species)} · {(animal.Male ? "самец" : "самка")}: {animal.Health}/{animal.Maximum} HP");
+                        {
+                            var row = Row();
+                            AddLine(row, $"{DomesticAnimalName(animal.Species)} · {(animal.Male ? "самец" : "самка")}: {animal.Health}/{animal.Maximum} HP");
+                            var slaughter = ActionButton("Забить", () => TryCommand(() =>
+                                context.Production.SlaughterLivestock(animal.Id)));
+                            var canSlaughter = context.Production.CanSlaughterLivestock(animal.Id);
+                            slaughter.SetEnabled(canSlaughter);
+                            if (!canSlaughter) slaughter.tooltip = animal.Species == "horse"
+                                ? "Лошадей не забивают." : "Племенная четвёрка защищена от ручного забоя.";
+                            row.Add(slaughter);
+                            inspector.Add(row);
+                        }
                     }
                 }
                 else if (site.Kind == ProductionSiteKind.PrimitiveCropPlot)
@@ -2735,6 +3046,26 @@ namespace Game.Presentation.UI
                     if (site.CropPhase != CropPlotPhase.Unplanted)
                         AddLine(inspector, "Смена культуры доступна после сбора урожая.");
                 }
+            }
+            if (building.DefinitionId == new BuildingDefinitionId("hunting_camp"))
+            {
+                var hunting = context.Production.HuntingPolicies.FirstOrDefault(x => x.BuildingId == building.Id) ??
+                    new HuntingLodgePolicyState(building.Id, HuntingOperationMode.Hunt, 0);
+                AddSection(inspector, "Режим охотничьей стоянки");
+                inspector.Add(ActionButton((hunting.Mode == HuntingOperationMode.Hunt ? "✓ " : string.Empty) + "Охота",
+                    () => TryCommand(() => context.Production.SetHuntingPolicy(building.Id,
+                        HuntingOperationMode.Hunt, hunting.TargetCarcasses))));
+                inspector.Add(ActionButton((hunting.Mode == HuntingOperationMode.RestorePopulation ? "✓ " : string.Empty) +
+                    "Восстановление популяции", () => TryCommand(() => context.Production.SetHuntingPolicy(building.Id,
+                        HuntingOperationMode.RestorePopulation, hunting.TargetCarcasses))));
+            }
+            if (building.DefinitionId == new BuildingDefinitionId("healer_hut"))
+            {
+                var patients = context.Facilities.ClinicPatients.Where(x => x.ClinicId == building.Id).ToArray();
+                AddSection(inspector, $"Лечебница: врачи занимают 2 из 6 мест · пациентов {patients.Length}/4");
+                foreach (var patient in patients)
+                    AddLine(inspector, $"{context.Characters.Get(patient.PatientId).Name} · тяжесть {patient.Severity}" +
+                        (patient.InTreatment ? " · лечится" : " · ждёт"));
             }
             var workplaceSites = context.Production.Sites.Where(x =>
                 x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id).ToArray();
@@ -2789,17 +3120,26 @@ namespace Game.Presentation.UI
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
             {
                 if (definition.Housing != null)
+                {
                     inspector.Add(ActionButton("Поселить выбранных", () => TryCommand(() =>
                     {
                         var assigned = context.Selection.SelectedCharacterIds.Count(id =>
                             context.Facilities.AssignHome(id, building.Id).Succeeded);
                         SetStatus($"Назначено жильцов: {assigned}.");
                     })));
-                if (definition.Workplace != null && definition.Production == null)
-                    inspector.Add(ActionButton("Назначить выбранных работников", () => TryCommand(() =>
+                    inspector.Add(ActionButton("Выселить выбранных", () => TryCommand(() =>
+                    {
+                        var evicted = context.Selection.SelectedCharacterIds.Count(id =>
+                            context.Facilities.HomeAssignments.TryGetValue(id, out var home) && home == building.Id &&
+                            context.Facilities.UnassignHome(id));
+                        SetStatus($"Выселено жильцов: {evicted}.");
+                    })));
+                }
+                if (definition.Workplace != null)
+                    inspector.Add(ActionButton("Работать здесь / сменить профессию", () => TryCommand(() =>
                     {
                         var assigned = context.Selection.SelectedCharacterIds.Count(id =>
-                            context.Facilities.AssignWorkplace(id, building.Id).Succeeded);
+                            context.Facilities.ChangeWorkplace(id, building.Id).Succeeded);
                         SetStatus($"Назначено работников: {assigned}.");
                     })));
                 if (building.DefinitionId == new BuildingDefinitionId("training_ground"))
@@ -2827,6 +3167,25 @@ namespace Game.Presentation.UI
                         SetStatus($"Лекарь завершил лечение; снято состояний: {recovered}.");
                     })));
             }
+            if (building.DefinitionId == new BuildingDefinitionId("military_barracks"))
+            {
+                var rally = context.Buildings.All.FirstOrDefault(x => x.IsOperational &&
+                    x.DefinitionId == new BuildingDefinitionId("rally_point") && x.OwnerSideId == building.OwnerSideId);
+                var gather = ActionButton("Собрать военных на точке сбора", () => TryCommand(() =>
+                {
+                    if (rally == null) throw new PlayerFacingException("Сначала постройте точку сбора.");
+                    foreach (var id in context.PlayerCharacterIds().Where(id => context.MilitaryTraining.GetRank(id).HasValue))
+                        context.Work.CreateMoveJob(id,
+                            new WorldPosition(rally.Coordinate.X, rally.Coordinate.Level, rally.Coordinate.Z),
+                            WorkPriority.Immediate, queuePlacement: WorkQueuePlacement.Front);
+                    SetStatus("Военные направлены к точке сбора.");
+                }), "barracks-gather-military");
+                gather.SetEnabled(rally != null);
+                gather.tooltip = rally == null ? "Недоступно: в поселении нет точки сбора." :
+                    "Все военные поселения соберутся в указанной точке.";
+                inspector.Add(gather);
+                if (rally == null) AddMuted(inspector, "Сбор недоступен: сначала постройте точку сбора.");
+            }
             if (!building.IsOperational)
                 inspector.Add(ActionButton("Отменить стройку", () => TryCommand(() =>
                 {
@@ -2845,27 +3204,13 @@ namespace Game.Presentation.UI
                         if (!result.Succeeded) throw new PlayerFacingException("Ремонт недоступен: " + result.Failure);
                         SetStatus($"Ремонт завершён: +{result.IntegrityChanged} прочности.");
                     })));
-                if (definition.Upgrades != null)
-                    foreach (var upgrade in definition.Upgrades.Options)
-                    {
-                        var capturedUpgrade = upgrade;
-                        inspector.Add(ActionButton("Улучшить: " + Content("building", upgrade.TargetDefinitionId.ToString()),
-                            () => TryCommand(() =>
-                            {
-                                var result = context.BuildingLifecycle.Upgrade(building.Id,
-                                    capturedUpgrade.TargetDefinitionId, StableEntityId.NewId(),
-                                    TimeSpan.FromTicks(capturedUpgrade.WorkRequiredTicks),
-                                    context.Clock().State.CalendarTicks, LifecycleFundingSources());
-                                if (!result.Succeeded) throw new PlayerFacingException("Улучшение недоступно: " + result.Failure);
-                                SetStatus("Здание улучшено.");
-                            })));
-                    }
                 if (building.DefinitionId == new BuildingDefinitionId("gate") && context.BuildingPathing != null)
                 {
                     var open = context.BuildingPathing.IsGateOpen(building.Id);
                     inspector.Add(ActionButton(open ? "Закрыть ворота" : "Открыть ворота", () => TryCommand(() =>
                     {
-                        if (!context.BuildingPathing.SetGateOpen(building.Id, !open))
+                        if (!context.BuildingPathing.SetGateAccessMode(building.Id,
+                                open ? GateAccessMode.Closed : GateAccessMode.Open))
                             throw new PlayerFacingException("Состояние ворот изменить нельзя.");
                         SetStatus(open ? "Ворота закрыты." : "Ворота открыты.");
                     })));

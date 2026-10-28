@@ -238,7 +238,8 @@ namespace Game.Domain.Military
 
     public sealed class MilitaryUnitSaveState
     {
-        public MilitaryUnitSaveState(IEnumerable<MilitaryUnitState> units)
+        public MilitaryUnitSaveState(IEnumerable<MilitaryUnitState> units,
+            IEnumerable<MilitaryArmyState> armies = null)
         {
             var values = (units ?? throw new ArgumentNullException(nameof(units))).ToArray();
             if (values.Any(x => x == null)) throw new ArgumentException("Saved units cannot be null.", nameof(units));
@@ -246,8 +247,36 @@ namespace Game.Domain.Military
             if (values.Select(x => x.Id).Distinct().Count() != values.Length)
                 throw new ArgumentException("Saved military unit IDs must be unique.", nameof(units));
             Units = Array.AsReadOnly(values);
+            var formations = (armies ?? Array.Empty<MilitaryArmyState>()).ToArray();
+            if (formations.Any(x => x == null) || formations.Select(x => x.Id).Distinct().Count() != formations.Length ||
+                formations.SelectMany(x => x.SquadIds).Distinct().Count() != formations.Sum(x => x.SquadIds.Count))
+                throw new ArgumentException("Saved armies must be valid and squads may belong to one army only.", nameof(armies));
+            Armies = Array.AsReadOnly(formations.OrderBy(x => x.Id).ToArray());
         }
 
         public IReadOnlyList<MilitaryUnitState> Units { get; }
+        public IReadOnlyList<MilitaryArmyState> Armies { get; }
+    }
+
+    public sealed class MilitaryArmyState
+    {
+        public MilitaryArmyState(StableEntityId id, MilitarySideId ownerSideId,
+            StableEntityId commanderId, IEnumerable<MilitaryUnitId> squadIds)
+        {
+            if (!id.IsValid || !ownerSideId.IsValid || !commanderId.IsValid)
+                throw new ArgumentException("Army identity, side and commander are required.");
+            var squads = (squadIds ?? throw new ArgumentNullException(nameof(squadIds))).Distinct().OrderBy(x => x).ToArray();
+            if (squads.Length == 0 || squads.Length > 10 || squads.Any(x => !x.IsValid))
+                throw new ArgumentException("An army requires one to ten unique squads.", nameof(squadIds));
+            Id = id;
+            OwnerSideId = ownerSideId;
+            CommanderId = commanderId;
+            SquadIds = Array.AsReadOnly(squads);
+        }
+
+        public StableEntityId Id { get; }
+        public MilitarySideId OwnerSideId { get; }
+        public StableEntityId CommanderId { get; }
+        public IReadOnlyList<MilitaryUnitId> SquadIds { get; }
     }
 }

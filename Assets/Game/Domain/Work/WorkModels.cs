@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Game.Domain.AI;
 using Game.Domain.Resources;
+using Game.Domain.Buildings;
 
 namespace Game.Domain.Work
 {
@@ -43,7 +44,8 @@ namespace Game.Domain.Work
     public readonly struct WorkGroupState
     {
         public WorkGroupState(WorkGroupId id, string displayName, StableEntityId[] memberIds,
-            StableEntityId? commanderId, WorkGroupRole role = WorkGroupRole.General)
+            StableEntityId? commanderId, WorkGroupRole role = WorkGroupRole.General,
+            WorkShiftKind shift = WorkShiftKind.Day)
         {
             if (!id.IsValid) throw new ArgumentException("Valid group identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 64)
@@ -53,6 +55,8 @@ namespace Game.Domain.Work
             MemberIds = memberIds ?? Array.Empty<StableEntityId>();
             CommanderId = commanderId;
             Role = role;
+            if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
+            Shift = shift;
         }
 
         public WorkGroupId Id { get; }
@@ -60,18 +64,21 @@ namespace Game.Domain.Work
         public IReadOnlyList<StableEntityId> MemberIds { get; }
         public StableEntityId? CommanderId { get; }
         public WorkGroupRole Role { get; }
+        public WorkShiftKind Shift { get; }
     }
 
     public sealed class WorkGroup
     {
         private readonly HashSet<StableEntityId> members = new HashSet<StableEntityId>();
 
-        private WorkGroup(WorkGroupId id, string displayName, WorkGroupRole role)
+        private WorkGroup(WorkGroupId id, string displayName, WorkGroupRole role,
+            WorkShiftKind shift = WorkShiftKind.Day)
         {
             if (!id.IsValid) throw new ArgumentException("Valid group identity required.", nameof(id));
             Id = id;
             if (!Enum.IsDefined(typeof(WorkGroupRole), role)) throw new ArgumentOutOfRangeException(nameof(role));
             Role = role;
+            Shift = shift;
             Rename(displayName);
         }
 
@@ -79,6 +86,7 @@ namespace Game.Domain.Work
         public string DisplayName { get; private set; }
         public StableEntityId? CommanderId { get; private set; }
         public WorkGroupRole Role { get; }
+        public WorkShiftKind Shift { get; private set; }
         public int MemberCount => members.Count;
         public IReadOnlyList<StableEntityId> Members => members
             .OrderBy(x => x.ToString(), StringComparer.Ordinal).ToArray();
@@ -91,7 +99,7 @@ namespace Game.Domain.Work
 
         public static WorkGroup Restore(WorkGroupState state)
         {
-            var group = new WorkGroup(state.Id, state.DisplayName, state.Role);
+            var group = new WorkGroup(state.Id, state.DisplayName, state.Role, state.Shift);
             foreach (var member in state.MemberIds) group.AddMember(member);
             if (state.CommanderId.HasValue) group.SetCommander(state.CommanderId.Value);
             return group;
@@ -107,6 +115,8 @@ namespace Game.Domain.Work
         public void AddMember(StableEntityId characterId)
         {
             if (!characterId.IsValid) throw new ArgumentException("Valid character identity required.", nameof(characterId));
+            if (Role == WorkGroupRole.Warriors && members.Count >= 50)
+                throw new InvalidOperationException("A military squad may contain at most 50 residents including its commander.");
             if (!members.Add(characterId))
                 throw new InvalidOperationException("Character is already a member of this work group.");
         }
@@ -127,7 +137,13 @@ namespace Game.Domain.Work
             CommanderId = characterId;
         }
 
-        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId, Role);
+        public void SetShift(WorkShiftKind shift)
+        {
+            if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
+            Shift = shift;
+        }
+
+        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId, Role, Shift);
     }
 
     public sealed class WorkGroupRegistry

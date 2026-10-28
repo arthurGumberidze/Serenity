@@ -30,5 +30,20 @@ namespace Game.Simulation.Production
                     if(paused) CancelTasksForSite(site.Id);
                 }
         }
+
+        public void MaintainFisheryModes()
+        {
+            foreach (var group in orderedSites.Where(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&
+                         (x.RecipeId.ToString() == "fish_camp" || x.RecipeId.ToString() == "fish_breed"))
+                         .GroupBy(x => x.OwnerBuildingId).OrderBy(x => x.Key))
+            {
+                var stock = FishStockFor(group.First());
+                if (stock == null) continue;
+                var breeding = group.Any(x => x.RecipeId.ToString() == "fish_breed" && !x.Paused);
+                if (!breeding && stock.RemainingAmount <= 20) SetFisheryBreeding(group.Key, true);
+                else if (breeding && stock.RemainingAmount >= Math.Min(80, stock.SourceCapacity))
+                    SetFisheryBreeding(group.Key, false);
+            }
+        }
     }
 }

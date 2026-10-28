@@ -46,7 +46,10 @@ namespace Game.Domain.World
 
         public TiledWorldDefinition Definition => definition;
 
-        public float[] SampleWeights(float worldX, float worldZ)
+        public float[] SampleWeights(float worldX, float worldZ) =>
+            SampleWeights(worldX, worldZ, null, null);
+
+        private float[] SampleWeights(float worldX, float worldZ, float? preparedHeight, float? preparedSlope)
         {
             if (!definition.ContainsClosed(worldX, worldZ))
                 throw new ArgumentOutOfRangeException(nameof(worldX));
@@ -81,7 +84,7 @@ namespace Game.Domain.World
             else
                 Scale(result, 1f / membershipTotal);
 
-            ApplyTerrainModifiers(result, point, worldX, worldZ);
+            ApplyTerrainModifiers(result, point, worldX, worldZ, preparedHeight, preparedSlope);
             Normalize(result);
             return result;
         }
@@ -97,6 +100,41 @@ namespace Game.Domain.World
             {
                 var position = definition.SamplePosition(tile, x, z, resolution);
                 var weights = SampleWeights(position.X, position.Z);
+                for (var layer = 0; layer < LayerCount; layer++) result[z, x, layer] = weights[layer];
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Loading fast path: paint reuses the already prepared heightfield instead of evaluating the authored
+        /// mountain and hydrology another five times per alphamap pixel for height plus slope.
+        /// </summary>
+        public float[,,] CreateTileWeights(WorldTileId tile, int resolution, float[,] normalizedHeights)
+        {
+            if (!definition.IsValid(tile)) throw new ArgumentOutOfRangeException(nameof(tile));
+            if (resolution < 2 || resolution > 2049) throw new ArgumentOutOfRangeException(nameof(resolution));
+            if (normalizedHeights == null || normalizedHeights.GetLength(0) < 2 ||
+                normalizedHeights.GetLength(0) != normalizedHeights.GetLength(1))
+                throw new ArgumentException("A square prepared heightfield is required.", nameof(normalizedHeights));
+            var result = new float[resolution, resolution, LayerCount];
+            var heightResolution = normalizedHeights.GetLength(0);
+            var metresPerHeightSample = definition.TileSizeMeters / (heightResolution - 1f);
+            var slopeOffset = Math.Max(1, (int)Math.Round(12f / metresPerHeightSample));
+            for (var z = 0; z < resolution; z++)
+            for (var x = 0; x < resolution; x++)
+            {
+                var position = definition.SamplePosition(tile, x, z, resolution);
+                var hx = (int)Math.Round(x * (heightResolution - 1d) / (resolution - 1d));
+                var hz = (int)Math.Round(z * (heightResolution - 1d) / (resolution - 1d));
+                var minX = Math.Max(0, hx - slopeOffset); var maxX = Math.Min(heightResolution - 1, hx + slopeOffset);
+                var minZ = Math.Max(0, hz - slopeOffset); var maxZ = Math.Min(heightResolution - 1, hz + slopeOffset);
+                var height = normalizedHeights[hz, hx] * heights.MaximumTerrainHeightMeters;
+                var dx = (normalizedHeights[hz, maxX] - normalizedHeights[hz, minX]) *
+                         heights.MaximumTerrainHeightMeters / Math.Max(0.001f, (maxX - minX) * metresPerHeightSample);
+                var dz = (normalizedHeights[maxZ, hx] - normalizedHeights[minZ, hx]) *
+                         heights.MaximumTerrainHeightMeters / Math.Max(0.001f, (maxZ - minZ) * metresPerHeightSample);
+                var slope = (float)(Math.Atan(Math.Sqrt(dx * dx + dz * dz)) * 180d / Math.PI);
+                var weights = SampleWeights(position.X, position.Z, height, slope);
                 for (var layer = 0; layer < LayerCount; layer++) result[z, x, layer] = weights[layer];
             }
             return result;
@@ -124,12 +162,13 @@ namespace Game.Domain.World
             return hash;
         }
 
-        private void ApplyTerrainModifiers(float[] weights, WorldMapPoint point, float worldX, float worldZ)
+        private void ApplyTerrainModifiers(float[] weights, WorldMapPoint point, float worldX, float worldZ,
+            float? preparedHeight, float? preparedSlope)
         {
-            var height = heights.SampleHeight(worldX, worldZ);
+            var height = preparedHeight ?? heights.SampleHeight(worldX, worldZ);
             // Paint reads a broader slope footprint than construction rules so isolated heightmap facets do not
             // create speckled cliff paint or abrupt one-cell changes.
-            var slope = heights.SampleSlopeDegrees(worldX, worldZ, 12f);
+            var slope = preparedSlope ?? heights.SampleSlopeDegrees(worldX, worldZ, 12f);
             var distanceToWater = heights.DistanceToWater(worldX, worldZ);
             var rock = SmoothRange(slope, 16f, 34f);
             var highland = SmoothRange(height, 46f, 78f);

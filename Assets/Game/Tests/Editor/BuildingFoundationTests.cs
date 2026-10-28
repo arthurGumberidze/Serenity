@@ -143,7 +143,7 @@ namespace Game.Tests.Editor
                 Assert.That(prefab.GetComponent<Collider>(), Is.Not.Null, id.ToString());
             }
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("primitive_shelter")).Housing.ResidentCapacity,
-                Is.EqualTo(2));
+                Is.EqualTo(4));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut")).Housing.ResidentCapacity,
                 Is.EqualTo(4));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("storage_basket")).Storage.Capacity,
@@ -183,7 +183,7 @@ namespace Game.Tests.Editor
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("drying_rack")).Production.RecipeIds
                 .Select(x => x.ToString()), Is.EqualTo(new[] { "dry_meat" }));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("hide_workshop")).Production.RecipeIds
-                .Select(x => x.ToString()), Is.EqualTo(new[] { "cure_hide" }));
+                .Select(x => x.ToString()), Is.EqualTo(new[] { "cure_hide", "make_leather_clothing" }));
         }
 
         [Test]

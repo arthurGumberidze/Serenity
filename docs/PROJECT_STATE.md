@@ -1,5 +1,51 @@
 # PROJECT_STATE.md
 
+## WM15 living buildings — implementation complete (2026-10-29)
+
+The agreed living-building scope in `docs/world_map/WM15_LIVING_BUILDINGS_SPEC.md` is implemented across
+housing/family relocation, storage policy and spoilage, fire/kitchen heat and fuel, crops, livestock,
+hunting/carcass processing, fishing shifts, workshops, military training/armies, medicine, wells/mines,
+gates and common building controls. Permanent professions survive direct orders; new state is persisted,
+while compatibility with old saves is intentionally not required. The final gap pass adds side-aware gate
+passage with neutral detention, alternating day/night doctors, derived one-horse/one-rider movement bonuses,
+and a regression proving promotion never heals current body HP.
+
+Final focused EditMode delivery gate passed **86/86** (`editor-delivery.xml`, 57.73 s). Windows Development
+build `Builds/WM15LivingBuildings/Serenity.exe` succeeded with **0 errors / 85 warnings** (Unity exit 0).
+Exact commands and evidence are in `docs/validation/WM15LivingBuildings.md`. The user stopped further
+startup optimization; no completion claim is made for that separate concern. Overall WM15 remains
+IN_PROGRESS for the parallel visual/water acceptance work. Deferred building upgrades, settlement Ollama
+and mountain graphics remain in `docs/PAUSED_TASKS.md`.
+
+## WM15 ordinary-lake opacity and restored marsh identity — source only (2026-10-28)
+
+The user accepted and locked both the Terrain Sample alpine mountain and the mountain lake; neither may be
+changed by the remaining water pass. Source-only follow-up corrects the ordinary-lake profile: the earlier
+refraction value exposed more scene colour in this shader, so ordinary lakes now use stronger water-colour
+blending, absorption and minimum alpha. The continuous wetland field remains, but its core is again visibly
+dark olive and highly opaque, with a broader smooth river-to-marsh transition rather than discrete material
+rings. Static whitespace review passed. Per the user's explicit instruction, Unity, tests, visual capture and
+Player build were not run; the latest PNGs predate this follow-up and are not evidence for it.
+
+## WM15 Terrain Sample ridge and continuous wetland water — awaiting user acceptance (2026-10-28)
+
+The user-provided `Terrain Asset Pack Terrain Sample.unitypackage` remains intact in `Assets/28102026`.
+Only `Ridge05`, `Ridge06` and `Mountain06` heightmaps were admitted into project-owned WM15 art; demo scenes,
+editor tooling, vegetation and unrelated package content were excluded. The deterministic playable mountain
+now composites those stamps over the existing StampIT base, preserving the mountain-lake bowl and walkable
+snow apron while adding asymmetric summits, sharper ridges and eroded buttresses.
+
+Ordinary and mountain lake profiles now have higher absorption and minimum opacity. The clean-water-to-marsh
+change is no longer a material/submesh threshold: the water mesh stores a continuous wetland coefficient per
+vertex and the approved Procedural Water shader interpolates color, absorption, opacity, refraction, reflection,
+specular response and wave strength across the transition. Canonical hydrology and gameplay are unchanged.
+
+Review images are `Artifacts/WM15EnvironmentReview3/river.png`, `lake.png`, `mountain.png` and `marsh.png`.
+The final hidden Editor-only capture (`capture-a.log`) exited 0 and logged `WM15_ENVIRONMENT_REVIEW_CAPTURE`;
+it compiled/rendered the candidate but ran no tests and produced no Player build. The art capture was narrowed
+to completed terrain projection because a later, unrelated dirty-worktree gameplay catalog currently rejects
+the unresolved `draw_water` unlock. WM15 remains IN_PROGRESS pending the user's visual approval.
+
 ## WM15 full local asset-library review (2026-10-28)
 
 Analysis-only user request completed. Audited 31,088 Assets paths, 64 outer archives and 108 nested
@@ -8,6 +54,35 @@ building/prop libraries, distinguished unused alternatives from copied/procedura
 two exact duplicate archive pairs. Medieval Europe Starter Pack contains characters/axe, not buildings.
 See docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md and WM15_ASSET_LIBRARY_INVENTORY.md; commands/results:
 docs/validation/WM15LibraryAudit.md. No imports, deletion, Unity tests or build. WM15 remains IN_PROGRESS.
+
+## WM15 environment/water profile review — awaiting user acceptance (2026-10-28)
+
+The user-approved `Procedural Water Shader` URP variant now replaces `Serenity/StarterWater` on authored
+local water and the horizon sea. River, ordinary lake, mountain lake and marsh triangles use separate
+presentation materials while retaining the same hydrology, water levels, fishing and navigation authorities.
+Generated mountain-lake ice floes are removed. The mountain now combines brighter continuous terrain snow,
+the imported `Snow Mountain` hero mesh and a converted URP range from `Winter Mountains and Stamps`.
+
+Review images are `Artifacts/WM15EnvironmentReview/river.png`, `lake.png`, `mountain.png` and `marsh.png`.
+The final hidden Editor art capture (`capture-e.log`) exited 0 and logged
+`WM15_ENVIRONMENT_REVIEW_CAPTURE`; it was not a test run or Player build. The imported WebGPU package needed
+a narrow Unity 6000.6 compatibility repair (`GetEntityId().GetHashCode()` in its integer query-key adapter)
+before the project could compile. Tests and a Player build remain deferred until the user accepts the visual
+direction. WM15 remains IN_PROGRESS; existing saves and unrelated dirty/vendor changes were preserved.
+
+## WM15 Winter Environment mountain review — awaiting user acceptance (2026-10-28)
+
+Winter Environment is fully imported and its URP content is connected to the world catalog. The alpine
+landmark now uses the approved StampIT `Alpine Mountains 23` heightfield instead of an analytic mound,
+with scanned rock/snow shading, walkable snow down to the lake basin, winter conifers, bushes, grass,
+logs, rocks, distant mountains, fog and snow presentation. The distant world shell was lowered and given
+a triplanar alpine material so it no longer reads as a tall green/gray wall.
+
+The requested review image is `Artifacts/WM15MountainReview/winter-environment-final.png`. A hidden
+Unity Editor art capture exited 0 and logged `WM15_MOUNTAIN_REVIEW_CAPTURE`; this was not a test run or
+Player build. Per the user's instruction, tests and a new build remain deferred until visual approval.
+WM15 stays IN_PROGRESS; existing saves and previous candidates were not modified or deleted.
+
 
 ## WM15 current feedback — verified repair candidate (2026-10-27)
 

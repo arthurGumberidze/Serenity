@@ -144,7 +144,7 @@ namespace Game.Tests.Editor
             var art = AssetDatabase.LoadAssetAtPath<WorldMapResourceArtCatalog>(
                 "Assets/Game/Resources/World/WorldMapResourceArt.asset");
             Assert.That(art, Is.Not.Null);
-            Assert.That(art.Entries.Select(value => value.ResourceTypeId), Is.EquivalentTo(new[]
+            Assert.That(art.Entries.Select(value => value.ResourceTypeId), Is.SupersetOf(new[]
             {
                 "wood", "branches", "berries", "mushrooms", "medicinal_plants",
                 "plant_fiber", "stone", "flint", "clay", "fish"

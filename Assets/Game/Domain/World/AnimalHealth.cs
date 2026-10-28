@@ -181,6 +181,13 @@ namespace Game.Domain.World
                 throw new InvalidOperationException("Only an unprocessed dead animal can be harvested.");
             animals[id] = animal.With(0, 0, animal.ShotSequence, true);
         }
+
+        public bool RestoreWildPopulation(StableEntityId id)
+        {
+            if (!animals.TryGetValue(id, out var animal) || animal.Domestic || animal.Alive) return false;
+            animals[id] = new AnimalVitalState(animal.Id, animal.Species, animal.Maximum, animal.Maximum);
+            return true;
+        }
         public void Restore(IEnumerable<AnimalVitalState> states)
         {
             var values = (states ?? Array.Empty<AnimalVitalState>()).ToArray();

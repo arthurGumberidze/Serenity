@@ -47,7 +47,8 @@ namespace Game.Domain.AI
         Produce = 5,
         Research = 6,
         ManualTask = 7,
-        Eat = 8
+        Eat = 8,
+        Drink = 9
     }
 
     public enum AiActionPhase
@@ -65,28 +66,33 @@ namespace Game.Domain.AI
         Working = 10,
         DeliverProduction = 11,
         Researching = 12,
-        Eating = 13
+        Eating = 13,
+        Drinking = 14
     }
 
     public sealed class Tier1Needs
     {
-        public Tier1Needs(double hunger = 0d, double energy = 1d, double mood = 1d)
+        public Tier1Needs(double hunger = 0d, double energy = 1d, double mood = 1d, double thirst = 0d)
         {
             Hunger = Validate(hunger, nameof(hunger));
             Energy = Validate(energy, nameof(energy));
             Mood = Validate(mood, nameof(mood));
+            Thirst = Validate(thirst, nameof(thirst));
         }
 
         public double Hunger { get; private set; }
         public double Energy { get; private set; }
         public double Mood { get; private set; }
+        public double Thirst { get; private set; }
 
-        public void Advance(double hungerIncrease, double energyDecrease)
+        public void Advance(double hungerIncrease, double energyDecrease, double thirstIncrease = 0d)
         {
             if (!IsFiniteNonNegative(hungerIncrease)) throw new ArgumentOutOfRangeException(nameof(hungerIncrease));
             if (!IsFiniteNonNegative(energyDecrease)) throw new ArgumentOutOfRangeException(nameof(energyDecrease));
+            if (!IsFiniteNonNegative(thirstIncrease)) throw new ArgumentOutOfRangeException(nameof(thirstIncrease));
             Hunger = Clamp01(Hunger + hungerIncrease);
             Energy = Clamp01(Energy - energyDecrease);
+            Thirst = Clamp01(Thirst + thirstIncrease);
         }
 
         public void RecoverEnergy(double amount)
@@ -99,6 +105,12 @@ namespace Game.Domain.AI
         {
             if (!IsFiniteNonNegative(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
             Hunger = Clamp01(Hunger - amount);
+        }
+
+        public void SatisfyThirst(double amount)
+        {
+            if (!IsFiniteNonNegative(amount)) throw new ArgumentOutOfRangeException(nameof(amount));
+            Thirst = Clamp01(Thirst - amount);
         }
 
         public void AdjustMood(double delta)
@@ -120,7 +132,7 @@ namespace Game.Domain.AI
     public readonly struct Tier1AiAgentSnapshot
     {
         public Tier1AiAgentSnapshot(StableEntityId characterId, WorldPosition position, double hunger, double energy,
-            UtilityActionKind currentAction, AiActionPhase phase, double mood = 1d)
+            UtilityActionKind currentAction, AiActionPhase phase, double mood = 1d, double thirst = 0d)
         {
             if (!characterId.IsValid) throw new ArgumentException("Character identity required.", nameof(characterId));
             if (!Enum.IsDefined(typeof(UtilityActionKind), currentAction)) throw new ArgumentOutOfRangeException(nameof(currentAction));
@@ -130,6 +142,7 @@ namespace Game.Domain.AI
             Hunger = hunger;
             Energy = energy;
             Mood = mood;
+            Thirst = thirst;
             CurrentAction = currentAction;
             Phase = phase;
         }
@@ -139,6 +152,7 @@ namespace Game.Domain.AI
         public double Hunger { get; }
         public double Energy { get; }
         public double Mood { get; }
+        public double Thirst { get; }
         public UtilityActionKind CurrentAction { get; }
         public AiActionPhase Phase { get; }
     }
@@ -181,7 +195,7 @@ namespace Game.Domain.AI
         public void RecordDecision() => DecisionsMade = checked(DecisionsMade + 1);
 
         public Tier1AiAgentSnapshot CaptureState() => new Tier1AiAgentSnapshot(CharacterId, Position,
-            Needs.Hunger, Needs.Energy, CurrentAction, Phase, Needs.Mood);
+            Needs.Hunger, Needs.Energy, CurrentAction, Phase, Needs.Mood, Needs.Thirst);
     }
 
     public sealed class Tier1AiAgentRegistry

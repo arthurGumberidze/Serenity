@@ -1,9 +1,39 @@
 # TASK_GRAPH.md
 
+WM15 living buildings (2026-10-29): **DONE within agreed scope**. The complete contract is recorded in
+`docs/world_map/WM15_LIVING_BUILDINGS_SPEC.md`; building upgrade requirements/mechanics remain explicitly
+paused rather than omitted. Final gate: 86/86 focused EditMode tests passed; Windows Development build
+`Builds/WM15LivingBuildings/Serenity.exe` succeeded with 0 errors / 85 warnings. Side-aware gates with
+neutral detention, opposing doctor shifts, horse rider speed and non-healing military promotion close the
+last identified gaps. Exact evidence: `docs/validation/WM15LivingBuildings.md`. Overall WM15 remains
+IN_PROGRESS only for its separate visual/water acceptance and deferred performance work.
+
+WM15 ordinary-lake/marsh follow-up (2026-10-28): **IN_PROGRESS / source-only correction, render permission
+pending**. The accepted mountain and mountain lake are frozen. Ordinary lakes now use higher water-colour
+blend, absorption and minimum opacity. The wetland core is dark/opaque again and retains a broad continuous
+river transition without material bands. Static review only; Unity, tests, capture and Player build were not
+run by explicit user instruction.
+
 WM15 library audit (2026-10-28): **IN_PROGRESS / analysis deliverable complete**. Full current
 Assets/archive inventory and prioritized reuse assessment are in docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md
 and WM15_ASSET_LIBRARY_INVENTORY.md. No implementation/import/delete/test/build; no change to visual
 acceptance or remaining WM15 gates. Exact commands/results: docs/validation/WM15LibraryAudit.md.
+
+WM15 environment/water review (2026-10-28): **IN_PROGRESS / visual approval pending**. Generated lake ice is
+removed. Procedural Water Shader URP supplies profiled water without changing canonical hydrology; lake water
+is denser and its clean-to-marsh change is a continuous per-vertex shader blend. The playable alpine terrain
+now composites the existing StampIT base with selectively admitted Terrain Asset Pack `Ridge05`, `Ridge06`
+and `Mountain06` heightmaps. Snow Mountain and Winter Mountains & Stamps remain visual supplements. The final
+hidden Editor review capture exited 0 and the four PNGs are in `Artifacts/WM15EnvironmentReview3/`. No tests
+or Player build were run by explicit user request.
+
+
+WM15 winter mountain review (2026-10-28): **IN_PROGRESS / superseded by four-view review**. StampIT alpine
+height data and Winter Environment URP rock, snow, vegetation, props, weather and distant scenery are
+integrated. Hidden Editor art capture exited 0 and produced
+`Artifacts/WM15MountainReview/winter-environment-final.png`. No tests or Player build were run by explicit
+user request; those remain blocked until the user approves the screenshot.
+
 
 WM15 current feedback (2026-10-27): **IN_PROGRESS / build-batch-c and Player-a verified**.
 Focused EditMode passed 9/9. Final build: exit 0, 0 errors / 30 warnings; Player-a: 32/32, exit 0,

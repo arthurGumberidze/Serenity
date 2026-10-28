@@ -11,21 +11,40 @@ namespace Game.Domain.Military
 {
     public enum MilitaryRank
     {
-        Recruit = 1,
-        Soldier = 2,
-        Veteran = 3,
-        Elite = 4
+        Private = 1,
+        Sergeant = 2,
+        WarrantOfficer = 3,
+        Lieutenant = 4,
+        Captain = 5,
+        Major = 6,
+        LieutenantColonel = 7,
+        Colonel = 8,
+        ColonelGeneral = 9,
+        Generalissimo = 10,
+
+        // Source-compatible aliases for saves/tests created before the ten-rank design.
+        Recruit = Private,
+        Soldier = Sergeant,
+        Veteran = WarrantOfficer,
+        Elite = Lieutenant
     }
 
     public sealed class MilitaryTrainingLevelDefinition
     {
         public MilitaryTrainingLevelDefinition(MilitaryRank rank, long durationTicks,
-            int combatSkillLevel, IEnumerable<ResourceAmount> cost)
+            int combatSkillLevel, IEnumerable<ResourceAmount> cost,
+            int healthBonus = 0, int damagePerThousand = 1000,
+            long minimumServiceTicks = 0, int requiredBattleExperience = 0)
         {
             if (!Enum.IsDefined(typeof(MilitaryRank), rank)) throw new ArgumentOutOfRangeException(nameof(rank));
             if (durationTicks <= 0) throw new ArgumentOutOfRangeException(nameof(durationTicks));
             if (combatSkillLevel < 0 || combatSkillLevel > 100)
                 throw new ArgumentOutOfRangeException(nameof(combatSkillLevel));
+            if (healthBonus < 0 || damagePerThousand < 1000 || damagePerThousand > 2000)
+                throw new ArgumentOutOfRangeException(nameof(healthBonus));
+            if (minimumServiceTicks < 0) throw new ArgumentOutOfRangeException(nameof(minimumServiceTicks));
+            if (requiredBattleExperience < 0 || requiredBattleExperience > 100)
+                throw new ArgumentOutOfRangeException(nameof(requiredBattleExperience));
             var values = (cost ?? throw new ArgumentNullException(nameof(cost))).ToArray();
             if (values.Any(x => !x.Quantity.IsPositive) ||
                 values.Select(x => x.ResourceId).Distinct().Count() != values.Length)
@@ -34,12 +53,20 @@ namespace Game.Domain.Military
             DurationTicks = durationTicks;
             CombatSkillLevel = combatSkillLevel;
             Cost = Array.AsReadOnly(values.OrderBy(x => x.ResourceId).ToArray());
+            HealthBonus = healthBonus;
+            DamagePerThousand = damagePerThousand;
+            MinimumServiceTicks = minimumServiceTicks;
+            RequiredBattleExperience = requiredBattleExperience;
         }
 
         public MilitaryRank Rank { get; }
         public long DurationTicks { get; }
         public int CombatSkillLevel { get; }
         public IReadOnlyList<ResourceAmount> Cost { get; }
+        public int HealthBonus { get; }
+        public int DamagePerThousand { get; }
+        public long MinimumServiceTicks { get; }
+        public int RequiredBattleExperience { get; }
     }
 
     public sealed class MilitaryTrainingCatalog
@@ -52,7 +79,7 @@ namespace Game.Domain.Military
             if (copy.Length == 0 || copy.Any(x => x == null) ||
                 copy.Select(x => x.Rank).Distinct().Count() != copy.Length)
                 throw new ArgumentException("Training levels must be non-empty and unique.", nameof(values));
-            var expected = Enum.GetValues(typeof(MilitaryRank)).Cast<MilitaryRank>().OrderBy(x => x).ToArray();
+            var expected = Enum.GetValues(typeof(MilitaryRank)).Cast<MilitaryRank>().Distinct().OrderBy(x => x).ToArray();
             if (!copy.Select(x => x.Rank).OrderBy(x => x).SequenceEqual(expected))
                 throw new ArgumentException("Training catalog must define every approved rank.", nameof(values));
             definitions = copy.ToDictionary(x => x.Rank);
@@ -65,7 +92,7 @@ namespace Game.Domain.Military
 
         public bool TryGetNext(MilitaryRank? current, out MilitaryTrainingLevelDefinition value)
         {
-            var next = current.HasValue ? (int)current.Value + 1 : (int)MilitaryRank.Recruit;
+            var next = current.HasValue ? (int)current.Value + 1 : (int)MilitaryRank.Private;
             if (!Enum.IsDefined(typeof(MilitaryRank), next)) { value = null; return false; }
             value = Get((MilitaryRank)next);
             return true;
@@ -73,19 +100,26 @@ namespace Game.Domain.Military
 
         public static MilitaryTrainingCatalog CreateStoneAge() => new MilitaryTrainingCatalog(new[]
         {
-            Level(MilitaryRank.Recruit, 4, 20, 2, 1),
-            Level(MilitaryRank.Soldier, 8, 40, 4, 2),
-            Level(MilitaryRank.Veteran, 14, 65, 7, 4),
-            Level(MilitaryRank.Elite, 22, 90, 11, 7)
+            Level(MilitaryRank.Private, 4, 18, 0, 0, 0, 1000, Equipment("stone_spear", 1), Equipment("leather_clothing", 1)),
+            Level(MilitaryRank.Sergeant, 8, 28, 2, 0, 5, 1040, Equipment("wooden_shield", 1), Equipment("arrows", 6)),
+            Level(MilitaryRank.WarrantOfficer, 12, 38, 4, 0, 10, 1080, Equipment("combat_bow", 1), Equipment("arrows", 12)),
+            Level(MilitaryRank.Lieutenant, 18, 48, 7, 0, 15, 1120, Equipment("stone_spear", 1), Equipment("wooden_shield", 1)),
+            Level(MilitaryRank.Captain, 24, 58, 10, 4, 20, 1160, Equipment("leather_clothing", 1), Equipment("arrows", 12)),
+            Level(MilitaryRank.Major, 32, 68, 14, 6, 25, 1200, Equipment("stone_spear", 1), Equipment("arrows", 12)),
+            Level(MilitaryRank.LieutenantColonel, 42, 76, 21, 8, 30, 1250, Equipment("wooden_shield", 1), Equipment("leather_clothing", 1)),
+            Level(MilitaryRank.Colonel, 54, 84, 30, 10, 35, 1300, Equipment("combat_bow", 1), Equipment("arrows", 18)),
+            Level(MilitaryRank.ColonelGeneral, 72, 92, 45, 12, 40, 1380, Equipment("stone_spear", 1), Equipment("leather_clothing", 1)),
+            Level(MilitaryRank.Generalissimo, 96, 100, 60, 16, 50, 1500, Equipment("stone_spear", 1), Equipment("wooden_shield", 1))
         });
 
         private static MilitaryTrainingLevelDefinition Level(MilitaryRank rank, int gameHours,
-            int skill, long food, long wood) => new MilitaryTrainingLevelDefinition(rank,
-            TimeSpan.FromHours(gameHours).Ticks, skill, new[]
-            {
-                new ResourceAmount(new ResourceId("berries"), new ResourceQuantity(food)),
-                new ResourceAmount(new ResourceId("wood_log"), new ResourceQuantity(wood))
-            });
+            int skill, int serviceDays, int battleExperience, int healthBonus, int damagePerThousand,
+            params ResourceAmount[] cost) =>
+            new MilitaryTrainingLevelDefinition(rank, TimeSpan.FromHours(gameHours).Ticks, skill,
+                cost, healthBonus, damagePerThousand, TimeSpan.FromDays(serviceDays).Ticks, battleExperience);
+
+        private static ResourceAmount Equipment(string id, long units) =>
+            new ResourceAmount(new ResourceId(id), new ResourceQuantity(units));
     }
 
     public enum MilitaryTrainingStartFailure
@@ -99,7 +133,12 @@ namespace Game.Domain.Military
         WrongOwner = 6,
         AlreadyTraining = 7,
         MaximumRank = 8,
-        InsufficientResources = 9
+        InsufficientResources = 9,
+        BarracksFull = 10,
+        RankLimitReached = 11,
+        ReservedForRuler = 12,
+        InsufficientService = 13,
+        InsufficientBattleExperience = 14
     }
 
     public sealed class MilitaryTrainingRecordState

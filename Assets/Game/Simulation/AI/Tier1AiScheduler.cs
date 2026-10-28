@@ -117,6 +117,8 @@ namespace Game.Simulation.AI
         public const double CriticalRestEnergy = 0.10d;
         public const double CriticalHunger = 0.90d;
         public const double CriticalHungerCompletion = 0.20d;
+        public const double CriticalThirst = 0.85d;
+        public const double CriticalThirstCompletion = 0.10d;
         public const double WorkRefusalMood = 0.20d;
 
         public bool TryStartSleepNow(StableEntityId characterId, out SleepDenialReason reason)
@@ -173,7 +175,8 @@ namespace Game.Simulation.AI
         {
             if (!byId.TryGetValue(characterId, out var entry)) return false;
             if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId)) return false;
-            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || entry.Agent.Needs.Hunger >= CriticalHunger)
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || entry.Agent.Needs.Hunger >= CriticalHunger ||
+                entry.Agent.Needs.Thirst >= CriticalThirst)
                 return false;
             return entry.Action == null || entry.Action.IsInterruptible;
         }
@@ -277,7 +280,8 @@ namespace Game.Simulation.AI
                 var days = TimeSpan.FromTicks(elapsedTicks).TotalDays;
                 var energyDecrease = entry.Agent.CurrentAction == UtilityActionKind.Rest
                     ? 0d : settings.EnergyDecreasePerDay * days;
-                entry.Agent.Needs.Advance(settings.HungerIncreasePerDay * days, energyDecrease);
+                entry.Agent.Needs.Advance(settings.HungerIncreasePerDay * days, energyDecrease,
+                    settings.HungerIncreasePerDay * 1.5d * days);
                 entry.LastNeedTicks = calendarTicks;
                 updated++;
                 Metrics.TotalNeedUpdates++;
@@ -404,6 +408,17 @@ namespace Game.Simulation.AI
                 return;
             }
 
+            if (entry.Agent.Needs.Thirst >= CriticalThirst)
+            {
+                if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Drink)
+                {
+                    entry.Action?.Cancel();
+                    entry.Action = null;
+                    Start(entry, UtilityActionKind.Drink);
+                }
+                return;
+            }
+
             if (entry.Agent.Needs.Mood <= WorkRefusalMood)
             {
                 if (entry.Action != null && IsManual(entry.Action.Kind))
@@ -421,7 +436,7 @@ namespace Game.Simulation.AI
             {
                 if (!work.TryGetAssigned(entry.Agent.CharacterId, out var assigned))
                 {
-                    work.TryAssignNext(entry.Agent.CharacterId, out _);
+                    work.TryAssignNext(entry.Agent.CharacterId, calendarTicks, out _);
                     work.TryGetAssigned(entry.Agent.CharacterId, out assigned);
                 }
                 if (assigned != null)
@@ -537,6 +552,14 @@ namespace Game.Simulation.AI
                 case UtilityActionKind.Eat:
                     entry.Movement.Stop();
                     entry.Action = new EatActionExecution(entry.Agent, settings, world.Production?.Food);
+                    break;
+                case UtilityActionKind.Drink:
+                    var well = world.DrinkingWell?.Invoke(entry.Agent.Position);
+                    if (well.HasValue)
+                        entry.Action = new DrinkActionExecution(entry.Agent, entry.Movement, well.Value,
+                            settings.MovementTimeout);
+                    else
+                        entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
                     break;
                 case UtilityActionKind.Haul:
                     if (world.HaulJobs.TryClaim(entry.Agent, HaulCapacity(entry), out var job, out var claim))

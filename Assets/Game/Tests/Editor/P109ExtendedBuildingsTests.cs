@@ -26,7 +26,7 @@ namespace Game.Tests.Editor
     public sealed class P109ExtendedBuildingsTests
     {
         [Test]
-        public void CatalogAuthorsEveryEFacilityWithCapabilitiesAndRealWaterOutput()
+        public void CatalogAuthorsEveryEFacilityWithLivingBuildingCapabilities()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
                 "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
@@ -42,10 +42,12 @@ namespace Game.Tests.Editor
                 .HasFlag(BuildingPlacementConstraint.Shoreline), Is.True);
             var well = catalog.ResolveDefinition(new BuildingDefinitionId("well"));
             Assert.That(well.Placement.Constraints.HasFlag(BuildingPlacementConstraint.Groundwater), Is.True);
-            Assert.That(well.Production.RecipeIds.Single().ToString(), Is.EqualTo("draw_water"));
+            Assert.That(well.Production, Is.Null, "Residents drink physically at a well; water is not warehoused.");
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("primitive_path")).AllowsOverlap, Is.True);
             var hut = catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut"));
-            Assert.That(hut.Upgrades.Options.Single().TargetDefinitionId.ToString(), Is.EqualTo("clan_house"));
+            Assert.That(hut.Housing.ResidentCapacity, Is.EqualTo(4));
+            Assert.That(hut.Upgrades, Is.Null, "Concrete building upgrades are the explicitly paused follow-up task.");
+            Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("healer_hut")).Housing, Is.Null);
             Assert.That(ids.All(id => catalog.ResolveDefinition(new BuildingDefinitionId(id)).Maintenance != null), Is.True);
         }
 
@@ -116,11 +118,12 @@ namespace Game.Tests.Editor
         {
             var characters = new CharacterRegistry();
             var healer = Person(1, "Healer"); var patient = Person(2, "Patient"); var trainee = Person(3, "Trainee");
-            characters.Add(healer); characters.Add(patient); characters.Add(trainee);
+            var extraDoctor = Person(4, "Extra Doctor");
+            characters.Add(healer); characters.Add(patient); characters.Add(trainee); characters.Add(extraDoctor);
             var buildings = new BuildingRegistry();
             var definitions = new[]
             {
-                Definition("healer_hut", housing: 1, workers: 1),
+                Definition("healer_hut", workers: 2),
                 Definition("training_ground", workers: 1),
                 Definition("clan_house", housing: 2)
             }.ToDictionary(x => x.Id);
@@ -130,13 +133,17 @@ namespace Game.Tests.Editor
             var health = new HealthAndFamilyService(characters, HealthConditionCatalog.CreateStoneAge(), 42);
             var service = new SettlementFacilityService(characters, buildings, id => definitions[id], health);
 
-            Assert.That(service.AssignHome(healer.Id, healerHut.Id).Succeeded, Is.True);
-            Assert.That(service.AssignHome(patient.Id, healerHut.Id).Failure, Is.EqualTo(FacilityAssignmentFailure.CapacityReached));
-            Assert.That(service.AssignHome(healer.Id, clan.Id).Failure, Is.EqualTo(FacilityAssignmentFailure.CharacterAlreadyAssigned));
+            Assert.That(service.AssignHome(healer.Id, healerHut.Id).Failure, Is.EqualTo(FacilityAssignmentFailure.UnsupportedFacility));
+            Assert.That(service.AssignHome(healer.Id, clan.Id).Succeeded, Is.True);
             Assert.That(service.AssignWorkplace(healer.Id, healerHut.Id).Succeeded, Is.True);
-            Assert.That(service.AssignWorkplace(patient.Id, healerHut.Id).Failure, Is.EqualTo(FacilityAssignmentFailure.CapacityReached));
+            Assert.That(service.AssignWorkplace(patient.Id, healerHut.Id).Succeeded, Is.True);
+            Assert.That(service.AssignWorkplace(extraDoctor.Id, healerHut.Id).Failure, Is.EqualTo(FacilityAssignmentFailure.CapacityReached));
             health.ApplyCondition(patient.Id, new HealthConditionId("minor_cut"), 0);
             Assert.That(service.Treat(healer.Id, patient.Id), Is.EqualTo(1));
+            Assert.That(CharacterSkillRules.Level(healer, CharacterSkillRules.Medicine), Is.Zero,
+                "Treatment is sequential and cannot heal instantly when admitted.");
+            service.AdvanceClinics(TimeSpan.FromHours(10).Ticks);
+            service.AdvanceClinics(TimeSpan.FromHours(11).Ticks);
             Assert.That(CharacterSkillRules.Level(healer, CharacterSkillRules.Medicine), Is.EqualTo(1));
             Assert.That(service.AssignWorkplace(trainee.Id, training.Id).Succeeded, Is.True);
             Assert.That(service.Train(trainee.Id), Is.True);

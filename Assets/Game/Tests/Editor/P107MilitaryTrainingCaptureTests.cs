@@ -33,20 +33,25 @@ namespace Game.Tests.Editor
             Assert.That(first.Started, Is.True);
             Assert.That(first.Record.Rank, Is.EqualTo(MilitaryRank.Recruit));
             Assert.That(first.Record.CompletionTick, Is.EqualTo(TimeSpan.FromHours(4).Ticks));
+            Assert.That(identity.ProfessionId?.Value, Is.EqualTo("military"));
             fixture.Training.AdvanceTo(first.Record.CompletionTick);
 
             Assert.That(fixture.Characters.Get(identity.Id), Is.SameAs(identity));
             Assert.That(fixture.Characters.Count, Is.EqualTo(3));
             Assert.That(fixture.Training.GetRank(identity.Id), Is.EqualTo(MilitaryRank.Recruit));
             Assert.That(identity.TryGetSkill(MilitaryTrainingService.CombatSkillId, out var skill), Is.True);
-            Assert.That(skill.Level.Value, Is.EqualTo(20));
+            Assert.That(skill.Level.Value, Is.EqualTo(18));
             Assert.That(fixture.Appearances.Get(identity.Id).ClothingId,
                 Is.EqualTo(StoneAgeAppearanceProfiles.MilitaryClothing));
-            Assert.That(fixture.Units.TryGetForMember(identity.Id, out var unit), Is.True);
-            Assert.That(unit.ActiveMemberIds, Does.Contain(identity.Id));
+            Assert.That(fixture.Units.TryGetForMember(identity.Id, out _), Is.False,
+                "Privates wait in the military pool until a lieutenant forms and commands their squad.");
 
             var second = fixture.Training.TryStart(identity.Id, fixture.Barracks.Id, new CombatSideId("player"),
                 first.Record.CompletionTick, fixture.Inventories.All.Select(x => x.Owner));
+            Assert.That(second.Failure, Is.EqualTo(MilitaryTrainingStartFailure.InsufficientService));
+            var secondStartTick = first.Record.CompletionTick + TimeSpan.FromDays(2).Ticks;
+            second = fixture.Training.TryStart(identity.Id, fixture.Barracks.Id, new CombatSideId("player"),
+                secondStartTick, fixture.Inventories.All.Select(x => x.Owner));
             Assert.That(second.Started, Is.True);
             Assert.That(second.Record.Rank, Is.EqualTo(MilitaryRank.Soldier));
             Assert.That(second.Record.CompletionTick - second.Record.StartTick,
@@ -55,10 +60,26 @@ namespace Game.Tests.Editor
             fixture.Training.AdvanceTo(second.Record.CompletionTick);
             Assert.That(fixture.Training.GetRank(identity.Id), Is.EqualTo(MilitaryRank.Soldier));
             Assert.That(identity.TryGetSkill(MilitaryTrainingService.CombatSkillId, out skill), Is.True);
-            Assert.That(skill.Level.Value, Is.EqualTo(40));
-            Assert.That(fixture.Units.Get(unit.Id).ActiveMemberIds.Count(x => x == identity.Id), Is.EqualTo(1));
-            Assert.That(fixture.Funds.GetAmount(new ResourceId("berries")).Units, Is.EqualTo(24));
-            Assert.That(fixture.Funds.GetAmount(new ResourceId("wood_log")).Units, Is.EqualTo(17));
+            Assert.That(skill.Level.Value, Is.EqualTo(28));
+            Assert.That(fixture.Units.TryGetForMember(identity.Id, out _), Is.False);
+            Assert.That(fixture.Funds.GetAmount(new ResourceId("stone_spear")).Units, Is.EqualTo(3));
+            Assert.That(fixture.Funds.GetAmount(new ResourceId("wooden_shield")).Units, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void PromotionRaisesMaximumHealthWithoutHealingCurrentBodyHealth()
+        {
+            var fixture = Fixture.Create();
+            fixture.Soldier.SetHealth(new BodyHealth(new HealthValue(50), new HealthValue(50),
+                new HealthValue(50), new HealthValue(50), new HealthValue(50), new HealthValue(50)));
+            var before = fixture.Soldier.Health.Head.Value;
+
+            fixture.Training.RegisterDiagnosticGraduate(fixture.Soldier.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), MilitaryRank.ColonelGeneral, 0);
+
+            Assert.That(fixture.Training.GetMaximumHealth(fixture.Soldier.Id), Is.GreaterThan(100));
+            Assert.That(fixture.Soldier.Health.Head.Value, Is.EqualTo(before));
+            Assert.That(fixture.Soldier.Health.Torso.Value, Is.EqualTo(50));
         }
 
         [Test]
@@ -92,12 +113,39 @@ namespace Game.Tests.Editor
                 new CombatSideId("player"), 0, fixture.Inventories.All.Select(x => x.Owner)).Failure,
                 Is.EqualTo(MilitaryTrainingStartFailure.AlreadyTraining));
             fixture.Training.AdvanceTo(first.Record.CompletionTick);
-            fixture.Funds.TryRemove(new ResourceId("berries"),
-                fixture.Funds.GetAmount(new ResourceId("berries")));
+            fixture.Funds.TryRemove(new ResourceId("wooden_shield"),
+                fixture.Funds.GetAmount(new ResourceId("wooden_shield")));
             Assert.That(fixture.Training.TryStart(fixture.Soldier.Id, fixture.Barracks.Id,
-                new CombatSideId("player"), first.Record.CompletionTick,
+                new CombatSideId("player"), first.Record.CompletionTick + TimeSpan.FromDays(2).Ticks,
                 fixture.Inventories.All.Select(x => x.Owner)).Failure,
                 Is.EqualTo(MilitaryTrainingStartFailure.InsufficientResources));
+        }
+
+        [Test]
+        public void OfficerPromotionRequiresBattleExperienceAndCapturedOfficerBecomesPrivate()
+        {
+            var fixture = Fixture.Create();
+            fixture.Training.RegisterDiagnosticGraduate(fixture.Soldier.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), MilitaryRank.Lieutenant, 0);
+            var captain = fixture.Training.Catalog.Get(MilitaryRank.Captain);
+            var eligibleTick = captain.MinimumServiceTicks;
+
+            Assert.That(fixture.Training.TryStart(fixture.Soldier.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), eligibleTick, fixture.Inventories.All.Select(x => x.Owner)).Failure,
+                Is.EqualTo(MilitaryTrainingStartFailure.InsufficientBattleExperience));
+            CharacterSkillRules.GainWorkExperience(fixture.Soldier, CharacterSkillRules.Combat,
+                captain.RequiredBattleExperience);
+            Assert.That(fixture.Training.TryStart(fixture.Soldier.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), eligibleTick, fixture.Inventories.All.Select(x => x.Owner)).Started,
+                Is.True);
+
+            var retainedSkill = CharacterSkillRules.Level(fixture.Soldier, CharacterSkillRules.Combat);
+            fixture.Training.RemoveMilitaryHistory(new[] { fixture.Soldier.Id });
+            fixture.Training.RegisterCapturedPrivates(new[] { fixture.Soldier.Id }, fixture.Barracks.Id,
+                new CombatSideId("enemy"), eligibleTick);
+
+            Assert.That(fixture.Training.GetRank(fixture.Soldier.Id), Is.EqualTo(MilitaryRank.Private));
+            Assert.That(CharacterSkillRules.Level(fixture.Soldier, CharacterSkillRules.Combat), Is.EqualTo(retainedSkill));
         }
 
         [Test]
@@ -254,13 +302,23 @@ namespace Game.Tests.Editor
                 var resources = new ResourceCatalog(new[]
                 {
                     new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food),
-                    new ResourceDefinition(new ResourceId("wood_log"), "Wood", ResourceCategory.Construction)
+                    new ResourceDefinition(new ResourceId("wood_log"), "Wood", ResourceCategory.Construction),
+                    new ResourceDefinition(new ResourceId("stone_spear"), "Spear", ResourceCategory.Other),
+                    new ResourceDefinition(new ResourceId("leather_clothing"), "Armor", ResourceCategory.Other),
+                    new ResourceDefinition(new ResourceId("wooden_shield"), "Shield", ResourceCategory.Other),
+                    new ResourceDefinition(new ResourceId("combat_bow"), "Bow", ResourceCategory.Other),
+                    new ResourceDefinition(new ResourceId("arrows"), "Arrows", ResourceCategory.Other)
                 });
                 value.Inventories = new ResourceInventoryRegistry();
                 value.Funds = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, value.Soldier.Id),
-                    resources, 100);
+                    resources, 200);
                 value.Funds.TryAdd(new ResourceId("berries"), new ResourceQuantity(30));
                 value.Funds.TryAdd(new ResourceId("wood_log"), new ResourceQuantity(20));
+                value.Funds.TryAdd(new ResourceId("stone_spear"), new ResourceQuantity(4));
+                value.Funds.TryAdd(new ResourceId("leather_clothing"), new ResourceQuantity(4));
+                value.Funds.TryAdd(new ResourceId("wooden_shield"), new ResourceQuantity(4));
+                value.Funds.TryAdd(new ResourceId("combat_bow"), new ResourceQuantity(4));
+                value.Funds.TryAdd(new ResourceId("arrows"), new ResourceQuantity(40));
                 value.Inventories.Add(value.Funds);
                 value.Appearances = new CharacterAppearanceService(value.Characters,
                     StoneAgeAppearanceProfiles.CreateCatalog(), 107);

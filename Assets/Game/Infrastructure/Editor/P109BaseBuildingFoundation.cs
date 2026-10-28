@@ -182,19 +182,23 @@ namespace Game.Infrastructure.Editor
             var entries = new[]
             {
                 Entry("primitive_shelter", "Primitive Shelter", BuildingCategory.Shelter, 4, 3, shelter,
-                    "A quick hide shelter for the first residents.", "building_primitive_shelter", 50, 3,
+                    "Legacy Stone Age housing retained for compatible saves.", "building_primitive_shelter", 50, 3,
                     new[] { Cost("wood_log", 8), Cost("plant_fiber", 3) },
-                    "shelter_construction").ConfigureHousing(2),
+                    "shelter_construction").ConfigureHousing(4),
                 Entry("stone_age_hut", "Stone Age Hut", BuildingCategory.Shelter, 4, 4, Load<GameObject>(HutPath),
                     "A sturdier timber and hide home.", "building_stone_age_hut", 80, 3,
                     new[] { Cost("wood_log", 12), Cost("plant_fiber", 6), Cost("hide", 2) },
                     "shelter_construction").ConfigureHousing(4)
-                    .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 2), Cost("plant_fiber", 1) }, 30)
-                    .ConfigureUpgrades(new[] { Upgrade("clan_house", 100, Cost("wood_log", 16), Cost("stone", 8), Cost("cured_hide", 4)) }),
+                    .ConfigureMaintenance(0, 0, new[] { Cost("wood_log", 2), Cost("plant_fiber", 1) }, 30),
                 Entry("campfire", "Campfire", BuildingCategory.Food, 2, 2, Load<GameObject>(CampfirePath),
                     "A controlled fire and the settlement's first cooking place.", "building_campfire", 35, 2,
                     new[] { Cost("wood_log", 3), Cost("stone", 4) }, "controlled_fire")
                     .ConfigureProduction(1, new[] { "cook_meat", "cook_fish", "cook_berries" }, 24, 24),
+                Entry("stone_age_kitchen", "Stone Age Kitchen", BuildingCategory.Food, 4, 3,
+                    Load<GameObject>(CampfirePath), "A staffed kitchen that maintains prepared-food reserves.",
+                    "building_stone_age_kitchen", 80, 3,
+                    new[] { Cost("wood_log", 10), Cost("stone", 6), Cost("plant_fiber", 4) }, "controlled_fire")
+                    .ConfigureProduction(2, new[] { "cook_meat", "cook_fish", "cook_berries", "make_animal_feed" }, 48, 48),
                 Entry("storage_basket", "Storage Basket", BuildingCategory.Storage, 2, 1, storage,
                     "A woven shared store for settlement supplies.", "building_storage_basket", 45, 3,
                     new[] { Cost("wood_log", 3), Cost("plant_fiber", 5) }, "woodworking")
@@ -203,17 +207,18 @@ namespace Game.Infrastructure.Editor
                 Entry("stone_tool_workshop", "Stone Tool Workshop", BuildingCategory.Production, 4, 3,
                     Load<GameObject>(WorkshopPath), "A covered knapping bench for early tools.",
                     "building_stone_tool_workshop", 90, 3,
-                    new[] { Cost("wood_log", 10), Cost("stone", 8), Cost("plant_fiber", 4) }, "stone_tools"),
+                    new[] { Cost("wood_log", 10), Cost("stone", 8), Cost("plant_fiber", 4) }, "stone_tools")
+                    .ConfigureProduction(2, new[] { "craft_stone_spear", "craft_wooden_shield", "craft_combat_bow", "craft_arrows" }, 48, 32),
                 Entry("butcher_station", "Butcher Station", BuildingCategory.Food, 3, 3,
                     Load<GameObject>(ButcherPath), "A dedicated table turns whole carcasses into meat, hide and bone.",
                     "building_butcher_station", 65, 3,
                     new[] { Cost("wood_log", 7), Cost("stone", 3), Cost("plant_fiber", 3) }, "hunting")
-                    .ConfigureProduction(1, new[] { "butcher_carcass" }, 12, 24),
+                    .ConfigureProduction(1, new[] { "butcher_carcass", "butcher_field_carcass" }, 12, 24),
                 Entry("hunting_camp", "Hunting Camp", BuildingCategory.Production, 4, 3,
                     Load<GameObject>(HuntingCampPath), "A field camp required to organize nearby animal hunts.",
                     "building_hunting_camp", 75, 3,
                     new[] { Cost("wood_log", 9), Cost("plant_fiber", 5), Cost("hide", 2) }, "hunting")
-                    .ConfigureProduction(3, Array.Empty<string>(), 0, 0),
+                    .ConfigureProduction(3, new[] { "dress_carcass" }, 24, 24),
                 Entry("food_storage", "Food Storage", BuildingCategory.Storage, 4, 3,
                     Load<GameObject>(FoodStoragePath), "A raised, covered store reserved for food supplies.",
                     "building_food_storage", 70, 3,
@@ -229,7 +234,7 @@ namespace Game.Infrastructure.Editor
                     Load<GameObject>(HideWorkshopPath), "A covered frame for cleaning and curing hides.",
                     "building_hide_workshop", 80, 3,
                     new[] { Cost("wood_log", 9), Cost("stone", 3), Cost("plant_fiber", 7) }, "food_preservation")
-                    .ConfigureProduction(1, new[] { "cure_hide" }, 18, 18),
+                    .ConfigureProduction(1, new[] { "cure_hide", "make_leather_clothing" }, 18, 18),
                 Entry("primitive_crop_plot", "Primitive Crop Plot", BuildingCategory.Structure, 3, 3,
                     Load<GameObject>(CropPath), "A small worked plot.", "building_primitive_crop_plot", 35, 2,
                     new[] { Cost("wood_log", 2), Cost("plant_fiber", 2) }, "primitive_agriculture"),
@@ -237,15 +242,15 @@ namespace Game.Infrastructure.Editor
                     "A simple training and mustering shelter.", "building_military_barracks", 120, 3,
                     new[] { Cost("wood_log", 12), Cost("stone", 6) }, "organized_labor")
                     .ConfigureStructure(1400, 900),
-                Entry("clan_house", "Clan House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
-                    "A large shared home with room for an extended clan.", "building_clan_house", 150, 4,
+                Entry("clan_house", "Stone House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
+                    "A large stone home with room for an extended family.", "building_clan_house", 150, 4,
                     new[] { Cost("wood_log", 26), Cost("stone", 12), Cost("cured_hide", 6) }, "organized_labor")
                     .ConfigureHousing(10).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 3), Cost("plant_fiber", 2) }, 50),
                 Entry("healer_hut", "Healer Hut", BuildingCategory.Medical, 4, 4, Load<GameObject>(HealerHutPath),
                     "A sheltered medical workplace for treating injuries and disease.", "building_healer_hut", 100, 3,
                     new[] { Cost("wood_log", 12), Cost("stone", 5), Cost("plant_fiber", 8) }, "organized_labor")
-                    .ConfigureHousing(2).ConfigureWorkplace(2).ConfigureMaintenance(0, 0,
+                    .ConfigureProduction(2, new[] { "prepare_medicine" }, 24, 12).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 2), Cost("plant_fiber", 2) }, 35),
                 Entry("shrine", "Shrine", BuildingCategory.Community, 3, 3, Load<GameObject>(ShrinePath),
                     "A maintained communal place that supports settlement morale.", "building_shrine", 65, 3,
@@ -263,6 +268,9 @@ namespace Game.Infrastructure.Editor
                 Zone("training_ground", "Training Ground", BuildingCategory.Military, Load<GameObject>(TrainingGroundPath),
                     "An open practice area for improving combat skill.", 55, Cost("wood_log", 6), Cost("stone", 4))
                     .ConfigureWorkplace(6),
+                Zone("rally_point", "Rally Point", BuildingCategory.Military, Load<GameObject>(MeetingAreaPath),
+                    "The designated point where the settlement garrison assembles.", 30,
+                    Cost("wood_log", 3), Cost("stone", 2)),
                 Entry("fishing_camp", "Fishing Camp", BuildingCategory.Food, 8, 6, Load<GameObject>(FishingCampPath),
                     "A shoreline base required for organized fishing.", "building_fishing_camp", 70, 3,
                     new[] { Cost("wood_log", 8), Cost("plant_fiber", 6) }, "gathering")
@@ -280,7 +288,7 @@ namespace Game.Infrastructure.Editor
                     new[] { Cost("stone", 12), Cost("wood_log", 6) }, "advanced_stonecraft")
                     .ConfigurePlacement(BuildingSpatialForm.Structure, BuildingPlacementConstraint.ReachableApproach |
                         BuildingPlacementConstraint.OwnedTerritory | BuildingPlacementConstraint.Groundwater)
-                    .ConfigureProduction(2, new[] { "draw_water" }, 4, 24),
+                    .ConfigureWorkplace(2),
                 Segment("palisade", "Palisade", BuildingCategory.Military, Load<GameObject>(PalisadePath), false,
                     "A connected timber defensive barrier.", 35, Cost("wood_log", 5)),
                 Segment("gate", "Gate", BuildingCategory.Military, Load<GameObject>(GatePath), false,
@@ -293,7 +301,7 @@ namespace Game.Infrastructure.Editor
                     Load<GameObject>(PrimitivePathPath), true,
                     "A terrain-following footpath that remains traversable.", 15, Cost("stone", 1))
             };
-            catalog.Configure(entries, "primitive_shelter");
+            catalog.Configure(entries, "stone_age_hut");
             var resources = Load<ResourceCatalogAsset>(U09ResourceFoundation.CatalogPath);
             catalog.ConfigureResources(resources);
         }

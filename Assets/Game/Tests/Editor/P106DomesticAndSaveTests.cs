@@ -124,7 +124,7 @@ namespace Game.Tests.Editor
             characters.Add(man); characters.Add(woman); characters.Add(stranger);
             characters.LinkSpouses(man.Id, woman.Id);
             var buildings = new BuildingRegistry();
-            var definition = new BuildingDefinition(new BuildingDefinitionId("primitive_shelter"), "Shelter",
+            var definition = new BuildingDefinition(new BuildingDefinitionId("stone_age_hut"), "Shelter",
                 BuildingCategory.Shelter, new BuildingFootprint(4, 3));
             var building = Building.CreateNew(definition, new GridCoordinate(0, 0), BuildingOrientation.North,
                 new CombatSideId("player"), StableEntityId.NewId());

@@ -20,7 +20,15 @@ namespace Game.Tests.PlayMode
         public IEnumerator LoadLocal()
         {
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
-            yield return null;
+            var deadline = Time.realtimeSinceStartup + 900f;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            while (root == null || !root.IsInitialized)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline),
+                    "LocalGameplay did not finish asynchronous WM15 initialization in fifteen minutes.");
+                yield return null;
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            }
         }
 
         [UnityTest]

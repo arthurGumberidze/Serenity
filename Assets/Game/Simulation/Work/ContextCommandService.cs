@@ -122,7 +122,6 @@ namespace Game.Simulation.Work
         {
             switch (action)
             {
-                case ContextActionKind.Inspect: return WorkJobType.Inspect;
                 case ContextActionKind.Gather: return WorkJobType.Gather;
                 case ContextActionKind.Mine: return WorkJobType.Mine;
                 case ContextActionKind.Chop: return WorkJobType.Chop;

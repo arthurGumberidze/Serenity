@@ -76,6 +76,7 @@ namespace Game.Presentation.AI
         public Tier1MovementAuthority Authority => authority;
         public bool CrowdDetailEnabled => crowdDetailEnabled;
         public CharacterPresenter Presenter => presenter;
+        public Func<StableEntityId, WorldPosition, WorldPosition, bool> RouteValidator { get; set; }
 
         public void SetCrowdDetail(bool enabled)
         {
@@ -137,6 +138,12 @@ namespace Game.Presentation.AI
             if (!IsAvailable || stoppingDistance < 0f ||
                 !ReachableNavMeshPoint.TryFind(presenter.transform.position,
                     new Vector3(target.X, target.Y, target.Z), out var destination))
+            {
+                state = MovementState.Failed;
+                return;
+            }
+            var validatedDestination = new WorldPosition(destination.x, destination.y, destination.z);
+            if (RouteValidator != null && !RouteValidator(characterId, CurrentPosition, validatedDestination))
             {
                 state = MovementState.Failed;
                 return;
