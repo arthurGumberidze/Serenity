@@ -145,6 +145,10 @@ Shader "FX/ProceduralWater"
                 float4 _GDirectionCD;
             CBUFFER_END
 
+            float4 _WorldMapToDesign;
+            float4 _WorldMapMarshShape;
+            float _WorldMapArtEnabled;
+
             float Hash21(float2 p)
             {
                 float3 p3 = frac(float3(p.xyx) * 0.1031);
@@ -253,6 +257,15 @@ Shader "FX/ProceduralWater"
                 float wetland : TEXCOORD6;
             };
 
+            float SampleWorldWetland(float3 worldPos)
+            {
+                float2 design = _WorldMapToDesign.xy + worldPos.xz * _WorldMapToDesign.zw;
+                float2 radius = max(_WorldMapMarshShape.zw, float2(1.0, 1.0));
+                float2 delta = (design - _WorldMapMarshShape.xy) / radius;
+                return (1.0 - smoothstep(0.66, 1.36, length(delta))) *
+                    saturate(_WorldMapArtEnabled);
+            }
+
             Varyings Vert(Attributes v)
             {
                 Varyings o;
@@ -270,7 +283,8 @@ Shader "FX/ProceduralWater"
                 GerstnerWave(_GDirectionCD.xy, _GAmplitude.z, _GFrequency.z, _GSteepness.z, _GSpeed.z, p, t, offset, tangent, binormal);
                 GerstnerWave(_GDirectionCD.zw, _GAmplitude.w, _GFrequency.w, _GSteepness.w, _GSpeed.w, p, t, offset, tangent, binormal);
 
-                float wetland = smoothstep(0.0, 1.0, saturate(v.color.g));
+                float wetland = max(smoothstep(0.0, 1.0, saturate(v.color.g)),
+                    SampleWorldWetland(worldPos0));
                 offset *= _GerstnerIntensity * lerp(1.0, 0.23, wetland);
 
                 float4 displacedOS = v.positionOS;

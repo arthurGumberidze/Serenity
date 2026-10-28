@@ -2053,3 +2053,19 @@ lowering it exposes more scene colour and can read as greater transparency. Corr
 actual shader meaning plus higher absorption/minimum alpha. Retain the continuous per-vertex wetland field,
 but make its core distinctly dark olive and opaque and widen its smooth river transition. Do not restore
 discrete submesh/material bands. No Unity process, test, capture or build may run until the user authorizes it.
+
+## D-215 — Coordinate-authoritative wetland shading and bounded review capture (2026-10-29)
+
+Keep the continuous vertex wetland coefficient, but let the water shader also derive the identical coefficient
+from the authored marsh region and world-to-design transform. Taking the maximum makes generated water robust
+to missing or degraded mesh colour while preserving a single smooth field; it does not create a new material
+boundary, water body, save field or gameplay authority. The accepted mountain and mountain-lake profile remain
+untouched.
+
+The Editor-only review path may pause tiled-world bootstrap at terrain readiness, prepare deferred terrain
+tiles, settle materials for a bounded number of frames, capture only ordinary lake and marsh, then exit. This
+avoids waiting for unrelated population/catalog initialization and has no Player behavior. Visual acceptance
+still precedes focused tests and a Player build.
+
+The user approved the final ordinary-lake and marsh renders on 2026-10-29. The accepted mountain and mountain
+lake remain frozen; subsequent work must not retune these four environment targets without a new report.

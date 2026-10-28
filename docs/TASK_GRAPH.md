@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+WM15 ordinary-lake/marsh follow-up (2026-10-29): **DONE within accepted visual scope**. Mountain and
+mountain lake remain frozen. Ordinary lake density is increased; the wetland shader now evaluates its broad
+continuous region from world coordinates as well as mesh vertex colour, producing the intended clean-river to
+dark-olive marsh transition without material bands. The user approved both rendered views. Focused EditMode
+validation passed 16/16; Windows Development build `Builds/WM15WaterFinal/Serenity.exe` succeeded with 0
+errors / 85 warnings. Evidence: `docs/validation/WM15WaterReview5.md`.
+
 WM15 living buildings (2026-10-29): **DONE within agreed scope**. The complete contract is recorded in
 `docs/world_map/WM15_LIVING_BUILDINGS_SPEC.md`; building upgrade requirements/mechanics remain explicitly
 paused rather than omitted. Final gate: 86/86 focused EditMode tests passed; Windows Development build

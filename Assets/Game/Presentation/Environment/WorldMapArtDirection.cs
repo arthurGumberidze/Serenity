@@ -42,6 +42,10 @@ namespace Game.Presentation.Environment
             Shader.SetGlobalVectorArray("_WorldMapBiomeShapes", shapes);
             Shader.SetGlobalVectorArray("_WorldMapBiomeColors", colors);
             Shader.SetGlobalVectorArray("_WorldMapBlossomGroves", blossomGroves);
+            var marsh = Array.Find(regions, value => value != null && value.id == "H");
+            if (marsh != null)
+                Shader.SetGlobalVector("_WorldMapMarshShape", new Vector4(
+                    marsh.center.x, marsh.center.y, marsh.radius.x, marsh.radius.y));
             Shader.SetGlobalColor("_WorldMapShallowWater", shallowWater);
             Shader.SetGlobalColor("_WorldMapDeepWater", deepWater);
             Shader.SetGlobalColor("_WorldMapMarshWater", marshWater);

@@ -101,8 +101,8 @@ namespace Game.Tests.Editor
             var origin=new TiledWorldPopulationPlanner(world,heights,1380062136).Create().StartTerritory.Center;
             var definition=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>("Assets/Game/Art/Config/BuildingPresentationCatalog.asset")
                 .ResolveDefinition(new BuildingDefinitionId("fishing_pier"));
-            Assert.That(definition.Footprint.Width,Is.EqualTo(4));
-            Assert.That(definition.Footprint.Depth,Is.EqualTo(4));
+            Assert.That(definition.Footprint.Width,Is.EqualTo(6));
+            Assert.That(definition.Footprint.Depth,Is.EqualTo(6));
             var index=ShorePlacementIndex.Create(world,1380062136,definition.Footprint,1,origin.X,origin.Z,true);
             foreach(var lake in world.MapData.Hydrology.Lakes)
             {

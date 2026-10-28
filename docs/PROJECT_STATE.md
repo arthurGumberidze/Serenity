@@ -1,5 +1,16 @@
 # PROJECT_STATE.md
 
+## WM15 ordinary lake and marsh — accepted and verified (2026-10-29)
+
+The accepted mountain and mountain lake remain unchanged. Ordinary lakes now use the corrected dense-water
+profile. Marsh water has a clearly darker, more opaque core and a broad continuous river transition; the
+shader derives the same authored wetland field from world coordinates as a robust fallback to mesh vertex
+colour, so no material ring or hydrology subdivision is introduced. The focused hidden Editor capture exited
+0, logged `WM15_ENVIRONMENT_REVIEW_CAPTURE`, and produced `Artifacts/WM15WaterReview5/lake.png` and
+`marsh.png` without C# or shader errors; the user approved both views. The final focused EditMode gate passed
+16/16. Windows Development build `Builds/WM15WaterFinal/Serenity.exe` succeeded with 0 errors / 85 warnings.
+Exact commands and evidence: `docs/validation/WM15WaterReview5.md`.
+
 ## WM15 living buildings — implementation complete (2026-10-29)
 
 The agreed living-building scope in `docs/world_map/WM15_LIVING_BUILDINGS_SPEC.md` is implemented across

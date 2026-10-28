@@ -19,6 +19,10 @@ namespace Game.Infrastructure
     [DisallowMultipleComponent]
     public sealed class TiledTerrainWorld : MonoBehaviour
     {
+#if UNITY_EDITOR
+        public static event Action<TiledTerrainWorld> EditorTerrainReady;
+        public static bool EditorReviewCapturePending { get; set; }
+#endif
         public const int HeightmapResolution = 257;
         private const int TerrainPaintResolution = 64;
         private const float RefreshIntervalSeconds = 0.5f;
@@ -273,6 +277,19 @@ namespace Game.Infrastructure
                 gameObject.AddComponent<LateLandscapePresentation>().Initialize(this, natureCatalog.RuntimeLate);
             }
             Debug.Log("WM15_BOOT terrain ready");
+#if UNITY_EDITOR
+            if (EditorReviewCapturePending)
+            {
+                BeginBackgroundTilePreparation();
+                while (pendingTilePreparations.Count > 0)
+                {
+                    CollectPreparedTileData();
+                    yield return null;
+                }
+                EditorTerrainReady?.Invoke(this);
+                while (EditorReviewCapturePending) yield return null;
+            }
+#endif
         }
 
         public void BeginBackgroundTilePreparation()

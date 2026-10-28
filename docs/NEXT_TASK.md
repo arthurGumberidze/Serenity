@@ -8,13 +8,13 @@ additional startup optimization for this delivery. Preserve all imported assets 
 work. The building-upgrade table/mechanics, Ollama-controlled neighbouring settlements and further mountain
 graphics stay paused in `docs/PAUSED_TASKS.md` until the user starts one of those tasks.
 
-## WM15 ordinary lakes and marsh — awaiting permission to render (2026-10-28)
+## WM15 ordinary lakes and marsh — deliver verified build (2026-10-29)
 
-The accepted mountain and mountain-lake profiles are frozen. Ordinary-lake opacity and the visible marsh core
-have been corrected in source, retaining a broad continuous river-to-marsh blend. Do not launch Unity, tests,
-visual capture or a Player build without the user's explicit permission. When permission is given, capture the
-ordinary lake and marsh first and request visual approval; only after approval proceed to focused validation
-and the next WM15 Player candidate. Preserve old saves and unrelated dirty/vendor changes.
+Deliver `Builds/WM15WaterFinal/Serenity.exe` and ask the user to review it in a new game. The mountain,
+mountain lake, denser ordinary lake and continuous blue-to-dark-olive marsh transition are visually accepted.
+Focused EditMode validation passed 16/16 and the Windows Development build succeeded with 0 errors / 85
+warnings. The old reported `draw_water` mismatch is absent from the current catalog; only its localization and
+an explicit absence regression remain. Preserve old saves, previous builds and unrelated dirty/vendor changes.
 
 ## WM15 Terrain Sample ridge and water transition review — next unblocked work (2026-10-28)
 
