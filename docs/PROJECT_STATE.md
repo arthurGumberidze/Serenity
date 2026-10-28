@@ -1,5 +1,14 @@
 # PROJECT_STATE.md
 
+## WM15 full local asset-library review (2026-10-28)
+
+Analysis-only user request completed. Audited 31,088 Assets paths, 64 outer archives and 108 nested
+Unity package catalogs, plus 165 external-library files; no archive read errors. Prioritized existing
+building/prop libraries, distinguished unused alternatives from copied/procedural sources, and found
+two exact duplicate archive pairs. Medieval Europe Starter Pack contains characters/axe, not buildings.
+See docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md and WM15_ASSET_LIBRARY_INVENTORY.md; commands/results:
+docs/validation/WM15LibraryAudit.md. No imports, deletion, Unity tests or build. WM15 remains IN_PROGRESS.
+
 ## WM15 current feedback — verified repair candidate (2026-10-27)
 
 Current candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Final build-batch-c exited 0 with 0 errors /

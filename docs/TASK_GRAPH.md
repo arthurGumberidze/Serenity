@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+WM15 library audit (2026-10-28): **IN_PROGRESS / analysis deliverable complete**. Full current
+Assets/archive inventory and prioritized reuse assessment are in docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md
+and WM15_ASSET_LIBRARY_INVENTORY.md. No implementation/import/delete/test/build; no change to visual
+acceptance or remaining WM15 gates. Exact commands/results: docs/validation/WM15LibraryAudit.md.
+
 WM15 current feedback (2026-10-27): **IN_PROGRESS / build-batch-c and Player-a verified**.
 Focused EditMode passed 9/9. Final build: exit 0, 0 errors / 30 warnings; Player-a: 32/32, exit 0,
 no gameplay runtime errors. Manual-pier fishing, six lake places plus river support, mixed growing

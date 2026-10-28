@@ -1,5 +1,12 @@
 # NEXT_TASK.md
 
+## WM15 after full asset-library audit (2026-10-28)
+
+The requested audit is complete; see docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md. Recommended next
+content pass: 6–8 existing buildings and their work-site props, then terrain/shore consistency.
+This is a recommendation, not a new import authorization. Keep WM15 active and preserve the existing
+visual-approval gate before tests/new Player build. No asset deletion or bulk import is scheduled.
+
 ## WM15 current feedback — next unblocked work (2026-10-27)
 
 Candidate: `Builds/WorldMapCurrentFix/Serenity.exe`. Latest build-e succeeded with 0 errors / 82 warnings

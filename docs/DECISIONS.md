@@ -1,5 +1,14 @@
 # DECISIONS.md
 
+## D-213 — Asset availability, static references and runtime use are distinct (2026-10-28)
+
+The full library audit records archive presence, imported GUID/path matches, project references and
+scene/Resources reachability separately. Zero source-folder references cannot authorize deletion:
+WM15 copies selected art with remapped GUIDs, preprocesses heightmaps and resolves water by shader name.
+No new runtime architecture or dependency is approved by this review. Existing building/prop libraries
+are the first candidates; late-era assets and alternative pipelines remain deferred. See
+docs/world_map/WM15_ASSET_LIBRARY_REVIEW.md. WM15 acceptance and validation gates are unchanged.
+
 ## D-190 WM15 foliage repair reuses mesh LODs without changing world density (2026-10-24)
 
 Rendered build-e isolation measured GPU means of 81.875ms for the normal scene,
