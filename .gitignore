@@ -23,6 +23,7 @@
 /Validation/
 /Artifacts/
 /serenity_games_assets/
+/New Unity Project/
 /ProjectSettings/UMAPluginDocumentation.asset
 
 # Local superseded automation copy; retained outside versioned night pipeline.
@@ -37,6 +38,17 @@
 /Assets/*.unitypackage.meta
 /Assets/23102026/
 /Assets/23102026.meta
+# Raw import drops are reviewed into the tracked asset baseline; keep the source archives local.
+/Assets/25102026/
+/Assets/25102026.meta
+/Assets/26102026/
+/Assets/26102026.meta
+/Assets/28102026/
+/Assets/28102026.meta
+
+# Temporary scenes emitted by editor tests must never enter the asset fingerprint.
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta
 .env
 .env.*
 *.local.config
