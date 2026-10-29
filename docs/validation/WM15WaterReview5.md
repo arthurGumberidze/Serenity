@@ -54,3 +54,50 @@ Unity.exe -batchmode -projectPath C:\serenity_game -buildTarget Win64 -executeMe
 
 Result: Unity exit 0; `Build Finished, Result: Success`; `U00_BUILD_RESULT: Succeeded; errors=0; warnings=85`.
 Output: `Builds/WM15WaterFinal/Serenity.exe`.
+
+## Player world-creation repair
+
+The first delivered Player reported:
+
+```text
+InvalidOperationException: The approved Procedural Water Shader URP asset is not available.
+```
+
+The shader existed in the project but was referenced only through `Shader.Find`, so the Player build stripped
+it. Its GUID `bbaacdad9e0d49f4594c986566db96c4` is now in Graphics Settings Always Included Shaders. The production
+build entry point also fails before compilation if `FX/ProceduralWater` cannot be found or is not retained.
+
+The first post-shader-fix Player launch removed that exception and exposed a second world-creation blocker at
+the accepted steep rock-spire terrain: no valid arrival stance existed inside its authored protection radius.
+The planner now keeps the POI in place and selects the nearest deterministic, road-connected, dry and
+slope-valid stance within a maximum 64 m fallback radius.
+
+Focused command:
+
+```text
+Unity.exe -batchmode -projectPath C:\serenity_game -runTests -testPlatform EditMode -testFilter "Game.Tests.Editor.WM11WorldMapPoiExplorationTests.EveryPointHasDrySlopeBoundedApproachFromReachableWm09Route;Game.Tests.Editor.WM15AfternoonFeedbackTests.NewWorldPoiApproachesStayDryAcrossReportedWorldKeys" -testResults C:\serenity_game\Artifacts\WM15WaterReview5\editor-shaderfix-c.xml -quit -logFile C:\serenity_game\Artifacts\WM15WaterReview5\editor-shaderfix-c.log
+```
+
+Result: Unity exit 0; **4 total / 4 passed / 0 failed**; NUnit duration `481.8401853 s`. The cases cover the
+canonical route and three previously reported world keys. No C# or shader compilation error was recorded.
+
+Production rebuild command:
+
+```text
+Unity.exe -batchmode -projectPath C:\serenity_game -buildTarget Win64 -executeMethod U00Build.WindowsDevelopment -serenityBuildPath Builds/WM15WaterFinal/Serenity.exe -quit -logFile C:\serenity_game\Artifacts\WM15WaterReview5\build-shaderfix-c.log
+```
+
+Result: Unity exit 0; `Build Finished, Result: Success`;
+`U00_BUILD_RESULT: Succeeded; errors=0; warnings=85`.
+
+Actual Player evidence:
+
+- `player-shaderfix-b/player.log` reached `WM15_BOOT population ready` and `WM15_BOOT gameplay ready` without
+  the Procedural Water availability exception or the rock-spire approach exception.
+- Its opt-in diagnostic then rejected the current multiple-fishing-landing-marker contract using an obsolete
+  one-marker-per-zone assertion. The assertion was updated to require at least one marker for every hydrology
+  lake; this does not alter normal gameplay initialization.
+- The final repeated opt-in diagnostic launch from build `shaderfix-c` ended during the expensive strategic
+  overview stage and emitted no new exception, but did not reach its pass marker. It is therefore not counted
+  as a passed Player smoke. Runtime world-creation evidence comes from `player-shaderfix-b`, whose production
+  initialization code is identical to the final build.

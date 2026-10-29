@@ -1,5 +1,18 @@
 # DECISIONS.md
 
+## D-216 — Runtime-resolved shaders and steep hero POIs require bounded build/runtime fallbacks (2026-10-29)
+
+A critical shader resolved only through `Shader.Find` is not considered available to a Player merely because
+it exists in `Assets`. `FX/ProceduralWater` is retained through Graphics Settings Always Included Shaders, and
+the production build method validates both discovery and retention before building. This keeps shader stripping
+from converting an accepted presentation dependency into a world-creation failure.
+
+An intentionally steep hero landmark remains at its authored position. If its normal protection radius contains
+no dry, slope-valid planning stance, POI routing may end at the nearest deterministic stance discovered by the
+same road-connected flood fill, bounded to 64 m. The fallback changes only the arrival endpoint; it does not
+flatten or move the accepted mountain, weaken water/slope traversal rules, or introduce presentation authority
+into Domain planning.
+
 ## D-214 — Living buildings use persistent assignments and bounded autonomous policies (2026-10-29)
 
 Building behavior is canonical domain/simulation state, not presentation-only MonoBehaviour state.

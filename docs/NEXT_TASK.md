@@ -1,5 +1,13 @@
 # NEXT_TASK.md
 
+## WM15 corrected Player — user retest (2026-10-29)
+
+Deliver the rebuilt `Builds/WM15WaterFinal/Serenity.exe` and ask the user to create a new world. The stripped
+Procedural Water shader and the steep rock-spire POI approach that blocked real Player world creation are both
+fixed. Focused POI validation passed 4/4; the actual Player reached `WM15_BOOT gameplay ready` without either
+exception; the final Development rebuild succeeded with 0 errors / 85 warnings. Do not change the accepted
+mountain, mountain lake, ordinary lake or marsh presentation. Preserve unrelated dirty/vendor changes.
+
 ## Resume parallel WM15 visual/water work (2026-10-29)
 
 The living-buildings scope is complete and verified; do not reopen it unless a new defect is reported.

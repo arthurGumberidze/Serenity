@@ -23,6 +23,15 @@ public static class U00Build
         var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
         if (scenes.Length == 0 || scenes.Any(s => !File.Exists(s)))
             throw new BuildFailedException("An enabled, existing scene is required.");
+        var waterShader = Shader.Find("FX/ProceduralWater");
+        if (waterShader == null)
+            throw new BuildFailedException("The approved Procedural Water shader is missing.");
+        var waterShaderGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(waterShader));
+        var graphicsSettings = File.ReadAllText("ProjectSettings/GraphicsSettings.asset");
+        if (string.IsNullOrWhiteSpace(waterShaderGuid) ||
+            !graphicsSettings.Contains("guid: " + waterShaderGuid))
+            throw new BuildFailedException(
+                "FX/ProceduralWater must be listed in GraphicsSettings Always Included Shaders.");
 
         PlayerSettings.companyName = "Serenity";
         PlayerSettings.productName = "Serenity";

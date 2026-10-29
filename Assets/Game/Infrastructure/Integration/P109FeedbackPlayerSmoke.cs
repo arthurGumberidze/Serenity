@@ -40,7 +40,8 @@ namespace Game.Infrastructure.Integration
                 root.Research.CompleteAllForDiagnostics();
                 var markers = root.GetComponentsInChildren<Transform>(true)
                     .Where(x => x.name.StartsWith("Fishing landing ")).ToArray();
-                if (markers.Length != root.WorldDefinition.Zones.Count(x => x.Uses.HasFlag(WorldZoneUse.Fishing)))
+                var lakeIds = root.WorldDefinition.MapData.Hydrology.Lakes.Select(value => value.Id).ToArray();
+                if (lakeIds.Any(id => !markers.Any(marker => marker.name.EndsWith(id, StringComparison.Ordinal))))
                     throw new InvalidOperationException("A lake has no landing marker.");
                 foreach (var marker in markers)
                 {

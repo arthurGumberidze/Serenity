@@ -80,6 +80,7 @@ namespace Game.Domain.World
     {
         public const float MaximumApproachSlopeDegrees = 30f;
         public const float ApproachGridMeters = 8f;
+        public const float MaximumFallbackArrivalRadiusMeters = 64f;
         private readonly TiledWorldDefinition world;
         private readonly TiledWorldHeightSampler heights;
         private readonly WorldMapRoadNetworkPlan roads;
@@ -133,6 +134,8 @@ namespace Game.Domain.World
             if (sourceRoutes.Count == 0) throw new InvalidOperationException("WM09 has no dry road samples.");
 
             var arrivalRadius = Math.Max(6f, definition.ProtectionRadiusMeters);
+            if (!HasLocalTraversableStance(target, arrivalRadius, columns, rows, grid))
+                arrivalRadius = MaximumFallbackArrivalRadiusMeters;
             var open = new SortedSet<OpenNode>(OpenNodeComparer.Instance);
             var cost = new Dictionary<GridNode, float>();
             var parent = new Dictionary<GridNode, GridNode>();
@@ -173,6 +176,24 @@ namespace Game.Domain.World
                     rootRoute[next] = rootRoute[current];
                     open.Add(new OpenNode(next, nextCost + Heuristic(next, target, grid), sequence++));
                 }
+            }
+            if (!reached.HasValue)
+            {
+                // A landmark may sit on an intentionally steep hero formation.  Keep the POI at its
+                // authored position, but stop the route at the nearest reachable dry stance instead of
+                // making the entire world fail to load.  The bounded fallback is still road-connected,
+                // slope-valid and deterministic because it is selected from the completed flood fill.
+                var fallback = closed.Select(node => new
+                    {
+                        Node = node,
+                        Distance = Distance2D(Position(node, grid), target)
+                    })
+                    .Where(value => value.Distance <= MaximumFallbackArrivalRadiusMeters + 0.001f)
+                    .OrderBy(value => value.Distance)
+                    .ThenBy(value => value.Node.X)
+                    .ThenBy(value => value.Node.Z)
+                    .FirstOrDefault();
+                if (fallback != null) reached = fallback.Node;
             }
             if (!reached.HasValue && grid > 2f)
                 return FindApproach(definition, target, grid * .5f); // Resolve narrow dry passages missed by the coarse planning lattice.
@@ -227,6 +248,24 @@ namespace Game.Domain.World
             var position = Position(node, grid);
             return !heights.IsWater(position.X, position.Z) &&
                    heights.SampleSlopeDegrees(position.X, position.Z) <= MaximumApproachSlopeDegrees + 0.001f;
+        }
+
+        private bool HasLocalTraversableStance(WorldPosition target, float radius,
+            int columns, int rows, float grid)
+        {
+            var minX = Math.Max(0, (int)Math.Floor((target.X - world.Origin.X - radius) / grid));
+            var maxX = Math.Min(columns - 1, (int)Math.Ceiling((target.X - world.Origin.X + radius) / grid));
+            var minZ = Math.Max(0, (int)Math.Floor((target.Z - world.Origin.Z - radius) / grid));
+            var maxZ = Math.Min(rows - 1, (int)Math.Ceiling((target.Z - world.Origin.Z + radius) / grid));
+            for (var z = minZ; z <= maxZ; z++)
+            for (var x = minX; x <= maxX; x++)
+            {
+                var node = new GridNode(x, z);
+                var position = Position(node, grid);
+                if (Distance2D(position, target) <= radius + 0.001f &&
+                    IsTraversable(node, columns, rows, grid)) return true;
+            }
+            return false;
         }
 
         private bool SegmentTraversable(GridNode first, GridNode second, float grid)

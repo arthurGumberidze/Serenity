@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## WM15 Player world-creation repair — built and runtime verified (2026-10-29)
+
+The accepted mountain, mountain lake and water appearance remain unchanged. The Windows Player failure
+`The approved Procedural Water Shader URP asset is not available` was caused by build-time shader stripping:
+the approved shader was found only by name at runtime. `FX/ProceduralWater` is now an Always Included Shader,
+and `U00Build.WindowsDevelopment` refuses to build if either the asset or that retention setting is missing.
+
+An actual Player launch then exposed a second world-creation blocker at the intentionally steep rock-spire
+landmark. POI planning now preserves the authored landmark position while choosing a deterministic,
+road-connected, dry and slope-safe arrival stance within a bounded 64 m fallback radius. Four focused POI
+regressions passed 4/4. Player build `shaderfix-b` reached `WM15_BOOT gameplay ready` without either reported
+exception; its only failure was an obsolete diagnostic expectation about one fishing marker per lake, which
+was corrected to the current multi-marker contract. The final Windows Development rebuild at
+`Builds/WM15WaterFinal/Serenity.exe` succeeded with 0 errors / 85 warnings. A final repeated diagnostic launch
+ended during the expensive strategic-overview stage without a new exception, so it is not claimed as a passed
+smoke. Exact commands and evidence: `docs/validation/WM15WaterReview5.md`.
+
 ## WM15 ordinary lake and marsh — accepted and verified (2026-10-29)
 
 The accepted mountain and mountain lake remain unchanged. Ordinary lakes now use the corrected dense-water

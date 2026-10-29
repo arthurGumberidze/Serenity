@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 Player world-creation repair (2026-10-29): **DONE / awaiting user retest**. The approved
+`FX/ProceduralWater` shader is retained in Player builds and enforced by build preflight. Steep authored POIs
+keep their landmark position and receive a deterministic road-connected, dry, slope-safe arrival stance within
+a bounded 64 m fallback radius. Focused POI tests passed 4/4. An actual Player reached
+`WM15_BOOT gameplay ready` without the shader or POI exception. The final Windows Development rebuild at
+`Builds/WM15WaterFinal/Serenity.exe` succeeded with 0 errors / 85 warnings. Evidence:
+`docs/validation/WM15WaterReview5.md`.
+
 WM15 ordinary-lake/marsh follow-up (2026-10-29): **DONE within accepted visual scope**. Mountain and
 mountain lake remain frozen. Ordinary lake density is increased; the wetland shader now evaluates its broad
 continuous region from world coordinates as well as mesh vertex colour, producing the intended clean-river to

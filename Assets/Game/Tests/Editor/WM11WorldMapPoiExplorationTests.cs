@@ -71,7 +71,8 @@ namespace Game.Tests.Editor
                 var dx = point.ArrivalPosition.X - point.Position.X;
                 var dz = point.ArrivalPosition.Z - point.Position.Z;
                 Assert.That(Math.Sqrt(dx * dx + dz * dz),
-                    Is.LessThanOrEqualTo(Math.Max(6f, point.ProtectionRadiusMeters) + 0.01f), point.Id);
+                    Is.LessThanOrEqualTo(Math.Max(WorldMapPoiPlanner.MaximumFallbackArrivalRadiusMeters,
+                        point.ProtectionRadiusMeters) + 0.01f), point.Id);
             }
         }
 
