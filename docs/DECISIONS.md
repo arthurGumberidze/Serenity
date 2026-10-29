@@ -1,5 +1,23 @@
 # DECISIONS.md
 
+## D-217 — Local-map preparation is immutable, cached and resident after bounded warmup (2026-10-29)
+
+Canonical world generation, resources, actors and saves remain authoritative in Domain/Simulation. Runtime
+TerrainData, paint arrays, strategic overview pixels, tile roots and pooled view roots are disposable
+presentation. Their binary cache is keyed by generation identity, schema/map versions, world seed, dimensions
+and an explicit preparation-algorithm version; a missing/corrupt/incomplete cache is regenerated and can never
+be used as save authority. Completion is published only after every requested tile and overview file exists.
+
+Startup materializes only the nearby collision set. After gameplay is ready, at most two CPU preparations run
+in parallel and the main thread materializes at most one tile (including pooled population presentation) per
+frame. Once warmed, all 16 compact-world tiles remain resident and camera travel changes visibility instead of
+destroying/recreating terrain. Interactive tree proxies use a bounded incremental pool; a proxy remains dormant
+until a canonical production site exists. Dynamic characters and animals are not permanent construction
+obstacles. This follows FRS 42.6 pooling/central scheduling without adding per-object Update loops.
+
+The one-time bottom progress UI is presentation-only: it appears only for an incomplete cache, reports resident
+tile completion and hides shortly after 100%. Later launches with the same valid cache do not show it.
+
 ## D-216 — Runtime-resolved shaders and steep hero POIs require bounded build/runtime fallbacks (2026-10-29)
 
 A critical shader resolved only through `Shader.Find` is not considered available to a Player merely because

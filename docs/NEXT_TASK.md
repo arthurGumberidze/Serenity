@@ -1,5 +1,14 @@
 # NEXT_TASK.md
 
+## WM15 resident map cache — user retest (2026-10-29)
+
+Deliver `Builds/WM15MapWarmup/Serenity.exe` and ask the user to create a new world. On the first incomplete
+cache preparation, the bottom-centre `Подготовка карты: N%` indicator appears once and hides after 100%; later
+launches of the same generation/seed/version use the completed cache without showing it. Ask the user to pan
+across the full map after 100%. Automated Player evidence is cache hit 16/16 and worst warm refresh 5.4 ms,
+down from 1205.7 ms. Do not change the accepted mountain, mountain lake or water appearance. Preserve unrelated
+dirty/vendor changes and keep the deferred 100/300/500 population gates separate.
+
 ## WM15 corrected Player — user retest (2026-10-29)
 
 Deliver the rebuilt `Builds/WM15WaterFinal/Serenity.exe` and ask the user to create a new world. The stripped

@@ -1,5 +1,20 @@
 # Architecture — U01
 
+## WM15 resident map preparation boundary (2026-10-29)
+
+The local-map flow is `TiledWorldDefinition + world seed -> pure height/paint preparation -> versioned
+presentation cache -> main-thread TerrainData/tile view materialization`. The cache contains no mutable world,
+resource, actor, discovery or save state. A cache miss starts with the nearby collision tiles and continues in
+bounded background work after `gameplay ready`; a hit skips deterministic array recomputation. Corrupt,
+partial or version-mismatched entries fail closed to regeneration.
+
+All 16 compact-map tile roots and per-tile population roots become resident once, while rendering remains
+camera-bounded through tile visibility. Camera travel never unloads canonical state and no longer reconstructs
+resident terrain or population views. Tree interaction colliders are a centrally advanced bounded pool rather
+than per-tree Update objects. `WorldMapWarmupProgressOverlay` observes only preparation progress and owns no
+authority. This is a presentation performance adapter over the existing hybrid tiers, not a second streaming
+or save system.
+
 ## WM15 repair boundaries (2026-10-24)
 
 Strategic resource actions use `P102StrategicWorldView -> DirectWorkCommandService` and the

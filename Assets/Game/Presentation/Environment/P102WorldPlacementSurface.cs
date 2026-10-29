@@ -117,7 +117,8 @@ namespace Game.Presentation.Environment
                              Quaternion.identity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
                 {
                     if (blocker is TerrainCollider || blocker.GetComponentInParent<BuildableGround>() != null ||
-                        blocker.GetComponentInParent<CharacterPresenter>() != null) continue;
+                        blocker.GetComponentInParent<CharacterPresenter>() != null ||
+                        blocker.GetComponentInParent<AnimalHealthPresentation>() != null) continue;
                     var wall=blocker.GetComponentInParent<Game.Presentation.Buildings.BuildingPresenter>();
                     if(replaceOwnedPalisade && wall!=null && wall.IsBound && wall.Building.IsOperational &&
                         wall.Building.OwnerSideId.Value=="player" && wall.Building.DefinitionId.ToString()=="palisade")continue;

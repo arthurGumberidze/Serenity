@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+WM15 resident map cache/warmup (2026-10-29): **DONE / awaiting user retest**. Initial gameplay remains bounded,
+then all 16 terrain/population tiles are prepared in the background, retained and reused instead of being
+rebuilt during camera travel. Immutable presentation data is cached per generation/seed/version; incomplete
+first preparation shows one bottom progress percentage and a complete cache suppresses it on later launches.
+Focused EditMode passed 6/6, the full-residency PlayMode route passed 1/1, Windows Development build
+`Builds/WM15MapWarmup/Serenity.exe` succeeded with 0 errors / 82 warnings, and actual Player smoke exited 0
+with cache hit 16/16, 24 valid lake landings and worst warm camera refresh 5.4 ms (previously 1205.7 ms).
+Evidence: `docs/validation/WM15MapWarmup.md`. Deferred 100/300/500 population gates remain outside this task.
+
 WM15 Player world-creation repair (2026-10-29): **DONE / awaiting user retest**. The approved
 `FX/ProceduralWater` shader is retained in Player builds and enforced by build preflight. Steep authored POIs
 keep their landmark position and receive a deterministic road-connected, dry, slope-safe arrival stance within

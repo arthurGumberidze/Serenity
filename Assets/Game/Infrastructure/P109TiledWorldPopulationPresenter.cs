@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Domain;
@@ -20,7 +21,7 @@ using UnityEngine;
 
 namespace Game.Infrastructure
 {
-    /// <summary>Streams disposable views for the canonical, deterministic P10.9 world population.</summary>
+    /// <summary>Pools disposable views for the canonical, deterministic P10.9 world population.</summary>
     [DisallowMultipleComponent]
     public sealed class P109TiledWorldPopulationPresenter : MonoBehaviour
     {
@@ -56,18 +57,19 @@ namespace Game.Infrastructure
         private float animalTime;
         private float nextWildlifeRefresh;
         private AudioSource forestAmbience;
+        private Coroutine rewarmViewsRoutine;
 
         public TiledWorldPopulationPlan Plan { get; private set; }
-        public int ActiveTileViewCount => tileViews.Count;
-        public int ActiveResourceViewCount => tileViews.Values.Sum(root =>
+        public int ActiveTileViewCount => tileViews.Values.Count(root => root != null && root.activeSelf);
+        public int ActiveResourceViewCount => tileViews.Values.Where(root => root != null && root.activeSelf).Sum(root =>
             root.GetComponentsInChildren<ProductionSourcePresenter>(true).Length);
-        public int ActiveIndustrialViewCount => tileViews.Values.Sum(root =>
+        public int ActiveIndustrialViewCount => tileViews.Values.Where(root => root != null && root.activeSelf).Sum(root =>
             root.GetComponentsInChildren<WorldResourcePilePresenter>(true).Length);
         public WildlifePopulationService WildlifePopulation => wildlifePopulation;
         public WorldMapWildlifePresenter WildlifePresenter => wildlifePresenter;
         public WorldMapPoiPlan PoiPlan { get; private set; }
         public WorldMapPoiDiscoveryAdapter PoiDiscovery => poiDiscovery;
-        public int ActivePoiViewCount => tileViews.Values.Sum(root =>
+        public int ActivePoiViewCount => tileViews.Values.Where(root => root != null && root.activeSelf).Sum(root =>
             root.GetComponentsInChildren<WorldMapPoiPresenter>(true).Length);
 
         public void Initialize(TiledTerrainWorld world, ProductionService productionService,
@@ -125,6 +127,7 @@ namespace Game.Infrastructure
                 }, () => production.Sites.Where(site => site.IsDepleted && treeIds.Contains(site.Id)).Select(site => site.Id));
             }
             terrainWorld.VisualTilesChanged += RefreshViews;
+            terrainWorld.ResidentTilePrepared += PrewarmTileView;
             Debug.Log("WM15_BOOT population visible views");
             RefreshViews();
             Debug.Log("WM15_BOOT population ready");
@@ -135,24 +138,29 @@ namespace Game.Infrastructure
             if (terrainWorld == null || Plan == null) return;
             requiredTiles.Clear();
             foreach (var tile in terrainWorld.VisualTiles) requiredTiles.Add(tile);
-            foreach (var tile in tileViews.Keys.Where(tile => !requiredTiles.Contains(tile)).ToArray())
-            {
-                Destroy(tileViews[tile]);
-                tileViews.Remove(tile);
-                tileSources.Remove(tile);
-            }
             animals.RemoveAll(x => x.Transform == null);
+            foreach (var pair in tileViews)
+                if (pair.Value != null) pair.Value.SetActive(requiredTiles.Contains(pair.Key));
             foreach (var tile in requiredTiles.OrderBy(value => value))
-                if (!tileViews.ContainsKey(tile))
-                {
-                    var view = CreateTileView(tile);
-                    tileViews.Add(tile, view);
-                    tileSources.Add(tile, view.GetComponentsInChildren<ProductionSourcePresenter>(true));
-                }
-            foreach (var sources in tileSources.Values)
+                PrewarmTileView(tile);
+            foreach (var pair in tileSources.Where(pair => requiredTiles.Contains(pair.Key)))
+            {
+                var sources = pair.Value;
                 for (var index = 0; index < sources.Length; index++)
                     if (sources[index] != null) sources[index].Refresh();
+            }
             if (wildlifePresenter != null) wildlifePresenter.Rebalance(WildlifeFocus());
+        }
+
+        private void PrewarmTileView(WorldTileId tile)
+        {
+            if (!tileViews.TryGetValue(tile, out var view) || view == null)
+            {
+                view = CreateTileView(tile);
+                tileViews[tile] = view;
+                tileSources[tile] = view.GetComponentsInChildren<ProductionSourcePresenter>(true);
+            }
+            view.SetActive(requiredTiles.Contains(tile));
         }
 
         public void InitializeWildlifeTiers(Game.ECS.Tier2.Tier2Runtime tier2Runtime, long calendarTicks)
@@ -204,7 +212,19 @@ namespace Game.Infrastructure
             tileViews.Clear();
             tileSources.Clear();
             RefreshViews();
+            if (rewarmViewsRoutine != null) StopCoroutine(rewarmViewsRoutine);
+            rewarmViewsRoutine = StartCoroutine(RewarmResidentViews());
             wildlifePresenter?.Reconcile();
+        }
+
+        private IEnumerator RewarmResidentViews()
+        {
+            foreach (var tile in terrainWorld.LoadedTiles)
+            {
+                PrewarmTileView(tile);
+                yield return null;
+            }
+            rewarmViewsRoutine = null;
         }
 
         public StableEntityId ResourceId(TiledWorldResourceNode node) =>
@@ -398,6 +418,7 @@ namespace Game.Infrastructure
             {
                 var animal = animals[index];
                 if (animal.Transform == null) { animals.RemoveAt(index); continue; }
+                if (!animal.Transform.gameObject.activeInHierarchy) continue;
                 animal.Transform.GetComponent<AnimalHealthPresentation>()?.Refresh();
                 if (!production.Animals.IsAlive(animal.SiteId)) continue;
                 var offset = new Vector3(Mathf.Sin(now * 0.32f + animal.Phase), 0f,
@@ -643,7 +664,11 @@ namespace Game.Infrastructure
         private void OnDestroy()
         {
             ShutdownWildlife();
-            if (terrainWorld != null) terrainWorld.VisualTilesChanged -= RefreshViews;
+            if (terrainWorld != null)
+            {
+                terrainWorld.VisualTilesChanged -= RefreshViews;
+                terrainWorld.ResidentTilePrepared -= PrewarmTileView;
+            }
             animals.Clear();
         }
     }

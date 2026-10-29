@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Game.Domain.AI;
@@ -26,15 +27,27 @@ namespace Game.Infrastructure
         public const int HeightmapResolution = 257;
         private const int TerrainPaintResolution = 64;
         private const float RefreshIntervalSeconds = 0.5f;
+        private const int MaximumBackgroundPreparations = 2;
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
         private readonly Dictionary<WorldTileId, (float[,] heights, float[,,] paint)> preparedTileData = new();
         private readonly Dictionary<WorldTileId, Task<(float[,] heights, float[,,] paint)>> pendingTilePreparations = new();
         private readonly HashSet<WorldTileId> deferredTilePreparations = new();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
+        private readonly HashSet<WorldTileId> warmedTiles = new HashSet<WorldTileId>();
         private readonly List<GameObject> linkObjects = new List<GameObject>();
         private readonly List<Mesh> roadMeshes = new List<Mesh>();
         private readonly Dictionary<Game.Domain.StableEntityId, GameObject> vegetationColliders =
             new Dictionary<Game.Domain.StableEntityId, GameObject>();
+        private readonly Stack<GameObject> vegetationColliderPool = new Stack<GameObject>();
+        private readonly Queue<WorldMapVegetationInstance> pendingVegetationColliderBindings =
+            new Queue<WorldMapVegetationInstance>();
+        private readonly HashSet<Game.Domain.StableEntityId> desiredVegetationColliderIds =
+            new HashSet<Game.Domain.StableEntityId>();
+        private WorldTilePreparationCache preparationCache;
+        private Coroutine backgroundWarmupRoutine;
+        private int backgroundWarmupPercent;
+        private bool backgroundWarmupProgressVisible;
+        private int preparationCacheHitCount;
         private TiledWorldStreamingPlanner planner;
         private TerrainLayer[] sourceLayers = Array.Empty<TerrainLayer>();
         private readonly List<TerrainLayer> artLayers = new();
@@ -85,6 +98,7 @@ namespace Game.Infrastructure
         }
 
         public event Action VisualTilesChanged;
+        public event Action<WorldTileId> ResidentTilePrepared;
 
         public TiledWorldDefinition Definition { get; private set; }
         public TiledWorldHeightSampler HeightSampler { get; private set; }
@@ -98,6 +112,14 @@ namespace Game.Infrastructure
         public WorldMapRoadNetworkPlan RoadNetworkPlan => roadNetworkPlan;
         public GameObject RoadPresentationRoot => roadPresentationRoot;
         public int ActiveVegetationColliderCount => vegetationColliders.Count;
+        public int BackgroundWarmupPercent => backgroundWarmupPercent;
+        public bool BackgroundWarmupProgressVisible => backgroundWarmupProgressVisible;
+        public bool PreparationCacheWasCompleteAtStartup { get; private set; }
+        public int PreparationCacheHitCount => preparationCacheHitCount;
+        public bool BackgroundWarmupComplete => Definition != null && loaded.Count == Definition.Tiles.Count &&
+                                                warmedTiles.Count == Definition.Tiles.Count &&
+                                                pendingTilePreparations.Count == 0 &&
+                                                deferredTilePreparations.Count == 0;
         private WorldMapVegetationRenderer vegetationRenderer;
         public int ActiveVegetationViewCount => vegetationRenderer != null ? vegetationRenderer.InstanceCount : 0;
         public Texture2D StrategicGroundTexture => overviewGroundTexture;
@@ -208,6 +230,7 @@ namespace Game.Infrastructure
                     heightSampler.WorldSeed).Create();
                 ValidateRoadAssets();
                 roadNetworkPlan = new WorldMapRoadNetworkPlanner(definition, heightSampler).Create();
+                InitializePreparationCache();
             }
             else if (natureCatalog != null && natureCatalog.GroundLayers != null && natureCatalog.GroundLayers.Length > 0)
                 sourceLayers = natureCatalog.GroundLayers;
@@ -232,12 +255,7 @@ namespace Game.Infrastructure
                 foreach (var tileId in initialTiles)
                 {
                     var captured = tileId;
-                    pendingTilePreparations[captured] = Task.Run(() =>
-                    {
-                        var heights = HeightSampler.CreateNormalizedHeights(captured, HeightSampler.HeightmapResolution);
-                        return (heights, paint: terrainPaintSampler?.CreateTileWeights(captured,
-                            TerrainPaintResolution, heights));
-                    });
+                    pendingTilePreparations[captured] = Task.Run(() => PrepareTileData(captured));
                 }
                 var initialPreparations = initialTiles.Select(id => pendingTilePreparations[id]).ToArray();
                 var initialPrepared = Task.WhenAll(initialPreparations);
@@ -265,6 +283,7 @@ namespace Game.Infrastructure
                                      initialTiles.Count + "…");
                     yield return null;
                     loaded.Add(id, CreateTile(id));
+                    UpdateBackgroundWarmupProgress();
                 }
             }
             progress?.Invoke("Соединяем берега и дороги…");
@@ -281,9 +300,10 @@ namespace Game.Infrastructure
             if (EditorReviewCapturePending)
             {
                 BeginBackgroundTilePreparation();
-                while (pendingTilePreparations.Count > 0)
+                while (pendingTilePreparations.Count > 0 || deferredTilePreparations.Count > 0)
                 {
                     CollectPreparedTileData();
+                    BeginBackgroundTilePreparation();
                     yield return null;
                 }
                 EditorTerrainReady?.Invoke(this);
@@ -294,17 +314,21 @@ namespace Game.Infrastructure
 
         public void BeginBackgroundTilePreparation()
         {
-            foreach (var tileId in deferredTilePreparations.OrderBy(id => id).ToArray())
+            foreach (var tileId in deferredTilePreparations
+                         .OrderBy(id => TileDistanceSquared(id, lastCameraFocus)).ThenBy(id => id)
+                         .Take(Math.Max(0, MaximumBackgroundPreparations - pendingTilePreparations.Count)).ToArray())
             {
-                var captured = tileId;
-                pendingTilePreparations[captured] = Task.Run(() =>
-                {
-                    var heights = HeightSampler.CreateNormalizedHeights(captured, HeightSampler.HeightmapResolution);
-                    return (heights, paint: terrainPaintSampler?.CreateTileWeights(captured,
-                        TerrainPaintResolution, heights));
-                });
-                deferredTilePreparations.Remove(captured);
+                StartTilePreparation(tileId);
             }
+        }
+
+        public void BeginBackgroundTileWarmup()
+        {
+            if (Definition == null || Definition.MapData == null || backgroundWarmupRoutine != null) return;
+            BeginBackgroundTilePreparation();
+            if (backgroundWarmupProgressVisible && GetComponent<WorldMapWarmupProgressOverlay>() == null)
+                gameObject.AddComponent<WorldMapWarmupProgressOverlay>().Initialize(this);
+            backgroundWarmupRoutine = StartCoroutine(BackgroundTileWarmupRoutine());
         }
 
         public void ConfigureStreaming(Func<WorldPosition> cameraFocus,
@@ -379,6 +403,7 @@ namespace Game.Infrastructure
 
         private void Update()
         {
+            AdvanceVegetationColliderBindings(24);
             if (Definition == null || strategicMode || cameraFocusProvider == null ||
                 Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + RefreshIntervalSeconds;
@@ -395,26 +420,27 @@ namespace Game.Infrastructure
         {
             CollectPreparedTileData();
             var visibilityChanged = !visual.SetEquals(plan.VisualTiles);
-            var required = new HashSet<WorldTileId>(plan.CollisionTiles);
             var added = false;
             foreach (var id in plan.CollisionTiles)
             {
-                if (loaded.ContainsKey(id)) continue;
-                if (Definition.MapData != null && (pendingTilePreparations.ContainsKey(id) ||
-                    deferredTilePreparations.Contains(id))) continue;
+                if (loaded.TryGetValue(id, out var resident))
+                {
+                    if (navigationEnabled) EnsureNavigation(resident);
+                    continue;
+                }
+                if (Definition.MapData != null && deferredTilePreparations.Contains(id))
+                {
+                    StartTilePreparation(id);
+                    continue;
+                }
+                if (Definition.MapData != null && pendingTilePreparations.ContainsKey(id)) continue;
                 Debug.Log("WM15_BOOT tile " + id);
                 var tile = CreateTile(id);
                 loaded.Add(id, tile);
                 if (navigationEnabled) EnsureNavigation(tile);
                 added = true;
             }
-            foreach (var id in loaded.Keys.Where(value => !required.Contains(value)).ToArray())
-            {
-                var tile = loaded[id];
-                loaded.Remove(id);
-                DestroyTile(tile);
-                added = true;
-            }
+            UpdateBackgroundWarmupProgress();
             visual.Clear();
             foreach (var id in plan.VisualTiles) visual.Add(id);
             foreach (var pair in loaded)
@@ -452,6 +478,7 @@ namespace Game.Infrastructure
             {
                 preparedHeights = prepared.heights;
                 preparedPaint = prepared.paint;
+                preparedTileData.Remove(id);
             }
             var heightmapResolution = HeightSampler.HeightmapResolution;
             var data = new TerrainData
@@ -510,45 +537,82 @@ namespace Game.Infrastructure
                     .OrderBy(value => TreeDistanceSquared(value.Position, cameraFocus)).ThenBy(value => value.StableId)
                     .Take((int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
             var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
+            desiredVegetationColliderIds.Clear();
+            desiredVegetationColliderIds.UnionWith(ids);
+            pendingVegetationColliderBindings.Clear();
             foreach (var id in vegetationColliders.Keys.Where(value => !ids.Contains(value)).ToArray())
             {
-                Destroy(vegetationColliders[id]);
+                var released = vegetationColliders[id];
                 vegetationColliders.Remove(id);
+                released.SetActive(false);
+                vegetationColliderPool.Push(released);
             }
             foreach (var value in desired)
             {
-                var site = treeResource?.Invoke(value);
                 if (vegetationColliders.TryGetValue(value.StableId, out var existing))
                 {
-                    if (site != null)
+                    var site = treeResource?.Invoke(value);
+                    if (site == null)
                     {
-                        var presenter = existing.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>() ??
-                            existing.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                        // A collider without a production site cannot be selected or cleared and would
+                        // be treated as a permanent building blocker. Keep it dormant until state exists.
+                        existing.SetActive(false);
+                    }
+                    else
+                    {
+                        var presenter = existing.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                        if (!presenter)
+                            presenter = existing.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>();
                         if (presenter.Site != site) presenter.Bind(site, Color.white, true);
                         presenter.Refresh();
                         existing.SetActive(!site.IsDepleted);
                     }
                     continue;
                 }
-                if (site?.IsDepleted == true) continue;
-                var root = new GameObject();
+                pendingVegetationColliderBindings.Enqueue(value);
+            }
+        }
+
+        private void AdvanceVegetationColliderBindings(int maximum)
+        {
+            for (var index = 0; index < maximum && pendingVegetationColliderBindings.Count > 0; index++)
+            {
+                var value = pendingVegetationColliderBindings.Dequeue();
+                if (!desiredVegetationColliderIds.Contains(value.StableId) ||
+                    vegetationColliders.ContainsKey(value.StableId)) continue;
+                var site = treeResource?.Invoke(value);
+                if (site == null || site.IsDepleted) continue;
+                var root = vegetationColliderPool.Count > 0 ? vegetationColliderPool.Pop() : new GameObject();
+                root.SetActive(false);
                 root.transform.SetParent(transform, false);
                 root.transform.position = new Vector3(value.Position.X, value.Position.Y, value.Position.Z);
                 root.transform.rotation = Quaternion.Euler(0f, value.RotationDegrees, 0f);
-                root.AddComponent<WorldMapVegetationColliderProxy>().Bind(value.StableId);
-                var collider = root.AddComponent<CapsuleCollider>();
+                var proxy = root.GetComponent<WorldMapVegetationColliderProxy>();
+                if (!proxy) proxy = root.AddComponent<WorldMapVegetationColliderProxy>();
+                proxy.Bind(value.StableId);
+                // Unity's delayed Destroy leaves a managed component wrapper which is not C# null,
+                // but compares false through UnityEngine.Object. Do not use ?? for pooled components.
+                var collider = root.GetComponent<CapsuleCollider>();
+                if (!collider) collider = root.AddComponent<CapsuleCollider>();
                 collider.radius = 0.46f * value.UniformScale;
                 collider.height = 7.2f * value.UniformScale;
                 collider.center = Vector3.up * collider.height * 0.5f;
                 // Batched trees have no Renderer on their collider object. Add a canopy pick volume explicitly.
-                var crown = root.AddComponent<BoxCollider>();
+                var crown = root.GetComponent<BoxCollider>();
+                if (!crown) crown = root.AddComponent<BoxCollider>();
                 crown.isTrigger = true;
                 var bounds = TreeBounds(value);
                 crown.center = bounds.center * value.UniformScale;
                 crown.size = bounds.size * value.UniformScale;
                 if (site != null)
-                    root.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>().Bind(site, Color.white, true);
+                {
+                    var presenter = root.GetComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                    if (!presenter)
+                        presenter = root.AddComponent<Game.Presentation.Production.ProductionSourcePresenter>();
+                    presenter.Bind(site, Color.white, true);
+                }
                 vegetationColliders.Add(value.StableId, root);
+                root.SetActive(site?.IsDepleted != true);
             }
         }
 
@@ -1236,6 +1300,16 @@ namespace Game.Infrastructure
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp
             };
+            if (preparationCache != null && preparationCache.TryReadOverview(resolution, out var cachedRgba))
+            {
+                var cachedPixels = new Color32[resolution * resolution];
+                for (var index = 0; index < cachedPixels.Length; index++)
+                    cachedPixels[index] = new Color32(cachedRgba[index * 4], cachedRgba[index * 4 + 1],
+                        cachedRgba[index * 4 + 2], cachedRgba[index * 4 + 3]);
+                texture.SetPixels32(cachedPixels);
+                texture.Apply(false, true);
+                return texture;
+            }
             var pixels = new Color[resolution * resolution];
             var visualZones = Definition.Zones.Where(value => !value.Uses.HasFlag(WorldZoneUse.Fishing)).ToArray();
             var low = new Color(0.24f, 0.34f, 0.17f, 1f);
@@ -1313,6 +1387,23 @@ namespace Game.Infrastructure
             }
             texture.SetPixels(pixels);
             texture.Apply(false, true);
+            if (preparationCache != null)
+            {
+                var colors = pixels.Select(value => (Color32)value).ToArray();
+                var rgba = new byte[colors.Length * 4];
+                for (var index = 0; index < colors.Length; index++)
+                {
+                    rgba[index * 4] = colors[index].r;
+                    rgba[index * 4 + 1] = colors[index].g;
+                    rgba[index * 4 + 2] = colors[index].b;
+                    rgba[index * 4 + 3] = colors[index].a;
+                }
+                try { preparationCache.WriteOverview(resolution, rgba); }
+                catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning("World overview cache could not be written: " + exception.Message);
+                }
+            }
             return texture;
         }
 
@@ -1479,6 +1570,141 @@ namespace Game.Infrastructure
         {
             if (tile?.Root != null) Destroy(tile.Root);
             if (tile?.Data != null) Destroy(tile.Data);
+        }
+
+        private void InitializePreparationCache()
+        {
+            try
+            {
+                preparationCache = new WorldTilePreparationCache(Application.persistentDataPath, Definition,
+                    HeightSampler, TerrainPaintResolution, WorldMapTerrainPaintSampler.LayerCount);
+                PreparationCacheWasCompleteAtStartup = preparationCache.IsComplete(Definition.Tiles);
+                backgroundWarmupProgressVisible = !PreparationCacheWasCompleteAtStartup;
+                Debug.Log("WM15_MAP_CACHE state=" + (PreparationCacheWasCompleteAtStartup ? "hit" : "miss"));
+            }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException ||
+                                               exception is ArgumentException)
+            {
+                preparationCache = null;
+                backgroundWarmupProgressVisible = true;
+                Debug.LogWarning("World tile cache is unavailable; this session will use memory only: " +
+                                 exception.Message);
+            }
+            UpdateBackgroundWarmupProgress();
+        }
+
+        private (float[,] heights, float[,,] paint) PrepareTileData(WorldTileId tile)
+        {
+            if (preparationCache != null && preparationCache.TryRead(tile, out var cachedHeights,
+                    out var cachedPaint))
+            {
+                System.Threading.Interlocked.Increment(ref preparationCacheHitCount);
+                return (cachedHeights, cachedPaint);
+            }
+            var heights = HeightSampler.CreateNormalizedHeights(tile, HeightSampler.HeightmapResolution);
+            var paint = terrainPaintSampler?.CreateTileWeights(tile, TerrainPaintResolution, heights);
+            if (preparationCache != null)
+            {
+                try { preparationCache.Write(tile, heights, paint); }
+                catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
+                {
+                    // Caching is an optimization. The generated data remains valid for this session.
+                }
+            }
+            return (heights, paint);
+        }
+
+        private IEnumerator BackgroundTileWarmupRoutine()
+        {
+            yield return null;
+            var rebuiltNavigationLinks = false;
+            while (warmedTiles.Count < Definition.Tiles.Count)
+            {
+                CollectPreparedTileData();
+                BeginBackgroundTilePreparation();
+                var next = Definition.Tiles.Where(id => !warmedTiles.Contains(id))
+                    .OrderBy(id => TileDistanceSquared(id, lastCameraFocus)).ThenBy(id => id).FirstOrDefault();
+                if (!loaded.TryGetValue(next, out var tile))
+                {
+                    if (!preparedTileData.ContainsKey(next))
+                    {
+                        if (deferredTilePreparations.Contains(next)) StartTilePreparation(next);
+                        if (pendingTilePreparations.Count == 0 && deferredTilePreparations.Count == 0) break;
+                        yield return null;
+                        continue;
+                    }
+                    tile = CreateTile(next);
+                    loaded.Add(next, tile);
+                    if (navigationEnabled) EnsureNavigation(tile);
+                    rebuiltNavigationLinks = true;
+                    ConnectTerrainNeighbours();
+                }
+
+                ApplyResidentVisibility(tile);
+                ResidentTilePrepared?.Invoke(next);
+                warmedTiles.Add(next);
+                UpdateBackgroundWarmupProgress();
+                // Unity terrain, water and navigation objects must be materialized on the main thread.
+                // One resident tile (including pooled population views) is warmed per frame.
+                yield return null;
+            }
+
+            CollectPreparedTileData();
+            if (rebuiltNavigationLinks && navigationEnabled) RebuildLinks();
+            UpdateBackgroundWarmupProgress();
+            if (BackgroundWarmupComplete && preparationCache != null)
+            {
+                try { preparationCache.MarkComplete(Definition.Tiles); }
+                catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException ||
+                                                   exception is InvalidOperationException)
+                {
+                    Debug.LogWarning("World tile cache did not receive its completion marker: " + exception.Message);
+                }
+            }
+            if (BackgroundWarmupComplete)
+            {
+                backgroundWarmupPercent = 100;
+                Debug.Log("WM15_MAP_WARMUP_COMPLETE tiles=" + loaded.Count +
+                          " cacheHits=" + preparationCacheHitCount);
+                var hideAt = Time.unscaledTime + 1.25f;
+                while (Time.unscaledTime < hideAt) yield return null;
+                backgroundWarmupProgressVisible = false;
+            }
+            backgroundWarmupRoutine = null;
+        }
+
+        private float TileDistanceSquared(WorldTileId tile, WorldPosition focus)
+        {
+            var origin = Definition.TileOrigin(tile);
+            var x = origin.X + Definition.TileSizeMeters * 0.5f - focus.X;
+            var z = origin.Z + Definition.TileSizeMeters * 0.5f - focus.Z;
+            return x * x + z * z;
+        }
+
+        private void StartTilePreparation(WorldTileId tile)
+        {
+            if (!deferredTilePreparations.Remove(tile) || pendingTilePreparations.ContainsKey(tile) ||
+                loaded.ContainsKey(tile)) return;
+            var captured = tile;
+            pendingTilePreparations[captured] = Task.Run(() => PrepareTileData(captured));
+        }
+
+        private void ApplyResidentVisibility(LoadedTile tile)
+        {
+            var visible = !strategicMode && visual.Contains(tile.Id);
+            tile.Terrain.drawHeightmap = visible;
+            tile.Terrain.drawTreesAndFoliage = visible;
+            if (tile.WaterRoot == null) return;
+            tile.WaterRoot.SetActive(true);
+            var renderer = tile.WaterRoot.GetComponent<MeshRenderer>();
+            if (renderer != null) renderer.enabled = visible;
+        }
+
+        private void UpdateBackgroundWarmupProgress()
+        {
+            var total = Definition?.Tiles.Count ?? 0;
+            backgroundWarmupPercent = total == 0 ? 0 : Mathf.Clamp(
+                Mathf.FloorToInt(warmedTiles.Count * 100f / total), 0, 100);
         }
 
         private void OnDestroy()

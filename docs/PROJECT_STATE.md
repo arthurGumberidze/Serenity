@@ -1,5 +1,27 @@
 # PROJECT_STATE.md
 
+## WM15 resident map cache and one-time warmup — built and Player verified (2026-10-29)
+
+The accepted mountain, mountain lake and water presentation remain unchanged. The 4x4 local map no longer
+destroys and reconstructs TerrainData, population roots or interactive tree proxies as the camera crosses
+tile boundaries. Initial gameplay still creates only the nearby collision set; after gameplay becomes usable,
+two bounded worker tasks prepare immutable terrain/paint data while the main thread materializes at most one
+resident tile and its pooled population view per frame. All 16 tiles remain resident after warmup, with only
+visibility changing during camera travel.
+
+Prepared tile arrays and the strategic overview are cached under `Application.persistentDataPath`, keyed by
+generation, schema/map versions, seed, dimensions and preparation algorithm. The cache is disposable
+presentation data and never replaces canonical world/save state. A bottom-centre `Подготовка карты: N%` bar
+is shown only when the selected map cache is incomplete and disappears after reaching 100%; a complete-cache
+launch does not show it again.
+
+Focused EditMode passed 6/6 and the full-residency PlayMode scenario passed 1/1. Windows Development build
+`Builds/WM15MapWarmup/Serenity.exe` succeeded with 0 errors / 82 warnings. Final actual Player smoke exited 0,
+loaded 16/16 cached tiles, retained all resident terrain/population roots through the full map route, validated
+24 lake landing places and reduced worst synchronous warm camera refresh from 1205.7 ms to 5.4 ms. Dynamic
+animal colliders no longer make a build footprint a permanent terrain obstacle. Exact evidence:
+`docs/validation/WM15MapWarmup.md`.
+
 ## WM15 Player world-creation repair — built and runtime verified (2026-10-29)
 
 The accepted mountain, mountain lake and water appearance remain unchanged. The Windows Player failure

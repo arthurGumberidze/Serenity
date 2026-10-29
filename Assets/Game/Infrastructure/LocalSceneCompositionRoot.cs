@@ -310,7 +310,7 @@ namespace Game.Infrastructure
                 else yield return next;
             }
             IsInitialized = true;
-            TiledWorld?.BeginBackgroundTilePreparation();
+            TiledWorld?.BeginBackgroundTileWarmup();
             Destroy(loadingOverlay);
             Start();
             Debug.Log("WM15_BOOT gameplay ready");

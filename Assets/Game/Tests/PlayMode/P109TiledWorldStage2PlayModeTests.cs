@@ -70,5 +70,42 @@ namespace Game.Tests.PlayMode
                     FindObjectsSortMode.None).SingleOrDefault(value => value.IsBound && value.Site.Id == id),
                 Is.Not.Null);
         }
+
+        [UnityTest]
+        [Timeout(600000)]
+        public IEnumerator FullMapWarmupKeepsTerrainAndPopulationViewsResidentAcrossCameraTravel()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var deadline = Time.realtimeSinceStartup + 600f;
+            while ((root == null || !root.IsInitialized || !root.TiledWorld.BackgroundWarmupComplete) &&
+                   Time.realtimeSinceStartup < deadline)
+            {
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+                yield return null;
+            }
+            Assert.That(root, Is.Not.Null);
+            Assert.That(root.TiledWorld.BackgroundWarmupComplete, Is.True);
+            Assert.That(root.TiledWorld.LoadedTiles.Count, Is.EqualTo(root.WorldDefinition.Tiles.Count));
+            var pooledViews = root.WorldPopulation.GetComponentsInChildren<Transform>(true)
+                .Where(value => value.name.StartsWith("P10.9 Population ", StringComparison.Ordinal))
+                .Select(value => value.gameObject).OrderBy(value => value.name).ToArray();
+            Assert.That(pooledViews.Length, Is.EqualTo(root.WorldDefinition.Tiles.Count));
+
+            foreach (var tile in root.WorldDefinition.Tiles)
+            {
+                var origin = root.WorldDefinition.TileOrigin(tile);
+                var center = new WorldPosition(origin.X + root.WorldDefinition.TileSizeMeters * 0.5f, 0f,
+                    origin.Z + root.WorldDefinition.TileSizeMeters * 0.5f);
+                root.TiledWorld.RefreshNow(center, Array.Empty<WorldPosition>(),
+                    Array.Empty<Tuple<WorldPosition, WorldPosition>>());
+                Assert.That(root.TiledWorld.LoadedTiles.Count, Is.EqualTo(root.WorldDefinition.Tiles.Count));
+                Assert.That(root.WorldPopulation.ActiveTileViewCount,
+                    Is.EqualTo(root.TiledWorld.VisualTiles.Count));
+            }
+            var afterTravel = root.WorldPopulation.GetComponentsInChildren<Transform>(true)
+                .Where(value => value.name.StartsWith("P10.9 Population ", StringComparison.Ordinal))
+                .Select(value => value.gameObject).OrderBy(value => value.name).ToArray();
+            Assert.That(afterTravel, Is.EqualTo(pooledViews));
+        }
     }
 }
