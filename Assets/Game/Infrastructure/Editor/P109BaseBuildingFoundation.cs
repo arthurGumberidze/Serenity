@@ -245,7 +245,7 @@ namespace Game.Infrastructure.Editor
                 Entry("clan_house", "Stone House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
                     "A large stone home with room for an extended family.", "building_clan_house", 150, 4,
                     new[] { Cost("wood_log", 26), Cost("stone", 12), Cost("cured_hide", 6) }, "organized_labor")
-                    .ConfigureHousing(10).ConfigureMaintenance(0, 0,
+                    .ConfigureHousing(6).ConfigureMaintenance(0, 0,
                         new[] { Cost("wood_log", 3), Cost("plant_fiber", 2) }, 50),
                 Entry("healer_hut", "Healer Hut", BuildingCategory.Medical, 4, 4, Load<GameObject>(HealerHutPath),
                     "A sheltered medical workplace for treating injuries and disease.", "building_healer_hut", 100, 3,

@@ -222,7 +222,10 @@ namespace Game.Tests.Editor
             Assert.That(catalog.All.Last().Rank, Is.EqualTo(MilitaryRank.Generalissimo));
             Assert.That(catalog.All.Select(x => x.HealthBonus), Is.Ordered);
             Assert.That(catalog.All.Select(x => x.DamagePerThousand), Is.Ordered);
-            Assert.That(catalog.Get(MilitaryRank.Sergeant).MinimumServiceTicks, Is.GreaterThan(0));
+            Assert.That(catalog.Get(MilitaryRank.Sergeant).MinimumServiceTicks, Is.Zero,
+                "A private does not need a service delay before the next course.");
+            Assert.That(catalog.Get(MilitaryRank.WarrantOfficer).MinimumServiceTicks, Is.GreaterThan(0),
+                "Every promotion after sergeant requires service in the current rank.");
             Assert.That(catalog.Get(MilitaryRank.Lieutenant).RequiredBattleExperience, Is.Zero);
             Assert.That(catalog.Get(MilitaryRank.Captain).RequiredBattleExperience, Is.GreaterThan(0));
             Assert.That(MilitaryRank.Recruit, Is.EqualTo(MilitaryRank.Private));

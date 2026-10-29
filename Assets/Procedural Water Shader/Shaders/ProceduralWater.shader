@@ -22,6 +22,7 @@ Shader "FX/ProceduralWater"
         _MarshRefractionStrength("Marsh Refraction Strength", Range(0.0, 1.0)) = 0.96
 
         _DepthMax("Depth Color Range", Range(0.1, 50.0)) = 6.0
+        _UseVertexDepth("Use Authored Mesh Depth", Range(0.0, 1.0)) = 0.0
         _EdgeFade("Intersection Fade", Range(0.01, 5.0)) = 0.35
         _Absorption("Absorption", Range(0.0, 4.0)) = 0.75
         _MarshAbsorption("Marsh Absorption", Range(0.0, 4.0)) = 3.15
@@ -110,6 +111,7 @@ Shader "FX/ProceduralWater"
                 float _MarshRefractionStrength;
 
                 float _DepthMax;
+                float _UseVertexDepth;
                 float _EdgeFade;
                 float _Absorption;
                 float _MarshAbsorption;
@@ -255,6 +257,7 @@ Shader "FX/ProceduralWater"
                 float eyeDepth : TEXCOORD4;
                 float fogFactor : TEXCOORD5;
                 float wetland : TEXCOORD6;
+                float depthHint : TEXCOORD7;
             };
 
             float SampleWorldWetland(float3 worldPos)
@@ -308,6 +311,7 @@ Shader "FX/ProceduralWater"
 
                 o.fogFactor = ComputeFogFactor(positionCS.z);
                 o.wetland = wetland;
+                o.depthHint = saturate(v.color.r);
                 return o;
             }
 
@@ -319,6 +323,9 @@ Shader "FX/ProceduralWater"
 
                 float t = _Time.y;
                 float3 nRipple = RippleNormal(i.worldPos.xz, t);
+                // Bound procedural slopes before specular evaluation. Without this low-angle
+                // cameras magnified sub-pixel FBM changes into bright moving stripes.
+                nRipple = normalize(lerp(float3(0.0, 1.0, 0.0), nRipple, 0.32));
                 float3 n = normalize(lerp(n0, nRipple,
                     saturate(_RippleStrength * lerp(1.0, 0.38, wetland))));
 
@@ -330,8 +337,11 @@ Shader "FX/ProceduralWater"
                 float sceneDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
 
                 float depthDiffSigned = sceneDepth - i.eyeDepth;
-                float depthDiffPos = max(0.0, depthDiffSigned);
-                float submergedMask = step(0.0, depthDiffSigned);
+                float authoredDepth = saturate(i.depthHint) * _DepthMax;
+                float depthDiffPos = lerp(max(0.0, depthDiffSigned), authoredDepth,
+                    saturate(_UseVertexDepth));
+                float submergedMask = lerp(step(0.0, depthDiffSigned), 1.0,
+                    saturate(_UseVertexDepth));
 
                 float soft = saturate(depthDiffPos / max(0.0001, _EdgeFade));
                 soft = smoothstep(0.0, 1.0, soft);

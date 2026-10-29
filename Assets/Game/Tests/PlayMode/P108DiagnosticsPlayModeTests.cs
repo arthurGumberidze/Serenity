@@ -89,9 +89,14 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.SubmitDiagnosticCode("army_serenity"), Is.True,
                 root.Diagnostics.LastFailureDetail);
             var firstArmy = root.MilitaryTraining.Records.Skip(trainingBefore).ToArray();
-            Assert.That(firstArmy.Length, Is.EqualTo(root.MilitaryTraining.Catalog.All.Count));
-            CollectionAssert.AreEquivalent(root.MilitaryTraining.Catalog.All.Select(x => x.Rank),
+            var diagnosticRanks = root.MilitaryTraining.Catalog.All
+                .Where(x => x.Rank != Game.Domain.Military.MilitaryRank.Generalissimo).ToArray();
+            Assert.That(firstArmy.Length, Is.EqualTo(diagnosticRanks.Length));
+            CollectionAssert.AreEquivalent(diagnosticRanks.Select(x => x.Rank),
                 firstArmy.Select(x => x.Rank));
+            Assert.That(firstArmy.Any(x => x.Rank == Game.Domain.Military.MilitaryRank.Generalissimo), Is.False);
+            Assert.That(root.MilitaryTraining.GetRank(root.PlayerRealm.CurrentRulerId.Value),
+                Is.EqualTo(Game.Domain.Military.MilitaryRank.Generalissimo));
             Assert.That(firstArmy.Select(x => x.CharacterId).Distinct().Count(), Is.EqualTo(firstArmy.Length));
             foreach (var record in firstArmy)
             {

@@ -46,5 +46,5 @@ MonoBehaviour:
   MaleResident: {fileID: 5949706081513176824, guid: a0695744bfff5569a71a061c337331d9, type: 3}
   FemaleResident: {fileID: 2224834628610083241, guid: 8afb0bd9c80b5428afb7f70cb3261eef, type: 3}
   ChildResident: {fileID: 4520716785383396158, guid: b70262cbf47f5b16b4ed46cb3c62ec47, type: 3}
-  MaleTrainedResident: {fileID: 881141130174903451, guid: 85a675f94767c5e45ac4af31de04dbe9, type: 3}
-  FemaleTrainedResident: {fileID: 8283945756063803880, guid: 9e1ce57196b935e469741b8d59f97d58, type: 3}
+  MaleTrainedResident: {fileID: 1846530523549185644, guid: 23f907c94ad92894495c02b43a563c6f, type: 3}
+  FemaleTrainedResident: {fileID: 6339786312913494083, guid: 435d261c1fe73ba46883b819e578219d, type: 3}

@@ -2118,3 +2118,21 @@ progress begins only in the Building phase. Interaction resolves a reachable Nav
 instead of requiring the building pivot itself to be walkable. Shore placement treats a blocked sample as one
 candidate failure and continues the bounded bank search. Campfires participate in navigation as carved
 obstacles. UI pointer ownership blocks map zoom and third-person attacks while the pointer is over UI.
+
+## D-219 — User-retest shore, military and continuous-water presentation (2026-10-29)
+
+Fishing camp and pier use the same Shore + Reachable placement contract; OwnedTerritory is not an additional
+pier-only prerequisite. A confirmed shore building exposes Build based on its resolved interaction perimeter,
+not a transient preliminary NavMesh probe at the building pivot. Unfinished livestock pasture presentation is
+distinct from cultivated crop presentation, and animal grazing slots exclude the authored shelter bounds.
+
+The reigning ruler owns the unique Generalissimo rank. Diagnostics create only the remaining nine ranks and
+atomically assign military profession, warrior group and military clothing. Imported modular armour is filtered
+to one complete authored suit and receives a per-renderer property-block palette; vendor materials remain
+immutable. The Private course has no prior-service requirement; every promotion after Private does. Barracks
+presentation owns temporary trainee hiding and card projection, not canonical course state.
+
+Ordinary lake colour/depth comes from continuous authored mesh depth rather than camera depth/refraction.
+Loaded water meshes remain visible across terrain-tile presentation windows because water bodies cross those
+boundaries. The scenic southern sea begins underneath southern terrain, allowing terrain intersection to hide
+its rectangular mesh edge. None of these presentation choices changes hydrology, fishing or save authority.

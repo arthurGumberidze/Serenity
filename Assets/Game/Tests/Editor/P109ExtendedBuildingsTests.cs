@@ -35,7 +35,7 @@ namespace Game.Tests.Editor
                 "palisade", "gate", "watchtower", "primitive_path" };
             CollectionAssert.IsSubsetOf(ids, catalog.Entries.Select(x => x.DefinitionId).ToArray());
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("clan_house")).Housing.ResidentCapacity,
-                Is.EqualTo(10));
+                Is.EqualTo(6));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("healer_hut")).Workplace.MaximumWorkers,
                 Is.EqualTo(2));
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("fishing_camp")).Placement.Constraints

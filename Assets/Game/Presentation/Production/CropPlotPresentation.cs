@@ -14,6 +14,8 @@ namespace Game.Presentation.Production
         private CropArtCatalog art;
         private Renderer[] legacy;
         private Transform plot, planting;
+        private Bounds shelterLocalBounds;
+        private bool hasShelterBounds;
         private readonly List<Transform> plants = new();
         private float width, depth;
         private bool dedicatedPasture;
@@ -24,6 +26,27 @@ namespace Game.Presentation.Production
         public Vector3 GrazingPosition(int slot) => transform.TransformPoint(new Vector3(
             ((slot % 4 + .5f) / 4f - .5f) * width * .75f, 0f,
             ((slot / 4 + .5f) / 4f - .5f) * depth * .75f));
+
+        public bool IsValidGrazingPosition(Vector3 worldPosition, float clearance = .55f)
+        {
+            var local = transform.InverseTransformPoint(worldPosition);
+            if (Mathf.Abs(local.x) > width * .42f || Mathf.Abs(local.z) > depth * .42f) return false;
+            if (!hasShelterBounds) return true;
+            var expanded = shelterLocalBounds;
+            expanded.Expand(new Vector3(clearance * 2f, 0f, clearance * 2f));
+            local.y = expanded.center.y;
+            return !expanded.Contains(local);
+        }
+
+        public Vector3 SafeGrazingPosition(int slot)
+        {
+            // The front half of the pen is kept clear of the authored rear shelter.
+            var columns = 4;
+            var x = ((slot % columns + .5f) / columns - .5f) * width * .7f;
+            var row = slot / columns % 2;
+            var z = Mathf.Lerp(-depth * .32f, -depth * .06f, row);
+            return transform.TransformPoint(new Vector3(x, 0f, z));
+        }
 
         public void Configure(ProductionSite source, float widthMeters, float depthMeters,
             Game.Domain.World.AnimalHealthRegistry animalRegistry = null, bool pastureBuilding = false)
@@ -57,6 +80,7 @@ namespace Game.Presentation.Production
                 var shelter = WorldMapScenery.Instantiate(art.PastureShelter,plot); shelter.name="Pasture shelter";
                 Fit(shelter,new Vector3(width*.45f,3.5f,depth*.4f),false);
                 shelter.transform.localPosition += new Vector3(0,0,depth*.25f);
+                CacheShelterBounds(shelter);
             }
             displayedRecipe = null;
             Refresh();
@@ -67,6 +91,10 @@ namespace Game.Presentation.Production
             if (site == null || plot == null || building == null || !building.IsBound) return;
             var active = building.Building.IsOperational && !building.Building.IsDestroyed;
             plot.gameObject.SetActive(active);
+            // The pasture currently reuses the garden construction prefab. Its legacy crop
+            // renderers must stay hidden even before completion, otherwise a pen is shown as a field.
+            if (dedicatedPasture)
+                foreach (var renderer in legacy) if (renderer != null) renderer.enabled = false;
             if (!active) return;
             foreach (var renderer in legacy) if (renderer != null) renderer.enabled = false;
             var pasture = dedicatedPasture || animals?.IsPasture(site.Id) == true;
@@ -140,6 +168,23 @@ namespace Game.Presentation.Production
             holder.localRotation = Quaternion.Euler(0, yaw, 0);
             var view = WorldMapScenery.Instantiate(art.Fence, holder);
             Fit(view, new Vector3(length, 0.65f, 0.13f), true);
+        }
+
+        private void CacheShelterBounds(GameObject shelter)
+        {
+            hasShelterBounds = false;
+            foreach (var renderer in shelter.GetComponentsInChildren<Renderer>(true))
+            {
+                var bounds = renderer.bounds;
+                for (var i = 0; i < 8; i++)
+                {
+                    var point = transform.InverseTransformPoint(bounds.center + Vector3.Scale(bounds.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1,
+                            (i & 4) == 0 ? -1 : 1)));
+                    if (!hasShelterBounds) { shelterLocalBounds = new Bounds(point, Vector3.zero); hasShelterBounds = true; }
+                    else shelterLocalBounds.Encapsulate(point);
+                }
+            }
         }
 
         private static void Fit(GameObject view, Vector3 size, bool stretch)

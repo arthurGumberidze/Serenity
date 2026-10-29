@@ -93,6 +93,7 @@ namespace Game.Presentation.Characters
             foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
             var visual = UnityEngine.Object.Instantiate(rolePrefab, instance.transform, false);
             visual.name = "RoleVisual";
+            ConfigureMilitaryArmorVariant(visual, rolePrefab);
             SetLayerRecursively(visual, instance.layer);
             var roleAnimator = visual.GetComponentInChildren<Animator>(true);
             if (roleAnimator == null || !roleAnimator.isHuman)
@@ -104,6 +105,49 @@ namespace Game.Presentation.Characters
             }
             roleAnimator.applyRootMotion = false;
             presenter.SetVisualAnimator(roleAnimator);
+        }
+
+        private static void ConfigureMilitaryArmorVariant(GameObject visual, GameObject source)
+        {
+            if (source == null || source.name.IndexOf("Lowpoly_Armors", StringComparison.OrdinalIgnoreCase) < 0)
+                return;
+            var palette = new MaterialPropertyBlock();
+            foreach (var renderer in visual.GetComponentsInChildren<Renderer>(true))
+            {
+                var part = renderer.gameObject.name;
+                // Use one complete authored suit. The vendor showcase prefab enables several
+                // mutually exclusive bodies at once, so projecting it without filtering looked
+                // like ordinary/overlapping clothing instead of a soldier in armour.
+                renderer.enabled = part.IndexOf("_Armor_01_A_", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                   part.EndsWith("_Armor_head_01", StringComparison.OrdinalIgnoreCase);
+                if (!renderer.enabled) continue;
+
+                // The free vendor showcase material serializes its tint slots with transparent,
+                // HDR-white defaults. In URP Player builds that turns the selected suit into a
+                // featureless white silhouette. Keep the shared vendor material immutable and
+                // project a restrained Stone-Age military palette per renderer instead.
+                renderer.GetPropertyBlock(palette);
+                SetPalette(palette, "_Color", new Color(.42f, .45f, .43f, 1f));
+                SetPalette(palette, "_BaseColor", new Color(.42f, .45f, .43f, 1f));
+                SetPalette(palette, "_METAL1COLOR", new Color(.28f, .31f, .32f, 1f));
+                SetPalette(palette, "_METAL2COLOR", new Color(.46f, .50f, .51f, 1f));
+                SetPalette(palette, "_METAL3COLOR", new Color(.16f, .18f, .19f, 1f));
+                SetPalette(palette, "_LEATHER1COLOR", new Color(.24f, .12f, .055f, 1f));
+                SetPalette(palette, "_LEATHER2COLOR", new Color(.39f, .22f, .09f, 1f));
+                SetPalette(palette, "_LEATHER3COLOR", new Color(.13f, .065f, .025f, 1f));
+                SetPalette(palette, "_CLOTH1COLOR", new Color(.075f, .14f, .16f, 1f));
+                SetPalette(palette, "_CLOTH2COLOR", new Color(.27f, .055f, .045f, 1f));
+                SetPalette(palette, "_CLOTH3COLOR", new Color(.34f, .27f, .16f, 1f));
+                SetPalette(palette, "_SKINCOLOR", new Color(.57f, .34f, .22f, 1f));
+                SetPalette(palette, "_HAIRCOLOR", new Color(.09f, .045f, .02f, 1f));
+                SetPalette(palette, "_EYESCOLOR", new Color(.08f, .13f, .12f, 1f));
+                renderer.SetPropertyBlock(palette);
+            }
+        }
+
+        private static void SetPalette(MaterialPropertyBlock block, string property, Color value)
+        {
+            block.SetColor(Shader.PropertyToID(property), value);
         }
 
         private static void SetLayerRecursively(GameObject value, int layer)

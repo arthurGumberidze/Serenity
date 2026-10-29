@@ -50,7 +50,7 @@ namespace Game.Infrastructure.Editor
             entries.Add(new BuildingPresentationCatalog.Entry().Configure("fishing_pier","Рыбацкий пирс",BuildingCategory.Food,4,4,Save(pier,"FishingPier"))
                 .ConfigureMetadata(BuildingEra.StoneAge,"Пирс для медленной ручной рыбалки на озере или реке. Улов ждёт переноски на берегу.","building_fishing_camp",new[]{"gathering"})
                 .ConfigureConstruction(30,2).ConfigureEconomy(new[]{Cost("wood_log",12),Cost("plant_fiber",4)})
-                .ConfigurePlacement(BuildingSpatialForm.Structure,BuildingPlacementConstraint.Shoreline|BuildingPlacementConstraint.OwnedTerritory|BuildingPlacementConstraint.ReachableApproach,20000));
+                .ConfigurePlacement(BuildingSpatialForm.Structure,BuildingPlacementConstraint.Shoreline|BuildingPlacementConstraint.ReachableApproach,20000));
             buildings.Configure(entries,buildings.DefaultDefinitionId.ToString());EditorUtility.SetDirty(buildings);
             AssetDatabase.SaveAssets();
             Debug.Log("WM15_CURRENT_CONTENT authored livestock, ground torch and manual fishing pier");

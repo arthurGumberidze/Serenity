@@ -107,11 +107,7 @@ namespace Game.Infrastructure
         {
             var center = new Vector3(position.X, position.Y, position.Z);
             if (pen == null) return center;
-            var column = slot % 2 == 0 ? -1f : 1f;
-            var row = slot / 2 % 2 == 0 ? -1f : 1f;
-            var local = new Vector3(column * Mathf.Min(1.6f, pen.WidthMeters * .24f), 0f,
-                row * Mathf.Min(1.6f, pen.DepthMeters * .24f));
-            return root.TiledWorld.ProjectToGround(pen.transform.TransformPoint(local), .05f);
+            return root.TiledWorld.ProjectToGround(pen.SafeGrazingPosition(slot), .05f);
         }
 
         private GameObject CreateModel(GameObject view,string species,bool baby)
@@ -153,15 +149,25 @@ namespace Game.Infrastructure
                 var bytes = id.ToGuid().ToByteArray();
                 var seed = BitConverter.ToInt32(bytes,0) ^ (int)(Time.unscaledTime*17f);
                 var random = new System.Random(seed);
-                var local = new Vector3(((float)random.NextDouble()*2-1)*pen.WidthMeters*.42f,0,
-                    ((float)random.NextDouble()*2-1)*pen.DepthMeters*.42f);
-                goal = area.TransformPoint(local);
-                goal = root.TiledWorld.ProjectToGround(goal,.05f);
+                goal = root.TiledWorld.ProjectToGround(pen.SafeGrazingPosition(slot),.05f);
+                for (var attempt = 0; attempt < 8; attempt++)
+                {
+                    var local = new Vector3(((float)random.NextDouble()*2-1)*pen.WidthMeters*.42f,0,
+                        ((float)random.NextDouble()*2-1)*pen.DepthMeters*.42f);
+                    var candidate = root.TiledWorld.ProjectToGround(area.TransformPoint(local),.05f);
+                    if (!pen.IsValidGrazingPosition(candidate)) continue;
+                    goal = candidate; break;
+                }
                 goals[id] = goal;
                 nextWander[id] = Time.unscaledTime + 2f + (float)random.NextDouble()*4f;
             }
             var next = Vector3.MoveTowards(current,goal,delta*.55f);
             next.y = root.TiledWorld.ProjectToGround(next,.05f).y;
+            if (!pen.IsValidGrazingPosition(current) || !pen.IsValidGrazingPosition(next))
+            {
+                goals.Remove(id);
+                return root.TiledWorld.ProjectToGround(pen.SafeGrazingPosition(slot),.05f);
+            }
             var localNext = area.InverseTransformPoint(next);
             if (Mathf.Abs(localNext.x)>pen.WidthMeters*.48f || Mathf.Abs(localNext.z)>pen.DepthMeters*.48f)
             {

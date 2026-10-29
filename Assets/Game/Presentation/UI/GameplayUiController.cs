@@ -623,9 +623,10 @@ namespace Game.Presentation.UI
             }), "barracks-train-selection");
             button.SetEnabled(failures.Values.Any(x => x == MilitaryTrainingStartFailure.None));
             contextMenu.Add(button);
-            var firstFailure = failures.Values.FirstOrDefault(x => x != MilitaryTrainingStartFailure.None);
+            var firstFailure = failures.FirstOrDefault(x => x.Value != MilitaryTrainingStartFailure.None);
             if (!button.enabledSelf && roster.Length > 0)
-                AddMuted(contextMenu, "Обучение недоступно: " + MilitaryTrainingFailureText(firstFailure));
+                AddMuted(contextMenu, "Обучение недоступно: " +
+                    MilitaryTrainingRequirementText(firstFailure.Key, firstFailure.Value));
         }
 
         private void AddBuildingPolicyControls(VisualElement parent, Building building)
@@ -814,12 +815,18 @@ namespace Game.Presentation.UI
         private ContextCommandTarget ResolveBuildingWorkTarget(ContextCommandTarget target,
             IReadOnlyList<StableEntityId> roster)
         {
+            var searchRadius = 12f;
+            if (context.Buildings.TryGet(target.EntityId, out var building))
+            {
+                var footprint = context.BuildingCatalog.ResolveDefinition(building.DefinitionId).Footprint;
+                searchRadius = Mathf.Clamp(Mathf.Max(footprint.Width, footprint.Depth) * 3f + 8f, 12f, 32f);
+            }
             foreach (var id in roster)
             {
                 if (!context.Presentations.TryGet(id, out var presenter)) continue;
                 var destination = new Vector3(target.Position.X, target.Position.Y, target.Position.Z);
                 if (!Game.Presentation.AI.ReachableNavMeshPoint.TryFind(presenter.transform.position,
-                    destination, out var reachable, 12f)) continue;
+                    destination, out var reachable, searchRadius)) continue;
                 return new ContextCommandTarget(target.Kind,
                     new WorldPosition(reachable.x, reachable.y, reachable.z), target.EntityId,
                     target.ResourceId, target.ResourceClass);
@@ -933,11 +940,17 @@ namespace Game.Presentation.UI
                 context.Production.TryGetSite(target.EntityId, out var huntedSite) && huntedSite.RecipeId.ToString() == "hunt_animal";
             var correctRole = context.PlayerCharacterIds().Contains(id) &&
                 (HasContextRole(id, action, hunting) || hunting && context.Military.TryGetForMember(id, out _));
+            // A confirmed construction already has an authoritative buildable footprint. Its live
+            // interaction point is resolved again by the build action as nearby NavMesh tiles and
+            // obstacles change; rejecting the order here made valid shore construction permanently
+            // unavailable while its remote tile was not the resident's current presentation tile.
+            var pathAvailable = action == ContextActionKind.Build && target.Kind == ContextTargetKind.Building ||
+                                HasContextPath(id, pathTarget);
             return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
                 exists && capabilities.IsAdult, correctRole,
                 exists && targetStatusValid && (action == ContextActionKind.Move ||
                            capabilities.CanPerformOrdinaryWork),
-                true, technology, withinDistance, HasContextPath(id, pathTarget), resourceAvailable,
+                true, technology, withinDistance, pathAvailable, resourceAvailable,
                 capacity, busy, true, criticalNeed, interruptible);
         }
 
@@ -1081,23 +1094,7 @@ namespace Game.Presentation.UI
             }
         }
 
-        private static string MilitaryRankName(MilitaryRank rank)
-        {
-            return (int)rank switch
-            {
-                1 => "Рядовой",
-                2 => "Сержант",
-                3 => "Прапорщик",
-                4 => "Лейтенант",
-                5 => "Капитан",
-                6 => "Майор",
-                7 => "Подполковник",
-                8 => "Полковник",
-                9 => "Генерал-полковник",
-                10 => "Генералиссимус",
-                _ => rank.ToString()
-            };
-        }
+        private static string MilitaryRankName(MilitaryRank rank) => MilitaryRankNames.Russian(rank);
 
         private static string MilitaryAttackReason(MilitaryAttackDisabledReason reason)
         {
@@ -1654,7 +1651,8 @@ namespace Game.Presentation.UI
                          .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(12))
             {
                 var captured = person.Id;
-                var status = context.Work.TryGetAssigned(person.Id, out var job) ? E(job.Type) :
+                var status = context.MilitaryTraining.IsExternallyControlled(person.Id) ? "В казарме" :
+                    context.Work.TryGetAssigned(person.Id, out var job) ? E(job.Type) :
                     context.AiAgents.TryGet(person.Id, out var agent) ? E(agent.CurrentAction) : "ожидает";
                 var card = ActionButton(RussianTextCatalog.PersonName(person.Name.DisplayName) + "\n" + status,
                     () => SelectResident(captured), "resident-" + person.Id);
@@ -2354,12 +2352,13 @@ namespace Game.Presentation.UI
                             new CombatSideId("player"), context.Clock().State.CalendarTicks,
                             context.Inventories.All.Select(x => x.Owner));
                         if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " +
-                            MilitaryTrainingFailureText(result.Failure));
+                            MilitaryTrainingRequirementText(traineeId.Value, result.Failure));
                     }), "military-train");
                     train.SetEnabled(trainingAvailability == MilitaryTrainingStartFailure.None);
                     mainPanel.Add(train);
                     if (trainingAvailability != MilitaryTrainingStartFailure.None)
-                        AddMuted(mainPanel, "Недоступно: " + MilitaryTrainingFailureText(trainingAvailability));
+                        AddMuted(mainPanel, "Недоступно: " +
+                            MilitaryTrainingRequirementText(traineeId.Value, trainingAvailability));
                 }
             }
             AddSection(mainPanel, "Армии");
@@ -2450,6 +2449,42 @@ namespace Game.Presentation.UI
                 case MilitaryTrainingStartFailure.InsufficientBattleExperience: return "не хватает боевого опыта";
                 default: return failure.ToString();
             }
+        }
+
+        private string MilitaryTrainingRequirementText(StableEntityId characterId,
+            MilitaryTrainingStartFailure failure)
+        {
+            var next = context.MilitaryTraining.GetNextLevel(characterId);
+            if (failure == MilitaryTrainingStartFailure.InsufficientResources && next != null)
+            {
+                var missing = next.Cost.Select(cost =>
+                {
+                    var available = context.Inventories.All.Where(x => !x.IssuanceLocked)
+                        .Sum(x => x.GetAmount(cost.ResourceId).Units);
+                    return (cost, missing: Math.Max(0, cost.Quantity.Units - available));
+                }).Where(x => x.missing > 0).ToArray();
+                if (missing.Length > 0) return "нужно принести: " + string.Join(", ", missing.Select(x =>
+                    x.missing + " " + Content("resource", x.cost.ResourceId.ToString())));
+            }
+            if (failure == MilitaryTrainingStartFailure.InsufficientService && next != null)
+            {
+                var last = context.MilitaryTraining.Records.Where(x => x.CharacterId == characterId && x.Completed)
+                    .OrderByDescending(x => x.CompletionTick).ThenByDescending(x => x.Sequence).FirstOrDefault();
+                var served = last == null ? 0 : Math.Max(0, context.Clock().State.CalendarTicks - last.CompletionTick);
+                return "для курса «" + MilitaryRankName(next.Rank) + "» осталось отслужить " +
+                    FormatDuration(Math.Max(0, next.MinimumServiceTicks - served)) +
+                    " (требуется " + FormatDuration(next.MinimumServiceTicks) + ")";
+            }
+            if (failure == MilitaryTrainingStartFailure.InsufficientBattleExperience && next != null &&
+                context.Characters.TryGet(characterId, out var character))
+            {
+                var current = context.MilitaryTraining.GetRank(characterId);
+                var required = current.HasValue ? Math.Min(SkillLevel.Maximum,
+                    context.MilitaryTraining.Catalog.Get(current.Value).CombatSkillLevel + next.RequiredBattleExperience) : 0;
+                return "для курса «" + MilitaryRankName(next.Rank) + "» нужен боевой навык " + required +
+                    ", сейчас " + CharacterSkillRules.Level(character, MilitaryTrainingService.CombatSkillId);
+            }
+            return MilitaryTrainingFailureText(failure);
         }
 
         private void DrawSavePanel()
@@ -2848,12 +2883,18 @@ namespace Game.Presentation.UI
             var research = context.Research.AssignedWorkers.Contains(id) ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned");
             AddLine(inspector, F("ui.character.research", research));
             AddLine(inspector, F("ui.character.work_group", context.Work.Groups.TryGetForMember(id, out var group) ? group.DisplayName : T("common.none")));
-            AddLine(inspector, F("ui.character.current_job", context.Work.TryGetAssigned(id, out var job)
-                ? E(job.Type) + " · " + E(job.Status) : T("common.none")));
+            AddLine(inspector, F("ui.character.current_job", context.MilitaryTraining.IsExternallyControlled(id)
+                ? "В казарме" : context.Work.TryGetAssigned(id, out var job)
+                    ? E(job.Type) + " · " + E(job.Status) : T("common.none")));
             AddLine(inspector, F("ui.character.dynasty_role", DynastyRole(id)));
-            AddLine(inspector, F("ui.character.military", context.Military.TryGetForMember(id, out var unit)
-                ? T("ui.character.member") + (unit.CaptainId == id ? ", " + T("ui.character.captain") : string.Empty)
-                : T("ui.character.civilian")));
+            var militaryRank = context.MilitaryTraining.GetRank(id);
+            var militaryStatus = context.MilitaryTraining.IsExternallyControlled(id)
+                ? "В казарме · курс " + MilitaryRankName(context.MilitaryTraining.Active.Single(x => x.CharacterId == id).Rank)
+                : militaryRank.HasValue
+                    ? MilitaryRankName(militaryRank.Value) + (context.Military.TryGetForMember(id, out var unit) && unit.CaptainId == id
+                        ? ", " + T("ui.character.captain") : string.Empty)
+                    : T("ui.character.civilian");
+            AddLine(inspector, F("ui.character.military", militaryStatus));
             if (context.Combat.TryGetCombatant(id, out var combatant))
                 AddLine(inspector, $"Оружие: {combatant.WeaponId} · прочность {combatant.WeaponDurability}/100");
             if (context.Events != null)
@@ -2914,7 +2955,26 @@ namespace Game.Presentation.UI
                     .Select(pair => pair.Key).OrderBy(id => id).ToArray();
                 AddSection(inspector, $"Жильцы: {residents.Length}/{definition.Housing.ResidentCapacity}");
                 if (residents.Length == 0) AddMuted(inspector, "Дом свободен.");
-                else foreach (var resident in residents) AddLine(inspector, "• " + CharacterName(resident));
+                else foreach (var resident in residents)
+                {
+                    var capturedResident = resident;
+                    inspector.Add(ActionButton(CharacterName(resident), () => SelectAndFocusResident(capturedResident),
+                        "home-resident-" + resident));
+                }
+            }
+            if (building.IsOperational && building.DefinitionId == MilitaryTrainingService.BarracksDefinitionId)
+            {
+                var trainees = context.MilitaryTraining.Active.Where(x => x.BarracksId == building.Id)
+                    .OrderBy(x => x.CompletionTick).ThenBy(x => x.CharacterId).ToArray();
+                AddSection(inspector, $"В казарме: {trainees.Length}/6");
+                if (trainees.Length == 0) AddMuted(inspector, "Сейчас никто не обучается.");
+                foreach (var trainee in trainees)
+                {
+                    var capturedTrainee = trainee.CharacterId;
+                    inspector.Add(ActionButton(CharacterName(capturedTrainee) + " · " + MilitaryRankName(trainee.Rank) +
+                        " · " + FormatDuration(Math.Max(0, trainee.CompletionTick - context.Clock().State.CalendarTicks)),
+                        () => SelectAndFocusResident(capturedTrainee), "barracks-trainee-" + capturedTrainee));
+                }
             }
             if (!building.IsOperational && building.ConstructionRequiredTicks > 0)
                 AddLine(inspector, $"Строительство: {building.ConstructionProgress:P0} · требуется работа строителя");
@@ -3170,8 +3230,14 @@ namespace Game.Presentation.UI
                 }
             }
             DrawDirectPriority();
-            var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id,
-                new WorldPosition(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z));
+            var buildingPresenter = FindObjectsByType<Game.Presentation.Buildings.BuildingPresenter>(FindObjectsInactive.Exclude)
+                .FirstOrDefault(x => x.IsBound && x.BuildingId == building.Id);
+            var buildingPosition = buildingPresenter != null ? buildingPresenter.transform.position :
+                new Vector3(building.Coordinate.X, building.Coordinate.Level, building.Coordinate.Z);
+            var workTarget = ResolveBuildingWorkTarget(new ContextCommandTarget(ContextTargetKind.Building,
+                new WorldPosition(buildingPosition.x, buildingPosition.y, buildingPosition.z), building.Id),
+                context.Selection.SelectedCharacterIds);
+            var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, workTarget.Position);
             inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
@@ -3916,6 +3982,15 @@ namespace Game.Presentation.UI
             var wasSelected = context.Selection.SelectedCharacterId == id;
             context.Selection.SelectCharacterIds(new[] { id });
             if (wasSelected && context.Presentations.TryGet(id, out var presenter) && presenter != null)
+                context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
+                    presenter.transform.position.z));
+            RefreshNow();
+        }
+
+        private void SelectAndFocusResident(StableEntityId id)
+        {
+            context.Selection.SelectCharacterIds(new[] { id });
+            if (context.Presentations.TryGet(id, out var presenter) && presenter != null)
                 context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
                     presenter.transform.position.z));
             RefreshNow();

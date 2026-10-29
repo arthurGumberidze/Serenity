@@ -29,6 +29,24 @@ namespace Game.Domain.Military
         Elite = Lieutenant
     }
 
+    public static class MilitaryRankNames
+    {
+        public static string Russian(MilitaryRank rank) => (int)rank switch
+        {
+            1 => "Рядовой",
+            2 => "Сержант",
+            3 => "Прапорщик",
+            4 => "Лейтенант",
+            5 => "Капитан",
+            6 => "Майор",
+            7 => "Подполковник",
+            8 => "Полковник",
+            9 => "Генерал-полковник",
+            10 => "Генералиссимус",
+            _ => rank.ToString()
+        };
+    }
+
     public sealed class MilitaryTrainingLevelDefinition
     {
         public MilitaryTrainingLevelDefinition(MilitaryRank rank, long durationTicks,
@@ -101,7 +119,9 @@ namespace Game.Domain.Military
         public static MilitaryTrainingCatalog CreateStoneAge() => new MilitaryTrainingCatalog(new[]
         {
             Level(MilitaryRank.Private, 4, 18, 0, 0, 0, 1000, Equipment("stone_spear", 1), Equipment("leather_clothing", 1)),
-            Level(MilitaryRank.Sergeant, 8, 28, 2, 0, 5, 1040, Equipment("wooden_shield", 1), Equipment("arrows", 6)),
+            // A newly trained private may immediately take the sergeant course. Every later
+            // promotion keeps an explicit minimum service requirement.
+            Level(MilitaryRank.Sergeant, 8, 28, 0, 0, 5, 1040, Equipment("wooden_shield", 1), Equipment("arrows", 6)),
             Level(MilitaryRank.WarrantOfficer, 12, 38, 4, 0, 10, 1080, Equipment("combat_bow", 1), Equipment("arrows", 12)),
             Level(MilitaryRank.Lieutenant, 18, 48, 7, 0, 15, 1120, Equipment("stone_spear", 1), Equipment("wooden_shield", 1)),
             Level(MilitaryRank.Captain, 24, 58, 10, 4, 20, 1160, Equipment("leather_clothing", 1), Equipment("arrows", 12)),

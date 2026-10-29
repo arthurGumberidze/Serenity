@@ -94,24 +94,36 @@ namespace Game.Tests.Editor
             finally { UnityEngine.Object.DestroyImmediate(surfaceHost); }
         }
 
-        [Test] public void CompactAdaptivePierOffersManyDryPlacesPerLakeAcrossSteepBanks()
+        [Test] public void PierUsesSameSixDryBuildableLandingContractAsFishingCamp()
         {
             var world=TiledWorldDefinitionLoader.LoadProposedWorldMap();
             var heights=new TiledWorldHeightSampler(world,1380062136);
             var origin=new TiledWorldPopulationPlanner(world,heights,1380062136).Create().StartTerritory.Center;
             var definition=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>("Assets/Game/Art/Config/BuildingPresentationCatalog.asset")
                 .ResolveDefinition(new BuildingDefinitionId("fishing_pier"));
+            var camp=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>("Assets/Game/Art/Config/BuildingPresentationCatalog.asset")
+                .ResolveDefinition(new BuildingDefinitionId("fishing_camp"));
             Assert.That(definition.Footprint.Width,Is.EqualTo(6));
             Assert.That(definition.Footprint.Depth,Is.EqualTo(6));
-            var index=ShorePlacementIndex.Create(world,1380062136,definition.Footprint,1,origin.X,origin.Z,true);
+            Assert.That(definition.Placement.Constraints,Is.EqualTo(camp.Placement.Constraints));
+            var index=ShorePlacementIndex.Create(world,1380062136,definition.Footprint,1,origin.X,origin.Z);
+            var host=new GameObject("Pier surface validation");
+            var surface=host.AddComponent<P102WorldPlacementSurface>();surface.Configure(heights);
+            var unityOrigin=new Vector3(origin.X,0,origin.Z);surface.ImportShoreCells(index.Cells,1,unityOrigin);
             foreach(var lake in world.MapData.Hydrology.Lakes)
             {
                 var candidates=index.Candidates.Where(x=>x.WaterBodyId==lake.Id).ToArray();
-                Assert.That(candidates.Length,Is.GreaterThanOrEqualTo(18),lake.Id);
+                Assert.That(candidates.Length,Is.EqualTo(6),lake.Id);
                 foreach(var candidate in candidates)
+                {
                     Assert.That(ShoreBuildingPlacement.IsValid(heights,candidate.Anchor,definition.Footprint,
-                        candidate.Facing,1,origin.X,origin.Z,true),Is.True,lake.Id);
+                        candidate.Facing,1,origin.X,origin.Z),Is.True,lake.Id);
+                    var cells=definition.Footprint.EnumerateCells(candidate.Anchor,candidate.Facing).ToArray();
+                    Assert.That(surface.EvaluateFootprint(cells,1,unityOrigin,4.5f,false,true,false).CanPlace,
+                        Is.True,lake.Id);
+                }
             }
+            UnityEngine.Object.DestroyImmediate(host);
         }
     }
 }

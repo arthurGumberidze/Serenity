@@ -1169,13 +1169,18 @@ namespace Game.Infrastructure
             shoreIndexTask=System.Threading.Tasks.Task.Run(() => new[]
             {
                 ShorePlacementIndex.Create(world,seed,footprint,size,origin.x,origin.z),
-                ShorePlacementIndex.Create(world,seed,pierDefinition.Footprint,size,origin.x,origin.z,true)
+                // A pier uses the same authored dry-bank landing contract as a fishing camp.
+                // The old "adaptive" index accepted steep/blocked cells that could never be
+                // confirmed by the actual placement surface, leaving the preview permanently red.
+                ShorePlacementIndex.Create(world,seed,pierDefinition.Footprint,size,origin.x,origin.z)
             });
             completeShoreIndex=()=>
             {
                 var indices=shoreIndexTask.GetAwaiter().GetResult(); var index=indices[0]; var pierIndex=indices[1];
                 WorldPlacementSurface.ImportShoreCells(index.Cells,size,origin);
+                WorldPlacementSurface.ImportShoreCells(pierIndex.Cells,size,origin);
                 foreach(var candidate in index.Candidates)preparedShoreAnchors.Add((candidate.Anchor,candidate.Facing));
+                foreach(var candidate in pierIndex.Candidates)preparedShoreAnchors.Add((candidate.Anchor,candidate.Facing));
                 campPads.AddRange(index.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
                 pierPads.AddRange(pierIndex.Candidates.Select(x=>(x.Anchor,x.Facing,new Vector3(x.X,x.Y,x.Z))));
                 var lakeIds=new HashSet<string>(world.MapData.Hydrology.Lakes.Select(x=>x.Id));
@@ -1187,7 +1192,7 @@ namespace Game.Infrastructure
                     marker.transform.localScale*=.22f;
                     marker.transform.rotation=Quaternion.Euler(0,candidate.Facing.Degrees(),0);
                 }
-                Debug.Log($"WM15 shoreline candidates prepared: camps={campPads.Count}, adaptive piers={pierPads.Count}");
+                Debug.Log($"WM15 shoreline candidates prepared: camps={campPads.Count}, piers={pierPads.Count}");
             };
             (Vector3 point,BuildingOrientation orientation)? cached=null;
             Vector3 lastCursor=Vector3.positiveInfinity;
@@ -1199,12 +1204,12 @@ namespace Game.Infrastructure
             buildingPlacementController.ShoreSnap=point=>
             {
                 var activeDefinitionId=buildingPlacementController.ActiveDefinitionId?.ToString() ?? string.Empty;
-                var adaptivePier=activeDefinitionId=="fishing_pier";
-                var activeDefinition=adaptivePier?pierDefinition:definition;
-                var pads=adaptivePier?pierPads:campPads;
+                var isPier=activeDefinitionId=="fishing_pier";
+                var activeDefinition=isPier?pierDefinition:definition;
+                var pads=isPier?pierPads:campPads;
                 if(lastShoreDefinition!=activeDefinitionId)
                 { lastShoreDefinition=activeDefinitionId;cached=null;lastCursor=Vector3.positiveInfinity; }
-                if((point-lastCursor).sqrMagnitude>64 || (!cached.HasValue && cursorIndex>=near.Count && knownCount!=pads.Count))
+                if((point-lastCursor).sqrMagnitude>1600 || (!cached.HasValue && cursorIndex>=near.Count && knownCount!=pads.Count))
                 {
                     lastCursor=point;knownCount=pads.Count;cursorIndex=0;cached=null;
                     // The old 60 m lookup made a valid authored shoreline appear completely red
@@ -1216,21 +1221,22 @@ namespace Game.Infrastructure
                 }
                 if(cached.HasValue)return cached;
                 var timer=System.Diagnostics.Stopwatch.StartNew();
-                while(cursorIndex<near.Count && timer.Elapsed.TotalMilliseconds<2)
+                while(cursorIndex<near.Count && timer.Elapsed.TotalMilliseconds<8)
                 {
                     var candidate=near[cursorIndex];
                     cursorIndex++;
                     var cells=activeDefinition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
                     // One obstructed landing must not make the whole shoreline look invalid.
                     // Keep scanning the prepared candidates until a genuinely usable one is found.
-                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,adaptivePier))continue;
+                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,false))continue;
+                    var surface=WorldPlacementSurface.EvaluateFootprint(cells,buildingGridSize,buildingGridOrigin,
+                        4.5f,false,true,false);
+                    if(!surface.CanPlace)continue;
                     var verdict=BuildingPlacementService.Evaluate(activeDefinition,candidate.anchor,candidate.facing);
                     if(!verdict.IsValid)
                     {
                         if(System.Environment.GetCommandLineArgs().Contains("-wm15Evening"))
                         {
-                            var surface=WorldPlacementSurface.EvaluateFootprint(cells,buildingGridSize,buildingGridOrigin,
-                                adaptivePier?20f:4.5f,false,true,adaptivePier);
                             var reason=verdict.FailureReason+" "+surface.BlockedReason;
                             if(reportedRejections.Add(reason))Debug.Log("WM15_SHORE_CANDIDATE "+reason+" at "+candidate.center);
                         }
@@ -1261,11 +1267,10 @@ namespace Game.Infrastructure
                     WorldDefinition.MapData.Hydrology.Lakes.Any(x=>x.Id==body) &&
                     !preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation)))
                     return PlacementFailureReason.ShorelineRequired;
-                var adaptivePier=context.Request.Definition.Id.ToString()=="fishing_pier";
                 if (!(IsShoreFacility(context.Request.Definition.Id) && preparedShoreAnchors.Contains((context.Request.Anchor,context.Request.Orientation))) &&
                     !ShoreBuildingPlacement.IsValid(WorldHeight,context.Request.Anchor,
                     context.Request.Definition.Footprint,context.Request.Orientation,
-                    buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z,adaptivePier))
+                    buildingGridSize,buildingGridOrigin.x,buildingGridOrigin.z,false))
                     return PlacementFailureReason.ShorelineRequired;
             }
             if ((constraints & BuildingPlacementConstraint.Groundwater) != 0)

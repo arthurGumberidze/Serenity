@@ -178,12 +178,11 @@ namespace Game.Presentation.Buildings
             constructionEvaluation = construction == null ? default : construction.Evaluate(activeDefinition,
                 coordinate, orientation, fundingSources(), authoredCells);
             if (construction != null) previewEvaluation = constructionEvaluation.Placement;
-            var adaptivePier = activeDefinition.Id.ToString()=="fishing_pier";
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
                 : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
-                    adaptivePier ? 20f : IsShoreFacility() ? 4.5f : (float?)null,
-                    activeDefinition.Id.ToString()=="gate", IsShoreFacility(), adaptivePier);
+                    IsShoreFacility() ? 4.5f : (float?)null,
+                    activeDefinition.Id.ToString()=="gate", IsShoreFacility(), false);
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells, previewEvaluation.ApproachCells);

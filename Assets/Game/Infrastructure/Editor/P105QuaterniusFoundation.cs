@@ -93,6 +93,22 @@ namespace Game.Infrastructure.Editor
             Debug.Log("P109_WORK_ANIMATIONS_REPAIRED");
         }
 
+        [MenuItem("Serenity/P105/Use Polytope Military Armor")]
+        public static void UsePolytopeMilitaryArmor()
+        {
+            var male = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Polytope Studio/Lowpoly_Characters/Prefabs/Modular_Armors/PT_Lowpoly_Armors_Male_Moduar_Free.prefab");
+            var female = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Polytope Studio/Lowpoly_Characters/Prefabs/Modular_Armors/PT_Lowpoly_Armors_Female_Moduar_Free.prefab");
+            var catalog = AssetDatabase.LoadAssetAtPath<CharacterPresentationCatalog>(CatalogPath);
+            if (male == null || female == null || catalog == null)
+                throw new FileNotFoundException("Polytope military armor or character catalog is missing.");
+            catalog.ConfigureTrainedResidentVisuals(male, female);
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
+            Debug.Log("WM15_POLYTOPE_MILITARY_ARMOR_CONFIGURED");
+        }
+
         public static void RepairWorkRootTransforms()
         {
             foreach (var path in AnimationPaths) ConfigureHumanoidImporter(path, true);

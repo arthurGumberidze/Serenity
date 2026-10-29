@@ -1,5 +1,27 @@
 # PROJECT_STATE.md
 
+## WM15 direct user-retest repair — build delivered (2026-10-29)
+
+The reported shore, pasture, livestock, military, housing and water defects were repaired in the current
+living-world candidate. Fishing camp and pier now share the same shore constraints and expose a reachable
+Build order at real shoreline positions. Unfinished pasture presentation no longer projects crop rows, and
+livestock grazing points exclude the shelter footprint. Stone houses hold six residents and building occupant
+and barracks trainee names are clickable.
+
+The reigning ruler is the only Generalissimo; the diagnostic army creates the other nine Russian-labelled
+ranks, assigns military profession/group state and an authored Polytope armour suit with an explicit opaque
+metal/leather/cloth palette. A Private course has no prior-service gate; later promotions do. Trainees remain
+shown as `В казарме` and appear in the barracks card. Ordinary lakes use authored mesh depth instead of the
+screen-depth/refraction inputs that produced moving bands. Resident water meshes remain continuous across
+terrain visibility tiles, and the decorative southern sea edge is hidden under terrain rather than exposed as
+a straight layer behind the southern lake.
+
+Focused EditMode passed 34/34 before the final presentation-only water-edge adjustment. The actual Windows
+Player passed 25/25 with zero runtime errors before that last horizon geometry adjustment. Per the user's
+explicit instruction, the last adjustment was built but not run or visually rechecked. Final Windows
+Development build `Builds/WM15UserRetestFinal/Serenity.exe` succeeded with 0 errors / 85 warnings. Exact
+evidence and limitations: `docs/validation/WM15UserRetest.md`.
+
 ## WM15 living-building runtime feedback repair — built and verified (2026-10-29)
 
 The fifteen reported runtime defects were corrected without reopening startup optimization or changing the

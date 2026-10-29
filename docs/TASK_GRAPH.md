@@ -581,3 +581,11 @@ implemented and locally verified. The affected EditMode set is green after the d
 full-world PlayMode scenarios passed 2/2; Windows Development build `Builds/WM15UserFeedback/Serenity.exe`
 succeeded with 0 errors / 82 warnings. This feedback slice is DONE and awaits user retest. WM15 as a whole
 remains IN_PROGRESS only for separately owned visual/runtime acceptance and deferred population gates.
+
+WM15 direct user-retest repair note (2026-10-29): shore placement/action reachability, unfinished pasture
+presentation, livestock shelter exclusion, six-place stone housing, clickable occupants, Russian military
+ranks/training/barracks state and authored armour presentation are implemented. Focused EditMode passed 34/34;
+the pre-horizon-adjustment Player route passed 25/25 with zero runtime errors. Final Development build
+`Builds/WM15UserRetestFinal/Serenity.exe` succeeded with 0 errors / 85 warnings. At the user's instruction the
+final decorative-sea edge adjustment was built without another automated launch; this slice awaits the user's
+own visual retest and WM15 remains IN_PROGRESS. A persistent Unity test/build runner is the next separate task.

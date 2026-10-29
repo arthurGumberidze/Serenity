@@ -48,10 +48,6 @@ namespace Game.Tests.Editor
 
             var second = fixture.Training.TryStart(identity.Id, fixture.Barracks.Id, new CombatSideId("player"),
                 first.Record.CompletionTick, fixture.Inventories.All.Select(x => x.Owner));
-            Assert.That(second.Failure, Is.EqualTo(MilitaryTrainingStartFailure.InsufficientService));
-            var secondStartTick = first.Record.CompletionTick + TimeSpan.FromDays(2).Ticks;
-            second = fixture.Training.TryStart(identity.Id, fixture.Barracks.Id, new CombatSideId("player"),
-                secondStartTick, fixture.Inventories.All.Select(x => x.Owner));
             Assert.That(second.Started, Is.True);
             Assert.That(second.Record.Rank, Is.EqualTo(MilitaryRank.Soldier));
             Assert.That(second.Record.CompletionTick - second.Record.StartTick,
@@ -62,6 +58,10 @@ namespace Game.Tests.Editor
             Assert.That(identity.TryGetSkill(MilitaryTrainingService.CombatSkillId, out skill), Is.True);
             Assert.That(skill.Level.Value, Is.EqualTo(28));
             Assert.That(fixture.Units.TryGetForMember(identity.Id, out _), Is.False);
+            Assert.That(fixture.Training.TryStart(identity.Id, fixture.Barracks.Id, new CombatSideId("player"),
+                second.Record.CompletionTick, fixture.Inventories.All.Select(x => x.Owner)).Failure,
+                Is.EqualTo(MilitaryTrainingStartFailure.InsufficientService),
+                "Service starts being required only after the private-to-sergeant course.");
             Assert.That(fixture.Funds.GetAmount(new ResourceId("stone_spear")).Units, Is.EqualTo(3));
             Assert.That(fixture.Funds.GetAmount(new ResourceId("wooden_shield")).Units, Is.EqualTo(3));
         }

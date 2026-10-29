@@ -59,6 +59,12 @@ namespace Game.Presentation.Characters
         public GameObject ResolveTrainedResident(CharacterSex sex) =>
             sex == CharacterSex.Male ? MaleTrainedResident : FemaleTrainedResident;
 
+        public void ConfigureTrainedResidentVisuals(GameObject male, GameObject female)
+        {
+            MaleTrainedResident = male;
+            FemaleTrainedResident = female;
+        }
+
         public GameObject ResolveResident(CharacterSex sex, bool child) => child && ChildResident != null
             ? ChildResident : sex == CharacterSex.Male ? MaleResident : FemaleResident;
 

@@ -205,12 +205,14 @@ namespace Game.Simulation.Diagnostics
             var nextSequence = checked(sequence + 1);
             try
             {
-                foreach (var level in training.Catalog.All)
+                // Generalissimo is never spawned by a cheat: the reigning ruler owns that
+                // title automatically and remains the single canonical holder.
+                foreach (var level in training.Catalog.All.Where(x => x.Rank != MilitaryRank.Generalissimo))
                 {
                     var rank = level.Rank;
                     var id = DeterministicStableId.Create(worldSeed,
                         "diagnostic_army:" + nextSequence + ":" + (int)rank);
-                    var character = CreateAdult(id, "Diag " + rank, rank == MilitaryRank.Soldier
+                    var character = CreateAdult(id, "Воин " + MilitaryRankNames.Russian(rank), rank == MilitaryRank.Sergeant
                         ? CharacterSex.Female : CharacterSex.Male, "military");
                     characters.Add(character);
                     created.Add(character);

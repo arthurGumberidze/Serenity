@@ -203,9 +203,12 @@ namespace Game.Simulation.Military
                     continue;
                 }
                 if (record.CompletionTick > calendarTick) continue;
-                Complete(record);
+                // Publish the completed rank before changing appearance. AppearanceChanged is the
+                // integration event that removes civilian jobs/groups and rebuilds the soldier view;
+                // when completion was written afterwards, that event still saw a civilian.
                 records[i] = new MilitaryTrainingRecordState(record.CharacterId, record.BarracksId,
                     record.SideId, record.Rank, record.StartTick, record.CompletionTick, true, record.Sequence);
+                Complete(records[i]);
                 completed++;
             }
             LastProcessedTick = calendarTick;

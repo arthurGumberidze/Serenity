@@ -659,7 +659,7 @@ MonoBehaviour:
     constructionStageCount: 4
     storageCapacity: 0
     storageCategories: 000000000100000002000000i
-    housingCapacity: 10
+    housingCapacity: 6
     maximumWorkers: 0
     productionRecipeIds: []
     productionInputCapacity: 0
@@ -1377,7 +1377,7 @@ MonoBehaviour:
     placementMode: 0
     allowsOverlap: 0
     spatialForm: 0
-    placementConstraints: 7
+    placementConstraints: 6
     maximumHeightDeltaMillimetres: 20000
     approachClearanceMillimetres: 750
     prefab: {fileID: 106885001878982721, guid: c449256d3970232488f1f9e42662cdd5, type: 3}

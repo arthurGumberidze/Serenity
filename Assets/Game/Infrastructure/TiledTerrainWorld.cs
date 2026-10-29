@@ -452,7 +452,11 @@ namespace Game.Infrastructure
                 {
                     pair.Value.WaterRoot.SetActive(true);
                     var renderer = pair.Value.WaterRoot.GetComponent<MeshRenderer>();
-                    if (renderer != null) renderer.enabled = visible;
+                    // Water bodies cross tile boundaries. Culling their meshes with the terrain
+                    // visibility window exposed the straight edge of the nearest tile whenever
+                    // the camera approached a lake. Resident water is inexpensive and must remain
+                    // continuous; strategic mode owns its separate overview projection.
+                    if (renderer != null) renderer.enabled = !strategicMode;
                 }
                 pair.Value.Collider.enabled = true;
             }
@@ -1697,7 +1701,7 @@ namespace Game.Infrastructure
             if (tile.WaterRoot == null) return;
             tile.WaterRoot.SetActive(true);
             var renderer = tile.WaterRoot.GetComponent<MeshRenderer>();
-            if (renderer != null) renderer.enabled = visible;
+            if (renderer != null) renderer.enabled = !strategicMode;
         }
 
         private void UpdateBackgroundWarmupProgress()

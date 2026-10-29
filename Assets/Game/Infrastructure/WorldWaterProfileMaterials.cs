@@ -85,17 +85,23 @@ namespace Game.Infrastructure
             Set(value,"_BaseColor",new Color(.055f,.26f,.33f,.92f));
             Set(value,"_DeepColor",new Color(.009f,.06f,.12f,1f));
             Set(value,"_ReflectionColor",new Color(.58f,.72f,.80f,.32f));
-            Set(value,"_SpecularColor",new Color(.96f,.98f,1f,.42f));
+            // Calm lake highlights must remain broad and stable under camera zoom. The previous
+            // high-frequency normal plus 260-power highlight produced moving moire-like bands.
+            Set(value,"_SpecularColor",new Color(.96f,.98f,1f,.14f));
             // In this shader a higher refraction blend shows more water colour and less scene colour.
             // The previous .43 value therefore made ordinary lakes look more transparent, not less.
-            Set(value,"_Shininess",260f); Set(value,"_RefractionStrength",.91f);
+            Set(value,"_Shininess",92f); Set(value,"_RefractionStrength",.91f);
             Set(value,"_DepthMax",5.8f); Set(value,"_Absorption",1.58f); Set(value,"_Opacity",1f);
             Set(value,"_MinAlpha",.72f); Set(value,"_DepthAlphaBoost",.95f);
-            Set(value,"_RippleScale",1.35f); Set(value,"_RippleSpeed",.48f); Set(value,"_RippleStrength",.39f);
+            // Ordinary lakes already carry continuous normalized depth in mesh color.r. Screen-depth
+            // sampling near a low camera was the source of the straight moving band reported by the
+            // user, so this profile uses its authored depth and does not mix the opaque camera copy.
+            Set(value,"_UseVertexDepth",1f); Set(value,"_RefractionStrength",1f);
+            Set(value,"_RippleScale",.72f); Set(value,"_RippleSpeed",.28f); Set(value,"_RippleStrength",.09f);
             Set(value,"_FoamIntensity",.17f); Set(value,"_ShoreDepth",.62f);
             Set(value,"_FoamNoiseScale",1.8f); Set(value,"_FoamNoiseSpeed",.38f);
             Set(value,"_FoamCrestThreshold",.76f); Set(value,"_FoamCrestIntensity",.12f);
-            Set(value,"_EdgeFoamIntensity",.24f); Set(value,"_GerstnerIntensity",.2f);
+            Set(value,"_EdgeFoamIntensity",0f); Set(value,"_GerstnerIntensity",.2f);
             Set(value,"_GAmplitude",new Vector4(.035f,.024f,.018f,.012f));
             Set(value,"_GFrequency",new Vector4(1.1f,1.45f,.82f,.65f));
             Set(value,"_GSteepness",new Vector4(.38f,.32f,.26f,.22f));

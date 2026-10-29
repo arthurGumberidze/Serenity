@@ -64,9 +64,14 @@ namespace Game.Infrastructure
             var material = new Material(Resources.Load<Shader>("World/WorldMapHorizon")); materials.Add(material);
             AddMesh("Distant land", mesh, material);
             var sea = new Mesh { name = "Southern sea" };
+            // Start the scenic sea underneath the southern terrain instead of exposing a straight
+            // rectangular edge 120 m beyond it. The lowered horizon shell then reveals water along
+            // its actual terrain intersection; low RTS cameras near the southern lake no longer see
+            // an unrelated horizontal ocean layer behind the lake surface.
+            var hiddenSeaEdge = minimum.y + 48f;
             sea.vertices = new[] { new Vector3(minimum.x - 4000, 6, minimum.y - 4000),
-                new Vector3(minimum.x - 4000, 6, minimum.y - 120),
-                new Vector3(maximum.x + 4000, 6, minimum.y - 120),
+                new Vector3(minimum.x - 4000, 6, hiddenSeaEdge),
+                new Vector3(maximum.x + 4000, 6, hiddenSeaEdge),
                 new Vector3(maximum.x + 4000, 6, minimum.y - 4000) };
             sea.triangles = new[] { 0, 1, 2, 0, 2, 3 }; sea.colors = new[] { Color.red, Color.red, Color.red, Color.red };
             sea.RecalculateNormals(); sea.RecalculateBounds(); meshes.Add(sea);
