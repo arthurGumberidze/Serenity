@@ -22,6 +22,16 @@ namespace Game.Domain.Buildings
         }
 
         public bool IsValid => !string.IsNullOrEmpty(value);
+        // Authored level variants retain distinct save/catalog IDs but share their facility role.
+        public BuildingDefinitionId FamilyId
+        {
+            get
+            {
+                var marker = value?.LastIndexOf("_level", StringComparison.Ordinal) ?? -1;
+                return marker > 0 && int.TryParse(value.Substring(marker + 6), out var level) && level >= 2
+                    ? new BuildingDefinitionId(value.Substring(0, marker)) : this;
+            }
+        }
         public bool Equals(BuildingDefinitionId other) => string.Equals(value, other.value, StringComparison.Ordinal);
         public override bool Equals(object obj) => obj is BuildingDefinitionId other && Equals(other);
         public override int GetHashCode() => value == null ? 0 : StringComparer.Ordinal.GetHashCode(value);

@@ -27,6 +27,7 @@ namespace Game.Presentation.Buildings
         private readonly System.Collections.Generic.Dictionary<Transform,Quaternion> gateClosedRotations = new();
 
         public bool IsBound => building != null;
+        public BuildingDefinitionId PresentedDefinitionId { get; private set; }
         public Building Building => building;
         public StableEntityId BuildingId => building != null ? building.Id : throw new InvalidOperationException("Presenter is not bound.");
         public ConstructionState ConstructionState => building != null ? building.ConstructionState : throw new InvalidOperationException("Presenter is not bound.");
@@ -40,6 +41,7 @@ namespace Game.Presentation.Buildings
             if (IsBound) throw new InvalidOperationException("Presenter is already bound.");
             presentationRegistry.Register(source.Id, this);
             building = source;
+            PresentedDefinitionId = source.DefinitionId;
             registry = presentationRegistry;
             storageInventory = inventory;
             GetComponent<BuildingZoneVisual>()?.Render(source.PlacementCells, gridSize);
@@ -49,9 +51,9 @@ namespace Game.Presentation.Buildings
             gameObject.name = $"Building {source.DefinitionId} [{source.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(source.Id, ContextTargetKind.Building);
-            if (source.DefinitionId.ToString() == "campfire") EnsureCampfireObstacle(gridSize);
+            if (source.DefinitionId.FamilyId.ToString() == "campfire") EnsureCampfireObstacle(gridSize);
             RefreshStructuralPresentation();
-            if(source.DefinitionId.ToString()=="gate") SetGateOpen(false);
+            if(source.DefinitionId.FamilyId.ToString()=="gate") SetGateOpen(false);
         }
 
         private void EnsureCampfireObstacle(float gridSize)
@@ -70,7 +72,7 @@ namespace Game.Presentation.Buildings
 
         public void SetGateOpen(bool open)
         {
-            if(building?.DefinitionId.ToString()!="gate")return;
+            if(building?.DefinitionId.FamilyId.ToString()!="gate")return;
             var collider=GetComponent<BoxCollider>();if(collider!=null)collider.enabled=!open;
             var obstacle=GetComponent<UnityEngine.AI.NavMeshObstacle>() ?? gameObject.AddComponent<UnityEngine.AI.NavMeshObstacle>();
             obstacle.shape=UnityEngine.AI.NavMeshObstacleShape.Box;
@@ -171,8 +173,8 @@ namespace Game.Presentation.Buildings
 
         private void RefreshCampfire()
         {
-            var torch = building.DefinitionId.ToString() == "ground_torch";
-            var shouldBurn = (building.DefinitionId == new BuildingDefinitionId("campfire") || torch) &&
+            var torch = building.DefinitionId.FamilyId.ToString() == "ground_torch";
+            var shouldBurn = (building.DefinitionId.FamilyId == new BuildingDefinitionId("campfire") || torch) &&
                 building.IsOperational && !building.IsDestroyed;
             if (shouldBurn)
             {

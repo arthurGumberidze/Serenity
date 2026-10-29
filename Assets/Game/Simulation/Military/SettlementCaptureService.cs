@@ -242,7 +242,7 @@ namespace Game.Simulation.Military
 
         private Building ActiveBarracks(SettlementState settlement) => settlement.BuildingIds
             .Select(id => buildings.TryGet(id, out var value) ? value : null)
-            .Where(x => x != null && x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId &&
+            .Where(x => x != null && x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId &&
                 x.IsOperational && !x.IsDestroyed).OrderBy(x => x.Id).FirstOrDefault();
 
         private long CaptureSeed(SettlementId id)

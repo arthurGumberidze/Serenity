@@ -356,6 +356,43 @@ namespace Game.Tests
             Assert.That(buildings.TryGet(building.Id, out _), Is.False);
         }
 
+        [Test]
+        public void UpgradeUsesBuilderArrivalSustainedWorkResourcesAndSavedProgressWithoutHealing()
+        {
+            var f=CreateFixture(1,20,40,1d);var id=new BuildingDefinitionId("upgrade_hut");
+            var nextId=new BuildingDefinitionId("upgrade_hut_level2");
+            var cost=new[]{new ResourceAmount(f.Wood,new ResourceQuantity(5))};
+            var next=new BuildingDefinition(nextId,"Hut II",BuildingCategory.Shelter,BuildingEra.StoneAge,"","",null,
+                new ConstructionSpec(cost,TimeSpan.FromMinutes(20)),new PlacementSpec(new BuildingFootprint(1,1)),maxIntegrity:1600);
+            var first=new BuildingDefinition(id,"Hut",BuildingCategory.Shelter,BuildingEra.StoneAge,"","",null,
+                new ConstructionSpec(cost,TimeSpan.FromMinutes(20)),new PlacementSpec(new BuildingFootprint(1,1)),
+                upgrades:new UpgradeSpec(new[]{new BuildingUpgradeOption(nextId,cost,TimeSpan.FromMinutes(2))}));
+            var building=Building.CreateNew(first,new GridCoordinate(4,4),BuildingOrientation.North,new Game.Domain.Combat.CombatSideId("player"));
+            building.MarkCompleted();f.World.Buildings.Add(building);
+            var damage=new BuildingDamageService(f.World.Buildings,new[]{first,next});
+            damage.ApplyDamage(building.Id,StableEntityId.NewId(),200,BuildingDamageType.Generic,0);
+            var beforeHp=building.CurrentIntegrity;var beforeStock=f.TotalWood();
+            var lifecycle=new BuildingLifecycleService(f.World.Buildings,key=>key==id?first:next,damage,f.Inventories,
+                new WorldPileService(f.Resources,f.Inventories),new BuildingOccupancyGrid());
+            f.World.BuildingLifecycle=lifecycle;lifecycle.ConfigureWork(f.Work,_=>new WorldPosition(4,0,3));
+            Assert.That(lifecycle.RequestUpgrade(building.Id).Succeeded,Is.True);
+            Assert.That(lifecycle.RequestUpgrade(building.Id).Failure,Is.EqualTo(BuildingLifecycleFailure.DuplicateOperation));
+            f.AdvanceSeconds(2);var job=lifecycle.UpgradeJob(building.Id);f.AdvanceSeconds(5);
+            Assert.That(job.ProgressTicks,Is.Zero);f.Movements[0].Arrive();f.AdvanceSeconds(5);
+            Assert.That(job.ProgressTicks,Is.GreaterThan(0));Assert.That(building.DefinitionId,Is.EqualTo(id));
+            var saved=f.Work.CaptureState();Assert.That(saved.Jobs.Single(x=>x.Id==job.Id.Value).ProgressTicks,Is.EqualTo(job.ProgressTicks));
+            var restored=new WorkManager(f.CharacterRegistry);restored.RestoreState(saved);
+            Assert.That(restored.Jobs.Single(x=>x.Id==job.Id).ProgressTicks,Is.EqualTo(job.ProgressTicks));
+            Assert.That(restored.Jobs.Single(x=>x.Id==job.Id).Type,Is.EqualTo(WorkJobType.Upgrade));
+            f.Work.Cancel(job.Id);Assert.That(f.TotalWood(),Is.EqualTo(beforeStock));f.AdvanceSeconds(2);
+            Assert.That(lifecycle.RequestUpgrade(building.Id).Succeeded,Is.True);
+            for(var second=0;second<180;second++)
+            {f.AdvanceSeconds(1);if(f.Movements[0].State==MovementState.Moving)f.Movements[0].Arrive();}
+            Assert.That(building.DefinitionId,Is.EqualTo(nextId));Assert.That(building.CurrentIntegrity,Is.EqualTo(beforeHp));
+            Assert.That(building.MaxIntegrity,Is.EqualTo(1600));Assert.That(f.TotalWood(),Is.EqualTo(beforeStock-5));
+            Assert.That(Building.Restore(building.CaptureState()).DefinitionId,Is.EqualTo(nextId));
+        }
+
         private static Character CreateCharacter(string name) => Character.CreateNew(new CharacterCreationData(
             new CharacterName(name), CharacterSex.Male, 0, null, null, null, null, null,
             new[] { new TraitId("calm"), new TraitId("brave"), new TraitId("kind"), new TraitId("curious") },

@@ -2149,3 +2149,36 @@ write NUnit XML, and reject a zero-case selection. Development builds call the e
 retain its immutable-source provenance. JSON and process exit codes mirror the actual Editor result. Timeouts,
 process replacement, missing XML and interrupted operations fail closed. This decision changes validation
 orchestration only and does not reopen WM15 gameplay, water or delivered-build scope.
+
+## D-221 — Existing-asset levels, rank presentation and deformable alpine snow (2026-10-30)
+
+The user explicitly reopened the deferred building-upgrade task and authorized initial costs/conditions to be
+chosen now and edited later. Each player-buildable base definition has an authored `_level2` target. Housing
+follows the user's later correction: `stone_age_hut` houses four residents and upgrades into the existing
+stone-house model, housing six. `communal_house` is a separate level-I home. The old `clan_house` definition
+remains for seeded world content, is shown as level II and is hidden from the level-I construction menu.
+
+An upgrade is a canonical WorkOrder handled by the existing builder scheduler: arrival, sustained work,
+progress persistence, cancellation and final resource consumption. Costs are consumed atomically at completion;
+stock is neither reserved nor transported by this first implementation. Missing stock suspends work. The same
+building ID, placement and authorities survive model replacement. Current integrity is preserved absolutely;
+increasing maximum integrity never heals damage. Footprints remain fixed, with authored art fitted inside them.
+`BuildingDefinitionId.FamilyId` identifies facility behavior across level variants without changing save identity.
+
+Rank presentation chooses one admitted Polytope suit below lieutenant and distinct male/female officer variants.
+A URP material consumes the original RGB region masks; source vendor materials are not rewritten. Unused armour
+renderers are removed from generated prefabs. Rank changes refresh presentation, not canonical appearance state.
+
+Snow is a bounded presentation mesh over existing ground at the alpine foot. One central sampler depresses
+vertices along resident motion; no per-NPC Update or canonical terrain mutation is introduced. Trails persist
+only in the current session. Mountain water samples normalized screen UV from fragment SV_POSITION and uses
+mesh-authored depth for its palette; hydrology remains unchanged.
+
+Validation uses the persistent primary Unity Editor. Rendered acceptance is an asynchronous EditMode UnityTest
+that enters Play Mode with background execution enabled, and the same route is available in the built Player.
+
+The rendered save/load route exposed a fresh-world checkpoint mismatch: factions began at 10:00 while the
+strategic scheduler still reported tick zero until its first update. The scheduler now receives the initial
+calendar tick from the world clock. A paused new world can be saved immediately without simulating an extra
+decision or producing a checkpoint rejected on load. The strategy fixture includes actual training equipment
+resources, and its training scenario explicitly supplies equipment because it has no weapon workshop.

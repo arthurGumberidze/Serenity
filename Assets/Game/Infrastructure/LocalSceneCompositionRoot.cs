@@ -356,7 +356,8 @@ namespace Game.Infrastructure
                     StarterEnemyAi?.Dynasty.CurrentMonarchId == character.Id ||
                     StrategicAi != null && StrategicAi.Factions.Any(faction => faction.Dynasty.CurrentMonarchId == character.Id),
                 childSelector: character => character.AgeInCompletedYears(Clock != null
-                    ? Clock.State.BiologicalTicks : Character.BiologicalTicksPerYear * 20L) < 16);
+                    ? Clock.State.BiologicalTicks : Character.BiologicalTicksPerYear * 20L) < 16,
+                militaryRankSelector: id => MilitaryTraining?.GetRank(id) ?? StarterEnemyAi?.Training?.GetRank(id));
 
             InteractionMode = new LocalInteractionMode();
             Buildings = new BuildingRegistry();
@@ -587,7 +588,7 @@ namespace Game.Infrastructure
                         ConstructionSites.NotifyDelivery(construction);
                 });
             aiWorld.DrinkingWell = origin => Buildings.All.Where(x => x.IsOperational &&
-                    x.DefinitionId == new BuildingDefinitionId("well"))
+                    x.DefinitionId.FamilyId == new BuildingDefinitionId("well"))
                 .Select(x =>
                 {
                     var definition = buildingCatalog.ResolveDefinition(x.DefinitionId);
@@ -719,6 +720,8 @@ namespace Game.Infrastructure
                 id => buildingCatalog.ResolveDefinition(id), BuildingDamage, Inventories, WorldPiles,
                 BuildingOccupancy, Production);
             BuildingLifecycle.BuildingChanged += OnBuildingChanged;
+            BuildingLifecycle.UpgradeTechnologyAvailable = definition =>
+                definition.RequiredTechnologies.All(id => Research.IsCompleted(id));
             BuildingLifecycle.ConfigureWork(Work, building =>
             {
                 var cells = building.PlacementCells;
@@ -745,7 +748,7 @@ namespace Game.Infrastructure
             BuildingDamage.RegisterEconomyScope(StarterEnemyAi.Production, StarterEnemyAi.Inventories,
                 StarterEnemyAi.WorldPiles);
             StrategicAi = new AiStrategicScheduler(worldSeed, Characters, HealthFamily,
-                MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage);
+                MilitaryUnits, GlobalMap, Battles, Buildings, BuildingDamage, initialCalendarTick:Clock.State.CalendarTicks);
             StrategicAi.AddFaction(StarterEnemyAi);
             StarterEnemyAi.Training = new MilitaryTrainingService(Characters, HealthFamily, Buildings,
                 StarterEnemyAi.Inventories, MilitaryUnits, Appearances, worldSeed,
@@ -754,9 +757,14 @@ namespace Game.Infrastructure
                 MilitaryUnits, Appearances, worldSeed);
             MilitaryTraining.IsRuler = id => PlayerRealm.CurrentRulerId == id;
             AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.GetRank(id).HasValue);
-            Work.AssignmentScope = (id, order) => !MilitaryTraining.GetRank(id).HasValue ||
-                order.Type == WorkJobType.Move || order.Type == WorkJobType.Guard ||
-                order.Type == WorkJobType.Military;
+            BuildingLifecycle.UpgradeWorkerAllowed = (id, building) => CanCommandResident(id) &&
+                building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.GetRank(id).HasValue &&
+                Work.Groups.TryGetForMember(id,out var group) && group.Role==WorkGroupRole.Builders;
+            Work.AssignmentScope = (id, order) => order.Type==WorkJobType.Upgrade
+                ? Buildings.TryGet(order.Target.EntityId,out var targetBuilding) &&
+                  BuildingLifecycle.UpgradeWorkerAllowed(id,targetBuilding)
+                : !MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
+                  order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military;
             Appearances.AppearanceChanged += OnAppearanceChanged;
             Func<MilitaryTrainingRecordState, bool> canTrain = record =>
                 Buildings.TryGet(record.BarracksId, out var trainingBuilding) && trainingBuilding.IsOperational &&
@@ -870,7 +878,7 @@ namespace Game.Infrastructure
                 pointerRaycaster, input);
             cameraController.PointerBlockedByUi = pointerRaycaster.IsPointerBlockedByUi;
             ManualMoveInput.EnableContextMenus();
-            gameObject.AddComponent<SnowTrackPresentation>().Initialize(WorldHeight, CharacterPresentations,
+            gameObject.AddComponent<DeformableSnowPresentation>().Initialize(WorldHeight, CharacterPresentations,
                 TiledWorld.ArtWorldToDesign);
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
@@ -1313,7 +1321,7 @@ namespace Game.Infrastructure
         private bool GateAllowsMovement(StableEntityId characterId, WorldPosition from, WorldPosition to)
         {
             foreach (var gate in Buildings.All.Where(x => x.IsOperational &&
-                         x.DefinitionId == new BuildingDefinitionId("gate")).OrderBy(x => x.Id))
+                         x.DefinitionId.FamilyId == new BuildingDefinitionId("gate")).OrderBy(x => x.Id))
             {
                 var definition = buildingCatalog.ResolveDefinition(gate.DefinitionId);
                 var center = BuildingSpawner.GridToWorld(gate.Coordinate, definition, gate.Orientation);
@@ -1394,15 +1402,15 @@ namespace Game.Infrastructure
             NeighbourEconomy?.RebindAfterLoad();
             BuildingPathing.RebindAfterLoad();
             foreach (var gate in Buildings.All.Where(x => x.IsOperational &&
-                         x.DefinitionId == new BuildingDefinitionId("gate")))
+                         x.DefinitionId.FamilyId == new BuildingDefinitionId("gate")))
                 BuildingPathing.SetGateAccessMode(gate.Id, Facilities.GetPolicy(gate.Id).GateAccess);
             if (WorldDefinition.MapData == null) RegisterStarterTrees();
             foreach (var view in productionPresenters)
                 if (view != null && view.IsBound && Production.TryGetSite(view.Site.Id, out var canonical))
                     view.Bind(canonical, Color.white, true);
             foreach (var building in Buildings.All)
-                if (building.OwnerSideId.Value=="player" && (building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
-                     (building.DefinitionId == new BuildingDefinitionId("primitive_garden") || building.DefinitionId.ToString() == "animal_pasture")) &&
+                if (building.OwnerSideId.Value=="player" && (building.DefinitionId.FamilyId == new BuildingDefinitionId("primitive_crop_plot") ||
+                     (building.DefinitionId.FamilyId == new BuildingDefinitionId("primitive_garden") || building.DefinitionId.FamilyId.ToString() == "animal_pasture")) &&
                     BuildingPresentations.TryGet(building.Id, out var cropView)) RegisterCropPlot(building, cropView);
             WorldPopulation?.RebindAfterLoad();
             DirectWorkCommands.EnsureRoleGroups();
@@ -1660,8 +1668,8 @@ namespace Game.Infrastructure
             {
                 var main = settlement.BuildingIds.Select(id => Buildings.TryGet(id, out var value) ? value : null)
                     .Where(x => x != null && !x.IsDestroyed)
-                    .OrderByDescending(x => x.DefinitionId == new BuildingDefinitionId("chief_hut"))
-                    .ThenByDescending(x => x.DefinitionId == new BuildingDefinitionId("stone_age_hut"))
+                    .OrderByDescending(x => x.DefinitionId.FamilyId == new BuildingDefinitionId("chief_hut"))
+                    .ThenByDescending(x => x.DefinitionId.FamilyId == new BuildingDefinitionId("stone_age_hut"))
                     .ThenBy(x => x.Id).FirstOrDefault();
                 if (main != null) SettlementCapture.Register(settlement.Id, main.Id, Clock.State.CalendarTicks);
             }
@@ -1705,9 +1713,9 @@ namespace Game.Infrastructure
 
         private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
         {
-            if(building?.DefinitionId.ToString()=="gate")
+            if(building?.DefinitionId.FamilyId.ToString()=="gate")
             {
-                foreach(var wallView in BuildingPresentations.All.Where(x=>x.IsBound && x.Building.DefinitionId.ToString()=="palisade").ToArray())
+                foreach(var wallView in BuildingPresentations.All.Where(x=>x.IsBound && x.Building.DefinitionId.FamilyId.ToString()=="palisade").ToArray())
                 {
                     var wallId=wallView.BuildingId; BuildingSpawner.Despawn(wallView);
                     if(Buildings.TryGet(wallId,out var wall))BuildingSpawner.Spawn(wall);
@@ -1717,8 +1725,8 @@ namespace Game.Infrastructure
             if (building != null && !building.IsOperational && Work != null)
                 ConstructionClearance?.Register(building,
                     buildingPlacementController.LastPlacedClearanceSourceIds, WorkPriority.Normal);
-            if (building != null && (building.DefinitionId == new BuildingDefinitionId("primitive_crop_plot") ||
-                                     (building.DefinitionId == new BuildingDefinitionId("primitive_garden") || building.DefinitionId.ToString() == "animal_pasture")))
+            if (building != null && (building.DefinitionId.FamilyId == new BuildingDefinitionId("primitive_crop_plot") ||
+                                     (building.DefinitionId.FamilyId == new BuildingDefinitionId("primitive_garden") || building.DefinitionId.FamilyId.ToString() == "animal_pasture")))
                 RegisterCropPlot(building, presenter);
             if (building != null)
             {
@@ -1747,6 +1755,21 @@ namespace Game.Infrastructure
 
         private void OnBuildingChanged(Building building)
         {
+            if (building != null && BuildingPresentations.TryGet(building.Id,out var oldView) &&
+                oldView.PresentedDefinitionId != building.DefinitionId)
+            {
+                var wasSelected=selectionProbe!=null&&selectionProbe.SelectedBuildingPresenter==oldView;
+                BuildingSpawner.Despawn(oldView);
+                var replacement=BuildingSpawner.Spawn(building);
+                if(wasSelected)selectionProbe.SelectBuilding(replacement);
+                var upgraded=buildingCatalog.ResolveDefinition(building.DefinitionId);
+                if(upgraded.Storage!=null && Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage,building.Id),out var storage))
+                    storage.EnsureCapacity(upgraded.Storage.Capacity);
+                if(upgraded.Production!=null && upgraded.Workplace!=null)RegisterBuildingWorkplace(building,replacement);
+                if(building.DefinitionId.FamilyId.ToString()=="primitive_crop_plot" ||
+                    building.DefinitionId.FamilyId.ToString()=="primitive_garden" || building.DefinitionId.FamilyId.ToString()=="animal_pasture")
+                    RegisterCropPlot(building,replacement);
+            }
             BuildingPathing?.Reconcile(building);
             if (building != null && (building.IsDestroyed || building.OwnerSideId != new CombatSideId("player")))
                 Facilities?.RemoveBuildingAssignments(building.Id);
@@ -1754,7 +1777,7 @@ namespace Game.Infrastructure
                 Facilities?.ReconcileHousing();
             if (building != null && BuildingPresentations.TryGet(building.Id, out var presenter))
                 {
-                if (building.DefinitionId.ToString()=="animal_pasture" && building.IsOperational)
+                if (building.DefinitionId.FamilyId.ToString()=="animal_pasture" && building.IsOperational)
                     RegisterCropPlot(building,presenter);
                 presenter.RefreshStructuralPresentation();
             }
@@ -1786,7 +1809,7 @@ namespace Game.Infrastructure
                 depth = (building.PlacementCells.Max(cell => cell.Z) - building.PlacementCells.Min(cell => cell.Z) + 1) * buildingGridSize;
                 if (building.Orientation.Degrees() % 180 != 0) (width, depth) = (depth, width);
             }
-            visual.Configure(site, width, depth, Production.Animals, building.DefinitionId.ToString()=="animal_pasture");
+            visual.Configure(site, width, depth, Production.Animals, building.DefinitionId.FamilyId.ToString()=="animal_pasture");
             var presenter = buildingPresenter.GetComponent<ProductionSourcePresenter>() ??
                 buildingPresenter.gameObject.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, new Color(0.25f, 0.65f, 0.18f), preserveColor: true);
@@ -1798,7 +1821,7 @@ namespace Game.Infrastructure
             var definition = buildingCatalog.ResolveDefinition(building.DefinitionId);
             if (definition.Workplace == null || definition.Production == null) return;
             var world = BuildingSpawner.GridToWorld(building.Coordinate, definition, building.Orientation);
-            if (definition.Id.ToString() == "fishing_camp")
+            if (definition.Id.FamilyId.ToString() == "fishing_camp")
             {
                 world -= Quaternion.Euler(0,building.Orientation.Degrees(),0) * Vector3.forward *
                     (definition.Footprint.Depth * buildingGridSize * .5f + 1.5f);

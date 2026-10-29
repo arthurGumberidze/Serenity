@@ -121,7 +121,7 @@ namespace Game.Presentation.Environment
                         blocker.GetComponentInParent<AnimalHealthPresentation>() != null) continue;
                     var wall=blocker.GetComponentInParent<Game.Presentation.Buildings.BuildingPresenter>();
                     if(replaceOwnedPalisade && wall!=null && wall.IsBound && wall.Building.IsOperational &&
-                        wall.Building.OwnerSideId.Value=="player" && wall.Building.DefinitionId.ToString()=="palisade")continue;
+                        wall.Building.OwnerSideId.Value=="player" && wall.Building.DefinitionId.FamilyId.ToString()=="palisade")continue;
                     var poi = blocker.GetComponentInParent<WorldMapPoiProtectionVolume>();
                     if (poi != null)
                     {

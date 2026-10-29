@@ -117,8 +117,8 @@ namespace Game.Simulation.Buildings
         private const int MaximumAuthoredCells = 4096;
         private readonly Dictionary<StableEntityId,List<(Building wall,GridCoordinate[] cells)>> gateCuts = new();
         private bool ReplaceableWall(GridCoordinate cell,BuildingDefinition definition)
-            => definition.Id.ToString()=="gate" && occupancy.TryGetOwner(cell,out var id) &&
-                registry.TryGet(id,out var wall) && wall.DefinitionId.ToString()=="palisade" &&
+            => definition.Id.FamilyId.ToString()=="gate" && occupancy.TryGetOwner(cell,out var id) &&
+                registry.TryGet(id,out var wall) && wall.DefinitionId.FamilyId.ToString()=="palisade" &&
                 wall.OwnerSideId.Value=="player" && wall.IsOperational;
 
         private readonly BuildingRegistry registry;
@@ -182,7 +182,7 @@ namespace Game.Simulation.Buildings
             var cuts=new List<(Building wall,GridCoordinate[] cells)>();
             if(request.Definition.Id.ToString()=="gate")
             {
-                foreach(var wall in registry.All.Where(x=>x.DefinitionId.ToString()=="palisade" &&
+                foreach(var wall in registry.All.Where(x=>x.DefinitionId.FamilyId.ToString()=="palisade" &&
                     x.PlacementCells.Any(evaluation.Cells.Contains)).ToArray())
                 {
                     var old=wall.PlacementCells.ToArray(); cuts.Add((wall,old));

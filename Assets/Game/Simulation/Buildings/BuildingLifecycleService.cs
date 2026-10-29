@@ -40,6 +40,58 @@ namespace Game.Simulation.Buildings
         private readonly ProductionService production;
         private WorkManager work;
         private Func<Building, WorldPosition> approachPosition;
+        public Func<BuildingDefinition, bool> UpgradeTechnologyAvailable { get; set; }
+        public Func<StableEntityId, Building, bool> UpgradeWorkerAllowed { get; set; }
+
+        public WorkOrder UpgradeJob(StableEntityId id) => work?.Jobs.FirstOrDefault(x =>
+            x.Type == WorkJobType.Upgrade && x.Target.EntityId == id && !x.IsTerminal);
+
+        public BuildingUpgradeOption UpgradeOption(Building building) =>
+            definitions(building.DefinitionId).Upgrades?.Options.SingleOrDefault();
+
+        public BuildingLifecycleResult RequestUpgrade(StableEntityId id)
+        {
+            if (!buildings.TryGet(id, out var building)) return Fail(BuildingLifecycleFailure.MissingBuilding);
+            if (!building.IsOperational) return Fail(BuildingLifecycleFailure.InactiveBuilding);
+            if (work == null || approachPosition == null) return Fail(BuildingLifecycleFailure.Unsupported);
+            if (UpgradeJob(id) != null || DemolitionJob(id) != null) return Fail(BuildingLifecycleFailure.DuplicateOperation);
+            var option = UpgradeOption(building);
+            if (option == null) return Fail(BuildingLifecycleFailure.InvalidUpgrade);
+            var target = definitions(option.TargetDefinitionId);
+            if (UpgradeTechnologyAvailable != null && !UpgradeTechnologyAvailable(target))
+                return Fail(BuildingLifecycleFailure.Unsupported);
+            if (!TryPlan(option.Cost, UpgradeFunding(building), out _)) return Fail(BuildingLifecycleFailure.InsufficientResources);
+            work.CreateDirectJob(WorkJobType.Upgrade, null,
+                WorkTarget.ForEntity(WorkTargetKind.Building,id,approachPosition(building)),WorkPriority.High,
+                work.Groups.All.FirstOrDefault(x=>x.Role==WorkGroupRole.Builders)?.Id);
+            return new BuildingLifecycleResult(BuildingLifecycleFailure.None);
+        }
+
+        private IEnumerable<InventoryOwner> UpgradeFunding(Building building) => inventories.All
+            .Where(x => x.Owner.Kind == InventoryOwnerKind.WorldPile ||
+                x.Owner.Kind == InventoryOwnerKind.BuildingStorage && buildings.TryGet(x.Owner.Id,out var owner) &&
+                owner.IsOperational && owner.OwnerSideId == building.OwnerSideId)
+            .OrderBy(x=>x.Owner.Id).Select(x=>x.Owner);
+
+        public bool AdvanceUpgrade(WorkOrder job, TimeSpan delta, long calendarTick)
+        {
+            if (job == null || job.Type != WorkJobType.Upgrade || job.Status != WorkJobStatus.Active ||
+                !job.AssigneeId.HasValue || UpgradeJob(job.Target.EntityId) != job) return false;
+            if (!buildings.TryGet(job.Target.EntityId,out var building) || !building.IsOperational)
+            { work.Fail(job.Id); return false; }
+            if(UpgradeWorkerAllowed!=null&&!UpgradeWorkerAllowed(job.AssigneeId.Value,building))
+            {work.Fail(job.Id);return false;}
+            var option=UpgradeOption(building);
+            if(option==null){work.Fail(job.Id);return false;}
+            if(UpgradeTechnologyAvailable!=null && !UpgradeTechnologyAvailable(definitions(option.TargetDefinitionId)))return false;
+            // Costs are consumed atomically at completion, so cancelling never loses resources.
+            // If another job spent the stock, this work waits without inventing materials.
+            if(!TryPlan(option.Cost,UpgradeFunding(building),out _))return false;
+            job.AdvanceProgress(delta);
+            if(job.ProgressTicks<option.WorkRequiredTicks)return false;
+            return Upgrade(building.Id,option.TargetDefinitionId,StableEntityId.FromDeterministicHash(0x55504752414445UL,(ulong)job.Id.Value),
+                TimeSpan.FromTicks(job.ProgressTicks),calendarTick,UpgradeFunding(building)).Succeeded;
+        }
 
         public void ConfigureWork(WorkManager manager, Func<Building, WorldPosition> approach)
         { work = manager ?? throw new ArgumentNullException(nameof(manager)); approachPosition = approach; }
@@ -141,7 +193,7 @@ namespace Game.Simulation.Buildings
             if (!building.IsOperational) return Fail(BuildingLifecycleFailure.InactiveBuilding);
             if (definitions(building.DefinitionId).Maintenance?.CanDemolish != true || work == null || approachPosition == null)
                 return Fail(BuildingLifecycleFailure.Unsupported);
-            if (DemolitionJob(buildingId) != null) return Fail(BuildingLifecycleFailure.DuplicateOperation);
+            if (DemolitionJob(buildingId) != null || UpgradeJob(buildingId) != null) return Fail(BuildingLifecycleFailure.DuplicateOperation);
             work.CreateDirectJob(WorkJobType.Demolish, null,
                 WorkTarget.ForEntity(WorkTargetKind.Building, buildingId, approachPosition(building)), WorkPriority.High);
             return new BuildingLifecycleResult(BuildingLifecycleFailure.None);

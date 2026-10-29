@@ -581,6 +581,7 @@ namespace Game.Presentation.AI
                 WorkJobType.Mine => CharacterAnimationIntent.Mine,
                 WorkJobType.Build => CharacterAnimationIntent.Build,
                 WorkJobType.Demolish => CharacterAnimationIntent.Build,
+                WorkJobType.Upgrade => CharacterAnimationIntent.Build,
                 WorkJobType.Haul => CharacterAnimationIntent.Carry,
                 WorkJobType.Military or WorkJobType.Guard => CharacterAnimationIntent.Combat,
                 _ => CharacterAnimationIntent.Gather

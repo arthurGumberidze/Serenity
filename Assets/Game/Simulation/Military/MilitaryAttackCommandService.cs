@@ -98,7 +98,7 @@ namespace Game.Simulation.Military
             {
                 exists = buildings.TryGet(target.EntityId, out var building) && !building.IsDestroyed;
                 hostile = exists && sameSide && building.OwnerSideId.Value != side.Value;
-                militaryBuilding = exists && building.DefinitionId == MilitaryTrainingService.BarracksDefinitionId;
+                militaryBuilding = exists && building.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId;
             }
             return MilitaryDirectTargetRules.Evaluate(ids.Length > 0, allMilitary, sameSide,
                 target.Kind, exists, hostile, militaryBuilding, physicalPath);

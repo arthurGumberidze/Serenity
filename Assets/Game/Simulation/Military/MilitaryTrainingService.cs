@@ -147,7 +147,7 @@ namespace Game.Simulation.Military
             var capability = capabilities.GetCapabilities(characterId);
             if (!capability.IsAdult) return MilitaryTrainingStartFailure.NotAdult;
             if (capability.IsIncapacitated) return MilitaryTrainingStartFailure.Incapacitated;
-            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId != BarracksDefinitionId)
+            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId.FamilyId != BarracksDefinitionId)
                 return MilitaryTrainingStartFailure.MissingBarracks;
             if (!barracks.IsOperational) return MilitaryTrainingStartFailure.BarracksInactive;
             if (!sideId.IsValid || barracks.OwnerSideId != sideId)
@@ -228,7 +228,7 @@ namespace Game.Simulation.Military
             var capability = capabilities.GetCapabilities(characterId);
             if (!capability.IsAdult || capability.IsIncapacitated)
                 throw new InvalidOperationException("Diagnostic graduate must be an available adult.");
-            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId != BarracksDefinitionId ||
+            if (!buildings.TryGet(barracksId, out var barracks) || barracks.DefinitionId.FamilyId != BarracksDefinitionId ||
                 !barracks.IsOperational || barracks.OwnerSideId != sideId)
                 throw new InvalidOperationException("Diagnostic graduate requires an operational same-side barracks.");
             if (records.Any(x => x.CharacterId == characterId) || units.TryGetForMember(characterId, out _))

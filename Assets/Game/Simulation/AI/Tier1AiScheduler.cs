@@ -106,7 +106,7 @@ namespace Game.Simulation.AI
             if (domestic?.IsSleepingInBed(characterId) == true) return true;
             return world.Production != null &&
                 world.Production.TryGetActiveWorkplace(characterId, out var building) &&
-                building.DefinitionId != new Game.Domain.Buildings.BuildingDefinitionId("campfire");
+                building.DefinitionId.FamilyId != new Game.Domain.Buildings.BuildingDefinitionId("campfire");
         }
         public AutonomousWorkMode WorkMode => autonomousWorkMode;
 
@@ -712,12 +712,14 @@ namespace Game.Simulation.AI
             {
                 Action completion = null;
                 Func<TimeSpan, bool> advanceWork = null;
-                if (job.Type == WorkJobType.Demolish)
+                if (job.Type == WorkJobType.Demolish || job.Type == WorkJobType.Upgrade)
                 {
                     if (world.BuildingLifecycle == null || world.Buildings == null ||
                         !world.Buildings.TryGet(job.Target.EntityId, out var target) || !target.IsOperational)
                     { work.Fail(job.Id); return; }
-                    advanceWork = delta => world.BuildingLifecycle.AdvanceDemolition(job, delta, calendarTicks);
+                    advanceWork = delta => job.Type == WorkJobType.Upgrade
+                        ? world.BuildingLifecycle.AdvanceUpgrade(job,delta,calendarTicks)
+                        : world.BuildingLifecycle.AdvanceDemolition(job, delta, calendarTicks);
                 }
                 Game.Domain.Buildings.Building construction = null;
                 if (job.Type == WorkJobType.Build && world.Buildings != null &&
@@ -754,6 +756,7 @@ namespace Game.Simulation.AI
             switch (type)
             {
                 case WorkJobType.Demolish:
+                case WorkJobType.Upgrade:
                 case WorkJobType.Build: return CharacterSkillRules.Construction;
                 case WorkJobType.Military:
                 case WorkJobType.Guard: return CharacterSkillRules.Combat;

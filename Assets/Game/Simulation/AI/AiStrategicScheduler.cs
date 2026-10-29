@@ -215,8 +215,10 @@ namespace Game.Simulation.AI
             ICharacterCapabilityProvider capabilityProvider, MilitaryUnitService militaryUnits,
             GlobalMapService globalMap, BattleResolutionService battleService, BuildingRegistry buildings,
             BuildingDamageService buildingDamage = null, AiStrategicSettings strategicSettings = null,
-            AiDecisionService decisionService = null)
+            AiDecisionService decisionService = null, long initialCalendarTick = 0)
         {
+            if(initialCalendarTick<0)throw new ArgumentOutOfRangeException(nameof(initialCalendarTick));
+            LastProcessedTick=initialCalendarTick;
             worldSeed = simulationSeed; characters = characterRegistry ?? throw new ArgumentNullException(nameof(characterRegistry));
             capabilities = capabilityProvider ?? throw new ArgumentNullException(nameof(capabilityProvider));
             units = militaryUnits ?? throw new ArgumentNullException(nameof(militaryUnits));
@@ -375,7 +377,7 @@ namespace Game.Simulation.AI
             if (faction.Strategic.IsDefeated || faction.Strategic.PendingOrders.Any(x => x.Kind == AiDecisionKind.PrepareAttack) ||
                 faction.Training.Active.Count > 0) return;
             var barracks = buildingRegistry.All.Where(x => x.OwnerSideId == faction.Strategic.SideId &&
-                x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId && x.IsOperational).OrderBy(x => x.Id).FirstOrDefault();
+                x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId && x.IsOperational).OrderBy(x => x.Id).FirstOrDefault();
             if (barracks == null || !HasDevelopment(faction) ||
                 faction.Production.GetCanonicalTotal(new ResourceId("berries")) < settings.FoodTarget) return;
             var eligible = Eligible(faction, x => x.CanFight);
@@ -391,7 +393,7 @@ namespace Game.Simulation.AI
 
         private bool HasDevelopment(AiFactionRuntime faction) => new[] { "primitive_shelter", "storage_basket", "primitive_crop_plot" }
             .All(id => buildingRegistry.All.Any(x => x.OwnerSideId == faction.Strategic.SideId &&
-                x.DefinitionId.ToString() == id && x.IsOperational));
+                x.DefinitionId.FamilyId.ToString() == id && x.IsOperational));
 
         public double EstimateStrength(IEnumerable<StableEntityId> roster) => roster.Distinct()
             .Where(id => characters.TryGet(id, out var c) && c.LifeState == CharacterLifeState.Alive && capabilities.GetCapabilities(id).CanFight)
@@ -655,7 +657,7 @@ namespace Game.Simulation.AI
                 var settlement = map.Settlements.Single(x => x.Id == faction.Strategic.HomeSettlementId);
                 map.SynchronizeSettlement(settlement.Id, settlement.LocationId, settlement.OwnerSideId,
                     settlement.BuildingIds.Concat(new[] { placed.Id }), settlement.ResidentCharacterIds);
-                if (!faction.UsesWorkScheduler && definition.Id.ToString() == "primitive_crop_plot")
+                if (!faction.UsesWorkScheduler && definition.Id.FamilyId.ToString() == "primitive_crop_plot")
                     faction.Production.AddSite(ProductionSite.CreateCropPlot(placed.Id,
                         new ProductionRecipeId("cultivate_berries"), new WorldPosition(coordinate.X, 0, coordinate.Z),
                         faction.Production.Settings.CropGrowthDuration));

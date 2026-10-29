@@ -63,6 +63,7 @@ namespace Game.Simulation.Work
             {
                 case WorkJobType.Gather: return WorkGroupRole.Gatherers;
                 case WorkJobType.Demolish:
+                case WorkJobType.Upgrade:
                 case WorkJobType.Build: return WorkGroupRole.Builders;
                 case WorkJobType.Haul: return WorkGroupRole.Haulers;
                 case WorkJobType.Craft: return WorkGroupRole.Crafters;

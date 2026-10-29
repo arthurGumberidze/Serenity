@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.Characters;
+using Game.Domain.Military;
 using Game.Simulation.Characters;
 using UnityEngine;
 
@@ -19,13 +20,23 @@ namespace Game.Presentation.Characters
         private readonly Func<Vector3, Vector3> positionProjector;
         private readonly Func<Character, bool> isRuler;
         private readonly Func<Character, bool> isChild;
+        private readonly Func<StableEntityId, MilitaryRank?> militaryRank;
         private readonly HashSet<StableEntityId> detailedUmaCharacters = new HashSet<StableEntityId>();
         private readonly Dictionary<StableEntityId, GameObject> residentStyles = new();
 
-        private GameObject ResidentStyle(Character character) => isRuler != null && !isRuler(character)
+        private GameObject ResidentStyle(Character character)
+        {
+            var rank = militaryRank?.Invoke(character.Id);
+            if (rank.HasValue && catalog.MilitaryUniforms != null)
+            {
+                var uniform = catalog.MilitaryUniforms.Resolve(rank.Value, character.Sex);
+                if (uniform != null) return uniform;
+            }
+            return isRuler != null && !isRuler(character)
             ? appearances?.GetOrCreate(character).ClothingId == StoneAgeAppearanceProfiles.MilitaryClothing
                 ? catalog.ResolveTrainedResident(character.Sex) ?? catalog.ResolveResident(character.Sex,false)
                 : catalog.ResolveResident(character.Sex, isChild?.Invoke(character) == true) : null;
+        }
 
         public bool RequiresStyleRefresh(Character character) => character != null &&
             residentStyles.TryGetValue(character.Id, out var previous) && previous != ResidentStyle(character);
@@ -33,7 +44,8 @@ namespace Game.Presentation.Characters
         public CharacterPresentationSpawner(CharacterPresentationCatalog catalog,
             CharacterPresentationRegistry registry, CharacterAppearanceService appearanceService = null,
             Transform parent = null, Func<Vector3, Vector3> presentationPositionProjector = null,
-            Func<Character, bool> rulerSelector = null, Func<Character, bool> childSelector = null)
+            Func<Character, bool> rulerSelector = null, Func<Character, bool> childSelector = null,
+            Func<StableEntityId, MilitaryRank?> militaryRankSelector = null)
         {
             this.catalog = catalog != null ? catalog : throw new ArgumentNullException(nameof(catalog));
             this.registry = registry ?? throw new ArgumentNullException(nameof(registry));
@@ -42,6 +54,7 @@ namespace Game.Presentation.Characters
             positionProjector = presentationPositionProjector;
             isRuler = rulerSelector;
             isChild = childSelector;
+            militaryRank = militaryRankSelector;
         }
 
         public CharacterPresenter Spawn(Character character, Vector3 position, Quaternion rotation)

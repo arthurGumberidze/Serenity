@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbf65a31ecd2e7c408ea2ca4f37982a6, type: 3}
+  m_Name: MilitaryUniforms
+  m_EditorClassIdentifier: Game.Presentation::Game.Presentation.Characters.MilitaryUniformCatalog
+  Entries:
+  - MinimumRank: 1
+    Male: {fileID: 7247385493923432554, guid: 10f826024f75ddd4aaa27432f21a7bde, type: 3}
+    Female: {fileID: 1574699102447543131, guid: d81624030ab5a724fbb3bfd5819d466b, type: 3}
+  - MinimumRank: 4
+    Male: {fileID: 7310210847501435951, guid: 1752d13028ab99f4c80f65d48829085f, type: 3}
+    Female: {fileID: 1871585460934275803, guid: 71a04c2ed659d0e4596a70e2d007fc92, type: 3}
+  - MinimumRank: 5
+    Male: {fileID: 1341327286703375455, guid: f5ba7a4cf5c98ee43821e67dc05cfa2b, type: 3}
+    Female: {fileID: 8458387558738307307, guid: 0f13550996daf264898be1f42b9b0603, type: 3}
+  - MinimumRank: 6
+    Male: {fileID: 1993853236603347872, guid: f1b9fc91652ccaa469bb2ac45f1f9c95, type: 3}
+    Female: {fileID: 990156706731895978, guid: 3d13c30f8b682b947b7330860961dc91, type: 3}
+  - MinimumRank: 7
+    Male: {fileID: 8166899779002038658, guid: fd14105babb3fe64dabc57c0bc3c1df5, type: 3}
+    Female: {fileID: 1783812061937295072, guid: 8cd69cf78d1054b4c9d9b5e534e02336, type: 3}
+  - MinimumRank: 8
+    Male: {fileID: 6829878638859408383, guid: 4d234ab92a2f1064292860e6404e1e6a, type: 3}
+    Female: {fileID: 20096232254891381, guid: ca721ac75b1680746b624143dd516c78, type: 3}
+  - MinimumRank: 9
+    Male: {fileID: 4358814213949033903, guid: 66b0f1eed4a0780409c917810e6d4050, type: 3}
+    Female: {fileID: 8339971393220521892, guid: c966d0e28c9155e40ad527ec9533430b, type: 3}
+  - MinimumRank: 10
+    Male: {fileID: 5407388598800454143, guid: 774f96d333000234eb9835f40942e8ef, type: 3}
+    Female: {fileID: 6718195799745092663, guid: e158d187d97f5644bb4ac1d9193cd0ec, type: 3}

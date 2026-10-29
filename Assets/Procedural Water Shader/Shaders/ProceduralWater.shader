@@ -331,7 +331,10 @@ Shader "FX/ProceduralWater"
 
                 // Refraction/depth taps outside the camera texture produced a bright horizontal
                 // band at the lower screen edge when the camera approached a lake.
-                float2 uv = saturate(i.screenUv);
+                // In the fragment stage SV_POSITION is in pixels. Computing this from clip-space
+                // vertices and interpolating the result samples unrelated parts of the camera,
+                // especially when a large shoreline triangle intersects the near plane.
+                float2 uv = GetNormalizedScreenSpaceUV(i.positionCS);
 
                 float rawDepth = SampleSceneDepth(uv);
                 float sceneDepth = LinearEyeDepth(rawDepth, _ZBufferParams);

@@ -1,5 +1,31 @@
 # PROJECT_STATE.md
 
+## WM15 existing-asset expansion — delivered and verified (2026-10-30)
+
+Authored 33 level-II upgrade chains (including two legacy hidden definitions), three new buildings,
+and sixteen male/female rank-uniform prefabs from the existing library. Player housing follows the latest
+instruction: a four-resident hut upgrades into the existing six-resident stone house; the communal house
+is independently buildable. Upgrades use builder arrival, sustained work, editable research/cost/time,
+cancellation and atomic final material consumption. Identity, assignments, inventories and production
+queues survive the model change; maximum integrity increases without healing current damage.
+
+Alpine-foot snow now has raised deformable geometry with motion-driven tracks. Military appearance uses
+one suit below lieutenant and progressively richer officer variants. Water screen UV computation is corrected
+and the mountain lake uses mesh-authored depth. The new-world AI scheduler starts at the same calendar tick
+as its factions, fixing immediate paused-world save/load validation.
+
+Persistent Unity runner: 104 affected domain/content cases passed; strategic group passed 26/26 after fixture
+repairs; final content review passed 4/4. Rendered Editor route passed 1/1 (20 conditions). Visual review then
+corrected snow overexposure and the acceptance camera's Cinemachine override. Windows Development build
+`Builds/WM15AssetExpansion/Serenity.exe` passed with 0 errors / 0 warnings and immutable-source provenance.
+Actual Windows Player exited 0 with 21/21 checks and no scenario runtime errors. Images show depressed snow
+tracks and stable mountain-lake rendering at 20, 5 and 1 metres. The manually positioned 60-metre camera
+also exposes a terrain coverage boundary; that frame is not evidence of general terrain completeness.
+Details, shutdown diagnostics and evidence are recorded in `docs/validation/WM15AssetExpansion.md`.
+
+Editable settings and scope limits: `docs/world_map/WM15_ASSET_EXPANSION.md`. Existing unrelated mountain/import
+changes remain preserved in the working tree. Deferred 100/300/500 population gates remain outside this task.
+
 ## Persistent Unity test/build runner — implemented and verified (2026-10-29)
 
 `Tools/UnityRunner.ps1` now keeps one ordinary hidden Unity 6000.6.4f1 Editor alive and serializes incremental

@@ -231,7 +231,7 @@ namespace Game.Infrastructure
         {
             if(root?.Production==null||root.Buildings==null||Time.unscaledTime<nextPierRefresh)return;
             nextPierRefresh=Time.unscaledTime+1f;
-            foreach(var building in root.Buildings.All.Where(x=>x.IsOperational&&x.DefinitionId.ToString()=="fishing_pier"))
+            foreach(var building in root.Buildings.All.Where(x=>x.IsOperational&&x.DefinitionId.FamilyId.ToString()=="fishing_pier"))
             {
                 if(builtPiers.Contains(building.Id)||!root.BuildingPresentations.TryGet(building.Id,out var view))continue;
                 var start=view.transform.position;var forward=view.transform.forward;

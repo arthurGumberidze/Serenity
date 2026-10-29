@@ -539,7 +539,7 @@ namespace Game.Presentation.UI
             }
             if (target.Kind == ContextTargetKind.Building &&
                 context.Buildings.TryGet(target.EntityId, out var actionBuilding) &&
-                actionBuilding.DefinitionId == MilitaryTrainingService.BarracksDefinitionId)
+                actionBuilding.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId)
                 AddBarracksTrainingContext(actionBuilding);
             if (isCropTarget) AddCropActions(cropTarget);
             AddMuted(contextMenu, "Обычный выбор отменяет прежнюю очередь. Shift + выбор добавляет приказ в хвост.");
@@ -663,7 +663,7 @@ namespace Game.Presentation.UI
                         !policy.WorkPaused, policy.GateAccess)), "building-work-toggle"));
             }
 
-            if (building.DefinitionId == new BuildingDefinitionId("gate"))
+            if (building.DefinitionId.FamilyId == new BuildingDefinitionId("gate"))
             {
                 AddMuted(parent, "Режим ворот");
                 foreach (var value in new[] { GateAccessMode.Open, GateAccessMode.Closed,
@@ -704,8 +704,8 @@ namespace Game.Presentation.UI
         private bool CanGuardAt(Building building)
         {
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
-            return building.DefinitionId == new BuildingDefinitionId("gate") ||
-                building.DefinitionId == new BuildingDefinitionId("chief_hut") ||
+            return building.DefinitionId.FamilyId == new BuildingDefinitionId("gate") ||
+                building.DefinitionId.FamilyId == new BuildingDefinitionId("chief_hut") ||
                 definition.Category == BuildingCategory.Military;
         }
 
@@ -752,7 +752,7 @@ namespace Game.Presentation.UI
             cropTarget = default;
             if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var garden) ||
                 !garden.IsOperational || garden.OwnerSideId.Value != "player" ||
-                garden.DefinitionId.ToString()=="animal_pasture" ||
+                garden.DefinitionId.FamilyId.ToString()=="animal_pasture" ||
                 !context.Production.TryGetSite(garden.Id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot)
                 return false;
             cropTarget = new ContextCommandTarget(ContextTargetKind.ResourceSource, site.Position,
@@ -764,7 +764,7 @@ namespace Game.Presentation.UI
         {
             fishTarget = default;
             if (target.Kind != ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId, out var camp) ||
-                camp.DefinitionId.ToString() != "fishing_camp" || !camp.IsOperational || camp.OwnerSideId.Value != "player") return false;
+                camp.DefinitionId.FamilyId.ToString() != "fishing_camp" || !camp.IsOperational || camp.OwnerSideId.Value != "player") return false;
             if (!context.Production.Sites.Any(s => s.OwnerBuildingId == camp.Id && s.RecipeId.ToString() == "fish_camp")) return false;
             fishTarget = target;
             return true;
@@ -774,7 +774,7 @@ namespace Game.Presentation.UI
         {
             fishTarget=default;
             if(target.Kind!=ContextTargetKind.Building || !context.Buildings.TryGet(target.EntityId,out var pier) ||
-                pier.DefinitionId.ToString()!="fishing_pier" || !pier.IsOperational || pier.OwnerSideId.Value!="player")return false;
+                pier.DefinitionId.FamilyId.ToString()!="fishing_pier" || !pier.IsOperational || pier.OwnerSideId.Value!="player")return false;
             var stock=context.Production.FishStockAt(target.Position);
             if(stock==null)return false;
             fishTarget=new ContextCommandTarget(ContextTargetKind.ResourceSource,stock.Position,stock.Id,
@@ -1444,8 +1444,8 @@ namespace Game.Presentation.UI
         {
             var berries = new ResourceId("berries");
             var shelter = context.Buildings.All.Any(x =>
-                x.DefinitionId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
-            var storage = context.Buildings.All.Any(x => x.DefinitionId == new BuildingDefinitionId("storage_basket") &&
+                x.DefinitionId.FamilyId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
+            var storage = context.Buildings.All.Any(x => x.DefinitionId.FamilyId == new BuildingDefinitionId("storage_basket") &&
                                                           x.IsOperational && context.Inventories.TryGet(
                                                               new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
             var researchStarted = context.Research.ActiveProject != null || context.Research.CompletedTechnologies.Any(x =>
@@ -1881,9 +1881,9 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, T("ui.economy.title"));
             var shelterReady = context.Buildings.All.Any(x =>
-                x.DefinitionId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
+                x.DefinitionId.FamilyId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
             var storageReady = context.Buildings.All.Any(x =>
-                x.DefinitionId == new BuildingDefinitionId("storage_basket") && x.IsOperational &&
+                x.DefinitionId.FamilyId == new BuildingDefinitionId("storage_basket") && x.IsOperational &&
                 context.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
             var playerIds = PlayerCharacterIds();
             var population = playerIds.Count(id => context.Characters.TryGet(id, out var person) &&
@@ -1946,7 +1946,8 @@ namespace Game.Presentation.UI
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
                 // Retain the legacy ID for existing scenes/saves, not as a second player option.
-                if (entry.DefinitionId == "primitive_crop_plot" || entry.DefinitionId == "primitive_shelter") continue;
+                if (entry.DefinitionId == "primitive_crop_plot" || entry.DefinitionId == "primitive_shelter" || entry.DefinitionId=="clan_house") continue;
+                if (entry.DefinitionId.EndsWith("_level2",StringComparison.Ordinal)) continue;
                 var definition = entry.CreateDefinition();
                 if (!MatchesBuildCategory(definition, buildCategory)) continue;
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
@@ -2315,7 +2316,7 @@ namespace Game.Presentation.UI
             else if (!hasCaptain) AddMuted(mainPanel, T("ui.military.no_captain"));
             AddSection(mainPanel, "Обучение в казармах");
             var traineeId = context.Selection.SelectedCharacterId;
-            var barracks = context.Buildings.All.Where(x => x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId &&
+            var barracks = context.Buildings.All.Where(x => x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId &&
                     x.IsOperational && x.OwnerSideId.Value == "player").OrderBy(x => x.Id).FirstOrDefault();
             if (!traineeId.HasValue) AddMuted(mainPanel, "Выберите одного взрослого жителя.");
             else
@@ -2945,7 +2946,7 @@ namespace Game.Presentation.UI
         {
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
             AddSection(inspector, Content("building", definition.Id.ToString()));
-            AddLine(inspector, "Уровень здания: 1");
+            AddLine(inspector, "Уровень здания: "+(definition.Id==definition.Id.FamilyId&&definition.Id.ToString()!="clan_house"?"1":"2"));
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
             if (building.IsOperational) AddBuildingPolicyControls(inspector, building);
             if (building.IsOperational && definition.Housing != null)
@@ -2962,7 +2963,7 @@ namespace Game.Presentation.UI
                         "home-resident-" + resident));
                 }
             }
-            if (building.IsOperational && building.DefinitionId == MilitaryTrainingService.BarracksDefinitionId)
+            if (building.IsOperational && building.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId)
             {
                 var trainees = context.MilitaryTraining.Active.Where(x => x.BarracksId == building.Id)
                     .OrderBy(x => x.CompletionTick).ThenBy(x => x.CharacterId).ToArray();
@@ -3164,7 +3165,7 @@ namespace Game.Presentation.UI
                         AddLine(inspector, "Смена культуры доступна после сбора урожая.");
                 }
             }
-            if (building.DefinitionId == new BuildingDefinitionId("hunting_camp"))
+            if (building.DefinitionId.FamilyId == new BuildingDefinitionId("hunting_camp"))
             {
                 var hunting = context.Production.HuntingPolicies.FirstOrDefault(x => x.BuildingId == building.Id) ??
                     new HuntingLodgePolicyState(building.Id, HuntingOperationMode.Hunt, 0);
@@ -3176,7 +3177,7 @@ namespace Game.Presentation.UI
                     "Восстановление популяции", () => TryCommand(() => context.Production.SetHuntingPolicy(building.Id,
                         HuntingOperationMode.RestorePopulation, hunting.TargetCarcasses))));
             }
-            if (building.DefinitionId == new BuildingDefinitionId("healer_hut"))
+            if (building.DefinitionId.FamilyId == new BuildingDefinitionId("healer_hut"))
             {
                 var patients = context.Facilities.ClinicPatients.Where(x => x.ClinicId == building.Id).ToArray();
                 AddSection(inspector, $"Лечебница: врачи занимают 2 из 6 мест · пациентов {patients.Length}/4");
@@ -3188,7 +3189,7 @@ namespace Game.Presentation.UI
                 x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id).ToArray();
             if (workplaceSites.Length > 0)
             {
-                if (building.DefinitionId.ToString()=="fishing_camp")
+                if (building.DefinitionId.FamilyId.ToString()=="fishing_camp")
                 {
                     var stock = context.Production.FishStockAt(workplaceSites[0].Position);
                     AddLine(inspector,stock == null ? "Нет доступного водоёма" : $"Рыба в водоёме: {stock.RemainingAmount}/{stock.SourceCapacity}");
@@ -3224,7 +3225,7 @@ namespace Game.Presentation.UI
                         recipeRow.Add(ActionButton("+1", () => TryCommand(() => QueueProduction(building, capturedRecipe, 1))));
                         recipeRow.Add(ActionButton("+5", () => TryCommand(() => QueueProduction(building, capturedRecipe, 5))));
                     }
-                    if (building.DefinitionId.ToString() != "fishing_camp") recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
+                    if (building.DefinitionId.FamilyId.ToString() != "fishing_camp") recipeRow.Add(ActionButton(workplaceSite.Paused ? "Продолжить" : "Пауза", () => TryCommand(() =>
                         context.Production.SetWorkplacePaused(building.Id, capturedRecipe, !workplaceSite.Paused))));
                     inspector.Add(recipeRow);
                 }
@@ -3238,7 +3239,7 @@ namespace Game.Presentation.UI
                 new WorldPosition(buildingPosition.x, buildingPosition.y, buildingPosition.z), building.Id),
                 context.Selection.SelectedCharacterIds);
             var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, workTarget.Position);
-            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
+            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.FamilyId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
             {
@@ -3265,7 +3266,7 @@ namespace Game.Presentation.UI
                             context.Facilities.ChangeWorkplace(id, building.Id).Succeeded);
                         SetStatus($"Назначено работников: {assigned}.");
                     })));
-                if (building.DefinitionId == new BuildingDefinitionId("training_ground"))
+                if (building.DefinitionId.FamilyId == new BuildingDefinitionId("training_ground"))
                     inspector.Add(ActionButton("Провести тренировку", () => TryCommand(() =>
                     {
                         var trained = 0;
@@ -3276,7 +3277,7 @@ namespace Game.Presentation.UI
                         }
                         SetStatus($"Прошли тренировку: {trained}.");
                     })));
-                if (building.DefinitionId == new BuildingDefinitionId("healer_hut") &&
+                if (building.DefinitionId.FamilyId == new BuildingDefinitionId("healer_hut") &&
                     context.Selection.SelectedCharacterIds.Count >= 2)
                     inspector.Add(ActionButton("Лечить выбранных", () => TryCommand(() =>
                     {
@@ -3290,10 +3291,10 @@ namespace Game.Presentation.UI
                         SetStatus($"Лекарь завершил лечение; снято состояний: {recovered}.");
                     })));
             }
-            if (building.DefinitionId == new BuildingDefinitionId("military_barracks"))
+            if (building.DefinitionId.FamilyId == new BuildingDefinitionId("military_barracks"))
             {
                 var rally = context.Buildings.All.FirstOrDefault(x => x.IsOperational &&
-                    x.DefinitionId == new BuildingDefinitionId("rally_point") && x.OwnerSideId == building.OwnerSideId);
+                    x.DefinitionId.FamilyId == new BuildingDefinitionId("rally_point") && x.OwnerSideId == building.OwnerSideId);
                 var gather = ActionButton("Собрать военных на точке сбора", () => TryCommand(() =>
                 {
                     if (rally == null) throw new PlayerFacingException("Сначала постройте точку сбора.");
@@ -3318,6 +3319,35 @@ namespace Game.Presentation.UI
                 })));
             else if (context.BuildingLifecycle != null)
             {
+                var upgradeOption=context.BuildingLifecycle.UpgradeOption(building);
+                var upgradeJob=context.BuildingLifecycle.UpgradeJob(building.Id);
+                if(upgradeOption!=null && building.OwnerSideId==new CombatSideId("player"))
+                {
+                    var upgradedDefinition=context.BuildingCatalog.ResolveDefinition(upgradeOption.TargetDefinitionId);
+                    AddLine(inspector,"Следующий уровень: "+Content("building",upgradedDefinition.Id.ToString()));
+                    AddMuted(inspector,"Стоимость: "+string.Join(", ",upgradeOption.Cost.Select(x=>
+                        Content("resource",x.ResourceId.ToString())+" ×"+x.Quantity.Units))+
+                        "; работа: "+TimeSpan.FromTicks(upgradeOption.WorkRequiredTicks).TotalMinutes+" игровых мин.");
+                    if(upgradeJob!=null)
+                    {
+                        AddLine(inspector,"Улучшение: "+RussianTextCatalog.Percent((double)upgradeJob.ProgressTicks/upgradeOption.WorkRequiredTicks));
+                        AddMuted(inspector,"Требуются свободный строитель, доступ к зданию и материалы на складе. Материалы списываются при завершении.");
+                        inspector.Add(ActionButton("Отменить улучшение",()=>TryCommand(()=>context.Work.Cancel(upgradeJob.Id))));
+                    }
+                    else
+                    {
+                        var unlocked=upgradedDefinition.RequiredTechnologies.All(id=>context.Research.IsCompleted(id));
+                        var button=ActionButton("Улучшить до уровня II",()=>TryCommand(()=>
+                        {
+                            var result=context.BuildingLifecycle.RequestUpgrade(building.Id);
+                            if(!result.Succeeded)throw new PlayerFacingException(result.Failure==Game.Simulation.Buildings.BuildingLifecycleFailure.InsufficientResources
+                                ? "Не хватает материалов для улучшения." : "Улучшение недоступно: "+result.Failure);
+                            SetStatus("Улучшение назначено строителям.");
+                        }));
+                        button.SetEnabled(unlocked);inspector.Add(button);
+                        if(!unlocked)AddMuted(inspector,"Сначала завершите исследования: "+string.Join(", ",upgradedDefinition.RequiredTechnologies.Select(id=>Content("technology",id.ToString()))));
+                    }
+                }
                 if (definition.Maintenance != null && building.CurrentIntegrity < building.MaxIntegrity)
                     inspector.Add(ActionButton("Ремонтировать", () => TryCommand(() =>
                     {
@@ -3327,7 +3357,7 @@ namespace Game.Presentation.UI
                         if (!result.Succeeded) throw new PlayerFacingException("Ремонт недоступен: " + result.Failure);
                         SetStatus($"Ремонт завершён: +{result.IntegrityChanged} прочности.");
                     })));
-                if (building.DefinitionId == new BuildingDefinitionId("gate") && context.BuildingPathing != null)
+                if (building.DefinitionId.FamilyId == new BuildingDefinitionId("gate") && context.BuildingPathing != null)
                 {
                     var open = context.BuildingPathing.IsGateOpen(building.Id);
                     inspector.Add(ActionButton(open ? "Закрыть ворота" : "Открыть ворота", () => TryCommand(() =>

@@ -194,7 +194,7 @@ namespace Game.Simulation.Diagnostics
         private DiagnosticExecutionResult CreateArmy()
         {
             var side = new CombatSideId("player");
-            var barracks = buildings.All.Where(x => x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId &&
+            var barracks = buildings.All.Where(x => x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId &&
                     x.IsOperational && x.OwnerSideId == side).OrderBy(x => x.Id).FirstOrDefault();
             if (barracks == null)
                 return new DiagnosticExecutionResult(DiagnosticCommandKind.CreateArmy,

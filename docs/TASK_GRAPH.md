@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+WM15 existing-asset expansion (2026-10-30): **DONE / awaiting user retest**. Added level-II
+building chains with resource-funded builder work, separate communal house/storage/crafting hall, hut4 →
+existing stone house6, rank-dependent military presentation, deformable alpine-foot snow and corrected lake
+screen sampling. Persistent runner validated 104 domain/content cases, 26 strategic cases, 4 final content
+cases and 1 rendered route. Final immutable Windows build succeeded with 0 errors / 0 warnings;
+actual Player passed 21/21 checks, exited 0 and its close lake/snow images were reviewed.
+Evidence: `docs/validation/WM15AssetExpansion.md`; configuration: `docs/world_map/WM15_ASSET_EXPANSION.md`.
+The broader WM15 population/performance gates remain deferred.
+
 U00 persistent Unity test/build runner (2026-10-29): **DONE**. One Unity 6000.6.4f1 Editor process owns a
 file-backed, domain-reload-safe command queue for incremental compilation, asynchronous EditMode tests and
 Windows Development builds. Test XML, per-command logs, JSON exit status and build provenance are mandatory;

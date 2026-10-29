@@ -266,7 +266,8 @@ namespace Game.Domain.Research
             }
             var organizedLaborUnlocks = new List<TechnologyUnlock> { C("organized_labor") };
             foreach (var id in new[] { "military_barracks", "clan_house", "healer_hut", "shrine", "chief_hut",
-                         "meeting_area", "training_ground", "palisade", "gate", "watchtower", "primitive_path" })
+                         "meeting_area", "training_ground", "palisade", "gate", "watchtower", "primitive_path",
+                         "communal_house", "central_storehouse", "crafting_hall" })
             {
                 var buildingId = new BuildingDefinitionId(id);
                 if (availableBuildingIds.Contains(buildingId)) organizedLaborUnlocks.Add(TechnologyUnlock.Building(buildingId));

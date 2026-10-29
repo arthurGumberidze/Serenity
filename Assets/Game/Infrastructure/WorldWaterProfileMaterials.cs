@@ -116,14 +116,15 @@ namespace Game.Infrastructure
             Set(value,"_DeepColor",new Color(.018f,.105f,.20f,.98f));
             Set(value,"_ReflectionColor",new Color(.78f,.88f,.96f,.52f));
             Set(value,"_SpecularColor",new Color(1f,1f,1f,.56f));
-            Set(value,"_Shininess",340f); Set(value,"_RefractionStrength",.48f);
+            Set(value,"_Shininess",110f); Set(value,"_RefractionStrength",1f);
+            Set(value,"_UseVertexDepth",1f);
             Set(value,"_DepthMax",8.2f); Set(value,"_Absorption",.88f); Set(value,"_Opacity",1f);
             Set(value,"_MinAlpha",.52f); Set(value,"_DepthAlphaBoost",.68f);
             Set(value,"_RippleScale",1.65f); Set(value,"_RippleSpeed",.34f); Set(value,"_RippleStrength",.34f);
             Set(value,"_FoamIntensity",.22f); Set(value,"_ShoreDepth",.76f);
             Set(value,"_FoamNoiseScale",2.1f); Set(value,"_FoamNoiseSpeed",.28f);
             Set(value,"_FoamCrestThreshold",.82f); Set(value,"_FoamCrestIntensity",.08f);
-            Set(value,"_EdgeFoamIntensity",.32f); Set(value,"_GerstnerIntensity",.14f);
+            Set(value,"_EdgeFoamIntensity",0f); Set(value,"_GerstnerIntensity",.14f);
             Set(value,"_GAmplitude",new Vector4(.022f,.016f,.011f,.008f));
             Set(value,"_GFrequency",new Vector4(1.35f,1.8f,1.0f,.72f));
             Set(value,"_GSteepness",new Vector4(.28f,.24f,.2f,.16f));

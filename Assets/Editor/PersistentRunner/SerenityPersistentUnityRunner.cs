@@ -36,7 +36,15 @@ public static class SerenityPersistentUnityRunner
     {
         Directory.CreateDirectory(Root);
         Directory.CreateDirectory(RequestsPath);
+        // EditorInstance.json can still describe the previous process during InitializeOnLoad.
+        // Retry on the main thread; build/import workers never acquire the primary identity.
+        EditorApplication.update += InitializePrimary;
+    }
+
+    private static void InitializePrimary()
+    {
         if (!IsPrimaryEditorProcess()) return;
+        EditorApplication.update -= InitializePrimary;
         CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
         CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
         CompilationPipeline.compilationFinished -= OnCompilationFinished;

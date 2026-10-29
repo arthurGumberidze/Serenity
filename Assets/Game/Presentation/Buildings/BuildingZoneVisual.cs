@@ -57,11 +57,13 @@ namespace Game.Presentation.Buildings
                 var bound=GetComponent<BuildingPresenter>()?.IsBound==true;
                 foreach(var instance in instances)
                 {
-                    var cell=instance.GetComponent<BoxCollider>() ?? instance.AddComponent<BoxCollider>();
+                    var cell=instance.GetComponent<BoxCollider>();
+                    if(cell==null)cell=instance.AddComponent<BoxCollider>();
                     cell.center=new Vector3(0,size.y*.5f,0);cell.size=new Vector3(gridSize,size.y,.45f);
                     cell.enabled=bound;
                     if(!bound)continue;
-                    var obstacle=instance.GetComponent<UnityEngine.AI.NavMeshObstacle>() ?? instance.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+                    var obstacle=instance.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+                    if(obstacle==null)obstacle=instance.AddComponent<UnityEngine.AI.NavMeshObstacle>();
                     obstacle.shape=UnityEngine.AI.NavMeshObstacleShape.Box;
                     obstacle.center=cell.center;obstacle.size=cell.size;obstacle.carving=true;
                     obstacle.carveOnlyStationary=false;

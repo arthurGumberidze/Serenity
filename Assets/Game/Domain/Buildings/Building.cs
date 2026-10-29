@@ -197,7 +197,7 @@ namespace Game.Domain.Buildings
         public IReadOnlyList<GridCoordinate> PlacementCells => placementCells.AsReadOnly();
         public void ReplacePalisadeCells(IEnumerable<GridCoordinate> cells)
         {
-            if (DefinitionId.ToString() != "palisade") throw new InvalidOperationException("Only modular palisades can be trimmed.");
+            if (DefinitionId.FamilyId.ToString() != "palisade") throw new InvalidOperationException("Only modular palisades can be trimmed.");
             var values=cells.Distinct().ToArray(); placementCells.Clear(); placementCells.AddRange(values);
         }
 
@@ -404,9 +404,8 @@ namespace Game.Domain.Buildings
             if (target == null) throw new ArgumentNullException(nameof(target));
             if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
             if (IsDestroyed || !IsOperational || target.Id == DefinitionId || !processedDamageEvents.Add(eventId)) return false;
-            var oldMaximum = MaxIntegrity;
-            CurrentIntegrity = Math.Max(1, (int)Math.Min(target.MaxIntegrity,
-                ((long)CurrentIntegrity * target.MaxIntegrity + oldMaximum - 1L) / oldMaximum));
+            // A more durable structure is not a repair. Preserve absolute current integrity.
+            CurrentIntegrity = Math.Min(CurrentIntegrity, target.MaxIntegrity);
             DefinitionId = target.Id;
             MaxIntegrity = target.MaxIntegrity;
             StructuralStatus = StatusFor(CurrentIntegrity, MaxIntegrity);

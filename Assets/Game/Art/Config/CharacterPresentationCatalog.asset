@@ -48,3 +48,4 @@ MonoBehaviour:
   ChildResident: {fileID: 4520716785383396158, guid: b70262cbf47f5b16b4ed46cb3c62ec47, type: 3}
   MaleTrainedResident: {fileID: 1846530523549185644, guid: 23f907c94ad92894495c02b43a563c6f, type: 3}
   FemaleTrainedResident: {fileID: 6339786312913494083, guid: 435d261c1fe73ba46883b819e578219d, type: 3}
+  MilitaryUniforms: {fileID: 11400000, guid: c99d386310d50a842a1e3cbf3241e6a8, type: 2}

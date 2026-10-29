@@ -41,6 +41,18 @@ namespace Game.Tests.Editor
         private static readonly long DecisionStep = TimeSpan.FromHours(6).Ticks;
 
         [Test]
+        public void FreshPausedWorldAtNonZeroCalendarTimeCanRestoreItsFirstCheckpoint()
+        {
+            var start=TimeSpan.FromHours(10).Ticks;
+            var f=Fixture.Create(15007,initialCalendarTick:start);
+            var scheduler=f.Scheduler;
+            var snapshot=scheduler.CaptureState();
+            Assert.That(snapshot.LastProcessedTick,Is.EqualTo(start));
+            Assert.DoesNotThrow(()=>scheduler.RestoreState(snapshot));
+            Assert.That(f.Ai.Strategic.DecisionSequence,Is.Zero,"Saving must not simulate an extra AI decision.");
+        }
+
+        [Test]
         public void DefaultPolicyDevelopsPeacefullyWithoutOpeningRaid()
         {
             var f = Fixture.Create(15001, warPolicy: AiWarPolicy.SettlementFirst);
@@ -128,6 +140,9 @@ namespace Game.Tests.Editor
         public void EnemyBuildsBarracksTrainsRealResidentsAndKeepsCivilianReserve()
         {
             var f = Fixture.Create(15005, warPolicy: AiWarPolicy.SettlementFirst);
+            // Training now consumes actual equipment; this strategy fixture has no weapon workshop.
+            foreach(var gear in new[]{"stone_spear","leather_clothing","wooden_shield","combat_bow","arrows"})
+                f.Ai.WorldPiles.Create(new ResourceId(gear),new ResourceQuantity(60),new GridCoordinate(0,0));
             f.AdvanceTo(TimeSpan.FromDays(30).Ticks);
             Assert.That(f.Buildings.All.Any(x => x.OwnerSideId == f.EnemySide &&
                 x.DefinitionId == MilitaryTrainingService.BarracksDefinitionId && x.IsOperational), Is.True);
@@ -598,7 +613,7 @@ namespace Game.Tests.Editor
             public SettlementId PlayerSettlement;
             public SettlementId EnemySettlement;
 
-            public static Fixture Create(long seed, bool defender = false, AiWarPolicy warPolicy = null)
+            public static Fixture Create(long seed, bool defender = false, AiWarPolicy warPolicy = null, long initialCalendarTick = 0)
             {
                 var value = new Fixture { Seed = seed };
                 value.Characters = new CharacterRegistry();
@@ -671,7 +686,7 @@ namespace Game.Tests.Editor
                 var weather = new WeatherService(seed, ClimateProfile.Temperate, value.Health);
                 value.Damage = new BuildingDamageService(value.Buildings, definitions, value.PlayerProduction,
                     value.PlayerInventories, value.PlayerPiles, weather, value.Combat, value.Occupancy);
-                value.Ai = AiRuntimeBootstrap.CreateStarterEnemy(seed, 0, AdultBiologicalTick,
+                value.Ai = AiRuntimeBootstrap.CreateStarterEnemy(seed, initialCalendarTick, AdultBiologicalTick,
                     value.Characters, value.Health, value.Tiers, value.Map, value.Buildings, value.Placement,
                     value.Resources, value.Recipes, value.Technologies, definitions, weather);
                 value.Health.BindSuccession(value.Ai.Succession);
@@ -680,7 +695,7 @@ namespace Game.Tests.Editor
                 value.Scheduler = new AiStrategicScheduler(seed, value.Characters, value.Health, value.Units,
                     value.Map, value.Battles, value.Buildings, value.Damage,
                     new AiStrategicSettings(DecisionStep, 3, 24, 16, warPolicy: warPolicy ??
-                        new AiWarPolicy(0, 0, .01, 100, 0, false)));
+                        new AiWarPolicy(0, 0, .01, 100, 0, false)),initialCalendarTick:initialCalendarTick);
                 value.Scheduler.AddFaction(value.Ai);
                 if (warPolicy != null && warPolicy.RequireTraining)
                     value.Ai.Training = new MilitaryTrainingService(value.Characters, value.Health, value.Buildings,
@@ -763,6 +778,11 @@ namespace Game.Tests.Editor
             new ResourceDefinition(new ResourceId("stone"), "Stone", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("plant_fiber"), "Fiber", ResourceCategory.Construction),
             new ResourceDefinition(new ResourceId("hide"), "Hide", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("leather_clothing"), "Leather clothing", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("stone_spear"), "Spear", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("wooden_shield"), "Shield", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("combat_bow"), "Bow", ResourceCategory.Other),
+            new ResourceDefinition(new ResourceId("arrows"), "Arrows", ResourceCategory.Other),
             new ResourceDefinition(new ResourceId("berries"), "Berries", ResourceCategory.Food)
         });
 

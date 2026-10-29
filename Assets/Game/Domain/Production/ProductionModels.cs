@@ -422,7 +422,12 @@ namespace Game.Domain.Production
         public StableEntityId OwnerBuildingId { get; }
         public int QueuedBatches { get; private set; }
         public bool Paused { get; private set; }
-        public int MaximumWorkers { get; }
+        public int MaximumWorkers { get; private set; }
+        public void IncreaseWorkplaceCapacity(int workers)
+        {
+            if(workers<1)throw new ArgumentOutOfRangeException(nameof(workers));
+            if(Kind==ProductionSiteKind.BuildingWorkplace)MaximumWorkers=Math.Max(MaximumWorkers,workers);
+        }
         public bool Continuous { get; private set; }
         public void SetContinuous(bool enabled) { Continuous = enabled; }
         public bool IsDepleted => Kind == ProductionSiteKind.NaturalSource && RemainingAmount == 0;

@@ -39,7 +39,7 @@ namespace Game.Simulation.Buildings
         public bool SetGateAccessMode(StableEntityId buildingId, GateAccessMode mode)
         {
             if (!Enum.IsDefined(typeof(GateAccessMode), mode) ||
-                !buildings.TryGet(buildingId, out var building) || building.DefinitionId != GateDefinition ||
+                !buildings.TryGet(buildingId, out var building) || building.DefinitionId.FamilyId != GateDefinition ||
                 !building.IsOperational) return false;
             gateModes[buildingId] = mode;
             return SetGateOpen(buildingId, mode == GateAccessMode.Open || mode == GateAccessMode.AlliesOnly);
@@ -49,7 +49,7 @@ namespace Game.Simulation.Buildings
             CombatSideId? travelerSide)
         {
             if (!travelerId.IsValid || !buildings.TryGet(buildingId, out var gate) ||
-                gate.DefinitionId != GateDefinition || !gate.IsOperational) return GatePassageResult.Denied;
+                gate.DefinitionId.FamilyId != GateDefinition || !gate.IsOperational) return GatePassageResult.Denied;
             if (allowedTravelersOnce.Remove(travelerId)) return GatePassageResult.Allowed;
             switch (GetGateAccessMode(buildingId))
             {
@@ -79,7 +79,7 @@ namespace Game.Simulation.Buildings
 
         public bool SetGateOpen(StableEntityId buildingId, bool open)
         {
-            if (!buildings.TryGet(buildingId, out var building) || building.DefinitionId != GateDefinition ||
+            if (!buildings.TryGet(buildingId, out var building) || building.DefinitionId.FamilyId != GateDefinition ||
                 !building.IsOperational) return false;
             var definition = definitions(building.DefinitionId);
             var cells = Cells(building, definition);
@@ -112,16 +112,16 @@ namespace Game.Simulation.Buildings
                 return;
             }
             releasedDestroyed.Remove(building.Id);
-            if (building.DefinitionId == GateDefinition && openGates.Contains(building.Id))
+            if (building.DefinitionId.FamilyId == GateDefinition && openGates.Contains(building.Id))
                 occupancy.Release(cells, building.Id);
         }
 
         public void RebindAfterLoad()
         {
             openGates.RemoveWhere(id => !buildings.TryGet(id, out var building) || !building.IsOperational ||
-                building.DefinitionId != GateDefinition);
+                building.DefinitionId.FamilyId != GateDefinition);
             foreach (var id in gateModes.Keys.Where(id => !buildings.TryGet(id, out var building) ||
-                         !building.IsOperational || building.DefinitionId != GateDefinition).ToArray()) gateModes.Remove(id);
+                         !building.IsOperational || building.DefinitionId.FamilyId != GateDefinition).ToArray()) gateModes.Remove(id);
             detainedTravelers.Clear();
             allowedTravelersOnce.Clear();
             releasedDestroyed.Clear();

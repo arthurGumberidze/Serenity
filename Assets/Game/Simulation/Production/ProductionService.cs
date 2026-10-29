@@ -292,7 +292,7 @@ namespace Game.Simulation.Production
         {
             if (!Animals.Policy.DomesticSpecies.Contains(species) || Animals.AtHome(id).Count > 0 ||
                 !buildings.TryGet(id, out var building) ||
-                building.DefinitionId.ToString()!="animal_pasture" ||
+                building.DefinitionId.FamilyId.ToString()!="animal_pasture" ||
                 building.OwnerSideId != requester || !building.IsOperational ||
                 !sites.TryGetValue(id, out var site) || site.Kind != ProductionSiteKind.PrimitiveCropPlot ||
                 site.CropPhase != CropPlotPhase.Unplanted || tasks.Values.Any(x => !x.IsTerminal && x.SiteId == id))
@@ -362,7 +362,7 @@ namespace Game.Simulation.Production
         public bool SetHuntingPolicy(StableEntityId buildingId, HuntingOperationMode mode, long targetCarcasses)
         {
             if (!buildings.TryGet(buildingId, out var building) ||
-                building.DefinitionId.ToString() != "hunting_camp") return false;
+                building.DefinitionId.FamilyId.ToString() != "hunting_camp") return false;
             var last = huntingPolicies.TryGetValue(buildingId, out var current)
                 ? current.LastRestorationTick : LastCalendarTick;
             huntingPolicies[buildingId] = new HuntingLodgePolicyState(buildingId, mode, targetCarcasses, last);
@@ -396,7 +396,7 @@ namespace Game.Simulation.Production
         }
 
         public bool IsPastureSite(StableEntityId id) => buildings.TryGet(id, out var building) &&
-            building.DefinitionId.ToString() == "animal_pasture";
+            building.DefinitionId.FamilyId.ToString() == "animal_pasture";
 
         private void AddLivestock(StableEntityId home, WorldPosition position, string species, bool male, long tick, int sequence)
         {
@@ -571,6 +571,8 @@ namespace Game.Simulation.Production
                 inventories.Add(new ResourceInventory(inputOwner, resources, definition.Production.InputCapacity));
             if (!inventories.TryGet(outputOwner, out _))
                 inventories.Add(new ResourceInventory(outputOwner, resources, definition.Production.OutputCapacity));
+            inventories.Get(inputOwner).EnsureCapacity(definition.Production.InputCapacity);
+            inventories.Get(outputOwner).EnsureCapacity(definition.Production.OutputCapacity);
             var result = new List<ProductionSite>();
             foreach (var recipeId in definition.Production.RecipeIds)
             {
@@ -585,6 +587,7 @@ namespace Game.Simulation.Production
                         site.SetContinuous(true);
                     if (recipeId.ToString() == "fish_breed") { site.SetContinuous(true); site.SetPaused(true); }
                 }
+                site.IncreaseWorkplaceCapacity(definition.Workplace.MaximumWorkers);
                 result.Add(site);
             }
             return result;
@@ -679,7 +682,7 @@ namespace Game.Simulation.Production
         {
             if (work == null) throw new ArgumentNullException(nameof(work));
             var created = 0;
-            var hasWell = buildings.All.Any(x => x.IsOperational && x.DefinitionId.ToString() == "well");
+            var hasWell = buildings.All.Any(x => x.IsOperational && x.DefinitionId.FamilyId.ToString() == "well");
             foreach (var policy in livestockPolicies.Values.OrderBy(x => x.BuildingId).ToArray())
             {
                 var destinationOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, policy.BuildingId);
@@ -738,7 +741,7 @@ namespace Game.Simulation.Production
             var hour = (calendarTick % TimeSpan.TicksPerDay) / (double)TimeSpan.TicksPerHour;
             var required = temperatureCelsius < 10d || hour >= 18d || hour < 6d;
             foreach (var building in buildings.All.Where(x => x.IsOperational &&
-                         (x.DefinitionId.ToString() == "campfire" || x.DefinitionId.ToString() == "stone_age_kitchen"))
+                         (x.DefinitionId.FamilyId.ToString() == "campfire" || x.DefinitionId.FamilyId.ToString() == "stone_age_kitchen"))
                          .OrderBy(x => x.Id))
             {
                 var owner = InputOwner(building.Id);
@@ -912,13 +915,13 @@ namespace Game.Simulation.Production
             if (unlocks != null && !unlocks.IsProductionRecipeUnlocked(id)) return false;
             if (id.ToString() == "hunt_animal" && resources.Contains(new ResourceId("carcass")) &&
                 !buildings.All.Any(building => building.IsOperational &&
-                    building.DefinitionId == new BuildingDefinitionId("hunting_camp"))) return false;
+                    building.DefinitionId.FamilyId == new BuildingDefinitionId("hunting_camp"))) return false;
             // Explicit shore fishing remains available without a camp. Organized hunting starts at its station;
             // an ordinary resident killing wildlife uses the separate lower-yield field-dressing route.
             if (directOrder) return true;
             if (id.ToString() == "fish_water" &&
                 !buildings.All.Any(building => building.IsOperational &&
-                    building.DefinitionId == new BuildingDefinitionId("fishing_camp"))) return false;
+                    building.DefinitionId.FamilyId == new BuildingDefinitionId("fishing_camp"))) return false;
             return true;
         }
 

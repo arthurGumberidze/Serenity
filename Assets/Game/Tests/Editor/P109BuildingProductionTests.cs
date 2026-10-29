@@ -56,6 +56,7 @@ namespace Game.Tests.Editor
                     new ResourceTransferService(Inventories), new ProductionSettings(TimeSpan.FromDays(1),
                         TimeSpan.FromDays(2), TimeSpan.FromDays(15), Array.Empty<ResourceStockTarget>()));
                 Production.RegisterBuildingWorkplace(buildingId, Definition, new WorldPosition(2, 0, 3));
+                Site.SetContinuous(false); // These cases exercise the explicit finite-queue mode.
             }
 
             public StableEntityId AddWorker(int value)
@@ -173,9 +174,9 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void ButcherStationConservesOneCarcassIntoAllThreeProducts()
+        public void ButcherStationConservesOneDressedCarcassIntoMeatAndBone()
         {
-            var carcass = new ResourceId("carcass");
+            var carcass = new ResourceId("dressed_carcass");
             var meat = new ResourceId("meat");
             var hide = new ResourceId("hide");
             var bone = new ResourceId("bone");
@@ -204,6 +205,7 @@ namespace Game.Tests.Editor
             var production = new ProductionService(ProductionCatalog.CreateStoneAge(resources), resources,
                 inventories, buildings, new ResourceTransferService(inventories));
             production.RegisterBuildingWorkplace(building.Id, definition, default);
+            production.Sites.Single().SetContinuous(false);
             var worker = Fixture.Id(71);
             inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.Character, worker),
                 resources, 10));
@@ -213,7 +215,7 @@ namespace Game.Tests.Editor
             Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromMinutes(45)).Completed, Is.True);
             var output = inventories.Get(production.OutputOwner(building.Id));
             Assert.That(output.GetAmount(meat).Units, Is.EqualTo(5));
-            Assert.That(output.GetAmount(hide).Units, Is.EqualTo(2));
+            Assert.That(output.GetAmount(hide).Units, Is.Zero,"Hide is removed by the earlier dressing stage.");
             Assert.That(output.GetAmount(bone).Units, Is.EqualTo(3));
             Assert.That(inventories.Get(production.InputOwner(building.Id)).GetAmount(carcass).Units, Is.Zero);
         }
@@ -226,7 +228,7 @@ namespace Game.Tests.Editor
             var fiber = new ResourceId("plant_fiber");
             var berries = new ResourceId("berries");
             var meat = new ResourceId("meat");
-            var hide = new ResourceId("hide");
+            var hide = new ResourceId("raw_hide");
             var driedMeat = new ResourceId("dried_meat");
             var curedHide = new ResourceId("cured_hide");
             var resources = new ResourceCatalog(new[]
@@ -260,7 +262,7 @@ namespace Game.Tests.Editor
             Assert.That(production.AdvanceTask(hideJob.Task.Id, TimeSpan.FromHours(3)).Completed, Is.True);
 
             Assert.That(inventories.Get(production.OutputOwner(drying.Id)).GetAmount(driedMeat).Units, Is.EqualTo(2));
-            Assert.That(inventories.Get(production.OutputOwner(hides.Id)).GetAmount(curedHide).Units, Is.EqualTo(2));
+            Assert.That(inventories.Get(production.OutputOwner(hides.Id)).GetAmount(curedHide).Units, Is.EqualTo(1));
             var foodStorage = new InventoryOwner(InventoryOwnerKind.BuildingStorage, Fixture.Id(84));
             inventories.Add(new ResourceInventory(foodStorage, resources, 120, new[] { ResourceCategory.Food }));
             Assert.That(new ResourceTransferService(inventories).TransferExact(production.OutputOwner(drying.Id),
@@ -306,6 +308,7 @@ namespace Game.Tests.Editor
                 workplace: new WorkplaceSpec(1), production: new ProductionSpec(
                     new[] { new ProductionRecipeId(recipeId) }, 18, 18));
             production.RegisterBuildingWorkplace(building.Id, definition, default);
+            production.Sites.Single(x=>x.OwnerBuildingId==building.Id).SetContinuous(false);
             return building;
         }
 

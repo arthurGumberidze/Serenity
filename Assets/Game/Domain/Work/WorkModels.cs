@@ -262,7 +262,7 @@ namespace Game.Domain.Work
     {
         Haul = 0, Move = 1, Gather = 2, Build = 3, Craft = 4, Farm = 5,
         Research = 6, Scout = 7, Military = 8, Care = 9,
-        Inspect = 10, Mine = 11, Chop = 12, Guard = 13, Demolish = 14
+        Inspect = 10, Mine = 11, Chop = 12, Guard = 13, Demolish = 14, Upgrade = 15
     }
     public enum WorkQueuePlacement { RejectWhenBusy = 0, Front = 1, Tail = 2 }
     public enum WorkPriority { Low = 0, Normal = 1, High = 2, Urgent = 3, Immediate = 4 }

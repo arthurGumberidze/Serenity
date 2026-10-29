@@ -168,7 +168,7 @@ namespace Game.Simulation.Buildings
             if (calendarTick < health.LastCalendarTick) throw new ArgumentOutOfRangeException(nameof(calendarTick));
             AutoAdmitPatients(calendarTick);
             var completed = 0;
-            foreach (var clinic in buildings.All.Where(x => x.IsOperational && x.DefinitionId == HealerHut)
+            foreach (var clinic in buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId == HealerHut)
                          .OrderBy(x => x.Id))
             {
                 var hour = (int)((calendarTick % TimeSpan.TicksPerDay) / TimeSpan.TicksPerHour);
@@ -206,7 +206,7 @@ namespace Game.Simulation.Buildings
                          .ThenBy(x => x.TargetId).Select(x => x.TargetId).Distinct())
             {
                 if (clinicPatients.Any(x => x.PatientId == patient)) continue;
-                var clinic = buildings.All.Where(x => x.IsOperational && x.DefinitionId == HealerHut &&
+                var clinic = buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId == HealerHut &&
                         clinicPatients.Count(p => p.ClinicId == x.Id) < 4).OrderBy(x => x.Id).FirstOrDefault();
                 if (clinic != null) RequestTreatment(patient, clinic.Id, calendarTick);
             }
@@ -235,8 +235,8 @@ namespace Game.Simulation.Buildings
         }
 
         public int MoralePerThousand => buildings.All.Any(x => x.IsOperational &&
-            (x.DefinitionId == Shrine || x.DefinitionId == MeetingArea)) ? 1100 : 1000;
-        public int GovernancePerThousand => buildings.All.Any(x => x.IsOperational && x.DefinitionId == ChiefHut)
+            (x.DefinitionId.FamilyId == Shrine || x.DefinitionId.FamilyId == MeetingArea)) ? 1100 : 1000;
+        public int GovernancePerThousand => buildings.All.Any(x => x.IsOperational && x.DefinitionId.FamilyId == ChiefHut)
             ? 1100 : 1000;
 
         public HouseholdHousingStatus GetHouseholdStatus(StableEntityId familyId) =>
@@ -377,15 +377,15 @@ namespace Game.Simulation.Buildings
         }
 
         private bool IsOperationalDefinition(StableEntityId buildingId, BuildingDefinitionId definitionId) =>
-            buildings.TryGet(buildingId, out var building) && building.IsOperational && building.DefinitionId == definitionId;
+            buildings.TryGet(buildingId, out var building) && building.IsOperational && building.DefinitionId.FamilyId == definitionId;
 
         private bool IsChiefHouse(StableEntityId buildingId) =>
-            buildings.TryGet(buildingId, out var building) && building.DefinitionId == ChiefHut;
+            buildings.TryGet(buildingId, out var building) && building.DefinitionId.FamilyId == ChiefHut;
 
         private static ProfessionId ProfessionFor(Building building, BuildingDefinition definition)
         {
             if (definition.Workplace.RequiredProfession.HasValue) return definition.Workplace.RequiredProfession.Value;
-            var id = building.DefinitionId.ToString();
+            var id = building.DefinitionId.FamilyId.ToString();
             if (id == "healer_hut") return new ProfessionId("healer");
             if (id.Contains("garden") || id.Contains("crop") || id == "animal_pasture")
                 return new ProfessionId("farmer");
@@ -411,7 +411,7 @@ namespace Game.Simulation.Buildings
 
         private StableEntityId? FindFamilyHome(IReadOnlyCollection<Character> members)
         {
-            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId != ChiefHut)
+            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId != ChiefHut)
                          .OrderBy(x => x.Id))
             {
                 var definition = definitions(building.DefinitionId);
@@ -426,7 +426,7 @@ namespace Game.Simulation.Buildings
 
         private StableEntityId? FindFreeOrdinaryHome()
         {
-            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId != ChiefHut)
+            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId != ChiefHut)
                          .OrderBy(x => x.Id))
             {
                 var definition = definitions(building.DefinitionId);
@@ -440,7 +440,7 @@ namespace Game.Simulation.Buildings
         private void MoveRulingDynastyToChiefHouse()
         {
             if (!rulingDynastyId.HasValue) return;
-            var chief = buildings.All.Where(x => x.IsOperational && x.DefinitionId == ChiefHut)
+            var chief = buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId == ChiefHut)
                 .OrderBy(x => x.Id).FirstOrDefault();
             if (chief == null) return;
             foreach (var character in characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive &&

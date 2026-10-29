@@ -1,5 +1,25 @@
 # NEXT_TASK.md
 
+## Next action — user retest of WM15 asset expansion (2026-10-30)
+
+The authorized asset-expansion work is complete. Start a new game with
+`Builds/WM15AssetExpansion/Serenity.exe`; review building upgrades, hut4 → stone house6, the separate
+communal house, military rank variants, alpine snow trails and the mountain lake at close range.
+Costs, work duration and research conditions are editable as described in
+`docs/world_map/WM15_ASSET_EXPANSION.md`. Validation: `docs/validation/WM15AssetExpansion.md`.
+Do not resume deferred population gates, unrelated mountain reauthoring or Ollama work without new direction.
+The user authorized deleting obsolete saves if needed and requested PC shutdown after completion.
+
+## WM15 existing-asset expansion — DONE (2026-10-30)
+
+User explicitly reopened building upgrades and mountain-foot snow/lake fixes. Priority: improve and add
+buildings, author a distinct level II for every base building, and implement resource-funded builder upgrades
+with editable costs/conditions. Add rank-dependent military uniforms (one shared enlisted suit below lieutenant),
+deformable snow trails, fix close mountain-lake rendering. Validate through Tools/UnityRunner.ps1 and deliver a
+new Windows Player. Preserve unrelated imported/mountain work and previous builds. This authorization supersedes
+the older pause/retest-only restrictions below. Do not resume unrelated population gates or startup optimization.
+
+
 ## Persistent Unity test/build runner — DONE (2026-10-29)
 
 Use `Tools/UnityRunner.ps1` and `docs/UNITY_PERSISTENT_RUNNER.md` for subsequent compile, EditMode and Development

@@ -18,6 +18,9 @@ namespace Game.Presentation.Localization
         private static readonly HashSet<string> ReportedMissing = new HashSet<string>(StringComparer.Ordinal);
         private static readonly Dictionary<string, string> Entries = new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["content.building.communal_house"] = "Общинный дом",
+            ["content.building.central_storehouse"] = "Общинный склад",
+            ["content.building.crafting_hall"] = "Ремесленный двор",
             ["event.poi_discovery_sacred_grove.discovered.title"] = "Священная роща",
             ["event.poi_discovery_sacred_grove.discovered.description"] = "Среди старых деревьев найдено тихое место для обрядов.",
             ["event.poi_discovery_sacred_grove.discovered.choice.acknowledge"] = "Отметить открытие",
@@ -706,6 +709,9 @@ namespace Game.Presentation.Localization
 
         public static string Content(string category, string id)
         {
+            if(category=="building"&&id=="stone_age_hut_level2")return "Каменный дом";
+            if(category=="building" && id!=null && id.EndsWith("_level2",StringComparison.Ordinal))
+                return Content(category,id.Substring(0,id.Length-7))+" II";
             var key = "content." + (category ?? string.Empty) + "." + (id ?? string.Empty);
             return Get(key);
         }
@@ -792,6 +798,7 @@ namespace Game.Presentation.Localization
             ["enum.WorkJobType.Move"] = "Перемещение", ["enum.WorkJobType.Haul"] = "Переноска",
             ["enum.WorkJobType.Gather"] = "Сбор", ["enum.WorkJobType.Build"] = "Строительство",
             ["enum.WorkJobType.Demolish"] = "Разборка",
+            ["enum.WorkJobType.Upgrade"] = "Улучшение здания",
             ["enum.WorkJobType.Chop"] = "Рубка", ["enum.WorkJobType.Mine"] = "Добыча",
             ["enum.WorkJobType.Craft"] = "Ремесло", ["enum.WorkJobType.Farm"] = "Фермерство",
             ["enum.WorkJobType.Research"] = "Исследование", ["enum.WorkJobType.Scout"] = "Разведка",

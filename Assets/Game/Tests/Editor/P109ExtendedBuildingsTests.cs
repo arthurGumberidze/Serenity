@@ -46,7 +46,8 @@ namespace Game.Tests.Editor
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("primitive_path")).AllowsOverlap, Is.True);
             var hut = catalog.ResolveDefinition(new BuildingDefinitionId("stone_age_hut"));
             Assert.That(hut.Housing.ResidentCapacity, Is.EqualTo(4));
-            Assert.That(hut.Upgrades, Is.Null, "Concrete building upgrades are the explicitly paused follow-up task.");
+            Assert.That(hut.Upgrades.Options.Single().TargetDefinitionId, Is.EqualTo(new BuildingDefinitionId("stone_age_hut_level2")),
+                "The user authorized concrete builder upgrades on 2026-10-30.");
             Assert.That(catalog.ResolveDefinition(new BuildingDefinitionId("healer_hut")).Housing, Is.Null);
             Assert.That(ids.All(id => catalog.ResolveDefinition(new BuildingDefinitionId(id)).Maintenance != null), Is.True);
         }
@@ -83,10 +84,10 @@ namespace Game.Tests.Editor
                 Vector3.zero).Spawn(building);
             try
             {
-                var particles = presenter.GetComponentsInChildren<ParticleSystemRenderer>(true)
-                    .Single(x => x.name == "Campfire Flame VFX");
-                Assert.That(particles.sharedMaterial, Is.Not.Null);
-                Assert.That(particles.sharedMaterial.shader.name, Does.Not.Contain("InternalError"));
+                var particles = presenter.GetComponentsInChildren<ParticleSystemRenderer>(true);
+                Assert.That(particles,Is.Not.Empty);
+                Assert.That(particles.All(x=>x.sharedMaterial!=null&&x.sharedMaterial.shader.isSupported&&
+                    !x.sharedMaterial.shader.name.Contains("InternalError")),Is.True);
             }
             finally
             {

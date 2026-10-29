@@ -175,7 +175,7 @@ namespace Game.Infrastructure
                         building.PlacementCells.Any(c=>Math.Abs(origin.x+c.X*grid-x.Position.X)<grid &&
                             Math.Abs(origin.z+c.Z*grid-x.Position.Z)<grid)).Select(x=>x.Id));
                 var definition=faction.Buildings[building.DefinitionId];
-                if(building.IsOperational && building.DefinitionId.ToString()=="primitive_crop_plot" &&
+                if(building.IsOperational && building.DefinitionId.FamilyId.ToString()=="primitive_crop_plot" &&
                     !faction.Production.TryGetSite(building.Id,out _))
                     faction.Production.AddSite(ProductionSite.CreateCropPlot(building.Id,
                         new ProductionRecipeId("cultivate_berries"),Approach(building),faction.Production.Settings.CropGrowthDuration));

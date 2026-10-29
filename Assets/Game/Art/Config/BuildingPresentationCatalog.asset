@@ -29,7 +29,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+    prefab: {fileID: 4739414420845463223, guid: 40deddf7225dbed4fb53e740edbe1671, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -53,8 +53,62 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: primitive_shelter_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 6
+      workMinutes: 63
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: primitive_shelter_level2
+    displayName: Primitive Shelter II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. Legacy Stone Age housing retained for compatible saves."
+    iconKey: building_primitive_shelter
+    category: 0
+    era: 0
+    requiredTechnologyIds:
+    - shelter_construction
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 136727221757671922, guid: 47c44608266a35b468b32e249e5dc06e, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 8
+    - resourceId: plant_fiber
+      quantity: 3
+    constructionWorkMinutes: 50
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 6
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -74,7 +128,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4497993395105743423, guid: cc4a74738936e194397cd42db16388d6, type: 3}
+    prefab: {fileID: 2283940791529401535, guid: 25021b7d68bcee14297a3bccb7feb0f6, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -102,8 +156,68 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: stone_age_hut_level2
+      cost:
+      - resourceId: stone
+        quantity: 18
+      - resourceId: wood_log
+        quantity: 12
+      - resourceId: plant_fiber
+        quantity: 6
+      workMinutes: 100
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: stone_age_hut_level2
+    displayName: "\u041A\u0430\u043C\u0435\u043D\u043D\u044B\u0439 \u0434\u043E\u043C"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A sturdier timber and hide home."
+    iconKey: building_stone_age_hut
+    category: 0
+    era: 0
+    requiredTechnologyIds:
+    - shelter_construction
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 4
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5271883284597464748, guid: 9eeb02a35b9ec1c439217f6e5c801bd6, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: plant_fiber
+      quantity: 6
+    - resourceId: hide
+      quantity: 2
+    constructionWorkMinutes: 80
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 6
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 2
+    - resourceId: plant_fiber
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -123,7 +237,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6771108735984779082, guid: 75c5f853e798d6443a2b565c786558e2, type: 3}
+    prefab: {fileID: 5267413667071220443, guid: 47a9ea5368aed4846abfe519d6060d54, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -150,8 +264,65 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: campfire_level2
+      cost:
+      - resourceId: stone
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 44
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: campfire_level2
+    displayName: Campfire II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A controlled fire and the settlement's first cooking place."
+    iconKey: building_campfire
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - controlled_fire
+    - organized_labor
+    - woodworking
+    footprintWidth: 2
+    footprintDepth: 2
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 8219123273308726108, guid: b310a14bb423cad4280d902598e02539, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: stone
+      quantity: 4
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds:
+    - cook_berries
+    - cook_fish
+    - cook_meat
+    productionInputCapacity: 48
+    productionOutputCapacity: 48
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -171,7 +342,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 2179510593021755186, guid: be2f422bd53268d46af72bbaf9e9d22f, type: 3}
+    prefab: {fileID: 3913887155514488185, guid: 0814f167434f04a4cac27d4b3de58102, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 10
@@ -201,8 +372,70 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: stone_age_kitchen_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: stone
+        quantity: 5
+      - resourceId: wood_log
+        quantity: 8
+      workMinutes: 100
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: stone_age_kitchen_level2
+    displayName: Stone Age Kitchen II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A staffed kitchen that maintains prepared-food reserves."
+    iconKey: building_stone_age_kitchen
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - controlled_fire
+    - organized_labor
+    - woodworking
+    footprintWidth: 6
+    footprintDepth: 5
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5670775099148246024, guid: 96d301f4b8d58fc419bc34936d5258af, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 10
+    - resourceId: stone
+      quantity: 6
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 80
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds:
+    - cook_berries
+    - cook_fish
+    - cook_meat
+    - make_animal_feed
+    productionInputCapacity: 96
+    productionOutputCapacity: 96
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -222,7 +455,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4524549007022253732, guid: e992badc47bdb4745a603abd48a53aa7, type: 3}
+    prefab: {fileID: 2053389161456325787, guid: 056d5392d98557d459b6648bc0ed2f12, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -246,8 +479,61 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: storage_basket_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 57
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: storage_basket_level2
+    displayName: Storage Basket II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A woven shared store for settlement supplies."
+    iconKey: building_storage_basket
+    category: 1
+    era: 0
+    requiredTechnologyIds:
+    - woodworking
+    - organized_labor
+    footprintWidth: 2
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3359061864430843661, guid: f3d72780325a94a47a12fb7e2b08e1ff, type: 3}
+    constructionCost:
+    - resourceId: plant_fiber
+      quantity: 5
+    - resourceId: wood_log
+      quantity: 3
+    constructionWorkMinutes: 45
+    constructionStageCount: 3
+    storageCapacity: 80
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -267,7 +553,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4137803262028555564, guid: 095346f27eb45cf46be465533f056d48, type: 3}
+    prefab: {fileID: 3591245907060633047, guid: 3035fe1d8b402824a926e954b9e70c85, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 10
@@ -297,8 +583,70 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: stone_tool_workshop_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: stone
+        quantity: 6
+      - resourceId: wood_log
+        quantity: 8
+      workMinutes: 113
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: stone_tool_workshop_level2
+    displayName: Stone Tool Workshop II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A covered knapping bench for early tools."
+    iconKey: building_stone_tool_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - stone_tools
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3439188321014877454, guid: 57e9605cdff94a84e92e29f092fe5468, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 10
+    - resourceId: stone
+      quantity: 8
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 90
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds:
+    - craft_arrows
+    - craft_combat_bow
+    - craft_stone_spear
+    - craft_wooden_shield
+    productionInputCapacity: 96
+    productionOutputCapacity: 64
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -318,7 +666,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 1651891879297022418, guid: e2f3d59f1c69bdf4bba99a481a49de05, type: 3}
+    prefab: {fileID: 2081671268832304534, guid: 7154e4094ea45304ab4c317e9b896398, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 7
@@ -346,8 +694,68 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: butcher_station_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: stone
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 6
+      workMinutes: 82
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: butcher_station_level2
+    displayName: Butcher Station II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A dedicated table turns whole carcasses into meat, hide and bone."
+    iconKey: building_butcher_station
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - hunting
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3111302818186803547, guid: 22e88d0feb49d7c4ca2ed641e8261827, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 7
+    - resourceId: stone
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 3
+    constructionWorkMinutes: 65
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds:
+    - butcher_carcass
+    - butcher_field_carcass
+    productionInputCapacity: 24
+    productionOutputCapacity: 48
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -367,7 +775,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 7559929419030301708, guid: 9fb32eb288756fc48970206371ce4635, type: 3}
+    prefab: {fileID: 9133587195177761854, guid: 515513f2941c08c45a5844f38ce35d8e, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 9
@@ -394,8 +802,67 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: hunting_camp_level2
+      cost:
+      - resourceId: hide
+        quantity: 2
+      - resourceId: plant_fiber
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 7
+      workMinutes: 94
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: hunting_camp_level2
+    displayName: Hunting Camp II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A field camp required to organize nearby animal hunts."
+    iconKey: building_hunting_camp
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - hunting
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 7253480655498455177, guid: 63e0a0dc7ce94414b98dafe7d803d6cb, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 9
+    - resourceId: plant_fiber
+      quantity: 5
+    - resourceId: hide
+      quantity: 2
+    constructionWorkMinutes: 75
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 4
+    productionRecipeIds:
+    - dress_carcass
+    productionInputCapacity: 48
+    productionOutputCapacity: 48
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -415,7 +882,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 5338887291422888517, guid: 39023f37b66f3474798b8f8831493cbb, type: 3}
+    prefab: {fileID: 4491213509934960225, guid: c4c7766c8c8549f459964346155630a4, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 10
@@ -441,8 +908,66 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: food_storage_level2
+      cost:
+      - resourceId: hide
+        quantity: 2
+      - resourceId: plant_fiber
+        quantity: 6
+      - resourceId: wood_log
+        quantity: 8
+      workMinutes: 88
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: food_storage_level2
+    displayName: Food Storage II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A raised, covered store reserved for food supplies."
+    iconKey: building_food_storage
+    category: 1
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 685206405090097936, guid: 35bd3cd9aaddd7c449990583dc509eed, type: 3}
+    constructionCost:
+    - resourceId: hide
+      quantity: 2
+    - resourceId: plant_fiber
+      quantity: 7
+    - resourceId: wood_log
+      quantity: 10
+    constructionWorkMinutes: 70
+    constructionStageCount: 3
+    storageCapacity: 240
+    storageCategories: 01000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -462,7 +987,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6389391837826904269, guid: 3a9661f7f2f402a41b340d52a167579f, type: 3}
+    prefab: {fileID: 6268790737319819260, guid: 377d1d024c13a5342a58f486e28a5ced, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 6
@@ -487,8 +1012,63 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: drying_rack_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 5
+      workMinutes: 69
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: drying_rack_level2
+    displayName: Drying Rack II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. An open rack preserves butchered meat without fuel."
+    iconKey: building_drying_rack
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 2
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4404857281356604825, guid: bc34d3aefab49f8498c98cca278188a2, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 6
+    - resourceId: plant_fiber
+      quantity: 5
+    constructionWorkMinutes: 55
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds:
+    - dry_meat
+    productionInputCapacity: 36
+    productionOutputCapacity: 36
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -508,7 +1088,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 413966355839806363, guid: acd72aaca4d6ada409bdf98b0c4590b8, type: 3}
+    prefab: {fileID: 719593902855105060, guid: 15555b316e4b2a642aa31cd4cd67d147, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 9
@@ -536,8 +1116,68 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: hide_workshop_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 6
+      - resourceId: stone
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 7
+      workMinutes: 100
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: hide_workshop_level2
+    displayName: Hide Workshop II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A covered frame for cleaning and curing hides."
+    iconKey: building_hide_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - food_preservation
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2206139763290738725, guid: b5183feddf136f6418f3314a44eb23c2, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 9
+    - resourceId: stone
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 7
+    constructionWorkMinutes: 80
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds:
+    - cure_hide
+    - make_leather_clothing
+    productionInputCapacity: 36
+    productionOutputCapacity: 36
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -557,7 +1197,61 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 1417715211975955541, guid: fddd9261bb9cbda4093f87f1e9f59aae, type: 3}
+    prefab: {fileID: 5785793075122403843, guid: d23f2afd6631d5e4a9c5c385454f13b6, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 2
+    - resourceId: plant_fiber
+      quantity: 2
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: primitive_crop_plot_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 2
+      workMinutes: 44
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: primitive_crop_plot_level2
+    displayName: Primitive Crop Plot II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A small worked plot."
+    iconKey: building_primitive_crop_plot
+    category: 2
+    era: 0
+    requiredTechnologyIds:
+    - primitive_agriculture
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2094981387583421002, guid: dea7ae223a3f77b40babbb9a5b1a330a, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 2
@@ -582,7 +1276,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -602,7 +1296,60 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8919281241274719754, guid: 275e52a014cc0b04e9d700644f4e316a, type: 3}
+    prefab: {fileID: 2304283978498045066, guid: 880435c76e33e7b4e8ea095daa11f19f, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: stone
+      quantity: 6
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: military_barracks_level2
+      cost:
+      - resourceId: stone
+        quantity: 5
+      - resourceId: wood_log
+        quantity: 9
+      workMinutes: 150
+    maxIntegrity: 1400
+    fireDamagePerThousand: 900
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: military_barracks_level2
+    displayName: Military Barracks II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A simple training and mustering shelter."
+    iconKey: building_military_barracks
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4932719993219980746, guid: 62988228e8e03c747972175fb201fea0, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -627,7 +1374,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1400
+    maxIntegrity: 2240
     fireDamagePerThousand: 900
     combatDamagePerThousand: 1000
     capturable: 1
@@ -647,7 +1394,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 5488585577479961829, guid: df02b2216d3fffe4bb9d1964cfc0d903, type: 3}
+    prefab: {fileID: 4458008679080669002, guid: bb8b7660bb61ac74c84715914ec5eab9, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 26
@@ -696,7 +1443,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 7471284310444944688, guid: 3b345b9d1dfd1f6488492c17972809bb, type: 3}
+    prefab: {fileID: 2065506282122642094, guid: 35249720dceab7f44b82f9078d92d219, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -725,8 +1472,68 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: healer_hut_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 6
+      - resourceId: stone
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 9
+      workMinutes: 125
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: healer_hut_level2
+    displayName: Healer Hut II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A sheltered medical workplace for treating injuries and disease."
+    iconKey: building_healer_hut
+    category: 7
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 4
+    footprintDepth: 4
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4563449779482581483, guid: dba1652b63599594da92018abcc03a88, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: stone
+      quantity: 5
+    - resourceId: plant_fiber
+      quantity: 8
+    constructionWorkMinutes: 100
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds:
+    - prepare_medicine
+    productionInputCapacity: 48
+    productionOutputCapacity: 24
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 2
+    - resourceId: plant_fiber
+      quantity: 2
+    repairWorkMinutes: 35
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -746,7 +1553,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 896245607924915164, guid: c241117bb9be3f04794fd3cd06aa2e27, type: 3}
+    prefab: {fileID: 4918533982128019892, guid: e06fbd163406d06448ff7139d48ba4d7, type: 3}
     constructionCost:
     - resourceId: stone
       quantity: 10
@@ -772,8 +1579,63 @@ MonoBehaviour:
       quantity: 1
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: shrine_level2
+      cost:
+      - resourceId: stone
+        quantity: 8
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 82
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: shrine_level2
+    displayName: Shrine II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A maintained communal place that supports settlement morale."
+    iconKey: building_shrine
+    category: 6
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3147215038720228268, guid: f2adf214e17865a4895a04ed59f30a8f, type: 3}
+    constructionCost:
+    - resourceId: stone
+      quantity: 10
+    - resourceId: wood_log
+      quantity: 4
+    constructionWorkMinutes: 65
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: stone
+      quantity: 2
+    repairWorkMinutes: 25
+    upkeepCost:
+    - resourceId: plant_fiber
+      quantity: 1
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -793,7 +1655,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 3973969917360199081, guid: 190f4e6a1e6f3b9489ca093968075fc3, type: 3}
+    prefab: {fileID: 7502816724251572375, guid: f10f8b6be075806429c4e8771c58cfae, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 20
@@ -821,8 +1683,67 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: chief_hut_level2
+      cost:
+      - resourceId: cured_hide
+        quantity: 4
+      - resourceId: stone
+        quantity: 6
+      - resourceId: wood_log
+        quantity: 15
+      workMinutes: 163
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: chief_hut_level2
+    displayName: Chief Hut II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. The chief's residence and the settlement governance workplace."
+    iconKey: building_chief_hut
+    category: 6
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 5
+    footprintDepth: 4
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5432071738173788527, guid: 3d9d5f3dbf08cf64badae99f76c18b13, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 20
+    - resourceId: stone
+      quantity: 8
+    - resourceId: cured_hide
+      quantity: 5
+    constructionWorkMinutes: 130
+    constructionStageCount: 4
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 6
+    maximumWorkers: 2
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: cured_hide
+      quantity: 1
+    repairWorkMinutes: 45
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -842,7 +1763,7 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 684172229593271832, guid: afc70c37269e99048ab9cd9e77b023e6, type: 3}
+    prefab: {fileID: 1551095851518578183, guid: d02b6d5cc8206f5418905ea85c86ab96, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -866,8 +1787,61 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: meeting_area_level2
+      cost:
+      - resourceId: stone
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 44
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: meeting_area_level2
+    displayName: Meeting Area II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A marked area for settlement gatherings."
+    iconKey: building_meeting_area
+    category: 6
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5119108177298139325, guid: 6ea0e871577e55f4486607c53d243f49, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: stone
+      quantity: 2
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 13
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -887,7 +1861,7 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 3641555035118272229, guid: 207e54869525ac641a0654dd230f9395, type: 3}
+    prefab: {fileID: 7379740434661722284, guid: 6ebfab39c563230488da7bd51e2a8100, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 6
@@ -911,8 +1885,61 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: training_ground_level2
+      cost:
+      - resourceId: stone
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 5
+      workMinutes: 69
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: training_ground_level2
+    displayName: Training Ground II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. An open practice area for improving combat skill."
+    iconKey: building_training_ground
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 1124866437120136510, guid: 0fd642138f59ea543a5220ad9b23ffa2, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 6
+    - resourceId: stone
+      quantity: 4
+    constructionWorkMinutes: 55
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 7
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -932,7 +1959,60 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 7510845634790520162, guid: 17c5eb64e42076e448b6e474cb34d8ca, type: 3}
+    prefab: {fileID: 4379451940280795684, guid: f0eba2eb998f9504c9187fa2fe620e52, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: stone
+      quantity: 2
+    constructionWorkMinutes: 30
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: rally_point_level2
+      cost:
+      - resourceId: stone
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 38
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: rally_point_level2
+    displayName: Rally Point II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. The designated point where the settlement garrison assembles."
+    iconKey: building_rally_point
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 5
+    footprintDepth: 5
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 752096854833667549, guid: a5734ca47be38e84fa32a658c5fe4936, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -957,7 +2037,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -977,7 +2057,7 @@ MonoBehaviour:
     placementConstraints: 6
     maximumHeightDeltaMillimetres: 4500
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4450261199759727127, guid: 2a63c8154b026c04d8f7716a25a6d5b3, type: 3}
+    prefab: {fileID: 7705316109983855738, guid: 6cdf722204556314c8f9a8ca34afa909, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -1003,8 +2083,64 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: fishing_camp_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 5
+      - resourceId: wood_log
+        quantity: 6
+      workMinutes: 88
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: fishing_camp_level2
+    displayName: Fishing Camp II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A shoreline base required for organized fishing."
+    iconKey: building_fishing_camp
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - gathering
+    - organized_labor
+    - woodworking
+    footprintWidth: 8
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 6
+    maximumHeightDeltaMillimetres: 4500
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 6957823132067242614, guid: 7dd352a35c571a843be70f87ab160eb6, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 8
+    - resourceId: plant_fiber
+      quantity: 6
+    constructionWorkMinutes: 70
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 2
+    productionRecipeIds:
+    - fish_breed
+    - fish_camp
+    productionInputCapacity: 2
+    productionOutputCapacity: 60
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1024,7 +2160,7 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4931938157932219821, guid: 44fab226ded713a44875b6a281049089, type: 3}
+    prefab: {fileID: 7812697456656264342, guid: 3e9e747619ec1de43ada3680aafaf266, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 2
@@ -1048,8 +2184,61 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: gathering_area_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 2
+      workMinutes: 38
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: gathering_area_level2
+    displayName: Gathering Area II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A managed zone over wild berry and fibre sources."
+    iconKey: building_gathering_area
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3295175720718325918, guid: 765c83ee82d41a9468bd0c69bc77eda5, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 2
+    - resourceId: plant_fiber
+      quantity: 2
+    constructionWorkMinutes: 30
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 9
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1069,7 +2258,7 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4217031356742583598, guid: 18ccd03fa58636841b0edf2dae7ea790, type: 3}
+    prefab: {fileID: 4245688492358776062, guid: ca2daacc15720c9499f41effb22d98c4, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 4
@@ -1093,8 +2282,62 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: primitive_garden_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 75
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: primitive_garden_level2
+    displayName: Primitive Garden II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A larger cultivated zone with sowing and harvest cycles."
+    iconKey: building_primitive_garden
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - primitive_agriculture
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 5517178669576722484, guid: 8deff15a910e79549b948f2a94847f73, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 4
+    - resourceId: plant_fiber
+      quantity: 5
+    constructionWorkMinutes: 60
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 5
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1114,7 +2357,7 @@ MonoBehaviour:
     placementConstraints: 11
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 8147308935518625590, guid: 947385125b58c1c43a20130a017a5010, type: 3}
+    prefab: {fileID: 982055295511054978, guid: 04aa18b8a113b9440959eb74a09fb325, type: 3}
     constructionCost:
     - resourceId: stone
       quantity: 12
@@ -1138,8 +2381,62 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: well_level2
+      cost:
+      - resourceId: stone
+        quantity: 9
+      - resourceId: wood_log
+        quantity: 5
+      workMinutes: 107
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: well_level2
+    displayName: Well II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A stone-lined groundwater source."
+    iconKey: building_well
+    category: 9
+    era: 0
+    requiredTechnologyIds:
+    - advanced_stonecraft
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 11
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3582681680602031078, guid: 19e6e39a9e864ec40ae3f2e54351abbe, type: 3}
+    constructionCost:
+    - resourceId: stone
+      quantity: 12
+    - resourceId: wood_log
+      quantity: 6
+    constructionWorkMinutes: 85
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1159,7 +2456,56 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6808985207252248693, guid: 1c4fd7f103f233b44b4baf286768a244, type: 3}
+    prefab: {fileID: 3019479788513129985, guid: 670b620e5288e9b43bfdc1594c518ab4, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 5
+    constructionWorkMinutes: 35
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 20
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: palisade_level2
+      cost:
+      - resourceId: wood_log
+        quantity: 4
+      workMinutes: 44
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: palisade_level2
+    displayName: Palisade II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A connected timber defensive barrier."
+    iconKey: building_palisade
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 1
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 2
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3492908497908600227, guid: 6b735326af1da89428876bebc71066c2, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 5
@@ -1182,7 +2528,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1202,7 +2548,60 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 6926310770527509521, guid: 26d9c79e0a62f2a469f97c804b986c13, type: 3}
+    prefab: {fileID: 8935403286828236177, guid: 01a0b94c2e4651640989329f82265489, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 8
+    - resourceId: stone
+      quantity: 2
+    constructionWorkMinutes: 55
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 20
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: gate_level2
+      cost:
+      - resourceId: stone
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 6
+      workMinutes: 69
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: gate_level2
+    displayName: Gate II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A controllable passage through a palisade."
+    iconKey: building_gate
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 8642271109472003910, guid: 751e26496f8fd1544993f8dbbf010689, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -1227,7 +2626,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1247,7 +2646,7 @@ MonoBehaviour:
     placementConstraints: 2
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 2037994050957237548, guid: 42e6eedbf0b6e6949b28bb6810a845fa, type: 3}
+    prefab: {fileID: 1173338392468777242, guid: cdad3a7579cb3eb4db8cb57fb4afa331, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 14
@@ -1273,8 +2672,65 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: watchtower_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: stone
+        quantity: 4
+      - resourceId: wood_log
+        quantity: 11
+      workMinutes: 125
     maxIntegrity: 1600
+    fireDamagePerThousand: 850
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: watchtower_level2
+    displayName: Watchtower II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. An elevated defensive observation platform."
+    iconKey: building_watchtower
+    category: 8
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 3
+    footprintDepth: 3
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 4053311135528767980, guid: 57a2d846280449d45b574fc5735d549c, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 14
+    - resourceId: stone
+      quantity: 5
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 100
+    constructionStageCount: 4
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 2560
     fireDamagePerThousand: 850
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1294,7 +2750,56 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 3171109459196516170, guid: a7d56d47020c60849ad9393c9db65e99, type: 3}
+    prefab: {fileID: 4165005325941973029, guid: 0be9f1d6c95902e4baded68a82216577, type: 3}
+    constructionCost:
+    - resourceId: stone
+      quantity: 1
+    constructionWorkMinutes: 15
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 20
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: primitive_path_level2
+      cost:
+      - resourceId: stone
+        quantity: 2
+      workMinutes: 30
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: primitive_path_level2
+    displayName: Primitive Path II
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. A terrain-following footpath that remains traversable."
+    iconKey: building_primitive_path
+    category: 9
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 1
+    footprintDepth: 1
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 2
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2108370749159546024, guid: 554eaed268b0e6143a4cd64f769be37a, type: 3}
     constructionCost:
     - resourceId: stone
       quantity: 1
@@ -1317,7 +2822,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1337,7 +2842,59 @@ MonoBehaviour:
     placementConstraints: 3
     maximumHeightDeltaMillimetres: 750
     approachClearanceMillimetres: 750
-    prefab: {fileID: 1583642908811062946, guid: 73349634292272b42a115e947c18cb32, type: 3}
+    prefab: {fileID: 30138235194524157, guid: 49396d71bca06d24982ed649d3764d16, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 2
+    constructionWorkMinutes: 5
+    constructionStageCount: 1
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost: []
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: ground_torch_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 2
+      - resourceId: wood_log
+        quantity: 3
+      workMinutes: 30
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: ground_torch_level2
+    displayName: "\u041D\u0430\u0437\u0435\u043C\u043D\u044B\u0439 \u0444\u0430\u043A\u0435\u043B II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u0423\u043B\u0438\u0447\u043D\u044B\u0439 \u0444\u0430\u043A\u0435\u043B \u0434\u043B\u044F \u043E\u0441\u0432\u0435\u0449\u0435\u043D\u0438\u044F \u043F\u043E\u0441\u0435\u043B\u0435\u043D\u0438\u044F."
+    iconKey: building_campfire
+    category: 9
+    era: 0
+    requiredTechnologyIds:
+    - controlled_fire
+    - organized_labor
+    - woodworking
+    footprintWidth: 2
+    footprintDepth: 2
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 3
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2199733835001635404, guid: 1bee059e64a2ff74cbddb5da1b11a6bb, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 3
@@ -1360,7 +2917,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1380,7 +2937,59 @@ MonoBehaviour:
     placementConstraints: 6
     maximumHeightDeltaMillimetres: 20000
     approachClearanceMillimetres: 750
-    prefab: {fileID: 106885001878982721, guid: c449256d3970232488f1f9e42662cdd5, type: 3}
+    prefab: {fileID: 6353952897934310807, guid: 1d80e4f6acb983649a875c9c7a1d61e1, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 12
+    - resourceId: plant_fiber
+      quantity: 4
+    constructionWorkMinutes: 30
+    constructionStageCount: 2
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost: []
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: fishing_pier_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 3
+      - resourceId: wood_log
+        quantity: 9
+      workMinutes: 38
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: fishing_pier_level2
+    displayName: "\u0420\u044B\u0431\u0430\u0446\u043A\u0438\u0439 \u043F\u0438\u0440\u0441 II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u041F\u0438\u0440\u0441 \u0434\u043B\u044F \u043C\u0435\u0434\u043B\u0435\u043D\u043D\u043E\u0439 \u0440\u0443\u0447\u043D\u043E\u0439 \u0440\u044B\u0431\u0430\u043B\u043A\u0438 \u043D\u0430 \u043E\u0437\u0435\u0440\u0435 \u0438\u043B\u0438 \u0440\u0435\u043A\u0435. \u0423\u043B\u043E\u0432 \u0436\u0434\u0451\u0442 \u043F\u0435\u0440\u0435\u043D\u043E\u0441\u043A\u0438 \u043D\u0430 \u0431\u0435\u0440\u0435\u0433\u0443."
+    iconKey: building_fishing_camp
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - gathering
+    - organized_labor
+    - woodworking
+    footprintWidth: 6
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 6
+    maximumHeightDeltaMillimetres: 20000
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 3559258310377865688, guid: 8c605fc928944444f9b5949de144df38, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 12
@@ -1403,7 +3012,7 @@ MonoBehaviour:
     canDemolish: 1
     demolitionReturnPerThousand: 500
     upgrades: []
-    maxIntegrity: 1000
+    maxIntegrity: 1600
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
@@ -1422,7 +3031,7 @@ MonoBehaviour:
     placementConstraints: 1
     maximumHeightDeltaMillimetres: 4500
     approachClearanceMillimetres: 750
-    prefab: {fileID: 4217031356742583598, guid: 18ccd03fa58636841b0edf2dae7ea790, type: 3}
+    prefab: {fileID: 9011388523630498472, guid: 4556df946955c85498fb87df4fd1521c, type: 3}
     constructionCost:
     - resourceId: wood_log
       quantity: 8
@@ -1446,8 +3055,385 @@ MonoBehaviour:
     upkeepCost: []
     canDemolish: 1
     demolitionReturnPerThousand: 500
-    upgrades: []
+    upgrades:
+    - targetDefinitionId: animal_pasture_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 5
+      - resourceId: wood_log
+        quantity: 6
+      workMinutes: 75
     maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: animal_pasture_level2
+    displayName: "\u0417\u0430\u0433\u043E\u043D \u0434\u043B\u044F \u0441\u043A\u043E\u0442\u0430 II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u041F\u0440\u043E\u0441\u0442\u043E\u0440\u043D\u044B\u0439 \u0437\u0430\u0433\u043E\u043D \u0441 \u043D\u0430\u0432\u0435\u0441\u043E\u043C \u0438 \u043A\u043E\u0440\u043C\u0443\u0448\u043A\u043E\u0439. \u0420\u0430\u0441\u0442\u044F\u043D\u0438\u0442\u0435 \u043E\u0442 8\xD78 \u0434\u043E 24\xD724 \u043A\u043B\u0435\u0442\u043E\u043A."
+    iconKey: building_primitive_garden
+    category: 5
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 8
+    footprintDepth: 8
+    placementMode: 0
+    allowsOverlap: 1
+    spatialForm: 1
+    placementConstraints: 1
+    maximumHeightDeltaMillimetres: 4500
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 41026290232262781, guid: 8742988919bc1b94584b7ce9765bb2b8, type: 3}
+    constructionCost:
+    - resourceId: plant_fiber
+      quantity: 6
+    - resourceId: wood_log
+      quantity: 8
+    constructionWorkMinutes: 60
+    constructionStageCount: 2
+    storageCapacity: 512
+    storageCategories: 0100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1600
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: communal_house
+    displayName: "\u041E\u0431\u0449\u0438\u043D\u043D\u044B\u0439 \u0434\u043E\u043C"
+    description: "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_clan_house
+    category: 0
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    footprintWidth: 8
+    footprintDepth: 7
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2537443382496169649, guid: 28bb1ef017a9ff84690a0bf5f2660803, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 32
+    - resourceId: stone
+      quantity: 18
+    - resourceId: plant_fiber
+      quantity: 12
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 
+    housingCapacity: 10
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 2
+    repairWorkMinutes: 50
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: communal_house_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 9
+      - resourceId: stone
+        quantity: 14
+      - resourceId: wood_log
+        quantity: 24
+      workMinutes: 150
+    maxIntegrity: 1400
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: communal_house_level2
+    displayName: "\u041E\u0431\u0449\u0438\u043D\u043D\u044B\u0439 \u0434\u043E\u043C II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_clan_house
+    category: 0
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 8
+    footprintDepth: 7
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 732292545149419714, guid: 85394c01093e5614eb7c66235185c25f, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 32
+    - resourceId: stone
+      quantity: 18
+    - resourceId: plant_fiber
+      quantity: 12
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 
+    housingCapacity: 15
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: plant_fiber
+      quantity: 2
+    repairWorkMinutes: 50
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 2240
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: central_storehouse
+    displayName: "\u041E\u0431\u0449\u0438\u043D\u043D\u044B\u0439 \u0441\u043A\u043B\u0430\u0434"
+    description: "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_food_storage
+    category: 1
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    footprintWidth: 7
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 7133060327317401922, guid: 42f9cba55b0a1a643b4201de0f96aa6f, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 32
+    - resourceId: stone
+      quantity: 18
+    - resourceId: plant_fiber
+      quantity: 12
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 600
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: central_storehouse_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 9
+      - resourceId: stone
+        quantity: 14
+      - resourceId: wood_log
+        quantity: 24
+      workMinutes: 150
+    maxIntegrity: 1400
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: central_storehouse_level2
+    displayName: "\u041E\u0431\u0449\u0438\u043D\u043D\u044B\u0439 \u0441\u043A\u043B\u0430\u0434 II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_food_storage
+    category: 1
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 7
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 6304517066018996063, guid: 939b12e352b23654e919581695befc89, type: 3}
+    constructionCost:
+    - resourceId: plant_fiber
+      quantity: 12
+    - resourceId: stone
+      quantity: 18
+    - resourceId: wood_log
+      quantity: 32
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 1200
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 2240
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: crafting_hall
+    displayName: "\u0420\u0435\u043C\u0435\u0441\u043B\u0435\u043D\u043D\u044B\u0439 \u0434\u0432\u043E\u0440"
+    description: "\u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_stone_tool_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    footprintWidth: 7
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 527932935071180873, guid: c329bb73f8a084042a926c31dccab8a0, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 32
+    - resourceId: stone
+      quantity: 18
+    - resourceId: plant_fiber
+      quantity: 12
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 
+    housingCapacity: 0
+    maximumWorkers: 3
+    productionRecipeIds:
+    - craft_arrows
+    - craft_combat_bow
+    - craft_stone_spear
+    - craft_wooden_shield
+    productionInputCapacity: 120
+    productionOutputCapacity: 120
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades:
+    - targetDefinitionId: crafting_hall_level2
+      cost:
+      - resourceId: plant_fiber
+        quantity: 9
+      - resourceId: stone
+        quantity: 14
+      - resourceId: wood_log
+        quantity: 24
+      workMinutes: 150
+    maxIntegrity: 1400
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
+  - definitionId: crafting_hall_level2
+    displayName: "\u0420\u0435\u043C\u0435\u0441\u043B\u0435\u043D\u043D\u044B\u0439 \u0434\u0432\u043E\u0440 II"
+    description: "\u0423\u0441\u0438\u043B\u0435\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0432\u0442\u043E\u0440\u043E\u0433\u043E \u0443\u0440\u043E\u0432\u043D\u044F. \u0420\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u0430\u044F \u043E\u0431\u0449\u0438\u043D\u043D\u0430\u044F \u043F\u043E\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u0441 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0440\u0430\u0431\u043E\u0447\u0438\u043C \u043F\u0440\u043E\u0441\u0442\u0440\u0430\u043D\u0441\u0442\u0432\u043E\u043C."
+    iconKey: building_stone_tool_workshop
+    category: 4
+    era: 0
+    requiredTechnologyIds:
+    - organized_labor
+    - woodworking
+    footprintWidth: 7
+    footprintDepth: 6
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 2722911619337163215, guid: 17a8bb8883887c841ac513f3124652f5, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 32
+    - resourceId: stone
+      quantity: 18
+    - resourceId: plant_fiber
+      quantity: 12
+    constructionWorkMinutes: 120
+    constructionStageCount: 3
+    storageCapacity: 0
+    storageCategories: 
+    housingCapacity: 0
+    maximumWorkers: 4
+    productionRecipeIds:
+    - craft_arrows
+    - craft_combat_bow
+    - craft_stone_spear
+    - craft_wooden_shield
+    productionInputCapacity: 240
+    productionOutputCapacity: 240
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 1
+    repairWorkMinutes: 30
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 2240
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
