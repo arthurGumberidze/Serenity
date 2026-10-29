@@ -1,13 +1,11 @@
 # NEXT_TASK.md
 
-## Persistent Unity test/build runner after WM15 user retest (2026-10-29)
+## Persistent Unity test/build runner — DONE (2026-10-29)
 
-The current gameplay repair is built at `Builds/WM15UserRetestFinal/Serenity.exe`; wait for the user's own
-launch/screenshots before changing its gameplay or water presentation again. The user explicitly requested a
-separate follow-up task to remove repeated cold Unity startup cost. Implement a persistent Editor-side command
-runner (or equivalent one-process compile/test/build route) that reuses one Unity 6000.6.4f1 process, never
-combines `-runTests` with the premature `-quit` path, writes authoritative XML/build results, and preserves the
-shared dirty asset tree. Do not turn this into another asset-fingerprint or gameplay-optimization task.
+Use `Tools/UnityRunner.ps1` and `docs/UNITY_PERSISTENT_RUNNER.md` for subsequent compile, EditMode and Development
+build work. The runner is verified on one live Unity 6000.6.4f1 PID and never uses the `-runTests`/`-quit`
+command-line path. The next product action remains the user's own launch/screenshots from
+`Builds/WM15UserRetestFinal/Serenity.exe`; do not change gameplay or water presentation until that feedback.
 
 ## WM15 living-building feedback — user retest (2026-10-29)
 

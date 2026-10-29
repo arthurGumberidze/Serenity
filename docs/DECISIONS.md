@@ -2136,3 +2136,16 @@ Ordinary lake colour/depth comes from continuous authored mesh depth rather than
 Loaded water meshes remain visible across terrain-tile presentation windows because water bodies cross those
 boundaries. The scenic southern sea begins underneath southern terrain, allowing terrain intersection to hide
 its rectangular mesh edge. None of these presentation choices changes hydrology, fishing or save authority.
+
+## D-220 — Persistent validation uses one primary Editor and fail-closed evidence (2026-10-29)
+
+Repeated local validation reuses one ordinary Unity 6000.6.4f1 Editor rather than repeatedly starting Unity in
+command-line test mode. A file queue under `Library` is the transport because it survives domain reload and adds
+no package, service or project content. `Library/EditorInstance.json` is the process-ownership authority;
+secondary Unity build workers must not touch runner state.
+
+Compilation refreshes and compiles only changed scripts. EditMode tests use the asynchronous Test Runner API,
+write NUnit XML, and reject a zero-case selection. Development builds call the existing U00 build authority and
+retain its immutable-source provenance. JSON and process exit codes mirror the actual Editor result. Timeouts,
+process replacement, missing XML and interrupted operations fail closed. This decision changes validation
+orchestration only and does not reopen WM15 gameplay, water or delivered-build scope.

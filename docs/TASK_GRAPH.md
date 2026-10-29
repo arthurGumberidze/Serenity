@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+U00 persistent Unity test/build runner (2026-10-29): **DONE**. One Unity 6000.6.4f1 Editor process owns a
+file-backed, domain-reload-safe command queue for incremental compilation, asynchronous EditMode tests and
+Windows Development builds. Test XML, per-command logs, JSON exit status and build provenance are mandatory;
+zero selected tests fail closed. One PID passed compile, focused 1/1 EditMode and Development-build validation.
+Evidence: `docs/validation/PersistentUnityRunner.md`. This infrastructure does not change WM15 gameplay,
+water presentation, acceptance status or the delivered retest Player.
+
 WM15 resident map cache/warmup (2026-10-29): **DONE / awaiting user retest**. Initial gameplay remains bounded,
 then all 16 terrain/population tiles are prepared in the background, retained and reused instead of being
 rebuilt during camera travel. Immutable presentation data is cached per generation/seed/version; incomplete

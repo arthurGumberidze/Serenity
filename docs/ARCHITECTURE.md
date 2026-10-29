@@ -1,5 +1,18 @@
 # Architecture — U01
 
+## U00 persistent Editor command boundary (2026-10-29)
+
+The local validation flow is `PowerShell client -> atomic Library request -> primary Unity Editor update ->
+CompilationPipeline / TestRunnerApi / U00Build -> atomic result`. `Library/EditorInstance.json` identifies the
+only queue owner; Player-build workers and competing Unity processes cannot publish state or complete commands.
+The queue is serialized and ignored by version control. Compile state persists across domain reload, while an
+interrupted non-resumable operation fails rather than being replayed.
+
+Tests run through the asynchronous EditMode API and save the framework's NUnit XML before reporting success.
+No cases selected is a failure. Builds retain U00's target/version/shader preflight and immutable-source
+provenance. The PowerShell process exit code and JSON result are projections of the Editor verdict; a timeout
+is protocol failure, never inferred test/build success. The runner owns no gameplay, save or presentation state.
+
 ## WM15 resident map preparation boundary (2026-10-29)
 
 The local-map flow is `TiledWorldDefinition + world seed -> pure height/paint preparation -> versioned

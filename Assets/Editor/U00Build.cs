@@ -15,6 +15,11 @@ public static class U00Build
 {
     public static void WindowsDevelopment()
     {
+        WindowsDevelopment(CommandLineValue("-serenityBuildPath") ?? "Builds/Windows/Serenity.exe");
+    }
+
+    public static BuildReport WindowsDevelopment(string buildPath)
+    {
         if (Application.unityVersion != "6000.6.4f1")
             throw new BuildFailedException("Use the pinned Unity 6000.6.4f1 Editor.");
         if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
@@ -38,7 +43,6 @@ public static class U00Build
         PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
         EditorSettings.serializationMode = SerializationMode.ForceText;
         AssetDatabase.SaveAssets();
-        var buildPath = CommandLineValue("-serenityBuildPath") ?? "Builds/Windows/Serenity.exe";
         var buildDirectory = Path.GetDirectoryName(buildPath);
         if (string.IsNullOrWhiteSpace(buildDirectory))
             throw new BuildFailedException("The Windows build path requires a parent directory.");
@@ -68,6 +72,7 @@ public static class U00Build
             build_guid = report.summary.guid.ToString(), unity_version = Application.unityVersion,
             created_utc = DateTime.UtcNow.ToString("O")
         }, true), new UTF8Encoding(false));
+        return report;
     }
 
     [Serializable]

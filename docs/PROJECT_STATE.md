@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## Persistent Unity test/build runner — implemented and verified (2026-10-29)
+
+`Tools/UnityRunner.ps1` now keeps one ordinary hidden Unity 6000.6.4f1 Editor alive and serializes incremental
+compile, asynchronous EditMode and Windows Development-build requests through an ignored `Library` queue.
+Assembly reload resumes compile state; Unity build-worker processes cannot claim the primary queue. Every
+command produces JSON/log evidence, tests additionally produce NUnit XML, and zero selected tests fail closed.
+
+One live PID completed incremental compile in 0.263 s, repeated focused EditMode cases 1/1, and the final
+incremental Development build in 41.909 s. The empty-selection regression returned exit 1 with XML total 0.
+Usage and exact evidence: `docs/UNITY_PERSISTENT_RUNNER.md` and
+`docs/validation/PersistentUnityRunner.md`. Gameplay, water presentation and the current WM15 retest build
+remain unchanged.
+
 ## WM15 direct user-retest repair — build delivered (2026-10-29)
 
 The reported shore, pasture, livestock, military, housing and water defects were repaired in the current
