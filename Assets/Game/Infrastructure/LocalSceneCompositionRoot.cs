@@ -753,6 +753,11 @@ namespace Game.Infrastructure
             MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
                 MilitaryUnits, Appearances, worldSeed);
             MilitaryTraining.IsRuler = id => PlayerRealm.CurrentRulerId == id;
+            AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.GetRank(id).HasValue);
+            Work.AssignmentScope = (id, order) => !MilitaryTraining.GetRank(id).HasValue ||
+                order.Type == WorkJobType.Move || order.Type == WorkJobType.Guard ||
+                order.Type == WorkJobType.Military;
+            Appearances.AppearanceChanged += OnAppearanceChanged;
             Func<MilitaryTrainingRecordState, bool> canTrain = record =>
                 Buildings.TryGet(record.BarracksId, out var trainingBuilding) && trainingBuilding.IsOperational &&
                 trainingBuilding.OwnerSideId == record.SideId &&
@@ -863,6 +868,7 @@ namespace Game.Infrastructure
                     position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
                      BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi),
                 pointerRaycaster, input);
+            cameraController.PointerBlockedByUi = pointerRaycaster.IsPointerBlockedByUi;
             ManualMoveInput.EnableContextMenus();
             gameObject.AddComponent<SnowTrackPresentation>().Initialize(WorldHeight, CharacterPresentations,
                 TiledWorld.ArtWorldToDesign);
@@ -934,6 +940,7 @@ namespace Game.Infrastructure
 
         private void OnDestroy()
         {
+            if (Appearances != null) Appearances.AppearanceChanged -= OnAppearanceChanged;
             if (TiledWorld != null) TiledWorld.VisualTilesChanged -= RefreshAuthoredTreeVisibility;
             if (AiRuntime != null) AiRuntime.SimulationAdvanced -= OnSimulationAdvanced;
             if (HealthFamily != null) HealthFamily.ChildBorn -= OnChildBorn;
@@ -946,6 +953,26 @@ namespace Game.Infrastructure
             }
             WorldPopulation?.ShutdownWildlife();
             Tier2Runtime?.Dispose();
+        }
+
+        private void OnAppearanceChanged(StableEntityId characterId)
+        {
+            if (Characters == null || !Characters.TryGet(characterId, out var character)) return;
+            if (MilitaryTraining?.GetRank(characterId).HasValue == true)
+            {
+                foreach (var order in Work.GetQueue(characterId).Where(x => x.Type != WorkJobType.Move &&
+                             x.Type != WorkJobType.Guard && x.Type != WorkJobType.Military).ToArray())
+                    Work.Cancel(order.Id);
+                if (Work.Groups.TryGetForMember(characterId, out var current) &&
+                    current.Role != WorkGroupRole.Warriors)
+                    Work.RemoveMember(current.Id, characterId);
+                var warriors = Work.Groups.All.FirstOrDefault(x => x.Role == WorkGroupRole.Warriors);
+                if (warriors != null && !warriors.Contains(characterId)) Work.AddMember(warriors.Id, characterId);
+            }
+            if (Tier1Adapter == null || CharacterPresentations == null ||
+                !CharacterPresentations.TryGet(characterId, out _)) return;
+            Tier1Adapter.RebuildPresentation(character);
+            selectionProbe?.RefreshSelectedPresentations();
         }
 
         private void RefreshAuthoredTreeVisibility()
@@ -1180,17 +1207,23 @@ namespace Game.Infrastructure
                 if((point-lastCursor).sqrMagnitude>64 || (!cached.HasValue && cursorIndex>=near.Count && knownCount!=pads.Count))
                 {
                     lastCursor=point;knownCount=pads.Count;cursorIndex=0;cached=null;
-                    near=pads.Where(x=>new Vector2(x.center.x-point.x,x.center.z-point.z).sqrMagnitude<60*60)
-                        .OrderBy(x=>new Vector2(x.center.x-point.x,x.center.z-point.z).sqrMagnitude).ToList();
+                    // The old 60 m lookup made a valid authored shoreline appear completely red
+                    // unless the cursor happened to be very close to one invisible candidate.
+                    // Keep the search bounded, but always offer the nearest prepared landing.
+                    near=pads.Where(x=>new Vector2(x.center.x-point.x,x.center.z-point.z).sqrMagnitude<240f*240f)
+                        .OrderBy(x=>new Vector2(x.center.x-point.x,x.center.z-point.z).sqrMagnitude)
+                        .Take(96).ToList();
                 }
                 if(cached.HasValue)return cached;
                 var timer=System.Diagnostics.Stopwatch.StartNew();
                 while(cursorIndex<near.Count && timer.Elapsed.TotalMilliseconds<2)
                 {
                     var candidate=near[cursorIndex];
-                    var cells=activeDefinition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
-                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,adaptivePier))return null;
                     cursorIndex++;
+                    var cells=activeDefinition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
+                    // One obstructed landing must not make the whole shoreline look invalid.
+                    // Keep scanning the prepared candidates until a genuinely usable one is found.
+                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,adaptivePier))continue;
                     var verdict=BuildingPlacementService.Evaluate(activeDefinition,candidate.anchor,candidate.facing);
                     if(!verdict.IsValid)
                     {

@@ -500,6 +500,8 @@ namespace Game.Presentation.UI
             {
                 if (action == ContextActionKind.Gather && isCropTarget) continue;
                 var actionTarget = action==ContextActionKind.Gather && isPierTarget ? pierTarget : target;
+                if (action == ContextActionKind.Build && actionTarget.Kind == ContextTargetKind.Building)
+                    actionTarget = ResolveBuildingWorkTarget(actionTarget, activeContextSelectionIds);
                 if (!ContextActionRules.SupportsTarget(action, actionTarget)) continue;
                 if (target.Kind == ContextTargetKind.Building && context.Buildings.TryGet(target.EntityId, out var menuBuilding))
                 {
@@ -532,7 +534,8 @@ namespace Game.Presentation.UI
                 AddMuted(contextMenu, action == ContextActionKind.Attack
                     ? (attackState.Enabled ? "Доступно" : "Недоступно: " + MilitaryAttackReason(attackState.Reason))
                     : state.Reason == ContextUnavailableReason.None
-                        ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") + ContextReason(state.Reason));
+                        ? "Доступно" : (state.Delayed ? "Задержка: " : "Недоступно: ") +
+                            ContextReason(state.Reason, action, actionTarget));
             }
             if (target.Kind == ContextTargetKind.Building &&
                 context.Buildings.TryGet(target.EntityId, out var actionBuilding) &&
@@ -558,14 +561,16 @@ namespace Game.Presentation.UI
             if (canPlant) plant.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
             contextMenu.Add(plant);
             AddMuted(contextMenu, site.CropPhase == CropPlotPhase.Unplanted
-                ? (canPlant ? "Доступно" : "Недоступно: " + ContextReason(availability.Reason))
+                ? (canPlant ? "Доступно" : "Недоступно: " + ContextReason(availability.Reason,
+                    ContextActionKind.Gather, cropTarget))
                 : "Доступно только на незасеянном поле");
             var harvest = ActionButton("Собрать урожай", () => ExecuteCropContextAction(site.Id,CropPlotPhase.Ready), "context-crop-harvest");
             harvest.SetEnabled(canHarvest);
             if (canHarvest) harvest.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
             contextMenu.Add(harvest);
             AddMuted(contextMenu, site.CropPhase == CropPlotPhase.Ready
-                ? (canHarvest ? "Урожай созрел · " + CropPercent(site) : "Недоступно: " + ContextReason(availability.Reason))
+                ? (canHarvest ? "Урожай созрел · " + CropPercent(site) : "Недоступно: " +
+                    ContextReason(availability.Reason, ContextActionKind.Gather, cropTarget))
                 : "Сбор доступен при созревании: " + CropPercent(site));
         }
 
@@ -627,41 +632,35 @@ namespace Game.Presentation.UI
         {
             if (context.Facilities == null) return;
             var policy = context.Facilities.GetPolicy(building.Id);
-            AddMuted(parent, "Приоритет работы");
-            var priorityRow = Row();
-            foreach (var value in new[] { BuildingWorkPriority.Low, BuildingWorkPriority.Normal,
-                         BuildingWorkPriority.High, BuildingWorkPriority.Emergency })
+            var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
+            var hasWork = definition.Workplace != null || context.Production.Sites.Any(site =>
+                site.OwnerBuildingId == building.Id || site.Id == building.Id);
+            if (hasWork)
             {
-                var captured = value;
-                var button = ActionButton(policy.Priority == value ? "●" : "○", () =>
-                    TryCommand(() => context.Facilities.SetPolicy(building.Id, captured, policy.Shift,
-                        policy.WorkPaused, policy.GateAccess)), "building-priority-" + value.ToString().ToLowerInvariant());
-                button.tooltip = value == BuildingWorkPriority.Low ? "Низкий приоритет" :
-                    value == BuildingWorkPriority.Normal ? "Обычный приоритет" :
-                    value == BuildingWorkPriority.High ? "Высокий приоритет" : "Аварийный приоритет";
-                button.style.color = value == BuildingWorkPriority.Low ? new StyleColor(new Color(.45f, .75f, 1f)) :
-                    value == BuildingWorkPriority.Normal ? new StyleColor(new Color(.55f, .9f, .55f)) :
-                    value == BuildingWorkPriority.High ? new StyleColor(new Color(1f, .78f, .3f)) :
-                    new StyleColor(new Color(1f, .3f, .25f));
-                SerenityUiDesign.SetSelected(button, policy.Priority == value);
-                priorityRow.Add(button);
+                AddMuted(parent, "Приоритет работы");
+                var priorityRow = Row();
+                foreach (var value in new[] { BuildingWorkPriority.Low, BuildingWorkPriority.Normal,
+                             BuildingWorkPriority.High, BuildingWorkPriority.Emergency })
+                {
+                    var captured = value;
+                    var button = ActionButton(policy.Priority == value ? "●" : "○", () =>
+                        TryCommand(() => context.Facilities.SetPolicy(building.Id, captured, policy.Shift,
+                            policy.WorkPaused, policy.GateAccess)), "building-priority-" + value.ToString().ToLowerInvariant());
+                    button.tooltip = value == BuildingWorkPriority.Low ? "Низкий приоритет" :
+                        value == BuildingWorkPriority.Normal ? "Обычный приоритет" :
+                        value == BuildingWorkPriority.High ? "Высокий приоритет" : "Аварийный приоритет";
+                    button.style.color = value == BuildingWorkPriority.Low ? new StyleColor(new Color(.45f, .75f, 1f)) :
+                        value == BuildingWorkPriority.Normal ? new StyleColor(new Color(.55f, .9f, .55f)) :
+                        value == BuildingWorkPriority.High ? new StyleColor(new Color(1f, .78f, .3f)) :
+                        new StyleColor(new Color(1f, .3f, .25f));
+                    SerenityUiDesign.SetSelected(button, policy.Priority == value);
+                    priorityRow.Add(button);
+                }
+                parent.Add(priorityRow);
+                parent.Add(ActionButton(policy.WorkPaused ? "Возобновить работу" : "Остановить работу", () =>
+                    TryCommand(() => context.Facilities.SetPolicy(building.Id, policy.Priority, policy.Shift,
+                        !policy.WorkPaused, policy.GateAccess)), "building-work-toggle"));
             }
-            parent.Add(priorityRow);
-            var shiftRow = Row();
-            foreach (var value in new[] { WorkShiftKind.Day, WorkShiftKind.Night })
-            {
-                var captured = value;
-                var button = ActionButton((policy.Shift == value ? "✓ " : string.Empty) +
-                    (value == WorkShiftKind.Day ? "День" : "Ночь"), () =>
-                    TryCommand(() => context.Facilities.SetPolicy(building.Id, policy.Priority, captured,
-                        policy.WorkPaused, policy.GateAccess)), "building-shift-" + value.ToString().ToLowerInvariant());
-                SerenityUiDesign.SetSelected(button, policy.Shift == value);
-                shiftRow.Add(button);
-            }
-            parent.Add(shiftRow);
-            parent.Add(ActionButton(policy.WorkPaused ? "Возобновить работу" : "Остановить работу", () =>
-                TryCommand(() => context.Facilities.SetPolicy(building.Id, policy.Priority, policy.Shift,
-                    !policy.WorkPaused, policy.GateAccess)), "building-work-toggle"));
 
             if (building.DefinitionId == new BuildingDefinitionId("gate"))
             {
@@ -791,6 +790,8 @@ namespace Game.Presentation.UI
             if (action == ContextActionKind.Gather && TryGetFishingCampTarget(target, out var fishingTarget))
             { target = fishingTarget; action = ContextActionKind.Craft; }
             var roster = activeContextSelectionIds.ToArray();
+            if (action == ContextActionKind.Build && target.Kind == ContextTargetKind.Building)
+                target = ResolveBuildingWorkTarget(target, roster);
             var destination = action == ContextActionKind.Haul ? FindHaulDestination() : null;
             InventoryOwner? source = null;
             if (action == ContextActionKind.Haul && target.Kind == ContextTargetKind.ResourcePile)
@@ -808,6 +809,22 @@ namespace Game.Presentation.UI
             root.schedule.Execute(() => context.Selection.SelectCharacterIds(roster)).ExecuteLater(0);
             RefreshNow();
             return result;
+        }
+
+        private ContextCommandTarget ResolveBuildingWorkTarget(ContextCommandTarget target,
+            IReadOnlyList<StableEntityId> roster)
+        {
+            foreach (var id in roster)
+            {
+                if (!context.Presentations.TryGet(id, out var presenter)) continue;
+                var destination = new Vector3(target.Position.X, target.Position.Y, target.Position.Z);
+                if (!Game.Presentation.AI.ReachableNavMeshPoint.TryFind(presenter.transform.position,
+                    destination, out var reachable, 12f)) continue;
+                return new ContextCommandTarget(target.Kind,
+                    new WorldPosition(reachable.x, reachable.y, reachable.z), target.EntityId,
+                    target.ResourceId, target.ResourceClass);
+            }
+            return target;
         }
 
         public MilitaryAttackCommandResult ExecuteMilitaryAttack()
@@ -915,7 +932,7 @@ namespace Game.Presentation.UI
             var hunting = action == ContextActionKind.Gather && target.Kind == ContextTargetKind.ResourceSource &&
                 context.Production.TryGetSite(target.EntityId, out var huntedSite) && huntedSite.RecipeId.ToString() == "hunt_animal";
             var correctRole = context.PlayerCharacterIds().Contains(id) &&
-                (HasContextRole(id, action) || hunting && context.Military.TryGetForMember(id, out _));
+                (HasContextRole(id, action, hunting) || hunting && context.Military.TryGetForMember(id, out _));
             return new ContextActionFacts(exists && character.LifeState == CharacterLifeState.Alive,
                 exists && capabilities.IsAdult, correctRole,
                 exists && targetStatusValid && (action == ContextActionKind.Move ||
@@ -924,7 +941,7 @@ namespace Game.Presentation.UI
                 capacity, busy, true, criticalNeed, interruptible);
         }
 
-        private bool HasContextRole(StableEntityId id, ContextActionKind action)
+        private bool HasContextRole(StableEntityId id, ContextActionKind action, bool hunting = false)
         {
             if (context.MilitaryTraining.GetRank(id).HasValue &&
                 action != ContextActionKind.Move && action != ContextActionKind.Attack &&
@@ -935,6 +952,7 @@ namespace Game.Presentation.UI
             switch (action)
             {
                 case ContextActionKind.Gather:
+                    required = hunting ? WorkGroupRole.Hunters : WorkGroupRole.Gatherers; break;
                 case ContextActionKind.Mine:
                 case ContextActionKind.Chop: required = WorkGroupRole.Gatherers; break;
                 case ContextActionKind.Haul: required = WorkGroupRole.Haulers; break;
@@ -1111,12 +1129,13 @@ namespace Game.Presentation.UI
             }
         }
 
-        private static string ContextReason(ContextUnavailableReason reason)
+        private static string ContextReason(ContextUnavailableReason reason, ContextActionKind action,
+            ContextCommandTarget target)
         {
             switch (reason)
             {
                 case ContextUnavailableReason.WrongTargetType: return "неподходящий тип цели";
-                case ContextUnavailableReason.WrongRole: return "неподходящая роль";
+                case ContextUnavailableReason.WrongRole: return "требуется роль: " + RequiredRoleName(action, target);
                 case ContextUnavailableReason.TooYoung: return "недопустимый возраст";
                 case ContextUnavailableReason.InvalidStatus: return "статус жителя не позволяет выполнить приказ";
                 case ContextUnavailableReason.MissingTool: return "нет подходящего инструмента";
@@ -1131,6 +1150,21 @@ namespace Game.Presentation.UI
                 case ContextUnavailableReason.NonInterruptiblePhase: return "сначала завершится непрерываемая фаза";
                 default: return string.Empty;
             }
+        }
+
+        private static string RequiredRoleName(ContextActionKind action, ContextCommandTarget target)
+        {
+            if (action == ContextActionKind.Gather && target.Kind == ContextTargetKind.ResourceSource &&
+                target.ResourceId.HasValue && (target.ResourceId.Value.ToString() == "meat" ||
+                    target.ResourceId.Value.ToString().Contains("carcass"))) return "охотник";
+            return action switch
+            {
+                ContextActionKind.Gather => "сборщик", ContextActionKind.Mine => "сборщик",
+                ContextActionKind.Chop => "сборщик", ContextActionKind.Haul => "переносчик",
+                ContextActionKind.Build => "строитель", ContextActionKind.Craft => "ремесленник",
+                ContextActionKind.Guard => "воин", ContextActionKind.Attack => "обученный военный",
+                _ => "подходящий работник"
+            };
         }
 
         private void CreateDocument()
@@ -2044,6 +2078,20 @@ namespace Game.Presentation.UI
                 return;
             }
             AddSection(mainPanel, current.DisplayName);
+            AddLine(mainPanel, $"Дневная смена (06:00–18:00): {current.MembersForShift(WorkShiftKind.Day).Count}");
+            AddLine(mainPanel, $"Ночная смена (18:00–06:00): {current.MembersForShift(WorkShiftKind.Night).Count}");
+            var shiftAssignments = Row();
+            shiftAssignments.Add(ActionButton("Выбранных → день", () => TryCommand(() =>
+            {
+                foreach (var id in context.Selection.SelectedCharacterIds.Where(current.Contains))
+                    context.Work.SetMemberShift(current.Id, id, WorkShiftKind.Day);
+            }), "work-shift-day"));
+            shiftAssignments.Add(ActionButton("Выбранных → ночь", () => TryCommand(() =>
+            {
+                foreach (var id in context.Selection.SelectedCharacterIds.Where(current.Contains))
+                    context.Work.SetMemberShift(current.Id, id, WorkShiftKind.Night);
+            }), "work-shift-night"));
+            mainPanel.Add(shiftAssignments);
             var diagnosticType = JobTypeForRole(current.Role);
             if (diagnosticType.HasValue)
                 foreach (var candidate in context.DirectWork.GetCandidates(diagnosticType.Value, default))
@@ -2859,6 +2907,15 @@ namespace Game.Presentation.UI
             AddLine(inspector, "Уровень здания: 1");
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
             if (building.IsOperational) AddBuildingPolicyControls(inspector, building);
+            if (building.IsOperational && definition.Housing != null)
+            {
+                var residents = context.Facilities.HomeAssignments
+                    .Where(pair => pair.Value == building.Id)
+                    .Select(pair => pair.Key).OrderBy(id => id).ToArray();
+                AddSection(inspector, $"Жильцы: {residents.Length}/{definition.Housing.ResidentCapacity}");
+                if (residents.Length == 0) AddMuted(inspector, "Дом свободен.");
+                else foreach (var resident in residents) AddLine(inspector, "• " + CharacterName(resident));
+            }
             if (!building.IsOperational && building.ConstructionRequiredTicks > 0)
                 AddLine(inspector, $"Строительство: {building.ConstructionProgress:P0} · требуется работа строителя");
             if (!building.IsOperational && context.ConstructionClearance != null &&
@@ -3508,6 +3565,7 @@ namespace Game.Presentation.UI
                 case WorkGroupRole.Scouts: return WorkJobType.Scout;
                 case WorkGroupRole.Warriors: return WorkJobType.Military;
                 case WorkGroupRole.Caregivers: return WorkJobType.Care;
+                case WorkGroupRole.Hunters: return WorkJobType.Gather;
                 default: return null;
             }
         }

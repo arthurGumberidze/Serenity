@@ -49,8 +49,23 @@ namespace Game.Presentation.Buildings
             gameObject.name = $"Building {source.DefinitionId} [{source.Id}]";
             var hitProxy = GetComponent<StableWorldHitProxy>() ?? gameObject.AddComponent<StableWorldHitProxy>();
             hitProxy.Bind(source.Id, ContextTargetKind.Building);
+            if (source.DefinitionId.ToString() == "campfire") EnsureCampfireObstacle(gridSize);
             RefreshStructuralPresentation();
             if(source.DefinitionId.ToString()=="gate") SetGateOpen(false);
+        }
+
+        private void EnsureCampfireObstacle(float gridSize)
+        {
+            // Unity's destroyed Component proxy is not a CLR null, so ?? can retain an invalid
+            // serialized obstacle. Use Unity's overloaded null check before adding a fresh one.
+            var obstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
+            if (obstacle == null) obstacle = gameObject.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+            obstacle.shape = UnityEngine.AI.NavMeshObstacleShape.Box;
+            obstacle.center = new Vector3(0f, .35f, 0f);
+            obstacle.size = new Vector3(Mathf.Max(1.2f, gridSize * 1.55f), .8f,
+                Mathf.Max(1.2f, gridSize * 1.55f));
+            obstacle.carving = true;
+            obstacle.carveOnlyStationary = false;
         }
 
         public void SetGateOpen(bool open)

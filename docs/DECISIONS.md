@@ -2100,3 +2100,21 @@ still precedes focused tests and a Player build.
 
 The user approved the final ordinary-lake and marsh renders on 2026-10-29. The accepted mountain and mountain
 lake remain frozen; subsequent work must not retune these four environment targets without a new report.
+
+## D-218 — Runtime authority boundaries for soldiers, shifts and building interaction (2026-10-29)
+
+Military profession is a hard ordinary-work exclusion, not a soft suitability preference. Promotion or
+diagnostic creation therefore changes profession and clothing atomically, removes a soldier from civilian work
+groups, and cancels only incompatible civilian orders; Move, Guard and Military orders remain valid. Appearance
+changes notify presentation so a newly promoted Tier1 resident is rebuilt immediately in uniform.
+
+Work shifts belong to individual members inside a group. The group remains the profession/task authority while
+each member independently selects day or night; persistence records that mapping and older snapshots fall back
+to the group's legacy shift. Building cards no longer own shifts. Hunters are a first-class tenth group and
+role so UI availability can name the exact missing role.
+
+Construction separates logistics from labor: planning and hauling do not create a Build job, and visible build
+progress begins only in the Building phase. Interaction resolves a reachable NavMesh point around a footprint
+instead of requiring the building pivot itself to be walkable. Shore placement treats a blocked sample as one
+candidate failure and continues the bounded bank search. Campfires participate in navigation as carved
+obstacles. UI pointer ownership blocks map zoom and third-person attacks while the pointer is over UI.

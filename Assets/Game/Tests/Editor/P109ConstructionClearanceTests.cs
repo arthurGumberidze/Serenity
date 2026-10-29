@@ -43,18 +43,19 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void FreeSiteSchedulesDeliveryAndBuildImmediately()
+        public void FreeSiteSchedulesDeliveryBeforeBuildWork()
         {
             var fixture = CreateFixture();
 
             fixture.Clearance.Register(fixture.Building, Array.Empty<StableEntityId>(), WorkPriority.Normal);
 
             Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Haul && !x.IsTerminal), Is.True);
-            Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Build && !x.IsTerminal), Is.True);
+            Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Build && !x.IsTerminal), Is.False,
+                "A builder must not animate at zero progress while construction materials are still in transit.");
             Assert.That(fixture.Clearance.TryGetStatus(fixture.Building.Id, out var status), Is.True);
             Assert.That(status.IsClearing, Is.False);
             Assert.That(status.DeliveriesScheduled, Is.True);
-            Assert.That(status.BuildScheduled, Is.True);
+            Assert.That(status.BuildScheduled, Is.False);
         }
 
         [Test]
@@ -87,7 +88,8 @@ namespace Game.Tests.Editor
             fixture.Clearance.Advance();
 
             Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Haul && !x.IsTerminal), Is.True);
-            Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Build && !x.IsTerminal), Is.True);
+            Assert.That(fixture.Work.Jobs.Any(x => x.Type == WorkJobType.Build && !x.IsTerminal), Is.False,
+                "Clearing the site starts logistics, not premature builder animation.");
         }
 
         [Test, Category("WM12")]

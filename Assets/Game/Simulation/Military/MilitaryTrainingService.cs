@@ -277,6 +277,7 @@ namespace Game.Simulation.Military
                 records.RemoveAll(x => x.CharacterId == id);
                 records.Add(new MilitaryTrainingRecordState(id, barracksId, newSide, MilitaryRank.Private,
                     calendarTick, calendarTick, true, ++sequence));
+                character.AssignProfession(new ProfessionId("military"));
                 appearances.SetClothing(id, StoneAgeAppearanceProfiles.MilitaryClothing);
                 added++;
             }
@@ -301,6 +302,7 @@ namespace Game.Simulation.Military
         {
             var character = characters.Get(record.CharacterId);
             var level = catalog.Get(record.Rank);
+            character.AssignProfession(new ProfessionId("military"));
             character.SetSkill(new SkillState(CombatSkillId, new SkillLevel(Math.Max(
                 CharacterSkillRules.Level(character, CombatSkillId), level.CombatSkillLevel))));
             appearances.SetClothing(record.CharacterId, StoneAgeAppearanceProfiles.MilitaryClothing);

@@ -17,6 +17,7 @@ namespace Game.Presentation.CameraControl
         private Func<Vector3, float> groundHeight;
         private Vector3 home;
         private float focusAboveGround;
+        public Func<Vector2, bool> PointerBlockedByUi { get; set; }
 
         public void ConfigureGround(Func<Vector3, float> sample, Vector3 start)
         {
@@ -99,7 +100,8 @@ namespace Game.Presentation.CameraControl
             if (groundHeight != null) position.y = groundHeight(position)+focusAboveGround;
             if ((position - transform.position).sqrMagnitude > 0.00000001f) transform.position = position;
 
-            targetZoom = Mathf.Clamp(targetZoom - input.Zoom * settings.ZoomSpeed,
+            var pointerBlocked = PointerBlockedByUi?.Invoke(input.PointerPosition) == true;
+            targetZoom = Mathf.Clamp(targetZoom - (pointerBlocked ? 0f : input.Zoom) * settings.ZoomSpeed,
                 settings.MinZoom, settings.MaxZoom);
             var zoom = Mathf.MoveTowards(currentZoom, targetZoom, settings.ZoomSmoothing * unscaledDeltaTime);
             if (Mathf.Abs(zoom - currentZoom) > 0.0001f)

@@ -322,7 +322,9 @@ Shader "FX/ProceduralWater"
                 float3 n = normalize(lerp(n0, nRipple,
                     saturate(_RippleStrength * lerp(1.0, 0.38, wetland))));
 
-                float2 uv = i.screenUv;
+                // Refraction/depth taps outside the camera texture produced a bright horizontal
+                // band at the lower screen edge when the camera approached a lake.
+                float2 uv = saturate(i.screenUv);
 
                 float rawDepth = SampleSceneDepth(uv);
                 float sceneDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
@@ -368,10 +370,10 @@ Shader "FX/ProceduralWater"
 
                 float2 px = (_EdgeFoamWidth / _ScreenParams.xy);
                 float dC = sceneDepth;
-                float dR = SampleSceneDepthLinear(uv + float2(px.x, 0.0));
-                float dL = SampleSceneDepthLinear(uv + float2(-px.x, 0.0));
-                float dU = SampleSceneDepthLinear(uv + float2(0.0, px.y));
-                float dD = SampleSceneDepthLinear(uv + float2(0.0, -px.y));
+                float dR = SampleSceneDepthLinear(saturate(uv + float2(px.x, 0.0)));
+                float dL = SampleSceneDepthLinear(saturate(uv + float2(-px.x, 0.0)));
+                float dU = SampleSceneDepthLinear(saturate(uv + float2(0.0, px.y)));
+                float dD = SampleSceneDepthLinear(saturate(uv + float2(0.0, -px.y)));
 
                 float grad = max(max(abs(dC - dR), abs(dC - dL)), max(abs(dC - dU), abs(dC - dD)));
                 float edgeFoam = smoothstep(_EdgeFoamThreshold, _EdgeFoamThreshold * 3.0, grad);

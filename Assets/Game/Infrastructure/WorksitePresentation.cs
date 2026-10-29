@@ -30,6 +30,7 @@ namespace Game.Infrastructure
         private float nextRefresh;
         private readonly List<FishSchool> schools = new();
         private float fishTime;
+        private float nextFishRefresh;
         private sealed class FishSchool
         {
             public Transform Parent;
@@ -161,10 +162,17 @@ namespace Game.Infrastructure
         {
             if (root?.Clock == null) return;
             if (!root.Clock.IsPaused) fishTime += Time.unscaledDeltaTime;
-            schools.RemoveAll(x => x.Parent == null);
-            foreach (var school in schools)
+            // Fish are background presentation. Updating hundreds of transforms at the render frame rate
+            // caused the camera hitch visible near a populated lake; 20 Hz is smooth enough for the slow
+            // swimming paths and leaves the simulation/render budget to residents and construction.
+            if (Time.unscaledTime >= nextFishRefresh)
             {
-                RefreshFish(school);
+                nextFishRefresh = Time.unscaledTime + 0.05f;
+                schools.RemoveAll(x => x.Parent == null);
+                foreach (var school in schools)
+                {
+                    RefreshFish(school);
+                }
             }
             if (Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + 0.25f;

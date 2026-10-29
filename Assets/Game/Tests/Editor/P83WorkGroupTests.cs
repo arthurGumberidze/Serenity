@@ -11,6 +11,7 @@ using Game.Domain.Work;
 using Game.Infrastructure;
 using Game.Simulation.AI;
 using Game.Simulation.Resources;
+using Game.Simulation.Time;
 using Game.Simulation.Work;
 using NUnit.Framework;
 using UnityEngine;
@@ -21,13 +22,14 @@ namespace Game.Tests
     public sealed class P83WorkGroupTests
     {
         [Test]
-        public void NineRoleGroupsAndNearestSuitableAssignmentAreDeterministic()
+        public void TenRoleGroupsIncludeHuntersAndNearestSuitableAssignmentIsDeterministic()
         {
             var fixture = new Fixture();
             var far = fixture.Add("Far", new WorldPosition(12, 0, 0), 90);
             var near = fixture.Add("Near", new WorldPosition(2, 0, 0), 20);
             var groups = fixture.Commands.EnsureRoleGroups();
-            Assert.That(groups.Select(x => x.Role).Distinct().Count(), Is.EqualTo(9));
+            Assert.That(groups.Select(x => x.Role).Distinct().Count(), Is.EqualTo(10));
+            Assert.That(groups.Select(x => x.Role), Does.Contain(WorkGroupRole.Hunters));
             var gatherers = groups.Single(x => x.Role == WorkGroupRole.Gatherers);
             fixture.Work.AddMember(gatherers.Id, far.Id);
             fixture.Work.AddMember(gatherers.Id, near.Id);
@@ -78,6 +80,25 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ResidentExcludedFromOrdinaryWorkCancelsExistingCivilianOrder()
+        {
+            var fixture = new Fixture();
+            var resident = fixture.Add("Future soldier", default, 50);
+            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Gatherers);
+            fixture.Work.AddMember(gatherers.Id, resident.Id);
+            var order = fixture.Commands.Issue(WorkJobType.Gather,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite, StableEntityId.NewId(), default),
+                WorkPriority.Normal);
+            Assert.That(order.AssigneeId, Is.EqualTo(resident.Id));
+
+            fixture.Scheduler.BindOrdinaryWorkEligibility(_ => false);
+            fixture.Scheduler.Advance(new GameTimeAdvance(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)));
+
+            Assert.That(order.Status, Is.EqualTo(WorkJobStatus.Cancelled));
+            Assert.That(fixture.Work.HasOpenJob(resident.Id), Is.False);
+        }
+
+        [Test]
         public void ExclusiveTargetConflictCancelAndReprioritizeAreSafe()
         {
             var fixture = new Fixture();
@@ -98,8 +119,11 @@ namespace Game.Tests
         {
             var fixture = new Fixture();
             var worker = fixture.Add("Worker", default, 50);
+            var nightWorker = fixture.Add("Night Worker", new WorldPosition(20, 0, 0), 50);
             var builders = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Builders);
             fixture.Work.AddMember(builders.Id, worker.Id);
+            fixture.Work.AddMember(builders.Id, nightWorker.Id);
+            fixture.Work.SetMemberShift(builders.Id, nightWorker.Id, WorkShiftKind.Night);
             var order = fixture.Commands.Issue(WorkJobType.Build,
                 WorkTarget.ForEntity(WorkTargetKind.Building, StableEntityId.NewId(), new WorldPosition(3, 0, 4)),
                 WorkPriority.High);
@@ -110,7 +134,12 @@ namespace Game.Tests
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
 
             Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
-            Assert.That(restored.Work.Groups.Count, Is.EqualTo(9));
+            Assert.That(restored.Work.Groups.Count, Is.EqualTo(10));
+            var savedBuilders = restored.Work.Groups.Single(x => x.Id == builders.Id);
+            Assert.That(savedBuilders.MemberShifts.Single(x => x.CharacterId == worker.Id).Shift,
+                Is.EqualTo(WorkShiftKind.Day));
+            Assert.That(savedBuilders.MemberShifts.Single(x => x.CharacterId == nightWorker.Id).Shift,
+                Is.EqualTo(WorkShiftKind.Night));
             var saved = restored.Work.Jobs.Single();
             Assert.That(saved.Id, Is.EqualTo(order.Id.Value));
             Assert.That(saved.Type, Is.EqualTo(WorkJobType.Build));
@@ -152,6 +181,7 @@ namespace Game.Tests
             }
             public WorkManager Work { get; }
             public DirectWorkCommandService Commands { get; }
+            public Tier1AiScheduler Scheduler => scheduler;
 
             public Character Add(string name, WorldPosition position, int strength, double energy = 1d)
             {

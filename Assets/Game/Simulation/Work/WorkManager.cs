@@ -87,6 +87,8 @@ namespace Game.Simulation.Work
         }
 
         public void SetGroupShift(WorkGroupId groupId, WorkShiftKind shift) => Groups.Get(groupId).SetShift(shift);
+        public void SetMemberShift(WorkGroupId groupId, StableEntityId characterId, WorkShiftKind shift) =>
+            Groups.Get(groupId).SetMemberShift(characterId, shift);
 
         public WorkOrder CreateMoveJob(StableEntityId? assigneeId, WorldPosition target, WorkPriority priority,
             WorkGroupId? groupId = null, bool exclusiveTarget = false,
@@ -201,7 +203,8 @@ namespace Game.Simulation.Work
             if (calendarTick < 0) throw new ArgumentOutOfRangeException(nameof(calendarTick));
             if (!Groups.TryGetForMember(characterId, out var group)) return true;
             var hour = (int)((calendarTick % TimeSpan.TicksPerDay) / TimeSpan.TicksPerHour);
-            return group.Shift == WorkShiftKind.Day ? hour >= 6 && hour < 18 : hour < 6 || hour >= 18;
+            var shift = group.ShiftFor(characterId);
+            return shift == WorkShiftKind.Day ? hour >= 6 && hour < 18 : hour < 6 || hour >= 18;
         }
 
         public bool TryGetAssigned(StableEntityId characterId, out WorkOrder job)
@@ -269,7 +272,8 @@ namespace Game.Simulation.Work
             {
                 var group = AddGroup(WorkGroup.CreateWithId(groupState.Id, groupState.DisplayName, groupState.Role),
                     groupState.MemberIds);
-                group.SetShift(groupState.Shift);
+                foreach (var member in groupState.MemberShifts)
+                    if (group.Contains(member.CharacterId)) group.SetMemberShift(member.CharacterId, member.Shift);
                 if (groupState.CommanderId.HasValue) group.SetCommander(groupState.CommanderId.Value);
             }
             foreach (var saved in state.Jobs.OrderBy(x => x.Id))

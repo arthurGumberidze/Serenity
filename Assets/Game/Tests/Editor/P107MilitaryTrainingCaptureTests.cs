@@ -78,6 +78,9 @@ namespace Game.Tests.Editor
                 new CombatSideId("player"), MilitaryRank.ColonelGeneral, 0);
 
             Assert.That(fixture.Training.GetMaximumHealth(fixture.Soldier.Id), Is.GreaterThan(100));
+            Assert.That(fixture.Soldier.ProfessionId?.Value, Is.EqualTo("military"));
+            Assert.That(fixture.Appearances.Get(fixture.Soldier.Id).ClothingId,
+                Is.EqualTo(StoneAgeAppearanceProfiles.MilitaryClothing));
             Assert.That(fixture.Soldier.Health.Head.Value, Is.EqualTo(before));
             Assert.That(fixture.Soldier.Health.Torso.Value, Is.EqualTo(50));
         }

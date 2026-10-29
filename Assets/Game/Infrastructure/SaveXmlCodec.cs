@@ -364,7 +364,15 @@ namespace Game.Infrastructure
             var produced = Items(element.Element("producedTotals"), "amount", DeserializeAmount);
             var inventories = Items(element.Element("inventories"), "inventory", item =>
             {
-                RequireFields(item, new[] { "ownerKind", "ownerId", "capacity", "acceptsAll", "categories", "amounts" });
+                var inventoryFields = new List<string>
+                {
+                    "ownerKind", "ownerId", "capacity", "acceptsAll", "categories"
+                };
+                if (item.Element("acceptsAllResources") != null) inventoryFields.Add("acceptsAllResources");
+                if (item.Element("resources") != null) inventoryFields.Add("resources");
+                if (item.Element("issuanceLocked") != null) inventoryFields.Add("issuanceLocked");
+                inventoryFields.Add("amounts");
+                RequireFields(item, inventoryFields.ToArray());
                 var acceptsAll = XmlConvert.ToBoolean(Value(item, "acceptsAll"));
                 var categories = Items(item.Element("categories"), "category",
                     category => (ResourceCategory)XmlConvert.ToInt32(category.Value));
@@ -1757,7 +1765,10 @@ namespace Game.Infrastructure
                 new XElement("id", group.Id.ToString()), new XElement("name", group.DisplayName),
                 new XElement("role", (int)group.Role), new XElement("shift", (int)group.Shift),
                 OptionalId("commanderId", group.CommanderId),
-                new XElement("members", group.MemberIds.Select(id => new XElement("member", id.ToString())))))));
+                new XElement("members", group.MemberIds.Select(id => new XElement("member", id.ToString()))),
+                new XElement("memberShifts", group.MemberShifts.Select(member => new XElement("memberShift",
+                    new XElement("id", member.CharacterId.ToString()),
+                    new XElement("shift", (int)member.Shift))))))));
             element.Add(new XElement("jobs", state.Jobs.Select(job =>
             {
                 var item = new XElement("job",
@@ -1790,11 +1801,21 @@ namespace Game.Infrastructure
                 : new[] { "nextJobId", "groups", "jobs" });
             var groups = Items(element.Element("groups"), "group", value =>
             {
-                RequireFields(value, new[] { "id", "name", "role", "commanderId", "members" });
+                var groupFields = new[] { "id", "name", "role", "commanderId", "members" };
+                if (value.Element("shift") != null) groupFields = groupFields.Concat(new[] { "shift" }).ToArray();
+                if (value.Element("memberShifts") != null) groupFields = groupFields.Concat(new[] { "memberShifts" }).ToArray();
+                RequireFields(value, groupFields);
                 return new WorkGroupState(new WorkGroupId(StableEntityId.Parse(Value(value, "id"))),
                     Value(value, "name"), Items(value.Element("members"), "member", x => StableEntityId.Parse(Scalar(x))),
                     OptionalStableId(value, "commanderId"), (WorkGroupRole)Int(value, "role"),
-                    value.Element("shift") == null ? WorkShiftKind.Day : (WorkShiftKind)Int(value, "shift"));
+                    value.Element("shift") == null ? WorkShiftKind.Day : (WorkShiftKind)Int(value, "shift"),
+                    value.Element("memberShifts") == null ? null :
+                        Items(value.Element("memberShifts"), "memberShift", member =>
+                        {
+                            RequireFields(member, new[] { "id", "shift" });
+                            return new WorkGroupMemberShiftState(StableEntityId.Parse(Value(member, "id")),
+                                (WorkShiftKind)Int(member, "shift"));
+                        }));
             });
             var jobs = Items(element.Element("jobs"), "job", value =>
             {

@@ -65,7 +65,8 @@ namespace Game.Infrastructure.Integration
                 root.GameplayUi.SetOnboardingVisible(false);
                 root.GameplayUi.SetDeveloperUiVisible(false);
                 var groups = root.DirectWorkCommands.EnsureRoleGroups();
-                result.nine_role_groups = groups.Select(x => x.Role).Distinct().Count() == 9;
+                result.nine_role_groups = groups.Select(x => x.Role).Distinct().Count() == 10 &&
+                    groups.Any(x => x.Role == WorkGroupRole.Hunters);
                 var gatherers = groups.Single(x => x.Role == WorkGroupRole.Gatherers);
                 var worker = root.MaleDemoCharacter.Id;
                 if (root.Work.Groups.TryGetForMember(worker, out var previous) && previous.Id != gatherers.Id)

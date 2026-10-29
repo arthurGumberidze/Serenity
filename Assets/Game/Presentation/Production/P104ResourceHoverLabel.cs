@@ -27,7 +27,13 @@ namespace Game.Presentation.Production
             var source = proxy.GetComponent<ProductionSourcePresenter>();
             if (source != null && source.IsBound)
             {
-                if (production.IsPastureSite(source.Site.Id))
+                if (production.Animals.TryGet(source.Site.Id, out var animal))
+                {
+                    label = animal.Alive
+                        ? $"{AnimalName(animal.Species)} · {(animal.Male ? "самец" : "самка")} · {animal.Health}/{animal.Maximum} HP"
+                        : $"Туша {AnimalName(animal.Species).ToLowerInvariant()} · 0/{animal.Maximum} HP";
+                }
+                else if (production.IsPastureSite(source.Site.Id))
                 {
                     var herd = production.Animals.AtHome(source.Site.Id).Count(x => x.Alive);
                     label = herd == 0 ? "Загон для скота · пуст" : $"Загон для скота · животных: {herd}";
@@ -55,6 +61,13 @@ namespace Game.Presentation.Production
             var gui = WorldPointerRaycaster.ScreenToGuiPoint(pointer);
             GUI.Box(new Rect(gui.x + 14f, gui.y + 14f, 230f, 30f), label, style);
         }
+
+        private static string AnimalName(string species) => species switch
+        {
+            "sheep" => "Овца", "cow" => "Корова", "goat" => "Коза", "pig" => "Свинья",
+            "horse" => "Лошадь", "chicken" => "Курица", "duck" => "Утка", "rabbit" => "Кролик",
+            _ => "Животное"
+        };
 
         public static string CropGrowthLabel(Game.Domain.Production.ProductionSite site)
         {

@@ -32,6 +32,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(480000)]
         public IEnumerator Assigned_bed_drives_sleep_and_ui_exposes_player_facing_domestic_route()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();

@@ -182,6 +182,7 @@ namespace Game.Presentation.Control
             if (control.State.Mode != PlayerControlMode.ThirdPerson || !activeCharacterId.HasValue ||
                 runtime.Clock.IsPaused || raycaster.WorldCamera == null)
             { LastAttackStatus = ManualCombatAttackStatus.Invalid; LastAttackMessage = "Удар недоступен на паузе."; return; }
+            if (raycaster.IsPointerBlockedByUi(input.PointerPosition)) return;
             if (Time.unscaledTime < nextSwingTime) return;
             nextSwingTime = Time.unscaledTime + 0.45f;
             if (presentations.TryGet(activeCharacterId.Value, out var attacker)) attacker.PlayManualAttackPresentation();

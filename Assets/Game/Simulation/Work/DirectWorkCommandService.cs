@@ -38,7 +38,7 @@ namespace Game.Simulation.Work
         {
             WorkGroupRole.Gatherers, WorkGroupRole.Builders, WorkGroupRole.Haulers,
             WorkGroupRole.Crafters, WorkGroupRole.FarmersGatherers, WorkGroupRole.Scientists,
-            WorkGroupRole.Scouts, WorkGroupRole.Warriors, WorkGroupRole.Caregivers
+            WorkGroupRole.Scouts, WorkGroupRole.Warriors, WorkGroupRole.Caregivers, WorkGroupRole.Hunters
         };
 
         private readonly CharacterRegistry characters;
@@ -126,7 +126,7 @@ namespace Game.Simulation.Work
             var group = work.Groups.All.FirstOrDefault(x => x.Role == role);
             if (group == null) return Array.Empty<WorkCandidateDiagnostic>();
             return group.Members.Select(id => Diagnose(id, role, target))
-                .OrderByDescending(x => x.Suitability).ThenBy(x => x.DistanceSquared)
+                .OrderBy(x => x.DistanceSquared).ThenByDescending(x => x.Suitability)
                 .ThenBy(x => DeterministicTieBreak(x.CharacterId, 0)).ToArray();
         }
 
@@ -137,7 +137,7 @@ namespace Game.Simulation.Work
                 .Where(x => allowSafeInterruption
                     ? scheduler.CanInterruptForDirectWork(x.CharacterId)
                     : x.Available)
-                .OrderByDescending(x => x.Suitability).ThenBy(x => x.DistanceSquared)
+                .OrderBy(x => x.DistanceSquared).ThenByDescending(x => x.Suitability)
                 .ThenBy(x => DeterministicTieBreak(x.CharacterId, job.Id.Value)).ToArray();
             if (candidates.Length == 0) return false;
             var selected = candidates[0].CharacterId;
@@ -184,6 +184,7 @@ namespace Game.Simulation.Work
                 case WorkGroupRole.Builders: return text.Contains("build");
                 case WorkGroupRole.Crafters: return text.Contains("craft");
                 case WorkGroupRole.Caregivers: return text.Contains("heal") || text.Contains("medic");
+                case WorkGroupRole.Hunters: return text.Contains("hunt");
                 default: return text.Contains("worker");
             }
         }
@@ -198,6 +199,7 @@ namespace Game.Simulation.Work
                 case WorkGroupRole.Builders: return "construction";
                 case WorkGroupRole.Crafters: return "crafting";
                 case WorkGroupRole.Caregivers: return "medicine";
+                case WorkGroupRole.Hunters: return "hunting";
                 default: return null;
             }
         }
@@ -226,6 +228,7 @@ namespace Game.Simulation.Work
                 case WorkGroupRole.Scouts: return "Разведчики";
                 case WorkGroupRole.Warriors: return "Воины";
                 case WorkGroupRole.Caregivers: return "Опекуны";
+                case WorkGroupRole.Hunters: return "Охотники";
                 default: return "Рабочие";
             }
         }

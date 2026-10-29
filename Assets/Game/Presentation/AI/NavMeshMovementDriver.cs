@@ -32,6 +32,7 @@ namespace Game.Presentation.AI
         private float lightweightSpeed;
         private bool hasRequestedDestination;
         private bool crowdDetailEnabled = true;
+        private bool simulationPaused;
 
         public NavMeshMovementDriver(CharacterPresenter presenter, float baseSpeed)
         {
@@ -96,8 +97,10 @@ namespace Game.Presentation.AI
                 if (state == MovementState.Moving && hasRequestedDestination)
                 {
                     agent.stoppingDistance = requestedStoppingDistance;
-                    agent.isStopped = false;
                     state = agent.SetDestination(requestedDestination) ? MovementState.Moving : MovementState.Failed;
+                    // Camera movement may promote a resident back to a full NavMeshAgent while the
+                    // simulation is paused. Rebuilding its path must never unpause physical motion.
+                    agent.isStopped = simulationPaused;
                 }
                 return;
             }
@@ -276,6 +279,7 @@ namespace Game.Presentation.AI
 
         public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)
         {
+            simulationPaused = paused;
             if (!IsAvailable) return;
             if (movementPerThousand < 0 || movementPerThousand > 2000)
                 throw new ArgumentOutOfRangeException(nameof(movementPerThousand));

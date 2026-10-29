@@ -56,7 +56,11 @@ namespace Game.Infrastructure
                         obstacle.center = Vector3.up * .6f; obstacle.radius = .4f; obstacle.height = 1.2f;
                         view.AddComponent<ProductionSourcePresenter>().Bind(site, Color.white, true);
                         view.AddComponent<AnimalHealthPresentation>().Bind(root.Production.Animals, animal.Id, model.transform);
-                        view.transform.position = new Vector3(site.Position.X,site.Position.Y,site.Position.Z);
+                        // Founding animals used to spawn at the exact same point and looked like a
+                        // single sheep until their slow wander separated them.
+                        var initial = InitialPenSlot(site.Position, pen, slot);
+                        view.transform.position = initial;
+                        site.MoveAnimal(new WorldPosition(initial.x, initial.y, initial.z));
                         views.Add(animal.Id, view);
                     }
                     if(animal.Alive && age>=1 && adultViews.Add(animal.Id))
@@ -97,6 +101,17 @@ namespace Game.Infrastructure
                     view.GetComponent<AnimalHealthPresentation>().Refresh();
                 }
             }
+        }
+
+        private Vector3 InitialPenSlot(WorldPosition position, CropPlotPresentation pen, int slot)
+        {
+            var center = new Vector3(position.X, position.Y, position.Z);
+            if (pen == null) return center;
+            var column = slot % 2 == 0 ? -1f : 1f;
+            var row = slot / 2 % 2 == 0 ? -1f : 1f;
+            var local = new Vector3(column * Mathf.Min(1.6f, pen.WidthMeters * .24f), 0f,
+                row * Mathf.Min(1.6f, pen.DepthMeters * .24f));
+            return root.TiledWorld.ProjectToGround(pen.transform.TransformPoint(local), .05f);
         }
 
         private GameObject CreateModel(GameObject view,string species,bool baby)

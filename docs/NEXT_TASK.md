@@ -1,5 +1,14 @@
 # NEXT_TASK.md
 
+## WM15 living-building feedback — user retest (2026-10-29)
+
+Deliver `Builds/WM15UserFeedback/Serenity.exe` and ask the user to create a new world, use the military/resource
+diagnostics, assign builders and hunter/day/night group members, place a pier and fishing building, and inspect
+a hut, pen animal, campfire pathing, paused camera movement, UI wheel/TPS input and close lake edge. Automated
+evidence is 2/2 full-world PlayMode scenarios plus all affected EditMode assertions green; the Development
+build succeeded with 0 errors / 82 warnings. Do not resume startup optimization. Preserve the neighbouring
+mountain/import work and do not reopen deferred building upgrades, Ollama settlements or mountain graphics.
+
 ## WM15 resident map cache — user retest (2026-10-29)
 
 Deliver `Builds/WM15MapWarmup/Serenity.exe` and ask the user to create a new world. On the first incomplete

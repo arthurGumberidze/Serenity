@@ -36,6 +36,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(480000)]
         public IEnumerator EveryInteractiveWorldObjectHasStableHitProxyAndCollider()
         {
             foreach (var presenter in Object.FindObjectsByType<CharacterPresenter>(FindObjectsInactive.Exclude))

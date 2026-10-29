@@ -57,6 +57,7 @@ namespace Game.Simulation.AI
         private long calendarTicks;
         private AutonomousWorkMode autonomousWorkMode = AutonomousWorkMode.LegacyUtility;
         private IExternalCharacterActivityOwner externalActivityOwner;
+        private Func<StableEntityId, bool> ordinaryWorkEligibility;
 
         public Tier1AiScheduler(CharacterRegistry characters, Tier1AiAgentRegistry agents, Tier1AiWorld world,
             Tier1AiSettings settings = null, WorkManager workManager = null,
@@ -149,6 +150,9 @@ namespace Game.Simulation.AI
             externalActivityOwner = owner;
         }
 
+        public void BindOrdinaryWorkEligibility(Func<StableEntityId, bool> eligibility) =>
+            ordinaryWorkEligibility = eligibility ?? throw new ArgumentNullException(nameof(eligibility));
+
         public void SuspendForExternalControl(StableEntityId characterId)
         {
             if (!byId.TryGetValue(characterId, out var entry))
@@ -174,6 +178,7 @@ namespace Game.Simulation.AI
         public bool CanInterruptForDirectWork(StableEntityId characterId)
         {
             if (!byId.TryGetValue(characterId, out var entry)) return false;
+            if (ordinaryWorkEligibility != null && !ordinaryWorkEligibility(characterId)) return false;
             if (externalActivityOwner != null && externalActivityOwner.IsExternallyControlled(characterId)) return false;
             if (entry.Agent.Needs.Energy <= CriticalRestEnergy || entry.Agent.Needs.Hunger >= CriticalHunger ||
                 entry.Agent.Needs.Thirst >= CriticalThirst)
@@ -422,6 +427,32 @@ namespace Game.Simulation.AI
             if (entry.Agent.Needs.Mood <= WorkRefusalMood)
             {
                 if (entry.Action != null && IsManual(entry.Action.Kind))
+                {
+                    entry.Action.Cancel();
+                    entry.Action = null;
+                }
+                entry.Movement.Stop();
+                entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
+                return;
+            }
+
+            var ordinaryWorkAllowed = ordinaryWorkEligibility == null ||
+                ordinaryWorkEligibility(entry.Agent.CharacterId);
+            if (!ordinaryWorkAllowed)
+            {
+                // Trained soldiers still satisfy hunger, thirst and rest above, but they never
+                // fall through into civilian hauling, gathering, production or research.
+                if (work != null && work.TryGetAssigned(entry.Agent.CharacterId, out var militaryOrder))
+                {
+                    if (militaryOrder.Type == WorkJobType.Move || militaryOrder.Type == WorkJobType.Guard ||
+                        militaryOrder.Type == WorkJobType.Military)
+                    {
+                        if (entry.Action == null) StartManual(entry, militaryOrder);
+                        return;
+                    }
+                    work.Cancel(militaryOrder.Id);
+                }
+                if (entry.Action != null)
                 {
                     entry.Action.Cancel();
                     entry.Action = null;

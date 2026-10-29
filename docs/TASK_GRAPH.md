@@ -575,3 +575,9 @@ pasture founding, accumulation-style mountain snow, requested light multipliers 
 silver fish are implemented. Focused evidence is effectively 11/11; Windows build-e succeeded with 0 errors;
 Player-b passed 55 relevant/runtime checks with two unrelated historical hunt timing failures. WM15 stays
 IN_PROGRESS for user visual acceptance, initial loading and deferred full 100/300/500 gates.
+
+WM15 living-building runtime feedback note (2026-10-29): all fifteen newly reported behavior/UI defects are
+implemented and locally verified. The affected EditMode set is green after the deterministic P83 rerun; two
+full-world PlayMode scenarios passed 2/2; Windows Development build `Builds/WM15UserFeedback/Serenity.exe`
+succeeded with 0 errors / 82 warnings. This feedback slice is DONE and awaits user retest. WM15 as a whole
+remains IN_PROGRESS only for separately owned visual/runtime acceptance and deferred population gates.

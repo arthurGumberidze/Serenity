@@ -18,7 +18,8 @@ namespace Game.Domain.Work
         Scientists = 6,
         Scouts = 7,
         Warriors = 8,
-        Caregivers = 9
+        Caregivers = 9,
+        Hunters = 10
     }
 
     public readonly struct WorkGroupId : IEquatable<WorkGroupId>, IComparable<WorkGroupId>
@@ -45,7 +46,8 @@ namespace Game.Domain.Work
     {
         public WorkGroupState(WorkGroupId id, string displayName, StableEntityId[] memberIds,
             StableEntityId? commanderId, WorkGroupRole role = WorkGroupRole.General,
-            WorkShiftKind shift = WorkShiftKind.Day)
+            WorkShiftKind shift = WorkShiftKind.Day,
+            IEnumerable<WorkGroupMemberShiftState> memberShifts = null)
         {
             if (!id.IsValid) throw new ArgumentException("Valid group identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName) || displayName.Trim().Length > 64)
@@ -57,6 +59,8 @@ namespace Game.Domain.Work
             Role = role;
             if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
             Shift = shift;
+            MemberShifts = Array.AsReadOnly((memberShifts ?? MemberIds.Select(value =>
+                new WorkGroupMemberShiftState(value, shift))).ToArray());
         }
 
         public WorkGroupId Id { get; }
@@ -65,11 +69,27 @@ namespace Game.Domain.Work
         public StableEntityId? CommanderId { get; }
         public WorkGroupRole Role { get; }
         public WorkShiftKind Shift { get; }
+        public IReadOnlyList<WorkGroupMemberShiftState> MemberShifts { get; }
+    }
+
+    public readonly struct WorkGroupMemberShiftState
+    {
+        public WorkGroupMemberShiftState(StableEntityId characterId, WorkShiftKind shift)
+        {
+            if (!characterId.IsValid) throw new ArgumentException("Valid character identity required.", nameof(characterId));
+            if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
+            CharacterId = characterId;
+            Shift = shift;
+        }
+        public StableEntityId CharacterId { get; }
+        public WorkShiftKind Shift { get; }
     }
 
     public sealed class WorkGroup
     {
         private readonly HashSet<StableEntityId> members = new HashSet<StableEntityId>();
+        private readonly Dictionary<StableEntityId, WorkShiftKind> memberShifts =
+            new Dictionary<StableEntityId, WorkShiftKind>();
 
         private WorkGroup(WorkGroupId id, string displayName, WorkGroupRole role,
             WorkShiftKind shift = WorkShiftKind.Day)
@@ -100,7 +120,9 @@ namespace Game.Domain.Work
         public static WorkGroup Restore(WorkGroupState state)
         {
             var group = new WorkGroup(state.Id, state.DisplayName, state.Role, state.Shift);
-            foreach (var member in state.MemberIds) group.AddMember(member);
+            var shifts = state.MemberShifts.ToDictionary(value => value.CharacterId, value => value.Shift);
+            foreach (var member in state.MemberIds)
+                group.AddMember(member, shifts.TryGetValue(member, out var shift) ? shift : state.Shift);
             if (state.CommanderId.HasValue) group.SetCommander(state.CommanderId.Value);
             return group;
         }
@@ -112,23 +134,39 @@ namespace Game.Domain.Work
             DisplayName = displayName.Trim();
         }
 
-        public void AddMember(StableEntityId characterId)
+        public void AddMember(StableEntityId characterId, WorkShiftKind shift = WorkShiftKind.Day)
         {
             if (!characterId.IsValid) throw new ArgumentException("Valid character identity required.", nameof(characterId));
             if (Role == WorkGroupRole.Warriors && members.Count >= 50)
                 throw new InvalidOperationException("A military squad may contain at most 50 residents including its commander.");
             if (!members.Add(characterId))
                 throw new InvalidOperationException("Character is already a member of this work group.");
+            memberShifts.Add(characterId, shift);
         }
 
         public bool RemoveMember(StableEntityId characterId)
         {
             if (!members.Remove(characterId)) return false;
+            memberShifts.Remove(characterId);
             if (CommanderId == characterId) CommanderId = null;
             return true;
         }
 
         public bool Contains(StableEntityId characterId) => members.Contains(characterId);
+
+        public WorkShiftKind ShiftFor(StableEntityId characterId) => memberShifts.TryGetValue(characterId, out var shift)
+            ? shift : throw new InvalidOperationException("Character is not a member of this work group.");
+
+        public IReadOnlyList<StableEntityId> MembersForShift(WorkShiftKind shift) => Members
+            .Where(value => memberShifts.TryGetValue(value, out var assigned) && assigned == shift).ToArray();
+
+        public void SetMemberShift(StableEntityId characterId, WorkShiftKind shift)
+        {
+            if (!members.Contains(characterId))
+                throw new InvalidOperationException("Character is not a member of this work group.");
+            if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
+            memberShifts[characterId] = shift;
+        }
 
         public void SetCommander(StableEntityId characterId)
         {
@@ -141,9 +179,11 @@ namespace Game.Domain.Work
         {
             if (!Enum.IsDefined(typeof(WorkShiftKind), shift)) throw new ArgumentOutOfRangeException(nameof(shift));
             Shift = shift;
+            foreach (var member in members) memberShifts[member] = shift;
         }
 
-        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId, Role, Shift);
+        public WorkGroupState CaptureState() => new WorkGroupState(Id, DisplayName, Members.ToArray(), CommanderId,
+            Role, Shift, Members.Select(value => new WorkGroupMemberShiftState(value, ShiftFor(value))));
     }
 
     public sealed class WorkGroupRegistry

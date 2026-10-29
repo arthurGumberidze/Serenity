@@ -27,6 +27,7 @@ namespace Game.Simulation.Characters
         }
 
         public AppearanceDefinitionCatalog Catalog => catalog;
+        public event Action<StableEntityId> AppearanceChanged;
 
         public AppearanceState GetOrCreate(Character character)
         {
@@ -55,6 +56,7 @@ namespace Game.Simulation.Characters
         {
             Validate(appearance, allowUnknownProfile: false);
             states[appearance.CharacterId] = appearance;
+            AppearanceChanged?.Invoke(appearance.CharacterId);
         }
 
         public AppearanceState SetClothing(StableEntityId characterId, AppearancePartId clothingId)
@@ -66,6 +68,7 @@ namespace Game.Simulation.Characters
             var replacement = current.With(clothingId: clothingId);
             Validate(replacement, allowUnknownProfile: false);
             states[characterId] = replacement;
+            AppearanceChanged?.Invoke(characterId);
             return replacement;
         }
 

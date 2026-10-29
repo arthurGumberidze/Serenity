@@ -164,6 +164,10 @@ namespace Game.Simulation.Buildings
                 fundingSources(), plan.Priority) || HasDeliveryJob(building.Id) ||
                 building.ConstructionMaterials.All(x => x.RemainingUnits == 0);
             if (!plan.DeliveriesScheduled) return;
+            // Scheduling transport is not the same as installing its cargo. Starting a builder
+            // before the final stage is committed only plays a work animation while the domain
+            // correctly rejects progress. Wait for the construction phase to become workable.
+            if (building.ConstructionPhase != ConstructionPhase.Building) return;
             if (!plan.BuildScheduled && !HasBuildJob(building.Id))
             {
                 work.CreateDirectJob(WorkJobType.Build, null,

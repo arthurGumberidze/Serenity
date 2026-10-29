@@ -1,5 +1,26 @@
 # PROJECT_STATE.md
 
+## WM15 living-building runtime feedback repair — built and verified (2026-10-29)
+
+The fifteen reported runtime defects were corrected without reopening startup optimization or changing the
+parallel mountain/import work. Housing no longer exposes work priority or building shifts and now lists its
+occupants. Work-group members own their day/night shifts, and a dedicated Hunters group/role is available.
+Soldiers created by diagnostics receive military profession/clothing immediately and are excluded from
+civilian work. Construction now starts only after delivery, uses reachable interaction points around the
+footprint, and no longer shows hammering at zero progress. Shore snapping skips blocked candidates and searches
+a larger bank radius, so piers and fishing buildings can find valid approaches.
+
+Pause now stops NavMesh presentation movement even while the camera changes LOD. Campfires carve navigation;
+live livestock labels show species/sex/health instead of carcass text, and pen animals are separated visibly.
+Map zoom and third-person attack ignore pointer input over UI. Water depth sampling is clamped at screen edges,
+and decorative fish updates are throttled to remove the reported close-water hitch. Save XML accepts and
+round-trips the new per-member shifts and existing warehouse policy fields.
+
+Affected EditMode coverage is green: the broad run passed 58/59 and the corrected deterministic P83 rerun
+passed 7/7, closing the single failed assertion. Two full-world PlayMode scenarios passed 2/2 in 524.74 s.
+Windows Development build `Builds/WM15UserFeedback/Serenity.exe` succeeded with 0 errors / 82 warnings. Exact
+commands and evidence: `docs/validation/WM15UserFeedback.md`.
+
 ## WM15 resident map cache and one-time warmup — built and Player verified (2026-10-29)
 
 The accepted mountain, mountain lake and water presentation remain unchanged. The 4x4 local map no longer
