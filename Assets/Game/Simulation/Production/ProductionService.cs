@@ -1025,6 +1025,12 @@ namespace Game.Simulation.Production
         }
 
         public bool IsTaskActive(StableEntityId taskId) => tasks.TryGetValue(taskId, out var task) && !task.IsTerminal;
+        public bool TryGetWorkerTask(StableEntityId workerId, out ProductionTask task)
+        {
+            task = null;
+            return workerTasks.TryGetValue(workerId, out var taskId) &&
+                tasks.TryGetValue(taskId, out task) && !task.IsTerminal;
+        }
 
         public void CollectActiveWorkerIds(List<StableEntityId> destination)
         {

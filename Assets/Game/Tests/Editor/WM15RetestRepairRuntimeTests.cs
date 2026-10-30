@@ -22,6 +22,50 @@ namespace Game.Tests.Editor
     public sealed class WM15RetestRepairRuntimeTests
     {
         private const string Evidence="Artifacts/WM15RetestRepair/gameplay";
+        [UnityTest,Timeout(1500000)]
+        public IEnumerator ConcurrentUpgradesAndCompleteSnow()
+        {
+            Directory.CreateDirectory(Evidence);
+            yield return new EnterPlayMode();
+            Application.runInBackground=true;
+            yield return SceneManager.LoadSceneAsync("MainMenu");yield return null;
+            var menu=UnityEngine.Object.FindAnyObjectByType<MainMenuController>();
+            menu.OpenNewGame();menu.StartNewGame(1380062136);
+            LocalSceneCompositionRoot root;
+            while((root=UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>())==null||!root.IsInitialized)
+            {Assert.That(Application.isPlaying,Is.True,"Gameplay test was interrupted");yield return null;}
+            root.Clock.Pause();
+            var snow=root.GetComponent<DeformableSnowPresentation>();
+            Assert.That(snow.PreparationComplete,Is.True);
+            var patchCount=snow.SnowPatchCount;
+            root.Diagnostics.Execute(DiagnosticCommandKind.UnlockAll);
+            root.Diagnostics.Execute(DiagnosticCommandKind.GrantResources);
+            // Two completed fixtures extend the starter town; only their upgrades are under test.
+            var sourceHut=root.Buildings.All.First(x=>x.OwnerSideId.Value=="player"&&x.DefinitionId.FamilyId.ToString()=="stone_age_hut");
+            var hutDefinition=root.BuildingCatalog.ResolveDefinition(sourceHut.DefinitionId);
+            for(var n=1;n<=2;n++)
+            {
+                var extra=Building.CreateNew(hutDefinition,new GridCoordinate(
+                    sourceHut.Coordinate.X+n*8,sourceHut.Coordinate.Z+12),sourceHut.Orientation,sourceHut.OwnerSideId);
+                extra.MarkCompleted();root.Buildings.Add(extra);root.BuildingSpawner.Spawn(extra);
+            }
+            yield return new WaitForSecondsRealtime(2);
+            var buildings=root.Buildings.All.Where(x=>x.OwnerSideId.Value=="player"&&x.IsOperational&&
+                root.BuildingLifecycle.UpgradeOption(x)!=null).Take(5).ToArray();
+            Assert.That(buildings.Length,Is.EqualTo(5));
+            var targets=buildings.Select(x=>root.BuildingLifecycle.UpgradeOption(x).TargetDefinitionId).ToArray();
+            foreach(var building in buildings)Assert.That(root.BuildingLifecycle.RequestUpgrade(building.Id).Succeeded,Is.True);
+            root.Clock.SetSpeed(GameSpeed.VeryFast);root.Clock.Resume();
+            var until=Time.realtimeSinceStartup+180;
+            while(Time.realtimeSinceStartup<until&&buildings.Where((x,i)=>x.DefinitionId!=targets[i]).Any())yield return null;
+            Dump(root,"concurrent-upgrades");
+            for(var i=0;i<buildings.Length;i++)Assert.That(buildings[i].DefinitionId,Is.EqualTo(targets[i]),"Upgrade "+buildings[i].Id);
+            root.Clock.Pause();
+            yield return SnowRoute(root);
+            Assert.That(snow.SnowPatchCount,Is.EqualTo(patchCount),"Camera/walking never generate or remove snow patches");
+            root.GameplayUi.ConfirmReturnToMainMenu();yield return null;yield return null;
+            Assert.That(SceneManager.GetActiveScene().name,Is.EqualTo("MainMenu"));
+        }
         [UnityTest,Timeout(900000)]
         public IEnumerator AutomaticBuilderUpgradeAndDistantPierDelivery()
         {

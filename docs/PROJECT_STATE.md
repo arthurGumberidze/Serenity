@@ -1,5 +1,17 @@
 # PROJECT_STATE.md
 
+## WM16 follow-up — DONE / awaiting user retest (2026-10-30)
+
+Added visible in-game menu access, complete snow/map preparation with weighted progress and a paused
+startup clock, navigation approach/arrival repairs, configurable delayed ruler cadence and JSONL audit.
+The user log's destroyed-renderer exception is reproduced by a passing model-replacement regression.
+Domain/menu/strategy/work gates: 71/71. Final runtime route passed: five concurrent upgrades completed,
+58 footprints, return to MainMenu. Windows build passed with 0 errors / 0 warnings; native Player exited 0
+with an empty errors.txt. Close snow at 1920x1080: mean 23.82 ms running, 9.92 ms paused; isolated spikes remain.
+Delivery: Builds/WM16Followup/Serenity.exe. Native shutdown reports two persistent allocations; not a runtime NRE.
+Evidence: docs/validation/WM16Followup.md.
+
+
 ## WM16 optional ruler strategy AI — implemented and verified (2026-10-30)
 
 Neighbour rulers now have an optional aggregate planning layer over the existing deterministic U26 executor.

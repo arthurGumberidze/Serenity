@@ -175,6 +175,7 @@ namespace Game.Domain.AI
         public UtilityActionKind CurrentAction { get; private set; }
         public AiActionPhase Phase { get; private set; }
         public long DecisionsMade { get; private set; }
+        public event Action<Tier1AiAgentState> ActionChanged;
 
         public void UpdatePosition(WorldPosition position) => Position = position;
 
@@ -182,14 +183,18 @@ namespace Game.Domain.AI
         {
             if (!Enum.IsDefined(typeof(UtilityActionKind), action)) throw new ArgumentOutOfRangeException(nameof(action));
             if (!Enum.IsDefined(typeof(AiActionPhase), phase)) throw new ArgumentOutOfRangeException(nameof(phase));
+            var changed = CurrentAction != action || Phase != phase;
             CurrentAction = action;
             Phase = phase;
+            if (changed) ActionChanged?.Invoke(this);
         }
 
         public void SetPhase(AiActionPhase phase)
         {
             if (!Enum.IsDefined(typeof(AiActionPhase), phase)) throw new ArgumentOutOfRangeException(nameof(phase));
+            var changed = Phase != phase;
             Phase = phase;
+            if (changed) ActionChanged?.Invoke(this);
         }
 
         public void RecordDecision() => DecisionsMade = checked(DecisionsMade + 1);

@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+WM16 user follow-up (2026-10-30): **DONE / awaiting user retest**. Menu, complete snow/map readiness, progress bar,
+concurrent upgrade navigation, delayed configurable AI cadence, execution audit, and livestock selection
+exception repair. 71 domain/UI/strategy/work tests passed; final runtime completed five concurrent upgrades,
+58 footprints and menu return. Windows build passed (0 errors / 0 warnings), native Player exited 0.
+
+
 WM16 optional ruler strategy AI (2026-10-30): **DONE / awaiting user retest**. Added deterministic-only,
 local Ollama and cloud-first/Ollama-fallback modes. External models return one validated aggregate yearly plan,
 never resident-by-resident commands or direct world mutations. Annual/trade/war/crisis/dialogue/manual triggers,

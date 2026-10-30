@@ -1283,6 +1283,9 @@ namespace Game.Presentation.UI
             navigationToggle.tooltip = "Развернуть меню";
             navigationToggle.AddToClassList("serenity-nav-toggle");
             navigation.Add(navigationToggle);
+            var leaveGame = ActionButton("⌂", RequestReturnToMainMenu, "navigation-main-menu");
+            leaveGame.tooltip = "Главное меню";
+            navigation.Add(leaveGame);
             onboardingToggleButton = ActionButton(T("ui.onboarding.hide"),
                 () => SetOnboardingVisible(!onboarding.Visible), "onboarding-toggle");
             onboardingToggleButton.userData = T("ui.onboarding.hide");
@@ -4070,6 +4073,7 @@ namespace Game.Presentation.UI
                 }));
             }
             modal.Add(scale);
+            modal.Add(ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "settings-main-menu"));
             modal.Add(ActionButton("Закрыть", CloseModal, "settings-close"));
         }
 

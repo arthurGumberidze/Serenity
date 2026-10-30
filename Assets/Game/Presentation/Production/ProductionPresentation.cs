@@ -104,11 +104,15 @@ namespace Game.Presentation.Production
                 if (recipe == "chop_wood" || recipe == "gather_stone" || recipe == "gather_iron" || recipe == "gather_gold")
                     NaturalHarvestEffect.Play(gameObject, recipe == "chop_wood");
             }
+            // Animal death and representation swaps can destroy renderers after Bind.
+            if (Array.Exists(cachedRenderers, renderer => renderer == null))
+                cachedRenderers = GetComponentsInChildren<Renderer>(true);
             displayedDepleted = site.IsDepleted;
             propertyBlock ??= new MaterialPropertyBlock();
             var color = site.IsDepleted ? Color.gray : isSelected ? Color.Lerp(activeColor, Color.white, 0.55f) : activeColor;
             foreach (var renderer in cachedRenderers)
             {
+                if (renderer == null) continue;
                 if (preserveAuthoredColor && !site.IsDepleted && !isSelected)
                 {
                     renderer.SetPropertyBlock(null);

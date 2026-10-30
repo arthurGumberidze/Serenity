@@ -281,6 +281,7 @@ namespace Game.Infrastructure
 
         public bool IsInitialized { get; private set; }
         private WorldLoadingOverlay loadingOverlay;
+        private bool loadedSavedGame;
 
         private void Awake()
         {
@@ -310,9 +311,20 @@ namespace Game.Infrastructure
                 if (next is IEnumerator nested) stages.Push(nested);
                 else yield return next;
             }
-            IsInitialized = true;
+            var preparedSnow = GetComponent<DeformableSnowPresentation>();
             TiledWorld?.BeginBackgroundTileWarmup();
+            loadingOverlay.SetStage("Подготавливаем всю карту и снежный покров…");
+            while (preparedSnow != null && !preparedSnow.PreparationComplete ||
+                   TiledWorld?.Definition.MapData != null && !TiledWorld.BackgroundWarmupComplete)
+            {
+                loadingOverlay.SetProgress(.8f + .10f * (preparedSnow?.PreparationProgress ?? 1f) +
+                    .09f * (TiledWorld?.BackgroundWarmupPercent ?? 100)/100f);
+                yield return null;
+            }
+            loadingOverlay.SetProgress(1f);
+            IsInitialized = true;
             Destroy(loadingOverlay);
+            if (!loadedSavedGame) AiRuntime.SetPaused(false);
             Start();
             Debug.Log("WM15_BOOT gameplay ready");
         }
@@ -557,7 +569,7 @@ namespace Game.Infrastructure
 
             // Begin a new session in daylight; loading still restores the exact saved clock.
             Clock = new GameClock(new GameTimeState(TimeSpan.TicksPerHour * 10L,
-                Character.BiologicalTicksPerYear * 20L, 1, false));
+                Character.BiologicalTicksPerYear * 20L, 1, true));
             Dynasty = DynastyState.Restore(NewGame.Dynasty);
             PlayerRealm = new PlayerRealmState(MaleDemoCharacter.Id);
             GameRun = new GameRunState();
@@ -878,7 +890,8 @@ namespace Game.Infrastructure
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
             RulerStrategies = gameObject.AddComponent<RulerStrategyRuntime>();
             RulerStrategies.Initialize(StrategicAi, userSettings.rulerAiMode,
-                () => Clock.State.CalendarTicks, () => Clock.IsPaused);
+                () => Clock.State.CalendarTicks, () => Clock.IsPaused, userSettings.rulerAiIntervalMonths);
+            gameObject.AddComponent<RulerActionAudit>().Initialize(this);
 
             TiledWorld.ConfigureStreaming(CameraStreamingFocus, StreamingPhysicalPositions,
                 StreamingNavigationRoutes);
@@ -904,6 +917,7 @@ namespace Game.Infrastructure
                 try
                 {
                     PlayerSaves.Load(startupSlot);
+                    loadedSavedGame = true;
                 }
                 catch (Exception exception) when (exception is System.IO.IOException ||
                                                   exception is UnauthorizedAccessException ||
@@ -1760,6 +1774,12 @@ namespace Game.Infrastructure
                 var bounds = new Bounds(presenter.transform.position, Vector3.one);
                 foreach (var collider in presenter.GetComponentsInChildren<Collider>())
                     if(collider.enabled && !collider.isTrigger)bounds.Encapsulate(collider.bounds);
+                // Carved footprints can extend beyond the visible model's colliders.
+                foreach(var obstacle in presenter.GetComponentsInChildren<UnityEngine.AI.NavMeshObstacle>())
+                    if(obstacle.enabled)
+                        for(var corner=0;corner<8;corner++)
+                            bounds.Encapsulate(obstacle.transform.TransformPoint(obstacle.center+Vector3.Scale(
+                                obstacle.size*.5f,new Vector3((corner&1)==0?-1:1,(corner&2)==0?-1:1,(corner&4)==0?-1:1))));
                 var candidates = new[] {
                     new Vector3(bounds.center.x,0,bounds.min.z-1.2f), new Vector3(bounds.center.x,0,bounds.max.z+1.2f),
                     new Vector3(bounds.min.x-1.2f,0,bounds.center.z), new Vector3(bounds.max.x+1.2f,0,bounds.center.z) };

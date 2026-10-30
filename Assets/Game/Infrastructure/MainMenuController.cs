@@ -524,6 +524,14 @@ namespace Game.Infrastructure
             rulerAi.RegisterValueChangedCallback(change =>
                 workingSettings.rulerAiMode = RulerAiModes.All[Math.Max(0, rulerAiModes.IndexOf(change.newValue))]);
             StyleField(rulerAi); content.Add(rulerAi);
+            var cadenceLabels = new List<string> { "Раз в месяц", "Раз в полгода", "Раз в год" };
+            var cadenceMonths = new[] { 1, 6, 12 };
+            var cadence = new DropdownField("Частота запросов ИИ", cadenceLabels,
+                Math.Max(0, Array.IndexOf(cadenceMonths, workingSettings.rulerAiIntervalMonths)));
+            cadence.RegisterValueChangedCallback(change => workingSettings.rulerAiIntervalMonths =
+                cadenceMonths[cadenceLabels.IndexOf(change.newValue)]);
+            StyleField(cadence); content.Add(cadence);
+            AddLine("Первый запрос — через два игровых дня. Интервал общий для Ollama и облачного ИИ.");
             AddLine(T("menu.settings.ruler_ai.explanation"));
 
             AddHeading(T("menu.settings.keys"), 22);

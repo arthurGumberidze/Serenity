@@ -20,6 +20,7 @@ namespace Game.Infrastructure
         private readonly HashSet<Vector2Int> queued=new();
         private readonly List<StableEntityId> stale=new();
         private readonly Dictionary<Vector2Int,float> depthSamples=new();
+        private readonly Dictionary<Vector2Int,float> groundSamples=new();
         private readonly Queue<(Vector3 position,Vector3 direction,bool left)> deferredFootsteps=new();
         private TiledWorldHeightSampler heights;
         private CharacterPresentationRegistry presentations;
@@ -27,6 +28,9 @@ namespace Game.Infrastructure
         private Material material;
         private float nextSample;
         private IEnumerator patchBuilder;
+        private int preparationTotal, preparationCompleted;
+        public bool PreparationComplete => preparationTotal > 0 && preparationCompleted == preparationTotal;
+        public float PreparationProgress => preparationTotal == 0 ? 0 : (float)preparationCompleted/preparationTotal;
         private struct TrackState { public Vector3 Position; public bool Left; public float Seen; }
         private sealed class Patch
         {
@@ -46,11 +50,11 @@ namespace Game.Infrastructure
             var art=Resources.Load<Game.Presentation.Environment.LateLandscapeCatalog>("World/LateLandscape");
             if(art!=null){material.SetTexture("_BaseMap",art.SnowAlbedo);material.SetTexture("_NormalMap",art.SnowNormal);}
             // Prepare the mountain-foot snow before the player first brings the camera there.
-            var centre=Key(new Vector3((855f-map.x)/map.z,0,(792f-map.y)/map.w));
-            for(var radius=0;radius<=6;radius++)
-                for(var z=-radius;z<=radius;z++)for(var x=-radius;x<=radius;x++)
-                    if(Mathf.Abs(x)==radius||Mathf.Abs(z)==radius)
-                    {var key=centre+new Vector2Int(x,z);if(queued.Add(key))pending.Enqueue(key);}
+            var min=Key(new Vector3((855f-156f-map.x)/map.z,0,(792f-126f-map.y)/map.w));
+            var max=Key(new Vector3((855f+156f-map.x)/map.z,0,(792f+126f-map.y)/map.w));
+            for(var z=min.y;z<=max.y;z++)for(var x=min.x;x<=max.x;x++)
+            {var key=new Vector2Int(x,z);queued.Add(key);pending.Enqueue(key);}
+            preparationTotal=pending.Count;
         }
         private void Update()
         {
@@ -58,12 +62,14 @@ namespace Game.Infrastructure
             if(Time.unscaledTime>=nextSample)
             {
                 nextSample=Time.unscaledTime+.1f;
-                var camera=Camera.main;
-                if(camera!=null && Physics.Raycast(camera.ViewportPointToRay(new Vector3(.5f,.5f)),out var hit,1500f))QueueAround(hit.point,2);
                 SampleResidents();
             }
-            if(patchBuilder==null && pending.Count>0)patchBuilder=BuildPatch(pending.Dequeue());
-            if(patchBuilder!=null && !patchBuilder.MoveNext())patchBuilder=null;
+            var preparationWatch=System.Diagnostics.Stopwatch.StartNew();
+            while(preparationWatch.Elapsed.TotalMilliseconds<10 && (patchBuilder!=null || pending.Count>0))
+            {
+                if(patchBuilder==null)patchBuilder=BuildPatch(pending.Dequeue());
+                if(!patchBuilder.MoveNext()){patchBuilder=null;preparationCompleted++;}
+            }
             for(var n=Mathf.Min(32,deferredFootsteps.Count);n>0;n--)
             {
                 var step=deferredFootsteps.Dequeue();
@@ -75,7 +81,24 @@ namespace Game.Infrastructure
         }
         public bool IsTrackableSnow(Vector3 p)=>SnowDepth(p.x,p.z)>.06f;
         public bool IsPreparedAt(Vector3 p)=>patches.ContainsKey(Key(p));
-        private float Ground(float x,float z) => NewGameWorldPreparation.TryHeight(heights,x,z,out var value) ? value : heights.SampleHeight(x,z);
+        private float Ground(float x,float z)
+        {
+            var ix=Mathf.FloorToInt(x);var iz=Mathf.FloorToInt(z);
+            return Mathf.Lerp(Mathf.Lerp(GroundSample(ix,iz),GroundSample(ix+1,iz),x-ix),
+                Mathf.Lerp(GroundSample(ix,iz+1),GroundSample(ix+1,iz+1),x-ix),z-iz);
+        }
+        private float GroundSample(int x,int z)
+        {
+            var key=new Vector2Int(x,z);
+            if(!groundSamples.TryGetValue(key,out var value))
+            {
+                var sx=Mathf.Clamp(x,heights.Definition.Origin.X,heights.Definition.Origin.X+heights.Definition.WidthMeters);
+                var sz=Mathf.Clamp(z,heights.Definition.Origin.Z,heights.Definition.Origin.Z+heights.Definition.DepthMeters);
+                value=NewGameWorldPreparation.TryHeight(heights,sx,sz,out var cached)?cached:heights.SampleHeight(sx,sz);
+                groundSamples.Add(key,value);
+            }
+            return value;
+        }
         private float Slope(float x,float z)
         {
             if(!heights.Definition.ContainsClosed(x-1,z-1)||!heights.Definition.ContainsClosed(x+1,z+1))return 90;
@@ -107,6 +130,7 @@ namespace Game.Infrastructure
         }
         public void QueueAround(Vector3 p,int radius=1)
         {
+            if(preparationTotal>0)return; // Complete coverage was queued before gameplay.
             if(!IsTrackableSnow(p))return;
             var centre=Key(p);
             var urgent=new List<Vector2Int>();

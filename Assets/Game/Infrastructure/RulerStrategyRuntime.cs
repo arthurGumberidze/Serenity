@@ -32,14 +32,19 @@ namespace Game.Infrastructure
         public bool IsRequestInFlight => activeCoroutine != null;
         public string Mode => mode;
         public string LastStatus { get; private set; } = string.Empty;
+        public Action<string, long, string, string> Audit { get; set; }
 
         public void Initialize(AiStrategicScheduler scheduler, string configuredMode,
-            Func<long> calendarTickProvider, Func<bool> pauseProvider)
+            Func<long> calendarTickProvider, Func<bool> pauseProvider, int intervalMonths = 12)
         {
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             coordinator = new RulerStrategyCoordinator(this.scheduler);
             calendarTick = calendarTickProvider ?? throw new ArgumentNullException(nameof(calendarTickProvider));
             paused = pauseProvider ?? throw new ArgumentNullException(nameof(pauseProvider));
+            coordinator.PeriodicRequestsOnly = true;
+            var interval = TimeSpan.FromDays(intervalMonths == 1 ? 30 : intervalMonths == 6 ? 182.5 : 365);
+            foreach (var faction in scheduler.Factions)
+                faction.RulerStrategy.ConfigureCadence(faction.FoundedTick, interval);
             mode = RulerAiModes.All.Contains(configuredMode, StringComparer.Ordinal)
                 ? configuredMode : RulerAiModes.Ollama;
             this.scheduler.StrategyTriggerRequested += OnStrategyTriggerRequested;
@@ -88,8 +93,11 @@ namespace Game.Infrastructure
             activeRequest = null;
         }
 
-        private void OnStrategyTriggerRequested(AiStateId factionId, RulerStrategyTrigger trigger, string subject) =>
-            Request(factionId, trigger, subject);
+        private void OnStrategyTriggerRequested(AiStateId factionId, RulerStrategyTrigger trigger, string subject)
+        {
+            // Automatic trade/war/crisis changes are included in the next scheduled request.
+            // They must not silently bypass the player's selected provider-call frequency.
+        }
 
         private void TryDispatch()
         {
@@ -122,6 +130,7 @@ namespace Game.Infrastructure
                             provider, calendarTick());
                         if (coordinator.TryAccept(request.FactionId, plan, calendarTick(), out var rejection))
                         {
+                            Audit?.Invoke(request.FactionId.ToString(), plan.RequestSequence, "accepted_plan", response.Content);
                             LastStatus = provider + ": " + plan.Summary;
                             CompleteRequest();
                             yield break;
@@ -145,6 +154,7 @@ namespace Game.Infrastructure
                 }
             }
             coordinator.CompleteFailure(request.FactionId, calendarTick(), lastProvider, lastStatus, lastError);
+            Audit?.Invoke(request.FactionId.ToString(), request.Pending.Sequence, "provider_failure", lastStatus.ToString());
             LastStatus = lastProvider + " unavailable; deterministic strategy remains active.";
             CompleteRequest();
         }

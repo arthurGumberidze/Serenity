@@ -2237,3 +2237,33 @@ cleared character selection. Windows immutable build and actual Player checks pa
 running average remains around 31 FPS; targeted snow work does not claim to complete the deferred general
 simulation/population optimization gates. Exact commands, failure diagnoses and measurements are in
 `docs/validation/WM15RetestRepair.md`.
+
+## D-224 — Full snow readiness, delayed ruler cadence and execution audit (2026-10-30)
+
+The user explicitly reopens startup, navigation and ruler-provider paths. Enumerate the complete authored
+snow ellipse before gameplay; camera and resident movement do not create or remove its patches. Cache
+one-metre ground samples and interpolate the 20-cm deformation mesh. Preparation uses a bounded 10-ms
+main-thread budget while loading, with no remaining geometry work after readiness. Map tile warmup also
+finishes before gameplay. The progress bar combines completed stages, tiles and snow patches; game time
+starts after preparation, not behind the overlay.
+
+Work approach bounds include carved NavMesh footprints. Arrival requires reaching the requested horizontal
+position and the end of the actual path, but does not require near-zero velocity under crowd avoidance.
+This lets work actions stop the agent themselves once it reaches the work area.
+
+Ruler automatic requests begin after two game days and repeat at a user-selected 30 / 182.5 / 365-day
+interval for either provider mode. Automatic crisis/war/trade events no longer bypass the selected cadence.
+Explicit manual/dialogue requests remain available after the initial delay. Failure also advances the
+next request date. Existing annual-named snapshot fields remain backward compatible; cadence is a user
+setting applied to the coordinator's state on scene initialization.
+
+At the user's explicit request, D-223's no-response-body-log rule is narrowed: validated accepted plan JSON
+is written to a per-session UTF-8 JSONL audit alongside strategic execution and resident action transitions.
+Credentials, request headers and environment variables are never written. Faction + plan sequence correlate
+plans with actions; zero denotes deterministic behavior without an active external plan. Player residents
+are clearly distinguished from externally advised neighboring factions. Production recipe/site/task IDs
+are recorded through a constant-time canonical task lookup. The log is independent of save-state.
+
+Validation and exact commands: docs/validation/WM16Followup.md. Final validation passed: 71 tests,
+five concurrent upgrades with real builders, complete resident snow and 58 footprints, menu return,
+immutable Windows build and native Player exit 0. Await user retest of the original stuck-building scenario.

@@ -25,6 +25,7 @@ namespace Game.Infrastructure
         public float uiScale = 1f;
         public float cameraSpeed = 1f;
         public string rulerAiMode = RulerAiModes.Ollama;
+        public int rulerAiIntervalMonths = 12;
         public string cameraUp = "w";
         public string cameraDown = "s";
         public string cameraLeft = "a";
@@ -48,6 +49,8 @@ namespace Game.Infrastructure
                 throw new InvalidDataException("Invalid settings range.");
             if (!RulerAiModes.All.Contains(rulerAiMode, StringComparer.Ordinal))
                 throw new InvalidDataException("Invalid ruler AI mode.");
+            if (rulerAiIntervalMonths != 1 && rulerAiIntervalMonths != 6 && rulerAiIntervalMonths != 12)
+                rulerAiIntervalMonths = 12;
 
             var keys = PrimaryKeys().ToArray();
             if (keys.Any(string.IsNullOrWhiteSpace) || keys.Any(key => !IsSupportedKey(key)))

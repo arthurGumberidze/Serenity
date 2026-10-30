@@ -198,6 +198,15 @@ namespace Game.Domain.AI
     public sealed class RulerStrategyState
     {
         public static readonly long AnnualIntervalTicks = TimeSpan.FromDays(365).Ticks;
+        private long requestIntervalTicks = AnnualIntervalTicks;
+        private long firstRequestTick;
+        public void ConfigureCadence(long initialTick, TimeSpan interval)
+        {
+            if (initialTick < 0 || interval <= TimeSpan.Zero) throw new ArgumentOutOfRangeException();
+            firstRequestTick = checked(initialTick + TimeSpan.FromDays(2).Ticks);
+            requestIntervalTicks = interval.Ticks;
+            if (RequestSequence == 0) NextAnnualTick = firstRequestTick;
+        }
         private readonly List<RulerStrategyJournalEntry> journal = new List<RulerStrategyJournalEntry>();
 
         public RulerStrategyState(long initialTick)
@@ -216,7 +225,7 @@ namespace Game.Domain.AI
             out RulerStrategyPendingRequest request)
         {
             if (tick < 0) throw new ArgumentOutOfRangeException(nameof(tick));
-            if (PendingRequest.HasValue)
+            if (PendingRequest.HasValue || tick < firstRequestTick)
             {
                 request = default;
                 return false;
@@ -240,8 +249,7 @@ namespace Game.Domain.AI
             journal.Add(new RulerStrategyJournalEntry(pending.Sequence, pending.RequestedTick, completedTick,
                 pending.Trigger, provider, status, note ?? string.Empty));
             while (journal.Count > 32) journal.RemoveAt(0);
-            if (pending.Trigger == RulerStrategyTrigger.Annual)
-                NextAnnualTick = checked(pending.RequestedTick + AnnualIntervalTicks);
+            NextAnnualTick = checked(pending.RequestedTick + requestIntervalTicks);
             PendingRequest = null;
         }
 

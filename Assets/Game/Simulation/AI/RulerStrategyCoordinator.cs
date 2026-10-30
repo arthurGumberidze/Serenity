@@ -95,6 +95,7 @@ namespace Game.Simulation.AI
         private static readonly long CrisisCooldownTicks = TimeSpan.FromDays(30).Ticks;
         private static readonly long WarCooldownTicks = TimeSpan.FromDays(7).Ticks;
         private readonly AiStrategicScheduler scheduler;
+        public bool PeriodicRequestsOnly { get; set; }
 
         public RulerStrategyCoordinator(AiStrategicScheduler strategicScheduler)
         {
@@ -110,9 +111,10 @@ namespace Game.Simulation.AI
                 if (calendarTick >= faction.RulerStrategy.NextAnnualTick)
                 {
                     faction.RulerStrategy.TryBegin(calendarTick, RulerStrategyTrigger.Annual,
-                        "Составить стратегию поселения на следующий игровой год.", out _);
+                        "Составить стратегию поселения до следующего планового запроса.", out _);
                     continue;
                 }
+                if (PeriodicRequestsOnly) continue;
                 if (faction.Production.GetCanonicalTotal(new ResourceId("berries")) == 0 &&
                     TriggerAllowed(faction, RulerStrategyTrigger.Crisis, calendarTick, CrisisCooldownTicks))
                 {

@@ -1,5 +1,14 @@
 # NEXT_TASK.md
 
+## Next action — user retest of WM16 follow-up (2026-10-30)
+
+Launch Builds/WM16Followup/Serenity.exe and start a new game. Menu access, full snow preparation,
+loading progress, concurrent upgrades, AI cadence/audit and livestock renderer repair are DONE.
+71 tests and the real five-upgrade/snow/menu route passed through the persistent runner; Windows build
+and native Player smoke passed. First external AI request is after two game days; select month / half-year /
+year in main-menu settings. Inspect LocalLow/Serenity/Serenity/AiAudit for plan/action JSONL.
+Await user retest before unrelated work. Do not shut down the PC. Older deliveries below are historical.
+
 ## Next action — user retest of optional ruler strategy AI (2026-10-30)
 
 Launch `Builds/RulerStrategyAI/Serenity.exe`. In main-menu settings choose `Ollama локально`, start a new game,

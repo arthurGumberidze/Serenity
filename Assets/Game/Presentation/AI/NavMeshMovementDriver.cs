@@ -126,9 +126,10 @@ namespace Game.Presentation.AI
                 if (agent.pathStatus != NavMeshPathStatus.PathComplete) return MovementState.Failed;
                 // SetDestination can briefly retain the previous path's zero remainingDistance.
                 // Arrival must refer to this request, not a previous job's endpoint.
-                var actualDistance = Vector3.Distance(presenter.transform.position,requestedDestination);
+                var delta = presenter.transform.position-requestedDestination;
+                var actualDistance = new Vector2(delta.x,delta.z).magnitude;
                 if (hasRequestedDestination && actualDistance <= requestedStoppingDistance + .2f &&
-                    agent.remainingDistance <= agent.stoppingDistance + 0.05f && agent.velocity.sqrMagnitude <= 0.04f)
+                    agent.remainingDistance <= agent.stoppingDistance + 0.05f)
                     return MovementState.Arrived;
                 return MovementState.Moving;
             }
