@@ -1,5 +1,24 @@
 # PROJECT_STATE.md
 
+## WM16 optional ruler strategy AI — implemented and verified (2026-10-30)
+
+Neighbour rulers now have an optional aggregate planning layer over the existing deterministic U26 executor.
+The main-menu setting selects deterministic-only, local Ollama, or cloud-first with Ollama fallback. Ollama uses
+`qwen3.5:4b`; cloud development uses the configured OpenAI-compatible LLM Gate endpoint and reads
+`LLM_GATE_API_KEY` only from the process environment. Neither provider can mutate the world directly.
+
+One bounded JSON plan covers an entire settlement, including populations up to 2000, through resource targets,
+five workforce cohorts, research/building/army priorities and diplomacy posture. Annual, trade, war, crisis,
+dialogue and manual triggers are centralized; no request starts while paused. Invalid JSON, translated/unknown
+content IDs, impossible population values, timeout or provider failure leaves the canonical game AI running.
+Plans, pending requests and a 32-entry decision journal persist in nested schema v1; old saves default safely.
+
+Unity compile passed with 0 errors. Delivery EditMode gates passed U26 29/29 and P2 5/5. A real local Ollama
+request kept the exact machine IDs after prompt hardening and returned a Russian summary in 37.8 seconds on CPU.
+No cloud call/key access occurred. Windows Development build `Builds/RulerStrategyAI/Serenity.exe` succeeded
+with 0 errors / 52 inherited warnings. Details and exact commands: `docs/validation/RulerStrategyAI.md`;
+configuration/security: `docs/AI_RULER_STRATEGY.md`. Existing unrelated dirty terrain/vendor work was preserved.
+
 ## WM15 user screenshot/video repair — delivered and verified (2026-10-30)
 
 The ten reported issues reopen the relevant building, navigation, domestic, fishing and snow paths.

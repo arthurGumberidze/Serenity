@@ -572,6 +572,88 @@ namespace Game.Tests.Editor
                 value.TargetLocationId, value.LastDecisionTick, value.NextDecisionTick, value.DecisionSequence,
                 value.PendingOrders, value.RecentDecisions, value.IsDefeated, value.DefeatReason);
 
+        [Test]
+        public void AnnualRulerStrategyUsesAggregateContextAndRoundTripsThroughSave()
+        {
+            var f = Fixture.Create(15031);
+            var coordinator = new RulerStrategyCoordinator(f.Scheduler);
+            var annualTick = f.Ai.RulerStrategy.NextAnnualTick;
+            coordinator.AdvanceTo(annualTick);
+            var request = coordinator.PendingRequests().Single();
+            Assert.That(request.Pending.Trigger, Is.EqualTo(RulerStrategyTrigger.Annual));
+            Assert.That(request.Context.Population, Is.EqualTo(f.Ai.Residents.Count));
+            Assert.That(request.Context.Resources.Select(value => value.ResourceId),
+                Is.EquivalentTo(new[] { "berries", "wood_log", "plant_fiber", "stone" }));
+
+            var plan = new RulerStrategyPlan(request.Pending.Sequence, annualTick,
+                annualTick + RulerStrategyState.AnnualIntervalTicks, RulerStrategyProviderKind.Ollama,
+                AiStrategicGoal.AdvanceResearch, 40, 24, 3, 25,
+                RulerDiplomaticPosture.Cooperative, 35, 20, 15, 25, 5,
+                Array.Empty<string>(), "Сначала исследования и устойчивые запасы.");
+            Assert.That(coordinator.TryAccept(f.Ai.Strategic.Id, plan, annualTick, out var rejection),
+                Is.True, rejection);
+
+            var codec = new SaveXmlCodec();
+            var strategicSave = f.Scheduler.CaptureState();
+            strategicSave = new AiStrategicSaveState(strategicSave.WorldSeed, annualTick,
+                strategicSave.Factions);
+            var decoded = codec.Deserialize(codec.Serialize(new SaveSnapshot(SaveSnapshot.CurrentVersion,
+                Id(15031), new GameTimeState(annualTick, 0, 1, false), 400,
+                strategicAi: strategicSave))).StrategicAi;
+            Assert.That(decoded.LastProcessedTick, Is.EqualTo(annualTick));
+            Assert.That(decoded.Factions.Single().RulerStrategy.ActivePlan.GeneratedTick,
+                Is.LessThanOrEqualTo(decoded.LastProcessedTick));
+            Assert.That(decoded.Factions.Single().RulerStrategy.PendingRequest.HasValue, Is.False);
+            f.Scheduler.RestoreState(decoded);
+            var restored = f.Ai.RulerStrategy.ActivePlan;
+            Assert.That(restored.PreferredGoal, Is.EqualTo(AiStrategicGoal.AdvanceResearch));
+            Assert.That(restored.Provider, Is.EqualTo(RulerStrategyProviderKind.Ollama));
+            Assert.That(f.Ai.RulerStrategy.Journal.Single().Status,
+                Is.EqualTo(RulerStrategyRequestStatus.Accepted));
+        }
+
+        [Test]
+        public void PreferredRulerGoalCannotOverrideCriticalTravelOrInvalidWorkforce()
+        {
+            var service = new AiDecisionService();
+            Assert.That(service.Select(Facts(hasResearch: true, canConstruct: true),
+                AiStrategicGoal.AdvanceResearch), Is.EqualTo(AiDecisionKind.StartResearch));
+            Assert.That(service.Select(Facts(hasResearch: true, canConstruct: true, isTravelling: true),
+                AiStrategicGoal.AdvanceResearch), Is.EqualTo(AiDecisionKind.Travel));
+            Assert.Throws<ArgumentException>(() => new RulerStrategyPlan(1, 0,
+                RulerStrategyState.AnnualIntervalTicks, RulerStrategyProviderKind.Ollama,
+                AiStrategicGoal.DevelopSettlement, 20, 20, 3, 20,
+                RulerDiplomaticPosture.Neutral, 20, 20, 20, 20, 10,
+                Array.Empty<string>(), "invalid total"));
+        }
+
+        [Test]
+        public void OllamaAndCloudPayloadsAreUtf8SafeJsonOnlyContracts()
+        {
+            var pending = new RulerStrategyPendingRequest(7, TimeSpan.FromDays(12).Ticks,
+                RulerStrategyTrigger.Dialogue, "Как пережить зиму?");
+            var request = new RulerStrategyRequest(new AiStateId(Id(15032)), pending,
+                new RulerStrategyRequestContext(2000, 2, 4, AiStrategicGoal.StabilizeEconomy,
+                    new[] { new RulerStrategyResourceFact("berries", 12) },
+                    Array.Empty<string>(), new[] { "stone_tools" },
+                    new[] { "primitive_shelter" }, Array.Empty<RulerStrategyRelationFact>()));
+            var ollama = RulerStrategyJsonCodec.CreateOllamaRequest(request, "qwen3.5:4b");
+            var cloud = RulerStrategyJsonCodec.CreateCloudRequest(request, "gpt-6-luna");
+            StringAssert.Contains("\"think\":false", ollama);
+            StringAssert.Contains("Как пережить зиму?", ollama);
+            StringAssert.Contains("\"response_format\"", cloud);
+
+            var json = "{\"goal\":\"develop_settlement\",\"food_target\":40," +
+                "\"material_target\":25,\"minimum_army_size\":20,\"aggression\":15," +
+                "\"diplomatic_posture\":\"cooperative\",\"workforce\":{" +
+                "\"food\":35,\"materials\":25,\"construction\":20,\"research\":15,\"military\":5}," +
+                "\"building_priorities\":[\"primitive_shelter\"],\"summary\":\"Строить жильё\"}";
+            var plan = RulerStrategyJsonCodec.ParsePlan(json, request,
+                RulerStrategyProviderKind.Ollama, pending.RequestedTick);
+            Assert.That(plan.MinimumArmySize, Is.EqualTo(20));
+            Assert.That(plan.BuildingPriorities.Single(), Is.EqualTo("primitive_shelter"));
+        }
+
         private static StableEntityId Id(int value) => StableEntityId.Parse(value.ToString("x32"));
 
         private sealed class Fixture

@@ -809,3 +809,23 @@ Training flows `GameplayUiController -> MilitaryTrainingService -> CharacterRegi
 Direct attack flows `RMB or strategic UI -> MilitaryAttackCommandService -> MilitaryUnitCommandService -> WorkManager/NavMesh -> CombatService or BuildingDamageService`. Domain target rules reject civilian direct targets, friendly targets, non-military buildings and untrained/mixed units before an order exists. Resolution requires a detailed unit member within physical engagement range. On arrival the same service may ask `SettlementFlagCaptureService` to claim only registered flags inside that radius; an ordinary hostile barracks receives combat damage when it is not a capture flag. Strategic overview remains a camera/UI scale over this same physical route.
 
 Capture flows `nearby trained unit -> SettlementFlagCaptureService -> existing Building owner -> shared GameClock progress -> BuildingDamageService ownership transaction -> GlobalMapService synchronization`. The persisted workflow identifies a settlement main building and derives the current operational barracks deterministically. Both flags must share the attacker owner, except that no operational barracks removes the second requirement. Contest freezes, defender recapture resets, destroyed barracks falls through, and five calendar hours equals five real minutes at x1. Completion transfers existing building IDs and their attached stores, then resolves defender soldiers once from the persisted seed/outcome. Snapshot v24 stores courses, attack orders, flag clocks and final outcome; UI, presenters and smoke instrumentation own no capture truth.
+
+## WM16 optional ruler-strategy boundary
+
+The planning path is `GameClock trigger -> RulerStrategyCoordinator -> RulerStrategyRuntime -> Ollama or
+OpenAI-compatible cloud -> RulerStrategyPlan -> AiStrategicScheduler`. Domain owns the bounded plan, pending
+request and journal DTOs. Simulation creates aggregate context, enforces cadence and validates faction content.
+Infrastructure alone owns HTTP, environment variables, UTF-8 JSON and provider fallback. The existing U26
+scheduler remains the only gameplay executor and the existing production, research, construction, military,
+map, battle and capture services remain the only mutation authorities.
+
+Context size is independent of resident count: population is a scalar and workforce is five percentages.
+Resources, technologies, building IDs and relations are sorted bounded sets. A provider receives no per-resident
+prompt and creates no mass agent loop. One scene-level coroutine serializes requests, applies results on the main
+thread and never starts a request while the clock is paused.
+
+The settings order is deterministic-only, local Ollama, or cloud-first/Ollama-fallback. Failure at every external
+provider records one bounded outcome and returns to baseline U26 behavior. Save XML nests schema-v1 strategy
+state under each existing faction; old payloads omit it and receive an empty state scheduled for a future annual
+review. Loading cancels an obsolete in-flight HTTP request, clears disposable dispatch tracking and replays only
+the canonical saved pending request.

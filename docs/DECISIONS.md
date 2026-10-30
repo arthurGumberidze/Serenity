@@ -2206,6 +2206,30 @@ The hut bypasses the generic brown primitive-shelter tint. Central storage remai
 named Склад, independently of communal housing. These decisions respond to the user's screenshots/videos;
 full gameplay and Player performance acceptance are recorded separately and must pass before DONE.
 
+## D-223 — External ruler models are bounded planners, never simulation authorities (2026-10-30)
+
+An optional language model may propose one aggregate strategy for an AI settlement; it may not issue commands
+for individual residents or mutate resources, buildings, research, diplomacy, travel, combat, dynasty or save
+state directly. The authority path is `game trigger -> RulerStrategyCoordinator -> optional provider -> strict
+RulerStrategyPlan validation -> AiStrategicScheduler -> existing canonical services`. Critical travel, battle,
+occupation and capture always outrank a model preference. Missing service, key, network, timeout, malformed JSON
+or invalid content ID leaves the deterministic scheduler active.
+
+The request context scales by cohorts and totals, not residents. A 2000-person settlement therefore has the
+same bounded request shape as a six-person settlement. One global scene component owns asynchronous requests;
+there is no per-faction or per-NPC `Update`. Annual cadence is one game year, while trade, war, crisis, dialogue
+and manual triggers are deduplicated and one request per faction may be pending. No request begins while paused.
+
+User settings select deterministic-only, local Ollama, or cloud-first with Ollama fallback. Local defaults to
+`qwen3.5:4b`; cloud uses an OpenAI-compatible Chat Completions JSON response. Keys exist only in process
+environment. A distributable client must point its configurable cloud URL at a project backend rather than ship
+a paid provider key. The client never logs response bodies or credentials.
+
+Accepted plans, pending requests and the newest 32 outcomes live inside each existing AI faction save record.
+The optional nested payload declares ruler-strategy schema v1; old faction payloads construct a safe empty state.
+SaveSnapshot v29/v30 and world generation remain unchanged because this is a backward-compatible optional
+subschema of the existing v13 strategic-AI section, not a new top-level authority.
+
 Final validation for D-222: 56 domain cases, seven role-command cases and the complete real gameplay
 route passed. Ordinary ungrouped jobs use nearest-available-worker assignment; empty role fallbacks
 remain ungrouped so assigned workers and saved group membership agree. The pier card explicitly handles

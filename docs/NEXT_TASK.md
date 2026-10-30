@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## Next action — user retest of optional ruler strategy AI (2026-10-30)
+
+Launch `Builds/RulerStrategyAI/Serenity.exe`. In main-menu settings choose `Ollama локально`, start a new game,
+press F10 and use `Запросить внешний план` in the strategic-AI debug card. The request is asynchronous and may
+take about 38 seconds on the tested CPU; the game AI keeps running. The card then shows provider, preferred goal
+and validity tick. Test `Облачный API → Ollama` only after starting a new game process that can read
+`LLM_GATE_API_KEY`; do not paste the key into the game or repository. Setup and fallback details:
+`docs/AI_RULER_STRATEGY.md`. Automated evidence: U26 29/29, P2 5/5, local Ollama JSON smoke and a successful
+Windows Development build. Await user feedback before extending diplomacy/conversation UI.
+
 ## Next action — user retest of WM15 screenshot/video repair (2026-10-30)
 
 Launch `Builds/WM15RetestRepair/Serenity.exe` and start a new game. All ten requested repairs are implemented;

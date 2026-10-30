@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
@@ -14,13 +15,15 @@ namespace Game.Presentation.AI
         private AiStrategicScheduler scheduler;
         private WorldPointerRaycaster pointer;
         private Action advance;
-        private Rect panel = new Rect(8, 590, 360, 330);
+        private Action<AiStateId> requestStrategy;
+        private Rect panel = new Rect(8, 540, 390, 410);
 
         public void Initialize(AiStrategicScheduler strategicScheduler, WorldPointerRaycaster raycaster,
-            Action advanceCommand)
+            Action advanceCommand, Action<AiStateId> requestStrategyCommand = null)
         {
             scheduler = strategicScheduler ?? throw new ArgumentNullException(nameof(strategicScheduler));
             pointer?.UnregisterUiBlocker(this); pointer = raycaster; advance = advanceCommand;
+            requestStrategy = requestStrategyCommand;
             pointer?.RegisterUiBlocker(this);
         }
 
@@ -49,9 +52,16 @@ namespace Game.Presentation.AI
                 GUILayout.Label($"Армия: {state.KnownMilitaryUnits.Count} · боеспособны {strength} · первый {unit}");
                 GUILayout.Label($"Цель/место: {RussianTextCatalog.Enum(state.Goal)} / {(state.TargetLocationId.HasValue ? RussianTextCatalog.Content("location", state.TargetLocationId.Value.Value) : "нет")}");
                 GUILayout.Label($"Переходы: {state.PendingOrders.Count} · последний такт {state.LastDecisionTick}");
+                var plan = faction.RulerStrategy.ActivePlan;
+                GUILayout.Label("Внешний план: " + (plan == null ? "нет" :
+                    $"{plan.Provider} · {plan.PreferredGoal} · до {plan.ValidUntilTick}"));
+                GUILayout.Label("Запрос стратегии: " + (faction.RulerStrategy.PendingRequest.HasValue
+                    ? faction.RulerStrategy.PendingRequest.Value.Trigger.ToString() : "нет"));
                 GUILayout.Label("Сражение: " + (battle.HasValue ? battle.Value.ToString() : "нет"));
                 GUILayout.Label($"Побеждён: {(state.IsDefeated ? "да" : "нет")} {RussianTextCatalog.Enum(state.DefeatReason)}");
                 if (GUILayout.Button("Продвинуть время мира")) advance?.Invoke();
+                if (requestStrategy != null && GUILayout.Button("Запросить внешний план"))
+                    requestStrategy(state.Id);
             }
             GUILayout.EndArea();
         }

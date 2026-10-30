@@ -260,7 +260,7 @@ namespace Game.Domain.AI
             ResearchSaveState research, ProductionSaveState production,
             IEnumerable<WorldResourcePileState> worldPiles = null,
             IReadOnlyDictionary<string, int> relations = null, MilitaryTrainingSaveState training = null,
-            long foundedTick = 0)
+            long foundedTick = 0, RulerStrategyStateSnapshot rulerStrategy = null)
         {
             Strategic = strategic ?? throw new ArgumentNullException(nameof(strategic));
             Dynasty = dynasty ?? throw new ArgumentNullException(nameof(dynasty));
@@ -275,6 +275,7 @@ namespace Game.Domain.AI
             Relations = new ReadOnlyDictionary<string, int>(relations == null ? new Dictionary<string, int>() : relations.ToDictionary(x => x.Key, x => x.Value));
             Training = training;
             FoundedTick = foundedTick;
+            RulerStrategy = rulerStrategy ?? new RulerStrategyState(strategic.LastDecisionTick).CaptureState();
         }
         public AiStrategicStateSnapshot Strategic { get; }
         public DynastyStateSnapshot Dynasty { get; }
@@ -284,6 +285,7 @@ namespace Game.Domain.AI
         public IReadOnlyDictionary<string, int> Relations { get; }
         public MilitaryTrainingSaveState Training { get; }
         public long FoundedTick { get; }
+        public RulerStrategyStateSnapshot RulerStrategy { get; }
     }
 
     public sealed class AiStrategicSaveState

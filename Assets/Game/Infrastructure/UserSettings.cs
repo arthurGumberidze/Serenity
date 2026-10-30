@@ -24,6 +24,7 @@ namespace Game.Infrastructure
         public int qualityLevel = 1;
         public float uiScale = 1f;
         public float cameraSpeed = 1f;
+        public string rulerAiMode = RulerAiModes.Ollama;
         public string cameraUp = "w";
         public string cameraDown = "s";
         public string cameraLeft = "a";
@@ -45,6 +46,8 @@ namespace Game.Infrastructure
             if (masterVolume < 0f || masterVolume > 1f || uiScale < 1f || uiScale > 1.5f ||
                 cameraSpeed < 0.5f || cameraSpeed > 2f)
                 throw new InvalidDataException("Invalid settings range.");
+            if (!RulerAiModes.All.Contains(rulerAiMode, StringComparer.Ordinal))
+                throw new InvalidDataException("Invalid ruler AI mode.");
 
             var keys = PrimaryKeys().ToArray();
             if (keys.Any(string.IsNullOrWhiteSpace) || keys.Any(key => !IsSupportedKey(key)))
@@ -99,6 +102,9 @@ namespace Game.Infrastructure
                 var json = File.ReadAllText(path, Encoding.UTF8);
                 var settings = JsonUtility.FromJson<UserSettingsData>(json);
                 if (settings == null) throw new InvalidDataException("Settings payload is empty.");
+                // Version 1 predates the optional ruler planner field. Preserve every existing preference
+                // and install the safe local-first default instead of treating that file as corrupt.
+                if (string.IsNullOrWhiteSpace(settings.rulerAiMode)) settings.rulerAiMode = RulerAiModes.Ollama;
                 settings.Validate();
                 return new UserSettingsLoadResult(settings, false);
             }

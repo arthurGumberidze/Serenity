@@ -1389,6 +1389,7 @@ namespace Game.Infrastructure
                         new XElement("relations", faction.Relations.OrderBy(x => x.Key).Select(x =>
                             new XElement("relation", new XElement("sideId", x.Key), new XElement("score", x.Value)))),
                         SerializeAiTraining(faction.Training),
+                        SerializeRulerStrategy(faction.RulerStrategy),
                         SerializeAiDynasty(faction.Dynasty), SerializeResearch(faction.Research),
                         SerializeProduction(faction.Production, false, true),
                         new XElement("worldPiles", faction.WorldPiles.Select(value => new XElement("pile",
@@ -1412,7 +1413,10 @@ namespace Game.Infrastructure
             var factions = Items(element.Element("factions"), "faction", item =>
             {
                 var expanded = item.Element("foundedTick") != null;
-                RequireFields(item, expanded
+                var hasRulerStrategy = item.Element("rulerStrategy") != null;
+                RequireFields(item, hasRulerStrategy
+                    ? new[] { "strategic", "dynasty", "research", "production", "worldPiles", "foundedTick", "relations", "training", "rulerStrategy" }
+                    : expanded
                     ? new[] { "strategic", "dynasty", "research", "production", "worldPiles", "foundedTick", "relations", "training" }
                     : new[] { "strategic", "dynasty", "research", "production", "worldPiles" });
                 var value = item.Element("strategic");
@@ -1458,9 +1462,121 @@ namespace Game.Infrastructure
                         return new KeyValuePair<string, int>(Value(relation, "sideId"), Int(relation, "score"));
                     }).ToDictionary(x => x.Key, x => x.Value) : null,
                     expanded ? DeserializeAiTraining(item.Element("training")) : null,
-                    expanded ? Long(item, "foundedTick") : 0);
+                    expanded ? Long(item, "foundedTick") : 0,
+                    hasRulerStrategy ? DeserializeRulerStrategy(item.Element("rulerStrategy")) : null);
             });
             return new AiStrategicSaveState(Long(element, "worldSeed"), Long(element, "lastProcessedTick"), factions);
+        }
+
+        private static XElement SerializeRulerStrategy(RulerStrategyStateSnapshot state)
+        {
+            if (state == null) return new XElement("rulerStrategy");
+            return new XElement("rulerStrategy",
+                new XElement("schemaVersion", RulerStrategyStateSnapshot.SchemaVersion),
+                new XElement("requestSequence", state.RequestSequence),
+                new XElement("nextAnnualTick", state.NextAnnualTick),
+                SerializeRulerStrategyPending(state.PendingRequest),
+                SerializeRulerStrategyPlan(state.ActivePlan),
+                new XElement("journal", state.Journal.Select(entry => new XElement("entry",
+                    new XElement("requestSequence", entry.RequestSequence),
+                    new XElement("requestedTick", entry.RequestedTick),
+                    new XElement("completedTick", entry.CompletedTick),
+                    new XElement("trigger", (int)entry.Trigger),
+                    new XElement("provider", (int)entry.Provider),
+                    new XElement("status", (int)entry.Status),
+                    new XElement("note", entry.Note)))));
+        }
+
+        private static XElement SerializeRulerStrategyPending(RulerStrategyPendingRequest? pending)
+        {
+            var element = new XElement("pending");
+            if (!pending.HasValue) return element;
+            var value = pending.Value;
+            element.Add(new XElement("sequence", value.Sequence),
+                new XElement("requestedTick", value.RequestedTick),
+                new XElement("trigger", (int)value.Trigger),
+                new XElement("subject", value.Subject));
+            return element;
+        }
+
+        private static XElement SerializeRulerStrategyPlan(RulerStrategyPlan plan)
+        {
+            var element = new XElement("plan");
+            if (plan == null) return element;
+            element.Add(new XElement("requestSequence", plan.RequestSequence),
+                new XElement("generatedTick", plan.GeneratedTick),
+                new XElement("validUntilTick", plan.ValidUntilTick),
+                new XElement("provider", (int)plan.Provider),
+                new XElement("preferredGoal", (int)plan.PreferredGoal),
+                new XElement("foodTarget", plan.FoodTarget),
+                new XElement("materialTarget", plan.MaterialTarget),
+                new XElement("minimumArmySize", plan.MinimumArmySize),
+                new XElement("aggression", plan.Aggression),
+                new XElement("diplomaticPosture", (int)plan.DiplomaticPosture),
+                new XElement("foodWorkforcePercent", plan.FoodWorkforcePercent),
+                new XElement("materialsWorkforcePercent", plan.MaterialsWorkforcePercent),
+                new XElement("constructionWorkforcePercent", plan.ConstructionWorkforcePercent),
+                new XElement("researchWorkforcePercent", plan.ResearchWorkforcePercent),
+                new XElement("militaryWorkforcePercent", plan.MilitaryWorkforcePercent),
+                new XElement("buildingPriorities", plan.BuildingPriorities.Select(value =>
+                    new XElement("building", value))),
+                new XElement("summary", plan.Summary));
+            return element;
+        }
+
+        private static RulerStrategyStateSnapshot DeserializeRulerStrategy(XElement element)
+        {
+            if (element == null || !element.HasElements)
+                throw new FormatException("Missing ruler strategy state.");
+            RequireFields(element, new[] { "schemaVersion", "requestSequence", "nextAnnualTick", "pending", "plan", "journal" });
+            if (Int(element, "schemaVersion") != RulerStrategyStateSnapshot.SchemaVersion)
+                throw new NotSupportedException("Unsupported ruler strategy schema version.");
+            var pendingElement = element.Element("pending");
+            RulerStrategyPendingRequest? pending = null;
+            if (pendingElement.HasElements)
+            {
+                RequireFields(pendingElement, new[] { "sequence", "requestedTick", "trigger", "subject" });
+                pending = new RulerStrategyPendingRequest(Long(pendingElement, "sequence"),
+                    Long(pendingElement, "requestedTick"),
+                    (RulerStrategyTrigger)Int(pendingElement, "trigger"), Value(pendingElement, "subject"));
+            }
+            else if (pendingElement.HasAttributes || !string.IsNullOrWhiteSpace(pendingElement.Value))
+                throw new FormatException("Invalid ruler strategy pending request.");
+
+            var planElement = element.Element("plan");
+            RulerStrategyPlan plan = null;
+            if (planElement.HasElements)
+            {
+                RequireFields(planElement, new[] { "requestSequence", "generatedTick", "validUntilTick", "provider",
+                    "preferredGoal", "foodTarget", "materialTarget", "minimumArmySize", "aggression",
+                    "diplomaticPosture", "foodWorkforcePercent", "materialsWorkforcePercent",
+                    "constructionWorkforcePercent", "researchWorkforcePercent", "militaryWorkforcePercent",
+                    "buildingPriorities", "summary" });
+                var priorities = Items(planElement.Element("buildingPriorities"), "building", Scalar);
+                plan = new RulerStrategyPlan(Long(planElement, "requestSequence"), Long(planElement, "generatedTick"),
+                    Long(planElement, "validUntilTick"), (RulerStrategyProviderKind)Int(planElement, "provider"),
+                    (AiStrategicGoal)Int(planElement, "preferredGoal"), Int(planElement, "foodTarget"),
+                    Int(planElement, "materialTarget"), Int(planElement, "minimumArmySize"),
+                    Int(planElement, "aggression"), (RulerDiplomaticPosture)Int(planElement, "diplomaticPosture"),
+                    Int(planElement, "foodWorkforcePercent"), Int(planElement, "materialsWorkforcePercent"),
+                    Int(planElement, "constructionWorkforcePercent"), Int(planElement, "researchWorkforcePercent"),
+                    Int(planElement, "militaryWorkforcePercent"), priorities, Value(planElement, "summary"));
+            }
+            else if (planElement.HasAttributes || !string.IsNullOrWhiteSpace(planElement.Value))
+                throw new FormatException("Invalid ruler strategy plan.");
+
+            var journal = Items(element.Element("journal"), "entry", entry =>
+            {
+                RequireFields(entry, new[] { "requestSequence", "requestedTick", "completedTick", "trigger",
+                    "provider", "status", "note" });
+                return new RulerStrategyJournalEntry(Long(entry, "requestSequence"),
+                    Long(entry, "requestedTick"), Long(entry, "completedTick"),
+                    (RulerStrategyTrigger)Int(entry, "trigger"),
+                    (RulerStrategyProviderKind)Int(entry, "provider"),
+                    (RulerStrategyRequestStatus)Int(entry, "status"), Value(entry, "note"));
+            });
+            return new RulerStrategyStateSnapshot(Long(element, "requestSequence"),
+                Long(element, "nextAnnualTick"), pending, plan, journal);
         }
 
         private static XElement SerializeAiTraining(MilitaryTrainingSaveState state)

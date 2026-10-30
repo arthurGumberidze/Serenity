@@ -195,6 +195,7 @@ namespace Game.Infrastructure
         public GlobalMapService GlobalMap { get; private set; }
         public ConnectedWorldService ConnectedWorld { get; private set; }
         public AiStrategicScheduler StrategicAi { get; private set; }
+        public RulerStrategyRuntime RulerStrategies { get; private set; }
         public EventService Events { get; private set; }
         public AiFactionRuntime StarterEnemyAi { get; private set; }
         public GameModeTransitionService ModeTransitions { get; private set; }
@@ -795,7 +796,9 @@ namespace Game.Infrastructure
             CampaignProgress = new CampaignProgressService(ActiveNewGameConfiguration, new CombatSideId("player"),
                 StarterEnemyAi, GlobalMap, MilitaryUnits, StrategicAi, Battles, Clock.State.CalendarTicks, GameRun);
             gameObject.AddComponent<StrategicAiDebugOverlay>().Initialize(StrategicAi, pointerRaycaster,
-                () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)));
+                () => AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1d / (int)Clock.Speed)),
+                id => RulerStrategies?.Request(id, RulerStrategyTrigger.Manual,
+                    "Ручной запрос из отладочной панели."));
             BuildingDamage.BuildingChanged += OnBuildingChanged;
             Tiers.BindTransitionGuard(new CharacterTierTransitionGuardSet(Combat, PlayerControl));
             AiScheduler.BindExternalActivityOwner(new CharacterActivityOwnerSet(Combat, PlayerControl, MilitaryTraining, StarterEnemyAi.Training));
@@ -873,6 +876,9 @@ namespace Game.Infrastructure
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
+            RulerStrategies = gameObject.AddComponent<RulerStrategyRuntime>();
+            RulerStrategies.Initialize(StrategicAi, userSettings.rulerAiMode,
+                () => Clock.State.CalendarTicks, () => Clock.IsPaused);
 
             TiledWorld.ConfigureStreaming(CameraStreamingFocus, StreamingPhysicalPositions,
                 StreamingNavigationRoutes);
@@ -1056,6 +1062,7 @@ namespace Game.Infrastructure
             }
             PerformanceBenchmark?.RecordWorkersAndWeatherAllocation();
             StrategicAi.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks);
+            RulerStrategies?.AdvanceTo(targetCalendarTick);
             AdvanceMilitaryTrainingTo(targetCalendarTick);
             MilitaryAttack.AdvanceTo(targetCalendarTick);
             SettlementCapture.AdvanceTo(targetCalendarTick, Clock.State.BiologicalTicks,
@@ -1409,6 +1416,7 @@ namespace Game.Infrastructure
                 ConstructionSites.RebindRestored(building);
             ConstructionClearance?.RebindAfterLoad(Buildings.All.Where(x=>x.OwnerSideId.Value=="player"));
             NeighbourEconomy?.RebindAfterLoad();
+            RulerStrategies?.RebaseAfterLoad();
             BuildingPathing.RebindAfterLoad();
             foreach (var gate in Buildings.All.Where(x => x.IsOperational &&
                          x.DefinitionId.FamilyId == new BuildingDefinitionId("gate")))

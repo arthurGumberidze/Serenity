@@ -513,6 +513,19 @@ namespace Game.Infrastructure
             AddSlider(T("menu.settings.camera_speed"), 0.5f, 2f, workingSettings.cameraSpeed,
                 value => workingSettings.cameraSpeed = (float)Math.Round(value, 2));
 
+            var rulerAiModes = new List<string>
+            {
+                T("menu.settings.ruler_ai.deterministic"),
+                T("menu.settings.ruler_ai.ollama"),
+                T("menu.settings.ruler_ai.cloud")
+            };
+            var rulerAiModeIndex = Math.Max(0, Array.IndexOf(RulerAiModes.All, workingSettings.rulerAiMode));
+            var rulerAi = new DropdownField(T("menu.settings.ruler_ai"), rulerAiModes, rulerAiModeIndex);
+            rulerAi.RegisterValueChangedCallback(change =>
+                workingSettings.rulerAiMode = RulerAiModes.All[Math.Max(0, rulerAiModes.IndexOf(change.newValue))]);
+            StyleField(rulerAi); content.Add(rulerAi);
+            AddLine(T("menu.settings.ruler_ai.explanation"));
+
             AddHeading(T("menu.settings.keys"), 22);
             AddKeyDropdown(T("menu.settings.key.up"), workingSettings.cameraUp, value => workingSettings.cameraUp = value);
             AddKeyDropdown(T("menu.settings.key.down"), workingSettings.cameraDown, value => workingSettings.cameraDown = value);

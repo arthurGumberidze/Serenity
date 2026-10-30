@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM16 optional ruler strategy AI (2026-10-30): **DONE / awaiting user retest**. Added deterministic-only,
+local Ollama and cloud-first/Ollama-fallback modes. External models return one validated aggregate yearly plan,
+never resident-by-resident commands or direct world mutations. Annual/trade/war/crisis/dialogue/manual triggers,
+pause suppression, timeouts, strict JSON/content-ID validation, nested schema-v1 persistence and bounded journal
+are connected to the existing U26 scheduler. Delivery compile passed; U26 29/29 and P2 5/5 EditMode tests passed;
+real `qwen3.5:4b` JSON smoke passed at 37.8 s; Windows Development build succeeded with 0 errors / 52 inherited
+warnings. Evidence: `docs/validation/RulerStrategyAI.md`; operation: `docs/AI_RULER_STRATEGY.md`.
+
 WM15 screenshot/video repair (2026-10-30): **DONE / awaiting user retest**. Addressed building materials,
 physical navigation, preloading, automatic upgrades/construction, housing/sleep, exact-pier fishing and
 snow preparation/trails. Validation: 56/56 domain + 7/7 roles + 1/1 actual gameplay; Windows build passed

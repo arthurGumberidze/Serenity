@@ -45,6 +45,7 @@ namespace Game.Tests.Editor
                 resolutionHeight = 1080,
                 uiScale = 1.25f,
                 cameraSpeed = 1.4f,
+                rulerAiMode = RulerAiModes.Cloud,
                 cameraUp = "upArrow",
                 cameraDown = "downArrow",
                 cameraLeft = "leftArrow",
@@ -59,6 +60,7 @@ namespace Game.Tests.Editor
             Assert.That(loaded.Settings.resolutionWidth, Is.EqualTo(1920));
             Assert.That(loaded.Settings.uiScale, Is.EqualTo(1.25f).Within(0.001f));
             Assert.That(loaded.Settings.cameraUp, Is.EqualTo("upArrow"));
+            Assert.That(loaded.Settings.rulerAiMode, Is.EqualTo(RulerAiModes.Cloud));
             Assert.That(path, Does.Not.Contain("Saves"));
 
             loaded.Settings.pause = loaded.Settings.build;
@@ -76,7 +78,23 @@ namespace Game.Tests.Editor
 
             Assert.That(loaded.WasCorrupt, Is.True);
             Assert.That(loaded.Settings.version, Is.EqualTo(UserSettingsData.CurrentVersion));
+            Assert.That(loaded.Settings.rulerAiMode, Is.EqualTo(RulerAiModes.Ollama));
             Assert.That(File.ReadAllText(path), Is.EqualTo(before));
+        }
+
+        [Test]
+        public void ExistingVersionOneSettingsWithoutRulerAiFieldMigrateToLocalDefault()
+        {
+            var path = Path.Combine(directory, "legacy-user-settings.json");
+            var legacy = new UserSettingsData();
+            var json = UnityEngine.JsonUtility.ToJson(legacy).Replace(
+                ",\"rulerAiMode\":\"ollama\"", string.Empty);
+            File.WriteAllText(path, json);
+
+            var loaded = new UserSettingsStore(path).Load();
+
+            Assert.That(loaded.WasCorrupt, Is.False);
+            Assert.That(loaded.Settings.rulerAiMode, Is.EqualTo(RulerAiModes.Ollama));
         }
 
         [Test]
