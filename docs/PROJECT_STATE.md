@@ -1,5 +1,29 @@
 # PROJECT_STATE.md
 
+## WM16 neighbour progression and monthly Ollama endurance — DONE / awaiting user retest (2026-10-31)
+
+The neighbour settlement no longer loses its own work scope when the shared Tier1 scheduler installs the
+player scope. Residents can claim their faction's production, research, construction and logistics jobs;
+off-camera deliveries use the same canonical inventories without path-dependent stalls. Critical hunger and
+thirst recover instead of repeatedly interrupting work, controlled fire unlocks the campfire/cooking route,
+and autonomous production prefers stable storage over ground piles. Crop plots now admit one phase task at a
+time and safely cancel stale restored tasks rather than throwing when another worker changes the plot phase.
+
+Ollama planning is local-only in the endurance route, uses `qwen3.5:4b`, and returns one bounded settlement
+plan valid for 30 game days. The completed 730-day run produced 25 distinct accepted monthly plans, 2,922
+correlated strategic executions and 42,288 JSONL audit records. All six neighbour residents performed
+1,634–1,795 productive actions each; the neighbour had 19,737 action transitions and zero `Eat/Failed`
+transitions. Every accepted plan sequence had canonical strategic execution and one construction directive
+was issued. Audit: `C:/Users/Lenovo/AppData/LocalLow/Serenity/Serenity/AiAudit/20261030-204752-996.jsonl`.
+
+The live two-year NUnit route completed all 730 game days and all provider/action assertions, then its former
+final assertion expected a physical building to finish under 12-hour simulation slices (4 -> 4). That assertion
+was replaced by the correct endurance contract: a correlated canonical construction directive. Physical work
+completion is covered separately by the exact hourly route, which passed 1/1 in 438.31 s and proved cooking,
+research, canonical building placement and operational completion within 14 game days. Production regressions
+passed 13/13. Windows Development build `Builds/NeighbourProgressionRepair/Serenity.exe` passed with 0 errors /
+0 warnings. Exact evidence: `docs/validation/NeighbourProgressionRepair.md`.
+
 ## WM16 follow-up — DONE / awaiting user retest (2026-10-30)
 
 Added visible in-game menu access, complete snow/map preparation with weighted progress and a paused

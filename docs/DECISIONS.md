@@ -2267,3 +2267,24 @@ are recorded through a constant-time canonical task lookup. The log is independe
 Validation and exact commands: docs/validation/WM16Followup.md. Final validation passed: 71 tests,
 five concurrent upgrades with real builders, complete resident snow and 58 footprints, menu return,
 immutable Windows build and native Player exit 0. Await user retest of the original stuck-building scenario.
+
+## D-225 — External plans guide aggregate policy; canonical workers retain settlement scope (2026-10-31)
+
+An accepted external plan remains a bounded settlement policy, not a list of commands for up to 2000
+individual residents. A monthly plan is valid for exactly 30 game days and influences the existing strategic
+scheduler's resource, workforce, research and building priorities. The canonical scheduler, production,
+research, work and construction services continue to decide and execute each resident action. Local-only
+endurance testing must assert that every accepted plan sequence has at least one correlated strategic execution
+and that every materialized resident performs productive canonical work; it must not require an LLM response
+per resident or infer causality from an action log alone.
+
+The shared Tier1 work manager may serve player and neighbour residents, but assignment filtering must preserve
+the resident's faction scope. Installing the player scope globally cannot overwrite neighbour eligibility.
+Neighbour delivery creation is continuous and canonical; off-camera movement may collapse route traversal but
+may not bypass inventory ownership, reservation, transfer, construction or production rules.
+
+A primitive crop plot has one mutable phase and therefore admits only one active phase-changing task. A second
+plant/harvest reservation is rejected. A stale task restored from an older snapshot or invalidated by another
+transition is cancelled and released before inputs are consumed, rather than allowing a phase mismatch to abort
+the simulation. Exact hourly testing owns physical construction-completion proof; accelerated long-horizon
+testing owns provider cadence, plan correlation and resident-activity proof.

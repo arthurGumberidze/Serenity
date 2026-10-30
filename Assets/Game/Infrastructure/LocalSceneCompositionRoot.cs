@@ -760,14 +760,22 @@ namespace Game.Infrastructure
             BuildingLifecycle.UpgradeWorkerAllowed = (id, building) => CanCommandResident(id) &&
                 building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.GetRank(id).HasValue &&
                 (!Work.Groups.TryGetForMember(id,out var group) || group.Role==WorkGroupRole.Builders || group.Role==WorkGroupRole.General);
-            Work.AssignmentScope = (id, order) => order.Type==WorkJobType.Upgrade
-                ? Buildings.TryGet(order.Target.EntityId,out var targetBuilding) &&
-                  BuildingLifecycle.UpgradeWorkerAllowed(id,targetBuilding)
-                : (CanCommandResident(id) || order.Type==WorkJobType.Move || order.Type==WorkJobType.Guard || order.Type==WorkJobType.Military) &&
-                  (order.Type != WorkJobType.Build || !Buildings.TryGet(order.Target.EntityId,out var site) ||
-                   site.ConstructionStageCount == 0 || site.ConstructionPhase == ConstructionPhase.Building) &&
-                  (!MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
-                  order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military);
+            Work.AssignmentScope = (id, order) =>
+            {
+                // WorkManager is shared by both physical economies. Keep faction ownership in the final
+                // composition predicate; otherwise this later player-policy assignment silently replaces
+                // NeighbourEconomyRuntime's scope and the neighbour can never claim its own logistics.
+                if (StarterEnemyAi.Residents.Contains(id))
+                    return NeighbourEconomy?.CanAssignWork(id, order) == true;
+                return order.Type==WorkJobType.Upgrade
+                    ? Buildings.TryGet(order.Target.EntityId,out var targetBuilding) &&
+                      BuildingLifecycle.UpgradeWorkerAllowed(id,targetBuilding)
+                    : (CanCommandResident(id) || order.Type==WorkJobType.Move || order.Type==WorkJobType.Guard || order.Type==WorkJobType.Military) &&
+                      (order.Type != WorkJobType.Build || !Buildings.TryGet(order.Target.EntityId,out var site) ||
+                       site.ConstructionStageCount == 0 || site.ConstructionPhase == ConstructionPhase.Building) &&
+                      (!MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
+                       order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military);
+            };
             Appearances.AppearanceChanged += OnAppearanceChanged;
             Func<MilitaryTrainingRecordState, bool> canTrain = record =>
                 Buildings.TryGet(record.BarracksId, out var trainingBuilding) && trainingBuilding.IsOperational &&

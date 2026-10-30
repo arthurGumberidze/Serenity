@@ -75,16 +75,19 @@ namespace Game.Simulation.AI
     public sealed class RulerStrategyRequest
     {
         public RulerStrategyRequest(AiStateId factionId, RulerStrategyPendingRequest pending,
-            RulerStrategyRequestContext context)
+            RulerStrategyRequestContext context, long planHorizonTicks = 0)
         {
-            if (!factionId.IsValid) throw new ArgumentException(nameof(factionId));
+            if (planHorizonTicks == 0) planHorizonTicks = RulerStrategyState.AnnualIntervalTicks;
+            if (!factionId.IsValid || planHorizonTicks < 0) throw new ArgumentException(nameof(factionId));
             FactionId = factionId;
             Pending = pending;
             Context = context ?? throw new ArgumentNullException(nameof(context));
+            PlanHorizonTicks = planHorizonTicks;
         }
         public AiStateId FactionId { get; }
         public RulerStrategyPendingRequest Pending { get; }
         public RulerStrategyRequestContext Context { get; }
+        public long PlanHorizonTicks { get; }
     }
 
     /// <summary>
@@ -201,7 +204,8 @@ namespace Game.Simulation.AI
             return new RulerStrategyRequest(faction.Strategic.Id, pending,
                 new RulerStrategyRequestContext(faction.Residents.Count,
                     faction.Strategic.ControlledSettlements.Count, faction.Strategic.KnownMilitaryUnits.Count,
-                    faction.Strategic.Goal, resources, completed, available, buildings, relations));
+                    faction.Strategic.Goal, resources, completed, available, buildings, relations),
+                faction.RulerStrategy.RequestIntervalTicks);
         }
 
         private static string Truncate(string value)

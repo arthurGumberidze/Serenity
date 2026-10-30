@@ -93,7 +93,9 @@ namespace Game.Simulation.AI
                 moveElapsed += simulationDelta;
                 if(movement.CurrentPosition.DistanceSquared(lastProgressPosition)>=.25f)
                 {moveElapsed=TimeSpan.Zero;lastProgressPosition=movement.CurrentPosition;}
-                if (movement.State == MovementState.Failed || moveElapsed >= settings.MovementTimeout) { Fail(); return; }
+                if (movement.State == MovementState.Failed ||
+                    movement.State == MovementState.Moving && moveElapsed >= settings.MovementTimeout)
+                { Fail(); return; }
                 if (movement.State != MovementState.Arrived) return;
                 movement.Stop();
                 var start = domestic.BeginSleep(agent.CharacterId);
@@ -285,10 +287,23 @@ namespace Game.Simulation.AI
                 lastProgressPosition = movement.CurrentPosition;
                 phaseElapsed = TimeSpan.Zero;
             }
-            if (!IsValid || movement.State == MovementState.Failed ||
-                ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.MoveToDestination) &&
-                 phaseElapsed >= settings.MovementTimeout))
+            if (!IsValid)
             {
+                world.RecordHaulExecutionFailure("Invalid:" + Phase + ":" + claim.Phase);
+                Fail();
+                return;
+            }
+            if (movement.State == MovementState.Failed)
+            {
+                world.RecordHaulExecutionFailure("MovementFailed:" + Phase);
+                Fail();
+                return;
+            }
+            if (movement.State == MovementState.Moving &&
+                (Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.MoveToDestination) &&
+                phaseElapsed >= settings.MovementTimeout)
+            {
+                world.RecordHaulExecutionFailure("MovementTimeout:" + Phase);
                 Fail();
                 return;
             }
@@ -331,6 +346,7 @@ namespace Game.Simulation.AI
             var failure = world.Transfers.TransferExact(job.Source, characterOwner, job.ResourceId, job.Quantity);
             if (failure != TransferFailureReason.None)
             {
+                world.RecordHaulExecutionFailure("Pickup:" + failure);
                 Fail();
                 return;
             }
@@ -355,6 +371,7 @@ namespace Game.Simulation.AI
             }
             if ((failure == TransferFailureReason.DestinationRejected || failure == TransferFailureReason.MissingDestination) &&
                 TryReplanDestination()) return;
+            world.RecordHaulExecutionFailure("Dropoff:" + failure);
             Fail();
         }
 
@@ -463,7 +480,7 @@ namespace Game.Simulation.AI
             if ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
                 movement.CurrentPosition.DistanceSquared(lastMovementPosition) > .04f)
             { phaseElapsed = TimeSpan.Zero; lastMovementPosition = movement.CurrentPosition; }
-            if (movement.State == MovementState.Failed ||
+            if (movement.State == MovementState.Failed || movement.State == MovementState.Moving &&
                 ((Phase == AiActionPhase.MoveToSource || Phase == AiActionPhase.DeliverProduction) &&
                  phaseElapsed >= settings.MovementTimeout))
             {

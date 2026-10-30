@@ -654,6 +654,35 @@ namespace Game.Tests.Editor
             Assert.That(plan.BuildingPriorities.Single(), Is.EqualTo("primitive_shelter"));
         }
 
+        [Test]
+        public void LocalModelPlanIsClampedAndNormalizedAtTheCanonicalBoundary()
+        {
+            var pending = new RulerStrategyPendingRequest(8, TimeSpan.FromDays(30).Ticks,
+                RulerStrategyTrigger.Annual, string.Empty);
+            var request = new RulerStrategyRequest(new AiStateId(Id(15033)), pending,
+                new RulerStrategyRequestContext(6, 1, 0, AiStrategicGoal.StabilizeEconomy,
+                    Array.Empty<RulerStrategyResourceFact>(), Array.Empty<string>(), Array.Empty<string>(),
+                    new[] { "campfire" }, Array.Empty<RulerStrategyRelationFact>()),
+                TimeSpan.FromDays(30).Ticks);
+            var json = "{\"goal\":\"develop_settlement\",\"food_target\":999999," +
+                "\"material_target\":-5,\"minimum_army_size\":0,\"aggression\":140," +
+                "\"diplomatic_posture\":\"neutral\",\"workforce\":{" +
+                "\"food\":70,\"materials\":30,\"construction\":30,\"research\":20,\"military\":10}," +
+                "\"building_priorities\":[\"invented\",\"campfire\"],\"summary\":\"ok\"}";
+
+            var plan = RulerStrategyJsonCodec.ParsePlan(json, request,
+                RulerStrategyProviderKind.Ollama, pending.RequestedTick);
+
+            Assert.That(plan.FoodTarget, Is.EqualTo(10000));
+            Assert.That(plan.MaterialTarget, Is.Zero);
+            Assert.That(plan.MinimumArmySize, Is.EqualTo(1));
+            Assert.That(plan.Aggression, Is.EqualTo(100));
+            Assert.That(plan.FoodWorkforcePercent + plan.MaterialsWorkforcePercent +
+                plan.ConstructionWorkforcePercent + plan.ResearchWorkforcePercent +
+                plan.MilitaryWorkforcePercent, Is.EqualTo(100));
+            Assert.That(plan.BuildingPriorities, Is.EqualTo(new[] { "campfire" }));
+        }
+
         private static StableEntityId Id(int value) => StableEntityId.Parse(value.ToString("x32"));
 
         private sealed class Fixture

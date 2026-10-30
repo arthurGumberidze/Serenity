@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Buildings;
@@ -9,6 +10,22 @@ using Game.Simulation.Research;
 
 namespace Game.Simulation.AI
 {
+    public enum SpecifiedHaulAvailability
+    {
+        Available = 0,
+        UnsupportedOwner = 1,
+        InvalidRequest = 2,
+        MissingSourcePosition = 3,
+        MissingDestinationPosition = 4,
+        MissingInventory = 5,
+        MissingCarryLoad = 6,
+        CarryCapacity = 7,
+        SourceUnavailable = 8,
+        DestinationRejected = 9,
+        SourceReserved = 10,
+        DestinationReserved = 11
+    }
+
     public readonly struct HaulJobCandidate
     {
         public HaulJobCandidate(InventoryOwner source, InventoryOwner destination, ResourceId resourceId,
@@ -39,7 +56,9 @@ namespace Game.Simulation.AI
         private readonly float gridSize;
         private readonly WorldPosition gridOrigin;
         private readonly Func<WorldPosition, WorldPosition> groundPosition;
+        private readonly Dictionary<SpecifiedHaulAvailability,long> specifiedRejections = new();
         public Func<InventoryOwner, WorldPosition?> PositionOverride { get; set; }
+        public IReadOnlyDictionary<SpecifiedHaulAvailability,long> SpecifiedRejections => specifiedRejections;
 
         public HaulWorldQuery(ResourceInventoryRegistry inventories, WorldPileService piles, BuildingRegistry buildings,
             HaulClaimRegistry claims, float gridSize = 1f, WorldPosition gridOrigin = default,
@@ -162,27 +181,64 @@ namespace Game.Simulation.AI
             if (agent == null) throw new ArgumentNullException(nameof(agent));
             candidate = default;
             claim = null;
-            if ((sourceOwner.Kind != InventoryOwnerKind.WorldPile &&
-                    sourceOwner.Kind != InventoryOwnerKind.BuildingStorage &&
-                    sourceOwner.Kind != InventoryOwnerKind.ProductionOutput) ||
-                (destinationOwner.Kind != InventoryOwnerKind.BuildingStorage &&
-                    destinationOwner.Kind != InventoryOwnerKind.ConstructionBuffer &&
-                    destinationOwner.Kind != InventoryOwnerKind.ProductionInput) ||
-                !resourceId.IsValid || !quantity.IsPositive ||
-                !TryInventoryPosition(sourceOwner, resourceId, false, out var sourcePosition) ||
-                !TryInventoryPosition(destinationOwner, resourceId, true, out var destinationPosition) ||
-                !inventories.TryGet(sourceOwner, out var source) ||
-                !inventories.TryGet(destinationOwner, out var destination)) return false;
-            var characterOwner = inventories.WorkerOwner(agent.CharacterId);
-            if (!inventories.TryGet(characterOwner, out var characterInventory) ||
-                characterInventory.Capacity - characterInventory.TotalUnits < quantity.Units ||
-                !source.CanRemove(resourceId, quantity) || !destination.CanAdd(resourceId, quantity)) return false;
+            var availability=DiagnoseSpecified(agent, sourceOwner, destinationOwner, resourceId, quantity);
+            if (availability != SpecifiedHaulAvailability.Available)
+            {
+                specifiedRejections.TryGetValue(availability,out var count);
+                specifiedRejections[availability]=checked(count+1);
+                return false;
+            }
+            TryInventoryPosition(sourceOwner, resourceId, false, out var sourcePosition);
+            TryInventoryPosition(destinationOwner, resourceId, true, out var destinationPosition);
+            var source = inventories.Get(sourceOwner);
+            var destination = inventories.Get(destinationOwner);
             if (!claims.TryClaim(agent.CharacterId, sourceOwner, destinationOwner, resourceId, quantity,
                     source.GetAmount(resourceId).Units, destination.Capacity - destination.TotalUnits, out claim))
+            {
+                availability=quantity.Units>source.GetAmount(resourceId).Units-
+                    claims.ReservedAtSource(sourceOwner,resourceId)
+                    ? SpecifiedHaulAvailability.SourceReserved
+                    : SpecifiedHaulAvailability.DestinationReserved;
+                specifiedRejections.TryGetValue(availability,out var count);
+                specifiedRejections[availability]=checked(count+1);
                 return false;
+            }
             candidate = new HaulJobCandidate(sourceOwner, destinationOwner, resourceId, quantity,
                 sourcePosition, destinationPosition);
             return true;
+        }
+
+        public SpecifiedHaulAvailability DiagnoseSpecified(Tier1AiAgentState agent, InventoryOwner sourceOwner,
+            InventoryOwner destinationOwner, ResourceId resourceId, ResourceQuantity quantity)
+        {
+            if (agent == null) throw new ArgumentNullException(nameof(agent));
+            if (sourceOwner.Kind != InventoryOwnerKind.WorldPile &&
+                sourceOwner.Kind != InventoryOwnerKind.BuildingStorage &&
+                sourceOwner.Kind != InventoryOwnerKind.ProductionOutput ||
+                destinationOwner.Kind != InventoryOwnerKind.BuildingStorage &&
+                destinationOwner.Kind != InventoryOwnerKind.ConstructionBuffer &&
+                destinationOwner.Kind != InventoryOwnerKind.ProductionInput)
+                return SpecifiedHaulAvailability.UnsupportedOwner;
+            if (!resourceId.IsValid || !quantity.IsPositive) return SpecifiedHaulAvailability.InvalidRequest;
+            if (!TryInventoryPosition(sourceOwner, resourceId, false, out _))
+                return SpecifiedHaulAvailability.MissingSourcePosition;
+            if (!TryInventoryPosition(destinationOwner, resourceId, true, out _))
+                return SpecifiedHaulAvailability.MissingDestinationPosition;
+            if (!inventories.TryGet(sourceOwner, out var source) ||
+                !inventories.TryGet(destinationOwner, out var destination))
+                return SpecifiedHaulAvailability.MissingInventory;
+            var characterOwner = inventories.WorkerOwner(agent.CharacterId);
+            if (!inventories.TryGet(characterOwner, out var characterInventory))
+                return SpecifiedHaulAvailability.MissingCarryLoad;
+            if (characterInventory.Capacity - characterInventory.TotalUnits < quantity.Units)
+                return SpecifiedHaulAvailability.CarryCapacity;
+            if (!source.CanRemove(resourceId, quantity)) return SpecifiedHaulAvailability.SourceUnavailable;
+            if (!destination.CanAdd(resourceId, quantity)) return SpecifiedHaulAvailability.DestinationRejected;
+            if (quantity.Units > source.GetAmount(resourceId).Units -
+                claims.ReservedAtSource(sourceOwner, resourceId)) return SpecifiedHaulAvailability.SourceReserved;
+            if (quantity.Units > destination.Capacity - destination.TotalUnits -
+                claims.ReservedAtDestination(destinationOwner)) return SpecifiedHaulAvailability.DestinationReserved;
+            return SpecifiedHaulAvailability.Available;
         }
 
         public bool TryFindDestinationForCarried(Tier1AiAgentState agent, ResourceId resourceId, long units,
@@ -301,6 +357,8 @@ namespace Game.Simulation.AI
 
     public sealed class Tier1AiWorld
     {
+        private readonly Dictionary<string, long> haulExecutionFailures = new Dictionary<string, long>();
+
         public Tier1AiWorld(HaulWorldQuery haulJobs, HaulClaimRegistry claims, ResourceTransferService transfers,
             ProductionService production = null, ResearchService research = null,
             BuildingRegistry buildings = null, Action<InventoryOwner> resourceDelivered = null)
@@ -322,5 +380,13 @@ namespace Game.Simulation.AI
         public Game.Simulation.Buildings.BuildingLifecycleService BuildingLifecycle { get; set; }
         public Action<InventoryOwner> ResourceDelivered { get; }
         public Func<WorldPosition, WorldPosition?> DrinkingWell { get; set; }
+        public IReadOnlyDictionary<string, long> HaulExecutionFailures => haulExecutionFailures;
+
+        public void RecordHaulExecutionFailure(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason)) reason = "Unknown";
+            haulExecutionFailures.TryGetValue(reason, out var count);
+            haulExecutionFailures[reason] = checked(count + 1);
+        }
     }
 }

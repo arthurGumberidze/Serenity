@@ -865,7 +865,7 @@ namespace Game.Simulation.AI
         private static WorldLocationId Other(WorldRouteState route, WorldLocationId value) => route.From == value ? route.To : route.From;
         private static int TechnologyScore(TechnologyDefinition value) => TechnologyScore(value.Id);
         private static int TechnologyScore(TechnologyId value)
-        { var text=value.ToString(); if(text=="shelter_construction")return 1000; if(text=="stone_tools")return 900; if(text=="primitive_agriculture")return 850; return 500-text.Length; }
+        { var text=value.ToString(); if(text=="controlled_fire")return 1100; if(text=="shelter_construction")return 1000; if(text=="stone_tools")return 900; if(text=="primitive_agriculture")return 850; return 500-text.Length; }
         private void Record(AiStrategicState state, long tick, AiDecisionKind kind, AiStrategicGoal goal,
             int score, string reason, SettlementId? settlement = null, WorldLocationId? location = null,
             MilitaryUnitId? unitId = null) => state.RecordDecision(tick, settings.DecisionIntervalTicks,

@@ -26,10 +26,14 @@ namespace Game.Infrastructure
         private readonly Vector3 origin;
         private readonly ConstructionSiteService sites;
         private readonly ConstructionClearanceCoordinator clearance;
+        private readonly Tier1AiWorld aiWorld;
         private readonly Dictionary<StableEntityId,OffCameraWorkMovement> abstractMoves = new();
         private readonly HashSet<StableEntityId> knownBuildings = new();
         private long nextSourcesTick;
         public Tier1AiScheduler Scheduler { get; }
+        public HaulWorldQuery HaulJobs { get; }
+        public IReadOnlyDictionary<string,long> HaulExecutionFailures => aiWorld.HaulExecutionFailures;
+        public bool CanAssignWork(StableEntityId worker, WorkOrder job) => CanAssign(worker, job);
 
         public NeighbourEconomyRuntime(LocalSceneCompositionRoot world,float gridSize,Vector3 gridOrigin)
         {
@@ -40,8 +44,9 @@ namespace Game.Infrastructure
             var transfers=new ResourceTransferService(faction.Inventories);
             var query=new HaulWorldQuery(faction.Inventories,faction.WorldPiles,root.Buildings,root.HaulClaims,
                 grid,new WorldPosition(origin.x,origin.y,origin.z),Ground);
+            HaulJobs=query;
             query.PositionOverride=InventoryPosition;
-            var aiWorld=new Tier1AiWorld(query,root.HaulClaims,transfers,faction.Production,faction.Research,
+            aiWorld=new Tier1AiWorld(query,root.HaulClaims,transfers,faction.Production,faction.Research,
                 root.Buildings,owner=> { if(owner.Kind==InventoryOwnerKind.ConstructionBuffer &&
                     root.Buildings.TryGet(owner.Id,out var building)) sites.NotifyDelivery(building); });
             Scheduler=new Tier1AiScheduler(root.Characters,root.AiAgents,aiWorld,workManager:root.Work,
@@ -97,8 +102,28 @@ namespace Game.Infrastructure
         private WorldPosition Approach(Building building)
         {
             var footprint=faction.Buildings[building.DefinitionId].Footprint.Rotate(building.Orientation);
-            return Ground(new WorldPosition(origin.x+(building.Coordinate.X+(footprint.Width-1)*.5f)*grid,0,
-                origin.z+(building.Coordinate.Z-1.5f)*grid));
+            var preferred=new WorldPosition(origin.x+(building.Coordinate.X+(footprint.Width-1)*.5f)*grid,0,
+                origin.z+(building.Coordinate.Z-1.5f)*grid);
+            bool Valid(WorldPosition point)
+            {
+                var grounded=Ground(point);
+                return root.WorldDefinition.ContainsClosed(grounded.X,grounded.Z) &&
+                    root.WorldHeight.IsBuildable(grounded.X,grounded.Z,30f) &&
+                    !root.BuildingOccupancy.IsOccupied(new GridCoordinate(
+                        Mathf.RoundToInt((grounded.X-origin.x)/grid),Mathf.RoundToInt((grounded.Z-origin.z)/grid)));
+            }
+            if(Valid(preferred))return Ground(preferred);
+            // Authored footprints can place the nominal front point on a steep micro-cell or make it round
+            // back into occupancy. Pick the nearest stable free point instead of making every route fail.
+            for(var radius=1;radius<=8;radius++)
+            for(var dx=-radius;dx<=radius;dx++)
+            for(var dz=-radius;dz<=radius;dz++)
+            {
+                if(Math.Max(Math.Abs(dx),Math.Abs(dz))!=radius)continue;
+                var candidate=new WorldPosition(preferred.X+dx*grid,0,preferred.Z+dz*grid);
+                if(Valid(candidate))return Ground(candidate);
+            }
+            return Ground(preferred);
         }
         private WorldPosition? InventoryPosition(InventoryOwner owner)
         {
@@ -182,6 +207,12 @@ namespace Game.Infrastructure
                 if(building.IsOperational && definition.Production!=null && definition.Workplace!=null)
                     faction.Production.RegisterBuildingWorkplace(building.Id,definition,Approach(building));
             }
+            // The player economy runs these logistics passes from LocalSceneCompositionRoot. The neighbour
+            // owns a separate ProductionService, so it must maintain the same input/output routes here.
+            // Without them residents gather raw food into piles, but never deliver it to the campfire or
+            // move cooked meals into storage; once the starter meals run out every worker loops on Eat/Failed.
+            faction.Production.MaintainContinuousDeliveries(root.Work);
+            faction.Production.MaintainLivingBuildingLogistics(root.Work);
             clearance.Advance();
         }
         public void RebindAfterLoad()
@@ -195,42 +226,11 @@ namespace Game.Infrastructure
 
         private IReadOnlyList<WorldPosition> FindRoute(WorldPosition start,WorldPosition target)
         {
-            // Bounded local A* also works when distant terrain tiles have no physical NavMesh.
-            const float step=2f;
-            Vector2Int Cell(WorldPosition p)=>new(Mathf.RoundToInt(p.X/step),Mathf.RoundToInt(p.Z/step));
-            var first=Cell(start);var last=Cell(target);
-            var frontier=new SortedSet<(float score,int order,Vector2Int cell)>(Comparer<(float score,int order,Vector2Int cell)>.Create(
-                (a,b)=>a.score!=b.score?a.score.CompareTo(b.score):a.order.CompareTo(b.order)));
-            var costs=new Dictionary<Vector2Int,float>{{first,0}};var parents=new Dictionary<Vector2Int,Vector2Int>();
-            var visited=new HashSet<Vector2Int>();var sequence=0;
-            frontier.Add((0,sequence++,first));
-            var directions=new[]{Vector2Int.up,Vector2Int.right,Vector2Int.down,Vector2Int.left};
-            while(frontier.Count>0 && visited.Count<4096)
-            {
-                var cell=frontier.Min.cell;frontier.Remove(frontier.Min);if(!visited.Add(cell))continue;
-                if(cell==last)
-                {
-                    var result=new List<WorldPosition>{Ground(target)};
-                    while(cell!=first){result.Add(Ground(new WorldPosition(cell.x*step,0,cell.y*step)));cell=parents[cell];}
-                    result.Reverse();return result;
-                }
-                foreach(var direction in directions)
-                {
-                    var next=cell+direction;if(visited.Contains(next) || Vector2Int.Distance(next,first)>150)continue;
-                    var allowed=true;
-                    for(var i=0;i<=4 && allowed;i++)
-                    {
-                        var x=(cell.x+direction.x*i/4f)*step;var z=(cell.y+direction.y*i/4f)*step;
-                        allowed=root.WorldDefinition.ContainsClosed(x,z) && root.WorldHeight.IsBuildable(x,z,30f) &&
-                            !root.BuildingOccupancy.IsOccupied(new GridCoordinate(Mathf.RoundToInt((x-origin.x)/grid),Mathf.RoundToInt((z-origin.z)/grid)));
-                    }
-                    if(!allowed)continue;
-                    var cost=costs[cell]+1;if(costs.TryGetValue(next,out var old) && old<=cost)continue;
-                    costs[next]=cost;parents[next]=cell;
-                    frontier.Add((cost+Math.Abs(next.x-last.x)+Math.Abs(next.y-last.y),sequence++,next));
-                }
-            }
-            return null;
+            // This driver exists only while the resident has no physical GameObject. Tier-1 movement takes
+            // over as soon as the character materializes, so running a local A* for every off-camera haul
+            // adds no visible fidelity and scales poorly for large settlements. Canonical work endpoints are
+            // already validated by their source/building services; interpolate between them in O(1).
+            return new[]{Ground(target)};
         }
     }
 }

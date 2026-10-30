@@ -51,6 +51,8 @@ namespace Game.Tests.Editor
                 fixture.Scheduler.Advance(new Game.Simulation.Time.GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
 
             Assert.That(agent.Needs.Hunger, Is.EqualTo(0.95d));
+            Assert.That(agent.CurrentAction, Is.Not.EqualTo(UtilityActionKind.Eat),
+                "A failed Eat loop must not prevent shortage-recovery work.");
             Assert.That(fixture.Storage.GetAmount(fixture.Raw).Units, Is.EqualTo(5));
             Assert.That(fixture.Production.Food.TotalConsumed, Is.Zero);
         }

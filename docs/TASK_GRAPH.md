@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM16 neighbour progression repair (2026-10-31): **DONE / awaiting user retest**. Repaired neighbour-specific
+work assignment, production/logistics, critical-need recovery and crop-plot concurrency. Monthly local-only
+Ollama planning was observed for 730 game days: 25/25 accepted plans, all plan sequences correlated with
+canonical strategic execution, all six residents productive, and zero failed-meal loops in 42,288 audit rows.
+The exact hourly 14-day route passed cooking, research, new building and operational completion; production
+passed 13/13. Windows build passed with 0 errors / 0 warnings. Evidence:
+`docs/validation/NeighbourProgressionRepair.md`.
+
 WM16 user follow-up (2026-10-30): **DONE / awaiting user retest**. Menu, complete snow/map readiness, progress bar,
 concurrent upgrade navigation, delayed configurable AI cadence, execution audit, and livestock selection
 exception repair. 71 domain/UI/strategy/work tests passed; final runtime completed five concurrent upgrades,

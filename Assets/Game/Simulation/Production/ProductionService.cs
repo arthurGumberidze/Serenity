@@ -78,6 +78,12 @@ namespace Game.Simulation.Production
         public bool IsShortage => TotalShortage > 0;
         public IReadOnlyList<ResourceId> EdibleResources => Array.AsReadOnly(edibleResources);
 
+        public bool HasAvailableMeal => inventories.All
+            .Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ||
+                x.Owner.Kind == InventoryOwnerKind.Character)
+            .Any(inventory => edibleResources.Any(resourceId =>
+                inventory.CanRemove(resourceId, new ResourceQuantity(1))));
+
         public bool TryConsumeMeal()
         {
             foreach (var inventory in inventories.All
@@ -621,7 +627,9 @@ namespace Game.Simulation.Production
                     job.Destination.HasValue && job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
                     job.Destination.Value.EntityId == buildingId).Sum(job => job.Quantity.Units);
                 var missing = Math.Max(0, required - input.GetAmount(amount.ResourceId).Units - pendingDestination);
-                foreach (var source in inventories.All.OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
+                foreach (var source in inventories.All
+                             .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
+                             .ThenBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
                 {
                     if (missing == 0) break;
                     if (source.Owner.Kind != InventoryOwnerKind.WorldPile &&
@@ -658,7 +666,13 @@ namespace Game.Simulation.Production
                         job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
                         job.Destination.Value.EntityId == site.OwnerBuildingId).Sum(job => job.Quantity.Units);
                     var missing = Math.Max(0, amount.Quantity.Units - input.GetAmount(amount.ResourceId).Units - pendingDestination);
-                    foreach (var source in inventories.All.OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
+                    // Stable storage is preferred over ground piles. Autonomous pile cleanup and queued
+                    // workplace deliveries otherwise race for the same pile between reservation ticks,
+                    // leaving a stream of failed WorldPile -> ProductionInput orders even though the
+                    // material has already reached the communal store.
+                    foreach (var source in inventories.All
+                                 .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
+                                 .ThenBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id))
                     {
                         if (missing == 0) break;
                         if (source.IssuanceLocked || source.Owner.Kind != InventoryOwnerKind.BuildingStorage &&
@@ -980,6 +994,8 @@ namespace Game.Simulation.Production
             if (!inventories.TryGet(inventories.WorkerOwner(workerId), out _) ||
                 !sites.TryGetValue(siteId, out var site) || !site.IsWorkAvailable ||
                 !IsSiteOperational(siteId)) return false;
+            if (site.Kind == ProductionSiteKind.PrimitiveCropPlot &&
+                tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id, true)) return false;
             if(site.RecipeId.ToString()=="fish_water" && ManualFishingAccess!=null && !ManualFishingAccess(site.Id))return false;
@@ -1395,6 +1411,14 @@ namespace Game.Simulation.Production
         private ProductionCompletion Complete(ProductionTask task)
         {
             var site = sites[task.SiteId];
+            if (site.Kind == ProductionSiteKind.PrimitiveCropPlot &&
+                (task.Kind == ProductionTaskKind.Plant && site.CropPhase != CropPlotPhase.Unplanted ||
+                 task.Kind == ProductionTaskKind.Harvest && site.CropPhase != CropPlotPhase.Ready))
+            {
+                task.Cancel();
+                Release(task);
+                return default;
+            }
             if (site.Kind == ProductionSiteKind.NaturalSource && site.IsDepleted)
             {
                 task.Cancel();
@@ -1499,6 +1523,8 @@ namespace Game.Simulation.Production
             foreach (var site in orderedSites)
             {
                 if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
+                if (site.Kind == ProductionSiteKind.PrimitiveCropPlot &&
+                    tasks.Values.Any(task => !task.IsTerminal && task.SiteId == site.Id)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace && BuildingWorkAllowed != null &&
                     !BuildingWorkAllowed(site.OwnerBuildingId, LastCalendarTick)) continue;
                 if(site.RecipeId.ToString()=="fish_water" && ManualFishingAccess!=null && !ManualFishingAccess(site.Id))continue;

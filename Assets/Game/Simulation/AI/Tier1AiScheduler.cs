@@ -404,7 +404,12 @@ namespace Game.Simulation.AI
                 return;
             }
 
-            if (entry.Agent.Needs.Hunger >= CriticalHunger)
+            // When prepared food is exhausted, repeatedly starting a doomed Eat action would lock every
+            // resident out of the very hauling and cooking work that can end the shortage. Keep critical
+            // hunger authoritative as soon as a meal exists, but allow the normal work selector to run
+            // during an actual shortage so the settlement can recover.
+            if (entry.Agent.Needs.Hunger >= CriticalHunger &&
+                (world.Production?.Food == null || world.Production.Food.HasAvailableMeal))
             {
                 if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Eat)
                 {
@@ -415,7 +420,12 @@ namespace Game.Simulation.AI
                 return;
             }
 
-            if (entry.Agent.Needs.Thirst >= CriticalThirst)
+            // A settlement without a completed well must still be able to research and build its first
+            // water source. As with an empty pantry above, do not trap every resident in a failed need
+            // action when there is no valid destination; the need remains critical and wins immediately
+            // once a drinking point becomes available.
+            if (entry.Agent.Needs.Thirst >= CriticalThirst &&
+                world.DrinkingWell?.Invoke(entry.Agent.Position).HasValue == true)
             {
                 if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Drink)
                 {

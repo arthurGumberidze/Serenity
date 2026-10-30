@@ -122,6 +122,28 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void ContinuousDeliveriesPreferStableStorageOverRacingGroundPiles()
+        {
+            var fixture = new Fixture();
+            fixture.Site.SetContinuous(true);
+            var pileOwner = new InventoryOwner(InventoryOwnerKind.WorldPile, Fixture.Id(31));
+            var pile = new ResourceInventory(pileOwner, fixture.Resources, 20);
+            pile.TryAdd(fixture.Berries, new ResourceQuantity(9));
+            pile.TryAdd(fixture.Wood, new ResourceQuantity(3));
+            fixture.Inventories.Add(pile);
+            var storageOwner = new InventoryOwner(InventoryOwnerKind.BuildingStorage, Fixture.Id(32));
+            var storage = new ResourceInventory(storageOwner, fixture.Resources, 20);
+            storage.TryAdd(fixture.Berries, new ResourceQuantity(9));
+            storage.TryAdd(fixture.Wood, new ResourceQuantity(3));
+            fixture.Inventories.Add(storage);
+            var work = new WorkManager(new CharacterRegistry());
+
+            Assert.That(fixture.Production.MaintainContinuousDeliveries(work), Is.EqualTo(2));
+            Assert.That(work.Jobs.All(value => value.Target.Kind == WorkTargetKind.BuildingStorage &&
+                value.Target.EntityId == storageOwner.Id), Is.True);
+        }
+
+        [Test]
         public void FullOutputPausesCommittedWorkWithoutConsumingOrDuplicatingBatch()
         {
             var fixture = new Fixture(3);

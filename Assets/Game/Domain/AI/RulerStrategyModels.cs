@@ -217,6 +217,7 @@ namespace Game.Domain.AI
 
         public long RequestSequence { get; private set; }
         public long NextAnnualTick { get; private set; }
+        public long RequestIntervalTicks => requestIntervalTicks;
         public RulerStrategyPendingRequest? PendingRequest { get; private set; }
         public RulerStrategyPlan ActivePlan { get; private set; }
         public IReadOnlyList<RulerStrategyJournalEntry> Journal => journal.AsReadOnly();

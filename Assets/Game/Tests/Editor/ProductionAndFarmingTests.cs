@@ -258,6 +258,19 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Production.AdvanceTask(harvest.Task.Id, TimeSpan.FromHours(8)).Completed, Is.False);
         }
 
+        [Test] public void PrimitiveCropPlotAllowsOnlyOneConcurrentPhaseTask()
+        {
+            var fixture = new Fixture(targets: new[] { new ResourceStockTarget(new ResourceId("berries"), 100) });
+            var first = fixture.AddWorker(101);
+            var second = fixture.AddWorker(102);
+            var plot = fixture.AddPlot(22);
+
+            Assert.That(fixture.Production.TryReserveAtSite(first, plot.Id, out var plant), Is.True);
+            Assert.That(fixture.Production.TryReserveAtSite(second, plot.Id, out _), Is.False);
+            Assert.That(fixture.Production.AdvanceTask(plant.Task.Id, TimeSpan.FromHours(8)).Completed, Is.True);
+            Assert.That(plot.CropPhase, Is.EqualTo(CropPlotPhase.Growing));
+        }
+
         [Test] public void FiveYearSettlementRemainsFoodPositiveWithoutNegativeResources()
         {
             var fixture = new Fixture(storageCapacity: 5000,

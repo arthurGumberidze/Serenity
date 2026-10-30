@@ -65,7 +65,8 @@ namespace Game.Simulation.AI
             }
             if (job.Status == WorkJobStatus.Cancelled) { Cancel(); return; }
             if (!movement.IsAvailable || movement.State == MovementState.Failed ||
-                (agent.Phase == AiActionPhase.MoveToTarget && elapsed >= timeout) || construction?.IsDestroyed == true)
+                (agent.Phase == AiActionPhase.MoveToTarget && movement.State == MovementState.Moving &&
+                 elapsed >= timeout) || construction?.IsDestroyed == true)
             {
                 movement.Stop();
                 work.Fail(job.Id);
@@ -185,7 +186,8 @@ namespace Game.Simulation.AI
                 Cancel();
                 return;
             }
-            if (!movement.IsAvailable || movement.State == MovementState.Failed || elapsed >= timeout)
+            if (!movement.IsAvailable || movement.State == MovementState.Failed ||
+                movement.State == MovementState.Moving && elapsed >= timeout)
             {
                 movement.Stop();
                 work.Fail(job.Id);

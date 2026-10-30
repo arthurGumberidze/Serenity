@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## Next action — user retest of neighbour monthly Ollama progression (2026-10-31)
+
+Launch `Builds/NeighbourProgressionRepair/Serenity.exe`, select `Ollama локально` and the one-month interval,
+then start a new game. The first external request is after two game days; each accepted plan remains valid for
+30 game days and the deterministic AI executes it through canonical settlement jobs. The automated 730-day
+run observed 25 accepted local plans and productive work from every neighbour resident; the exact 14-day route
+also completed cooking, research and a new operational building. Inspect the newest JSONL file under
+`LocalLow/Serenity/Serenity/AiAudit`. Await user feedback before unrelated work. The current one-time shutdown
+request is fulfilled after this delivery; do not repeat it on a later retest unless requested again.
+
 ## Next action — user retest of WM16 follow-up (2026-10-30)
 
 Launch Builds/WM16Followup/Serenity.exe and start a new game. Menu access, full snow preparation,

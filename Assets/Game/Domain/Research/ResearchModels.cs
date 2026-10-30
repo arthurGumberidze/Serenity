@@ -254,6 +254,17 @@ namespace Game.Domain.Research
                 var buildingId = new BuildingDefinitionId(id);
                 if (availableBuildingIds.Contains(buildingId)) gatheringUnlocks.Add(TechnologyUnlock.Building(buildingId));
             }
+            var controlledFireUnlocks = new List<TechnologyUnlock> { C("controlled_fire") };
+            foreach (var recipeId in new[] { "cook_meat", "cook_fish", "cook_berries" })
+            {
+                var id = new ProductionRecipeId(recipeId);
+                if (production.All.Any(recipe => recipe.Id == id))
+                    controlledFireUnlocks.Add(TechnologyUnlock.Recipe(id));
+            }
+            if (availableBuildingIds.Contains(new BuildingDefinitionId("campfire")))
+                controlledFireUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("campfire")));
+            controlledFireUnlocks.AddRange(availableBuildingIds.Where(id => id.ToString() == "ground_torch")
+                .Select(TechnologyUnlock.Building));
             var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
             if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
                 huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
@@ -291,10 +302,7 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("gathering"), "Gathering", new[] { T("basic_survival") }, TimeSpan.FromDays(1),
                     gatheringUnlocks, startingKnowledge: true),
                 new TechnologyDefinition(T("controlled_fire"), "Controlled Fire", new[] { T("basic_survival") }, TimeSpan.FromDays(2),
-                    availableBuildingIds.Contains(new BuildingDefinitionId("campfire"))
-                        ? new[] { C("controlled_fire"), TechnologyUnlock.Building(new BuildingDefinitionId("campfire")) }
-                            .Concat(availableBuildingIds.Where(id=>id.ToString()=="ground_torch").Select(TechnologyUnlock.Building))
-                        : new[] { C("controlled_fire") }),
+                    controlledFireUnlocks),
                 new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("basic_survival"), T("gathering") }, TimeSpan.FromDays(2),
                     availableBuildingIds.Contains(new BuildingDefinitionId("stone_age_hut"))
                         ? new[] { TechnologyUnlock.Building(new BuildingDefinitionId("stone_age_hut")) }

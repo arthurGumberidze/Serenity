@@ -182,7 +182,10 @@ namespace Game.Infrastructure
             {
                 web.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
                 web.downloadHandler = new DownloadHandlerBuffer();
-                web.timeout = provider == RulerStrategyProviderKind.Ollama ? 60 : 20;
+                // A small CPU-only local model can occasionally need more than a minute while the game and
+                // Unity test runner are also consuming the machine. Cloud calls stay tightly bounded; the
+                // offline provider gets enough time to finish without turning a slow answer into a lost month.
+                web.timeout = provider == RulerStrategyProviderKind.Ollama ? 180 : 20;
                 web.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
                 if (provider == RulerStrategyProviderKind.CloudApi)
                     web.SetRequestHeader("Authorization", "Bearer " + apiKey);
@@ -232,7 +235,7 @@ namespace Game.Infrastructure
     public static class RulerStrategyJsonCodec
     {
         [Serializable] private sealed class Message { public string role; public string content; }
-        [Serializable] private sealed class OllamaOptions { public int num_ctx = 2048; public int num_predict = 300; public float temperature = 0.1f; }
+        [Serializable] private sealed class OllamaOptions { public int num_ctx = 2048; public int num_predict = 256; public float temperature = 0.1f; }
         [Serializable] private sealed class OllamaRequest { public string model; public Message[] messages; public bool stream; public bool think; public string format; public OllamaOptions options; }
         [Serializable] private sealed class CloudFormat { public string type = "json_object"; }
         [Serializable] private sealed class CloudRequest { public string model; public Message[] messages; public string reasoning_effort = "none"; public CloudFormat response_format = new CloudFormat(); }
@@ -259,6 +262,7 @@ namespace Game.Infrastructure
             public long request_sequence;
             public string trigger;
             public long game_tick;
+            public int plan_horizon_days;
             public string subject;
             public int population;
             public int settlements;
@@ -314,31 +318,61 @@ namespace Game.Infrastructure
             if (string.IsNullOrWhiteSpace(json)) throw new FormatException("Strategy response is empty.");
             var dto = JsonUtility.FromJson<PlanDto>(json);
             if (dto == null || dto.workforce == null) throw new FormatException("Strategy JSON is incomplete.");
+            var workforce = NormalizeWorkforce(dto.workforce);
+            var allowedPriorities = new HashSet<string>(request.Context.AvailableBuildingPriorities,
+                StringComparer.Ordinal);
+            var priorities = (dto.building_priorities ?? Array.Empty<string>())
+                .Where(value => value != null && allowedPriorities.Contains(value))
+                .Distinct(StringComparer.Ordinal).Take(8).ToArray();
+            var summary = dto.summary ?? string.Empty;
+            if (summary.Length > 512) summary = summary.Substring(0, 512);
             return new RulerStrategyPlan(request.Pending.Sequence, completedTick,
-                checked(request.Pending.RequestedTick + RulerStrategyState.AnnualIntervalTicks), provider,
-                ParseGoal(dto.goal), dto.food_target, dto.material_target, dto.minimum_army_size,
-                dto.aggression, ParsePosture(dto.diplomatic_posture), dto.workforce.food,
-                dto.workforce.materials, dto.workforce.construction, dto.workforce.research,
-                dto.workforce.military, dto.building_priorities, dto.summary ?? string.Empty);
+                checked(request.Pending.RequestedTick + request.PlanHorizonTicks), provider,
+                ParseGoal(dto.goal), Math.Clamp(dto.food_target, 0, 10000),
+                Math.Clamp(dto.material_target, 0, 10000), Math.Clamp(dto.minimum_army_size, 1,
+                    Math.Max(1, Math.Min(2000, request.Context.Population))),
+                Math.Clamp(dto.aggression, 0, 100), ParsePosture(dto.diplomatic_posture), workforce[0],
+                workforce[1], workforce[2], workforce[3], workforce[4], priorities, summary);
+        }
+
+        private static int[] NormalizeWorkforce(Workforce source)
+        {
+            var raw = new[] { source.food, source.materials, source.construction, source.research, source.military }
+                .Select(value => Math.Clamp(value, 0, 100)).ToArray();
+            var total = raw.Sum();
+            if (total == 0) return new[] { 35, 25, 20, 15, 5 };
+            var normalized = raw.Select(value => value * 100 / total).ToArray();
+            var remainder = 100 - normalized.Sum();
+            foreach (var index in Enumerable.Range(0, raw.Length)
+                         .OrderByDescending(index => raw[index] * 100 % total).ThenBy(index => index))
+            {
+                if (remainder-- <= 0) break;
+                normalized[index]++;
+            }
+            return normalized;
         }
 
         private static Message[] Messages(RulerStrategyRequest request)
         {
             var system = "You are the strategic planner for a game settlement. Return one JSON object only, " +
                 "without Markdown or commentary. Plan aggregate cohorts; never list individual residents. " +
+                "The user context contains plan_horizon_days; make this strategy specifically for that period, " +
+                "because another review will replace it at the end of the horizon. " +
                 "All enum values and content IDs below are machine tokens: copy them exactly in English ASCII " +
                 "and NEVER translate, rename, inflect, or invent them. goal must be exactly one of: " +
                 "stabilize_economy, advance_research, develop_settlement, form_army, attack_settlement, recover. " +
                 "diplomatic_posture must be exactly one of: isolationist, neutral, cooperative, expansionist. " +
-                "Required fields: goal, food_target, material_target, minimum_army_size, aggression (0..100), " +
+                "Required fields: goal, food_target (0..10000), material_target (0..10000), " +
+                "minimum_army_size (1..population, never above the context population), aggression (0..100), " +
                 "diplomatic_posture, workforce {food,materials,construction,research,military} totaling exactly 100, " +
                 "building_priorities copied verbatim only from allowed_building_priorities, and summary. " +
-                "Write summary in Russian, at most 512 characters.";
+                "Return compact JSON without indentation. Write summary in Russian, at most 80 characters.";
             var context = new ContextDto
             {
                 request_sequence = request.Pending.Sequence,
                 trigger = request.Pending.Trigger.ToString(),
                 game_tick = request.Pending.RequestedTick,
+                plan_horizon_days = Math.Max(1, (int)Math.Round(TimeSpan.FromTicks(request.PlanHorizonTicks).TotalDays)),
                 subject = request.Pending.Subject,
                 population = request.Context.Population,
                 settlements = request.Context.SettlementCount,

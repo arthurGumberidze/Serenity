@@ -74,6 +74,11 @@ namespace Game.Infrastructure
                 faction=faction,planSequence=sequence,resident=resident,kind=kind,detail=detail}));}
             catch(IOException){writer.Dispose();writer=null;Debug.LogWarning("AI audit disabled: file write failed.");}
         }
+        public void FlushNow()
+        {
+            try { writer?.Flush(); }
+            catch (IOException) { writer?.Dispose(); writer = null; }
+        }
         private void OnDestroy()
         {
             foreach(var agent in observed)agent.ActionChanged-=OnAction;
