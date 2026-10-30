@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Game.Domain.AI;
+using Game.Simulation.AI;
 using UnityEngine;
 
 namespace Game.Infrastructure
@@ -19,6 +20,8 @@ namespace Game.Infrastructure
         private StreamWriter writer;
         private readonly HashSet<Tier1AiAgentState> observed = new();
         private readonly Dictionary<string,long> decisions = new();
+        private readonly Dictionary<Game.Domain.StableEntityId,AiFactionRuntime> residentFactions = new();
+        private float nextScan;
         private float nextFlush;
         public string LogPath { get; private set; }
         public void Initialize(LocalSceneCompositionRoot scene)
@@ -39,16 +42,22 @@ namespace Game.Infrastructure
         private void Update()
         {
             if(root==null||writer==null)return;
-            foreach(var agent in root.AiAgents.All)
-                if(observed.Add(agent)){agent.ActionChanged+=OnAction;OnAction(agent);}
-            foreach(var faction in root.StrategicAi.Factions)
+            if(Time.unscaledTime>=nextScan)
             {
-                var key=faction.Strategic.Id.ToString();
-                decisions.TryGetValue(key,out var previous);
-                foreach(var decision in faction.Strategic.RecentDecisions.Where(x=>x.Sequence>previous))
-                    Write(key,faction.RulerStrategy.PlanAt(decision.Tick)?.RequestSequence??0,null,
-                        "strategic_execution",decision.Kind+"; "+decision.Reason);
-                decisions[key]=faction.Strategic.DecisionSequence;
+                nextScan=Time.unscaledTime+0.5f;
+                foreach(var faction in root.StrategicAi.Factions)
+                    foreach(var resident in faction.Residents)residentFactions[resident]=faction;
+                foreach(var agent in root.AiAgents.All)
+                    if(observed.Add(agent)){agent.ActionChanged+=OnAction;OnAction(agent);}
+                foreach(var faction in root.StrategicAi.Factions)
+                {
+                    var key=faction.Strategic.Id.ToString();
+                    decisions.TryGetValue(key,out var previous);
+                    foreach(var decision in faction.Strategic.RecentDecisions.Where(x=>x.Sequence>previous))
+                        Write(key,faction.RulerStrategy.PlanAt(decision.Tick)?.RequestSequence??0,null,
+                            "strategic_execution",decision.Kind+"; "+decision.Reason);
+                    decisions[key]=faction.Strategic.DecisionSequence;
+                }
             }
             if(writer!=null&&Time.unscaledTime>=nextFlush)
             {
@@ -58,7 +67,7 @@ namespace Game.Infrastructure
         }
         private void OnAction(Tier1AiAgentState agent)
         {
-            var faction=root.StrategicAi.Factions.FirstOrDefault(x=>x.Residents.Contains(agent.CharacterId));
+            residentFactions.TryGetValue(agent.CharacterId,out var faction);
             var job=root.Work.GetQueue(agent.CharacterId).FirstOrDefault();
             var production=faction?.Production??root.Production;
             var productionDetail=production.TryGetWorkerTask(agent.CharacterId,out var task)

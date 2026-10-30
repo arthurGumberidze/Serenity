@@ -240,6 +240,7 @@ namespace Game.Simulation.Production
         public long LastCalendarTick { get; private set; }
         public IReadOnlyList<ProductionSite> Sites => sites.Values.OrderBy(x => x.Id).ToArray();
         public IReadOnlyList<ProductionTask> ActiveTasks => tasks.Values.Where(x => !x.IsTerminal).OrderBy(x => x.Id).ToArray();
+        public int TrackedTaskCount => tasks.Count;
         public IReadOnlyList<ResourceStockTarget> Targets => targets.OrderBy(x => x.Key)
             .Select(x => new ResourceStockTarget(x.Key, x.Value)).ToArray();
         public const int HorseMovementPerThousand = 1400;
@@ -622,7 +623,7 @@ namespace Game.Simulation.Production
             foreach (var amount in recipe.Inputs)
             {
                 var required = checked(amount.Quantity.Units * site.QueuedBatches);
-                var pendingDestination = work.Jobs.Where(job => !job.IsTerminal &&
+                var pendingDestination = work.OpenJobs.Where(job =>
                     job.Type == WorkJobType.Haul && job.ResourceId == amount.ResourceId &&
                     job.Destination.HasValue && job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
                     job.Destination.Value.EntityId == buildingId).Sum(job => job.Quantity.Units);
@@ -634,7 +635,7 @@ namespace Game.Simulation.Production
                     if (missing == 0) break;
                     if (source.Owner.Kind != InventoryOwnerKind.WorldPile &&
                         source.Owner.Kind != InventoryOwnerKind.BuildingStorage) continue;
-                    var pendingSource = work.Jobs.Where(job => !job.IsTerminal &&
+                    var pendingSource = work.OpenJobs.Where(job =>
                         job.Type == WorkJobType.Haul && job.ResourceId == amount.ResourceId &&
                         job.Target.EntityId == source.Owner.Id).Sum(job => job.Quantity.Units);
                     var units = Math.Min(missing,
@@ -661,7 +662,7 @@ namespace Game.Simulation.Production
                 if (!inventories.TryGet(destination, out var input)) continue;
                 foreach (var amount in recipe.Inputs)
                 {
-                    var pendingDestination = work.Jobs.Where(job => !job.IsTerminal && job.Type == WorkJobType.Haul &&
+                    var pendingDestination = work.OpenJobs.Where(job => job.Type == WorkJobType.Haul &&
                         job.ResourceId == amount.ResourceId && job.Destination.HasValue &&
                         job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
                         job.Destination.Value.EntityId == site.OwnerBuildingId).Sum(job => job.Quantity.Units);
@@ -677,7 +678,7 @@ namespace Game.Simulation.Production
                         if (missing == 0) break;
                         if (source.IssuanceLocked || source.Owner.Kind != InventoryOwnerKind.BuildingStorage &&
                             source.Owner.Kind != InventoryOwnerKind.WorldPile) continue;
-                        var pendingSource = work.Jobs.Where(job => !job.IsTerminal && job.Type == WorkJobType.Haul &&
+                        var pendingSource = work.OpenJobs.Where(job => job.Type == WorkJobType.Haul &&
                             job.ResourceId == amount.ResourceId && job.Target.EntityId == source.Owner.Id)
                             .Sum(job => job.Quantity.Units);
                         var units = Math.Min(missing, Math.Max(0,
@@ -738,7 +739,7 @@ namespace Game.Simulation.Production
                             !x.IssuanceLocked && x.CanAdd(amount.ResourceId, new ResourceQuantity(1)))
                         .OrderBy(x => x.Owner.Id).FirstOrDefault();
                     if (destination == null) continue;
-                    var alreadyPending = work.Jobs.Any(job => !job.IsTerminal && job.Type == WorkJobType.Haul &&
+                    var alreadyPending = work.OpenJobs.Any(job => job.Type == WorkJobType.Haul &&
                         job.Target.EntityId == source.Owner.Id && job.ResourceId == amount.ResourceId);
                     if (alreadyPending) continue;
                     var units = Math.Min(amount.Quantity.Units, 8L);
@@ -783,7 +784,7 @@ namespace Game.Simulation.Production
         private int CreateDeliveryToTarget(WorkManager work, InventoryOwner destinationOwner,
             ResourceInventory destination, ResourceId resourceId, long target, WorkPriority priority)
         {
-            var pending = work.Jobs.Where(job => !job.IsTerminal && job.Type == WorkJobType.Haul &&
+            var pending = work.OpenJobs.Where(job => job.Type == WorkJobType.Haul &&
                 job.ResourceId == resourceId && job.Destination.HasValue &&
                 job.Destination.Value.EntityId == destinationOwner.Id).Sum(job => job.Quantity.Units);
             var missing = Math.Max(0, target - destination.GetAmount(resourceId).Units - pending);
@@ -1492,6 +1493,7 @@ namespace Game.Simulation.Production
         private void Release(ProductionTask task)
         {
             workerTasks.Remove(task.WorkerId);
+            tasks.Remove(task.Id);
         }
 
         private bool RecipeNeeded(ProductionRecipe recipe)

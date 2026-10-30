@@ -192,6 +192,32 @@ namespace Game.Tests
         }
 
         [Test]
+        public void CompletedJobHistoryIsBoundedAndIdsRemainMonotonicAfterRestore()
+        {
+            var registry = new CharacterRegistry();
+            var manager = new WorkManager(registry);
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            for (var i = 0; i < 10000; i++)
+            {
+                var job = manager.CreateMoveJob(null, new WorldPosition(i, 0f, 0f), WorkPriority.Normal);
+                Assert.That(manager.Cancel(job.Id), Is.True);
+            }
+            stopwatch.Stop();
+
+            Assert.That(manager.JobCount, Is.EqualTo(WorkManager.TerminalHistoryLimit));
+            Assert.That(manager.OpenJobs, Is.Empty);
+            Assert.That(manager.Jobs.First().Id.Value, Is.EqualTo(9745));
+            Assert.Throws<KeyNotFoundException>(() => manager.Get(new JobId(1)));
+
+            var restored = new WorkManager(registry);
+            restored.RestoreState(manager.CaptureState());
+            var next = restored.CreateMoveJob(null, new WorldPosition(10001f, 0f, 0f), WorkPriority.Normal);
+            Assert.That(next.Id.Value, Is.EqualTo(10001));
+            TestContext.WriteLine("Work history gate: completed=10000 retained=" + manager.JobCount +
+                " elapsedMs=" + stopwatch.Elapsed.TotalMilliseconds.ToString("0.000"));
+        }
+
+        [Test]
         public void ManualMovePreemptsInterruptibleAutonomousHaulAndReleasesItsClaim()
         {
             var fixture = CreateFixture(1, 20, 40, 1d);

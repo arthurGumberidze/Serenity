@@ -2260,7 +2260,7 @@ namespace Game.Infrastructure
         private IEnumerable<Tuple<WorldPosition, WorldPosition>> StreamingNavigationRoutes()
         {
             if (Work == null || Tiers == null) yield break;
-            foreach (var job in Work.Jobs.Where(value => !value.IsTerminal && value.AssigneeId.HasValue))
+            foreach (var job in Work.OpenJobs.Where(value => value.AssigneeId.HasValue))
             {
                 var target = job.Target.Position;
                 if (!WorldDefinition.TryGetTile(target.X, target.Z, out _)) continue;

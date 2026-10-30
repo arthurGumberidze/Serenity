@@ -136,6 +136,56 @@ namespace Game.Tests.Editor
                 Is.GreaterThan(initialOperational), "Residents must deliver materials and finish the building.");
         }
 
+        [UnityTest, Timeout(900000)]
+        public IEnumerator ThreeAcceleratedMonthsKeepWorkRegistriesAndStepCostBounded()
+        {
+            var evidence = Path.GetFullPath("Artifacts/NeighbourAiOptimization/three-months");
+            Directory.CreateDirectory(evidence);
+            var settingsPath = Path.Combine(evidence, "user-settings-" + Guid.NewGuid().ToString("N") + ".json");
+            new UserSettingsStore(settingsPath).Save(new UserSettingsData { rulerAiMode = RulerAiModes.Deterministic });
+            previousSettingsPath = Environment.GetEnvironmentVariable("SERENITY_SETTINGS_PATH");
+            Environment.SetEnvironmentVariable("SERENITY_SETTINGS_PATH", settingsPath);
+            NewGameLaunchState.Request(20261031L);
+            yield return new EnterPlayMode();
+            Application.runInBackground = true;
+            yield return SceneManager.LoadSceneAsync("LocalGameplay");
+            LocalSceneCompositionRoot root;
+            while ((root = UnityEngine.Object.FindAnyObjectByType<LocalSceneCompositionRoot>()) == null ||
+                   !root.IsInitialized)
+                yield return null;
+
+            var faction = root.StarterEnemyAi;
+            var monthlyMilliseconds = new List<double>();
+            var registryCounts = new List<string>();
+            root.AiRuntime.SetSpeed(GameSpeed.Maximum);
+            root.AiRuntime.SetPaused(false);
+            for (var month = 1; month <= 3; month++)
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                for (var day = 0; day < 30; day++)
+                {
+                    root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(72));
+                    root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(72));
+                    yield return null;
+                }
+                stopwatch.Stop();
+                monthlyMilliseconds.Add(stopwatch.Elapsed.TotalMilliseconds);
+                var openJobs = root.Work.OpenJobs.Count();
+                registryCounts.Add("month=" + month + "; jobs=" + root.Work.JobCount +
+                    "; open=" + openJobs + "; productionTasks=" + faction.Production.TrackedTaskCount);
+                Assert.That(root.Work.JobCount, Is.LessThanOrEqualTo(openJobs + Game.Simulation.Work.WorkManager.TerminalHistoryLimit));
+                Assert.That(faction.Production.TrackedTaskCount, Is.LessThanOrEqualTo(faction.Residents.Count));
+            }
+            root.AiRuntime.SetPaused(true);
+
+            File.WriteAllLines(Path.Combine(evidence, "summary.txt"), registryCounts.Concat(new[]
+            {
+                "monthlyMilliseconds=" + string.Join(",", monthlyMilliseconds.Select(value => value.ToString("0.0")))
+            }));
+            TestContext.WriteLine(string.Join(" | ", registryCounts) + " | monthlyMs=" +
+                string.Join(",", monthlyMilliseconds.Select(value => value.ToString("0.0"))));
+        }
+
         [UnityTest, Timeout(7200000)]
         public IEnumerator OllamaMonthlyPlansGuideBusyResidentsForTwoGameYears()
         {

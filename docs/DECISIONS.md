@@ -2288,3 +2288,22 @@ plant/harvest reservation is rejected. A stale task restored from an older snaps
 transition is cancelled and released before inputs are consumed, rather than allowing a phase mismatch to abort
 the simulation. Exact hourly testing owns physical construction-completion proof; accelerated long-horizon
 testing owns provider cadence, plan correlation and resident-activity proof.
+
+## D-226 — Bound completed work and reserve CPU for local inference (2026-10-31)
+
+Canonical open work is indexed separately from presentation/history records. Assignment and simulation queries
+read the stable-ID-sorted open index and never scan completed history. The newest 256 terminal work orders remain
+available for UI diagnostics and save/load; older terminal orders are evicted in O(1) insertion order. Job IDs
+remain monotonic and are never reused. Production tasks have no historical UI/save contract and are removed
+immediately after completion or cancellation; returned task objects may still report their terminal state.
+
+The optional action audit is not a frame-critical authority. It discovers new agents and strategic decisions at
+two hertz, subscribes once to action transitions, and caches resident/faction ownership. JSONL writes remain
+buffered with one-second flushes. Provider duration is safe operational metadata and is written as
+`provider_timing`; credentials, headers and unvalidated response bodies remain excluded.
+
+Local inference must not claim every logical processor needed by the game. The Ollama request calculates a
+bounded thread count from `Environment.ProcessorCount`, leaving at least two logical processors and capping the
+model at eight threads on larger CPUs. `SERENITY_OLLAMA_THREADS` is an explicit 1–64 override. This trades some
+response latency for frame responsiveness; the deterministic game AI continues independently while the HTTP
+request is in flight.

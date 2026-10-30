@@ -216,25 +216,25 @@ namespace Game.Simulation.Buildings
 
         private WorkPriority FindPriority(StableEntityId buildingId)
         {
-            var jobs = work.Jobs.Where(x => !x.IsTerminal &&
+            var jobs = work.OpenJobs.Where(x =>
                 ((x.Target.Kind == WorkTargetKind.Building && x.Target.EntityId == buildingId) ||
                  (x.Destination.HasValue && x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
                   x.Destination.Value.EntityId == buildingId))).ToArray();
             return jobs.Length == 0 ? WorkPriority.Normal : jobs.OrderByDescending(x => x.Priority).First().Priority;
         }
 
-        private IEnumerable<WorkOrder> LinkedOpenJobs(StableEntityId buildingId, Plan plan) => work.Jobs.Where(x =>
-            !x.IsTerminal && ((x.Target.Kind == WorkTargetKind.ProductionSite && plan.Sources.Contains(x.Target.EntityId)) ||
+        private IEnumerable<WorkOrder> LinkedOpenJobs(StableEntityId buildingId, Plan plan) => work.OpenJobs.Where(x =>
+            (x.Target.Kind == WorkTargetKind.ProductionSite && plan.Sources.Contains(x.Target.EntityId)) ||
                               (x.Target.Kind == WorkTargetKind.Building && x.Target.EntityId == buildingId) ||
                               (x.Destination.HasValue && x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
-                               x.Destination.Value.EntityId == buildingId)));
+                               x.Destination.Value.EntityId == buildingId));
 
-        private bool HasDeliveryJob(StableEntityId buildingId) => work.Jobs.Any(x => !x.IsTerminal &&
+        private bool HasDeliveryJob(StableEntityId buildingId) => work.OpenJobs.Any(x =>
             x.Type == WorkJobType.Haul && x.Destination.HasValue &&
             x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
             x.Destination.Value.EntityId == buildingId);
 
-        private bool HasBuildJob(StableEntityId buildingId) => work.Jobs.Any(x => !x.IsTerminal &&
+        private bool HasBuildJob(StableEntityId buildingId) => work.OpenJobs.Any(x =>
             x.Type == WorkJobType.Build && x.Target.Kind == WorkTargetKind.Building &&
             x.Target.EntityId == buildingId);
 

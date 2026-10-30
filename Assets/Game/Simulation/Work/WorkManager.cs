@@ -24,9 +24,12 @@ namespace Game.Simulation.Work
     /// <summary>Session-owned canonical group and work-order coordinator. It has no frame loop.</summary>
     public sealed class WorkManager
     {
+        public const int TerminalHistoryLimit = 256;
         private readonly CharacterRegistry characters;
         private readonly IWorkEligibilityPolicy eligibility;
         private readonly Dictionary<long, WorkOrder> jobs = new Dictionary<long, WorkOrder>();
+        private readonly SortedDictionary<long, WorkOrder> openJobs = new SortedDictionary<long, WorkOrder>();
+        private readonly Queue<long> terminalHistory = new Queue<long>();
         private readonly Dictionary<WorkTarget, JobId> exclusiveTargets = new Dictionary<WorkTarget, JobId>();
         public Func<StableEntityId,WorkOrder,bool> AssignmentScope { get; set; }
         private long nextJobId = 1;
@@ -42,6 +45,7 @@ namespace Game.Simulation.Work
         public WorkGroupRegistry Groups { get; } = new WorkGroupRegistry();
         public int JobCount => jobs.Count;
         public IReadOnlyList<WorkOrder> Jobs => jobs.Values.OrderBy(x => x.Id).ToArray();
+        public IEnumerable<WorkOrder> OpenJobs => openJobs.Values;
 
         public WorkGroup CreateGroup(string displayName, IEnumerable<StableEntityId> memberIds,
             WorkGroupRole role = WorkGroupRole.General)
@@ -185,7 +189,7 @@ namespace Game.Simulation.Work
         public bool TryAssignNext(StableEntityId characterId, out WorkOrder job)
         {
             RequireCharacter(characterId);
-            job = jobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type) &&
+            job = openJobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type) &&
                     (AssignmentScope?.Invoke(characterId,x) ?? true))
                 .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).FirstOrDefault();
             return job != null && Assign(job.Id, characterId, WorkQueuePlacement.Tail);
@@ -209,15 +213,15 @@ namespace Game.Simulation.Work
 
         public bool TryGetAssigned(StableEntityId characterId, out WorkOrder job)
         {
-            job = jobs.Values.Where(x => x.AssigneeId == characterId &&
+            job = openJobs.Values.Where(x => x.AssigneeId == characterId &&
                     (x.Status == WorkJobStatus.Assigned || x.Status == WorkJobStatus.Active))
                 .OrderByDescending(x => x.Status == WorkJobStatus.Active)
                 .ThenBy(x => x.QueueOrder).ThenBy(x => x.Id).FirstOrDefault();
             return job != null;
         }
 
-        public IReadOnlyList<WorkOrder> GetQueue(StableEntityId characterId) => jobs.Values
-            .Where(x => x.AssigneeId == characterId && !x.IsTerminal)
+        public IReadOnlyList<WorkOrder> GetQueue(StableEntityId characterId) => openJobs.Values
+            .Where(x => x.AssigneeId == characterId)
             .OrderByDescending(x => x.Status == WorkJobStatus.Active)
             .ThenBy(x => x.QueueOrder).ThenBy(x => x.Id).ToArray();
 
@@ -249,7 +253,7 @@ namespace Game.Simulation.Work
 
         public void SetClaimState(JobId id, WorkClaimState state) => SetClaimState(Get(id), state);
 
-        public bool HasOpenJob(StableEntityId characterId) => jobs.Values.Any(x => x.AssigneeId == characterId && !x.IsTerminal);
+        public bool HasOpenJob(StableEntityId characterId) => openJobs.Values.Any(x => x.AssigneeId == characterId);
 
         public bool IsTargetReserved(WorkTarget target) => exclusiveTargets.ContainsKey(target);
 
@@ -266,6 +270,8 @@ namespace Game.Simulation.Work
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             jobs.Clear();
+            openJobs.Clear();
+            terminalHistory.Clear();
             exclusiveTargets.Clear();
             Groups.Clear();
             foreach (var groupState in state.Groups.OrderBy(x => x.Id))
@@ -299,6 +305,8 @@ namespace Game.Simulation.Work
                 order.RestoreRuntime(saved.Status, saved.ClaimState);
                 order.RestoreProgress(saved.ProgressTicks);
                 jobs.Add(saved.Id, order);
+                if (!order.IsTerminal) openJobs.Add(saved.Id, order);
+                else terminalHistory.Enqueue(saved.Id);
                 if (saved.ExclusiveTarget && !order.IsTerminal)
                 {
                     if (exclusiveTargets.ContainsKey(saved.Target))
@@ -311,7 +319,8 @@ namespace Game.Simulation.Work
                 jobs.Values.Where(x => x.QueueOrder > 0).Select(x => x.QueueOrder + 1).DefaultIfEmpty(1).Max());
             nextFrontOrder = Math.Min(state.NextFrontOrder,
                 jobs.Values.Where(x => x.QueueOrder < 0).Select(x => x.QueueOrder - 1).DefaultIfEmpty(-1).Min());
-            var duplicate = jobs.Values.Where(x => x.Status == WorkJobStatus.Active && x.AssigneeId.HasValue)
+            PruneTerminalHistory();
+            var duplicate = openJobs.Values.Where(x => x.Status == WorkJobStatus.Active && x.AssigneeId.HasValue)
                 .GroupBy(x => x.AssigneeId.Value).FirstOrDefault(x => x.Count() > 1);
             if (duplicate != null)
                 throw new InvalidOperationException("Work save assigns multiple active jobs to one character.");
@@ -339,6 +348,7 @@ namespace Game.Simulation.Work
                 assigneeId, groupId, resourceId, quantity, exclusiveTarget,
                 assigneeId.HasValue ? AllocateQueueOrder(queuePlacement) : 0);
             jobs.Add(job.Id.Value, job);
+            openJobs.Add(job.Id.Value, job);
             if (exclusiveTarget) exclusiveTargets.Add(target, job.Id);
             return job;
         }
@@ -357,8 +367,17 @@ namespace Game.Simulation.Work
         {
             if (job.IsTerminal) return false;
             if (!job.Finish(terminalStatus)) return false;
+            openJobs.Remove(job.Id.Value);
             if (job.ExclusiveTarget) exclusiveTargets.Remove(job.Target);
+            terminalHistory.Enqueue(job.Id.Value);
+            PruneTerminalHistory();
             return true;
+        }
+
+        private void PruneTerminalHistory()
+        {
+            while (terminalHistory.Count > TerminalHistoryLimit)
+                jobs.Remove(terminalHistory.Dequeue());
         }
 
         private static void SetClaimState(WorkOrder job, WorkClaimState state)

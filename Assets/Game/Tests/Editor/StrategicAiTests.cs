@@ -637,11 +637,15 @@ namespace Game.Tests.Editor
                     new[] { new RulerStrategyResourceFact("berries", 12) },
                     Array.Empty<string>(), new[] { "stone_tools" },
                     new[] { "primitive_shelter" }, Array.Empty<RulerStrategyRelationFact>()));
-            var ollama = RulerStrategyJsonCodec.CreateOllamaRequest(request, "qwen3.5:4b");
+            var ollama = RulerStrategyJsonCodec.CreateOllamaRequest(request, "qwen3.5:4b", 4);
             var cloud = RulerStrategyJsonCodec.CreateCloudRequest(request, "gpt-6-luna");
             StringAssert.Contains("\"think\":false", ollama);
+            StringAssert.Contains("\"num_thread\":4", ollama);
             StringAssert.Contains("Как пережить зиму?", ollama);
             StringAssert.Contains("\"response_format\"", cloud);
+            Assert.That(RulerStrategyJsonCodec.RecommendedOllamaThreadCount(2), Is.EqualTo(1));
+            Assert.That(RulerStrategyJsonCodec.RecommendedOllamaThreadCount(8), Is.EqualTo(6));
+            Assert.That(RulerStrategyJsonCodec.RecommendedOllamaThreadCount(16), Is.EqualTo(8));
 
             var json = "{\"goal\":\"develop_settlement\",\"food_target\":40," +
                 "\"material_target\":25,\"minimum_army_size\":20,\"aggression\":15," +

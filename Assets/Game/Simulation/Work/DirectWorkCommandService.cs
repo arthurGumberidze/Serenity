@@ -116,7 +116,7 @@ namespace Game.Simulation.Work
 
         public void ReevaluateQueued()
         {
-            foreach (var job in work.Jobs.Where(x => x.Status == WorkJobStatus.Queued)
+            foreach (var job in work.OpenJobs.Where(x => x.Status == WorkJobStatus.Queued)
                          .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).ToArray())
                 AssignBest(job, job.Priority == WorkPriority.Immediate);
         }

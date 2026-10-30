@@ -1,5 +1,14 @@
 # NEXT_TASK.md
 
+## Next action — user retest of optimized monthly Ollama mode (2026-10-31)
+
+Launch `Builds/NeighbourAiOptimized/Serenity.exe`, select local Ollama and the monthly interval. The game now
+limits local inference threads automatically (8 on the tested 22-thread CPU), bounds completed work history and
+removes terminal production tasks. Compare frame responsiveness during each request and inspect
+`provider_timing` entries in the newest `AiAudit` JSONL file. Override only if needed with the user environment
+variable `SERENITY_OLLAMA_THREADS` (for example 6 for more game headroom). Await user feedback before unrelated
+work. The user requested one PC shutdown after this delivery; do not repeat it on a later retest unless asked.
+
 ## Next action — user retest of neighbour monthly Ollama progression (2026-10-31)
 
 Launch `Builds/NeighbourProgressionRepair/Serenity.exe`, select `Ollama локально` and the one-month interval,

@@ -171,7 +171,7 @@ namespace Game.Simulation.Resources
             if (building == null) throw new ArgumentNullException(nameof(building));
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             if (sites == null || work == null || piles == null || building.IsOperational) return false;
-            foreach (var order in work.Jobs.Where(x => !x.IsTerminal &&
+            foreach (var order in work.OpenJobs.Where(x =>
                 ((x.Type == WorkJobType.Build && x.Target.EntityId == building.Id) ||
                  (x.Type == WorkJobType.Haul && x.Destination.HasValue &&
                   x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
@@ -192,7 +192,7 @@ namespace Game.Simulation.Resources
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             if (building.IsOperational || sites == null || work == null || piles == null || !settlementId.IsValid)
                 return false;
-            if (work.Jobs.Any(x => !x.IsTerminal && x.Type == WorkJobType.Haul && x.Destination.HasValue &&
+            if (work.OpenJobs.Any(x => x.Type == WorkJobType.Haul && x.Destination.HasValue &&
                                    x.Destination.Value.Kind == WorkTargetKind.ConstructionBuffer &&
                                    x.Destination.Value.EntityId == building.Id)) return true;
             inventories.TryGet(building.ConstructionBufferOwner,out var buffer);
@@ -245,7 +245,7 @@ namespace Game.Simulation.Resources
                 var remaining = cost.Quantity.Units;
                 foreach (var source in sources)
                 {
-                    var reserved = work == null ? 0L : work.Jobs.Where(x => !x.IsTerminal && x.Type == WorkJobType.Haul &&
+                    var reserved = work == null ? 0L : work.OpenJobs.Where(x => x.Type == WorkJobType.Haul &&
                         x.ResourceId == cost.ResourceId && x.Target.EntityId == source.Owner.Id &&
                         ((source.Owner.Kind == InventoryOwnerKind.WorldPile && x.Target.Kind == WorkTargetKind.WorldPile) ||
                          (source.Owner.Kind == InventoryOwnerKind.BuildingStorage &&

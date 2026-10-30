@@ -119,6 +119,7 @@ namespace Game.Tests.Editor
             Assert.That(source.IsDepleted, Is.True);
             Assert.That(fixture.Production.HasEligibleWork(worker, default), Is.False);
             Assert.That(fixture.CharacterInventory(worker).GetAmount(fixture.Wood).Units, Is.EqualTo(4));
+            Assert.That(fixture.Production.TrackedTaskCount, Is.Zero);
         }
 
         [Test] public void PartialWorkCompletesOneBatchExactlyOnceAndCancellationReleasesSource()
@@ -131,6 +132,7 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Production.AdvanceTask(task.Task.Id, TimeSpan.FromHours(3)).Completed, Is.False);
             Assert.That(task.Task.AccumulatedWorkTicks, Is.EqualTo(TimeSpan.FromHours(3).Ticks));
             Assert.That(fixture.Production.Cancel(task.Task.Id), Is.True);
+            Assert.That(fixture.Production.TrackedTaskCount, Is.Zero);
             Assert.That(fixture.Production.TryReserve(second, default, out var replacement), Is.True);
             var complete = fixture.Production.AdvanceTask(replacement.Task.Id, TimeSpan.FromHours(8));
             Assert.That(complete.Completed, Is.True);

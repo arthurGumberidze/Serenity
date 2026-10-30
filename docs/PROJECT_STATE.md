@@ -1,5 +1,25 @@
 # PROJECT_STATE.md
 
+## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
+
+The shared work registry now maintains a sorted active-job index, so assignment, construction, production and
+streaming queries no longer allocate/sort the full historical job set. Completed work history is retained only
+for the newest 256 entries with O(1) queue eviction; IDs remain monotonic across save/load. Completed and
+cancelled production tasks leave their registry immediately. The action audit discovers residents twice per
+second instead of every frame and caches resident-to-faction ownership.
+
+Local Ollama requests now reserve CPU capacity for Unity. The default on this 22-logical-processor machine is
+8 inference threads; `SERENITY_OLLAMA_THREADS` can override 1–64. Each provider call records a non-sensitive
+`provider_timing` audit entry. A real local cold request completed in 21.54 s (3.94 s model load) with eight
+threads and no cloud call.
+
+Validation: compile succeeded; work/production/strategy tests passed 60/60. The 10,000-completed-job gate took
+45.56 ms and retained 256 entries. The existing 1,000-worker/30-day production gate took 742.99 ms with zero
+measured thread allocations. A real three-month scene route passed; monthly simulation work was 6.79, 6.72 and
+5.24 seconds rather than increasing, with 3–4 open jobs and 0–1 production tasks. Windows Development build
+`Builds/NeighbourAiOptimized/Serenity.exe` passed with 0 errors / 0 warnings. Exact commands:
+`docs/validation/NeighbourAiOptimization.md`.
+
 ## WM16 neighbour progression and monthly Ollama endurance — DONE / awaiting user retest (2026-10-31)
 
 The neighbour settlement no longer loses its own work scope when the shared Tier1 scheduler installs the

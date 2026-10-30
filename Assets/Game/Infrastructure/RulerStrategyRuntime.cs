@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Game.Domain.AI;
@@ -32,6 +33,7 @@ namespace Game.Infrastructure
         public bool IsRequestInFlight => activeCoroutine != null;
         public string Mode => mode;
         public string LastStatus { get; private set; } = string.Empty;
+        public long LastRequestDurationMilliseconds { get; private set; }
         public Action<string, long, string, string> Audit { get; set; }
 
         public void Initialize(AiStrategicScheduler scheduler, string configuredMode,
@@ -121,7 +123,12 @@ namespace Game.Infrastructure
             {
                 lastProvider = provider;
                 RulerProviderResponse response = null;
+                var stopwatch = Stopwatch.StartNew();
                 yield return Send(provider, request, value => response = value);
+                stopwatch.Stop();
+                LastRequestDurationMilliseconds = stopwatch.ElapsedMilliseconds;
+                Audit?.Invoke(request.FactionId.ToString(), request.Pending.Sequence, "provider_timing",
+                    provider + "; elapsed_ms=" + LastRequestDurationMilliseconds);
                 if (response != null && response.Succeeded)
                 {
                     try
@@ -175,7 +182,8 @@ namespace Game.Infrastructure
             }
             var body = provider == RulerStrategyProviderKind.Ollama
                 ? RulerStrategyJsonCodec.CreateOllamaRequest(request,
-                    Environment.GetEnvironmentVariable("SERENITY_OLLAMA_MODEL") ?? "qwen3.5:4b")
+                    Environment.GetEnvironmentVariable("SERENITY_OLLAMA_MODEL") ?? "qwen3.5:4b",
+                    ResolveOllamaThreadCount())
                 : RulerStrategyJsonCodec.CreateCloudRequest(request,
                     Environment.GetEnvironmentVariable("SERENITY_CLOUD_MODEL") ?? "gpt-6-luna");
             using (var web = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
@@ -212,6 +220,14 @@ namespace Game.Infrastructure
             }
         }
 
+        private static int ResolveOllamaThreadCount()
+        {
+            var configured = Environment.GetEnvironmentVariable("SERENITY_OLLAMA_THREADS");
+            return int.TryParse(configured, out var value) && value >= 1 && value <= 64
+                ? value
+                : RulerStrategyJsonCodec.RecommendedOllamaThreadCount(Environment.ProcessorCount);
+        }
+
         private void CompleteRequest()
         {
             activeCoroutine = null;
@@ -235,7 +251,13 @@ namespace Game.Infrastructure
     public static class RulerStrategyJsonCodec
     {
         [Serializable] private sealed class Message { public string role; public string content; }
-        [Serializable] private sealed class OllamaOptions { public int num_ctx = 2048; public int num_predict = 256; public float temperature = 0.1f; }
+        [Serializable] private sealed class OllamaOptions
+        {
+            public int num_ctx = 2048;
+            public int num_predict = 256;
+            public int num_thread;
+            public float temperature = 0.1f;
+        }
         [Serializable] private sealed class OllamaRequest { public string model; public Message[] messages; public bool stream; public bool think; public string format; public OllamaOptions options; }
         [Serializable] private sealed class CloudFormat { public string type = "json_object"; }
         [Serializable] private sealed class CloudRequest { public string model; public Message[] messages; public string reasoning_effort = "none"; public CloudFormat response_format = new CloudFormat(); }
@@ -275,9 +297,18 @@ namespace Game.Infrastructure
             public RelationDto[] relations;
         }
 
-        public static string CreateOllamaRequest(RulerStrategyRequest request, string model)
+        public static int RecommendedOllamaThreadCount(int logicalProcessors)
+        {
+            if (logicalProcessors <= 0) throw new ArgumentOutOfRangeException(nameof(logicalProcessors));
+            if (logicalProcessors <= 2) return 1;
+            if (logicalProcessors <= 4) return logicalProcessors - 2;
+            return Math.Min(8, logicalProcessors - Math.Max(2, logicalProcessors / 4));
+        }
+
+        public static string CreateOllamaRequest(RulerStrategyRequest request, string model, int numThreads = 0)
         {
             if (string.IsNullOrWhiteSpace(model)) throw new ArgumentException(nameof(model));
+            if (numThreads < 0 || numThreads > 64) throw new ArgumentOutOfRangeException(nameof(numThreads));
             return JsonUtility.ToJson(new OllamaRequest
             {
                 model = model,
@@ -285,7 +316,12 @@ namespace Game.Infrastructure
                 stream = false,
                 think = false,
                 format = "json",
-                options = new OllamaOptions()
+                options = new OllamaOptions
+                {
+                    num_thread = numThreads == 0
+                        ? RecommendedOllamaThreadCount(Environment.ProcessorCount)
+                        : numThreads
+                }
             });
         }
 

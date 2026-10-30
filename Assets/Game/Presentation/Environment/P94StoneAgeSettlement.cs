@@ -211,7 +211,7 @@ namespace Game.Presentation.Environment
         public void RefreshNow()
         {
             if (work == null || indicatorPrefab == null) return;
-            var open = work.Jobs.Where(x => !x.IsTerminal).Take(24).ToArray();
+            var open = work.OpenJobs.Take(24).ToArray();
             var openIds = new HashSet<JobId>(open.Select(x => x.Id));
             foreach (var stale in indicators.Keys.Where(x => !openIds.Contains(x)).ToArray())
             {

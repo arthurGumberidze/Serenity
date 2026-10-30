@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE**. Active work has a dedicated sorted
+index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit
+resident discovery is throttled/cached. Ollama automatically leaves CPU capacity for Unity and records request
+duration. Tests passed 60/60 plus a real three-month scene route; monthly simulation cost decreased
+6.79 -> 6.72 -> 5.24 s. The 10,000-job gate retained 256 entries in 45.56 ms. Evidence:
+`docs/validation/NeighbourAiOptimization.md`.
+
 WM16 neighbour progression repair (2026-10-31): **DONE / awaiting user retest**. Repaired neighbour-specific
 work assignment, production/logistics, critical-need recovery and crop-plot concurrency. Monthly local-only
 Ollama planning was observed for 730 game days: 25/25 accepted plans, all plan sequences correlated with

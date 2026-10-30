@@ -49,7 +49,7 @@ namespace Game.Simulation.Production
                 var destination = new InventoryOwner(InventoryOwnerKind.BuildingStorage, zone.StorageId);
                 if (!inventories.TryGet(source, out var output) || !inventories.TryGet(destination, out var storage)) continue;
                 var definition = industry.GetDefinition(zone.DefinitionId);
-                var open = work.Jobs.Where(value => !value.IsTerminal && value.Target.EntityId == zone.Id).ToArray();
+                var open = work.OpenJobs.Where(value => value.Target.EntityId == zone.Id).ToArray();
                 var candidates = roster.Where(id => available(id) && !work.HasOpenJob(id))
                     .OrderBy(id => position(id).DistanceSquared(zone.Position)).ThenBy(id => id).ToList();
                 // Reserve one resident for other settlement work; never create imaginary workers.
