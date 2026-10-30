@@ -31,6 +31,7 @@ namespace Game.Infrastructure
         private readonly Dictionary<WorldTileId, LoadedTile> loaded = new Dictionary<WorldTileId, LoadedTile>();
         private readonly Dictionary<WorldTileId, (float[,] heights, float[,,] paint)> preparedTileData = new();
         private readonly Dictionary<WorldTileId, Task<(float[,] heights, float[,,] paint)>> pendingTilePreparations = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<WorldTileId, Vector4[,]> preparedWaterSamples = new();
         private readonly HashSet<WorldTileId> deferredTilePreparations = new();
         private readonly HashSet<WorldTileId> visual = new HashSet<WorldTileId>();
         private readonly HashSet<WorldTileId> warmedTiles = new HashSet<WorldTileId>();
@@ -294,6 +295,7 @@ namespace Game.Infrastructure
             {
                 gameObject.AddComponent<WorldMapHorizon>().Initialize(this, natureCatalog);
                 gameObject.AddComponent<LateLandscapePresentation>().Initialize(this, natureCatalog.RuntimeLate);
+                ConfigurePhysicalWinterScenery();
             }
             Debug.Log("WM15_BOOT terrain ready");
 #if UNITY_EDITOR
@@ -310,6 +312,26 @@ namespace Game.Infrastructure
                 while (EditorReviewCapturePending) yield return null;
             }
 #endif
+        }
+
+        private void ConfigurePhysicalWinterScenery()
+        {
+            foreach (var item in GetComponentsInChildren<Transform>(true))
+            {
+                if (item.name == "Alpine rock" || item.name == "Snowy conifer")
+                    WorldMapScenery.AddSolidFootprint(item.gameObject, item.name == "Snowy conifer");
+                var snow = item.name == "Localized alpine snowfall";
+                var fog = item.name == "Mountain lake ground mist";
+                if (!snow && !fog) continue;
+                foreach (var particles in item.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    var main = particles.main; main.maxParticles = snow ? 600 : 16;
+                    if (fog) main.startSize = new ParticleSystem.MinMaxCurve(8f,14f);
+                    var emission = particles.emission;
+                    emission.rateOverTimeMultiplier *= snow ? .25f / 1.25f : .10f / .72f;
+                    if (snow) { var shape = particles.shape; shape.radius = 32f; }
+                }
+            }
         }
 
         public void BeginBackgroundTilePreparation()
@@ -534,11 +556,19 @@ namespace Game.Infrastructure
         private void RefreshVegetationColliders(WorldPosition cameraFocus)
         {
             if (vegetationPlan == null) return;
-            var desired = strategicMode
-                ? Array.Empty<WorldMapVegetationInstance>()
-                : selectableTrees.Where(value => visual.Contains(value.Tile) &&
-                        TreeDistanceSquared(value.Position, cameraFocus) <= 225f * 225f)
-                    .OrderBy(value => TreeDistanceSquared(value.Position, cameraFocus)).ThenBy(value => value.StableId)
+            var actors=(physicalPositionProvider?.Invoke()??Array.Empty<WorldPosition>()).ToArray();
+            float Distance(WorldMapVegetationInstance value)
+            {
+                var distance=strategicMode?float.MaxValue:TreeDistanceSquared(value.Position,cameraFocus);
+                foreach(var actor in actors)
+                {
+                    var near=TreeDistanceSquared(value.Position,actor);
+                    if(near<=15f*15f)distance=Mathf.Min(distance,near);
+                }
+                return distance;
+            }
+            var desired = selectableTrees.Where(value => Distance(value) <= 225f * 225f)
+                    .OrderBy(Distance).ThenBy(value => value.StableId)
                     .Take((int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
             var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
             desiredVegetationColliderIds.Clear();
@@ -601,6 +631,11 @@ namespace Game.Infrastructure
                 collider.radius = 0.46f * value.UniformScale;
                 collider.height = 7.2f * value.UniformScale;
                 collider.center = Vector3.up * collider.height * 0.5f;
+                var obstacle=root.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+                if(!obstacle)obstacle=root.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+                obstacle.shape=UnityEngine.AI.NavMeshObstacleShape.Capsule;
+                obstacle.center=collider.center;obstacle.radius=collider.radius;obstacle.height=collider.height;
+                obstacle.carving=true;obstacle.carveOnlyStationary=true;
                 // Batched trees have no Renderer on their collider object. Add a canopy pick volume explicitly.
                 var crown = root.GetComponent<BoxCollider>();
                 if (!crown) crown = root.AddComponent<BoxCollider>();
@@ -793,16 +828,9 @@ namespace Game.Infrastructure
             var tileOrigin = Definition.TileOrigin(id);
             var step = Definition.TileSizeMeters / (float)resolution;
             // Sample continuous corners once. Adjacent cells and tiles now agree on height/depth.
-            var samples = new Vector4[resolution + 1, resolution + 1];
+            var samples = preparedWaterSamples.TryRemove(id, out var preparedWater)
+                ? preparedWater : NewGameWorldPreparation.PrepareWater(HeightSampler, id);
             var clipped = new Vector4[4];
-            for (var z = 0; z <= resolution; z++)
-            for (var x = 0; x <= resolution; x++)
-            {
-                var wx = tileOrigin.X + x * step;
-                var wz = tileOrigin.Z + z * step;
-                var distance = HeightSampler.WaterBoundaryDistance(wx, wz, out var surface);
-                samples[x, z] = new Vector4(x * step, surface, z * step, distance);
-            }
             for (var z = 0; z < resolution; z++)
             for (var x = 0; x < resolution; x++)
             {
@@ -1599,6 +1627,9 @@ namespace Game.Infrastructure
 
         private (float[,] heights, float[,,] paint) PrepareTileData(WorldTileId tile)
         {
+            if (Definition.MapData != null)
+                preparedWaterSamples[tile] = NewGameWorldPreparation.PrepareWater(HeightSampler, tile);
+            if (NewGameWorldPreparation.TryGet(HeightSampler, tile, out var prepared)) return prepared;
             if (preparationCache != null && preparationCache.TryRead(tile, out var cachedHeights,
                     out var cachedPaint))
             {

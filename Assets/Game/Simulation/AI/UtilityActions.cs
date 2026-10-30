@@ -60,6 +60,7 @@ namespace Game.Simulation.AI
         private readonly Tier1AiSettings settings;
         private readonly DomesticService domestic;
         private TimeSpan moveElapsed;
+        private WorldPosition lastProgressPosition;
         private bool occupying;
 
         public SleepActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
@@ -73,6 +74,7 @@ namespace Game.Simulation.AI
             Phase = AiActionPhase.MoveToTarget;
             agent.SetAction(UtilityActionKind.Rest, Phase);
             movement.MoveTo(bed.SleepPosition, 0.35f);
+            lastProgressPosition=movement.CurrentPosition;
         }
 
         public UtilityActionKind Kind => UtilityActionKind.Rest;
@@ -89,6 +91,8 @@ namespace Game.Simulation.AI
             if (Phase == AiActionPhase.MoveToTarget)
             {
                 moveElapsed += simulationDelta;
+                if(movement.CurrentPosition.DistanceSquared(lastProgressPosition)>=.25f)
+                {moveElapsed=TimeSpan.Zero;lastProgressPosition=movement.CurrentPosition;}
                 if (movement.State == MovementState.Failed || moveElapsed >= settings.MovementTimeout) { Fail(); return; }
                 if (movement.State != MovementState.Arrived) return;
                 movement.Stop();

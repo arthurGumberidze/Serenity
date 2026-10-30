@@ -48,7 +48,7 @@ namespace Game.Simulation.AI
         public AiActionPhase Phase => agent.Phase;
         public bool IsFinished { get; private set; }
         public bool Succeeded { get; private set; }
-        public bool IsInterruptible => agent.Phase == AiActionPhase.MoveToTarget;
+        public bool IsInterruptible => true;
         public bool IsValid => !IsFinished && !job.IsTerminal && movement.IsAvailable;
 
         public void Tick(TimeSpan simulationDelta)

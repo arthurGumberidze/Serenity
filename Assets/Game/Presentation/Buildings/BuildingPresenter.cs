@@ -23,6 +23,8 @@ namespace Game.Presentation.Buildings
         private bool[] originalVisibility;
         private GameObject scaffold;
         private Material scaffoldMaterial;
+        private bool upgradeWorksite;
+        public void SetUpgradeWorksite(bool active) { upgradeWorksite=active; }
         private BuildingConstructionStageVisual[] constructionStages;
         private readonly System.Collections.Generic.Dictionary<Transform,Quaternion> gateClosedRotations = new();
 
@@ -236,7 +238,7 @@ namespace Game.Presentation.Buildings
         {
             if (originalRenderers == null) return;
             var finished = building.ConstructionState == ConstructionState.Completed;
-            if (!finished && scaffold == null)
+            if ((!finished || upgradeWorksite) && scaffold == null)
             {
                 scaffold = new GameObject("Construction frame");
                 scaffold.transform.SetParent(transform, false);
@@ -256,7 +258,7 @@ namespace Game.Presentation.Buildings
                 foreach (var z in new[] { -depth * 0.5f, depth * 0.5f })
                     CreateBeam(new Vector3(0f, height * 0.75f, z), new Vector3(width, 0.12f, 0.12f));
             }
-            if (scaffold != null) scaffold.SetActive(!finished && !building.IsDestroyed);
+            if (scaffold != null) scaffold.SetActive((!finished || upgradeWorksite) && !building.IsDestroyed);
             if (constructionStages != null)
             {
                 var finalStage = constructionStages.Length == 0 ? 0 : constructionStages.Max(x => x.RequiredStage);

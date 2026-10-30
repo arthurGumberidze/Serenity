@@ -777,6 +777,7 @@ namespace Game.Presentation.UI
                 pier.DefinitionId.FamilyId.ToString()!="fishing_pier" || !pier.IsOperational || pier.OwnerSideId.Value!="player")return false;
             var stock=context.Production.FishStockAt(target.Position);
             if(stock==null)return false;
+            foreach(var resident in activeContextSelectionIds)context.Production.RequestedFishingPiers[resident]=pier.Id;
             fishTarget=new ContextCommandTarget(ContextTargetKind.ResourceSource,stock.Position,stock.Id,
                 new ResourceId("fish"),ContextResourceClass.Gatherable);
             return true;
@@ -928,14 +929,15 @@ namespace Game.Presentation.UI
                     building.IsOperational && context.Production.Sites.Any(x =>
                         x.Kind == ProductionSiteKind.BuildingWorkplace && x.OwnerBuildingId == building.Id &&
                         x.IsWorkAvailable);
+                var workplace=context.Production.Sites.FirstOrDefault(x=>x.OwnerBuildingId==target.EntityId && x.IsWorkAvailable);
+                if(workplace!=null && context.Production.WorkPosition!=null)pathTarget=context.Production.WorkPosition(id,workplace);
             }
             var busy = context.Work.HasOpenJob(id);
             var criticalNeed = context.AiAgents.TryGet(id, out var agent) &&
                 (agent.Needs.Energy <= Game.Simulation.AI.Tier1AiScheduler.CriticalRestEnergy ||
                  agent.Needs.Hunger >= Game.Simulation.AI.Tier1AiScheduler.CriticalHunger);
             var interruptible = !busy || context.AiScheduler.CanInterruptForDirectWork(id);
-            var withinDistance = !context.AiAgents.TryGet(id, out var distanceAgent) ||
-                DistanceSquared(distanceAgent.Position, target.Position) <= 250f * 250f;
+            var withinDistance = true;
             var hunting = action == ContextActionKind.Gather && target.Kind == ContextTargetKind.ResourceSource &&
                 context.Production.TryGetSite(target.EntityId, out var huntedSite) && huntedSite.RecipeId.ToString() == "hunt_animal";
             var correctRole = context.PlayerCharacterIds().Contains(id) &&
@@ -3239,7 +3241,9 @@ namespace Game.Presentation.UI
                 new WorldPosition(buildingPosition.x, buildingPosition.y, buildingPosition.z), building.Id),
                 context.Selection.SelectedCharacterIds);
             var target = WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, workTarget.Position);
-            inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.FamilyId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
+            if(building.IsOperational && building.DefinitionId.FamilyId.ToString()=="fishing_pier")
+                inspector.Add(ActionButton("Ловить рыбу",()=>TryCommand(()=>IssuePierFishing(building,workTarget.Position)),"fish-from-built-pier"));
+            else inspector.Add(ActionButton(building.IsOperational ? building.DefinitionId.FamilyId.ToString() == "fishing_camp" ? workplaceSites.Any(x=>x.RecipeId.ToString()=="fish_breed" && !x.Paused) ? "Разводить рыбу" : "Ловить рыбу" : "Изготавливать" : "Строить",
                 () => TryCommand(() => IssueDirect(building.IsOperational ? WorkJobType.Craft : WorkJobType.Build, target))));
             if (building.IsOperational && context.Facilities != null && context.Selection.SelectedCharacterIds.Count > 0)
             {
@@ -3664,6 +3668,29 @@ namespace Game.Presentation.UI
                 case WorkGroupRole.Hunters: return WorkJobType.Gather;
                 default: return null;
             }
+        }
+
+        public WorkOrder IssuePierFishing(Building building, WorldPosition position)
+        {
+            if(building==null || !building.IsOperational || building.OwnerSideId.Value!="player" ||
+                building.DefinitionId.FamilyId.ToString()!="fishing_pier")
+                throw new InvalidOperationException("Этот пирс недоступен для рыбалки.");
+            var stock=context.Production.FishStockAt(position);
+            if(stock==null)throw new InvalidOperationException("Рядом с пирсом нет доступной рыбы.");
+            var worker=context.Selection.SelectedCharacterIds.FirstOrDefault();
+            if(!worker.IsValid)
+                worker=context.Characters.GetAll().Where(person=>person.LifeState==CharacterLifeState.Alive &&
+                        context.Combat.TryGetSide(person.Id,out var side) && side.Value=="player" &&
+                        !context.MilitaryTraining.GetRank(person.Id).HasValue && !context.Work.HasOpenJob(person.Id) &&
+                        context.AiAgents.TryGet(person.Id,out _) && context.AiScheduler.CanInterruptForDirectWork(person.Id))
+                    .OrderBy(person=>context.Tiers.GetRuntimeState(person.Id).Position.DistanceSquared(position))
+                    .ThenBy(person=>person.Id).Select(person=>person.Id).FirstOrDefault();
+            if(!worker.IsValid)throw new InvalidOperationException("Нет свободного жителя для рыбалки.");
+            context.Production.RequestedFishingPiers[worker]=building.Id;
+            var job=context.Work.CreateDirectJob(WorkJobType.Gather,worker,
+                WorkTarget.ForEntity(WorkTargetKind.ProductionSite,stock.Id,stock.Position),workPriority);
+            SetStatus("Житель направляется ловить рыбу на выбранном пирсе.");
+            return job;
         }
 
         private void IssueDirect(WorkJobType type, WorkTarget target)

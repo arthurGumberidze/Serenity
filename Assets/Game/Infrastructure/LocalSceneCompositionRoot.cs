@@ -335,9 +335,9 @@ namespace Game.Infrastructure
                     requestedConfiguration.RulerAppearanceProfileId, requestedConfiguration.RulerAppearance);
             WorldDefinition = TiledWorldDefinitionLoader.LoadActive();
             WorldHeight = new TiledWorldHeightSampler(WorldDefinition, ActiveNewGameConfiguration.WorldSeed);
-            var activePopulationPlan = WorldDefinition.MapData == null ? null :
-                new TiledWorldPopulationPlanner(WorldDefinition, WorldHeight,
-                    ActiveNewGameConfiguration.WorldSeed).Create();
+            var populationPreparation=NewGameWorldPreparation.Population(WorldHeight);
+            while(!populationPreparation.IsCompleted)yield return null;
+            var activePopulationPlan=populationPreparation.GetAwaiter().GetResult();
             if (activePopulationPlan?.StartTerritory != null)
                 buildingGridOrigin = new Vector3(activePopulationPlan.StartTerritory.Center.X, 0f,
                     activePopulationPlan.StartTerritory.Center.Z);
@@ -489,15 +489,13 @@ namespace Game.Infrastructure
             FemaleDemoCharacter = Characters.Get(NewGame.SpouseId);
             FirstDemoHeir = Characters.Get(NewGame.FirstHeirId);
             SecondDemoHeir = Characters.Get(NewGame.SecondHeirId);
-            Domestic = new DomesticService(Characters, Buildings, HealthFamily, new[]
-            {
-                new BuildingDefinitionId("stone_age_hut"),
-                new BuildingDefinitionId("clan_house"),
-                new BuildingDefinitionId("chief_hut")
-            });
+            Domestic = new DomesticService(Characters, Buildings, HealthFamily,
+                buildingCatalog.Entries.Select(x=>x.CreateDefinition()).Where(x=>x.Housing!=null).Select(x=>x.Id));
             Facilities = new SettlementFacilityService(Characters, Buildings,
                 id => buildingCatalog.ResolveDefinition(id), HealthFamily, Inventories);
             Facilities.SetRulingDynasty(MaleDemoCharacter.DynastyId);
+            Facilities.HousingResidentEligible = character => CanCommandResident(character.Id);
+            Facilities.HousingBuildingEligible = building => building.OwnerSideId == new CombatSideId("player");
             RegisterStarterDomestic();
             SpawnDemoPile("berries", 60, new GridCoordinate(-8, -4), new Color(0.6f, 0.12f, 0.18f), 4);
             loadingOverlay.SetStage("Создаём жителей…");
@@ -543,7 +541,7 @@ namespace Game.Infrastructure
             yield return null;
             WorldPopulation = gameObject.AddComponent<P109TiledWorldPopulationPresenter>();
             WorldPopulation.Initialize(TiledWorld, Production, ResourceEcology, Industry, WorldPiles,
-                Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed);
+                Inventories, PopulatedBiomeWorld, ActiveNewGameConfiguration.WorldSeed,activePopulationPlan);
             loadingOverlay.SetStage("Подключаем жителей к работам…");
             yield return null;
             if (WorldDefinition.MapData == null)
@@ -575,10 +573,7 @@ namespace Game.Infrastructure
                 if(owner.Kind==InventoryOwnerKind.Character || owner.Kind==InventoryOwnerKind.CarryLoad)
                     return Tiers!=null && Tiers.TryGetTier(owner.Id,out _) ? Tiers.GetRuntimeState(owner.Id).Position : (WorldPosition?)null;
                 if(!Buildings.TryGet(owner.Id,out var building))return null;
-                var def=buildingCatalog.ResolveDefinition(building.DefinitionId);
-                var center=BuildingSpawner.GridToWorld(building.Coordinate,def,building.Orientation);
-                center-=Quaternion.Euler(0,building.Orientation.Degrees(),0)*Vector3.forward*(def.Footprint.Depth*buildingGridSize*.5f+1.5f);
-                return new WorldPosition(center.x,WorldHeight.SampleHeight(center.x,center.z),center.z);
+                return ConstructionWorkTarget(building);
             };
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings,
                 owner =>
@@ -722,15 +717,7 @@ namespace Game.Infrastructure
             BuildingLifecycle.BuildingChanged += OnBuildingChanged;
             BuildingLifecycle.UpgradeTechnologyAvailable = definition =>
                 definition.RequiredTechnologies.All(id => Research.IsCompleted(id));
-            BuildingLifecycle.ConfigureWork(Work, building =>
-            {
-                var cells = building.PlacementCells;
-                var x = cells.Count > 0 ? cells.Average(c => c.X) : building.Coordinate.X;
-                var z = (cells.Count > 0 ? cells.Min(c => c.Z) : building.Coordinate.Z) - 1.5f;
-                var wx = buildingGridOrigin.x + (float)x * buildingGridSize;
-                var wz = buildingGridOrigin.z + z * buildingGridSize;
-                return new WorldPosition(wx, WorldHeight.SampleHeight(wx, wz), wz);
-            });
+            BuildingLifecycle.ConfigureWork(Work, ConstructionWorkTarget);
             aiWorld.BuildingLifecycle = BuildingLifecycle;
             BuildingLifecycle.BuildingDemolished += OnBuildingDemolished;
             var strategicDefinitions = buildingCatalog.Entries.Select(entry =>
@@ -759,12 +746,15 @@ namespace Game.Infrastructure
             AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.GetRank(id).HasValue);
             BuildingLifecycle.UpgradeWorkerAllowed = (id, building) => CanCommandResident(id) &&
                 building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.GetRank(id).HasValue &&
-                Work.Groups.TryGetForMember(id,out var group) && group.Role==WorkGroupRole.Builders;
+                (!Work.Groups.TryGetForMember(id,out var group) || group.Role==WorkGroupRole.Builders || group.Role==WorkGroupRole.General);
             Work.AssignmentScope = (id, order) => order.Type==WorkJobType.Upgrade
                 ? Buildings.TryGet(order.Target.EntityId,out var targetBuilding) &&
                   BuildingLifecycle.UpgradeWorkerAllowed(id,targetBuilding)
-                : !MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
-                  order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military;
+                : (CanCommandResident(id) || order.Type==WorkJobType.Move || order.Type==WorkJobType.Guard || order.Type==WorkJobType.Military) &&
+                  (order.Type != WorkJobType.Build || !Buildings.TryGet(order.Target.EntityId,out var site) ||
+                   site.ConstructionStageCount == 0 || site.ConstructionPhase == ConstructionPhase.Building) &&
+                  (!MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
+                  order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military);
             Appearances.AppearanceChanged += OnAppearanceChanged;
             Func<MilitaryTrainingRecordState, bool> canTrain = record =>
                 Buildings.TryGet(record.BarracksId, out var trainingBuilding) && trainingBuilding.IsOperational &&
@@ -1018,6 +1008,7 @@ namespace Game.Infrastructure
             }
         }
 
+        private float nextHousingReconcile;
         private void OnSimulationAdvanced(GameTimeAdvance advance)
         {
             var targetCalendarTick = Clock.State.CalendarTicks;
@@ -1028,6 +1019,12 @@ namespace Game.Infrastructure
                     ConnectedWorld.ReportPhysicalPresence(presenter.transform.position.x, presenter.transform.position.z);
             WorldPopulation?.AdvancePoiExploration(targetCalendarTick);
             ConstructionClearance?.Advance();
+            if(Time.unscaledTime>=nextHousingReconcile)
+            {
+                nextHousingReconcile=Time.unscaledTime+.5f;
+                Facilities.ReconcileHousing();
+                Domestic.SynchronizeHousing(Facilities.HomeAssignments,id=>buildingCatalog.ResolveDefinition(id),ConstructionWorkTarget);
+            }
             industrialWork?.Advance(targetCalendarTick);
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
@@ -1089,7 +1086,11 @@ namespace Game.Infrastructure
             ResourceEcology?.AdvanceTo(targetCalendarTick, resourceRespawnSurface);
             PerformanceBenchmark?.RecordCanonicalServicesAllocation();
             for (var i = 0; i < productionPresenters.Count; i++) productionPresenters[i].Refresh();
-            foreach (var buildingView in BuildingPresentations.All) buildingView.RefreshStructuralPresentation();
+            foreach (var buildingView in BuildingPresentations.All)
+            {
+                buildingView.SetUpgradeWorksite(BuildingLifecycle.UpgradeJob(buildingView.BuildingId)!=null);
+                buildingView.RefreshStructuralPresentation();
+            }
             RefreshEnemyBuildings();
             WorldPopulation?.RefreshViews();
             WeatherPresentation.Refresh(targetCalendarTick);
@@ -1232,13 +1233,13 @@ namespace Game.Infrastructure
                 while(cursorIndex<near.Count && timer.Elapsed.TotalMilliseconds<8)
                 {
                     var candidate=near[cursorIndex];
-                    cursorIndex++;
                     var cells=activeDefinition.Footprint.EnumerateCells(candidate.anchor,candidate.facing).ToArray();
                     // One obstructed landing must not make the whole shoreline look invalid.
                     // Keep scanning the prepared candidates until a genuinely usable one is found.
-                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,false))continue;
+                    if(!WorldPlacementSurface.PrepareFootprint(cells,buildingGridSize,buildingGridOrigin,true,2,isPier))break;
+                    cursorIndex++;
                     var surface=WorldPlacementSurface.EvaluateFootprint(cells,buildingGridSize,buildingGridOrigin,
-                        4.5f,false,true,false);
+                        isPier?20f:4.5f,false,true,isPier);
                     if(!surface.CanPlace)continue;
                     var verdict=BuildingPlacementService.Evaluate(activeDefinition,candidate.anchor,candidate.facing);
                     if(!verdict.IsValid)
@@ -1250,6 +1251,14 @@ namespace Game.Infrastructure
                         }
                         continue;
                     }
+                    // A dry bank can belong to a disconnected navigation island. A construction
+                    // landing must be reachable from the settlement, not only locally walkable.
+                    var resident=CharacterPresentations.Active.Where(x=>x!=null && x.IsBound && CanCommandResident(x.CharacterId) &&
+                            (MilitaryTraining==null || !MilitaryTraining.GetRank(x.CharacterId).HasValue))
+                        .OrderBy(x=>new Vector2(x.transform.position.x-buildingGridOrigin.x,x.transform.position.z-buildingGridOrigin.z).sqrMagnitude)
+                        .FirstOrDefault();
+                    if(resident!=null && !Game.Presentation.AI.ReachableNavMeshPoint.TryFind(
+                        resident.transform.position,candidate.center,out _))continue;
                     cached=(candidate.center,candidate.facing);break;
                 }
                 return cached;
@@ -1735,15 +1744,28 @@ namespace Game.Infrastructure
             }
         }
 
-        private WorldPosition ConstructionWorkTarget(Building building)
+        public WorldPosition ConstructionWorkTarget(Building building)
         {
             if (building == null) throw new ArgumentNullException(nameof(building));
             if (BuildingPresentations.TryGet(building.Id, out var presenter) && presenter != null)
             {
                 var bounds = new Bounds(presenter.transform.position, Vector3.one);
-                foreach (var collider in presenter.GetComponentsInChildren<Collider>()) bounds.Encapsulate(collider.bounds);
-                var target = ProjectToGameplayGround(new Vector3(bounds.center.x, 0f, bounds.min.z - 1.2f));
-                return new WorldPosition(target.x, target.y, target.z);
+                foreach (var collider in presenter.GetComponentsInChildren<Collider>())
+                    if(collider.enabled && !collider.isTrigger)bounds.Encapsulate(collider.bounds);
+                var candidates = new[] {
+                    new Vector3(bounds.center.x,0,bounds.min.z-1.2f), new Vector3(bounds.center.x,0,bounds.max.z+1.2f),
+                    new Vector3(bounds.min.x-1.2f,0,bounds.center.z), new Vector3(bounds.max.x+1.2f,0,bounds.center.z) };
+                foreach(var candidate in candidates)
+                {
+                    if(!WorldDefinition.ContainsClosed(candidate.x,candidate.z) || WorldHeight.IsWater(candidate.x,candidate.z))continue;
+                    var ground=ProjectToGameplayGround(candidate);
+                    if(UnityEngine.AI.NavMesh.SamplePosition(ground,out var hit,1.5f,UnityEngine.AI.NavMesh.AllAreas) &&
+                       !WorldHeight.IsWater(hit.position.x,hit.position.z))
+                        return new WorldPosition(hit.position.x,hit.position.y,hit.position.z);
+                }
+                foreach(var candidate in candidates)
+                    if(WorldDefinition.ContainsClosed(candidate.x,candidate.z) && !WorldHeight.IsWater(candidate.x,candidate.z))
+                        return new WorldPosition(candidate.x,WorldHeight.SampleHeight(candidate.x,candidate.z),candidate.z);
             }
             var cells = building.PlacementCells;
             var x = cells.Count > 0 ? cells.Average(c => c.X) : building.Coordinate.X;
@@ -1779,6 +1801,7 @@ namespace Game.Infrastructure
                 {
                 if (building.DefinitionId.FamilyId.ToString()=="animal_pasture" && building.IsOperational)
                     RegisterCropPlot(building,presenter);
+                presenter.SetUpgradeWorksite(BuildingLifecycle.UpgradeJob(building.Id)!=null);
                 presenter.RefreshStructuralPresentation();
             }
         }

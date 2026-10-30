@@ -144,12 +144,13 @@ namespace Game.Infrastructure
                 RefreshBuiltPiers();
                 var key=(worker,site.Id);
                 var taskId=root.Production.ActiveTasks.FirstOrDefault(x=>x.WorkerId==worker && x.SiteId==site.Id)?.Id ?? default;
-                if(bankStances.TryGetValue(key,out var cached) && bankTasks.TryGetValue(key,out var previous) && previous==taskId)
+                var requested=root.Production.RequestedFishingPiers.TryGetValue(worker,out var requestedPier);
+                if(!requested && bankStances.TryGetValue(key,out var cached) && bankTasks.TryGetValue(key,out var previous) && previous==taskId)
                     return new WorldPosition(cached.x,cached.y,cached.z);
                 if(!fishPiers.TryGetValue(site.Id,out var piers))return site.Position;
                 var from=root.Tiers.GetRuntimeState(worker).Position;
                 var origin=new Vector3(from.X,from.Y,from.Z);
-                var pier=piers.Where(PierOperational).OrderBy(x=>(x.Stance-origin).sqrMagnitude)
+                var pier=piers.Where(x=>PierOperational(x) && (!requested || x.Building==requestedPier)).OrderBy(x=>(x.Stance-origin).sqrMagnitude)
                     .FirstOrDefault(x => Game.Presentation.AI.ReachableNavMeshPoint.TryFind(origin,x.Stance,out var end) &&
                         (end-x.Stance).sqrMagnitude < 1f);
                 if(pier==null)return site.Position;
@@ -165,6 +166,8 @@ namespace Game.Infrastructure
                 var stance = new Vector3(site.Position.X,site.Position.Y,site.Position.Z)+away*.9f;
                 return new WorldPosition(stance.x,root.WorldHeight.SampleHeight(stance.x,stance.z),stance.z);
             }
+            if(site.Kind==ProductionSiteKind.BuildingWorkplace && root.Buildings.TryGet(site.OwnerBuildingId,out var workplaceBuilding))
+                return root.ConstructionWorkTarget(workplaceBuilding);
             if (site.RecipeId.ToString() == "hunt_animal" || site.Kind != ProductionSiteKind.NaturalSource)
                 return site.Position;
             if (!root.CharacterPresentations.TryGet(worker,out var person)) return site.Position;
@@ -236,12 +239,17 @@ namespace Game.Infrastructure
                 if(builtPiers.Contains(building.Id)||!root.BuildingPresentations.TryGet(building.Id,out var view))continue;
                 var start=view.transform.position;var forward=view.transform.forward;
                 var target=start;var found=false;
-                for(var distance=0f;distance<=50;distance+=.5f)
+                for(var distance=.5f;distance<=50 && !found;distance+=.5f)
                 {
-                    var point=start+forward*distance;
-                    if(!root.WorldDefinition.ContainsClosed(point.x,point.z))break;
-                    if(!root.WorldHeight.IsWater(point.x,point.z))continue;
-                    target=point+forward*3f;found=true;break;
+                    for(var sector=0;sector<16;sector++)
+                    {
+                        var direction=Quaternion.Euler(0,sector*22.5f,0)*forward;
+                        var point=start+direction*distance;
+                        if(!root.WorldDefinition.ContainsClosed(point.x,point.z)||!root.WorldHeight.IsWater(point.x,point.z))continue;
+                        target=point+direction*3f;
+                        if(!root.WorldDefinition.ContainsClosed(target.x,target.z))continue;
+                        found=true;break;
+                    }
                 }
                 if(!found||!root.WorldDefinition.TryGetTile(start.x,start.z,out var tile))continue;
                 root.WorldHeight.WaterBoundaryDistance(target.x,target.z,out var surface);target.y=surface;

@@ -53,6 +53,8 @@ function Test-RunnerState($State) {
 function Get-ProjectEditorInstance {
     $instance = Read-JsonFile $editorInstancePath
     if ($null -eq $instance -or [string]$instance.version -ne $expectedUnityVersion) { return $null }
+    $editorProcess = Get-Process -Id ([int]$instance.process_id) -ErrorAction SilentlyContinue
+    if ($null -eq $editorProcess -or $editorProcess.ProcessName -ne 'Unity') { return $null }
     return $instance
 }
 

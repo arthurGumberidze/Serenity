@@ -381,7 +381,7 @@ namespace Game.Simulation.AI
             if (entry.Action == null) world.HaulJobs.DropTransportLoad(entry.Agent.CharacterId, entry.Agent.Position);
 
             if (work != null && work.TryGetAssigned(entry.Agent.CharacterId, out var direct) &&
-                direct.Priority == WorkPriority.Immediate && entry.Agent.Needs.Mood > WorkRefusalMood)
+                direct.Priority == WorkPriority.Immediate && entry.Agent.Needs.Mood > WorkRefusalMood && entry.Agent.Needs.Energy > CriticalRestEnergy)
             {
                 if (entry.Action != null && IsManual(entry.Action.Kind)) return;
                 entry.Action?.Cancel(); entry.Action = null;
@@ -390,16 +390,18 @@ namespace Game.Simulation.AI
             }
 
             // U11 precedence: a carrying phase is protected above; otherwise critical Energy wins.
-            if (entry.Agent.Needs.Energy <= CriticalRestEnergy)
+            var hour=(calendarTicks / TimeSpan.TicksPerHour)%24;
+            var scheduledRest=domestic!=null && (hour>=22||hour<6) && (work==null || work.IsOnShift(entry.Agent.CharacterId,calendarTicks)==false ||
+                !work.Groups.TryGetForMember(entry.Agent.CharacterId,out _));
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || scheduledRest && entry.Agent.Needs.Energy < .85d)
             {
-                var canSleep = domestic == null || domestic.EvaluateSleep(entry.Agent.CharacterId).Allowed;
-                if (canSleep && (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest))
+                if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest)
                 {
                     entry.Action?.Cancel();
                     entry.Action = null;
                     Start(entry, UtilityActionKind.Rest);
                 }
-                if (canSleep) return;
+                return;
             }
 
             if (entry.Agent.Needs.Hunger >= CriticalHunger)
@@ -725,6 +727,13 @@ namespace Game.Simulation.AI
                 if (job.Type == WorkJobType.Build && world.Buildings != null &&
                     world.Buildings.TryGet(job.Target.EntityId, out var building))
                 {
+                    if(building.ConstructionStageCount>0 && building.ConstructionPhase!=Game.Domain.Buildings.ConstructionPhase.Building)
+                    {
+                        work.RequeueAssigned(job.Id);
+                        entry.Movement.Stop();
+                        entry.Agent.SetAction(UtilityActionKind.Idle,AiActionPhase.Idle);
+                        return;
+                    }
                     completion = building.MarkCompleted;
                     construction = building;
                 }

@@ -54,6 +54,20 @@ namespace Game.Presentation.Buildings
                 ResourceInventory storage = null;
                 inventories?.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, building.Id), out storage);
                 presenter.Bind(building, registry, storage, gridSize);
+                var family=building.DefinitionId.FamilyId.ToString();
+                if(family=="fishing_pier")
+                    foreach(var collider in instance.GetComponentsInChildren<Collider>(true))collider.isTrigger=true;
+                if(definition.Placement.SpatialForm==BuildingSpatialForm.Structure &&
+                   family!="fishing_pier" && family!="gate" && family!="campfire")
+                {
+                    var obstacle=instance.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+                    if(obstacle==null)obstacle=instance.AddComponent<UnityEngine.AI.NavMeshObstacle>();
+                    obstacle.shape=UnityEngine.AI.NavMeshObstacleShape.Box;
+                    obstacle.center=new Vector3(0,1.2f,0);
+                    obstacle.size=new Vector3(Mathf.Max(.5f,definition.Footprint.Width*gridSize-.4f),2.4f,
+                        Mathf.Max(.5f,definition.Footprint.Depth*gridSize-.4f));
+                    obstacle.carving=true;obstacle.carveOnlyStationary=true;
+                }
             }
             catch
             {

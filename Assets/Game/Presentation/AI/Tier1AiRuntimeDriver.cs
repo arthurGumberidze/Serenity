@@ -273,7 +273,9 @@ namespace Game.Presentation.AI
             {
                 var movement = movements[index];
                 if (!movement.CrowdDetailEnabled || movement.Presenter == null) continue;
-                movement.Presenter.SetActivityHidden(For(movement.CharacterId).ShouldHideInsideBuilding(movement.CharacterId));
+                var indoors=For(movement.CharacterId).ShouldHideInsideBuilding(movement.CharacterId);
+                movement.Presenter.SetActivityHidden(indoors);
+                if(movement.Agent!=null)movement.Agent.radius=indoors?.01f:.32f;
                 var intent = ResolveAnimationIntent(movement.CharacterId);
                 movement.Presenter.SetAnimationIntent(intent);
                 movement.Presenter.RefreshActionPose(now);

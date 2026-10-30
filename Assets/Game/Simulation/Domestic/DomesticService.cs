@@ -39,6 +39,30 @@ namespace Game.Simulation.Domestic
         }
 
         public IReadOnlyList<HomeState> Homes => homes.Values.ToArray();
+        public void SynchronizeHousing(IReadOnlyDictionary<StableEntityId,StableEntityId> assignments,
+            Func<BuildingDefinitionId,BuildingDefinition> definitions, Func<Building,Game.Domain.AI.WorldPosition> entrance)
+        {
+            var nextHomes=new SortedDictionary<StableEntityId,HomeState>();
+            var nextBeds=new SortedDictionary<StableEntityId,BedState>();
+            foreach(var group in assignments.GroupBy(x=>x.Value).OrderBy(x=>x.Key))
+            {
+                if(!buildings.TryGet(group.Key,out var building)||!building.IsOperational)continue;
+                var definition=definitions(building.DefinitionId);if(definition.Housing==null)continue;
+                var residents=group.Select(x=>x.Key).OrderBy(x=>x).ToArray();
+                var footprint=definition.Footprint.Rotate(building.Orientation);var c=building.Coordinate;
+                nextHomes[group.Key]=new HomeState(group.Key,residents[0],
+                    new IndoorZoneState(c.X,c.Z,c.X+footprint.Width-1,c.Z+footprint.Depth-1,true,true),residents);
+                var approach=entrance(building);
+                foreach(var resident in residents)
+                {
+                    var old=beds.Values.FirstOrDefault(x=>x.AssignedResidentId==resident&&x.HomeBuildingId==group.Key);
+                    var id=old?.Id??DeterministicStableId.Create(0,"home-bed:"+group.Key+":"+resident);
+                    nextBeds[id]=new BedState(id,group.Key,c,approach,resident,old?.OccupiedResidentId);
+                }
+            }
+            homes.Clear();foreach(var pair in nextHomes)homes.Add(pair.Key,pair.Value);
+            beds.Clear();foreach(var pair in nextBeds)beds.Add(pair.Key,pair.Value);
+        }
         public IReadOnlyList<BedState> Beds => beds.Values.ToArray();
         public IReadOnlyList<RelationshipConsentState> Consents => consents.Values.OrderBy(x => x.FirstId).ThenBy(x => x.SecondId).ToArray();
         public IReadOnlyList<FamilyInteractionState> Interactions => interactions.Values.ToArray();

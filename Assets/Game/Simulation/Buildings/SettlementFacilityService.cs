@@ -62,6 +62,8 @@ namespace Game.Simulation.Buildings
         }
 
         public IReadOnlyDictionary<StableEntityId, StableEntityId> HomeAssignments => homes;
+        public Func<Character,bool> HousingResidentEligible { get; set; }
+        public Func<Building,bool> HousingBuildingEligible { get; set; }
         public IReadOnlyDictionary<StableEntityId, StableEntityId> WorkplaceAssignments => workplaces;
         public IReadOnlyCollection<StableEntityId> WaitingFamilyIds => waitingFamilies;
         public StableEntityId? RulingDynastyId => rulingDynastyId;
@@ -236,7 +238,7 @@ namespace Game.Simulation.Buildings
 
         public int MoralePerThousand => buildings.All.Any(x => x.IsOperational &&
             (x.DefinitionId.FamilyId == Shrine || x.DefinitionId.FamilyId == MeetingArea)) ? 1100 : 1000;
-        public int GovernancePerThousand => buildings.All.Any(x => x.IsOperational && x.DefinitionId.FamilyId == ChiefHut)
+        public int GovernancePerThousand => buildings.All.Any(x => x.IsOperational && (HousingBuildingEligible?.Invoke(x)??true) && x.DefinitionId.FamilyId == ChiefHut)
             ? 1100 : 1000;
 
         public HouseholdHousingStatus GetHouseholdStatus(StableEntityId familyId) =>
@@ -276,7 +278,8 @@ namespace Game.Simulation.Buildings
             PruneInvalidAssignments();
             MoveRulingDynastyToChiefHouse();
 
-            var living = characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive).ToArray();
+            var living = characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive &&
+                (HousingResidentEligible?.Invoke(x)??true)).ToArray();
             foreach (var family in living.Where(x => x.FamilyId.HasValue)
                          .GroupBy(x => x.FamilyId.Value).OrderBy(x => x.Key))
             {
@@ -411,7 +414,7 @@ namespace Game.Simulation.Buildings
 
         private StableEntityId? FindFamilyHome(IReadOnlyCollection<Character> members)
         {
-            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId != ChiefHut)
+            foreach (var building in buildings.All.Where(x => x.IsOperational && (HousingBuildingEligible?.Invoke(x)??true) && x.DefinitionId.FamilyId != ChiefHut)
                          .OrderBy(x => x.Id))
             {
                 var definition = definitions(building.DefinitionId);
@@ -426,7 +429,7 @@ namespace Game.Simulation.Buildings
 
         private StableEntityId? FindFreeOrdinaryHome()
         {
-            foreach (var building in buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId != ChiefHut)
+            foreach (var building in buildings.All.Where(x => x.IsOperational && (HousingBuildingEligible?.Invoke(x)??true) && x.DefinitionId.FamilyId != ChiefHut)
                          .OrderBy(x => x.Id))
             {
                 var definition = definitions(building.DefinitionId);
@@ -440,7 +443,7 @@ namespace Game.Simulation.Buildings
         private void MoveRulingDynastyToChiefHouse()
         {
             if (!rulingDynastyId.HasValue) return;
-            var chief = buildings.All.Where(x => x.IsOperational && x.DefinitionId.FamilyId == ChiefHut)
+            var chief = buildings.All.Where(x => x.IsOperational && (HousingBuildingEligible?.Invoke(x)??true) && x.DefinitionId.FamilyId == ChiefHut)
                 .OrderBy(x => x.Id).FirstOrDefault();
             if (chief == null) return;
             foreach (var character in characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive &&
@@ -452,7 +455,8 @@ namespace Game.Simulation.Buildings
         {
             foreach (var id in homes.Where(x => !characters.TryGet(x.Key, out var character) ||
                          character.LifeState != CharacterLifeState.Alive || !buildings.TryGet(x.Value, out var building) ||
-                         !building.IsOperational || definitions(building.DefinitionId).Housing == null)
+                         !building.IsOperational || !(HousingResidentEligible?.Invoke(character)??true) ||
+                         !(HousingBuildingEligible?.Invoke(building)??true) || definitions(building.DefinitionId).Housing == null)
                          .Select(x => x.Key).ToArray()) homes.Remove(id);
             foreach (var id in workplaces.Where(x => !characters.TryGet(x.Key, out var character) ||
                          character.LifeState != CharacterLifeState.Alive || !buildings.TryGet(x.Value, out var building) ||

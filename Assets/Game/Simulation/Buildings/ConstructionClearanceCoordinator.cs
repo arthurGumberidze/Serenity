@@ -168,7 +168,7 @@ namespace Game.Simulation.Buildings
             // before the final stage is committed only plays a work animation while the domain
             // correctly rejects progress. Wait for the construction phase to become workable.
             if (building.ConstructionPhase != ConstructionPhase.Building) return;
-            if (!plan.BuildScheduled && !HasBuildJob(building.Id))
+            if (!HasBuildJob(building.Id))
             {
                 work.CreateDirectJob(WorkJobType.Build, null,
                     WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, buildTarget(building)),

@@ -181,8 +181,8 @@ namespace Game.Presentation.Buildings
             surfaceEvaluation = connectedWorldSurface == null
                 ? new PlacementSurfaceEvaluation(previewEvaluation.IsValid, null)
                 : connectedWorldSurface.EvaluateFootprint(previewEvaluation.Cells, gridSize, gridOrigin,
-                    IsShoreFacility() ? 4.5f : (float?)null,
-                    activeDefinition.Id.ToString()=="gate", IsShoreFacility(), false);
+                    activeDefinition.Id.FamilyId.ToString()=="fishing_pier" ? 20f : IsShoreFacility() ? 4.5f : (float?)null,
+                    activeDefinition.Id.ToString()=="gate", IsShoreFacility(), activeDefinition.Id.FamilyId.ToString()=="fishing_pier");
             if (previewEvaluation.IsValid && !surfaceEvaluation.CanPlace)
                 previewEvaluation = new PlacementEvaluation(false, PlacementFailureReason.TerrainBlocked,
                     previewEvaluation.Cells, previewEvaluation.ApproachCells);

@@ -62,8 +62,8 @@ namespace Game.Simulation.Buildings
                 return Fail(BuildingLifecycleFailure.Unsupported);
             if (!TryPlan(option.Cost, UpgradeFunding(building), out _)) return Fail(BuildingLifecycleFailure.InsufficientResources);
             work.CreateDirectJob(WorkJobType.Upgrade, null,
-                WorkTarget.ForEntity(WorkTargetKind.Building,id,approachPosition(building)),WorkPriority.High,
-                work.Groups.All.FirstOrDefault(x=>x.Role==WorkGroupRole.Builders)?.Id);
+                WorkTarget.ForEntity(WorkTargetKind.Building,id,approachPosition(building)),WorkPriority.High);
+            BuildingChanged?.Invoke(building);
             return new BuildingLifecycleResult(BuildingLifecycleFailure.None);
         }
 

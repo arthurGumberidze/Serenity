@@ -95,7 +95,7 @@ namespace Game.Simulation.Work
                 throw new InvalidOperationException("Этот объект уже зарезервирован другим заданием.");
             var role = RoleFor(type);
             var group = work.Groups.All.Single(x => x.Role == role);
-            var order = work.CreateDirectJob(type, null, target, priority, group.Id, true);
+            var order = work.CreateDirectJob(type, null, target, priority, group.Members.Count > 0 ? group.Id : (WorkGroupId?)null, true);
             AssignBest(order, priority == WorkPriority.Immediate);
             return order;
         }
@@ -109,7 +109,7 @@ namespace Game.Simulation.Work
                 throw new InvalidOperationException("Эта куча уже зарезервирована другим заданием.");
             var group = work.Groups.All.Single(x => x.Role == WorkGroupRole.Haulers);
             var order = work.CreateHaulJob(null, source, destination, resourceId, quantity, priority,
-                group.Id, sourcePosition, true);
+                group.Members.Count > 0 ? group.Id : (WorkGroupId?)null, sourcePosition, true);
             AssignBest(order, priority == WorkPriority.Immediate);
             return order;
         }
@@ -133,8 +133,17 @@ namespace Game.Simulation.Work
 
         private bool AssignBest(WorkOrder job, bool allowSafeInterruption)
         {
-            if (!job.GroupId.HasValue || !work.Groups.TryGet(job.GroupId.Value, out var group)) return false;
-            var candidates = group.Members.Where(canCommand).Select(id => Diagnose(id, group.Role, job.Target.Position))
+            var role=RoleFor(job.Type);
+            WorkGroup group=null;
+            if(job.GroupId.HasValue && !work.Groups.TryGet(job.GroupId.Value,out group))return false;
+            if(group!=null)role=group.Role;
+            var roster=group?.Members.ToArray() ?? Array.Empty<StableEntityId>();
+            if(group==null && role!=WorkGroupRole.Warriors)
+                roster=characters.GetAll().Where(x=>x.LifeState==CharacterLifeState.Alive &&
+                    (!work.Groups.TryGetForMember(x.Id,out var assignedGroup)||assignedGroup.Role==WorkGroupRole.General||assignedGroup.Role==role))
+                    .Select(x=>x.Id).ToArray();
+            var candidates = roster.Where(canCommand).Where(id=>work.AssignmentScope?.Invoke(id,job)??true)
+                .Select(id => Diagnose(id, role, job.Target.Position))
                 .Where(x => allowSafeInterruption
                     ? scheduler.CanInterruptForDirectWork(x.CharacterId)
                     : x.Available)

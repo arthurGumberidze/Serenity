@@ -75,7 +75,7 @@ namespace Game.Infrastructure
         public void Initialize(TiledTerrainWorld world, ProductionService productionService,
             ResourceEcologyService ecologyService, IndustrialExtractionService industryService,
             WorldPileService pileService, ResourceInventoryRegistry inventoryRegistry,
-            P93PopulatedBiomeWorld authoredBiome, long worldSeed)
+            P93PopulatedBiomeWorld authoredBiome, long worldSeed,TiledWorldPopulationPlan preparedPlan=null)
         {
             terrainWorld = world ?? throw new ArgumentNullException(nameof(world));
             production = productionService ?? throw new ArgumentNullException(nameof(productionService));
@@ -93,7 +93,7 @@ namespace Game.Infrastructure
             Debug.Log("WM15_BOOT population templates");
             IndexTemplates(authoredBiome);
             Debug.Log("WM15_BOOT population plan");
-            Plan = new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
+            Plan = preparedPlan ?? new TiledWorldPopulationPlanner(world.Definition, world.HeightSampler, worldSeed).Create();
             if (world.Definition.MapData != null)
             {
                 if (terrainWorld.RoadNetworkPlan == null)
@@ -363,6 +363,8 @@ namespace Game.Infrastructure
                 terrainWorld.GetComponent<StableEnvironmentLodController>()?.ConfigureTree(view);
             view.transform.position = new Vector3(site.Position.X,
                 site.Position.Y + (node.RecipeId == "fish_water" ? 0.08f : 0.1f), site.Position.Z);
+            if(node.RecipeId=="gather_stone" || node.RecipeId=="gather_iron" || node.RecipeId=="gather_gold" || node.RecipeId=="chop_wood")
+                WorldMapScenery.AddSolidFootprint(view,node.RecipeId=="chop_wood");
             var presenter = view.GetComponent<ProductionSourcePresenter>() ?? view.AddComponent<ProductionSourcePresenter>();
             presenter.Bind(site, ResourceColor(node.RecipeId), reviewed != null || templates.ContainsKey(node.RecipeId));
             if (node.RecipeId == "hunt_animal") RegisterAnimalView(view, site, node.StableIndex);

@@ -1,5 +1,21 @@
 # PROJECT_STATE.md
 
+## WM15 user screenshot/video repair — delivered and verified (2026-10-30)
+
+The ten reported issues reopen the relevant building, navigation, domestic, fishing and snow paths.
+Work includes background new-game terrain/population/water preparation, bounded snow generation with
+deferred footprints, real automatic upgrade assignment/scaffolding, staged construction deliveries,
+generic housing/bed synchronization, critical/night rest, physical scenery and owned-pier fishing.
+RTS roof materials are authored opaque and the hut retains its imported material slots. Ordinary jobs
+choose nearby available residents, including empty-role fallback; the pier card chooses a free resident
+after selecting the building clears character selection. Foreign residents cannot take player construction.
+Persistent-runner regression passed 56/56 plus 7/7 role cases and 1/1 complete rendered gameplay route.
+`Builds/WM15RetestRepair/Serenity.exe` passed with 0 errors / 0 warnings and immutable provenance.
+Actual Player exited 0 with no runtime errors; hut and close snow images were inspected. At 1920x1080
+on Intel Arc, close snow averaged 17.10 ms paused and 31.99 ms with simulation; disabling its overlay
+while paused averaged 16.84 ms. This does not establish 60 FPS during simulation; broader population
+performance gates remain deferred. See docs/validation/WM15RetestRepair.md for commands and limits.
+
 ## WM15 existing-asset expansion — delivered and verified (2026-10-30)
 
 Authored 33 level-II upgrade chains (including two legacy hidden definitions), three new buildings,

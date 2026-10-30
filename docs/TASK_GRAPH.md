@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+WM15 screenshot/video repair (2026-10-30): **DONE / awaiting user retest**. Addressed building materials,
+physical navigation, preloading, automatic upgrades/construction, housing/sleep, exact-pier fishing and
+snow preparation/trails. Validation: 56/56 domain + 7/7 roles + 1/1 actual gameplay; Windows build passed
+with 0 errors / 0 warnings and Player exited 0. Full HD running snow-camera average is approximately
+31 FPS; general simulation/per-population optimization remains deferred. Evidence: `docs/validation/WM15RetestRepair.md`.
+
 WM15 existing-asset expansion (2026-10-30): **DONE / awaiting user retest**. Added level-II
 building chains with resource-funded builder work, separate communal house/storage/crafting hall, hut4 →
 existing stone house6, rank-dependent military presentation, deformable alpine-foot snow and corrected lake

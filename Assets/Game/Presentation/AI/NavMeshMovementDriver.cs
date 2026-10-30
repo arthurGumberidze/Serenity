@@ -221,7 +221,7 @@ namespace Game.Presentation.AI
             direction.Normalize();
             var runMultiplier = running ? 1.65f : 1f;
             var speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f * runMultiplier;
-            agent.Move(direction * (speed * unscaledDeltaTime));
+            agent.Move(PhysicalStep(presenter.transform.position,direction * (speed * unscaledDeltaTime)));
             presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
                 Quaternion.LookRotation(direction, Vector3.up), 720f * unscaledDeltaTime);
             presenter.SetSimulationPaused(false);
@@ -267,7 +267,13 @@ namespace Game.Presentation.AI
             var direction = flatOffset.normalized;
             var distance = Math.Min(lightweightSpeed * unscaledDeltaTime,
                 Math.Max(0f, flatOffset.magnitude - (finalCorner ? requestedStoppingDistance : 0f)));
-            var next = position + direction * distance;
+            var step=PhysicalStep(position,direction * distance);
+            if(step.sqrMagnitude<distance*distance*.25f && Time.unscaledTime>=nextSolidRepath)
+            {
+                nextSolidRepath=Time.unscaledTime+.5f;
+                MoveTo(new WorldPosition(requestedDestination.x,requestedDestination.y,requestedDestination.z),requestedStoppingDistance);
+            }
+            var next = position + step;
             // Flat-only integration retained the previous tile's elevation and buried
             // lightweight residents on slopes. Follow the actual navigation surface.
             if (NavMesh.SamplePosition(next, out var surface, 2f, NavMesh.AllAreas)) next.y = surface.position.y;
@@ -275,6 +281,24 @@ namespace Game.Presentation.AI
             presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
                 Quaternion.LookRotation(direction, Vector3.up), 540f * unscaledDeltaTime);
             presenter.SetMovementSpeed(lightweightSpeed);
+        }
+
+        private readonly RaycastHit[] solidHits=new RaycastHit[24];
+        private float nextSolidRepath;
+        private Vector3 PhysicalStep(Vector3 position,Vector3 step)
+        {
+            var length=step.magnitude;if(length<.0001f)return step;
+            var direction=step/length;
+            var count=Physics.CapsuleCastNonAlloc(position+Vector3.up*.45f,position+Vector3.up*1.45f,
+                .28f,direction,solidHits,length+.03f,Physics.DefaultRaycastLayers,QueryTriggerInteraction.Ignore);
+            for(var i=0;i<count;i++)
+            {
+                var collider=solidHits[i].collider;
+                if(collider==null || collider is TerrainCollider || collider.transform.IsChildOf(presenter.transform) ||
+                   collider.GetComponentInParent<CharacterPresenter>()!=null)continue;
+                length=Mathf.Min(length,Mathf.Max(0,solidHits[i].distance-.03f));
+            }
+            return direction*length;
         }
 
         public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)

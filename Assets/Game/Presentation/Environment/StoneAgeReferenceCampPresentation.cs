@@ -104,6 +104,8 @@ namespace Game.Presentation.Environment
             if (presenter == null || !presenter.IsBound)
                 throw new InvalidOperationException("P3 " + label + " presenter is not bound.");
             if (material == null) throw new InvalidOperationException("P3 " + label + " material is missing.");
+            // Legacy hide tint belongs to the primitive shelter, not the authored housing models.
+            if (label == "shelter" && presenter.Building.DefinitionId.FamilyId.ToString() != "primitive_shelter") return;
             var renderers = presenter.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0) throw new InvalidOperationException("P3 " + label + " has no renderers.");
             for (var i = 0; i < renderers.Length; i++)

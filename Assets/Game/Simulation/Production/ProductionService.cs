@@ -279,6 +279,7 @@ namespace Game.Simulation.Production
         public Func<StableEntityId, ProductionSite, WorldPosition> WorkPosition { get; set; }
         public Func<StableEntityId, ProductionSite, WorldPosition> OutputPosition { get; set; }
         public Func<StableEntityId,bool> ManualFishingAccess { get; set; }
+        public readonly Dictionary<StableEntityId,StableEntityId> RequestedFishingPiers = new();
         public Func<StableEntityId, long, bool> BuildingWorkAllowed { get; set; }
         public Func<StableEntityId, int> BuildingWorkPriority { get; set; }
         public Func<StableEntityId, bool> BuildingHasAssignedWorker { get; set; }

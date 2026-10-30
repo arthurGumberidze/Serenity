@@ -1,5 +1,26 @@
 # NEXT_TASK.md
 
+## Next action — user retest of WM15 screenshot/video repair (2026-10-30)
+
+Launch `Builds/WM15RetestRepair/Serenity.exe` and start a new game. All ten requested repairs are implemented;
+63 domain/role cases and the complete real gameplay route passed through the persistent runner. The Windows
+build passed with immutable provenance; actual Player exited 0 and its hut/snow images were reviewed.
+Close-snow Full HD measurements: about 58 FPS paused, 31 FPS with simulation; no 60-FPS simulation claim.
+General population-performance gates remain a separate deferred task. See `docs/validation/WM15RetestRepair.md`.
+Await user feedback before further unrelated work. The prior overnight shutdown was already fulfilled;
+do not shut down the PC for this daytime follow-up.
+
+## WM15 user video/screenshot repair — DONE (2026-10-30)
+
+Fix the ten reported retest issues: brown hut/roof holes; research-gated central storage renamed Склад;
+solid building/tree/rock navigation and physical collision; world preloading during character creation;
+actual builder upgrades with work-site scaffolding; automatic housing and urgent sleep; reachable fishing
+work on the player's own pier; construction delivery and distant automatic assignment; bounded snow cost
+and readable real walking tracks; naturally distributed individual fish. Review both supplied videos.
+Use the persistent Unity runner, actual gameplay routes, visual evidence and a new Windows build.
+This new request reopens the relevant startup and gameplay restrictions below. The prior night's one-time
+PC shutdown request was fulfilled and does not apply to this new daytime repair task.
+
 ## Next action — user retest of WM15 asset expansion (2026-10-30)
 
 The authorized asset-expansion work is complete. Start a new game with

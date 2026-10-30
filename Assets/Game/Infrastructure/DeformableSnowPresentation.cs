@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Game.Domain;
 using Game.Domain.World;
@@ -10,7 +11,7 @@ namespace Game.Infrastructure
     /// <summary>Bounded snow skin; never modifies collision, navigation, weather or saves.</summary>
     public sealed class DeformableSnowPresentation : MonoBehaviour
     {
-        public const float CellSize=.28f;
+        public const float CellSize=.20f;
         private const int Cells=48;
         private const float PatchSize=CellSize*Cells;
         private readonly Dictionary<StableEntityId,TrackState> states=new();
@@ -18,11 +19,14 @@ namespace Game.Infrastructure
         private readonly Queue<Vector2Int> pending=new();
         private readonly HashSet<Vector2Int> queued=new();
         private readonly List<StableEntityId> stale=new();
+        private readonly Dictionary<Vector2Int,float> depthSamples=new();
+        private readonly Queue<(Vector3 position,Vector3 direction,bool left)> deferredFootsteps=new();
         private TiledWorldHeightSampler heights;
         private CharacterPresentationRegistry presentations;
         private Vector4 map;
         private Material material;
         private float nextSample;
+        private IEnumerator patchBuilder;
         private struct TrackState { public Vector3 Position; public bool Left; public float Seen; }
         private sealed class Patch
         {
@@ -41,6 +45,12 @@ namespace Game.Infrastructure
             material=new Material(shader){name="Alpine deep snow",enableInstancing=true};
             var art=Resources.Load<Game.Presentation.Environment.LateLandscapeCatalog>("World/LateLandscape");
             if(art!=null){material.SetTexture("_BaseMap",art.SnowAlbedo);material.SetTexture("_NormalMap",art.SnowNormal);}
+            // Prepare the mountain-foot snow before the player first brings the camera there.
+            var centre=Key(new Vector3((855f-map.x)/map.z,0,(792f-map.y)/map.w));
+            for(var radius=0;radius<=6;radius++)
+                for(var z=-radius;z<=radius;z++)for(var x=-radius;x<=radius;x++)
+                    if(Mathf.Abs(x)==radius||Mathf.Abs(z)==radius)
+                    {var key=centre+new Vector2Int(x,z);if(queued.Add(key))pending.Enqueue(key);}
         }
         private void Update()
         {
@@ -52,41 +62,79 @@ namespace Game.Infrastructure
                 if(camera!=null && Physics.Raycast(camera.ViewportPointToRay(new Vector3(.5f,.5f)),out var hit,1500f))QueueAround(hit.point,2);
                 SampleResidents();
             }
-            if(pending.Count>0)BuildPatch(pending.Dequeue());
+            if(patchBuilder==null && pending.Count>0)patchBuilder=BuildPatch(pending.Dequeue());
+            if(patchBuilder!=null && !patchBuilder.MoveNext())patchBuilder=null;
+            for(var n=Mathf.Min(32,deferredFootsteps.Count);n>0;n--)
+            {
+                var step=deferredFootsteps.Dequeue();
+                if(patches.ContainsKey(Key(step.position)))Stamp(step.position,step.direction,step.left);
+                else deferredFootsteps.Enqueue(step);
+            }
             foreach(var p in patches.Values)if(p.Dirty)
             {p.Mesh.vertices=p.Vertices;p.Mesh.colors=p.Colors;p.Mesh.RecalculateNormals();p.Mesh.RecalculateBounds();p.Dirty=false;}
         }
         public bool IsTrackableSnow(Vector3 p)=>SnowDepth(p.x,p.z)>.06f;
+        public bool IsPreparedAt(Vector3 p)=>patches.ContainsKey(Key(p));
+        private float Ground(float x,float z) => NewGameWorldPreparation.TryHeight(heights,x,z,out var value) ? value : heights.SampleHeight(x,z);
+        private float Slope(float x,float z)
+        {
+            if(!heights.Definition.ContainsClosed(x-1,z-1)||!heights.Definition.ContainsClosed(x+1,z+1))return 90;
+            var dx=(Ground(x+1,z)-Ground(x-1,z))*.5f;var dz=(Ground(x,z+1)-Ground(x,z-1))*.5f;
+            return Mathf.Atan(Mathf.Sqrt(dx*dx+dz*dz))*Mathf.Rad2Deg;
+        }
         private float SnowDepth(float x,float z)
         {
-            if(!heights.Definition.ContainsClosed(x,z)||heights.IsWater(x,z))return 0;
+            var ix=Mathf.FloorToInt(x);var iz=Mathf.FloorToInt(z);
+            return Mathf.Lerp(Mathf.Lerp(DepthSample(ix,iz),DepthSample(ix+1,iz),x-ix),
+                Mathf.Lerp(DepthSample(ix,iz+1),DepthSample(ix+1,iz+1),x-ix),z-iz);
+        }
+        private float DepthSample(int x,int z)
+        {
+            var key=new Vector2Int(x,z);
+            if(!depthSamples.TryGetValue(key,out var value)){value=CalculateDepth(x,z);depthSamples[key]=value;}
+            return value;
+        }
+        private float CalculateDepth(float x,float z)
+        {
+            if(!heights.Definition.ContainsClosed(x,z))return 0;
             var dx=(x*map.z+map.x-855f)/154f;var dz=(z*map.w+map.y-792f)/124f;
             var edge=1f-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.65f,1f,Mathf.Sqrt(dx*dx+dz*dz)));
             if(edge<=0)return 0;
-            var h=Mathf.SmoothStep(0,1,Mathf.InverseLerp(7.5f,10.5f,heights.SampleHeight(x,z)));
-            var slope=1f-Mathf.SmoothStep(0,1,Mathf.InverseLerp(24f,36f,heights.SampleSlopeDegrees(x,z,1f)));
+            var h=Mathf.SmoothStep(0,1,Mathf.InverseLerp(7.5f,10.5f,Ground(x,z)));
+            if(h<=0||heights.IsWater(x,z))return 0;
+            var slope=1f-Mathf.SmoothStep(0,1,Mathf.InverseLerp(24f,36f,Slope(x,z)));
             return edge*h*slope*(.18f+.12f*Mathf.PerlinNoise(x*.19f,z*.19f));
         }
         public void QueueAround(Vector3 p,int radius=1)
         {
             if(!IsTrackableSnow(p))return;
             var centre=Key(p);
+            var urgent=new List<Vector2Int>();
             for(var z=-radius;z<=radius;z++)for(var x=-radius;x<=radius;x++)
-            {var key=centre+new Vector2Int(x,z);if(queued.Count<196&&queued.Add(key))pending.Enqueue(key);}
+            {var key=centre+new Vector2Int(x,z);if(patches.ContainsKey(key))continue;
+                urgent.Add(key);if(queued.Count<768&&queued.Add(key))pending.Enqueue(key);}
+            if(urgent.Count>0)
+            {
+                var ordered=new List<Vector2Int>(pending);pending.Clear();
+                foreach(var key in urgent)if(ordered.Remove(key))pending.Enqueue(key);
+                foreach(var key in ordered)pending.Enqueue(key);
+            }
         }
         private static Vector2Int Key(Vector3 p)=>new(Mathf.FloorToInt(p.x/PatchSize),Mathf.FloorToInt(p.z/PatchSize));
-        private void BuildPatch(Vector2Int key)
+        private IEnumerator BuildPatch(Vector2Int key)
         {
-            if(patches.ContainsKey(key))return;
+            if(patches.ContainsKey(key))yield break;
             var count=(Cells+1)*(Cells+1);
             var p=new Patch{Vertices=new Vector3[count],Ground=new float[count],Depth=new float[count],Colors=new Color[count]};
             var triangles=new List<int>();
+            var watch=System.Diagnostics.Stopwatch.StartNew();
             for(var z=0;z<=Cells;z++)for(var x=0;x<=Cells;x++)
             {
                 var i=z*(Cells+1)+x;var wx=key.x*PatchSize+x*CellSize;var wz=key.y*PatchSize+z*CellSize;
                 if(!heights.Definition.ContainsClosed(wx,wz))continue;
-                p.Ground[i]=heights.SampleHeight(wx,wz);p.Depth[i]=SnowDepth(wx,wz);
+                p.Ground[i]=Ground(wx,wz);p.Depth[i]=SnowDepth(wx,wz);
                 p.Vertices[i]=new Vector3(wx,p.Ground[i]+p.Depth[i]+.008f,wz);p.Colors[i]=new Color(0,0,0,1);
+                if(watch.Elapsed.TotalMilliseconds>=1.5){yield return null;watch.Restart();}
             }
             for(var z=0;z<Cells;z++)for(var x=0;x<Cells;x++)
             {
@@ -94,7 +142,7 @@ namespace Game.Infrastructure
                 if(p.Depth[a]<.012f||p.Depth[b]<.012f||p.Depth[c]<.012f||p.Depth[d]<.012f)continue;
                 triangles.AddRange(new[]{a,c,b,b,c,d});
             }
-            if(triangles.Count==0)return;
+            if(triangles.Count==0)yield break;
             p.Mesh=new Mesh{name="Deformable alpine snow "+key};p.Mesh.MarkDynamic();
             p.Mesh.vertices=p.Vertices;p.Mesh.colors=p.Colors;p.Mesh.SetTriangles(triangles,0);p.Mesh.RecalculateNormals();p.Mesh.RecalculateBounds();
             var view=new GameObject(p.Mesh.name);view.transform.SetParent(transform,false);
@@ -112,9 +160,9 @@ namespace Game.Infrastructure
                 state.Seen=Time.unscaledTime;var motion=p-state.Position;motion.y=0;
                 if(motion.sqrMagnitude>=.32f*.32f)
                 {
-                    if(motion.sqrMagnitude<=4f&&IsTrackableSnow(p))
+                    if(motion.sqrMagnitude<=900f&&IsTrackableSnow(p))
                     {
-                        var steps=Mathf.Min(6,Mathf.FloorToInt(motion.magnitude/.32f));
+                        var steps=Mathf.Min(96,Mathf.FloorToInt(motion.magnitude/.32f));
                         for(var n=1;n<=steps;n++){state.Left=!state.Left;Stamp(Vector3.Lerp(state.Position,p,n/(float)steps),motion.normalized,state.Left);}
                     }
                     state.Position=p;
@@ -127,6 +175,12 @@ namespace Game.Infrastructure
         public void Stamp(Vector3 position,Vector3 direction,bool left)
         {
             if(!IsTrackableSnow(position))return;
+            if(!patches.ContainsKey(Key(position)))
+            {
+                QueueAround(position,0);
+                if(deferredFootsteps.Count>=2048)deferredFootsteps.Dequeue();
+                deferredFootsteps.Enqueue((position,direction,left));return;
+            }
             direction.y=0;direction.Normalize();var side=Vector3.Cross(Vector3.up,direction);
             var centre=position+side*(left?-.12f:.12f);var key=Key(centre);var affected=false;
             for(var dz=-1;dz<=1;dz++)for(var dx=-1;dx<=1;dx++)

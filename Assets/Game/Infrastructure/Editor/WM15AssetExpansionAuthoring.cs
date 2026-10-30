@@ -54,7 +54,7 @@ namespace Game.Infrastructure.Editor
             var catalog=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(Buildings);
             var baseEntries=catalog.Entries.Where(x=>!x.DefinitionId.EndsWith("_level2",StringComparison.Ordinal)).ToList();
             AddNew(baseEntries,"communal_house","Общинный дом", "clan_house",Rts+"House3.prefab",8,7,10,0);
-            AddNew(baseEntries,"central_storehouse","Общинный склад","food_storage",Rts+"Storehouse.prefab",7,6,0,600);
+            AddNew(baseEntries,"central_storehouse","Склад","food_storage",Rts+"Storehouse.prefab",7,6,0,600);
             AddNew(baseEntries,"crafting_hall","Ремесленный двор","stone_tool_workshop",Rts+"LumberYard1.prefab",7,6,0,0);
             var entries=new List<BuildingPresentationCatalog.Entry>();
             var manifest=new List<string>{"building,level_1,level_2,work_minutes,cost"};
@@ -75,7 +75,7 @@ namespace Game.Infrastructure.Editor
                     source=PrefabUtility.SaveAsPrefabAsset(copy,snapshot);Object.DestroyImmediate(copy);
                 }
                 var one=AuthorBuildingView(source,def,id,1);
-                var title=id=="communal_house"?"Общинный дом":def.DisplayName;
+                var title=id=="communal_house"?"Общинный дом":id=="central_storehouse"?"Склад":def.DisplayName;
                 var baseEntry=Copy(original).Configure(id,title,def.Category,def.Footprint.Width,def.Footprint.Depth,one,def.PlacementMode,def.AllowsOverlap);
                 // Existing world seed scenes still reference this ID; its model is now the hut's second level.
                 if(id=="clan_house")
@@ -177,6 +177,8 @@ namespace Game.Infrastructure.Editor
                 }
             }
             var path=Folder+"/Buildings/"+id+"_L"+level+".prefab";
+            foreach(var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+                renderer.sharedMaterials=renderer.sharedMaterials.Select(CleanMaterial).ToArray();
             var result=PrefabUtility.SaveAsPrefabAsset(root,path);Object.DestroyImmediate(root);return result;
         }
 
@@ -235,13 +237,17 @@ namespace Game.Infrastructure.Editor
         private static Material CleanMaterial(Material source)
         {
             if(source==null)throw new InvalidDataException("Art material missing");
-            if(source.shader!=null&&source.shader.name.StartsWith("Universal Render Pipeline/",StringComparison.Ordinal))return source;
+            if(source.shader!=null && source.shader.name.StartsWith("Universal Render Pipeline/",StringComparison.Ordinal) &&
+               !AssetDatabase.GetAssetPath(source).StartsWith("Assets/RTSToonBuildings/",StringComparison.Ordinal))return source;
             if(materials.TryGetValue(source,out var cached))return cached;
             var path=Folder+"/Materials/"+AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(source))+".mat";
             var result=AssetDatabase.LoadAssetAtPath<Material>(path);
             if(result==null){result=new Material(Shader.Find("Universal Render Pipeline/Lit"));AssetDatabase.CreateAsset(result,path);}
             var texture=source.HasProperty("_BaseMap")?source.GetTexture("_BaseMap"):source.HasProperty("_MainTex")?source.GetTexture("_MainTex"):null;
             result.SetTexture("_BaseMap",texture);result.SetColor("_BaseColor",Color.white);result.SetFloat("_Smoothness",.16f);result.enableInstancing=true;
+            result.SetFloat("_AlphaClip",0);result.SetFloat("_Surface",0);result.SetFloat("_Cull",0);
+            result.DisableKeyword("_ALPHATEST_ON");result.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            result.renderQueue=-1;
             EditorUtility.SetDirty(result);materials[source]=result;return result;
         }
 

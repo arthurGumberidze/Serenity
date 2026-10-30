@@ -2182,3 +2182,34 @@ strategic scheduler still reported tick zero until its first update. The schedul
 calendar tick from the world clock. A paused new world can be saved immediately without simulating an extra
 decision or producing a checkpoint rejected on load. The strategy fixture includes actual training equipment
 resources, and its training scenario explicitly supplies equipment because it has no weapon workshop.
+
+## D-222 — Retest repair: background preparation and physical work approaches (2026-10-30)
+
+New Game begins optional, seed-specific preparation during character customization. Immutable terrain,
+paint, water-boundary samples and population plans are reused by the loader; Unity meshes and objects
+remain main-thread work. Snow geometry is generated with a bounded frame budget. Footsteps that precede
+mesh availability are retained and replayed, including normal movement at x10 game speed. Weather particle
+coverage and count are bounded to avoid filling the close camera with overlapping transparent quads.
+
+Housing assignments cover every eligible player-owned housing definition, then synchronize canonical beds
+and reachable entrance positions. Hidden indoor sleepers shrink their navigation avoidance radius so a
+shared doorway remains usable. Critical energy interrupts manual work; scheduled night rest respects shifts.
+
+Upgrade jobs are available to ordinary eligible residents when no dedicated builder exists. Scaffolding
+appears immediately when an upgrade is requested. Staged construction cannot perform labor before its
+materials arrive. Shore candidate preparation resumes the same candidate across frame-budget boundaries.
+Physical building/resource footprints participate in collision and navigation. Fishing remembers the chosen
+owned pier for the commanded resident and resolves an actual reachable deck stance there.
+
+RTS building materials are cloned into owned content and made opaque, retaining vendor source assets.
+The hut bypasses the generic brown primitive-shelter tint. Central storage remains research gated and is
+named Склад, independently of communal housing. These decisions respond to the user's screenshots/videos;
+full gameplay and Player performance acceptance are recorded separately and must pass before DONE.
+
+Final validation for D-222: 56 domain cases, seven role-command cases and the complete real gameplay
+route passed. Ordinary ungrouped jobs use nearest-available-worker assignment; empty role fallbacks
+remain ungrouped so assigned workers and saved group membership agree. The pier card explicitly handles
+cleared character selection. Windows immutable build and actual Player checks passed. Close-snow Full HD
+running average remains around 31 FPS; targeted snow work does not claim to complete the deferred general
+simulation/population optimization gates. Exact commands, failure diagnoses and measurements are in
+`docs/validation/WM15RetestRepair.md`.

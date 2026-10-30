@@ -276,6 +276,25 @@ namespace Game.Tests
             Assert.That(fixture.Agents[0].CurrentAction, Is.EqualTo(UtilityActionKind.Haul));
         }
 
+        [Test]
+        public void UngroupedConstructionChoosesNearbyResidentAndEmptyRoleOrdersRemainRestorable()
+        {
+            var fixture=CreateFixture(2,20,40,1d);
+            var agents=new Tier1AiAgentRegistry();foreach(var agent in fixture.Agents)agents.Add(agent);
+            fixture.Agents[1].UpdatePosition(new WorldPosition(500,0,0));
+            var commands=new DirectWorkCommandService(fixture.CharacterRegistry,agents,fixture.Scheduler,fixture.Work);
+            commands.EnsureRoleGroups();
+            var build=fixture.Work.CreateDirectJob(WorkJobType.Build,null,
+                WorkTarget.ForEntity(WorkTargetKind.Building,StableEntityId.NewId(),new WorldPosition(501,0,0)),WorkPriority.Normal);
+            commands.ReevaluateQueued();
+            Assert.That(build.AssigneeId,Is.EqualTo(fixture.Characters[1].Id),"A carrier already near a distant site should build it");
+            var second=commands.Issue(WorkJobType.Build,
+                WorkTarget.ForEntity(WorkTargetKind.Building,StableEntityId.NewId(),new WorldPosition(2,0,0)),WorkPriority.Normal);
+            Assert.That(second.AssigneeId,Is.EqualTo(fixture.Characters[0].Id));
+            Assert.That(second.GroupId.HasValue,Is.False,"Fallback workers must not be assigned to a group they do not belong to");
+            Assert.DoesNotThrow(()=>new WorkManager(fixture.CharacterRegistry).RestoreState(fixture.Work.CaptureState()));
+        }
+
         private static Fixture CreateFixture(int agentCount, long sourceUnits, long storageCapacity, double energy)
         {
             var resources = new ResourceCatalog(new[]

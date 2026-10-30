@@ -190,6 +190,7 @@ namespace Game.Infrastructure
             AddLine(T("menu.new_game.explanation"));
             rulerDraft = RulerCreationService.CreateDefault(suggestedSeed, appearanceCatalog);
             rulerRandomSequence = 0;
+            NewGameWorldPreparation.Begin(suggestedSeed);
 
             var editorGrid = new VisualElement { name = "ruler-editor-grid" };
             editorGrid.AddToClassList("serenity-editor-grid");
@@ -211,6 +212,7 @@ namespace Game.Infrastructure
                 { value = rulerDraft.RulerName, name = "ruler-name" };
             dynastyNameField = new TextField(T("menu.new_game.dynasty_name"))
                 { value = rulerDraft.DynastyName, name = "dynasty-name" };
+            rulerSeedField.RegisterValueChangedCallback(change => { if (long.TryParse(change.newValue, out var seed) && seed > 0) NewGameWorldPreparation.Begin(seed); });
             StyleField(rulerSeedField); StyleField(rulerNameField); StyleField(dynastyNameField);
             identityColumn.Add(rulerSeedField); identityColumn.Add(rulerNameField); identityColumn.Add(dynastyNameField);
 
@@ -271,6 +273,7 @@ namespace Game.Infrastructure
         public void StartNewGame(long worldSeed)
         {
             if (worldSeed <= 0) throw new ArgumentOutOfRangeException(nameof(worldSeed));
+            NewGameWorldPreparation.Begin(worldSeed);
             NewGameLaunchState.Request(worldSeed);
             ShowLoading(T("menu.loading.new_game"));
             SceneManager.LoadScene("LocalGameplay", LoadSceneMode.Single);
@@ -279,6 +282,7 @@ namespace Game.Infrastructure
         public void StartNewGame(NewGameConfiguration configuration)
         {
             NewGameLaunchState.Request(configuration ?? throw new ArgumentNullException(nameof(configuration)));
+            NewGameWorldPreparation.Begin(configuration.WorldSeed);
             ShowLoading(T("menu.loading.new_game"));
             SceneManager.LoadScene("LocalGameplay", LoadSceneMode.Single);
         }
@@ -316,6 +320,7 @@ namespace Game.Infrastructure
         {
             if (!long.TryParse(rulerSeedField?.value, out var seed) || seed <= 0) seed = suggestedSeed;
             rulerRandomSequence = 0;
+            NewGameWorldPreparation.Begin(suggestedSeed);
             rulerDraft = RulerCreationService.CreateDefault(seed, appearanceCatalog);
             ApplyDraftToEditor();
         }

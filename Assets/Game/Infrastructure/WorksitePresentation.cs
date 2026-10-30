@@ -146,12 +146,16 @@ namespace Game.Infrastructure
             for(var i=0;i<school.Fish.Length;i++)
             {
                 school.Fish[i].gameObject.SetActive(i<count); if(i>=count)continue;
-                // Staggered neighbours remain over one fish length apart; cells never overlap.
-                var lateral=(i%2==0?-1f:1f)+Mathf.Sin(t*1.3f+i*2f)*.18f;
-                var trailing=(i/2-(school.SchoolSize+1)/4f)*1.25f+(i%2)*.3f;
-                school.Fish[i].position=school.Center+drift+side*lateral+heading*trailing;
-                var desired=heading+side*Mathf.Sin(t+i)*.12f;
-                var turnDelta=root.Clock!=null && root.Clock.IsPaused?0f:Time.unscaledDeltaTime;
+                // Independent centres, radii and periods prevent rows or a shared rectangular formation.
+                var phase=school.Phase+i*2.399963f;
+                var orbit=fishTime*(.12f+.055f*(.5f+.5f*Mathf.Sin(phase*7f)))+phase;
+                var spread=school.Solitary?0f:Mathf.Sqrt((i+.5f)/school.SchoolSize)*4.5f;
+                var centre=school.Center+new Vector3(Mathf.Cos(phase)*spread,-.12f-.12f*Mathf.Sin(phase*3f),Mathf.Sin(phase)*spread);
+                var travelRadius=1.1f+.7f*(.5f+.5f*Mathf.Sin(phase));
+                school.Fish[i].position=centre+new Vector3(Mathf.Sin(orbit)*travelRadius,Mathf.Sin(orbit*.5f)*.04f,
+                    Mathf.Cos(orbit*.83f+phase)*travelRadius);
+                var desired=new Vector3(Mathf.Cos(orbit),0,-.83f*Mathf.Sin(orbit*.83f+phase));
+                var turnDelta=root.Clock!=null && root.Clock.IsPaused?0f:.05f;
                 school.Fish[i].rotation=SmoothSwimmingRotation(school.Fish[i].rotation,desired,turnDelta,
                     school.Solitary?26f:38f);
                 if(school.Animators[i]!=null)school.Animators[i].speed=root.Clock==null || root.Clock.IsPaused?0:1;

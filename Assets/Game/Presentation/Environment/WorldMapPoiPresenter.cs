@@ -79,6 +79,7 @@ namespace Game.Presentation.Environment
                 view.transform.localRotation = Quaternion.Euler(0f, phaseDegrees + index * 360f / count + 180f, 0f);
                 view.transform.localScale *= scale;
                 if (projectToGround != null) view.transform.position = projectToGround(view.transform.position);
+                WorldMapScenery.AddSolidFootprint(view);
                 // Runtime tiled NavMesh baking cannot consume unreadable vendor MeshColliders reliably.
                 foreach (var collider in view.GetComponentsInChildren<MeshCollider>(true)) collider.enabled = false;
             }

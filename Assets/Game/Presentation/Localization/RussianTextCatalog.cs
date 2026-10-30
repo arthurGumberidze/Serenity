@@ -19,7 +19,7 @@ namespace Game.Presentation.Localization
         private static readonly Dictionary<string, string> Entries = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["content.building.communal_house"] = "Общинный дом",
-            ["content.building.central_storehouse"] = "Общинный склад",
+            ["content.building.central_storehouse"] = "Склад",
             ["content.building.crafting_hall"] = "Ремесленный двор",
             ["event.poi_discovery_sacred_grove.discovered.title"] = "Священная роща",
             ["event.poi_discovery_sacred_grove.discovered.description"] = "Среди старых деревьев найдено тихое место для обрядов.",
@@ -851,6 +851,7 @@ namespace Game.Presentation.Localization
             ["enum.BuildingEventKind.Damaged"] = "повреждена", ["enum.BuildingEventKind.Destroyed"] = "разрушена",
             ["enum.BuildingEventKind.Ignited"] = "загорелась", ["enum.BuildingEventKind.Extinguished"] = "потушена",
             ["enum.BuildingEventKind.Captured"] = "захвачена",
+            ["enum.BuildingEventKind.Upgraded"] = "улучшена",
             ["enum.SuccessionReason.MonarchDeath"] = "смерть правителя",
             ["enum.SuccessionReason.DynastyExtinction"] = "пресечение династии",
             ["enum.PrecipitationType.None"] = "нет", ["enum.PrecipitationType.Rain"] = "дождь", ["enum.PrecipitationType.Snow"] = "снег",
