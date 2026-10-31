@@ -1,6 +1,16 @@
 # TASK_GRAPH.md
 
-WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE**. Active work has a dedicated sorted
+UI01 radical gameplay interface redesign (2026-10-31): **DESIGN READY / awaiting user approval**. The optimized
+monthly Ollama build has passed the user's retest and no longer blocks development. UI01 replaces the active
+task with a design-first rearchitecture of the player flow over the existing canonical services. Required
+review artifacts cover screen/navigation structure, HUD information hierarchy, resident/building/settlement
+cards, construction, research, dynasty, events, army, world map and future diplomacy. Full Unity implementation
+must not start until the user approves the specification and prototype. The interactive prototype and sixteen
+1920x1080/1280x720 renders passed static syntax, browser navigation, console-error and horizontal-overflow
+checks. No Unity runtime file changed and no Player build is claimed. General optimization and final polish
+remain deferred; unrelated dirty WM15/terrain/vendor work is preserved.
+
+WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit
 resident discovery is throttled/cached. Ollama automatically leaves CPU capacity for Unity and records request
 duration. Tests passed 60/60 plus a real three-month scene route; monthly simulation cost decreased

@@ -1,5 +1,29 @@
 # DECISIONS.md
 
+## D-218 — UI01 is a world-first presentation architecture with an explicit approval gate (2026-10-31)
+
+The next interface is not a restyle of the current always-visible top HUD, resident strip, navigation rail,
+notifications, onboarding card, inspector and construction dock. The world remains the primary workspace.
+Persistent chrome is limited to a decision-oriented command bar and five top-level sections. Selection opens
+one right context sheet, while the bottom ribbon contains only commands relevant to the current selection or
+mode. Settlement, research, dynasty, events, army and strategic map use focused workspaces. Progressive
+disclosure follows researched content and era rather than exposing future systems at game start.
+
+The authority boundary remains `UIDocument -> GameplayUiController/GameplayUiContext -> existing canonical
+services`. Resident, building, settlement and army cards are read-only projections over stable IDs; every
+mutation continues through the current Work, Building, Production, Research, Dynasty, Event, Military, Combat,
+Campaign and GlobalMap command paths. UI history, tabs, filters and folding are disposable Presentation state.
+The redesign may preserve stable element names and public test hooks during migration, but must not preserve
+the old spatial structure merely for implementation convenience. No per-NPC update, parallel inventory,
+alternate selection authority or new save payload is authorized.
+
+Diplomacy is represented as a clearly unavailable future surface until a canonical diplomacy service exists;
+the UI may not synthesize relation or treaty state. The dependency-free HTML prototype is a review artifact,
+not a runtime implementation. UI02 cannot start until the user approves the world-first shell, five-section
+navigation, context sheet/command ribbon model and Ash and Ember visual density. The required implementation
+floor remains 1280x720 at 125% UI scale, with 1920x1080 as the primary target. Broad optimization and final
+polish occur after functional acceptance except for critical defects.
+
 ## D-217 — Local-map preparation is immutable, cached and resident after bounded warmup (2026-10-29)
 
 Canonical world generation, resources, actors and saves remain authoritative in Domain/Simulation. Runtime

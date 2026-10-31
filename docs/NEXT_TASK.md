@@ -1,6 +1,27 @@
 # NEXT_TASK.md
 
-## Next action — user retest of optimized monthly Ollama mode (2026-10-31)
+## UI01 — review and approve the new interface direction (2026-10-31)
+
+Prepare and present a reviewable interface specification and prototype before changing the production Unity
+UI. The deliverable must redefine navigation and player flows rather than reskin the existing panels. It must
+cover the world-first HUD, resident/building/settlement inspectors, construction, research, dynasty, events,
+army, map and a future diplomacy surface. Every action must map to the existing canonical services; UI state
+remains disposable and may not become another gameplay or save authority.
+
+The design plan is ready at `docs/UI01_INTERFACE_REDESIGN.md`; open
+`docs/ui01/prototype/index.html` to review the interactive states. Confirm or revise: world-first HUD without
+the permanent resident strip, five primary sections, a right context sheet plus contextual bottom command
+ribbon, and the Ash and Ember visual density. Reference PNGs at 1920x1080 and 1280x720 are under the prototype's
+`screenshots` folder.
+
+Do not begin the full Unity implementation until the user explicitly approves the direction. Critical bugs
+discovered during inspection may be fixed with focused checks, but general optimization and final polish stay
+deferred. Preserve the current dirty WM15/terrain/vendor work and keep it out of UI01 commits.
+
+The optimized monthly Ollama build was successfully retested and accepted by the user on 2026-10-31. It no
+longer blocks development.
+
+## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 
 Launch `Builds/NeighbourAiOptimized/Serenity.exe`, select local Ollama and the monthly interval. The game now
 limits local inference threads automatically (8 on the tested 22-thread CPU), bounds completed work history and

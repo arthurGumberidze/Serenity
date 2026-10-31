@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Serenity UI01 Prototype</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="prototype" data-screen="resident">
+    <header class="command-bar">
+      <button class="settlement-mark" data-go="settlement" aria-label="Открыть обзор поселения">
+        <span class="crest">S</span>
+        <span><b>Тихий Брод</b><small><i class="status-dot calm"></i> Поселение спокойно</small></span>
+      </button>
+      <div class="vitals" aria-label="Главные показатели">
+        <button data-go="settlement"><span>Жители</span><b>10</b><small>3 свободны</small></button>
+        <button data-go="settlement"><span>Еда</span><b>126</b><small class="good">12 дней · +8</small></button>
+        <button data-go="settlement"><span>Вода</span><b>84</b><small>8 дней · −2</small></button>
+        <button data-go="settlement"><span>Дерево</span><b>30</b><small>12 доступно</small></button>
+      </div>
+      <button class="calendar" data-go="map"><b>Год 1 · день 18 · 10:24</b><small>Весна · ясно · 11,6 °C</small></button>
+      <button class="attention" data-go="events"><span class="bell">◆</span><span><b>2 важных</b><small>1 решение</small></span></button>
+      <div class="time-controls" aria-label="Скорость времени">
+        <button class="selected" title="Пауза">Ⅱ</button><button>1</button><button>2</button><button>3</button><button>5</button>
+      </div>
+      <button class="icon-button" title="Настройки">⚙</button>
+    </header>
+
+    <nav class="rail" aria-label="Основная навигация">
+      <button data-go="settlement"><span>⌂</span><small>Поселение</small></button>
+      <button data-go="resident"><span>♟</span><small>Люди</small></button>
+      <button data-go="build"><span>⌁</span><small>Строительство</small></button>
+      <button data-go="research"><span>✦</span><small>Знания</small></button>
+      <button data-go="map"><span>◈</span><small>Держава</small></button>
+      <div class="rail-spacer"></div>
+      <button data-go="events"><span>!</span><small>Внимание</small><em>2</em></button>
+      <button data-go="about"><span>?</span><small>О макете</small></button>
+    </nav>
+
+    <main class="world" aria-label="Игровой мир">
+      <div class="haze"></div>
+      <svg class="landscape" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#829064"/><stop offset="1" stop-color="#48583b"/></linearGradient>
+          <linearGradient id="water" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#375c63"/><stop offset="1" stop-color="#17343d"/></linearGradient>
+        </defs>
+        <rect width="1600" height="900" fill="url(#ground)"/>
+        <path d="M0 620 C220 540 320 670 520 610 C790 530 820 690 1100 600 C1300 540 1420 510 1600 570 L1600 900 L0 900Z" fill="url(#water)" opacity=".78"/>
+        <path d="M0 590 C260 500 330 640 530 575 C800 500 860 650 1120 560 C1350 480 1450 480 1600 535" fill="none" stroke="#c4bd8a" stroke-width="16" opacity=".42"/>
+        <g fill="#29402f" opacity=".95">
+          <circle cx="160" cy="190" r="78"/><circle cx="240" cy="150" r="62"/><circle cx="90" cy="280" r="70"/>
+          <circle cx="1370" cy="210" r="90"/><circle cx="1490" cy="150" r="68"/><circle cx="1280" cy="120" r="58"/>
+          <circle cx="1190" cy="710" r="74"/><circle cx="1320" cy="760" r="90"/>
+        </g>
+        <g stroke="#231b15" stroke-width="8" fill="#6d4b2d">
+          <path d="M690 355 l105 -35 85 55 -10 105 -160 0z"/><path d="M718 345 l72 -70 78 88z" fill="#342820"/>
+          <path d="M925 420 l95 -25 62 48 -8 82 -130 0z"/><path d="M942 409 l58 -58 68 70z" fill="#403126"/>
+          <path d="M570 500 l78 -20 50 34 -8 66 -104 0z"/><path d="M581 491 l48 -44 60 53z" fill="#403126"/>
+        </g>
+        <g fill="#d7b06a" stroke="#2b2118" stroke-width="5">
+          <circle cx="800" cy="575" r="12"/><circle cx="842" cy="590" r="12"/><circle cx="885" cy="565" r="12"/><circle cx="935" cy="585" r="12"/>
+        </g>
+        <path d="M745 620 C835 655 945 655 1050 620" fill="none" stroke="#b6a072" stroke-width="20" opacity=".55"/>
+      </svg>
+      <div class="world-label home-label"><b>Тихий Брод</b><small>10 жителей · 3 свободны</small></div>
+      <button class="world-token resident-token selected" data-go="resident" style="left:48%;top:58%"><span>Д</span><small>Доран</small></button>
+      <button class="world-token building-token" data-go="building" style="left:57%;top:43%"><span>⌂</span><small>Каменный дом</small></button>
+      <div class="toast-stack">
+        <button data-go="events"><i class="warning">!</i><span><b>Не хватает воды</b><small>Запаса примерно на 8 дней</small></span></button>
+        <button data-go="research"><i class="info">✦</i><span><b>Исследование идет</b><small>Обработка камня · 62%</small></span></button>
+      </div>
+    </main>
+
+    <section class="workspace" id="workspace" aria-live="polite"></section>
+    <aside class="context-sheet" id="context-sheet" aria-live="polite"></aside>
+
+    <footer class="command-ribbon" id="command-ribbon"></footer>
+    <div class="prototype-note">UI01 · интерактивный макет · клавиши 1–9 переключают состояния</div>
+  </div>
+  <script src="prototype.js"></script>
+</body>
+</html>

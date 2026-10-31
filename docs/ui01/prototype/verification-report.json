@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "report": [
+    {
+      "size": {
+        "width": 1920,
+        "height": 1080,
+        "tag": "desktop"
+      },
+      "statesRendered": 8,
+      "layout": {
+        "viewportWidth": 1920,
+        "bodyWidth": 1920,
+        "prototypeWidth": 1920,
+        "visibleButtons": 25
+      },
+      "errors": []
+    },
+    {
+      "size": {
+        "width": 1280,
+        "height": 720,
+        "tag": "minimum"
+      },
+      "statesRendered": 8,
+      "layout": {
+        "viewportWidth": 1280,
+        "bodyWidth": 1280,
+        "prototypeWidth": 1280,
+        "visibleButtons": 24
+      },
+      "errors": []
+    }
+  ]
+}

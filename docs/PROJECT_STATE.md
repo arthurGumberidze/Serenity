@@ -1,5 +1,25 @@
 # PROJECT_STATE.md
 
+## UI01 interface redesign — DESIGN READY / awaiting user approval (2026-10-31)
+
+The user accepted the optimized monthly Ollama build after a successful local retest. The WM16
+neighbour/Ollama cumulative-stall optimization is no longer a delivery or development blocker. UI01 is now
+the sole active product task: replace the current gameplay interface with a new information architecture and
+user flow while preserving the existing canonical Domain/Simulation services and stable command paths.
+
+UI01 is intentionally design-first. Its current deliverables are a reviewable screen/navigation map,
+component and state specification, service-to-view mapping, and interactive mockups for the HUD, resident,
+building, settlement, construction, research, dynasty, events, army, world map and future diplomacy. Full
+Unity implementation, broad optimization and polish remain behind explicit user approval of the prototype.
+
+The specification is `docs/UI01_INTERFACE_REDESIGN.md`; the dependency-free prototype is
+`docs/ui01/prototype/index.html`. Sixteen reference renders cover eight representative states at 1920x1080
+and 1280x720. Headless Edge exercised rail navigation, keys 1-9, map-to-diplomacy navigation and every major
+screen at both sizes with zero console/page errors and no horizontal overflow. `node --check` and
+`git diff --check` passed. No Unity source, scene, asset or canonical state changed, so no Unity test or Player
+build was run for this approval-only slice. The next action is user review; UI02 implementation must not start
+without explicit approval.
+
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 
 The shared work registry now maintains a sorted active-job index, so assignment, construction, production and
