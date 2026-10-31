@@ -1,5 +1,19 @@
 # DECISIONS.md
 
+## D-233 — UI01 revision 7 is the approved implementation baseline (2026-10-31)
+
+The user approved the revised gameplay-interface direction and requested implementation. UI01 therefore closes
+as a design-only task; UI02 begins the staged Unity rollout from the approved revision 7 prototype and
+`UI01_INTERFACE_REDESIGN.md`. The bottom navigation, group-first resident selection, local mini-map, compact
+world-visible construction drawer, categorized research dependency tree, quiet Black and Gold palette and
+two-role Cyrillic typography are binding presentation requirements unless later user feedback changes them.
+
+Scheduling invariants, design rationale, prototype watermarks and review annotations are not player-facing copy.
+Exclusive profession-group eligibility, urgent interruption/requeue ordering and automatic profession-aligned
+assignment remain Domain behavior and automated-test requirements. Every implementation slice must use canonical
+services and disposable Presentation state, preserve stable command paths and verify 1280×720 at 125% plus
+1920×1080 before replacing its legacy surface.
+
 ## D-232 — Domain invariants are behavior, not permanent player-facing copy (2026-10-31)
 
 The user identified that revision 6 exposed scheduling requirements as if they were final group-screen labels.

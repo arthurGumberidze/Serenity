@@ -1,16 +1,16 @@
 # PROJECT_STATE.md
 
-## UI01 interface redesign — DESIGN READY / awaiting user approval (2026-10-31)
+## UI01 interface redesign — DONE / user approved (2026-10-31)
 
 The user accepted the optimized monthly Ollama build after a successful local retest. The WM16
 neighbour/Ollama cumulative-stall optimization is no longer a delivery or development blocker. UI01 is now
-the sole active product task: replace the current gameplay interface with a new information architecture and
-user flow while preserving the existing canonical Domain/Simulation services and stable command paths.
+complete; UI02 is the sole active product task and begins the staged Unity implementation while preserving the
+existing canonical Domain/Simulation services and stable command paths.
 
-UI01 is intentionally design-first. Its current deliverables are a reviewable screen/navigation map,
+UI01 is intentionally design-first. Its completed deliverables are a reviewable screen/navigation map,
 component and state specification, service-to-view mapping, and interactive mockups for the HUD, resident,
 building, settlement, construction, research, dynasty, events, army, world map and future diplomacy. Full
-Unity implementation, broad optimization and polish remain behind explicit user approval of the prototype.
+Unity implementation, broad optimization and polish remain separate staged tasks beginning with UI02.
 
 The specification is `docs/UI01_INTERFACE_REDESIGN.md`; the dependency-free prototype is
 `docs/ui01/prototype/index.html`. The user's first revision moves the navigation rail to a bottom menu, adds
@@ -22,8 +22,8 @@ and turns research into a categorized dependency tree. Reference renders cover t
 filtering, compact drawer bounds, keys 1-9, map-to-diplomacy navigation and every major
 screen at both sizes with zero console/page errors and no horizontal overflow. `node --check` and
 `git diff --check` passed. No Unity source, scene, asset or canonical state changed, so no Unity test or Player
-build was run for this approval-only slice. The next action is user review; UI02 implementation must not start
-without explicit approval.
+build was run for this design-only slice. The user approved revision 7 and explicitly requested implementation;
+UI02 is now the next unblocked task and must begin in a separate chat from the clean UI01 handoff.
 
 The fourth revision adds a required gameplay backlog contract behind the group UI. Work eligibility is exclusive
 to the profession-aligned group even under urgent priority; urgent work interrupts only eligible group members
@@ -49,7 +49,9 @@ screen. Exclusive group eligibility, urgent interruption and requeue ordering re
 contracts only. The visible group screen now contains profession, allowed work, shift, priority, commander,
 membership and edit controls; the resident card contains profession, group, shift and queue. The late-game scale
 annotation was replaced with a live-style group summary, and the diplomacy placeholder now uses player-facing
-discovery language. Browser verification explicitly fails if the removed internal phrases return.
+discovery language. Browser verification explicitly fails if the removed internal phrases return. This is the
+approved UI01 baseline; implementation notes, invariants and prototype watermarks must never be rendered as
+literal player-facing copy.
 
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 

@@ -1,35 +1,40 @@
 # NEXT_TASK.md
 
-## UI01 — review and approve the new interface direction (2026-10-31)
+## UI02 — implement the approved interface foundation (2026-10-31)
 
-Prepare and present a reviewable interface specification and prototype before changing the production Unity
-UI. The deliverable must redefine navigation and player flows rather than reskin the existing panels. It must
-cover the world-first HUD, resident/building/settlement inspectors, construction, research, dynasty, events,
-army, map and a future diplomacy surface. Every action must map to the existing canonical services; UI state
-remains disposable and may not become another gameplay or save authority.
+UI01 revision 7 is approved and complete. Implement the first Unity slice from
+`docs/UI01_INTERFACE_REDESIGN.md` and `docs/UI01_HANDOFF.md`: design tokens/theme resources, the bottom
+navigation shell and route model, the Attention entry point, compatible stable element names, and the approved
+typography asset strategy. Start from the current committed runtime UI; UI01 intentionally changed no Unity
+runtime source.
 
-The design plan is ready at `docs/UI01_INTERFACE_REDESIGN.md`; open
-`docs/ui01/prototype/index.html` to review the interactive states. Confirm or revise: world-first HUD with a
-group-first member picker designed for 1000–2000 residents, the revised bottom navigation, the local mini-map,
-a world-visible compact construction drawer, a categorized dependency-tree research map, a right context sheet
-plus contextual command ribbon, and the quiet Black and Gold visual density. The bottom navigation now has direct worker
-group and military entries, while Realm combines the strategic map and diplomacy. Reference PNGs at 1920x1080
-and 1280x720 are under the prototype's `screenshots` folder.
+Keep every existing canonical command path working and keep navigation/layout state disposable. Do not create a
+second gameplay authority, cache canonical mutable collections in the UI, or add per-NPC update loops. Internal
+scheduling rules, design rationale, prototype watermarks and verification notes must not become visible labels.
+Profession-group exclusivity, urgent interruption/requeue semantics and automatic profession assignment remain
+future Domain/test work for UI04, not presentation text for UI02.
 
-The approved implementation backlog must also enforce profession-aligned work groups: no cross-group fallback,
-including urgent work; urgent work interrupts only eligible members and requeues their prior work second. Starting
-residents and every new adult/recruit auto-join the group matching their profession, while the player can create,
-delete and edit groups and membership. Profession and group display names/definition keys must stay aligned.
+Limit this slice to the foundation. Resident/group drill-down and selection belong to UI03/UI04; the compact
+construction drawer and categorized research tree belong to UI04; dynasty/events/army belong to UI05; realm map
+and diplomacy placeholder belong to UI06. Preserve the current dirty WM15/terrain/vendor work and keep it out of
+the UI02 commit.
 
-The structure is approved; revision 7 is awaiting the user's visual review of the quieter one-accent palette,
-two-role Cyrillic typography and player-facing copy cleanup. Internal scheduling/design requirements must remain
-behavior and tests, not permanent gameplay labels. Do not begin the full Unity implementation until the user
-approves this final visual pass. Critical bugs
-discovered during inspection may be fixed with focused checks, but general optimization and final polish stay
-deferred. Preserve the current dirty WM15/terrain/vendor work and keep it out of UI01 commits.
+Definition of Done:
+
+1. The approved quiet Black and Gold tokens and two-role typography are implemented without admitting font files
+   whose redistribution terms have not been reviewed.
+2. The bottom shell exposes the approved primary routes and Attention entry point while preserving stable element
+   names or explicit compatibility aliases for existing tests and command paths.
+3. Focused EditMode and PlayMode UI tests pass; the new shell is visually captured and reviewed at 1920×1080 and
+   1280×720 with 125% UI scale.
+4. A Windows Development build succeeds and a visible Player smoke confirms navigation/input without obscuring
+   the world unexpectedly.
+5. `PROJECT_STATE.md`, `TASK_GRAPH.md`, `DECISIONS.md` and `NEXT_TASK.md` record exact commands/results; commit only
+   the scoped files with an `UI02:` prefix.
 
 The optimized monthly Ollama build was successfully retested and accepted by the user on 2026-10-31. It no
-longer blocks development.
+longer blocks development. UI02 should be performed in the separate implementation chat created from this
+handoff; this UI01 chat stops at the approved design boundary.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 

@@ -1,11 +1,11 @@
 # TASK_GRAPH.md
 
-UI01 radical gameplay interface redesign (2026-10-31): **DESIGN READY / awaiting user approval**. The optimized
+UI01 radical gameplay interface redesign (2026-10-31): **DONE / user approved**. The optimized
 monthly Ollama build has passed the user's retest and no longer blocks development. UI01 replaces the active
 task with a design-first rearchitecture of the player flow over the existing canonical services. Required
 review artifacts cover screen/navigation structure, HUD information hierarchy, resident/building/settlement
-cards, construction, research, dynasty, events, army, world map and future diplomacy. Full Unity implementation
-must not start until the user approves the specification and prototype. The interactive prototype and twenty
+cards, construction, research, dynasty, events, army, world map and future diplomacy. The user approved the
+specification and revision 7 prototype. The interactive prototype and twenty
 1920x1080/1280x720 renders passed static syntax, browser navigation, console-error and horizontal-overflow
 checks. No Unity runtime file changed and no Player build is claimed. General optimization and final polish
 remain deferred; unrelated dirty WM15/terrain/vendor work is preserved. User revision 1 moves navigation to
@@ -22,15 +22,16 @@ starting and new adult/recruited residents auto-join by profession, while the pl
 control. Profession and group names remain aligned and no resident may remain ungrouped.
 User revision 5 approves the information architecture but pauses implementation for a final color review. The
 prototype now uses a stronger Black and Gold shell while preserving natural world colors and semantic success,
-warning and danger colors. UI02 must not start until the user accepts this palette.
+warning and danger colors. At that revision, UI02 remained gated on palette acceptance.
 User revision 6 quiets the palette and defines typography: normal UI uses near-black, bone, gray-beige and one
 desaturated gold accent; research categories no longer form a color rainbow; semantic hues are small and muted.
 Segoe UI represents dense Cyrillic UI text and Georgia is limited to large headings. Twenty regenerated renders,
-interaction checks and the prototype contrast targets pass. UI02 remains blocked for user visual acceptance.
+interaction checks and the prototype contrast targets pass. At that revision, UI02 remained gated on final
+visual acceptance.
 User revision 7 removes internal rules and design rationale from player-facing copy. Exclusive scheduling,
 urgent-group ownership and requeue ordering remain Domain behavior/tests, while the visible group workspace shows
 only actionable settings and state. Browser verification now rejects leakage of those internal phrases. UI02
-remains blocked for user visual acceptance.
+is the next unblocked implementation task and receives the approved UI01 baseline through a separate chat.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit
