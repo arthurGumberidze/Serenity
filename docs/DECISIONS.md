@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## D-236 — UI07 acceptance state remains disposable and viewport-bound (2026-10-31)
+
+UI07 may adapt layout, focus, wording and presentation geometry, but it does not own selection, world, fog,
+travel, pause, Save/Load, campaign outcome or any simulation mutation. The strategic camera/IMGUI projection is
+therefore clipped to the actual UI Toolkit Realm map canvas through disposable normalized viewport state; the
+canonical connected world, discovery and route services remain unchanged. Stable route/element names continue
+to be the compatibility boundary.
+
+Keyboard focus enters the visible confirmation/outcome scope, disabled actions remain visibly and textually
+distinct, scrollbars remain discoverable and compact labels may expose complete content through tooltips. Victory
+acknowledgement only dismisses Presentation while canonical simulation continues; defeat actions invoke existing
+load/main-menu paths. Compact bottom-navigation density, the scrolling ruler editor, four-column route summary and
+long external-AI settings explanation remain reversible user-review choices, not new persisted configuration.
+UI08 owns later integration/qualification and must not reinterpret this polish as diplomacy or alternate state.
+
 ## D-235 — UI05 people-and-risk workspaces are disposable canonical projections (2026-10-31)
 
 UI05 does not introduce a second family tree, event queue, army roster, supply ledger or combat model. People,

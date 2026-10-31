@@ -29,11 +29,13 @@ namespace Game.Presentation.World
         private CinemachineBrain brain;
         private bool savedBrainEnabled;
         public static Rect MapViewport => new Rect(0.20f, 0.17f, 0.56f, 0.70f);
+        private Rect currentViewport = MapViewport;
         private GUIStyle labelStyle;
         private ProductionService production;
         private DirectWorkCommandService directWork;
         private StableEntityId? selectedResource;
         private string resourceCommandMessage;
+        private bool applicationQuitting;
         private TiledWorldDefinition tiledWorld;
         private GlobalMapService globalMap;
         private Action<bool> setStrategicOverview;
@@ -47,8 +49,27 @@ namespace Game.Presentation.World
         public bool IsActive { get; private set; }
         public bool LegacyControlsVisible { get; private set; } = true;
         public StableEntityId? SelectedResourceId => selectedResource;
+        public Rect CurrentViewport => currentViewport;
 
         public void SetLegacyControlsVisible(bool visible) => LegacyControlsVisible = visible;
+
+        /// <summary>
+        /// Keeps the late IMGUI terrain projection inside the UI Toolkit map canvas. The viewport is
+        /// disposable presentation state; it cannot change discovery, travel or world identity.
+        /// </summary>
+        public void SetViewport(Rect normalizedViewport)
+        {
+            if (normalizedViewport.width <= 0.05f || normalizedViewport.height <= 0.05f)
+                throw new ArgumentOutOfRangeException(nameof(normalizedViewport));
+            currentViewport = new Rect(
+                Mathf.Clamp01(normalizedViewport.x),
+                Mathf.Clamp01(normalizedViewport.y),
+                Mathf.Clamp(normalizedViewport.width, 0.05f, 1f),
+                Mathf.Clamp(normalizedViewport.height, 0.05f, 1f));
+            currentViewport.width = Mathf.Min(currentViewport.width, 1f - currentViewport.x);
+            currentViewport.height = Mathf.Min(currentViewport.height, 1f - currentViewport.y);
+            if (IsActive && worldCamera != null) worldCamera.rect = currentViewport;
+        }
 
         public void ConfigureResourceCommands(DirectWorkCommandService commands) =>
             directWork = commands ?? throw new ArgumentNullException(nameof(commands));
@@ -106,7 +127,7 @@ namespace Game.Presentation.World
             savedBrainEnabled = brain != null && brain.enabled;
             if (brain != null) brain.enabled = false;
             setStrategicOverview?.Invoke(true);
-            worldCamera.rect = MapViewport;
+            worldCamera.rect = currentViewport;
             worldCamera.orthographic = true;
             var width = tiledWorld?.WidthMeters ?? ConnectedWorldContract.SizeMeters;
             var depth = tiledWorld?.DepthMeters ?? ConnectedWorldContract.SizeMeters;
@@ -262,7 +283,12 @@ namespace Game.Presentation.World
             RussianTextCatalog.TryGet("content.location." + location.Id.Value, out var localized)
                 ? localized : location.Name;
 
-        private void OnDisable() => Exit();
+        private void OnApplicationQuit() => applicationQuitting = true;
+
+        private void OnDisable()
+        {
+            if (!applicationQuitting) Exit();
+        }
 
         private void OnDestroy()
         {

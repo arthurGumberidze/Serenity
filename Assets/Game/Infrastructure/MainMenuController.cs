@@ -138,6 +138,7 @@ namespace Game.Infrastructure
             UI04PlayerSmokeController.LaunchFromMenuIfRequested(this);
             UI05PlayerSmokeController.LaunchFromMenuIfRequested(this);
             UI06PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            UI07PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -183,6 +184,7 @@ namespace Game.Infrastructure
                 SetStatus(corrupt.Length == 0 ? T("menu.continue.none") :
                     F("menu.continue.corrupt", string.Join(", ", corrupt)));
             }
+            FocusWhenReady(ContinueAvailable ? "continue-button" : "new-game-button");
         }
 
         public void OpenNewGame()
@@ -235,7 +237,7 @@ namespace Game.Infrastructure
             previewImage.style.height = 348;
             previewImage.AddToClassList("serenity-preview");
             previewCard.Add(previewImage);
-            previewStatus = new Label("Подготовка внешности…") { name = "ruler-preview-status" };
+            previewStatus = new Label("Подготовка портрета…") { name = "ruler-preview-status" };
             previewCard.Add(previewStatus);
             var previewControls = ButtonRow();
             previewControls.Add(ActionButton("↶", () => RotatePreview(-20f), "preview-rotate-left"));
@@ -254,7 +256,7 @@ namespace Game.Infrastructure
             CreateRulerPreview(previewImage);
             RefreshAppearanceParts();
             AddMuted(appearanceColumn,
-                "Все доступные совместимые параметры применяются к UMA в предпросмотре. Одежда пока ограничена одним проверенным комплектом.");
+                "Выберите черты правителя. Внешность не меняет правила новой партии.");
             content.Add(editorGrid);
             var row = ButtonRow();
             row.Add(ActionButton(T("menu.new_game.randomize"), RandomizeRuler, "randomize-ruler-button"));
@@ -267,12 +269,14 @@ namespace Game.Infrastructure
             row.Add(startButton);
             row.Add(ActionButton(T("menu.back"), ShowMain, "back-button"));
             content.Add(row);
+            FocusWhenReady("ruler-name");
         }
 
         public void SetUiScale(float value)
         {
             if (panelSettings == null) throw new InvalidOperationException("Main menu UI is not initialized.");
             panelSettings.scale = Mathf.Clamp(value, 1f, 1.5f);
+            ApplyMenuResponsiveLayout();
         }
 
         public void StartNewGame(long worldSeed)
@@ -394,6 +398,9 @@ namespace Game.Infrastructure
                 }
             }
             content.Add(ActionButton(T("menu.back"), ShowMain, "back-button"));
+            var firstLoad = content.Query<Button>().ToList()
+                .FirstOrDefault(button => button.name.StartsWith("load-slot-", StringComparison.Ordinal));
+            FocusWhenReady(firstLoad?.name ?? "back-button");
         }
 
         public void ContinueGame()
@@ -468,6 +475,7 @@ namespace Game.Infrastructure
             row.Add(ActionButton(T("menu.exit"), ConfirmExit, "confirm-exit-button"));
             row.Add(ActionButton(T("common.cancel"), CloseModal, "cancel-exit-button"));
             modal.Add(row);
+            FocusWhenReady("cancel-exit-button");
         }
 
         public void ConfirmExit()
@@ -490,7 +498,8 @@ namespace Game.Infrastructure
             var resolutions = new[] { "1280 × 720", "1600 × 900", "1920 × 1080", "2560 × 1440" }.ToList();
             var currentResolution = workingSettings.resolutionWidth + " × " + workingSettings.resolutionHeight;
             if (!resolutions.Contains(currentResolution)) resolutions.Add(currentResolution);
-            var resolution = new DropdownField(T("menu.settings.resolution"), resolutions, currentResolution);
+            var resolution = new DropdownField(T("menu.settings.resolution"), resolutions, currentResolution)
+                { name = "settings-resolution" };
             resolution.RegisterValueChangedCallback(change =>
             {
                 var parts = change.newValue.Split('×');
@@ -501,7 +510,8 @@ namespace Game.Infrastructure
 
             var windowModes = new List<string> { T("menu.settings.windowed"), T("menu.settings.fullscreen") };
             var windowMode = new DropdownField(T("menu.settings.window_mode"), windowModes,
-                (FullScreenMode)workingSettings.fullScreenMode == FullScreenMode.Windowed ? 0 : 1);
+                (FullScreenMode)workingSettings.fullScreenMode == FullScreenMode.Windowed ? 0 : 1)
+                { name = "settings-window-mode" };
             windowMode.RegisterValueChangedCallback(change => workingSettings.fullScreenMode =
                 change.newValue == windowModes[0] ? (int)FullScreenMode.Windowed : (int)FullScreenMode.FullScreenWindow);
             StyleField(windowMode); content.Add(windowMode);
@@ -509,7 +519,8 @@ namespace Game.Infrastructure
             var qualityNames = Enumerable.Range(0, Math.Max(1, QualitySettings.names.Length))
                 .Select(QualityName).ToList();
             workingSettings.qualityLevel = Mathf.Clamp(workingSettings.qualityLevel, 0, qualityNames.Count - 1);
-            var quality = new DropdownField(T("menu.settings.quality"), qualityNames, workingSettings.qualityLevel);
+            var quality = new DropdownField(T("menu.settings.quality"), qualityNames, workingSettings.qualityLevel)
+                { name = "settings-quality" };
             quality.RegisterValueChangedCallback(change => workingSettings.qualityLevel = qualityNames.IndexOf(change.newValue));
             StyleField(quality); content.Add(quality);
 
@@ -554,6 +565,7 @@ namespace Game.Infrastructure
                 "reset-settings-button"));
             row.Add(ActionButton(T("common.cancel"), ShowMain, "cancel-settings-button"));
             content.Add(row);
+            FocusWhenReady("settings-resolution");
         }
 
         private void AddKeyDropdown(string label, string current, Action<string> set)
@@ -593,14 +605,14 @@ namespace Game.Infrastructure
         }
 
         private static string ProfileLabel(AppearanceProfileDefinition profile) =>
-            profile.Sex == CharacterSex.Male ? "Человек — мужчина" : "Человек — женщина";
+            profile.Sex == CharacterSex.Male ? "Мужчина" : "Женщина";
 
         private void RefreshAppearanceParts()
         {
             if (appearanceParts == null) return;
             appearanceParts.Clear();
             var profile = SelectedProfile();
-            AddLine(appearanceParts, "Редактор внешности — значения 0–100% применяются без скрытых генетических параметров.");
+            AddLine(appearanceParts, "Настройте черты лица и телосложение правителя.");
             AddAppearanceDropdown("Тон кожи", "appearance-skin", profile.Skins, rulerDraft.Appearance.SkinId,
                 value => SetAppearanceOption("skin", value));
             AddAppearanceDropdown("Причёска", "appearance-hair", profile.Hairs, rulerDraft.Appearance.HairId,
@@ -614,7 +626,7 @@ namespace Game.Infrastructure
                 rulerDraft.Appearance.EyeColorId, value => SetAppearanceOption("eye_color", value));
             AddAppearanceDropdown("Возраст", "appearance-age", profile.Ages, rulerDraft.Appearance.AgeId,
                 value => SetAppearanceOption("age", value));
-            var clothing = new DropdownField("Одежда", new List<string> { "Проверенный совместимый комплект" }, 0)
+            var clothing = new DropdownField("Одежда", new List<string> { "Походная одежда" }, 0)
                 { name = "appearance-clothing" };
             clothing.SetEnabled(false); StyleField(clothing); appearanceParts.Add(clothing);
             foreach (var parameter in profile.Parameters)
@@ -824,7 +836,7 @@ namespace Game.Infrastructure
             root.style.alignItems = Align.Center;
             root.style.justifyContent = Justify.Center;
             SerenityUiDesign.ApplyRoot(root, "serenity-main-menu");
-            root.RegisterCallback<GeometryChangedEvent>(_ => ApplySafeArea());
+            root.RegisterCallback<GeometryChangedEvent>(_ => ApplyMenuResponsiveLayout());
 
             var atmosphere = new VisualElement { name = "menu-atmosphere" };
             atmosphere.style.position = Position.Absolute;
@@ -861,7 +873,7 @@ namespace Game.Infrastructure
             modal.AddToClassList(SerenityUiDesign.ModalClass);
             modal.style.display = DisplayStyle.None;
             root.Add(modal);
-            ApplySafeArea();
+            ApplyMenuResponsiveLayout();
         }
 
         private void RefreshSlots() => latestUsableSlot = saveCatalog.LatestUsableSlot();
@@ -937,6 +949,7 @@ namespace Game.Infrastructure
         private static Button ActionButton(string text, Action action, string name = null)
         {
             var button = new Button(action) { text = text, name = name ?? string.Empty };
+            button.tabIndex = 0;
             button.style.marginRight = 8;
             button.style.marginBottom = 8;
             SerenityUiDesign.StyleButton(button);
@@ -971,6 +984,27 @@ namespace Game.Infrastructure
             content.style.maxWidth = new Length(94, LengthUnit.Percent);
             content.style.maxHeight = new Length(90, LengthUnit.Percent);
             content.EnableInClassList("serenity-menu-editor", view == MainMenuView.NewGame);
+            ApplyMenuResponsiveLayout();
+        }
+
+        private void FocusWhenReady(string elementName)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(elementName)) return;
+            root.schedule.Execute(() =>
+            {
+                var target = root.Q<VisualElement>(elementName);
+                if (target != null && target.focusable && target.resolvedStyle.display != DisplayStyle.None)
+                    target.Focus();
+            }).ExecuteLater(1);
+        }
+
+        private void ApplyMenuResponsiveLayout()
+        {
+            ApplySafeArea();
+            if (root == null) return;
+            var width = root.resolvedStyle.width;
+            var compact = !float.IsNaN(width) && width > 0f && width < 1380f;
+            root.EnableInClassList("serenity-compact", compact);
         }
 
         private void ApplySafeArea()

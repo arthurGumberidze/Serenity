@@ -23,6 +23,7 @@ using Game.Presentation.Input;
 using Game.Presentation.Interaction;
 using Game.Presentation.Localization;
 using Game.Presentation.Resources;
+using Game.Presentation.World;
 using Game.Simulation.Control;
 using Game.Simulation.Military;
 using Game.Simulation.Production;
@@ -58,6 +59,7 @@ namespace Game.Presentation.UI
         private GameplayUiContext context;
         private WorldPointerRaycaster raycaster;
         private LocalGameplayInputSource input;
+        private P102StrategicWorldView strategicWorldView;
         private UIDocument document;
         private PanelSettings panelSettings;
         private VisualElement root;
@@ -82,6 +84,7 @@ namespace Game.Presentation.UI
         private VisualElement statusBar;
         private VisualElement tpsHud;
         private VisualElement modal;
+        private VisualElement campaignOutcome;
         private VisualElement onboardingCard;
         private VisualElement localMiniMap;
         private VisualElement localMiniMapGrid;
@@ -101,6 +104,7 @@ namespace Game.Presentation.UI
         private Label statusLabel;
         private Label tpsLabel;
         private Label gameOverLabel;
+        private Label campaignOutcomeDetail;
         private readonly List<string> notificationFeed = new List<string>();
         private sealed class NotificationTarget
         {
@@ -143,6 +147,8 @@ namespace Game.Presentation.UI
         private bool suppressNotificationCaptureOnce;
         private bool navigationExpanded;
         private bool resourcesExpanded;
+        private bool compactLayout;
+        private bool campaignOutcomeAcknowledged;
         private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
         private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
         private string peopleSearch = string.Empty;
@@ -218,6 +224,7 @@ namespace Game.Presentation.UI
             context = gameplayContext ?? throw new ArgumentNullException(nameof(gameplayContext));
             raycaster = worldRaycaster ?? throw new ArgumentNullException(nameof(worldRaycaster));
             input = inputSource ?? throw new ArgumentNullException(nameof(inputSource));
+            strategicWorldView = GetComponent<P102StrategicWorldView>();
             CreateDocument();
             BuildLayout();
             Subscribe();
@@ -355,6 +362,7 @@ namespace Game.Presentation.UI
         public void RefreshAfterStateRebind()
         {
             seenWarWarnings.Clear();
+            campaignOutcomeAcknowledged = false;
             CloseContextMenu();
             RefreshNow();
             RepaintTextTree();
@@ -383,9 +391,10 @@ namespace Game.Presentation.UI
             AddTitle(modal, F("ui.modal.load.title", index));
             AddLine(modal, T("ui.modal.load.body"));
             var row = Row();
-            row.Add(ActionButton(T("common.load"), () => ConfirmLoadSlot(index)));
-            row.Add(ActionButton(T("common.cancel"), CloseModal));
+            row.Add(ActionButton(T("common.load"), () => ConfirmLoadSlot(index), "confirm-load-slot-" + index));
+            row.Add(ActionButton(T("common.cancel"), CloseModal, "cancel-load-slot-" + index));
             modal.Add(row);
+            FocusWhenReady("cancel-load-slot-" + index, modal);
         }
 
         public void ConfirmLoadSlot(int index) => TryCommand(() =>
@@ -407,8 +416,9 @@ namespace Game.Presentation.UI
             AddLine(modal, F("ui.modal.new_game.body", worldSeed));
             var row = Row();
             row.Add(ActionButton(T("ui.action.new_game"), () => ConfirmNewGame(worldSeed), "confirm-new-game"));
-            row.Add(ActionButton(T("common.cancel"), CloseModal));
+            row.Add(ActionButton(T("common.cancel"), CloseModal, "cancel-new-game"));
             modal.Add(row);
+            FocusWhenReady("cancel-new-game", modal);
         }
 
         public void ConfirmNewGame(long worldSeed)
@@ -435,6 +445,7 @@ namespace Game.Presentation.UI
                 "confirm-main-menu"));
             row.Add(ActionButton(T("common.cancel"), CloseModal, "cancel-main-menu"));
             modal.Add(row);
+            FocusWhenReady("cancel-main-menu", modal);
         }
 
         public void ConfirmReturnToMainMenu()
@@ -450,6 +461,12 @@ namespace Game.Presentation.UI
             if (!initialized) return;
             if (ContextMenuVisible && Mouse.current?.middleButton.wasPressedThisFrame == true) CloseContextMenu();
             var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
+                modal != null && modal.resolvedStyle.display != DisplayStyle.None)
+            {
+                CloseModal();
+                return;
+            }
             if (keyboard != null && keyboard.f10Key.wasPressedThisFrame)
                 SetDeveloperUiVisible(!DeveloperUiVisible);
             HandleWorkGroupHotkeys(keyboard);
@@ -506,8 +523,10 @@ namespace Game.Presentation.UI
 
         private void OnPauseToggle()
         {
-            if (!DeveloperUiVisible && !IsTextInputFocused()) context.SetPaused(!context.Clock().IsPaused);
+            if (!DeveloperUiVisible && !IsTextInputFocused()) TogglePause();
         }
+
+        public void TogglePause() => context.SetPaused(!context.Clock().IsPaused);
 
         private void OnSlower()
         {
@@ -1347,14 +1366,16 @@ namespace Game.Presentation.UI
             alertLabel.tooltip = "Непрочитанные уведомления";
             attentionButton.Add(alertLabel);
             topBar.Add(attentionButton);
-            var pause = ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button");
+            var pause = ActionButton(T("ui.action.pause"), TogglePause, "pause-button");
             pause.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+            pause.tooltip = "Пауза или продолжение симуляции · Space";
             topBar.Add(pause);
             foreach (var speed in Speeds)
             {
                 var captured = speed;
                 var speedButton = ActionButton("x" + (int)speed, () => context.SetSpeed(captured), "speed-" + (int)speed);
                 speedButton.AddToClassList("serenity-time-button");
+                speedButton.tooltip = "Скорость симуляции x" + (int)speed;
                 topBar.Add(speedButton);
             }
             var settings = ActionButton(string.Empty, OpenSettings, "settings-button");
@@ -1543,20 +1564,25 @@ namespace Game.Presentation.UI
             tpsHud.style.display = DisplayStyle.None;
             root.Add(tpsHud);
 
-            gameOverLabel = new Label();
-            gameOverLabel.name = "game-over";
-            gameOverLabel.style.position = Position.Absolute;
-            gameOverLabel.style.left = new Length(28, LengthUnit.Percent);
-            gameOverLabel.style.right = new Length(28, LengthUnit.Percent);
-            gameOverLabel.style.top = new Length(38, LengthUnit.Percent);
-            gameOverLabel.style.paddingTop = 24; gameOverLabel.style.paddingBottom = 24;
-            gameOverLabel.style.backgroundColor = new Color(0.24f, 0.075f, 0.045f, 0.97f);
-            gameOverLabel.style.borderLeftColor = SerenityUiDesign.Danger;
-            gameOverLabel.style.borderLeftWidth = 4;
+            campaignOutcome = Panel("campaign-outcome");
+            campaignOutcome.AddToClassList("serenity-campaign-outcome");
+            campaignOutcome.style.position = Position.Absolute;
+            campaignOutcome.style.left = new Length(28, LengthUnit.Percent);
+            campaignOutcome.style.right = new Length(28, LengthUnit.Percent);
+            campaignOutcome.style.top = new Length(34, LengthUnit.Percent);
+            campaignOutcome.style.paddingLeft = 22; campaignOutcome.style.paddingRight = 22;
+            campaignOutcome.style.paddingTop = 18; campaignOutcome.style.paddingBottom = 18;
+            campaignOutcome.style.display = DisplayStyle.None;
+            campaignOutcome.pickingMode = PickingMode.Position;
+            gameOverLabel = new Label { name = "game-over" };
+            gameOverLabel.AddToClassList(SerenityUiDesign.TitleClass);
             gameOverLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            gameOverLabel.style.fontSize = 24;
-            gameOverLabel.style.display = DisplayStyle.None;
-            root.Add(gameOverLabel);
+            campaignOutcomeDetail = new Label { name = "campaign-outcome-detail" };
+            campaignOutcomeDetail.AddToClassList(SerenityUiDesign.BodyClass);
+            campaignOutcomeDetail.style.unityTextAlign = TextAnchor.MiddleCenter;
+            campaignOutcome.Add(gameOverLabel);
+            campaignOutcome.Add(campaignOutcomeDetail);
+            root.Add(campaignOutcome);
 
             modal = Panel("confirmation-modal");
             modal.style.position = Position.Absolute;
@@ -1659,6 +1685,7 @@ namespace Game.Presentation.UI
             realmMapOverlay.style.bottom = 194;
             realmMapOverlay.style.overflow = Overflow.Hidden;
             realmMapOverlay.pickingMode = PickingMode.Ignore;
+            realmMapOverlay.RegisterCallback<GeometryChangedEvent>(_ => UpdateStrategicViewport());
             realmWorkspace.Add(realmMapOverlay);
 
             realmLayers = new ScrollView(ScrollViewMode.Vertical) { name = "realm-layers" };
@@ -2082,8 +2109,10 @@ namespace Game.Presentation.UI
             weatherLabel.text = E(weather.Season) + " · " + E(weather.Type) + " · " + RussianTextCatalog.Decimal(weather.TemperatureCelsius) + " °C";
             modeLabel.text = T(context.GlobalMap.Mode == GameWorldMode.Local ? "ui.hud.mode.local" : "ui.hud.mode.global");
             var pendingEvents = context.Events?.PendingPlayerEvents.Count ?? 0;
-            alertLabel.text = F("ui.hud.alerts", notificationFeed.Count) +
-                              (pendingEvents > 0 ? F("ui.hud.pending_events", pendingEvents) : string.Empty);
+            var alertText = F("ui.hud.alerts", notificationFeed.Count) +
+                            (pendingEvents > 0 ? F("ui.hud.pending_events", pendingEvents) : string.Empty);
+            alertLabel.text = pendingEvents > 0 ? pendingEvents.ToString() : notificationFeed.Count.ToString();
+            alertLabel.tooltip = alertText;
             var pauseButton = topBar.Q<Button>("pause-button");
             pauseButton.text = T(clock.IsPaused ? "ui.action.resume" : "ui.action.pause");
             SerenityUiDesign.SetSelected(pauseButton, clock.IsPaused);
@@ -3400,9 +3429,11 @@ namespace Game.Presentation.UI
                 AddSection(card, F("ui.save.slot", slot.Index));
                 AddLine(card, slot.Exists ? slot.Detail : T("ui.save.empty_slot"));
                 var row = Row();
-                row.Add(ActionButton(T("common.save"), () => SaveSlot(slot.Index)));
-                var load = ActionButton(T("common.load"), () => RequestLoadSlot(slot.Index));
+                row.Add(ActionButton(T("common.save"), () => SaveSlot(slot.Index), "save-slot-" + slot.Index));
+                var load = ActionButton(T("common.load"), () => RequestLoadSlot(slot.Index), "load-slot-" + slot.Index);
                 load.SetEnabled(slot.Exists && !slot.IsCorrupt);
+                if (!slot.Exists) load.tooltip = T("ui.save.empty_slot");
+                else if (slot.IsCorrupt) load.tooltip = T("ui.save.corrupt_slot");
                 row.Add(load);
                 card.Add(row);
                 if (slot.IsCorrupt) AddMuted(card, T("ui.save.corrupt_slot"));
@@ -3600,7 +3631,7 @@ namespace Game.Presentation.UI
             actions.style.right = 8;
             actions.style.bottom = 2;
             actions.style.flexDirection = FlexDirection.Row;
-            actions.style.height = 36;
+            actions.style.height = 44;
             actions.style.overflow = Overflow.Hidden;
             actions.Add(RouteActionButton("Отправить", IssueSelectedMapTravel, "realm-travel"));
             actions.Add(RouteActionButton("Войти", EnterSelectedMapLocation, "realm-enter-selected"));
@@ -3613,7 +3644,7 @@ namespace Game.Presentation.UI
             var button = ActionButton(label, action, name);
             button.style.minWidth = 0;
             button.style.width = 96;
-            button.style.height = 32;
+            button.style.height = 40;
             button.style.fontSize = 11;
             return button;
         }
@@ -3634,6 +3665,7 @@ namespace Game.Presentation.UI
             card.style.paddingTop = 4;
             card.style.paddingBottom = 3;
             card.style.overflow = Overflow.Hidden;
+            card.tooltip = title + ": " + value + "\n" + detail;
             var heading = new Label(title);
             heading.AddToClassList(SerenityUiDesign.MutedClass);
             heading.style.fontSize = 10;
@@ -4652,19 +4684,46 @@ namespace Game.Presentation.UI
 
         private void RefreshGameOver()
         {
+            if (campaignOutcome == null) return;
+            campaignOutcome.Clear();
+            campaignOutcome.Add(gameOverLabel);
+            campaignOutcome.Add(campaignOutcomeDetail);
             if (context.GameRun.Status == GameRunStatus.GameOver)
             {
                 gameOverLabel.text = F("ui.game_over.defeat", E(context.GameRun.GameOverReason));
-                gameOverLabel.style.display = DisplayStyle.Flex;
+                campaignOutcomeDetail.text = "Партия завершена. Можно загрузить более раннее сохранение или вернуться в главное меню.";
+                var actions = Row();
+                actions.style.justifyContent = Justify.Center;
+                actions.Add(ActionButton("Загрузить сохранение", () =>
+                {
+                    campaignOutcomeAcknowledged = true;
+                    SetPanel(GameplayPanel.SaveLoad);
+                }, "defeat-load-button"));
+                actions.Add(ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "outcome-main-menu-button"));
+                campaignOutcome.Add(actions);
+                campaignOutcome.style.display = campaignOutcomeAcknowledged ? DisplayStyle.None : DisplayStyle.Flex;
+                if (!campaignOutcomeAcknowledged) FocusWhenReady("defeat-load-button", campaignOutcome);
                 return;
             }
             if (context.Campaign?.State.MilitaryVictory == true)
             {
                 gameOverLabel.text = T("ui.game_over.victory");
-                gameOverLabel.style.display = DisplayStyle.Flex;
+                campaignOutcomeDetail.text = "Военная цель достигнута. Мир и симуляция остаются активны — можно продолжить эту партию.";
+                var actions = Row();
+                actions.style.justifyContent = Justify.Center;
+                actions.Add(ActionButton("Продолжить партию", () =>
+                {
+                    campaignOutcomeAcknowledged = true;
+                    campaignOutcome.style.display = DisplayStyle.None;
+                }, "victory-continue-button"));
+                actions.Add(ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "outcome-main-menu-button"));
+                campaignOutcome.Add(actions);
+                campaignOutcome.style.display = campaignOutcomeAcknowledged ? DisplayStyle.None : DisplayStyle.Flex;
+                if (!campaignOutcomeAcknowledged) FocusWhenReady("victory-continue-button", campaignOutcome);
                 return;
             }
-            gameOverLabel.style.display = DisplayStyle.None;
+            campaignOutcomeAcknowledged = false;
+            campaignOutcome.style.display = DisplayStyle.None;
         }
 
         private void HandleWorkGroupHotkeys(Keyboard keyboard)
@@ -5059,6 +5118,19 @@ namespace Game.Presentation.UI
             modal.Clear();
         }
 
+        private void FocusWhenReady(string elementName, VisualElement focusScope = null)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(elementName)) return;
+            root.schedule.Execute(() =>
+            {
+                var target = root.Q<VisualElement>(elementName);
+                if (target == null || !target.focusable || target.resolvedStyle.display == DisplayStyle.None) return;
+                var focused = root.panel?.focusController?.focusedElement as VisualElement;
+                if (focused == null || focused == root || !focused.enabledInHierarchy ||
+                    (focusScope != null && !focusScope.Contains(focused))) target.Focus();
+            }).ExecuteLater(1);
+        }
+
         private ulong ComputeRefreshHash()
         {
             var clock = context.Clock();
@@ -5284,6 +5356,7 @@ namespace Game.Presentation.UI
             SerenityUiDesign.ApplySafeArea(root, Screen.safeArea, Screen.width, Screen.height);
             var width = root.resolvedStyle.width;
             var compact = !float.IsNaN(width) && width > 0f && width < 1380f;
+            compactLayout = compact;
             root.EnableInClassList("serenity-compact", compact);
             if (topBar == null) return;
             resourceStrip.style.maxWidth = compact ? 515 : 650;
@@ -5343,6 +5416,7 @@ namespace Game.Presentation.UI
                 }
             }
             ApplyPanelLayout();
+            UpdateStrategicViewport();
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
             {
@@ -5370,6 +5444,26 @@ namespace Game.Presentation.UI
                 : DisplayStyle.None;
             realmWorkspace.style.display = strategic && activePanel == GameplayPanel.Global
                 ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void UpdateStrategicViewport()
+        {
+            if (strategicWorldView == null || realmMapOverlay == null || root == null ||
+                Screen.width <= 0 || Screen.height <= 0) return;
+            var rootWidth = root.resolvedStyle.width;
+            var rootHeight = root.resolvedStyle.height;
+            var bounds = realmMapOverlay.worldBound;
+            if (float.IsNaN(rootWidth) || float.IsNaN(rootHeight) || rootWidth <= 0f || rootHeight <= 0f ||
+                bounds.width <= 1f || bounds.height <= 1f) return;
+            var pixelScaleX = Screen.width / rootWidth;
+            var pixelScaleY = Screen.height / rootHeight;
+            var left = Mathf.Clamp(bounds.xMin * pixelScaleX, 0f, Screen.width);
+            var right = Mathf.Clamp(bounds.xMax * pixelScaleX, 0f, Screen.width);
+            var top = Mathf.Clamp(bounds.yMin * pixelScaleY, 0f, Screen.height);
+            var bottom = Mathf.Clamp(bounds.yMax * pixelScaleY, 0f, Screen.height);
+            if (right - left < 64f || bottom - top < 64f) return;
+            strategicWorldView.SetViewport(new Rect(left / Screen.width, 1f - bottom / Screen.height,
+                (right - left) / Screen.width, (bottom - top) / Screen.height));
         }
 
         private static bool Blocks(VisualElement element, Vector2 point) => element != null &&
@@ -5457,8 +5551,7 @@ namespace Game.Presentation.UI
 
         private static Button ActionButton(string label, Action action, string name = null)
         {
-            // Space belongs to pause in gameplay; a focused button must not also submit on it.
-            var button = new Button(action) { text = label, name = name ?? string.Empty, focusable = false };
+            var button = new Button(action) { text = label, name = name ?? string.Empty, tabIndex = 0 };
             button.style.marginTop = 3; button.style.marginBottom = 3;
             button.style.marginLeft = 2; button.style.marginRight = 2;
             SerenityUiDesign.StyleButton(button);

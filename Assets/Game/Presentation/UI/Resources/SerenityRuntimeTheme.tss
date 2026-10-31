@@ -1114,3 +1114,72 @@
 .serenity-compact .serenity-selection-summary { width: 145px; min-width: 125px; }
 .serenity-compact .serenity-command-actions .serenity-button { font-size: 11px; padding-left: 7px; padding-right: 7px; }
 .serenity-compact .serenity-command-status { display: none; }
+
+/* UI07 acceptance and accessibility polish. Keep this block last. */
+.serenity-root .serenity-button {
+    min-height: 40px;
+}
+.serenity-root .serenity-field,
+.serenity-root .serenity-field .unity-base-text-field__input,
+.serenity-root .serenity-field .unity-popup-field__input {
+    min-height: 40px;
+}
+.serenity-root .serenity-button:focus,
+.serenity-root .serenity-field:focus,
+.serenity-root .serenity-field .unity-base-text-field__input:focus,
+.serenity-root .serenity-field .unity-popup-field__input:focus {
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgb(238, 205, 132);
+    border-right-color: rgb(238, 205, 132);
+    border-top-color: rgb(238, 205, 132);
+    border-bottom-color: rgb(238, 205, 132);
+}
+.serenity-root .serenity-button:disabled {
+    opacity: 0.58;
+}
+.serenity-root .unity-scroller--vertical {
+    width: 16px;
+    min-width: 16px;
+}
+.serenity-root .unity-scroller--horizontal {
+    height: 16px;
+    min-height: 16px;
+}
+.serenity-campaign-outcome {
+    background-color: rgba(23, 21, 17, 0.99);
+    border-left-width: 4px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(184, 154, 91);
+    border-right-color: rgba(210, 184, 117, 0.72);
+    border-top-color: rgba(210, 184, 117, 0.72);
+    border-bottom-color: rgba(210, 184, 117, 0.72);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+#realm-route-actions .serenity-button {
+    min-height: 40px;
+    height: 40px;
+}
+#realm-route-facts .serenity-muted {
+    font-size: 10px;
+}
+.serenity-compact .serenity-attention-button {
+    min-width: 54px;
+    width: 54px;
+}
+.serenity-compact .serenity-attention-button #alert-count {
+    width: 20px;
+    min-width: 20px;
+    white-space: nowrap;
+    font-size: 13px;
+}
+.serenity-compact .serenity-menu-editor .serenity-preview {
+    height: 300px;
+}

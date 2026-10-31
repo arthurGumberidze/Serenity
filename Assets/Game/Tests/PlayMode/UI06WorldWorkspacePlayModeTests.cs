@@ -6,6 +6,7 @@ using Game.Domain.Military;
 using Game.Domain.World;
 using Game.Infrastructure;
 using Game.Presentation.UI;
+using Game.Presentation.World;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -100,6 +101,18 @@ namespace Game.Tests.PlayMode
             Assert.That(ui.RootVisual.Query<Button>("diplomacy-unavailable").ToList(), Is.Not.Empty);
             Assert.That(ui.RootVisual.Query<Button>("diplomacy-unavailable").ToList().All(value => !value.enabledSelf), Is.True);
             Assert.That(root.SelectionProbe.SelectedCharacterId, Is.EqualTo(selectedId));
+            var strategicView = root.GetComponent<P102StrategicWorldView>();
+            var overlay = ui.RootVisual.Q("realm-map-overlay");
+            var expectedViewport = new Rect(
+                overlay.worldBound.xMin / ui.RootVisual.resolvedStyle.width,
+                1f - overlay.worldBound.yMax / ui.RootVisual.resolvedStyle.height,
+                overlay.worldBound.width / ui.RootVisual.resolvedStyle.width,
+                overlay.worldBound.height / ui.RootVisual.resolvedStyle.height);
+            Assert.That(strategicView.CurrentViewport.x, Is.EqualTo(expectedViewport.x).Within(.01f));
+            Assert.That(strategicView.CurrentViewport.y, Is.EqualTo(expectedViewport.y).Within(.01f));
+            Assert.That(strategicView.CurrentViewport.width, Is.EqualTo(expectedViewport.width).Within(.01f));
+            Assert.That(strategicView.CurrentViewport.height, Is.EqualTo(expectedViewport.height).Within(.01f));
+            Assert.That(root.PointerRaycaster.WorldCamera.rect, Is.EqualTo(strategicView.CurrentViewport));
 
             ui.SetPanel(GameplayPanel.Global);
             ui.RefreshNow();

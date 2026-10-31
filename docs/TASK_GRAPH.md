@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+UI07 interface acceptance, accessibility and final polish (2026-10-31): **DONE**. Reviewed the UI02-UI06 flow
+at 1920x1080 and 1280x720@125%, fixed the compact Realm terrain/header/route overlap, bounded Attention and long
+route copy, strengthened focus/disabled/scroll/40 px target states, cleaned ruler copy and added explicit
+victory-continue/defeat recovery actions without new authority. Final evidence: compile 0 errors, UI07 EditMode
+4/4, affected EditMode 42/42, focused UI06/UI07 PlayMode 2/2, P103 stable-ID/save/tier 1/1, Development build
+success and exact Player `passed=true` with six locally reviewed captures. The broad affected PlayMode attempt
+passed 9/14; four legacy readiness NREs remain classified and its actual UI06 viewport failure was repaired.
+Evidence: `docs/validation/UI07.md`. UI08 integration/qualification is next in a separate chat.
+
 UI06 local mini-map, strategic Realm workspace and honest diplomacy placeholder (2026-10-31): **DONE**. Added a
 clickable known-world mini-map plus a `Держава` projection with canonical fog/scouting, layers, settlements,
 armies, routes, selected detail and duration/weather/supply/risk facts. Travel, location/battle entry and return

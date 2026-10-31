@@ -1,5 +1,24 @@
 # PROJECT_STATE.md
 
+## UI07 interface acceptance, accessibility and final polish — DONE (2026-10-31)
+
+The complete UI02-UI06 Black and Gold player flow has been reviewed as one interface at 1920x1080 and
+1280x720@125%. The compact Realm defect is fixed: the late strategic terrain/fog projection follows the real map
+canvas and no longer covers its header or route summary. Main Menu, ruler/settings, confirmation and campaign
+outcome surfaces now expose safe keyboard focus, bounded numeric Attention, 40 px interaction targets, visible
+scroll affordances, explicit disabled states and player-facing copy without implementation terminology. Victory
+continues the canonical campaign; defeat offers load/main-menu actions. No alternate selection, save, simulation,
+map or campaign authority was added.
+
+Final validation passed compile with 0 errors / 143 inherited warnings, UI07 EditMode 4/4, affected EditMode
+42/42, focused UI06/UI07 PlayMode 2/2, and the P103 StableEntityId/queue/Save-Load/Tier route 1/1. The stabilized
+Windows Development build succeeded with 0 errors / 52 inherited warnings. Its exact binary reported
+`passed=true` with every predicate true, a clean shutdown log and six locally reviewed captures at both required layouts. A broad
+affected PlayMode attempt passed 9/14: four legacy full-world fixtures null-referenced before readiness, while its
+real UI06 viewport failure was fixed and passed in the focused rerun. Exact evidence and the reversible density/
+wording review list are in `docs/validation/UI07.md`. UI08 integration/qualification is next and must start in a
+separate chat.
+
 ## UI06 local mini-map and strategic Realm workspace — DONE (2026-10-31)
 
 The local HUD now includes a clickable known-world mini-map, and `Держава` opens a strategic projection over the

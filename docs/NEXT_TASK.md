@@ -1,24 +1,23 @@
 # NEXT_TASK.md
 
-## UI07 — interface acceptance, accessibility and final polish (2026-10-31)
+## UI08 — interface integration and release qualification (2026-10-31)
 
-UI06 is complete. Start UI07 only in a separate chat. Review the complete UI02–UI06 Black and Gold interface as
-one player flow at 1920x1080 and 1280x720@125%, then fix only acceptance/polish issues: overlap, clipping,
-readability, focus/keyboard behavior, consistent disabled/selected/warning states, scroll affordances and honest
-player-facing copy. Preserve the world-first hierarchy, stable route/element compatibility names and every
-canonical Domain/Simulation authority.
+UI07 is complete. Start UI08 only in a separate chat. Integrate and qualify the accepted UI02-UI07 interface
+through the normal Main Menu/New Game, Local/Realm/TPS, Save/Load and campaign outcome routes. Measure before
+changing performance, repair only demonstrated cross-surface integration/release defects, and preserve every
+canonical Domain/Simulation authority, StableEntityId and stable UI compatibility name.
 
-Do not introduce new gameplay systems, foreign-state/diplomacy simulation, alternate selection/save state,
-world/content work or UI08 integration scope. Reuse the existing exact-binary smoke paths and add only the
-smallest acceptance coverage needed for defects actually found during the cross-workspace review.
+Do not redesign accepted screens, add diplomacy/foreign-state simulation, invent alternate selection/save state,
+change world/content, or absorb the unrelated WM15/terrain/vendor/UMA/runner working-tree changes. Use the
+reversible review list in `docs/validation/UI07.md` only when the user explicitly requests a density/wording
+change.
 
 Definition of Done:
 
-1. Complete a screen-by-screen acceptance matrix for HUD, management, people/risk, military/events and Realm at
-   both required layouts, including 125% scale and keyboard/focus checks.
-2. Correct observed presentation/accessibility defects without changing canonical rules or pulling UI08 forward.
-3. Run focused UI07 plus affected UI02–UI06 tests, Development build and exact-binary visible smoke.
-4. Update project records and create a separate `UI07:` commit while preserving unrelated dirty work.
+1. Prove one normal end-to-end interface route across Local, Realm, TPS, Save/Load and victory/defeat behavior.
+2. Record measured UI/runtime performance and correct only reproducible UI integration regressions.
+3. Run the affected integration suites, Development build and exact-binary visible release smoke.
+4. Update project records and create a separate `UI08:` commit while preserving unrelated dirty work.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 

@@ -44,7 +44,7 @@ namespace Game.Tests.PlayMode
             yield return null;
             Assert.That(brain.enabled, Is.False);
             Assert.That(camera.orthographic, Is.True);
-            Assert.That(camera.rect, Is.EqualTo(P102StrategicWorldView.MapViewport));
+            Assert.That(camera.rect, Is.EqualTo(view.CurrentViewport));
             Assert.That(Vector3.Dot(camera.transform.forward, Vector3.down), Is.GreaterThan(0.999f));
             view.Exit();
             Assert.That(brain.enabled, Is.True);
