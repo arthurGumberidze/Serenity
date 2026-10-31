@@ -9,9 +9,10 @@ army, map and a future diplomacy surface. Every action must map to the existing 
 remains disposable and may not become another gameplay or save authority.
 
 The design plan is ready at `docs/UI01_INTERFACE_REDESIGN.md`; open
-`docs/ui01/prototype/index.html` to review the interactive states. Confirm or revise: world-first HUD without
-the permanent resident strip, the revised bottom navigation, the local mini-map, a right context sheet plus
-contextual command ribbon, and the Ash and Ember visual density. The bottom navigation now has direct worker
+`docs/ui01/prototype/index.html` to review the interactive states. Confirm or revise: world-first HUD with a
+compact resident tracker, the revised bottom navigation, the local mini-map, a world-visible compact
+construction drawer, a right context sheet plus contextual command ribbon, and the Ash and Ember visual
+density. The bottom navigation now has direct worker
 group and military entries, while Realm combines the strategic map and diplomacy. Reference PNGs at 1920x1080
 and 1280x720 are under the prototype's `screenshots` folder.
 

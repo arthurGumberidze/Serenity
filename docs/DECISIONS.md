@@ -1,5 +1,18 @@
 # DECISIONS.md
 
+## D-227 — UI01 keeps construction over the world and exposes every resident (2026-10-31)
+
+The user's second prototype correction keeps the local world visible while browsing and placing buildings.
+Construction therefore uses a compact lower drawer, not a focused full-screen workspace. Its categories and
+building tiles scroll within the drawer; placement feedback remains in the world. The drawer may not exceed
+roughly 40% of the minimum 1280x720 view and leaves the local mini-map and resident tracker available.
+
+A compact scrollable resident tracker is persistent in the local-world shell. Every living player resident is
+addressable by `StableEntityId`; one click selects that resident, opens the standard resident inspector and
+requests camera focus. Status text and critical-state markers are derived views only. The tracker maintains no
+parallel roster, location or selection authority and uses centralized revision-gated refresh rather than one
+update loop per resident. Focused workspaces may cover it; the construction drawer does not.
+
 ## D-219 — UI01 navigation moves to the bottom and the local world gains a derived mini-map (2026-10-31)
 
 The user's first prototype correction supersedes D-218 only for navigation placement and grouping. The main

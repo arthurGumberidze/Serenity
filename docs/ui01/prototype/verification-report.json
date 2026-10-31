@@ -12,7 +12,7 @@
         "viewportWidth": 1920,
         "bodyWidth": 1920,
         "prototypeWidth": 1920,
-        "visibleButtons": 28
+        "visibleButtons": 39
       },
       "errors": []
     },
@@ -27,7 +27,7 @@
         "viewportWidth": 1280,
         "bodyWidth": 1280,
         "prototypeWidth": 1280,
-        "visibleButtons": 27
+        "visibleButtons": 38
       },
       "errors": []
     }

@@ -42,6 +42,20 @@ function ensure(condition, message) {
       }
 
       await page.evaluate(() => show('resident'));
+      await page.locator('[data-resident=elda]').click();
+      ensure(await page.locator('.prototype').getAttribute('data-selected-resident') === 'elda',
+        `${size.tag}: resident tracker selection failed`);
+      ensure((await page.locator('.context-sheet').textContent()).includes('Эльда Серая'),
+        `${size.tag}: selected resident was not shown`);
+      ensure(await page.locator('.resident-chip[data-resident]').count() === 10,
+        `${size.tag}: resident tracker does not expose every resident`);
+
+      await page.evaluate(() => show('build'));
+      const buildDrawer = await page.locator('.workspace.build-drawer').boundingBox();
+      ensure(buildDrawer && buildDrawer.height <= 300 && buildDrawer.y > size.height * .4,
+        `${size.tag}: construction catalog obscures too much of the world`);
+
+      await page.evaluate(() => show('resident'));
       await page.locator('.mini-map').click();
       ensure(await page.locator('.prototype').getAttribute('data-screen') === 'map',
         `${size.tag}: mini-map navigation failed`);

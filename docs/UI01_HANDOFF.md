@@ -26,7 +26,8 @@ $env:NODE_PATH='C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\depe
 & 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' docs/ui01/prototype/verify.cjs
 ```
 
-Result after revision 1: passed. Headless Microsoft Edge rendered 18 PNGs, navigated through the bottom menu,
+Result after revision 2: passed. Headless Microsoft Edge rendered 18 PNGs, navigated through the bottom menu,
+tested selection through the persistent resident tracker, enforced the compact construction-drawer height,
 tested the local mini-map, keys 1-9 and map-to-diplomacy navigation, observed zero console/page errors and found
 no horizontal overflow at 1920x1080 or 1280x720.
 
@@ -44,7 +45,7 @@ Development build after the user approves implementation.
 
 Before UI02, confirm or revise these decisions:
 
-1. World-first HUD without a permanently visible resident strip.
+1. World-first HUD with a compact, scrollable resident tracker that selects and locates any resident.
 2. Bottom navigation with direct worker-group and military entries plus combined Realm/diplomacy.
-3. Local mini-map, right context sheet and contextual command ribbon above navigation.
+3. Local mini-map, world-visible compact construction drawer, right context sheet and contextual command ribbon.
 4. Ash and Ember visual direction and current information density.

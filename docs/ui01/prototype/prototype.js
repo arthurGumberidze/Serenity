@@ -8,14 +8,28 @@ const fact = (a,b) => `<div class="fact"><span>${a}</span><b>${b}</b></div>`;
 const metric = (name,value,percent,kind='') => `<div class="metric"><span>${name}</span><div class="bar ${kind}"><i style="width:${percent}%"></i></div><b>${value}</b></div>`;
 const header = (title, subtitle, actions='') => `<header class="workspace-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div>${actions}</div></header>`;
 
-const residentSheet = () => `
-  <div class="sheet-head"><div class="identity"><div class="portrait">Д</div><div><span class="eyebrow">Житель · правящая династия</span><h2>Доран Серый</h2><p>31 год · строитель · Тихий Брод</p></div></div><div class="state-line"><span>Сейчас</span><strong>Строит каменный дом · 64%</strong></div></div>
+const residents = {
+  doran:{initial:'Д',name:'Доран Серый',age:'31 год',profession:'строитель',now:'Строит каменный дом · 64%',health:'92%',group:'Строители · день'},
+  elda:{initial:'Э',name:'Эльда Серая',age:'29 лет',profession:'исследователь',now:'Исследует обработку камня · 62%',health:'100%',group:'Исследователи · день'},
+  mira:{initial:'М',name:'Мира Серая',age:'18 лет',profession:'переносчик',now:'Несёт древесину на склад',health:'96%',group:'Переносчики · весь день'},
+  neris:{initial:'Н',name:'Нерис Серая',age:'17 лет',profession:'исследователь',now:'Работает за столом знаний',health:'100%',group:'Исследователи · день'},
+  tarin:{initial:'Т',name:'Тарин Рыжий',age:'34 года',profession:'строитель',now:'Несёт камень к стройплощадке',health:'88%',group:'Строители · день'},
+  rovan:{initial:'Р',name:'Рован Тихий',age:'26 лет',profession:'рабочий',now:'Свободен · ожидает назначения',health:'100%',group:'Без группы'},
+  aren:{initial:'А',name:'Арен Следопыт',age:'37 лет',profession:'охотник',now:'Охотится у северного леса',health:'83%',group:'Охотники · утро'},
+  kael:{initial:'К',name:'Кейл Серый',age:'16 лет',profession:'ученик',now:'Лечится в доме · ранение',health:'74%',group:'Недоступен'},
+  lina:{initial:'Л',name:'Лина Полевая',age:'42 года',profession:'повар',now:'Готовит похлёбку · 3/8',health:'91%',group:'Повара · день'},
+  sava:{initial:'С',name:'Сава Младший',age:'14 лет',profession:'помощник',now:'Спит · восстановление 78%',health:'100%',group:'Без группы'}
+};
+let activeResident = 'doran';
+
+const residentSheet = () => { const r=residents[activeResident]; return `
+  <div class="sheet-head"><div class="identity"><div class="portrait">${r.initial}</div><div><span class="eyebrow">Житель · Тихий Брод</span><h2>${r.name}</h2><p>${r.age} · ${r.profession}</p></div></div><div class="state-line"><span>Сейчас</span><strong>${r.now}</strong></div></div>
   <div class="tabs"><button class="active">Обзор</button><button>Работа</button><button>Семья</button><button>История</button></div>
-  <div class="sheet-body"><h3>Состояние</h3>${metric('Здоровье','92%',92)}${metric('Голод','41%',41)}${metric('Жажда','68%',68,'warn')}${metric('Отдых','76%',76)}
-  <h3>Назначение</h3><div class="fact-list">${fact('Профессия','Строитель')}${fact('Группа','Строители · день')}${fact('Рабочее место','Каменный дом')}${fact('Очередь','Доставка → стройка')}</div>
+  <div class="sheet-body"><h3>Состояние</h3>${metric('Здоровье',r.health,parseInt(r.health,10))}${metric('Голод','41%',41)}${metric('Жажда','68%',68,'warn')}${metric('Отдых','76%',76)}
+  <h3>Назначение</h3><div class="fact-list">${fact('Профессия',r.profession)}${fact('Группа',r.group)}${fact('Местоположение','Показано камерой')}${fact('Очередь',r.now)}</div>
   <h3>Сильные стороны</h3><span class="tag good">Строительство 7</span><span class="tag">Сила 6</span><span class="tag">Выносливость 5</span>
   <h3>Семья</h3><div class="fact-list">${fact('Супруга','Эльда')}${fact('Дети','Мира, Нерис')}${fact('Дом','Каменный дом')}</div></div>
-  <div class="sheet-actions">${A('К жителю','primary')}${A('Назначить работу')}${A('Еще')}</div>`;
+  <div class="sheet-actions">${A('К жителю','primary')}${A('Назначить работу')}${A('Еще')}</div>`; };
 
 const buildingSheet = () => `
   <div class="sheet-head"><div class="identity"><div class="portrait">⌂</div><div><span class="eyebrow">Жилье · уровень II</span><h2>Каменный дом</h2><p>Семья Дорана · 4 из 6 мест</p></div></div><div class="state-line"><span>Состояние</span><strong>Строится · 64%</strong></div></div>
@@ -29,9 +43,9 @@ const settlement = () => `${header('Тихий Брод','Состояние п�
   <div class="workspace-body"><div class="recommendations"><div class="card selected"><span class="kicker">Главный риск</span><h2>Вода на 8 дней</h2><p>Потребление выше притока на 2 ед. в день.</p>${A('Построить колодец','primary')}</div><div class="card"><span class="kicker">Возможность</span><h2>3 свободных жителя</h2><p>Можно усилить добычу или исследование.</p>${A('Открыть работу')}</div><div class="card"><span class="kicker">Идет хорошо</span><h2>Еда +8 в день</h2><p>Запас стабилен при текущем населении.</p>${A('Проверить цепочку')}</div></div>
   <div class="grid"><div class="card"><span class="kicker">Люди</span><div class="big">10</div><p>7 заняты · 3 свободны · 1 болен</p></div><div class="card"><span class="kicker">Жилье</span><div class="big">10 / 14</div><p>Каменный дом даст еще 6 мест.</p></div><div class="card"><span class="kicker">Еда</span><div class="big">12 дней</div><p>126 единиц · тренд +8/день</p></div><div class="card"><span class="kicker">Производство</span><div class="big">4 / 6</div><p>2 места простаивают из-за работников.</p></div><div class="card"><span class="kicker">Исследование</span><div class="big">62%</div><p>Обработка камня · прогноз 2 дня.</p></div><div class="card"><span class="kicker">Оборона</span><div class="big">Низкая</div><p>4 бойца · нет палисада с востока.</p></div></div></div>`;
 
-const build = () => `${header('Строительство','Выберите постройку, затем укажите место в мире',A('Очередь строек'))}
-  <div class="workspace-body build-layout"><div class="category-list"><button class="active">Рекомендовано</button><button>Жилье</button><button>Еда и вода</button><button>Производство</button><button>Склады</button><button>Защита</button><button>Инфраструктура</button></div>
-  <div class="grid"><div class="card build-card selected"><span class="kicker">Рекомендуется</span><h2>Колодец</h2><p>Стабильный источник воды для поселения.</p><div class="costs"><span>🪵 8</span><span>⬡ 12</span><span>⏱ 9 ч</span></div>${A('Разместить','primary')}</div><div class="card build-card"><h2>Каменный дом</h2><p>Жилье для шести жителей. Защищает от холода.</p><div class="costs"><span>🪵 10</span><span>⬡ 24</span><span>⏱ 18 ч</span></div>${A('Разместить')}</div><div class="card build-card"><h2>Сушилка</h2><p>Сохраняет рыбу и мясо, снижает порчу.</p><div class="costs"><span>🪵 14</span><span>◌ 6</span><span>⏱ 11 ч</span></div>${A('Разместить')}</div><div class="card build-card"><h2>Палисад</h2><p>Сегмент оборонительной стены.</p><div class="costs"><span>🪵 18</span><span>⏱ 7 ч</span></div>${A('Разместить')}</div><div class="card build-card"><h2>Мастерская камня</h2><p>Инструменты и обработанные блоки.</p><div class="costs"><span>🪵 16</span><span>⬡ 20</span><span>⏱ 20 ч</span></div>${A('Нужно исследование')}</div></div></div></div>`;
+const build = () => `${header('Строительство','Компактный каталог — мир и место размещения остаются видны',A('Очередь строек'))}
+  <div class="build-drawer-body"><div class="build-categories"><button class="active">★ Рекомендовано</button><button>⌂ Жилье</button><button>◉ Еда и вода</button><button>⚒ Производство</button><button>▣ Склады</button><button>♜ Защита</button></div>
+  <div class="build-strip"><button class="build-tile selected"><span class="build-glyph">◉</span><span><b>Колодец</b><small>🪵 8 · ⬡ 12 · 9 ч</small></span><em>Рекомендуется</em></button><button class="build-tile"><span class="build-glyph">⌂</span><span><b>Каменный дом</b><small>🪵 10 · ⬡ 24 · 18 ч</small></span></button><button class="build-tile"><span class="build-glyph">◫</span><span><b>Сушилка</b><small>🪵 14 · ◌ 6 · 11 ч</small></span></button><button class="build-tile"><span class="build-glyph">♜</span><span><b>Палисад</b><small>🪵 18 · 7 ч</small></span></button><button class="build-tile locked"><span class="build-glyph">⚒</span><span><b>Мастерская</b><small>Нужно исследование</small></span></button></div></div>`;
 
 const research = () => `${header('Карта знаний','Каменный век · 4 из 14 технологий',A('Исследователи: 2'))}
   <div class="workspace-body"><div class="card selected" style="margin-bottom:18px"><span class="kicker">Активное исследование</span><h2>Обработка камня · 62%</h2><p>Эльда и Нерис · 38 знаний в день · осталось около 2 дней</p><div class="progress"><i style="width:62%"></i></div></div>
@@ -69,11 +83,13 @@ function show(name){
   const screen=screens[name]||screens.resident; app.dataset.screen=name;
   workspace.innerHTML=screen.workspace?screen.workspace():''; sheet.innerHTML=screen.sheet?screen.sheet():''; ribbon.innerHTML=screen.ribbon?screen.ribbon():'';
   workspace.classList.toggle('with-sheet',Boolean(screen.sheet));
+  workspace.classList.toggle('build-drawer',name==='build');
   document.querySelectorAll('[data-go]').forEach(b=>b.classList.toggle('active',b.dataset.go===name));
+  document.querySelectorAll('[data-resident]').forEach(b=>b.classList.toggle('selected',b.dataset.resident===activeResident));
   if(name==='map') setTimeout(()=>document.querySelector('.workspace-head .action')?.addEventListener('click',()=>show('diplomacy')),0);
   if(name==='diplomacy') setTimeout(()=>document.querySelector('.workspace-head .action')?.addEventListener('click',()=>show('map')),0);
 }
 
-document.addEventListener('click',e=>{const target=e.target.closest('[data-go]');if(target)show(target.dataset.go)});
+document.addEventListener('click',e=>{const resident=e.target.closest('.resident-chip[data-resident]');if(resident){activeResident=resident.dataset.resident;app.dataset.selectedResident=activeResident;show('resident');return}const target=e.target.closest('[data-go]');if(target)show(target.dataset.go)});
 document.addEventListener('keydown',e=>{const keys=['settlement','resident','workgroups','build','research','dynasty','army','map','events'];const i=Number(e.key)-1;if(i>=0&&i<keys.length)show(keys[i]);if(e.key==='Escape')show('resident')});
 show('resident');
