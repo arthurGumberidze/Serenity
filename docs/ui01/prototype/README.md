@@ -1,8 +1,8 @@
 # UI01 interactive prototype
 
-Open `index.html` in a desktop browser. Use the left rail or the numbered keys shown by the prototype to move
-between the HUD, resident, building, settlement, construction, research, dynasty, events, army, map and future
-diplomacy states.
+Open `index.html` in a desktop browser. Use the bottom navigation or number keys 1-9 to move between settlement,
+residents, worker groups, construction, research, dynasty, military, Realm and attention. The local mini-map
+opens Realm, which combines the strategic map and future diplomacy.
 
 This is a dependency-free review artifact. It contains no game state, network calls or Unity integration.
 The reference viewport is 1920×1080 and the layout also supports 1280×720.

@@ -13,8 +13,10 @@ building, settlement, construction, research, dynasty, events, army, world map a
 Unity implementation, broad optimization and polish remain behind explicit user approval of the prototype.
 
 The specification is `docs/UI01_INTERFACE_REDESIGN.md`; the dependency-free prototype is
-`docs/ui01/prototype/index.html`. Sixteen reference renders cover eight representative states at 1920x1080
-and 1280x720. Headless Edge exercised rail navigation, keys 1-9, map-to-diplomacy navigation and every major
+`docs/ui01/prototype/index.html`. The user's first revision moves the navigation rail to a bottom menu, adds
+direct worker-group and military entries, combines the realm map with diplomacy, and adds a clickable local
+mini-map. Reference renders cover the representative states at 1920x1080 and 1280x720. Headless Edge exercises
+bottom-menu navigation, keys 1-9, map-to-diplomacy navigation and every major
 screen at both sizes with zero console/page errors and no horizontal overflow. `node --check` and
 `git diff --check` passed. No Unity source, scene, asset or canonical state changed, so no Unity test or Player
 build was run for this approval-only slice. The next action is user review; UI02 implementation must not start

@@ -1,5 +1,18 @@
 # DECISIONS.md
 
+## D-219 — UI01 navigation moves to the bottom and the local world gains a derived mini-map (2026-10-31)
+
+The user's first prototype correction supersedes D-218 only for navigation placement and grouping. The main
+navigation is a bottom bar rather than a left rail. It exposes direct destinations for settlement, residents,
+worker-group assignment, construction, research, dynasty, military management, Realm and attention. Realm
+combines the strategic map and future diplomacy instead of spending two permanent navigation slots. The
+contextual command ribbon remains separate and appears directly above the bottom navigation.
+
+The local mini-map is a disposable projection of the existing ConnectedWorld/GlobalMap discovery state and
+the current camera bounds. It shows only known terrain, the settlement, selected/critical markers and camera
+coverage; clicking it opens Realm. It stores no fog, travel, position or diplomatic truth and disappears under
+focused workspaces. Full map mode and `GlobalMapRuntimeBridge` remain the strategic navigation authority.
+
 ## D-218 — UI01 is a world-first presentation architecture with an explicit approval gate (2026-10-31)
 
 The next interface is not a restyle of the current always-visible top HUD, resident strip, navigation rail,

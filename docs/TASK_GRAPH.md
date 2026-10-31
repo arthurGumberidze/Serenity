@@ -8,7 +8,9 @@ cards, construction, research, dynasty, events, army, world map and future diplo
 must not start until the user approves the specification and prototype. The interactive prototype and sixteen
 1920x1080/1280x720 renders passed static syntax, browser navigation, console-error and horizontal-overflow
 checks. No Unity runtime file changed and no Player build is claimed. General optimization and final polish
-remain deferred; unrelated dirty WM15/terrain/vendor work is preserved.
+remain deferred; unrelated dirty WM15/terrain/vendor work is preserved. User revision 1 moves navigation to
+the bottom, adds direct worker-group and military entries, combines Realm with diplomacy and adds a clickable
+local mini-map; overall visual approval remains open.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

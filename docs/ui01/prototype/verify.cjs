@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 
 const root = __dirname;
 const screenshots = path.join(root, 'screenshots');
-const states = ['resident', 'build', 'research', 'dynasty', 'events', 'army', 'map', 'diplomacy'];
+const states = ['resident', 'workgroups', 'build', 'research', 'dynasty', 'events', 'army', 'map', 'diplomacy'];
 const sizes = [
   { width: 1920, height: 1080, tag: 'desktop' },
   { width: 1280, height: 720, tag: 'minimum' }
@@ -35,15 +35,21 @@ function ensure(condition, message) {
         await page.screenshot({ path: path.join(screenshots, `${size.tag}-${state}.png`) });
       }
 
-      for (const state of ['settlement', 'resident', 'build', 'research', 'events', 'map', 'about']) {
+      for (const state of ['settlement', 'resident', 'workgroups', 'build', 'research', 'dynasty', 'army', 'events', 'map']) {
         await page.locator(`[data-go=${state}]`).first().click();
         ensure(await page.locator('.prototype').getAttribute('data-screen') === state,
           `${size.tag}: navigation to ${state} failed`);
       }
 
-      await page.keyboard.press('9');
+      await page.evaluate(() => show('resident'));
+      await page.locator('.mini-map').click();
       ensure(await page.locator('.prototype').getAttribute('data-screen') === 'map',
+        `${size.tag}: mini-map navigation failed`);
+
+      await page.keyboard.press('9');
+      ensure(await page.locator('.prototype').getAttribute('data-screen') === 'events',
         `${size.tag}: keyboard navigation failed`);
+      await page.locator('[data-go=map]').first().click();
       await page.locator('.workspace-head .action').click();
       ensure(await page.locator('.prototype').getAttribute('data-screen') === 'diplomacy',
         `${size.tag}: map to diplomacy navigation failed`);
