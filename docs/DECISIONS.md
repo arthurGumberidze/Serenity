@@ -1,5 +1,14 @@
 # DECISIONS.md
 
+## D-230 — UI01 uses a restrained Black and Gold visual shell (2026-10-31)
+
+The user pauses implementation for a final palette review. Warm near-black replaces blue-green panel surfaces;
+matte old gold owns selection, thin borders and primary actions; bone owns readable text. Natural greens/blues
+remain in the world and mini-map, while success, warning and danger retain their semantic colors plus text/icon
+cues. Gold is not a large-area fill and pure black is softened to preserve hierarchy and contrast. This visual
+revision supersedes D-218's Ash and Ember naming without changing navigation, authority or interaction contracts.
+UI02 remains blocked until the user accepts the rendered Black and Gold prototype.
+
 ## D-229 — Profession groups exclusively own work eligibility and assign every new adult (2026-10-31)
 
 The user's fourth correction makes work groups a canonical scheduling boundary, not merely a UI filter. A work

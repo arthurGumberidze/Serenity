@@ -9,6 +9,8 @@ not every inhabitant; selecting a group opens its searchable, virtualizable memb
 tree filtered by construction, defense, farming, crafting and medicine.
 Profession and group names are aligned in the mockup. The implementation backlog treats group membership as
 exclusive work eligibility, keeps urgent work inside its group and auto-assigns starting/new adult residents.
+Revision 5 uses the Black and Gold review palette: warm near-black surfaces, restrained old-gold interaction
+accents, bone text and unchanged semantic/natural world colors.
 
 This is a dependency-free review artifact. It contains no game state, network calls or Unity integration.
 The reference viewport is 1920×1080 and the layout also supports 1280×720.

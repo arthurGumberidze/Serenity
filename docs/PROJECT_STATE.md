@@ -31,6 +31,11 @@ and requeues prior work second. New-game residents and every new adult/recruit a
 profession, while manual group/member creation, reassignment and deletion remain available. Profession and group
 definition names stay aligned; no resident may remain ungrouped.
 
+The user approved the information architecture, then explicitly paused Unity implementation for one final visual
+review. Revision 5 strengthens the presentation from Ash and Ember to Black and Gold: warm near-black command
+surfaces, restrained old-gold borders/selection/primary actions, bone text and natural world/minimap colors.
+Implementation remains stopped until the user reviews this palette.
+
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 
 The shared work registry now maintains a sorted active-job index, so assignment, construction, production and

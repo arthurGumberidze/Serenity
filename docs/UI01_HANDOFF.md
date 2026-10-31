@@ -26,7 +26,7 @@ $env:NODE_PATH='C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\depe
 & 'C:\Users\Lenovo\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' docs/ui01/prototype/verify.cjs
 ```
 
-Result after revision 4: passed. Headless Microsoft Edge rendered 20 PNGs, navigated through the bottom menu,
+Result after revision 5: passed. Headless Microsoft Edge rendered 20 black-and-gold PNGs, navigated through the bottom menu,
 tested group-to-member resident selection, the categorized research dependency tree and its filter, enforced
 the compact construction-drawer height, checked the exclusive/urgent/automatic group contract in the group
 workspace, tested the local mini-map, keys 1-9 and map-to-diplomacy navigation,
@@ -51,4 +51,4 @@ Before UI02, confirm or revise these decisions:
 3. Local mini-map, world-visible compact construction drawer, right context sheet and contextual command ribbon.
 4. Categorized dependency-tree research map.
 5. Profession-aligned exclusive work groups, urgent requeue semantics and automatic assignment of new residents.
-6. Ash and Ember visual direction and current information density.
+6. Black and Gold visual direction and current information density.

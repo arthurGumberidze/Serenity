@@ -20,6 +20,9 @@ User revision 4 adds mandatory implementation work: profession-aligned groups ar
 urgent priority never recruits another group and only requeues eligible members' interrupted work second;
 starting and new adult/recruited residents auto-join by profession, while the player retains create/delete/edit
 control. Profession and group names remain aligned and no resident may remain ungrouped.
+User revision 5 approves the information architecture but pauses implementation for a final color review. The
+prototype now uses a stronger Black and Gold shell while preserving natural world colors and semantic success,
+warning and danger colors. UI02 must not start until the user accepts this palette.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

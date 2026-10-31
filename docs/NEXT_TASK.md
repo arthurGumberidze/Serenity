@@ -12,7 +12,7 @@ The design plan is ready at `docs/UI01_INTERFACE_REDESIGN.md`; open
 `docs/ui01/prototype/index.html` to review the interactive states. Confirm or revise: world-first HUD with a
 group-first member picker designed for 1000–2000 residents, the revised bottom navigation, the local mini-map,
 a world-visible compact construction drawer, a categorized dependency-tree research map, a right context sheet
-plus contextual command ribbon, and the Ash and Ember visual density. The bottom navigation now has direct worker
+plus contextual command ribbon, and the Black and Gold visual density. The bottom navigation now has direct worker
 group and military entries, while Realm combines the strategic map and diplomacy. Reference PNGs at 1920x1080
 and 1280x720 are under the prototype's `screenshots` folder.
 
@@ -21,7 +21,8 @@ including urgent work; urgent work interrupts only eligible members and requeues
 residents and every new adult/recruit auto-join the group matching their profession, while the player can create,
 delete and edit groups and membership. Profession and group display names/definition keys must stay aligned.
 
-Do not begin the full Unity implementation until the user explicitly approves the direction. Critical bugs
+The structure is approved; revision 5 is awaiting the user's visual review of the stronger black-and-gold palette.
+Do not begin the full Unity implementation until the user approves this final color pass. Critical bugs
 discovered during inspection may be fixed with focused checks, but general optimization and final polish stay
 deferred. Preserve the current dirty WM15/terrain/vendor work and keep it out of UI01 commits.
 

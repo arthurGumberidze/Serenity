@@ -1,7 +1,7 @@
 :root {
-  --ink:#111719; --ink-2:#182124; --panel:rgba(22,29,30,.96); --panel-2:rgba(31,40,40,.97);
-  --line:rgba(231,220,187,.16); --bone:#eee7d5; --muted:#aaa997; --ember:#d5a45e;
-  --ember-2:#f0c985; --good:#75b79b; --warn:#d9a04e; --danger:#cf6d62; --water:#5d9ca3;
+  --ink:#070808; --ink-2:#10110f; --panel:rgba(10,11,10,.97); --panel-2:rgba(24,23,19,.98);
+  --line:rgba(232,190,96,.24); --bone:#f2ead7; --muted:#b8ae99; --ember:#d6a84e;
+  --ember-2:#f2d083; --good:#75b79b; --warn:#d9a04e; --danger:#cf6d62; --water:#5d9ca3;
   --shadow:0 18px 55px rgba(0,0,0,.38); --radius:12px;
   font-family:Inter,"Segoe UI",Arial,sans-serif; color:var(--bone); background:#111;
 }
@@ -42,6 +42,40 @@ button{border:0;cursor:pointer}.prototype{position:relative;width:100vw;height:1
 .prototype-note{position:absolute;z-index:40;right:28px;bottom:2px;color:rgba(238,231,213,.58);font-size:10px;pointer-events:none}
 .quick-group.smart-filter{margin-top:5px;border-top-color:rgba(217,160,78,.45)}
 .tech-node.n-defense-1,.tech-node.n-defense-2,.tech-node.n-defense-3,.tech-node.n-medicine{top:364px}
+
+/* UI01 revision 5: black-gold shell. World colors remain natural; command surfaces use warm near-black. */
+.command-bar,.bottom-nav,.mini-map,.group-tracker,.group-members,.context-sheet,.command-ribbon,
+.workspace,.toast-stack button{
+  background-color:rgba(7,8,8,.96);border-color:rgba(232,190,96,.25)
+}
+.command-bar,.bottom-nav,.mini-map,.group-tracker,.group-members,.context-sheet,.command-ribbon,.workspace{
+  box-shadow:0 18px 55px rgba(0,0,0,.55),inset 0 1px rgba(242,208,131,.035)
+}
+.workspace-head,.sheet-actions{background:rgba(9,10,9,.985)}
+.sheet-head{background:linear-gradient(180deg,rgba(214,168,78,.13),rgba(8,9,8,.97))}
+.card,.group-card,.member,.unit,.person,.choice,.quick-group,.resident-chip,.build-tile,
+.research-summary,.tech-node,.state-line,.fact-list,.tabs button.active{
+  background-color:#171815;border-color:rgba(232,190,96,.18)
+}
+.card:hover,.group-card:hover,.member:hover,.unit:hover,.person:hover,.choice:hover,.quick-group:hover,
+.resident-chip:hover,.build-tile:hover,.tech-node:hover{background-color:#211f19;border-color:var(--ember)}
+.card.selected,.group-card.selected,.unit.selected,.quick-group.selected,.resident-chip.selected,
+.build-tile.selected,.tech-node.active{background-color:#272319;border-color:var(--ember);box-shadow:inset 3px 0 var(--ember)}
+.action,.group-tracker-head button,.close-members,.member-list-footer button,.category-list button,
+.build-categories button,.tech-filters button,.time-controls button,.icon-button{
+  background-color:#1b1b17;border-color:rgba(232,190,96,.22)
+}
+.action:hover,.group-tracker-head button:hover,.close-members:hover,.member-list-footer button:hover,
+.build-categories button:hover,.tech-filters button:hover{background-color:#2a261b;border-color:var(--ember-2)}
+.action.primary,.tech-filters button.active,.time-controls button.selected{
+  color:#17130c;background:linear-gradient(180deg,#f0ca78,#c9963e);border-color:#f2d083
+}
+.bottom-nav button:hover,.bottom-nav button.active{background:#242117;border-color:rgba(242,208,131,.55)}
+.resident-chip>span,.quick-group>span,.portrait,.settlement-mark .crest{background:#28251c;border-color:var(--ember)}
+.mini-map-canvas{border-color:rgba(242,208,131,.22);filter:saturate(.78) brightness(.82)}
+.member-search,.costs span,.build-glyph,.bar,.progress{background-color:#090a09;border-color:rgba(232,190,96,.17)}
+.tech-map{background:linear-gradient(90deg,rgba(214,168,78,.035) 1px,transparent 1px),linear-gradient(#121310,#080908);background-size:25% 100%;border-color:rgba(232,190,96,.22)}
+.tech-links path{stroke:rgba(232,190,96,.55)}
 @media(max-width:1450px){.settlement-mark{min-width:190px}.vitals button:nth-child(4){display:none}.calendar{min-width:176px}.context-sheet{width:340px}.command-ribbon{right:382px}.workspace.with-sheet{right:382px}.workspace.build-drawer{left:230px}.grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1320px){.bottom-nav{gap:2px}.bottom-nav button{min-width:0}.bottom-nav button small{font-size:9px}.bottom-nav button span{font-size:20px}.command-ribbon{right:382px}}
 @media(max-height:760px){.command-bar{height:62px}.toast-stack{top:84px}.bottom-nav{height:60px}.context-sheet,.workspace{top:82px;bottom:82px}.workspace.build-drawer{top:auto;bottom:82px;height:256px}.command-ribbon{bottom:86px}.sheet-body{padding-bottom:70px}.workspace-body{padding-top:14px}.world-label{top:24%}.mini-map{top:82px;width:190px}.mini-map-canvas{height:82px}.group-tracker{top:252px;bottom:82px;width:190px}.group-members{left:220px;top:252px;bottom:82px;width:286px}.scale-note{display:none}.build-tile{flex-basis:190px;min-height:82px;padding:9px}.build-glyph{width:42px;height:42px}.research-summary{grid-template-columns:1fr 220px}.tech-map{height:430px}}
