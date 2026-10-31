@@ -1,5 +1,25 @@
 # PROJECT_STATE.md
 
+## UI03 world HUD and stable selection surfaces — DONE (2026-10-31)
+
+The approved world-first HUD is implemented over the UI02 Black and Gold foundation: settlement/status and
+population/free-worker summaries, resources/time/weather/Attention, resident tracking, resident/building/multiple
+selection sheets, and a contextual command ribbon that keeps the centre world usable. Queue and status content is
+a disposable Presentation projection of canonical services. `SelectionProbe` and `StableEntityId` remain the only
+selection identity path; actions use the existing context, research, third-person and economy command paths.
+
+Validation on Unity 6000.6.4f1 passed: UI03 EditMode 2/2 and full-world PlayMode 1/1; affected UI02 5/5, U27 3/3,
+P103 EditMode 19/19 and the P103 StableEntityId selection/queue/save-load/Tier round-trip PlayMode route 1/1.
+Compilation completed with 0 errors. The Windows Development build `Builds/UI03/Serenity.exe` passed with 0 errors
+and 32 inherited warnings. Its exact-binary visible smoke exited 0 with every JSON assertion true; three locally
+reviewed real-world captures cover resident and building sheets at 1920x1080 and multiple selection at
+1280x720@125%. The known two-persistent-allocation shutdown diagnostic remains inherited from UI02.
+
+No UI04 work-group/profession rule or management-workspace scope was pulled forward. Because canonical settlement
+name data does not yet exist, the HUD uses the honest label `Поселение игрока`; this is a reversible presentation
+choice. Exact evidence and attempt diagnoses are in `docs/validation/UI03.md`. UI04 is the next unblocked task and
+must start in a separate chat.
+
 ## UI02 approved interface foundation — DONE (2026-10-31)
 
 The approved quiet Black and Gold visual foundation is now implemented in the Unity runtime: immutable colour,

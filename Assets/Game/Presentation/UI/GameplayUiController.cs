@@ -66,7 +66,14 @@ namespace Game.Presentation.UI
         private VisualElement resourceStrip;
         private VisualElement resourceDrawer;
         private VisualElement residentStrip;
+        private VisualElement commandRibbon;
+        private VisualElement commandActions;
+        private VisualElement commandQueue;
         private VisualElement bottomDock;
+        private Label settlementLabel;
+        private Label settlementStatusLabel;
+        private Label selectionSummaryLabel;
+        private Label selectionQueueLabel;
         private Label populationLabel;
         private Label placementFeedback;
         private ScrollView mainPanel;
@@ -206,7 +213,7 @@ namespace Game.Presentation.UI
             var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
                 Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
-                Blocks(statusBar, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint) ||
+                Blocks(commandRibbon, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint) ||
                 Blocks(resourceDrawer, panelPoint) || Blocks(residentStrip, panelPoint) || Blocks(bottomDock, panelPoint)) return true;
             return Blocks(modal, panelPoint);
         }
@@ -255,6 +262,7 @@ namespace Game.Presentation.UI
             CaptureNotifications();
             RefreshNotifications();
             RefreshInspector();
+            RefreshCommandRibbon();
             RefreshPanel();
             RefreshTps();
             RefreshGameOver();
@@ -1205,6 +1213,16 @@ namespace Game.Presentation.UI
             topBar.AddToClassList("serenity-top-hud");
             topBar.pickingMode = PickingMode.Position;
 
+            var settlementIdentity = new VisualElement { name = "settlement-identity" };
+            settlementIdentity.AddToClassList("serenity-settlement-identity");
+            settlementLabel = new Label("Поселение") { name = "settlement-name" };
+            settlementLabel.AddToClassList("serenity-settlement-name");
+            settlementStatusLabel = new Label("Спокойно") { name = "settlement-status" };
+            settlementStatusLabel.AddToClassList("serenity-settlement-status");
+            settlementIdentity.Add(settlementLabel);
+            settlementIdentity.Add(settlementStatusLabel);
+            topBar.Add(settlementIdentity);
+
             resourceStrip = new VisualElement { name = "resource-strip" };
             resourceStrip.AddToClassList("serenity-resource-strip");
             resourceStrip.style.flexDirection = FlexDirection.Row;
@@ -1239,11 +1257,14 @@ namespace Game.Presentation.UI
             timeCluster.Add(modeLabel);
             topBar.Add(timeCluster);
 
+            var attentionButton = ActionButton(string.Empty, () => SetPanel(GameplayPanel.Events), "attention-button");
+            attentionButton.AddToClassList("serenity-attention-button");
+            attentionButton.Add(SerenityIconLibrary.Image("alerts", "Центр внимания"));
             alertLabel = HudLabel(66);
             alertLabel.name = "alert-count";
             alertLabel.tooltip = "Непрочитанные уведомления";
-            topBar.Add(SerenityIconLibrary.Image("alerts", "Уведомления"));
-            topBar.Add(alertLabel);
+            attentionButton.Add(alertLabel);
+            topBar.Add(attentionButton);
             var pause = ActionButton(T("ui.action.pause"), () => context.SetPaused(!context.Clock().IsPaused), "pause-button");
             pause.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
             topBar.Add(pause);
@@ -1383,22 +1404,48 @@ namespace Game.Presentation.UI
             AddBuildCategory("Инфраструктура", BuildPaletteCategory.Infrastructure, "settlement");
             root.Add(bottomDock);
 
-            statusBar = Panel("status-bar");
-            statusBar.style.position = Position.Absolute;
-            statusBar.style.left = new Length(20, LengthUnit.Percent);
-            statusBar.style.right = new Length(20, LengthUnit.Percent);
-            statusBar.style.bottom = 90; statusBar.style.height = 34;
-            SerenityUiDesign.StyleSurface(statusBar, true);
+            commandRibbon = Panel("context-command-ribbon");
+            commandRibbon.AddToClassList("serenity-command-ribbon");
+            commandRibbon.style.position = Position.Absolute;
+            commandRibbon.style.left = 270;
+            commandRibbon.style.right = 376;
+            commandRibbon.style.bottom = 90;
+            commandRibbon.style.height = 76;
+            commandRibbon.style.flexDirection = FlexDirection.Row;
+            commandRibbon.style.alignItems = Align.Center;
+            commandRibbon.pickingMode = PickingMode.Position;
+
+            var selectionSummary = new VisualElement { name = "selection-summary" };
+            selectionSummary.AddToClassList("serenity-selection-summary");
+            selectionSummaryLabel = new Label { name = "selection-summary-label" };
+            selectionSummaryLabel.AddToClassList("serenity-selection-summary-title");
+            selectionQueueLabel = new Label { name = "selection-queue-label" };
+            selectionQueueLabel.AddToClassList("serenity-selection-queue-label");
+            selectionSummary.Add(selectionSummaryLabel);
+            selectionSummary.Add(selectionQueueLabel);
+            commandRibbon.Add(selectionSummary);
+
+            commandActions = new VisualElement { name = "context-command-actions" };
+            commandActions.AddToClassList("serenity-command-actions");
+            commandActions.style.flexDirection = FlexDirection.Row;
+            commandRibbon.Add(commandActions);
+
+            commandQueue = new VisualElement { name = "selection-queue" };
+            commandQueue.style.display = DisplayStyle.None;
+            commandRibbon.Add(commandQueue);
+
+            statusBar = new VisualElement { name = "status-bar" };
+            statusBar.AddToClassList("serenity-command-status");
             statusBar.style.flexDirection = FlexDirection.Row;
             statusBar.style.alignItems = Align.Center;
-            statusBar.style.paddingLeft = 12;
             statusLabel = new Label(T("ui.status.player"));
             statusLabel.style.flexGrow = 1;
             statusBar.Add(statusLabel);
             var mainMenuButton = ActionButton(T("ui.action.main_menu"), RequestReturnToMainMenu, "main-menu-button");
             mainMenuButton.style.marginRight = 8;
             statusBar.Add(mainMenuButton);
-            root.Add(statusBar);
+            commandRibbon.Add(statusBar);
+            root.Add(commandRibbon);
 
             tpsHud = Panel("tps-hud");
             tpsHud.style.position = Position.Absolute;
@@ -1602,7 +1649,17 @@ namespace Game.Presentation.UI
         {
             var clock = context.Clock();
             var alive = PlayerAliveCount();
-            populationLabel.text = F("ui.hud.population", alive);
+            var available = PlayerCharacterIds().Count(id => context.Characters.TryGet(id, out var person) &&
+                person.LifeState == CharacterLifeState.Alive && !context.Work.TryGetAssigned(id, out _) &&
+                !context.MilitaryTraining.IsExternallyControlled(id));
+            populationLabel.text = F("ui.hud.population", alive) + " · свободны " + available;
+            var playerBuildings = context.Buildings.All.Where(building => building.OwnerSideId.Value == "player").ToArray();
+            var burning = playerBuildings.Count(building => building.FireStatus == BuildingFireStatus.Burning);
+            var shortage = alive > 0 && TotalResource(new ResourceId("water")) < alive * 2L;
+            settlementLabel.text = "Поселение игрока";
+            settlementStatusLabel.text = burning > 0 ? "Пожар · " + burning : shortage ? "Дефицит воды" : "Спокойно";
+            settlementStatusLabel.EnableInClassList("is-danger", burning > 0);
+            settlementStatusLabel.EnableInClassList("is-warning", burning == 0 && shortage);
             foreach (var definition in context.Resources.All)
             {
                 var label = resourceStrip.Q<Label>("resource-primary-" + definition.Id);
@@ -1680,6 +1737,103 @@ namespace Game.Presentation.UI
                 SerenityUiDesign.SetSelected(card, context.Selection.SelectedCharacterId == person.Id);
                 residentStrip.Add(card);
             }
+        }
+
+        private void RefreshCommandRibbon()
+        {
+            if (commandRibbon == null || commandActions == null) return;
+            var strategic = context.GlobalMap.Mode != GameWorldMode.Local;
+            bottomDock.style.display = !strategic && (activePanel == GameplayPanel.Build ||
+                context.BuildingPlacement.IsActive) ? DisplayStyle.Flex : DisplayStyle.None;
+            commandActions.Clear();
+            var selectedIds = context.Selection.SelectedCharacterIds;
+            var buildingPresenter = context.Selection.SelectedBuildingPresenter;
+            var sourcePresenter = context.Selection.SelectedProductionSourcePresenter;
+            var pilePresenter = context.Selection.SelectedWorldResourcePilePresenter;
+            var wildlife = context.Selection.SelectedWildlife;
+            var hasSelection = selectedIds.Count > 0 || buildingPresenter != null || sourcePresenter != null ||
+                               pilePresenter != null || wildlife != null;
+            commandRibbon.style.display = !strategic && hasSelection
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            if (!hasSelection) return;
+
+            if (selectedIds.Count > 0)
+            {
+                var projection = GameplaySelectionQueueProjection.Build(selectedIds, context.Work, 3);
+                selectionSummaryLabel.text = projection.SelectedCount == 1
+                    ? CharacterName(selectedIds[0])
+                    : "Выбрано жителей: " + projection.SelectedCount;
+                selectionQueueLabel.text = projection.TotalOrders == 0
+                    ? "Готовы к приказу"
+                    : "Очередь: " + projection.TotalOrders + " · заняты: " + projection.BusyCount;
+                commandActions.Add(ActionButton("К выбранному", FocusPrimarySelection, "command-focus-selection"));
+                var researchAssigned = selectedIds.All(id => context.Research.AssignedWorkers.Contains(id));
+                commandActions.Add(ActionButton(researchAssigned ? "Снять с исследования" : "Назначить исследователями",
+                    () => TryCommand(() =>
+                    {
+                        if (researchAssigned) context.Research.UnassignWorkers(selectedIds);
+                        else context.Research.AssignWorkers(selectedIds);
+                    }), "command-toggle-research"));
+                if (selectedIds.Count == 1)
+                {
+                    var id = selectedIds[0];
+                    var direct = ActionButton("Прямое управление", () => TryCommand(() =>
+                    {
+                        var result = context.ThirdPerson.TryEnter(id);
+                        if (!result.IsEligible) throw new PlayerFacingException(EligibilityReason(result.Failure));
+                    }), "command-enter-tps");
+                    direct.SetEnabled(context.PlayerControl.Evaluate(id).IsEligible);
+                    commandActions.Add(direct);
+                }
+            }
+            else if (buildingPresenter != null && buildingPresenter.IsBound &&
+                     context.Buildings.TryGet(buildingPresenter.BuildingId, out var building))
+            {
+                var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
+                selectionSummaryLabel.text = Content("building", definition.Id.ToString());
+                selectionQueueLabel.text = building.IsOperational ? "Здание работает" :
+                    "Строительство: " + building.ConstructionProgress.ToString("P0");
+                commandActions.Add(ActionButton("К зданию", FocusPrimarySelection, "command-focus-selection"));
+                commandActions.Add(ActionButton("Хозяйство", () => SetPanel(GameplayPanel.Economy),
+                    "command-open-economy"));
+            }
+            else
+            {
+                selectionSummaryLabel.text = sourcePresenter != null ? "Источник ресурсов" :
+                    pilePresenter != null ? "Груз в мире" : wildlife != null ? wildlife.DisplayName : "Объект";
+                selectionQueueLabel.text = "Контекстные действия доступны в карточке";
+                commandActions.Add(ActionButton("К объекту", FocusPrimarySelection, "command-focus-selection"));
+                commandActions.Add(ActionButton("Хозяйство", () => SetPanel(GameplayPanel.Economy),
+                    "command-open-economy"));
+            }
+            commandActions.Add(ActionButton("Снять выбор", ClearSelectionFromUi, "command-clear-selection"));
+        }
+
+        private void FocusPrimarySelection()
+        {
+            var id = context.Selection.InspectedCharacterId;
+            if (id.HasValue && context.Presentations.TryGet(id.Value, out var presenter) && presenter != null)
+            {
+                context.FocusWorld(new WorldPosition(presenter.transform.position.x, presenter.transform.position.y,
+                    presenter.transform.position.z));
+                return;
+            }
+            var building = context.Selection.SelectedBuildingPresenter;
+            if (building != null)
+            {
+                var position = building.transform.position;
+                context.FocusWorld(new WorldPosition(position.x, position.y, position.z));
+                return;
+            }
+            var source = context.Selection.SelectedProductionSourcePresenter;
+            if (source != null) context.FocusWorld(source.Site.Position);
+        }
+
+        private void ClearSelectionFromUi()
+        {
+            context.Selection.ClearSelection();
+            RefreshNow();
         }
 
         private void RefreshPlacementFeedback()
@@ -2732,8 +2886,19 @@ namespace Game.Presentation.UI
             }
             if (context.Selection.SelectedCharacterIds.Count > 1)
             {
-                AddLine(inspector, F("ui.selection.characters", context.Selection.SelectedCharacterIds.Count));
-                AddMuted(inspector, T("ui.selection.many_help"));
+                var projection = GameplaySelectionQueueProjection.Build(context.Selection.SelectedCharacterIds,
+                    context.Work, 4);
+                AddInspectorHeader("Группа выбора", F("ui.selection.characters", projection.SelectedCount),
+                    projection.BusyCount + " выполняют приказы");
+                var names = context.Selection.SelectedCharacterIds.Take(6).Select(id => CharacterName(id)).ToArray();
+                AddLine(inspector, string.Join(" · ", names) +
+                    (projection.SelectedCount > names.Length ? " · ещё " + (projection.SelectedCount - names.Length) : string.Empty));
+                AddSection(inspector, "Общая очередь");
+                AddLine(inspector, projection.TotalOrders == 0 ? "Приказов нет" :
+                    "Приказов: " + projection.TotalOrders + " · заняты: " + projection.BusyCount);
+                foreach (var order in projection.VisibleOrders)
+                    AddQueueOrder(inspector, order);
+                AddMuted(inspector, "ПКМ по миру задаёт общий приказ; Shift добавляет его в конец очереди.");
                 return;
             }
             if (context.Selection.InspectedCharacterId.HasValue)
@@ -2877,6 +3042,10 @@ namespace Game.Presentation.UI
         {
             var character = context.Characters.Get(id);
             var capabilities = context.Health.GetCapabilities(id);
+            var queueProjection = GameplaySelectionQueueProjection.Build(new[] { id }, context.Work, 4);
+            var current = queueProjection.VisibleOrders.FirstOrDefault();
+            AddInspectorHeader("Житель", RussianTextCatalog.PersonName(character.Name.DisplayName),
+                current == null ? "Готов к приказу" : E(current.Type) + " · " + E(current.Status));
             AddSection(inspector, RussianTextCatalog.PersonName(character.Name.DisplayName));
             AddLine(inspector, F("ui.character.age", character.AgeInCompletedYears(context.Clock().State.BiologicalTicks),
                 E(character.Sex), E(character.LifeState)));
@@ -2914,6 +3083,9 @@ namespace Game.Presentation.UI
             AddLine(inspector, F("ui.character.current_job", context.MilitaryTraining.IsExternallyControlled(id)
                 ? "В казарме" : context.Work.TryGetAssigned(id, out var job)
                     ? E(job.Type) + " · " + E(job.Status) : T("common.none")));
+            AddSection(inspector, "Очередь приказов");
+            if (queueProjection.TotalOrders == 0) AddMuted(inspector, "Очередь пуста");
+            else foreach (var order in queueProjection.VisibleOrders) AddQueueOrder(inspector, order);
             AddLine(inspector, F("ui.character.dynasty_role", DynastyRole(id)));
             var militaryRank = context.MilitaryTraining.GetRank(id);
             var militaryStatus = context.MilitaryTraining.IsExternallyControlled(id)
@@ -2972,6 +3144,8 @@ namespace Game.Presentation.UI
         private void DrawBuildingInspector(Building building)
         {
             var definition = context.BuildingCatalog.ResolveDefinition(building.DefinitionId);
+            AddInspectorHeader("Здание", Content("building", definition.Id.ToString()),
+                building.IsOperational ? "Работает" : "Строится · " + building.ConstructionProgress.ToString("P0"));
             AddSection(inspector, Content("building", definition.Id.ToString()));
             AddLine(inspector, "Уровень здания: "+(definition.Id==definition.Id.FamilyId&&definition.Id.ToString()!="clan_house"?"1":"2"));
             AddLine(inspector, F("ui.building.owner", SideName(building.OwnerSideId), E(building.ConstructionState)));
@@ -3440,9 +3614,9 @@ namespace Game.Presentation.UI
             notifications.Clear();
             AddSection(notifications, T("ui.notifications.title"));
             if (notificationFeed.Count == 0) AddMuted(notifications, T("ui.notifications.none"));
-            // The fixed-height player HUD intentionally shows only the two newest messages; older entries remain
+            // The fixed-height player HUD intentionally shows only the three newest messages; older entries remain
             // in the bounded feed for tests/history without spilling into the selection inspector.
-            for (var index = notificationFeed.Count - 1; index >= Math.Max(0, notificationFeed.Count - 2); index--)
+            for (var index = notificationFeed.Count - 1; index >= Math.Max(0, notificationFeed.Count - 3); index--)
             {
                 var captured = index;
                 var button = ActionButton(notificationFeed[index], () => ActivateNotification(captured));
@@ -4194,6 +4368,8 @@ namespace Game.Presentation.UI
             root.EnableInClassList("serenity-compact", compact);
             if (topBar == null) return;
             resourceStrip.style.maxWidth = compact ? 515 : 650;
+            var fishChip = resourceStrip.Q("resource-primary-chip-fish");
+            if (fishChip != null) fishChip.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
             dateLabel.style.width = compact ? 126 : 156;
             weatherLabel.style.width = compact ? 155 : 205;
             modeLabel.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
@@ -4203,13 +4379,15 @@ namespace Game.Presentation.UI
             navigation.style.width = StyleKeyword.Auto;
             residentStrip.style.left = 10;
             residentStrip.style.right = compact ? 334 : 376;
+            commandRibbon.style.left = compact ? 18 : 270;
+            commandRibbon.style.right = compact ? 340 : 376;
+            commandRibbon.style.height = compact ? 70 : 76;
             bottomDock.style.left = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
             bottomDock.style.right = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
             inspector.style.width = compact ? 322 : 354;
             inspector.style.bottom = 90;
             notifications.style.width = compact ? 322 : 354;
             onboardingCard.style.width = compact ? 322 : 354;
-            inspector.style.top = onboarding.Visible ? 512 : 274;
             ApplyPanelLayout();
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
@@ -4223,11 +4401,15 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedBuildingPresenter != null ||
                 context.Selection.SelectedWorldResourcePilePresenter != null ||
                 context.Selection.SelectedProductionSourcePresenter != null);
+            inspector.style.top = hasSelection ? 72 : onboarding.Visible ? 512 : 274;
             inspector.style.display = strategic || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
-            notifications.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
-            onboardingCard.style.display = !strategic && onboarding.Visible ? DisplayStyle.Flex : DisplayStyle.None;
+            notifications.style.display = strategic || hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
+            onboardingCard.style.display = !strategic && onboarding.Visible && !hasSelection
+                ? DisplayStyle.Flex : DisplayStyle.None;
             residentStrip.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
-            bottomDock.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            bottomDock.style.display = !strategic && (activePanel == GameplayPanel.Build ||
+                context.BuildingPlacement.IsActive) ? DisplayStyle.Flex : DisplayStyle.None;
+            if (commandRibbon != null && strategic) commandRibbon.style.display = DisplayStyle.None;
             placementFeedback.style.display = !strategic && context.BuildingPlacement.IsActive
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
@@ -4360,6 +4542,29 @@ namespace Game.Presentation.UI
             var label = new Label(text);
             label.AddToClassList(SerenityUiDesign.MutedClass);
             parent.Add(label);
+        }
+
+        private void AddInspectorHeader(string kind, string title, string now)
+        {
+            var header = new VisualElement { name = "inspector-entity-header" };
+            header.AddToClassList("serenity-inspector-header");
+            var kicker = new Label(kind ?? string.Empty) { name = "inspector-kind" };
+            kicker.AddToClassList("serenity-inspector-kicker");
+            var heading = new Label(title ?? string.Empty) { name = "inspector-title" };
+            heading.AddToClassList("serenity-inspector-title");
+            var current = new Label(now ?? string.Empty) { name = "inspector-now" };
+            current.AddToClassList("serenity-inspector-now");
+            header.Add(kicker);
+            header.Add(heading);
+            header.Add(current);
+            inspector.Add(header);
+        }
+
+        private static void AddQueueOrder(VisualElement parent, WorkOrder order)
+        {
+            var line = new Label(E(order.Type) + " · " + E(order.Status) + " · " + E(order.Priority));
+            line.AddToClassList("serenity-queue-order");
+            parent.Add(line);
         }
     }
 

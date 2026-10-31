@@ -2464,3 +2464,25 @@ result. A visual-control tool's approval timeout does not weaken this determinis
 reason to repeat CUA. The PlayMode test uses a 600-second NUnit timeout because its real-world initialization
 contract already permits 600 seconds; the prior 180-second framework default was shorter than the tested
 readiness contract.
+
+## D-228 — UI03 selection and queues remain disposable StableEntityId projections (2026-10-31)
+
+The world HUD may summarize settlement status, selection and work queues, but it does not own them. Selection
+continues through `SelectionProbe` and `StableEntityId`; the resident/building/multiple sheets and command ribbon
+rebuild disposable views from canonical registries and `WorkManager`. They never cache mutable canonical
+collections or introduce a second command authority. Existing context, research, direct-control and economy
+services remain the action paths. Presentation refresh or Tier rebind must preserve identity by resolving the
+current presenter from StableEntityId rather than retaining an initial GameObject reference.
+
+Selection UI takes the right-side workspace while active, so passive notifications/onboarding yield instead of
+overlapping it. The bottom build catalog is visible only for the Construction route or active placement; the
+always-available UI02 navigation remains the persistent shell. At compact 1280x720@125%, resident cards have a
+minimum readable width and the command ribbon moves left while preserving a usable centre-world region. Until a
+canonical settlement-name service exists, player-facing identity is the non-persistent label `Поселение игрока`.
+
+`UI03PlayerSmokeController` is command-line-only exact-binary instrumentation. It resolves current bound
+presentation by StableEntityId, dispatches Move through `GameplayUiController.ExecuteContextAction`, verifies
+selection retention and queue projection, captures resident/building/multiple states, rejects dark screenshots
+and fails the process when any assertion is false. Inherited P103 selection fixtures similarly use commandable
+StableEntityIds and a selected resident's reachable ground position rather than stale seed presenters or a
+potentially disconnected world anchor. Exact evidence: `docs/validation/UI03.md`.

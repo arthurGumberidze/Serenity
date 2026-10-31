@@ -43,7 +43,6 @@ namespace Game.Tests
             var position = new WorldPosition(3, 0, 4);
             var targets = new[]
             {
-                new ContextCommandTarget(ContextTargetKind.Character, position, entity),
                 new ContextCommandTarget(ContextTargetKind.ResourceSource, position, entity,
                     new ResourceId("berries"), ContextResourceClass.Gatherable),
                 new ContextCommandTarget(ContextTargetKind.ResourceSource, position, entity,

@@ -1,5 +1,15 @@
 # TASK_GRAPH.md
 
+UI03 world HUD and stable selection surfaces (2026-10-31): **DONE**. Added the world-first settlement HUD,
+resident tracker, resident/building/multiple-selection sheets, disposable WorkManager queue projection and
+contextual command ribbon over the approved UI02 shell. Selection remains owned by `SelectionProbe` and
+`StableEntityId`; all actions retain their canonical service paths and no UI04 management/rule scope was added.
+Validation passed UI03 EditMode 2/2 and PlayMode 1/1; affected UI02 5/5, U27 3/3, P103 EditMode 19/19 and the full
+P103 selection/queue/save-load/Tier PlayMode route 1/1; compile 0 errors; Windows Development build 0 errors /
+32 inherited warnings; exact-binary visible Player smoke exit 0 with all assertions true and three locally
+reviewed captures at the required resolutions. Evidence: `docs/validation/UI03.md`. UI04 is next and remains a
+separate chat.
+
 UI02 approved interface foundation (2026-10-31): **DONE**. Implemented the approved quiet Black and Gold tokens,
 system-font strategy without new font assets, reusable theme states, project-owned route icons, horizontal bottom
 navigation, Attention entry point and the nine-route Presentation model over the existing `GameplayPanel`

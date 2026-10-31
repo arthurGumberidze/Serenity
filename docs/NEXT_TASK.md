@@ -1,29 +1,29 @@
 # NEXT_TASK.md
 
-## UI03 — implement world HUD and stable selection surfaces (2026-10-31)
+## UI04 — implement management workspaces and group/profession/urgent rules (2026-10-31)
 
-UI02 is complete. In a separate UI03 chat, implement only the next approved Unity slice from
-`docs/UI01_INTERFACE_REDESIGN.md`: the world-first HUD hierarchy, contextual sheet for a selected resident or
-building, multiple-selection presentation and the context command ribbon above the bottom shell. Reuse the UI02
-tokens, typography, icons, route model and stable compatibility names.
+UI03 is complete. In a separate UI04 chat, implement the approved management slice from
+`docs/UI01_INTERFACE_REDESIGN.md`: Settlement, People and Work Groups workspaces; profession-aligned exclusive
+group eligibility; automatic starting/new-adult/recruit assignment; manual create/edit/delete/reassignment;
+urgent interruption limited to eligible group members with the prior eligible work requeued second; and the
+Construction and categorized dependency-tree Research workspaces.
 
-Keep selection identity in the existing `SelectionProbe`/`StableEntityId` path and send commands through the
-existing canonical services. UI03 may project current state but must not cache canonical mutable collections,
-create a second selection/command authority, add per-NPC update loops or expose internal scheduling/design copy.
-Resident group drill-down and profession/group rule changes remain UI04; construction/research restructuring
-remains UI04; dynasty/events/army remain UI05; realm/diplomacy remains UI06.
+Preserve the UI03 `SelectionProbe`/`StableEntityId` selection path, disposable Presentation projections, context
+ribbon and canonical command/service routes. Do not cache canonical mutable collections in UI, add per-NPC Update
+loops, expose scheduling/design rationale as player copy, or pull forward UI05 dynasty/events/army and UI06
+realm/diplomacy work.
 
 Definition of Done:
 
-1. HUD, resident card, building card, multi-selection and context ribbon match the approved world-first layout
-   at 1920x1080 and 1280x720@125% while retaining a usable centre-world input region.
-2. Stable selection survives ordinary presentation refresh/rebinding and every command continues through the
-   existing canonical command services.
-3. Existing UI/selection tests plus focused UI03 EditMode and PlayMode tests pass.
+1. Settlement, People, group drill-down, Construction and Research workspaces match the approved player-facing
+   structure at 1920x1080 and 1280x720@125% without leaking internal invariant/design copy.
+2. Exclusive profession/group eligibility, auto-assignment and urgent interrupt/requeue ordering are enforced in
+   pure/testable Domain services and remain correct through save/load and simulation-tier changes.
+3. Existing UI/selection/work/construction/research tests plus focused UI04 EditMode and PlayMode tests pass.
 4. A Windows Development build and autonomous visible Player smoke pass with locally reviewed captures at both
    required resolutions.
-5. Update the four task/state/decision documents, record exact evidence, and commit only UI03-scoped files with
-   a `UI03:` prefix while preserving unrelated dirty WM15/terrain/vendor work.
+5. Update the four task/state/decision documents, record exact evidence, and commit only UI04-scoped files with
+   a `UI04:` prefix while preserving unrelated dirty WM15/terrain/vendor work.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 

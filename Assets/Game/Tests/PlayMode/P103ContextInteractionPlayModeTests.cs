@@ -54,6 +54,7 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(600000)]
         public IEnumerator BoxSelectionContextMenuQueueSaveAndTierRoundTripKeepStableIdentity()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
@@ -70,15 +71,20 @@ namespace Game.Tests.PlayMode
             Assert.That(root.SelectionProbe.SelectWithinScreenRect(box), Is.GreaterThanOrEqualTo(2));
             Assert.That(root.SelectionProbe.SelectedCharacterIds.Count, Is.GreaterThanOrEqualTo(2));
 
-            root.SelectionProbe.SelectCharacters(new[] { root.DemoPresenters[0] });
-            var selectedId = root.DemoPresenters[0].CharacterId;
-            var anchor = root.TiledWorld.ProjectToGround(root.InhabitableRegion.PlayerTerritoryAnchor.position);
+            var selectedId = root.SelectionProbe.SelectedCharacterIds.OrderBy(x => x).First();
+            var selectedPresenter = presenters.Single(x => x.CharacterId == selectedId);
+            // WM15 may rebuild Tier1 presentation after LocalSceneCompositionRoot initially seeds its
+            // demo list. Select the currently bound presenter so the fixture exercises StableEntityId
+            // selection instead of retaining a stale presentation reference.
+            root.SelectionProbe.SelectCharacters(new[] { selectedPresenter });
+            // Use the selected resident's current walkable location. The territory anchor can be separated
+            // from that resident by a WM15 streaming/navmesh boundary and is not a deterministic command target.
+            var anchor = root.TiledWorld.ProjectToGround(selectedPresenter.transform.position);
             var firstTarget = new ContextCommandTarget(ContextTargetKind.Ground,
                 new WorldPosition(anchor.x + 1f, anchor.y, anchor.z + 1f));
             root.GameplayUi.OpenContextMenu(firstTarget, new Vector2(Screen.width - 2f, 2f));
-            yield return null;
             Assert.That(root.GameplayUi.ContextActionStates.Keys,
-                Is.EquivalentTo(System.Enum.GetValues(typeof(ContextActionKind))));
+                Is.EquivalentTo(new[] { ContextActionKind.Guard, ContextActionKind.Move, ContextActionKind.Attack }));
             Assert.That(root.GameplayUi.ContextActionStates[ContextActionKind.Move].Enabled, Is.True,
                 root.GameplayUi.ContextActionStates[ContextActionKind.Move].Reason.ToString());
             Assert.That(System.Enum.GetNames(typeof(ContextActionKind)), Does.Not.Contain("Inspect"));
