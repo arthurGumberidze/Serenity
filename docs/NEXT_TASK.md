@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## Next action — UI08 user review (2026-11-01)
+
+UI01-UI08 implementation and release qualification are complete. Candidate:
+`Builds/UI08/Serenity.exe`; exact evidence: `docs/validation/UI08.md`. Review the compact bottom navigation,
+scrolling compact ruler editor, one-row Realm route facts/tooltips, external-AI Settings copy and the opaque lower
+Realm backdrop used to prevent People -> Realm stale-frame bleed. These are reversible presentation choices.
+
+Do not begin diplomacy, a 1000-NPC optimization, new world/content work or changes to canonical selection/save/
+campaign authority without a new explicit task. Preserve unrelated WM15/terrain/vendor/UMA/runner work.
+
 ## UI08 — interface integration and release qualification (2026-10-31)
 
 UI07 is complete. Start UI08 only in a separate chat. Integrate and qualify the accepted UI02-UI07 interface

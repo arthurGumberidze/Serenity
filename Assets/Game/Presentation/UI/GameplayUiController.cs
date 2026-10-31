@@ -89,6 +89,7 @@ namespace Game.Presentation.UI
         private VisualElement localMiniMap;
         private VisualElement localMiniMapGrid;
         private VisualElement realmWorkspace;
+        private VisualElement realmBottomBackdrop;
         private ScrollView realmLayers;
         private ScrollView realmDetail;
         private VisualElement realmRouteBar;
@@ -1663,6 +1664,16 @@ namespace Game.Presentation.UI
             realmWorkspace.style.display = DisplayStyle.None;
             realmWorkspace.pickingMode = PickingMode.Ignore;
 
+            realmBottomBackdrop = new VisualElement { name = "realm-bottom-backdrop" };
+            realmBottomBackdrop.style.position = Position.Absolute;
+            realmBottomBackdrop.style.left = 0;
+            realmBottomBackdrop.style.right = 0;
+            realmBottomBackdrop.style.bottom = 88;
+            realmBottomBackdrop.style.height = 140;
+            realmBottomBackdrop.style.backgroundColor = SerenityUiTokens.Canvas;
+            realmBottomBackdrop.pickingMode = PickingMode.Ignore;
+            realmWorkspace.Add(realmBottomBackdrop);
+
             realmMapHeader = Panel("realm-map-header");
             realmMapHeader.style.position = Position.Absolute;
             realmMapHeader.style.left = 268;
@@ -1735,12 +1746,16 @@ namespace Game.Presentation.UI
             if (strategic)
             {
                 mainPanel.style.display = DisplayStyle.None;
+                mainPanel.style.visibility = Visibility.Hidden;
                 residentStrip.style.display = DisplayStyle.None;
                 commandRibbon.style.display = DisplayStyle.None;
                 RefreshRealmMapOverlay();
             }
-            else if (activePanel != GameplayPanel.None)
-                mainPanel.style.display = DisplayStyle.Flex;
+            else
+            {
+                mainPanel.style.visibility = Visibility.Visible;
+                if (activePanel != GameplayPanel.None) mainPanel.style.display = DisplayStyle.Flex;
+            }
             if (showLocal) RefreshLocalMiniMap();
         }
 
@@ -5420,10 +5435,13 @@ namespace Game.Presentation.UI
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
             {
+                mainPanel.style.display = DisplayStyle.None;
+                mainPanel.style.visibility = Visibility.Hidden;
                 // Leave the same right-hand viewport free as P102StrategicWorldView.
                 mainPanel.style.left = 10;
                 mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 20f);
             }
+            else mainPanel.style.visibility = Visibility.Visible;
             var hasSelection = context != null && (context.Selection.InspectedCharacterId.HasValue ||
                 context.Selection.SelectedWildlife != null ||
                 context.Selection.SelectedBuildingPresenter != null ||

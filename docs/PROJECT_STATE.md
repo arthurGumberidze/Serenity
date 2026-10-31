@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## UI08 interface integration and release qualification — DONE (2026-11-01)
+
+The accepted UI01-UI07 interface now has one exact-binary release route from Main Menu/New Game through ruler and
+settings, Local HUD/selection, every management/people/dynasty/event/military workspace, TPS, pause, Save/Load,
+Realm/return and both campaign outcomes at 1920x1080 and 1280x720@125%. A demonstrated People -> Realm stale-frame
+bleed was fixed with strategic visibility plus an opaque lower Realm backdrop; no design, diplomacy, world or
+canonical Domain/Simulation authority changed.
+
+Final validation passed compile (0 errors), UI07/UI08 EditMode 6/6, affected EditMode 44/44, focused UI06/UI07
+PlayMode 2/2 and P103 stable-ID/queue/Save-Load/tier 1/1. The final Development build is
+`Builds/UI08/Serenity.exe` (GUID `08b9177c807e46209cc0994e14428bb5`). Its exact binary exited 0 with every
+predicate true, zero runtime exception matches and seven locally reviewed captures. Final measurements were
+40.31 ms average / 70.05 ms maximum UI refresh and 19.59 ms average / 24.97 ms p95 over 120 frames. The broad
+legacy PlayMode attempt passed 10/14; the four pre-readiness P4/P7/P85 NREs are classified in
+`docs/validation/UI08.md`. UI implementation is complete; the next action is user review of the reversible UI07/
+UI08 density and wording list, not a new development scope.
+
 ## UI07 interface acceptance, accessibility and final polish — DONE (2026-10-31)
 
 The complete UI02-UI06 Black and Gold player flow has been reviewed as one interface at 1920x1080 and

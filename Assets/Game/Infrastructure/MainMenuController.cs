@@ -139,6 +139,7 @@ namespace Game.Infrastructure
             UI05PlayerSmokeController.LaunchFromMenuIfRequested(this);
             UI06PlayerSmokeController.LaunchFromMenuIfRequested(this);
             UI07PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            UI08PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()

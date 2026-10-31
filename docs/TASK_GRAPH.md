@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+UI08 interface integration and release qualification (2026-11-01): **DONE**. Qualified one exact-binary route
+from Main Menu/New Game through all UI02-UI07 workspaces, TPS, pause, Save/Load, Realm/return and campaign outcomes
+at both required layouts. Fixed the demonstrated People -> Realm stale-frame bleed without new authority or
+redesign. Final evidence: compile 0 errors, UI07/UI08 EditMode 6/6, affected EditMode 44/44, focused UI06/UI07
+PlayMode 2/2, P103 stable-ID/save/tier 1/1, Development build success, exact Player exit 0/`passed=true`, clean
+runtime log, measured UI/frame timings and seven locally reviewed captures. The broad legacy attempt passed 10/14;
+four P4/P7/P85 pre-readiness NREs remain classified. Evidence: `docs/validation/UI08.md`. The staged UI01-UI08
+implementation is complete; only explicit user review may reopen reversible density/wording choices.
+
 UI07 interface acceptance, accessibility and final polish (2026-10-31): **DONE**. Reviewed the UI02-UI06 flow
 at 1920x1080 and 1280x720@125%, fixed the compact Realm terrain/header/route overlap, bounded Attention and long
 route copy, strengthened focus/disabled/scroll/40 px target states, cleaned ruler copy and added explicit

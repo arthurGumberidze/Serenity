@@ -1,5 +1,19 @@
 # DECISIONS.md
 
+## D-237 — UI08 release qualification owns evidence, not gameplay authority (2026-11-01)
+
+UI08 adds an exact-binary qualification route and repairs only a demonstrated cross-surface render-order defect.
+The route begins through normal Main Menu/New Game, keeps developer UI disabled and observes canonical services,
+StableEntityId and stable element names across Local, TPS, Save/Load, Realm and campaign outcomes. Outcome setup
+uses existing GlobalMap/Campaign services while ordinary UI commands retain their established boundaries; the
+qualification harness owns no persisted selection, save, map, army or campaign state.
+
+Strategic mode must suppress the obsolete local main panel after responsive layout and paint an opaque Canvas
+under the lower route bar. This prevents a transparent strategic camera gap from retaining virtualized People
+pixels without changing the accepted map canvas, route geometry or Black-and-Gold design. The backdrop and all
+UI07 density/wording choices remain reversible Presentation decisions. UI08 measurements are release evidence,
+not a general performance benchmark or authorization for 1000-NPC optimization.
+
 ## D-236 — UI07 acceptance state remains disposable and viewport-bound (2026-10-31)
 
 UI07 may adapt layout, focus, wording and presentation geometry, but it does not own selection, world, fog,
