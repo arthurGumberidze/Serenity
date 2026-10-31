@@ -72,21 +72,20 @@
         </span>
         <small>ЛКМ — открыть карту державы</small>
       </button>
-      <aside class="resident-tracker" aria-label="Быстрый выбор жителей">
-        <div class="resident-tracker-head"><span><b>Жители</b><small>ЛКМ — выбрать и найти</small></span><button title="Поиск жителя" aria-label="Поиск жителя">⌕</button></div>
-        <div class="resident-list">
-          <button class="resident-chip selected" data-resident="doran"><span>Д</span><b>Доран</b><small>Строит · 64%</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="elda"><span>Э</span><b>Эльда</b><small>Исследует</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="mira"><span>М</span><b>Мира</b><small>Переносит</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="neris"><span>Н</span><b>Нерис</b><small>Исследует</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="tarin"><span>Т</span><b>Тарин</b><small>Несёт камень</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="rovan"><span>Р</span><b>Рован</b><small>Свободен</small><i class="idle"></i></button>
-          <button class="resident-chip" data-resident="aren"><span>А</span><b>Арен</b><small>Охотится</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="kael"><span>К</span><b>Кейл</b><small>Ранен</small><i class="danger"></i></button>
-          <button class="resident-chip" data-resident="lina"><span>Л</span><b>Лина</b><small>Готовит</small><i class="good"></i></button>
-          <button class="resident-chip" data-resident="sava"><span>С</span><b>Сава</b><small>Спит</small><i class="idle"></i></button>
+      <aside class="group-tracker" aria-label="Быстрый выбор рабочих групп">
+        <div class="group-tracker-head"><span><b>Рабочие группы</b><small>выберите группу, затем жителя</small></span><button data-go="workgroups" title="Управление группами" aria-label="Управление группами">⚙</button></div>
+        <div class="quick-group-list">
+          <button class="quick-group selected" data-group="builders"><span>♜</span><b>Строители</b><small>3 · 2 заняты</small><i class="good"></i></button>
+          <button class="quick-group" data-group="researchers"><span>✦</span><b>Исследователи</b><small>2 · проект 62%</small><i class="good"></i></button>
+          <button class="quick-group" data-group="haulers"><span>⇄</span><b>Переносчики</b><small>2 · 4 задачи</small><i class="good"></i></button>
+          <button class="quick-group" data-group="hunters"><span>⌖</span><b>Охотники</b><small>1 · в поле</small><i class="good"></i></button>
+          <button class="quick-group" data-group="military"><span>⚔</span><b>Военные</b><small>4 · готовы</small><i class="good"></i></button>
+          <button class="quick-group" data-group="idle"><span>○</span><b>Свободные</b><small>1 · без задачи</small><i class="idle"></i></button>
+          <button class="quick-group" data-group="attention"><span>!</span><b>Требуют внимания</b><small>1 · ранен</small><i class="danger"></i></button>
         </div>
+        <small class="scale-note">В поздней игре список остаётся коротким при 1000–2000 жителей</small>
       </aside>
+      <section class="group-members" id="group-members" aria-label="Жители выбранной группы"></section>
       <div class="world-label home-label"><b>Тихий Брод</b><small>10 жителей · 3 свободны</small></div>
       <button class="world-token resident-token selected" data-go="resident" style="left:48%;top:58%"><span>Д</span><small>Доран</small></button>
       <button class="world-token building-token" data-go="building" style="left:57%;top:43%"><span>⌂</span><small>Каменный дом</small></button>

@@ -5,14 +5,17 @@ monthly Ollama build has passed the user's retest and no longer blocks developme
 task with a design-first rearchitecture of the player flow over the existing canonical services. Required
 review artifacts cover screen/navigation structure, HUD information hierarchy, resident/building/settlement
 cards, construction, research, dynasty, events, army, world map and future diplomacy. Full Unity implementation
-must not start until the user approves the specification and prototype. The interactive prototype and eighteen
+must not start until the user approves the specification and prototype. The interactive prototype and twenty
 1920x1080/1280x720 renders passed static syntax, browser navigation, console-error and horizontal-overflow
 checks. No Unity runtime file changed and no Player build is claimed. General optimization and final polish
 remain deferred; unrelated dirty WM15/terrain/vendor work is preserved. User revision 1 moves navigation to
 the bottom, adds direct worker-group and military entries, combines Realm with diplomacy and adds a clickable
 local mini-map; overall visual approval remains open.
 User revision 2 keeps the world visible behind a compact lower construction catalog and adds a persistent
-scrollable resident tracker whose selection opens and focuses any resident; overall visual approval remains open.
+resident tracker whose selection opens and focuses any resident; overall visual approval remains open.
+User revision 3 supersedes that per-resident tracker with group-first drill-down suitable for 1000–2000
+residents and makes research a dependency tree grouped by construction, defense, farming, crafting and
+medicine; overall visual approval remains open.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

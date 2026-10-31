@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## D-228 — UI01 selection is group-first and research is a categorized dependency tree (2026-10-31)
+
+The user's third prototype correction supersedes D-227's persistent per-resident tracker. The local-world rail
+shows a bounded set of work, military, idle and attention groups. Selecting a group opens a searchable,
+sortable, virtualized member projection; selecting a member then uses the existing `StableEntityId` selection
+and camera-focus path. The UI must never instantiate or update 1000–2000 resident rows at once, maintain a
+parallel roster, or imply that late-game play requires individual control. Group aggregates are revision-gated
+projections over the canonical work/military/character services.
+
+Research is presented as a directed dependency tree rather than an unrelated card grid. Visible categories are
+Construction, Defense, Farming, Crafting and Medicine, with room for data-driven additions. Filtering dims
+unrelated branches but preserves dependency context and typed lock reasons. Research definitions and the
+canonical `ResearchService` remain authoritative for prerequisites, progress and unlocks; layout, folding and
+category filters are disposable Presentation state.
+
 ## D-227 — UI01 keeps construction over the world and exposes every resident (2026-10-31)
 
 The user's second prototype correction keeps the local world visible while browsing and placing buildings.

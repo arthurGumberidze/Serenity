@@ -15,10 +15,11 @@ Unity implementation, broad optimization and polish remain behind explicit user 
 The specification is `docs/UI01_INTERFACE_REDESIGN.md`; the dependency-free prototype is
 `docs/ui01/prototype/index.html`. The user's first revision moves the navigation rail to a bottom menu, adds
 direct worker-group and military entries, combines the realm map with diplomacy, and adds a clickable local
-mini-map. The second revision changes construction to a compact lower drawer that leaves the world visible and
-adds a persistent scrollable resident tracker; one click selects a resident, opens the inspector and focuses
-the camera contract. Reference renders cover the representative states at 1920x1080 and 1280x720. Headless Edge exercises
-bottom-menu navigation, resident selection, compact drawer bounds, keys 1-9, map-to-diplomacy navigation and every major
+mini-map. The second revision changes construction to a compact lower drawer that leaves the world visible. The
+third revision replaces the per-resident tracker with group-first drill-down designed for 1000–2000 residents
+and turns research into a categorized dependency tree. Reference renders cover the representative states at
+1920x1080 and 1280x720. Headless Edge exercises bottom-menu navigation, group/member selection, research-tree
+filtering, compact drawer bounds, keys 1-9, map-to-diplomacy navigation and every major
 screen at both sizes with zero console/page errors and no horizontal overflow. `node --check` and
 `git diff --check` passed. No Unity source, scene, asset or canonical state changed, so no Unity test or Player
 build was run for this approval-only slice. The next action is user review; UI02 implementation must not start

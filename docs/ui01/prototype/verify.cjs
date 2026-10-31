@@ -42,13 +42,24 @@ function ensure(condition, message) {
       }
 
       await page.evaluate(() => show('resident'));
+      ensure(await page.locator('.quick-group[data-group]').count() === 7,
+        `${size.tag}: scalable group tracker is incomplete`);
+      await page.locator('[data-group=researchers]').click();
+      ensure(await page.locator('.group-members').getAttribute('class').then(x => x.includes('open')),
+        `${size.tag}: group member picker did not open`);
+      await page.screenshot({ path: path.join(screenshots, `${size.tag}-group-members.png`) });
       await page.locator('[data-resident=elda]').click();
       ensure(await page.locator('.prototype').getAttribute('data-selected-resident') === 'elda',
-        `${size.tag}: resident tracker selection failed`);
+        `${size.tag}: group member selection failed`);
       ensure((await page.locator('.context-sheet').textContent()).includes('Эльда Серая'),
         `${size.tag}: selected resident was not shown`);
-      ensure(await page.locator('.resident-chip[data-resident]').count() === 10,
-        `${size.tag}: resident tracker does not expose every resident`);
+
+      await page.evaluate(() => show('research'));
+      ensure(await page.locator('.tech-node').count() >= 12,
+        `${size.tag}: research dependency tree is incomplete`);
+      await page.locator('[data-tech-filter=defense]').click();
+      ensure(await page.locator('.prototype').getAttribute('data-tech-filter') === 'defense',
+        `${size.tag}: research category filter failed`);
 
       await page.evaluate(() => show('build'));
       const buildDrawer = await page.locator('.workspace.build-drawer').boundingBox();
@@ -77,7 +88,7 @@ function ensure(condition, message) {
       ensure(layout.bodyWidth === layout.viewportWidth && layout.prototypeWidth === layout.viewportWidth,
         `${size.tag}: horizontal overflow detected`);
       ensure(errors.length === 0, `${size.tag}: ${errors.join('; ')}`);
-      report.push({ size, statesRendered: states.length, layout, errors });
+      report.push({ size, statesRendered: states.length, supplementaryRenders: 1, layout, errors });
       await page.close();
     }
   } finally {
@@ -85,7 +96,7 @@ function ensure(condition, message) {
   }
 
   fs.writeFileSync(path.join(root, 'verification-report.json'), JSON.stringify({ passed: true, report }, null, 2));
-  console.log(`UI01 prototype verification passed: ${sizes.length} viewports, ${states.length * sizes.length} screenshots.`);
+  console.log(`UI01 prototype verification passed: ${sizes.length} viewports, ${(states.length + 1) * sizes.length} screenshots.`);
 })().catch(error => {
   console.error(error);
   process.exit(1);

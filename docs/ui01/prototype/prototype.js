@@ -2,6 +2,7 @@ const app = document.querySelector('.prototype');
 const workspace = document.querySelector('#workspace');
 const sheet = document.querySelector('#context-sheet');
 const ribbon = document.querySelector('#command-ribbon');
+const groupMembers = document.querySelector('#group-members');
 
 const A = (label, cls = '', key = '') => `<button class="action ${cls}">${label}${key ? ` <kbd>${key}</kbd>` : ''}</button>`;
 const fact = (a,b) => `<div class="fact"><span>${a}</span><b>${b}</b></div>`;
@@ -21,6 +22,22 @@ const residents = {
   sava:{initial:'С',name:'Сава Младший',age:'14 лет',profession:'помощник',now:'Спит · восстановление 78%',health:'100%',group:'Без группы'}
 };
 let activeResident = 'doran';
+let activeGroup = 'builders';
+
+const quickGroups = {
+  builders:{name:'Строители',total:3,members:['doran','tarin','rovan']},
+  researchers:{name:'Исследователи',total:2,members:['elda','neris']},
+  haulers:{name:'Переносчики',total:2,members:['mira','rovan']},
+  hunters:{name:'Охотники',total:1,members:['aren']},
+  military:{name:'Военные',total:4,members:['doran','aren','kael','rovan']},
+  idle:{name:'Свободные',total:1,members:['rovan']},
+  attention:{name:'Требуют внимания',total:1,members:['kael']}
+};
+
+function renderGroupMembers(){
+  const group=quickGroups[activeGroup];
+  groupMembers.innerHTML=`<div class="group-members-head"><span><b>${group.name}</b><small>${group.total} жителей · поиск и фильтры</small></span><button class="close-members" aria-label="Закрыть">×</button></div><label class="member-search">⌕ <input aria-label="Найти жителя в группе" placeholder="Имя, профессия, состояние"></label><div class="member-list">${group.members.map(id=>{const r=residents[id];return `<button class="resident-chip" data-resident="${id}"><span>${r.initial}</span><b>${r.name}</b><small>${r.now}</small><i class="${id==='kael'?'danger':'good'}"></i></button>`}).join('')}</div><div class="member-list-footer"><span>Показано ${group.members.length} из ${group.total}</span><button>Фильтры</button><button>По расстоянию</button></div>`;
+}
 
 const residentSheet = () => { const r=residents[activeResident]; return `
   <div class="sheet-head"><div class="identity"><div class="portrait">${r.initial}</div><div><span class="eyebrow">Житель · Тихий Брод</span><h2>${r.name}</h2><p>${r.age} · ${r.profession}</p></div></div><div class="state-line"><span>Сейчас</span><strong>${r.now}</strong></div></div>
@@ -47,9 +64,16 @@ const build = () => `${header('Строительство','Компактный
   <div class="build-drawer-body"><div class="build-categories"><button class="active">★ Рекомендовано</button><button>⌂ Жилье</button><button>◉ Еда и вода</button><button>⚒ Производство</button><button>▣ Склады</button><button>♜ Защита</button></div>
   <div class="build-strip"><button class="build-tile selected"><span class="build-glyph">◉</span><span><b>Колодец</b><small>🪵 8 · ⬡ 12 · 9 ч</small></span><em>Рекомендуется</em></button><button class="build-tile"><span class="build-glyph">⌂</span><span><b>Каменный дом</b><small>🪵 10 · ⬡ 24 · 18 ч</small></span></button><button class="build-tile"><span class="build-glyph">◫</span><span><b>Сушилка</b><small>🪵 14 · ◌ 6 · 11 ч</small></span></button><button class="build-tile"><span class="build-glyph">♜</span><span><b>Палисад</b><small>🪵 18 · 7 ч</small></span></button><button class="build-tile locked"><span class="build-glyph">⚒</span><span><b>Мастерская</b><small>Нужно исследование</small></span></button></div></div>`;
 
-const research = () => `${header('Карта знаний','Каменный век · 4 из 14 технологий',A('Исследователи: 2'))}
-  <div class="workspace-body"><div class="card selected" style="margin-bottom:18px"><span class="kicker">Активное исследование</span><h2>Обработка камня · 62%</h2><p>Эльда и Нерис · 38 знаний в день · осталось около 2 дней</p><div class="progress"><i style="width:62%"></i></div></div>
-  <div class="research-grid"><div class="card tech"><span class="kicker">Открыто</span><h2>Контроль огня</h2><p>Костер, приготовление пищи</p></div><div class="card tech selected"><span class="kicker">Изучается</span><h2>Обработка камня</h2><p>Каменный дом, топор, мастерская</p><div class="progress"><i style="width:62%"></i></div></div><div class="card tech"><span class="kicker">Доступно</span><h2>Хранение пищи</h2><p>Сушилка и пищевой склад</p></div><div class="card tech locked"><span class="kicker">Заблокировано</span><h2>Палисады</h2><p>Нужна обработка камня</p></div><div class="card tech"><span class="kicker">Доступно</span><h2>Лекарственные травы</h2><p>Хижина лекаря</p></div><div class="card tech locked"><span class="kicker">Будущая ветвь</span><h2>Гончарное дело</h2><p>Раскроется после хранения пищи</p></div><div class="card tech locked"><span class="kicker">Будущая эпоха</span><h2>Античность</h2><p>Пока скрыта</p></div></div></div>`;
+const techNode = (cls,type,title,detail,state='Доступно') => `<button class="tech-node ${cls}" data-tech-type="${type}"><span class="tech-type ${type}">${type==='build'?'Строительство':type==='defense'?'Оборона':type==='farm'?'Фермерство':type==='craft'?'Ремесло':'Медицина'}</span><b>${title}</b><small>${detail}</small><em>${state}</em></button>`;
+const research = () => `${header('Дерево знаний','Каменный век · зависимости и направления развития',A('Исследователи: 2'))}
+  <div class="workspace-body research-body"><div class="research-summary"><div><span class="kicker">Активное исследование</span><h2>Обработка камня · 62%</h2><p>Эльда и Нерис · 38 знаний/день · около 2 дней</p></div><div class="progress"><i style="width:62%"></i></div></div>
+  <div class="tech-filters" aria-label="Направления исследований"><button class="active" data-tech-filter="all">Все</button><button data-tech-filter="build">Строительство</button><button data-tech-filter="defense">Оборона</button><button data-tech-filter="farm">Фермерство</button><button data-tech-filter="craft">Ремесло</button><button data-tech-filter="medicine">Медицина</button></div>
+  <div class="tech-map" data-filter="all"><svg class="tech-links" viewBox="0 0 1200 470" preserveAspectRatio="none" aria-hidden="true"><g><path d="M150 235H270M420 95H510M420 235H510M420 375H510M660 95H750M660 235H750M660 375H750M900 95H1020M900 205H1020M900 295H1020M900 375H1020"/><path d="M270 235C240 235 240 95 270 95M270 235C240 235 240 375 270 375M660 235C700 235 700 205 750 205M660 235C700 235 700 295 750 295"/></g></svg>
+  ${techNode('root done','craft','Контроль огня','Костёр · приготовление','Открыто')}
+  ${techNode('n-build-1 done','build','Простые инструменты','Топор · молот','Открыто')}${techNode('n-build-2 active','build','Обработка камня','Дом · мастерская','Изучается · 62%')}${techNode('n-build-3 locked','build','Каменная кладка','Мост · стены','Нужна обработка камня')}${techNode('n-build-4 locked','build','Архитектура','Большие здания','Будущая эпоха')}
+  ${techNode('n-farm-1 done','farm','Собирательство','Ягоды · травы','Открыто')}${techNode('n-farm-2','farm','Земледелие','Поля · зерно')}${techNode('n-farm-3 locked','farm','Орошение','Каналы · урожай','Нужно земледелие')}${techNode('n-farm-4 locked','farm','Животноводство','Загоны · разведение','Нужно земледелие')}
+  ${techNode('n-defense-1 done','defense','Охота','Лук · разделка','Открыто')}${techNode('n-defense-2','defense','Стрельба','Тренировка · башня')}${techNode('n-defense-3 locked','defense','Палисады','Стены · ворота','Нужна кладка')}${techNode('n-medicine locked','medicine','Лекарские знания','Лечение · госпиталь','Нужны травы')}
+  </div></div>`;
 
 const dynasty = () => `${header('Династия Серых','Правление, семья и линия наследования',A('История правлений'))}
   <div class="workspace-body"><div class="family-tree"><button class="person ruler"><b>Доран I</b><small>Монарх · 31 год</small></button><button class="person spouse"><b>Эльда</b><small>Супруга · исследователь</small></button><div class="lineage"></div><button class="person heir"><b>Мира</b><small>Наследник · допустима</small></button><button class="person child2"><b>Нерис</b><small>Вторая в очереди</small></button><button class="person child3"><b>Кейл</b><small>Недопустим · ребенок</small></button></div>
@@ -81,6 +105,7 @@ const screens = {
 
 function show(name){
   const screen=screens[name]||screens.resident; app.dataset.screen=name;
+  groupMembers.classList.remove('open');
   workspace.innerHTML=screen.workspace?screen.workspace():''; sheet.innerHTML=screen.sheet?screen.sheet():''; ribbon.innerHTML=screen.ribbon?screen.ribbon():'';
   workspace.classList.toggle('with-sheet',Boolean(screen.sheet));
   workspace.classList.toggle('build-drawer',name==='build');
@@ -90,6 +115,15 @@ function show(name){
   if(name==='diplomacy') setTimeout(()=>document.querySelector('.workspace-head .action')?.addEventListener('click',()=>show('map')),0);
 }
 
-document.addEventListener('click',e=>{const resident=e.target.closest('.resident-chip[data-resident]');if(resident){activeResident=resident.dataset.resident;app.dataset.selectedResident=activeResident;show('resident');return}const target=e.target.closest('[data-go]');if(target)show(target.dataset.go)});
-document.addEventListener('keydown',e=>{const keys=['settlement','resident','workgroups','build','research','dynasty','army','map','events'];const i=Number(e.key)-1;if(i>=0&&i<keys.length)show(keys[i]);if(e.key==='Escape')show('resident')});
+document.addEventListener('click',e=>{
+  const resident=e.target.closest('.resident-chip[data-resident]');
+  if(resident){activeResident=resident.dataset.resident;app.dataset.selectedResident=activeResident;show('resident');return}
+  const group=e.target.closest('.quick-group[data-group]');
+  if(group){activeGroup=group.dataset.group;app.dataset.selectedGroup=activeGroup;document.querySelectorAll('.quick-group').forEach(b=>b.classList.toggle('selected',b===group));renderGroupMembers();groupMembers.classList.add('open');return}
+  if(e.target.closest('.close-members')){groupMembers.classList.remove('open');return}
+  const filter=e.target.closest('.tech-filters [data-tech-filter]');
+  if(filter){const value=filter.dataset.techFilter;document.querySelectorAll('[data-tech-filter]').forEach(b=>b.classList.toggle('active',b===filter));document.querySelector('.tech-map')?.setAttribute('data-filter',value);app.dataset.techFilter=value;return}
+  const target=e.target.closest('[data-go]');if(target)show(target.dataset.go)
+});
+document.addEventListener('keydown',e=>{const keys=['settlement','resident','workgroups','build','research','dynasty','army','map','events'];const i=Number(e.key)-1;if(i>=0&&i<keys.length)show(keys[i]);if(e.key==='Escape'){if(groupMembers.classList.contains('open'))groupMembers.classList.remove('open');else show('resident')}});
 show('resident');

@@ -4,8 +4,9 @@ Open `index.html` in a desktop browser. Use the bottom navigation or number keys
 residents, worker groups, construction, research, dynasty, military, Realm and attention. The local mini-map
 opens Realm, which combines the strategic map and future diplomacy.
 
-Construction opens as a compact lower drawer so the world remains visible. The persistent resident tracker
-selects and locates any inhabitant with one click; its list scrolls when the population does not fit.
+Construction opens as a compact lower drawer so the world remains visible. The persistent tracker lists groups,
+not every inhabitant; selecting a group opens its searchable, virtualizable member list. Research is a dependency
+tree filtered by construction, defense, farming, crafting and medicine.
 
 This is a dependency-free review artifact. It contains no game state, network calls or Unity integration.
 The reference viewport is 1920×1080 and the layout also supports 1280×720.

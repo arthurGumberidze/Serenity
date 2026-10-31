@@ -8,11 +8,12 @@
         "tag": "desktop"
       },
       "statesRendered": 9,
+      "supplementaryRenders": 1,
       "layout": {
         "viewportWidth": 1920,
         "bodyWidth": 1920,
         "prototypeWidth": 1920,
-        "visibleButtons": 39
+        "visibleButtons": 36
       },
       "errors": []
     },
@@ -23,11 +24,12 @@
         "tag": "minimum"
       },
       "statesRendered": 9,
+      "supplementaryRenders": 1,
       "layout": {
         "viewportWidth": 1280,
         "bodyWidth": 1280,
         "prototypeWidth": 1280,
-        "visibleButtons": 38
+        "visibleButtons": 35
       },
       "errors": []
     }
