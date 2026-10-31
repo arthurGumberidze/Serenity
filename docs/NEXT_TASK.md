@@ -1,30 +1,24 @@
 # NEXT_TASK.md
 
-## UI06 — implement strategic world workspace and honest diplomacy placeholder (2026-10-31)
+## UI07 — interface acceptance, accessibility and final polish (2026-10-31)
 
-UI05 is complete. In a separate UI06 chat, implement only the approved `UI01_INTERFACE_REDESIGN.md` world slice:
-the clickable local mini-map and combined `Держава` workspace with the strategic map, known-world layers/legend,
-settlements, armies, routes, fog/scouting and selected location/army detail. The route summary must show duration,
-weather, supply and risk, and returning must restore the local camera through the existing
-`GlobalMapRuntimeBridge`.
+UI06 is complete. Start UI07 only in a separate chat. Review the complete UI02–UI06 Black and Gold interface as
+one player flow at 1920x1080 and 1280x720@125%, then fix only acceptance/polish issues: overlap, clipping,
+readability, focus/keyboard behavior, consistent disabled/selected/warning states, scroll affordances and honest
+player-facing copy. Preserve the world-first hierarchy, stable route/element compatibility names and every
+canonical Domain/Simulation authority.
 
-Read known geography, campaign/travel state and selection only from existing ConnectedWorld, GlobalMap, Campaign,
-Military and camera/bridge services. The mini-map is not a second world and must not own discovery. Diplomacy is an
-honest placeholder only: do not invent foreign states, relations, treaties, demands or a mutable diplomacy model
-before a canonical diplomacy service exists. Preserve `StableEntityId`, Save/Load, fog/scouting and Local/Global/TPS
-transitions. Do not pull forward UI07 acceptance/polish or unrelated world/content work.
+Do not introduce new gameplay systems, foreign-state/diplomacy simulation, alternate selection/save state,
+world/content work or UI08 integration scope. Reuse the existing exact-binary smoke paths and add only the
+smallest acceptance coverage needed for defects actually found during the cross-workspace review.
 
 Definition of Done:
 
-1. The local mini-map and `Держава` workspace match the approved hierarchy at 1920x1080 and 1280x720@125%, with
-   readable layers, known locations/armies and route detail while preserving the visible-world philosophy.
-2. Map interactions use existing camera, travel, enter-settlement/battle and bridge commands; blocked commands show
-   typed player reasons, and diplomacy clearly states its unavailable future contract without simulating state.
-3. Focused UI06 plus affected UI02/UI03/UI05, global map/campaign/travel/fog, Save/Load and tier tests pass.
-4. A Windows Development build and autonomous visible exact-binary smoke pass with locally reviewed captures at both
-   required resolutions.
-5. Update the four task/state/decision documents, record exact evidence, and create a separate `UI06:` commit while
-   preserving unrelated WM15/terrain/vendor changes.
+1. Complete a screen-by-screen acceptance matrix for HUD, management, people/risk, military/events and Realm at
+   both required layouts, including 125% scale and keyboard/focus checks.
+2. Correct observed presentation/accessibility defects without changing canonical rules or pulling UI08 forward.
+3. Run focused UI07 plus affected UI02–UI06 tests, Development build and exact-binary visible smoke.
+4. Update project records and create a separate `UI07:` commit while preserving unrelated dirty work.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 

@@ -2519,3 +2519,19 @@ selection retention and queue projection, captures resident/building/multiple st
 and fails the process when any assertion is false. Inherited P103 selection fixtures similarly use commandable
 StableEntityIds and a selected resident's reachable ground position rather than stale seed presenters or a
 potentially disconnected world anchor. Exact evidence: `docs/validation/UI03.md`.
+
+## D-231 — UI06 maps remain projections and diplomacy remains an unavailable contract (2026-10-31)
+
+The local mini-map and strategic `Держава` workspace are disposable Presentation projections over
+`ConnectedWorldService`, `GlobalMapService`, military/campaign state and the existing world camera bridge. They
+may cache only transient layer toggles and selected map IDs. Discovery cells, fog, locations, routes, travel,
+army state and local/global mode remain canonical in their existing services; map UI never creates a second
+world or save authority. Mini-map clicks focus only revealed coordinates, and strategic return restores the RTS
+camera's captured focus, rotation and zoom through `GlobalMapRuntimeBridge`.
+
+Until a canonical diplomacy service exists, the workspace may show only already-known settlement/side facts and
+disabled actions labelled as unavailable. It must not infer or mutate relations, treaties, trade, demands or
+foreign-state state. Route duration, weather, supply and risk are likewise projections of current canonical
+weather, travel topology, unit supply and confirmed hostile facts. Exact-binary acceptance runs only when the
+`-ui06Smoke` flag is present; it enables background frames for deterministic automation, waits for rendered
+frames, rejects dark captures and does not change ordinary player runtime behavior.

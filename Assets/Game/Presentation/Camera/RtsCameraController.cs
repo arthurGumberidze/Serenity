@@ -49,6 +49,13 @@ namespace Game.Presentation.CameraControl
         public Transform CameraMount => cameraMount;
         public float CurrentZoom => currentZoom;
 
+        public void RestoreView(Vector3 position, Quaternion rotation, float zoom)
+        {
+            FocusPosition(position, zoom);
+            transform.rotation = rotation;
+            ApplyCameraMount();
+        }
+
         public void Configure(LocalGameplayInputSource source, Transform mount, RtsCameraSettings cameraSettings, float zoom)
         {
             inputSource = source;

@@ -888,7 +888,10 @@ namespace Game.Infrastructure
                     Events, CampaignProgress, StartNewGame, ReturnToMainMenu,
                     () => Characters.GetAll().Where(x => CanCommandResident(x.Id)).Select(x => x.Id).ToArray(),
                     position => cameraController.FocusPosition(new Vector3(position.X, position.Y, position.Z), 28f),
-                     BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi),
+                    BuildingLifecycle, BuildingPathing, Facilities, ConstructionClearance, StrategicAi,
+                    ConnectedWorld, () => new WorldPosition(pointerRaycaster.WorldCamera.transform.position.x,
+                        pointerRaycaster.WorldCamera.transform.position.y,
+                        pointerRaycaster.WorldCamera.transform.position.z)),
                 pointerRaycaster, input);
             cameraController.PointerBlockedByUi = pointerRaycaster.IsPointerBlockedByUi;
             ManualMoveInput.EnableContextMenus();

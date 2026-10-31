@@ -13,6 +13,10 @@ namespace Game.Infrastructure
         private LocalSceneCompositionRoot root;
         private P102StrategicWorldView strategicView;
         private bool developerUiVisible;
+        private Vector3 savedCameraFocus;
+        private Quaternion savedCameraRotation;
+        private float savedCameraZoom;
+        private bool hasSavedCameraView;
         public bool IsGlobalSceneLoaded => strategicView != null && strategicView.IsActive;
 
         public void Initialize(LocalSceneCompositionRoot compositionRoot)
@@ -30,6 +34,7 @@ namespace Game.Infrastructure
                 strategicView.Initialize(root.PointerRaycaster.WorldCamera, world, root.ConnectedWorld, root.Production);
             }
             strategicView.ConfigureResourceCommands(root.DirectWorkCommands);
+            strategicView.SetLegacyControlsVisible(false);
         }
 
         public void RequestEnterGlobal()
@@ -65,6 +70,13 @@ namespace Game.Infrastructure
 
         private void EnterStrategicView()
         {
+            if (!strategicView.IsActive)
+            {
+                savedCameraFocus = root.CameraController.transform.position;
+                savedCameraRotation = root.CameraController.transform.rotation;
+                savedCameraZoom = root.CameraController.CurrentZoom;
+                hasSavedCameraView = true;
+            }
             root.CameraController.enabled = false;
             root.Input.enabled = false;
             strategicView.Enter();
@@ -73,6 +85,11 @@ namespace Game.Infrastructure
         private void ExitStrategicView()
         {
             strategicView.Exit();
+            if (hasSavedCameraView)
+            {
+                root.CameraController.RestoreView(savedCameraFocus, savedCameraRotation, savedCameraZoom);
+                hasSavedCameraView = false;
+            }
             root.WeatherPresentation.ClearPreview(root.Clock.State.CalendarTicks);
             root.CameraController.enabled = true;
             root.Input.enabled = true;

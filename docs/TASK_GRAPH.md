@@ -1,5 +1,15 @@
 # TASK_GRAPH.md
 
+UI06 local mini-map, strategic Realm workspace and honest diplomacy placeholder (2026-10-31): **DONE**. Added a
+clickable known-world mini-map plus a `Держава` projection with canonical fog/scouting, layers, settlements,
+armies, routes, selected detail and duration/weather/supply/risk facts. Travel, location/battle entry and return
+use existing services and `GlobalMapRuntimeBridge`; local camera focus/rotation/zoom is restored. Diplomacy is a
+disabled future contract and creates no foreign-state or relationship authority. Final evidence: UI06 EditMode
+4/4, full-world UI06 PlayMode 1/1, affected EditMode 70/70, affected UI02/UI03/UI05 PlayMode 3/3, P103 stable-ID/
+save/tier pass, Development build success and exact Player exit 0 with all assertions true and reviewed required-
+resolution captures. Legacy readiness/test-framework failures are classified in `docs/validation/UI06.md`. UI07
+acceptance/polish is next in a separate chat; UI08 integration remains deferred.
+
 UI05 people, risk, dynasty, events and military workspaces (2026-10-31): **DONE**. Added canonical home/family/
 health detail, dynasty and succession, pending decisions plus bounded journal, and virtualized military unit/member
 workspaces with supply, training, safe orders and active combat status. Presentation owns no relation, event, army,

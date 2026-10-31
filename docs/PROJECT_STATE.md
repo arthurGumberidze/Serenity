@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## UI06 local mini-map and strategic Realm workspace — DONE (2026-10-31)
+
+The local HUD now includes a clickable known-world mini-map, and `Держава` opens a strategic projection over the
+existing connected terrain, discovery, locations, armies and routes. The workspace provides canonical layer/
+legend controls, selected location and army facts, duration/weather/supply/risk route evidence, travel/enter/
+return commands, and an explicitly unavailable future diplomacy contract. It owns no world, fog, selection,
+travel or relationship state. Returning through `GlobalMapRuntimeBridge` restores the authoritative RTS camera
+focus, rotation and zoom.
+
+Final validation passed UI06 EditMode 4/4, the full-world UI06 PlayMode route 1/1, affected EditMode 70/70,
+affected UI02/UI03/UI05 PlayMode 3/3, and the P103 stable-identity/save/tier route. The final Windows Development
+build succeeded with 0 errors / 53 inherited warnings. Its exact binary exited 0 with every UI06 predicate true,
+no runtime exception match, and locally reviewed 1920x1080 plus 1280x720@125% captures. Two old one-frame map
+fixtures still null-dereference before composition readiness; a later Unity Test Framework exit failure timed out
+without a UI06 assertion and the persistent runner recovered in place. Exact evidence is in
+`docs/validation/UI06.md`. UI07 acceptance/polish is next and must start in a separate chat.
+
 ## UI05 people, risk, dynasty, events and military workspaces — DONE (2026-10-31)
 
 Home/family/health detail, dynasty/succession, Attention decisions/journal and military roster/training/orders/

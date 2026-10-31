@@ -83,6 +83,14 @@ namespace Game.Presentation.UI
         private VisualElement tpsHud;
         private VisualElement modal;
         private VisualElement onboardingCard;
+        private VisualElement localMiniMap;
+        private VisualElement localMiniMapGrid;
+        private VisualElement realmWorkspace;
+        private ScrollView realmLayers;
+        private ScrollView realmDetail;
+        private VisualElement realmRouteBar;
+        private VisualElement realmMapHeader;
+        private VisualElement realmMapOverlay;
         private ScrollView contextMenu;
         private Button onboardingToggleButton;
         private Label resourcesLabel;
@@ -140,6 +148,10 @@ namespace Game.Presentation.UI
         private string peopleSearch = string.Empty;
         private StableEntityId? selectedDynastyPerson;
         private bool showEventJournal;
+        private bool showMapSettlements = true;
+        private bool showMapArmies = true;
+        private bool showMapRoutes = true;
+        private bool showMapWeather = true;
         private ContextCommandTarget? activeContextTarget;
         private StableEntityId[] activeContextSelectionIds = Array.Empty<StableEntityId>();
         private int lastUiPointerFrame = -2;
@@ -187,6 +199,8 @@ namespace Game.Presentation.UI
         public IReadOnlyDictionary<ContextActionKind, ContextActionAvailability> ContextActionStates => contextActionStates;
         public MilitaryAttackCommandResult LastMilitaryAttackResult { get; private set; }
         public DiagnosticExecutionResult LastDiagnosticResult { get; private set; }
+        public WorldLocationId? SelectedMapLocation => selectedLocation;
+        public MilitaryUnitId? SelectedMapUnit => selectedUnit;
         public GameplayUiRouteId? ActiveRoute => GameplayUiRoutes.TryForPanel(activePanel, out var route)
             ? route.Id
             : null;
@@ -231,7 +245,10 @@ namespace Game.Presentation.UI
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
                 Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
                 Blocks(commandRibbon, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint) ||
-                Blocks(resourceDrawer, panelPoint) || Blocks(residentStrip, panelPoint) || Blocks(bottomDock, panelPoint)) return true;
+                Blocks(resourceDrawer, panelPoint) || Blocks(residentStrip, panelPoint) || Blocks(bottomDock, panelPoint) ||
+                Blocks(localMiniMap, panelPoint) || Blocks(realmLayers, panelPoint) || Blocks(realmDetail, panelPoint) ||
+                Blocks(realmRouteBar, panelPoint) || Blocks(realmMapHeader, panelPoint) ||
+                Blocks(realmMapOverlay, panelPoint)) return true;
             return Blocks(modal, panelPoint);
         }
 
@@ -242,7 +259,19 @@ namespace Game.Presentation.UI
                 SetStatus("Раздел кодов доступен только на паузе.");
                 return;
             }
-            activePanel = activePanel == panel ? GameplayPanel.None : panel;
+            var closing = activePanel == panel;
+            if (panel == GameplayPanel.Global && !closing && context.GlobalMap.Mode == GameWorldMode.Local)
+            {
+                if (!selectedLocation.HasValue && IsKnownLocation(context.GlobalMap.ActiveLocationId))
+                    selectedLocation = context.GlobalMap.ActiveLocationId;
+                if (!selectedUnit.HasValue)
+                    selectedUnit = context.Military.Units.FirstOrDefault(value => value.OwnerSideId.Value == "player")?.Id;
+                context.RequestEnterGlobal();
+            }
+            else if ((panel != GameplayPanel.Global || closing) &&
+                     context.GlobalMap.Mode != GameWorldMode.Local)
+                context.RequestEnterLocation(context.GlobalMap.ActiveLocationId);
+            activePanel = closing ? GameplayPanel.None : panel;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
             RefreshNavigationSelection();
             ApplyPanelLayout();
@@ -250,6 +279,41 @@ namespace Game.Presentation.UI
         }
 
         public void Navigate(GameplayUiRouteId routeId) => SetPanel(GameplayUiRoutes.Get(routeId).Panel);
+
+        public void SelectMapLocation(WorldLocationId id)
+        {
+            if (!context.GlobalMap.Locations.Any(value => value.Id == id))
+                throw new ArgumentException("Unknown map location.", nameof(id));
+            if (context.ConnectedWorld != null && !context.ConnectedWorld.IsLocationRevealed(id))
+                throw new InvalidOperationException("Only a known location may be selected.");
+            selectedLocation = id;
+            RefreshNow();
+        }
+
+        public void SelectMapUnit(MilitaryUnitId id)
+        {
+            if (!context.Military.TryGet(id, out _)) throw new ArgumentException("Unknown military unit.", nameof(id));
+            selectedUnit = id;
+            RefreshNow();
+        }
+
+        public bool FocusLocalMiniMap(float normalizedX, float normalizedZ)
+        {
+            if (context.ConnectedWorld == null || normalizedX < 0f || normalizedX > 1f ||
+                normalizedZ < 0f || normalizedZ > 1f) return false;
+            var layout = context.ConnectedWorld.Layout;
+            var x = layout.OriginX + normalizedX * layout.WidthMeters;
+            var z = layout.OriginZ + normalizedZ * layout.DepthMeters;
+            if (!context.ConnectedWorld.IsRevealed(x, z))
+            {
+                SetStatus("Эта область ещё не разведана.");
+                return false;
+            }
+            context.FocusWorld(new WorldPosition(x, 0f, z));
+            SetStatus("Камера перемещена по известной карте.");
+            RefreshNow();
+            return true;
+        }
 
         public void SetOnboardingVisible(bool visible)
         {
@@ -281,6 +345,7 @@ namespace Game.Presentation.UI
             RefreshInspector();
             RefreshCommandRibbon();
             RefreshPanel();
+            RefreshWorldMapSurfaces();
             RefreshTps();
             RefreshGameOver();
             ApplyResponsiveLayout();
@@ -1390,6 +1455,8 @@ namespace Game.Presentation.UI
             notifications.pickingMode = PickingMode.Position;
             root.Add(notifications);
 
+            BuildWorldMapSurfaces();
+
             placementFeedback = new Label { name = "placement-feedback" };
             placementFeedback.AddToClassList("serenity-placement-feedback");
             placementFeedback.style.position = Position.Absolute;
@@ -1519,6 +1586,328 @@ namespace Game.Presentation.UI
             root.RegisterCallback<ClickEvent>(_ => lastUiPointerFrame = Time.frameCount,
                 TrickleDown.TrickleDown);
             ApplyResponsiveLayout();
+        }
+
+        private void BuildWorldMapSurfaces()
+        {
+            localMiniMap = Panel("local-mini-map");
+            localMiniMap.style.position = Position.Absolute;
+            localMiniMap.style.right = 10;
+            localMiniMap.style.bottom = 92;
+            localMiniMap.style.width = 220;
+            localMiniMap.style.height = 184;
+            localMiniMap.style.paddingLeft = 8;
+            localMiniMap.style.paddingRight = 8;
+            localMiniMap.style.paddingTop = 8;
+            localMiniMap.style.paddingBottom = 8;
+            localMiniMap.pickingMode = PickingMode.Position;
+            var miniTitle = new Label("Локальная карта") { name = "local-mini-map-title" };
+            miniTitle.AddToClassList(SerenityUiDesign.SectionClass);
+            localMiniMap.Add(miniTitle);
+            localMiniMapGrid = new VisualElement { name = "local-mini-map-grid" };
+            localMiniMapGrid.style.position = Position.Relative;
+            localMiniMapGrid.style.flexGrow = 1;
+            localMiniMapGrid.style.overflow = Overflow.Hidden;
+            localMiniMapGrid.style.borderLeftColor = SerenityUiDesign.Accent;
+            localMiniMapGrid.style.borderRightColor = SerenityUiDesign.Accent;
+            localMiniMapGrid.style.borderTopColor = SerenityUiDesign.Accent;
+            localMiniMapGrid.style.borderBottomColor = SerenityUiDesign.Accent;
+            localMiniMapGrid.style.borderLeftWidth = 1;
+            localMiniMapGrid.style.borderRightWidth = 1;
+            localMiniMapGrid.style.borderTopWidth = 1;
+            localMiniMapGrid.style.borderBottomWidth = 1;
+            localMiniMapGrid.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                var width = localMiniMapGrid.resolvedStyle.width;
+                var height = localMiniMapGrid.resolvedStyle.height;
+                if (width <= 0f || height <= 0f) return;
+                FocusLocalMiniMap(Mathf.Clamp01(evt.localPosition.x / width),
+                    Mathf.Clamp01(1f - evt.localPosition.y / height));
+                evt.StopPropagation();
+            });
+            localMiniMap.Add(localMiniMapGrid);
+            root.Add(localMiniMap);
+
+            realmWorkspace = new VisualElement { name = "realm-workspace" };
+            realmWorkspace.style.position = Position.Absolute;
+            realmWorkspace.style.left = 0;
+            realmWorkspace.style.right = 0;
+            realmWorkspace.style.top = 0;
+            realmWorkspace.style.bottom = 0;
+            realmWorkspace.style.display = DisplayStyle.None;
+            realmWorkspace.pickingMode = PickingMode.Ignore;
+
+            realmMapHeader = Panel("realm-map-header");
+            realmMapHeader.style.position = Position.Absolute;
+            realmMapHeader.style.left = 268;
+            realmMapHeader.style.right = 322;
+            realmMapHeader.style.top = 72;
+            realmMapHeader.style.height = 64;
+            realmMapHeader.style.flexDirection = FlexDirection.Row;
+            realmMapHeader.style.alignItems = Align.Center;
+            realmMapHeader.style.justifyContent = Justify.SpaceBetween;
+            realmMapHeader.style.paddingLeft = 12;
+            realmMapHeader.style.paddingRight = 12;
+            realmMapHeader.pickingMode = PickingMode.Position;
+            realmWorkspace.Add(realmMapHeader);
+
+            realmMapOverlay = new VisualElement { name = "realm-map-overlay" };
+            realmMapOverlay.style.position = Position.Absolute;
+            realmMapOverlay.style.left = new Length(20, LengthUnit.Percent);
+            realmMapOverlay.style.right = new Length(24, LengthUnit.Percent);
+            realmMapOverlay.style.top = 140;
+            realmMapOverlay.style.bottom = 194;
+            realmMapOverlay.style.overflow = Overflow.Hidden;
+            realmMapOverlay.pickingMode = PickingMode.Ignore;
+            realmWorkspace.Add(realmMapOverlay);
+
+            realmLayers = new ScrollView(ScrollViewMode.Vertical) { name = "realm-layers" };
+            StylePanel(realmLayers);
+            realmLayers.style.position = Position.Absolute;
+            realmLayers.style.left = 10;
+            realmLayers.style.top = 72;
+            realmLayers.style.bottom = 190;
+            realmLayers.style.width = 246;
+            realmLayers.pickingMode = PickingMode.Position;
+            realmWorkspace.Add(realmLayers);
+
+            realmDetail = new ScrollView(ScrollViewMode.Vertical) { name = "realm-detail" };
+            StylePanel(realmDetail);
+            realmDetail.style.position = Position.Absolute;
+            realmDetail.style.right = 10;
+            realmDetail.style.top = 72;
+            realmDetail.style.bottom = 190;
+            realmDetail.style.width = 310;
+            realmDetail.pickingMode = PickingMode.Position;
+            realmWorkspace.Add(realmDetail);
+
+            realmRouteBar = Panel("realm-route-summary");
+            realmRouteBar.style.position = Position.Absolute;
+            realmRouteBar.style.left = 268;
+            realmRouteBar.style.right = 322;
+            realmRouteBar.style.bottom = 90;
+            realmRouteBar.style.height = 118;
+            realmRouteBar.style.flexDirection = FlexDirection.Column;
+            realmRouteBar.style.alignItems = Align.Stretch;
+            realmRouteBar.style.paddingLeft = 12;
+            realmRouteBar.style.paddingRight = 12;
+            realmRouteBar.pickingMode = PickingMode.Position;
+            realmWorkspace.Add(realmRouteBar);
+            root.Add(realmWorkspace);
+        }
+
+        private void RefreshWorldMapSurfaces()
+        {
+            if (localMiniMap == null || realmWorkspace == null || context == null) return;
+            var strategic = context.GlobalMap.Mode != GameWorldMode.Local && activePanel == GameplayPanel.Global;
+            var showLocal = context.GlobalMap.Mode == GameWorldMode.Local &&
+                            !IsPeopleRiskWorkspace(activePanel) && activePanel != GameplayPanel.SaveLoad &&
+                            activePanel != GameplayPanel.Codes;
+            localMiniMap.style.display = showLocal ? DisplayStyle.Flex : DisplayStyle.None;
+            realmWorkspace.style.display = strategic ? DisplayStyle.Flex : DisplayStyle.None;
+            if (strategic)
+            {
+                mainPanel.style.display = DisplayStyle.None;
+                residentStrip.style.display = DisplayStyle.None;
+                commandRibbon.style.display = DisplayStyle.None;
+                RefreshRealmMapOverlay();
+            }
+            else if (activePanel != GameplayPanel.None)
+                mainPanel.style.display = DisplayStyle.Flex;
+            if (showLocal) RefreshLocalMiniMap();
+        }
+
+        private void RefreshLocalMiniMap()
+        {
+            localMiniMapGrid.Clear();
+            if (context.ConnectedWorld == null)
+            {
+                var unavailable = new Label("Карта недоступна");
+                unavailable.AddToClassList(SerenityUiDesign.MutedClass);
+                localMiniMapGrid.Add(unavailable);
+                return;
+            }
+            const int samples = 24;
+            var layout = context.ConnectedWorld.Layout;
+            for (var z = 0; z < samples; z++)
+            for (var x = 0; x < samples; x++)
+            {
+                var worldX = layout.OriginX + (x + .5f) / samples * layout.WidthMeters;
+                var worldZ = layout.OriginZ + (z + .5f) / samples * layout.DepthMeters;
+                var cell = new VisualElement();
+                cell.pickingMode = PickingMode.Ignore;
+                cell.style.position = Position.Absolute;
+                cell.style.left = new Length(x * 100f / samples, LengthUnit.Percent);
+                cell.style.top = new Length((samples - 1 - z) * 100f / samples, LengthUnit.Percent);
+                cell.style.width = new Length(100f / samples + .15f, LengthUnit.Percent);
+                cell.style.height = new Length(100f / samples + .15f, LengthUnit.Percent);
+                cell.style.backgroundColor = context.ConnectedWorld.IsRevealed(worldX, worldZ)
+                    ? new Color(.17f, .25f, .18f, 1f)
+                    : new Color(.025f, .025f, .024f, 1f);
+                localMiniMapGrid.Add(cell);
+            }
+            foreach (var location in context.GlobalMap.Locations.Where(value => IsKnownLocation(value.Id)))
+                AddMapDot(localMiniMapGrid, location.MapX, location.MapY, 7f,
+                    context.GlobalMap.GetSettlementAt(location.Id) == null ? SerenityUiDesign.TextMuted : SerenityUiDesign.Accent,
+                    "Мини-карта: " + LocationName(location.Id));
+            var camera = context.CameraPosition();
+            AddMapDot(localMiniMapGrid, camera.X, camera.Z, 9f, Color.white, "Положение камеры", "mini-camera-marker");
+            if (selectedLocation.HasValue && IsKnownLocation(selectedLocation.Value))
+            {
+                var selected = context.GlobalMap.GetLocation(selectedLocation.Value);
+                AddMapDot(localMiniMapGrid, selected.MapX, selected.MapY, 11f, SerenityUiDesign.Warning,
+                    "Выбранная цель", "mini-selected-marker");
+            }
+        }
+
+        private void AddMapDot(VisualElement parent, float worldX, float worldZ, float size, Color color,
+            string tooltip, string name = null)
+        {
+            if (context.ConnectedWorld == null) return;
+            var layout = context.ConnectedWorld.Layout;
+            var nx = Mathf.Clamp01((worldX - layout.OriginX) / layout.WidthMeters);
+            var nz = Mathf.Clamp01((worldZ - layout.OriginZ) / layout.DepthMeters);
+            var marker = new VisualElement { name = name ?? string.Empty, tooltip = tooltip };
+            marker.pickingMode = PickingMode.Ignore;
+            marker.style.position = Position.Absolute;
+            marker.style.left = new Length(nx * 100f, LengthUnit.Percent);
+            marker.style.top = new Length((1f - nz) * 100f, LengthUnit.Percent);
+            marker.style.width = size;
+            marker.style.height = size;
+            marker.style.translate = new Translate(-size * .5f, -size * .5f);
+            marker.style.backgroundColor = color;
+            marker.style.borderTopLeftRadius = size;
+            marker.style.borderTopRightRadius = size;
+            marker.style.borderBottomLeftRadius = size;
+            marker.style.borderBottomRightRadius = size;
+            parent.Add(marker);
+        }
+
+        private void RefreshRealmMapOverlay()
+        {
+            realmMapOverlay.Clear();
+            realmMapHeader.Clear();
+            if (context.ConnectedWorld == null) return;
+            var headerTitle = new Label("Стратегическая карта") { name = "realm-map-header-title" };
+            headerTitle.AddToClassList(SerenityUiDesign.SectionClass);
+            headerTitle.style.position = Position.Absolute;
+            headerTitle.style.left = 12;
+            headerTitle.style.right = 154;
+            headerTitle.style.top = 17;
+            headerTitle.style.whiteSpace = WhiteSpace.NoWrap;
+            headerTitle.style.overflow = Overflow.Hidden;
+            realmMapHeader.Add(headerTitle);
+            var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
+            var headerWeather = new Label("Погода: " + E(weather.Type)) { name = "realm-weather-layer" };
+            headerWeather.AddToClassList(SerenityUiDesign.ChipClass);
+            headerWeather.style.position = Position.Absolute;
+            headerWeather.style.right = 8;
+            headerWeather.style.top = 10;
+            headerWeather.style.width = 140;
+            realmMapHeader.Add(headerWeather);
+            if (showMapRoutes)
+                foreach (var route in context.GlobalMap.Routes.Where(value =>
+                             IsKnownLocation(value.From) && IsKnownLocation(value.To)))
+                    AddRouteDashes(route);
+            if (showMapSettlements)
+                foreach (var location in context.GlobalMap.Locations.Where(value => IsKnownLocation(value.Id)))
+                    AddRealmLocationMarker(location);
+            if (showMapArmies)
+            {
+                var index = 1;
+                foreach (var unit in context.Military.Units.Where(IsKnownMapUnit))
+                    AddRealmUnitMarker(unit, index++);
+            }
+            headerWeather.style.display = showMapWeather ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void AddRouteDashes(WorldRouteState route)
+        {
+            var from = context.GlobalMap.GetLocation(route.From);
+            var to = context.GlobalMap.GetLocation(route.To);
+            for (var step = 1; step < 10; step++)
+            {
+                var t = step / 10f;
+                var dash = new VisualElement();
+                dash.pickingMode = PickingMode.Ignore;
+                dash.style.position = Position.Absolute;
+                dash.style.left = new Length(MapX(Mathf.Lerp(from.MapX, to.MapX, t)), LengthUnit.Percent);
+                dash.style.top = new Length(MapY(Mathf.Lerp(from.MapY, to.MapY, t)), LengthUnit.Percent);
+                dash.style.width = 4;
+                dash.style.height = 4;
+                dash.style.backgroundColor = new Color(SerenityUiDesign.Accent.r, SerenityUiDesign.Accent.g,
+                    SerenityUiDesign.Accent.b, .72f);
+                realmMapOverlay.Add(dash);
+            }
+        }
+
+        private void AddRealmLocationMarker(WorldLocationState location)
+        {
+            var settlement = context.GlobalMap.GetSettlementAt(location.Id);
+            if (settlement != null && context.Campaign != null && !context.Campaign.CanRevealSettlement(settlement.Id))
+                return;
+            var captured = location.Id;
+            var marker = ActionButton(LocationName(location.Id), () => SelectMapLocation(captured),
+                "realm-map-location-" + location.Id.Value);
+            marker.style.position = Position.Absolute;
+            marker.style.left = new Length(MapX(location.MapX), LengthUnit.Percent);
+            marker.style.top = new Length(MapY(location.MapY), LengthUnit.Percent);
+            marker.style.maxWidth = 132;
+            marker.style.translate = new Translate(-18f, -12f);
+            marker.AddToClassList("serenity-card-action");
+            SerenityUiDesign.SetSelected(marker, selectedLocation == location.Id);
+            realmMapOverlay.Add(marker);
+        }
+
+        private void AddRealmUnitMarker(MilitaryUnitState unit, int index)
+        {
+            var point = UnitMapPoint(unit);
+            var captured = unit.Id;
+            var marker = ActionButton("⚑ " + index, () => SelectMapUnit(captured),
+                "realm-map-unit-" + unit.Id);
+            marker.style.position = Position.Absolute;
+            marker.style.left = new Length(MapX(point.x), LengthUnit.Percent);
+            marker.style.top = new Length(MapY(point.y), LengthUnit.Percent);
+            marker.style.translate = new Translate(-10f, 14f);
+            marker.tooltip = UnitLabel(unit, index) + " · " + UnitMapLocation(unit);
+            SerenityUiDesign.SetSelected(marker, selectedUnit == unit.Id);
+            realmMapOverlay.Add(marker);
+        }
+
+        private bool IsKnownMapUnit(MilitaryUnitState unit)
+        {
+            var travel = context.GlobalMap.Travels.FirstOrDefault(value => value.UnitId == unit.Id);
+            if (travel != null) return IsKnownLocation(travel.Origin) && IsKnownLocation(travel.Destination);
+            if (string.IsNullOrWhiteSpace(unit.AbstractLocationId)) return false;
+            return context.GlobalMap.Locations.Any(value => value.Id.Value == unit.AbstractLocationId &&
+                IsKnownLocation(value.Id));
+        }
+
+        private Vector2 UnitMapPoint(MilitaryUnitState unit)
+        {
+            var travel = context.GlobalMap.Travels.FirstOrDefault(value => value.UnitId == unit.Id);
+            if (travel == null)
+            {
+                var location = context.GlobalMap.GetLocation(new WorldLocationId(unit.AbstractLocationId));
+                return new Vector2(location.MapX, location.MapY);
+            }
+            var from = context.GlobalMap.GetLocation(travel.Origin);
+            var to = context.GlobalMap.GetLocation(travel.Destination);
+            var progress = Mathf.InverseLerp(travel.DepartureTick, travel.ArrivalTick,
+                context.Clock().State.CalendarTicks);
+            return Vector2.Lerp(new Vector2(from.MapX, from.MapY), new Vector2(to.MapX, to.MapY), progress);
+        }
+
+        private float MapX(float worldX)
+        {
+            var layout = context.ConnectedWorld.Layout;
+            return Mathf.Clamp01((worldX - layout.OriginX) / layout.WidthMeters) * 100f;
+        }
+
+        private float MapY(float worldZ)
+        {
+            var layout = context.ConnectedWorld.Layout;
+            return (1f - Mathf.Clamp01((worldZ - layout.OriginZ) / layout.DepthMeters)) * 100f;
         }
 
         private void ObserveOnboardingSignals()
@@ -3042,132 +3431,296 @@ namespace Game.Presentation.UI
                     AddNotification("Предупреждение: " + WarWarning(faction, order));
         }
 
-        private void DrawDiplomacy()
+        private void DrawDiplomacy(VisualElement parent)
         {
-            if (context.StrategicAi == null) return;
-            AddSection(mainPanel, "Соседние поселения и отношения");
-            var player = new CombatSideId("player");
-            foreach (var faction in context.StrategicAi.Factions.Where(x => !x.Strategic.IsDefeated))
+            AddSection(parent, "Дипломатия — будущая возможность");
+            var knownForeign = context.GlobalMap.Settlements.Where(settlement =>
+                    settlement.OwnerSideId.Value != "player" && IsKnownLocation(settlement.LocationId) &&
+                    (context.Campaign == null || context.Campaign.CanRevealSettlement(settlement.Id)))
+                .OrderBy(settlement => settlement.LocationId).ToArray();
+            if (knownForeign.Length == 0)
+                AddMuted(parent, "Контакт с другим государством ещё не подтверждён разведкой.");
+            else
+                foreach (var settlement in knownForeign)
+                    AddLine(parent, "Известный факт: " + LocationName(settlement.LocationId) + " · " +
+                        SideName(settlement.OwnerSideId));
+            AddMuted(parent, "Отношения, договоры, торговля, требования и последствия пока не моделируются.");
+            foreach (var label in new[] { "Предложить торговое соглашение", "Заключить договор", "Отправить требование" })
             {
-                AddLine(mainPanel, SideName(faction.Strategic.SideId) + ": отношения " + faction.RelationTo(player) +
-                    " · жителей " + faction.Residents.Count + " · обучено " + (faction.Training?.Records
-                        .Where(x => x.Completed).Select(x => x.CharacterId).Distinct().Count() ?? 0));
-                foreach (var order in faction.Strategic.PendingOrders.Where(x => x.Kind == AiDecisionKind.PrepareAttack && TargetsPlayer(x)))
-                    AddLine(mainPanel, "⚠ " + WarWarning(faction, order));
-                mainPanel.Add(ActionButton("Дар: 10 ягод (+20 к отношениям)", () => TryCommand(() =>
-                {
-                    if (!context.StrategicAi.TrySendGift(faction.Strategic.Id, player, context.Inventories))
-                        throw new PlayerFacingException("Дар не отправлен: нужно 10 ягод и свободное место у получателя.");
-                    AddNotification("Дар принят. Отношения улучшились.");
-                })));
-                mainPanel.Add(ActionButton("Объявить вражду", () => TryCommand(() =>
-                {
-                    faction.SetRelation(player, -100);
-                    AddNotification("Отношения стали враждебными. Сосед может начать подготовку к войне.");
-                })));
+                var button = ActionButton(label + " · недоступно", () => { }, "diplomacy-unavailable");
+                button.SetEnabled(false);
+                button.tooltip = "Действие появится вместе с полноценной дипломатической системой.";
+                parent.Add(button);
             }
         }
 
         private void DrawGlobalPanel()
         {
-            AddTitle(mainPanel, T("ui.map.title"));
-            DrawDiplomacy();
-            AddLine(mainPanel, F("ui.map.mode_location", E(context.GlobalMap.Mode),
-                LocationName(context.GlobalMap.ActiveLocationId)));
-            if (context.GlobalMap.Occupations.Count > 0)
-            {
-                AddSection(mainPanel, T("ui.map.occupations"));
-                foreach (var occupation in context.GlobalMap.Occupations)
-                {
-                    var remaining = Math.Max(0, occupation.CompletionTick - context.Clock().State.CalendarTicks);
-                    AddLine(mainPanel, F("ui.map.occupation", LocationName(occupation.LocationId),
-                        SideName(occupation.ClaimantSideId),
-                        RussianTextCatalog.Percent((double)occupation.ProgressTicks / occupation.RequiredDurationTicks),
-                        FormatDuration(remaining)));
-                }
-                AddMuted(mainPanel, T("ui.map.occupation_help"));
-            }
+            if (realmLayers == null || realmDetail == null || realmRouteBar == null) return;
+            realmLayers.Clear();
+            realmDetail.Clear();
+            realmRouteBar.Clear();
             if (context.GlobalMap.Mode == GameWorldMode.Local)
             {
+                AddTitle(mainPanel, T("ui.map.title"));
                 mainPanel.Add(ActionButton(T("ui.map.open"), context.RequestEnterGlobal));
                 AddMuted(mainPanel, T("ui.map.local_continues"));
                 return;
             }
-            AddSection(mainPanel, T("ui.map.locations"));
-            foreach (var location in context.GlobalMap.Locations)
+
+            AddTitle(realmLayers, "Держава");
+            AddMuted(realmLayers, "Известный мир · туман принадлежит разведке");
+            AddSection(realmLayers, "Слои и легенда");
+            AddFixedMapLayer(realmLayers, "Известная местность", "показана");
+            AddMapLayer(realmLayers, "Поселения", showMapSettlements, value => showMapSettlements = value);
+            AddMapLayer(realmLayers, "Армии", showMapArmies, value => showMapArmies = value);
+            AddMapLayer(realmLayers, "Маршруты", showMapRoutes, value => showMapRoutes = value);
+            AddMapLayer(realmLayers, "Погода", showMapWeather, value => showMapWeather = value);
+            AddFixedMapLayer(realmLayers, "Туман и разведка", "канонический");
+            AddMuted(realmLayers, "Инфраструктура, богатство и лояльность появятся после пространственных данных этих систем.");
+
+            AddSection(realmLayers, T("ui.map.locations"));
+            foreach (var location in context.GlobalMap.Locations.Where(value => IsKnownLocation(value.Id)))
             {
                 var captured = location.Id;
-                var settlement = context.GlobalMap.GetSettlementAt(location.Id);
-                var hidden = settlement != null && context.Campaign != null &&
-                             !context.Campaign.CanRevealSettlement(settlement.Id);
-                var owner = settlement == null ? T("ui.map.unclaimed") : SideName(settlement.OwnerSideId);
-                var locationButton = ActionButton((selectedLocation == location.Id ? T("common.selected_marker") : string.Empty) +
-                    (hidden ? T("ui.map.hidden") :
-                        F("ui.map.location", LocationName(location.Id), E(location.Type), owner)),
-                    () => { selectedLocation = captured; RefreshPanel(); });
-                locationButton.AddToClassList("serenity-card-action");
-                SerenityUiDesign.SetSelected(locationButton, selectedLocation == location.Id);
-                mainPanel.Add(locationButton);
+                var button = ActionButton(LocationName(location.Id), () => SelectMapLocation(captured),
+                    "realm-location-" + location.Id.Value);
+                SerenityUiDesign.SetSelected(button, selectedLocation == location.Id);
+                realmLayers.Add(button);
             }
-            AddSection(mainPanel, T("ui.map.player_armies"));
-            var index = 1;
-            foreach (var unit in context.Military.Units.Where(x => x.OwnerSideId.Value == "player"))
+            var scouting = context.ConnectedWorld?.CaptureState().ScoutingAssignments ??
+                           Array.Empty<ScoutingAssignmentState>();
+            AddSection(realmLayers, "Разведка");
+            AddLine(realmLayers, "Открыто ячеек: " + (context.ConnectedWorld?.RevealedCellCount ?? 0));
+            AddLine(realmLayers, scouting.Count == 0 ? "Активных назначений нет." :
+                "Назначений: " + scouting.Count + " · завершено: " + scouting.Count(value => value.Completed));
+
+            AddTitle(realmDetail, "Выбранная цель");
+            DrawSelectedMapDetail(realmDetail);
+            DrawDiplomacy(realmDetail);
+            AddSection(realmDetail, T("ui.map.battles"));
+            foreach (var battle in context.Battles.Battles.Where(value => value.Status == CombatEncounterStatus.Active))
             {
-                var captured = unit.Id;
-                var travel = context.GlobalMap.Travels.FirstOrDefault(x => x.UnitId == unit.Id);
-                var detail = travel == null ? LocationName(unit.AbstractLocationId) :
-                    F("ui.map.travel_eta", LocationName(travel.Origin), LocationName(travel.Destination),
-                        FormatDuration(Math.Max(0, travel.ArrivalTick - context.Clock().State.CalendarTicks)));
-                var unitButton = ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + UnitLabel(unit, index++) + " · " + detail,
-                    () => { selectedUnit = captured; RefreshPanel(); });
-                unitButton.AddToClassList("serenity-card-action");
-                SerenityUiDesign.SetSelected(unitButton, selectedUnit == unit.Id);
-                mainPanel.Add(unitButton);
-            }
-            var actions = Row();
-            var travelButton = ActionButton(T("ui.map.travel"), () => TryCommand(() =>
-            {
-                if (!selectedUnit.HasValue || !selectedLocation.HasValue)
-                    throw PlayerError("ui.map.need_unit_destination");
-                var result = context.GlobalMap.IssueTravelOrder(selectedUnit.Value, selectedLocation.Value,
-                    context.Clock().State.CalendarTicks);
-                if (!result.Issued) throw new PlayerFacingException(TravelReason(result.Status));
-                AddNotification(F("ui.map.departed", LocationName(selectedLocation.Value)));
-            }));
-            travelButton.SetEnabled(selectedUnit.HasValue && selectedLocation.HasValue);
-            actions.Add(travelButton);
-            var attackButton = ActionButton("Напасть", () => TryCommand(() =>
-            {
-                if (!selectedUnit.HasValue || !selectedLocation.HasValue)
-                    throw PlayerError("ui.map.need_unit_destination");
-                var unit = context.Military.Get(selectedUnit.Value);
-                if (unit.Representation != MilitaryUnitRepresentationMode.Detailed)
-                    unit = context.MilitaryRepresentations.Transition(unit.Id, MilitaryUnitRepresentationMode.Detailed);
-                var location = context.GlobalMap.Locations.Single(x => x.Id == selectedLocation.Value);
-                var result = context.MilitaryAttack.Issue(unit.ActiveMemberIds,
-                    new MilitaryDirectTarget(MilitaryDirectTargetKind.Area,
-                        new WorldPosition(location.MapX, 0, location.MapY)), context.Clock().State.CalendarTicks, true);
-                if (!result.Issued) throw new PlayerFacingException(MilitaryAttackReason(result.Availability.Reason));
-                AddNotification("Военные идут к цели через единый физический мир.");
-            }), "strategic-attack");
-            attackButton.SetEnabled(selectedUnit.HasValue && selectedLocation.HasValue);
-            actions.Add(attackButton);
-            actions.Add(ActionButton(T("ui.map.enter_location"), () => TryCommand(() =>
-            {
-                if (!selectedLocation.HasValue) throw PlayerError("ui.map.need_location");
-                context.RequestEnterLocation(selectedLocation.Value);
-            })));
-            mainPanel.Add(actions);
-            if (!selectedUnit.HasValue || !selectedLocation.HasValue)
-                AddMuted(mainPanel, T("ui.map.need_unit_destination"));
-            AddSection(mainPanel, T("ui.map.battles"));
-            foreach (var battle in context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active))
-            {
-                AddLine(mainPanel, F("ui.map.battle", E(battle.Mode), BattleCounts(battle), E(battle.Outcome)));
+                AddLine(realmDetail, F("ui.map.battle", E(battle.Mode), BattleCounts(battle), E(battle.Outcome)));
                 if (battle.Mode == BattleMode.Abstract)
-                    mainPanel.Add(ActionButton(T("ui.map.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
+                    realmDetail.Add(ActionButton(T("ui.map.enter_battle"), () => context.RequestEnterBattle(battle.BattleId),
+                        "realm-enter-battle"));
             }
+
+            DrawRouteSummary(realmRouteBar);
         }
+
+        private void AddMapLayer(VisualElement parent, string label, bool enabled, Action<bool> change)
+        {
+            var button = ActionButton((enabled ? "● " : "○ ") + label, () =>
+            {
+                change(!enabled);
+                RefreshNow();
+            }, "realm-layer-" + label.ToLowerInvariant().Replace(' ', '-'));
+            SerenityUiDesign.SetSelected(button, enabled);
+            parent.Add(button);
+        }
+
+        private static void AddFixedMapLayer(VisualElement parent, string label, string state)
+        {
+            var row = SerenityUiDesign.Card();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.justifyContent = Justify.SpaceBetween;
+            var title = new Label("● " + label);
+            title.AddToClassList(SerenityUiDesign.BodyClass);
+            var value = new Label(state);
+            value.AddToClassList(SerenityUiDesign.MutedClass);
+            row.Add(title);
+            row.Add(value);
+            parent.Add(row);
+        }
+
+        private void DrawSelectedMapDetail(VisualElement parent)
+        {
+            if (selectedLocation.HasValue)
+            {
+                var location = context.GlobalMap.GetLocation(selectedLocation.Value);
+                var settlement = context.GlobalMap.GetSettlementAt(location.Id);
+                AddSection(parent, LocationName(location.Id));
+                AddLine(parent, "Тип: " + E(location.Type));
+                AddLine(parent, settlement == null ? T("ui.map.unclaimed") :
+                    "Владелец: " + SideName(settlement.OwnerSideId));
+                AddLine(parent, "Маршрутов: " + context.GlobalMap.GetRoutes(location.Id).Count);
+                parent.Add(ActionButton("Войти в локацию", () => EnterSelectedMapLocation(),
+                    "realm-enter-location"));
+            }
+            else AddMuted(parent, "Выберите известную локацию на карте или в списке.");
+
+            if (selectedUnit.HasValue && context.Military.TryGet(selectedUnit.Value, out var unit))
+            {
+                AddSection(parent, "Армия");
+                AddLine(parent, UnitLabel(unit, 1));
+                AddLine(parent, "Положение: " + UnitMapLocation(unit));
+                AddLine(parent, "Снабжение: " + UnitSupplyText(unit));
+                AddLine(parent, "Состояние: " + E(unit.Status) + " · приказ: " + E(unit.Order.Kind));
+            }
+            else AddMuted(parent, "Выберите известную армию, чтобы рассчитать маршрут.");
+        }
+
+        private void DrawRouteSummary(VisualElement parent)
+        {
+            var summary = new VisualElement { name = "realm-route-facts" };
+            summary.style.position = Position.Absolute;
+            summary.style.left = 8;
+            summary.style.right = 8;
+            summary.style.top = 6;
+            summary.style.height = 66;
+            summary.style.overflow = Overflow.Hidden;
+            if (!selectedUnit.HasValue || !selectedLocation.HasValue ||
+                !context.Military.TryGet(selectedUnit.Value, out var unit))
+            {
+                AddLine(summary, "Маршрут: выберите армию и известную локацию.");
+                parent.Add(summary);
+                parent.Add(ActionButton("Вернуться в локальный мир", ReturnToLocalWorld, "realm-return-local"));
+                return;
+            }
+
+            var origin = new WorldLocationId(unit.AbstractLocationId);
+            var route = context.GlobalMap.GetRoutes(origin)
+                .FirstOrDefault(value => value.Connects(origin, selectedLocation.Value));
+            var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
+            var duration = route == null ? 0L : EstimateRouteDuration(route.TravelDurationTicks, unit,
+                weather.Modifiers.MovementPerThousand);
+            AddRouteFact(summary, 0, "Маршрут", LocationName(origin) + " → " + LocationName(selectedLocation.Value),
+                route == null ? "Прямого пути нет" : FormatDuration(duration));
+            AddRouteFact(summary, 1, "Погода", showMapWeather ? E(weather.Type) : "слой скрыт",
+                "Скорость: " + Percent(weather.Modifiers.MovementPerThousand));
+            AddRouteFact(summary, 2, "Снабжение", UnitSupplyText(unit),
+                "Расход: " + RequiredTravelSupply(unit));
+            AddRouteFact(summary, 3, "Риск", RouteRisk(unit, selectedLocation.Value, weather.Modifiers.MovementPerThousand),
+                "Только подтверждённые факторы");
+            parent.Add(summary);
+            var actions = new VisualElement { name = "realm-route-actions" };
+            actions.style.position = Position.Absolute;
+            actions.style.right = 8;
+            actions.style.bottom = 2;
+            actions.style.flexDirection = FlexDirection.Row;
+            actions.style.height = 36;
+            actions.style.overflow = Overflow.Hidden;
+            actions.Add(RouteActionButton("Отправить", IssueSelectedMapTravel, "realm-travel"));
+            actions.Add(RouteActionButton("Войти", EnterSelectedMapLocation, "realm-enter-selected"));
+            actions.Add(RouteActionButton("Вернуться", ReturnToLocalWorld, "realm-return-local"));
+            parent.Add(actions);
+        }
+
+        private static Button RouteActionButton(string label, Action action, string name)
+        {
+            var button = ActionButton(label, action, name);
+            button.style.minWidth = 0;
+            button.style.width = 96;
+            button.style.height = 32;
+            button.style.fontSize = 11;
+            return button;
+        }
+
+        private static void AddRouteFact(VisualElement parent, int index, string title, string value, string detail)
+        {
+            // Route facts stay bounded so the strategic projection never obscures the world or bottom navigation.
+            var card = new VisualElement { name = "realm-route-fact-" + index };
+            card.AddToClassList(SerenityUiDesign.CardClass);
+            card.style.position = Position.Absolute;
+            card.style.left = new Length(index * 25f, LengthUnit.Percent);
+            card.style.width = new Length(25, LengthUnit.Percent);
+            card.style.minWidth = 0;
+            card.style.height = 62;
+            card.style.marginRight = 4;
+            card.style.paddingLeft = 7;
+            card.style.paddingRight = 7;
+            card.style.paddingTop = 4;
+            card.style.paddingBottom = 3;
+            card.style.overflow = Overflow.Hidden;
+            var heading = new Label(title);
+            heading.AddToClassList(SerenityUiDesign.MutedClass);
+            heading.style.fontSize = 10;
+            heading.style.unityFontStyleAndWeight = FontStyle.Bold;
+            card.Add(heading);
+            var primary = new Label(value);
+            primary.style.fontSize = 13;
+            primary.style.unityFontStyleAndWeight = FontStyle.Bold;
+            primary.style.whiteSpace = WhiteSpace.NoWrap;
+            primary.style.overflow = Overflow.Hidden;
+            card.Add(primary);
+            var secondary = new Label(detail);
+            secondary.AddToClassList(SerenityUiDesign.MutedClass);
+            secondary.style.fontSize = 9;
+            secondary.style.whiteSpace = WhiteSpace.NoWrap;
+            secondary.style.overflow = Overflow.Hidden;
+            card.Add(secondary);
+            parent.Add(card);
+        }
+
+        private void IssueSelectedMapTravel() => TryCommand(() =>
+        {
+            if (!selectedUnit.HasValue || !selectedLocation.HasValue)
+                throw PlayerError("ui.map.need_unit_destination");
+            var result = context.GlobalMap.IssueTravelOrder(selectedUnit.Value, selectedLocation.Value,
+                context.Clock().State.CalendarTicks);
+            if (!result.Issued) throw new PlayerFacingException(TravelReason(result.Status));
+            AddNotification(F("ui.map.departed", LocationName(selectedLocation.Value)));
+        });
+
+        private void EnterSelectedMapLocation()
+        {
+            if (!selectedLocation.HasValue)
+            {
+                SetStatus(T("ui.map.need_location"));
+                return;
+            }
+            context.RequestEnterLocation(selectedLocation.Value);
+            activePanel = GameplayPanel.None;
+            mainPanel.style.display = DisplayStyle.None;
+            RefreshNow();
+        }
+
+        private void ReturnToLocalWorld()
+        {
+            context.RequestEnterLocation(context.GlobalMap.ActiveLocationId);
+            activePanel = GameplayPanel.None;
+            mainPanel.style.display = DisplayStyle.None;
+            RefreshNow();
+        }
+
+        private long RequiredTravelSupply(MilitaryUnitState unit) => checked(unit.ActiveMemberIds.Count *
+            context.Military.SupplySettings.TravelFoodPerMember);
+
+        private string UnitSupplyText(MilitaryUnitState unit)
+        {
+            var available = unit.Supply.Get(context.Military.SupplySettings.FoodResourceId);
+            return available + " " + Content("resource", context.Military.SupplySettings.FoodResourceId.ToString());
+        }
+
+        private long EstimateRouteDuration(long baseTicks, MilitaryUnitState unit, int weatherModifier)
+        {
+            var supplyModifier = unit.Supply.Get(context.Military.SupplySettings.FoodResourceId) >= RequiredTravelSupply(unit)
+                ? 1000 : context.Military.SupplySettings.ShortageMovementDurationPerThousand;
+            var modifier = Math.Min(10000L, (weatherModifier * (long)supplyModifier + 999L) / 1000L);
+            return Math.Max(1L, (checked(baseTicks * modifier) + 999L) / 1000L);
+        }
+
+        private string RouteRisk(MilitaryUnitState unit, WorldLocationId destination, int weatherModifier)
+        {
+            var settlement = context.GlobalMap.GetSettlementAt(destination);
+            var hostile = settlement != null && settlement.OwnerSideId.Value != unit.OwnerSideId.Value;
+            var shortSupply = unit.Supply.Get(context.Military.SupplySettings.FoodResourceId) < RequiredTravelSupply(unit);
+            if (hostile || shortSupply) return "Высокий";
+            return weatherModifier > 1200 ? "Повышенный" : "Низкий";
+        }
+
+        private string UnitMapLocation(MilitaryUnitState unit)
+        {
+            var travel = context.GlobalMap.Travels.FirstOrDefault(value => value.UnitId == unit.Id);
+            return travel == null ? LocationName(unit.AbstractLocationId) :
+                F("ui.map.travel_eta", LocationName(travel.Origin), LocationName(travel.Destination),
+                    FormatDuration(Math.Max(0, travel.ArrivalTick - context.Clock().State.CalendarTicks)));
+        }
+
+        private bool IsKnownLocation(WorldLocationId id) => context.ConnectedWorld == null ||
+            context.ConnectedWorld.IsLocationRevealed(id);
 
         private void RefreshInspector()
         {
@@ -4411,6 +4964,9 @@ namespace Game.Presentation.UI
                 case Game.Simulation.World.TravelOrderStatus.UnitInBattle: return T("ui.map.unit_in_battle");
                 case Game.Simulation.World.TravelOrderStatus.AlreadyTravelling: return T("ui.map.already_travelling");
                 case Game.Simulation.World.TravelOrderStatus.UnitNotAggregate: return T("ui.map.need_aggregate");
+                case Game.Simulation.World.TravelOrderStatus.UnitNotFound: return "Армия больше недоступна.";
+                case Game.Simulation.World.TravelOrderStatus.UnknownDestination: return "Локация больше недоступна.";
+                case Game.Simulation.World.TravelOrderStatus.InvalidOrigin: return "Текущее положение армии не связано с картой.";
                 default: return T("ui.status.command_failed");
             }
         }
@@ -4512,6 +5068,7 @@ namespace Game.Presentation.UI
                        context.MilitaryTraining.ComputeStateHash() ^ context.SettlementCapture.ComputeStateHash() ^
                        context.Research.ComputeStateHash() ^ context.Health.ComputeStateHash() ^
                        (context.Events?.ComputeStateHash() ?? 0UL) ^ (context.Campaign?.ComputeStateHash() ?? 0UL) ^
+                       unchecked((ulong)(context.ConnectedWorld?.RevealedCellCount ?? 0) << 12) ^
                        unchecked((ulong)context.Selection.SelectedCharacterIds.Count << 20) ^
                        unchecked((ulong)context.Buildings.All.Sum(x => x.History.Count) << 24) ^
                        unchecked((ulong)context.Work.JobCount << 32);
@@ -4523,6 +5080,8 @@ namespace Game.Presentation.UI
                 hash ^= unchecked((ulong)context.Selection.SelectedWildlife.StableId.GetHashCode());
             hash ^= unchecked((ulong)context.Characters.Count << 40);
             hash ^= unchecked((ulong)(context.ThirdPerson.LastAttackMessage?.GetHashCode() ?? 0));
+            hash ^= unchecked((ulong)(selectedLocation?.GetHashCode() ?? 0) << 7);
+            hash ^= unchecked((ulong)(selectedUnit?.GetHashCode() ?? 0) << 9);
             return hash;
         }
 
@@ -4748,6 +5307,41 @@ namespace Game.Presentation.UI
             inspector.style.bottom = 90;
             notifications.style.width = compact ? 322 : 354;
             onboardingCard.style.width = compact ? 322 : 354;
+            localMiniMap.style.width = compact ? 184 : 220;
+            localMiniMap.style.height = compact ? 154 : 184;
+            realmLayers.style.width = compact ? 210 : 246;
+            realmDetail.style.width = compact ? 270 : 310;
+            realmMapHeader.style.left = compact ? 222 : 268;
+            realmMapHeader.style.right = compact ? 282 : 322;
+            realmMapOverlay.style.left = compact ? new Length(18, LengthUnit.Percent) : new Length(20, LengthUnit.Percent);
+            realmMapOverlay.style.right = compact ? new Length(23, LengthUnit.Percent) : new Length(24, LengthUnit.Percent);
+            realmMapOverlay.style.top = 140;
+            realmMapOverlay.style.bottom = compact ? 224 : 212;
+            realmRouteBar.style.left = compact ? 222 : 268;
+            realmRouteBar.style.right = compact ? 282 : 322;
+            realmRouteBar.style.height = compact ? 126 : 118;
+            var strategicCenterWidth = Mathf.Max(320f, width - (compact ? 504f : 590f));
+            realmMapHeader.style.right = StyleKeyword.Auto;
+            realmMapHeader.style.width = strategicCenterWidth;
+            realmRouteBar.style.right = StyleKeyword.Auto;
+            realmRouteBar.style.width = strategicCenterWidth;
+            var mapHeaderTitle = realmMapHeader.Q<Label>("realm-map-header-title");
+            if (mapHeaderTitle != null) mapHeaderTitle.style.width = Mathf.Max(140f, strategicCenterWidth - 174f);
+            var routeFacts = realmRouteBar.Q("realm-route-facts");
+            if (routeFacts != null)
+            {
+                var factsWidth = Mathf.Max(296f, strategicCenterWidth - 24f);
+                routeFacts.style.right = StyleKeyword.Auto;
+                routeFacts.style.width = factsWidth;
+                var factWidth = factsWidth / 4f;
+                for (var index = 0; index < 4; index++)
+                {
+                    var fact = routeFacts.Q("realm-route-fact-" + index);
+                    if (fact == null) continue;
+                    fact.style.left = index * factWidth;
+                    fact.style.width = Mathf.Max(68f, factWidth - 4f);
+                }
+            }
             ApplyPanelLayout();
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
@@ -4774,6 +5368,8 @@ namespace Game.Presentation.UI
             placementFeedback.style.display = !strategic && context.BuildingPlacement.IsActive
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
+            realmWorkspace.style.display = strategic && activePanel == GameplayPanel.Global
+                ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         private static bool Blocks(VisualElement element, Vector2 point) => element != null &&

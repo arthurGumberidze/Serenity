@@ -143,7 +143,8 @@ namespace Game.Presentation.UI
             Action<WorldPosition> focusWorld, BuildingLifecycleService buildingLifecycle,
             BuildingPathingService buildingPathing, SettlementFacilityService facilities = null,
             ConstructionClearanceCoordinator constructionClearance = null,
-            Game.Simulation.AI.AiStrategicScheduler strategicAi = null)
+            Game.Simulation.AI.AiStrategicScheduler strategicAi = null,
+            ConnectedWorldService connectedWorld = null, Func<WorldPosition> cameraPosition = null)
         {
             Clock = clock ?? throw new ArgumentNullException(nameof(clock));
             StrategicAi = strategicAi;
@@ -202,6 +203,8 @@ namespace Game.Presentation.UI
             BuildingPathing = buildingPathing;
             Facilities = facilities;
             ConstructionClearance = constructionClearance;
+            ConnectedWorld = connectedWorld;
+            CameraPosition = cameraPosition ?? (() => new WorldPosition(0f, 0f, 0f));
         }
 
         public Func<GameClock> Clock { get; }
@@ -261,5 +264,7 @@ namespace Game.Presentation.UI
         public BuildingPathingService BuildingPathing { get; }
         public SettlementFacilityService Facilities { get; }
         public ConstructionClearanceCoordinator ConstructionClearance { get; }
+        public ConnectedWorldService ConnectedWorld { get; }
+        public Func<WorldPosition> CameraPosition { get; }
     }
 }

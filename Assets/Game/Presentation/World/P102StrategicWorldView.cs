@@ -28,7 +28,7 @@ namespace Game.Presentation.World
         private Rect savedViewport;
         private CinemachineBrain brain;
         private bool savedBrainEnabled;
-        public static Rect MapViewport => new Rect(0.32f, 0.075f, 0.675f, 0.80f);
+        public static Rect MapViewport => new Rect(0.20f, 0.17f, 0.56f, 0.70f);
         private GUIStyle labelStyle;
         private ProductionService production;
         private DirectWorkCommandService directWork;
@@ -45,7 +45,10 @@ namespace Game.Presentation.World
         private static readonly string[] ResourceNames =
         { "Брёвна", "Камень", "Волокно", "Шкуры", "Ягоды", "Железо", "Золото", "Мясо", "Рыба" };
         public bool IsActive { get; private set; }
+        public bool LegacyControlsVisible { get; private set; } = true;
         public StableEntityId? SelectedResourceId => selectedResource;
+
+        public void SetLegacyControlsVisible(bool visible) => LegacyControlsVisible = visible;
 
         public void ConfigureResourceCommands(DirectWorkCommandService commands) =>
             directWork = commands ?? throw new ArgumentNullException(nameof(commands));
@@ -163,7 +166,7 @@ namespace Game.Presentation.World
                 }
             }
             GUI.color = previous;
-            if (tiledWorld != null)
+            if (LegacyControlsVisible && tiledWorld != null)
             {
                 foreach (var location in globalMap.Locations)
                 {
@@ -173,7 +176,7 @@ namespace Game.Presentation.World
                     GUI.Box(new Rect(point.x - 75f, point.y - 18f, 150f, 36f), LocationName(location), labelStyle);
                 }
             }
-            else
+            else if (LegacyControlsVisible)
             {
                 foreach (var district in world.Districts)
                 {
@@ -184,8 +187,11 @@ namespace Game.Presentation.World
                         district.DisplayName + "\n" + district.Description, labelStyle);
                 }
             }
-            GUI.Box(new Rect(12f, 12f, 330f, 48f), "Стратегический обзор — 12 × 12 км\nТуман раскрывается присутствием и разведкой", labelStyle);
-            DrawResourceFilters();
+            if (LegacyControlsVisible)
+            {
+                GUI.Box(new Rect(12f, 12f, 330f, 48f), "Стратегический обзор — 12 × 12 км\nТуман раскрывается присутствием и разведкой", labelStyle);
+                DrawResourceFilters();
+            }
             GUI.EndGroup();
         }
 
