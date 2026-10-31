@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+UI05 people, risk, dynasty, events and military workspaces (2026-10-31): **DONE**. Added canonical home/family/
+health detail, dynasty and succession, pending decisions plus bounded journal, and virtualized military unit/member
+workspaces with supply, training, safe orders and active combat status. Presentation owns no relation, event, army,
+supply or battle state; all commands retain existing services and `StableEntityId`. Final validation: compile 0/0;
+UI05 EditMode 4/4; affected EditMode 153/153; final full-world UI05 PlayMode 1/1; build 0/0; exact Player exit 0,
+all eleven assertions true and four reviewed 1920x1080 / 1280x720@125% captures. The separate combined affected
+PlayMode attempt passed 4/20; exact legacy world-readiness/timeout diagnosis is in `docs/validation/UI05.md`. UI06
+strategic map/layers/routes and honest diplomacy placeholder is next in a separate chat.
+
 UI04 management workspaces and professional work rules (2026-10-31): **DONE**. Implemented Settlement,
 virtualized People, professional Work Groups, compact Construction and categorized Research workspaces. Added the
 canonical `ProfessionGroupService` for automatic adult/admission assignment and atomic edits; grouped eligibility

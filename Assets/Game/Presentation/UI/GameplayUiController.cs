@@ -138,6 +138,8 @@ namespace Game.Presentation.UI
         private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
         private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
         private string peopleSearch = string.Empty;
+        private StableEntityId? selectedDynastyPerson;
+        private bool showEventJournal;
         private ContextCommandTarget? activeContextTarget;
         private StableEntityId[] activeContextSelectionIds = Array.Empty<StableEntityId>();
         private int lastUiPointerFrame = -2;
@@ -165,6 +167,10 @@ namespace Game.Presentation.UI
             Settlement = 3,
             Society = 4
         }
+
+        private static bool IsPeopleRiskWorkspace(GameplayPanel panel) =>
+            panel == GameplayPanel.Domestic || panel == GameplayPanel.Dynasty ||
+            panel == GameplayPanel.Events || panel == GameplayPanel.Military;
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -1999,24 +2005,59 @@ namespace Game.Presentation.UI
         private void DrawEventsPanel()
         {
             AddTitle(mainPanel, "Центр внимания");
-            AddMuted(mainPanel, "Важные события, решения и последние сообщения поселения.");
-            AddSection(mainPanel, "Последние сообщения");
-            if (notificationFeed.Count == 0) AddMuted(mainPanel, "Новых сообщений нет.");
-            foreach (var message in notificationFeed.Take(8))
-            {
-                var card = SerenityUiDesign.Card();
-                card.AddToClassList("serenity-attention-message");
-                AddLine(card, message);
-                mainPanel.Add(card);
-            }
+            AddMuted(mainPanel, "Решения, угрозы и история поселения.");
+            var eventTabs = Row();
+            var decisions = ActionButton("Требуют решения", () => { showEventJournal = false; RefreshPanel(); },
+                "attention-decisions");
+            var journalButton = ActionButton("Журнал", () => { showEventJournal = true; RefreshPanel(); },
+                "attention-journal");
+            SerenityUiDesign.SetSelected(decisions, !showEventJournal);
+            SerenityUiDesign.SetSelected(journalButton, showEventJournal);
+            eventTabs.Add(decisions);
+            eventTabs.Add(journalButton);
+            mainPanel.Add(eventTabs);
             if (context.Events == null)
             {
                 AddMuted(mainPanel, T("ui.events.unavailable"));
                 return;
             }
             var pending = context.Events.PendingPlayerEvents;
+            if (showEventJournal)
+            {
+                AddSection(mainPanel, "Последние сообщения");
+                if (notificationFeed.Count == 0) AddMuted(mainPanel, "Новых сообщений нет.");
+                foreach (var message in notificationFeed.Take(12))
+                {
+                    var card = SerenityUiDesign.Card();
+                    card.AddToClassList("serenity-attention-message");
+                    AddLine(card, message);
+                    mainPanel.Add(card);
+                }
+                AddSection(mainPanel, T("ui.events.history"));
+                if (context.Events.History.Count == 0) AddMuted(mainPanel, T("ui.events.no_history"));
+                foreach (var entry in context.Events.History.Reverse().Take(24))
+                {
+                    var definition = context.Events.Catalog.Get(entry.DefinitionId);
+                    var card = SerenityUiDesign.Card();
+                    AddLine(card, EventTitle(entry.DefinitionId, definition.Nodes[0].Id));
+                    AddMuted(card, F("ui.events.history_line", string.Empty, E(entry.Status),
+                        EventOutcome(entry.OutcomeCode)));
+                    AddMuted(card, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
+                    mainPanel.Add(card);
+                }
+                return;
+            }
+
             AddSection(mainPanel, F("ui.events.pending", pending.Count));
-            if (pending.Count == 0) AddMuted(mainPanel, T("ui.events.none_pending"));
+            if (pending.Count == 0)
+            {
+                AddMuted(mainPanel, T("ui.events.none_pending"));
+                AddMuted(mainPanel, "Обычные сообщения доступны во вкладке «Журнал».");
+                return;
+            }
+            var eventList = Row();
+            eventList.name = "attention-pending-list";
+            eventList.style.flexWrap = Wrap.Wrap;
             foreach (var instance in pending)
             {
                 var definition = context.Events.Catalog.Get(instance.DefinitionId);
@@ -2026,10 +2067,11 @@ namespace Game.Presentation.UI
                     EventTitle(instance.DefinitionId, node.Id),
                     () => { selectedEvent = captured; RefreshPanel(); });
                 pendingButton.AddToClassList("serenity-card-action");
+                pendingButton.style.minWidth = 240;
                 SerenityUiDesign.SetSelected(pendingButton, selectedEvent == instance.InstanceId);
-                mainPanel.Add(pendingButton);
-                AddMuted(mainPanel, string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName)));
+                eventList.Add(pendingButton);
             }
+            mainPanel.Add(eventList);
             if (!selectedEvent.HasValue || pending.All(x => x.InstanceId != selectedEvent.Value))
                 selectedEvent = pending.Count == 0 ? (EventInstanceId?)null : pending[0].InstanceId;
             if (selectedEvent.HasValue)
@@ -2037,37 +2079,43 @@ namespace Game.Presentation.UI
                 var instance = pending.First(x => x.InstanceId == selectedEvent.Value);
                 var definition = context.Events.Catalog.Get(instance.DefinitionId);
                 var node = definition.Nodes.Single(x => x.Id == instance.CurrentNodeId);
-                AddSection(mainPanel, EventTitle(instance.DefinitionId, node.Id));
-                AddLine(mainPanel, EventDescription(instance.DefinitionId, node.Id));
-                AddMuted(mainPanel, F("ui.events.involving", string.Join(", ", instance.Targets.Select(context.Events.GetTargetDisplayName))));
+                var sceneCard = SerenityUiDesign.Card();
+                sceneCard.name = "attention-decision-card";
+                AddSection(sceneCard, "РЕШЕНИЕ · " + EventTitle(instance.DefinitionId, node.Id));
+                AddLine(sceneCard, EventDescription(instance.DefinitionId, node.Id));
+                AddMuted(sceneCard, F("ui.events.involving", string.Join(", ",
+                    instance.Targets.Select(context.Events.GetTargetDisplayName))));
+                AddMuted(sceneCard, instance.DueTick > context.Clock().State.CalendarTicks
+                    ? "Срок: " + FormatDuration(instance.DueTick - context.Clock().State.CalendarTicks)
+                    : "Решение ожидается сейчас");
                 foreach (var choice in node.Choices)
                 {
                     var capturedChoice = choice.Id;
-                    mainPanel.Add(ActionButton(EventChoice(instance.DefinitionId, node.Id, choice.Id), () => TryCommand(() =>
+                    var choiceButton = ActionButton(EventChoice(instance.DefinitionId, node.Id, choice.Id), () => TryCommand(() =>
                     {
                         var result = context.Events.ResolvePlayerChoice(instance.InstanceId, capturedChoice,
                             context.Clock().State.CalendarTicks);
-                        if (!result.Applied) throw PlayerError("ui.status.command_failed");
+                        if (!result.Applied) throw new PlayerFacingException(EventChoiceFailureText(result.Status));
                         selectedEvent = null;
                         SetStatus(T("ui.events.choice_applied"));
-                    })));
+                    }), "attention-choice-" + choice.Id.Value);
+                    choiceButton.AddToClassList("serenity-card-action");
+                    sceneCard.Add(choiceButton);
                 }
+                mainPanel.Add(sceneCard);
             }
-            AddSection(mainPanel, T("ui.events.history"));
-            if (context.Events.History.Count == 0) AddMuted(mainPanel, T("ui.events.no_history"));
-            var history = new Foldout { text = T("ui.events.history"), value = false, name = "event-history-foldout" };
-            history.AddToClassList("serenity-foldout");
-            foreach (var entry in context.Events.History.Reverse().Take(12))
-            {
-                var definition = context.Events.Catalog.Get(entry.DefinitionId);
-                var title = EventTitle(entry.DefinitionId, definition.Nodes[0].Id);
-                var card = SerenityUiDesign.Card();
-                AddLine(card, F("ui.events.history_line", title, E(entry.Status), EventOutcome(entry.OutcomeCode)));
-                AddMuted(card, string.Join(", ", entry.Targets.Select(context.Events.GetTargetDisplayName)));
-                history.Add(card);
-            }
-            if (context.Events.History.Count > 0) mainPanel.Add(history);
         }
+
+        private static string EventChoiceFailureText(EventChoiceCommandStatus status) => status switch
+        {
+            EventChoiceCommandStatus.InstanceNotFound => "Событие уже завершено.",
+            EventChoiceCommandStatus.NotPending => "Это решение сейчас не ожидается.",
+            EventChoiceCommandStatus.NotPlayerOwned => "Решение принимает другой правитель.",
+            EventChoiceCommandStatus.ChoiceNotFound => "Этот вариант больше недоступен.",
+            EventChoiceCommandStatus.TargetInvalid => "Участник события больше недоступен.",
+            EventChoiceCommandStatus.EffectRejected => "Условия выбора изменились.",
+            _ => "Решение не применено."
+        };
 
         private void DrawEconomyPanel()
         {
@@ -2363,45 +2411,99 @@ namespace Game.Presentation.UI
         private void DrawDynastyPanel()
         {
             AddTitle(mainPanel, context.Dynasty.Name);
-            AddLine(mainPanel, F("ui.dynasty.status", E(context.Dynasty.Status)));
-            AddLine(mainPanel, F("ui.dynasty.monarch", CharacterName(context.Dynasty.CurrentMonarchId)));
+            AddMuted(mainPanel, "Правление, семья и линия наследования.");
             var monarch = context.Dynasty.CurrentMonarchId.HasValue
                 ? context.Characters.Get(context.Dynasty.CurrentMonarchId.Value) : null;
-            AddLine(mainPanel, F("ui.dynasty.spouse", CharacterName(monarch?.SpouseId)));
             var children = monarch == null ? Array.Empty<Character>() : context.Family.GetChildren(monarch.Id).ToArray();
             var biologicalTick = context.Clock().State.BiologicalTicks;
-            AddLine(mainPanel, F("ui.dynasty.children", children.Length == 0 ? T("common.none") : string.Join(", ", children.Select(x =>
+            var candidates = monarch == null ? Array.Empty<Character>() : context.Family
+                .GetOrderedSuccessionCandidates(context.Dynasty, monarch.Id).ToArray();
+            var summary = Row();
+            summary.name = "dynasty-summary";
+            summary.style.flexWrap = Wrap.Wrap;
+            AddMetricCard(summary, "ПРАВИТЕЛЬ", CharacterName(context.Dynasty.CurrentMonarchId),
+                F("ui.dynasty.status", E(context.Dynasty.Status)));
+            AddMetricCard(summary, "ДИНАСТИЯ", context.Dynasty.MemberIds.Count + " членов",
+                "Основатель: " + CharacterName(context.Dynasty.FounderId));
+            AddMetricCard(summary, "НАСЛЕДОВАНИЕ", candidates.Length == 0 ? "Нет наследника" : CharacterName(candidates[0].Id),
+                candidates.Length + " допустимых кандидатов");
+            mainPanel.Add(summary);
+
+            AddSection(mainPanel, "Семейное дерево");
+            var tree = Row();
+            tree.name = "dynasty-family-tree";
+            tree.style.flexWrap = Wrap.Wrap;
+            if (monarch != null)
             {
-                var age = x.AgeInCompletedYears(biologicalTick);
-                return F("ui.dynasty.child", RussianTextCatalog.PersonName(x.Name.DisplayName), age,
-                    T(age >= Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears
-                        ? "ui.dynasty.adult" : "ui.dynasty.minor"));
-            }))));
+                AddDynastyPersonNode(tree, monarch, "Правитель", true);
+                if (monarch.SpouseId.HasValue && context.Characters.TryGet(monarch.SpouseId.Value, out var spouse))
+                    AddDynastyPersonNode(tree, spouse, "Супруг(а)", false);
+                foreach (var child in children.OrderBy(x => x.BiologicalBirthTick).ThenBy(x => x.Id))
+                {
+                    var age = child.AgeInCompletedYears(biologicalTick);
+                    var place = Array.FindIndex(candidates, x => x.Id == child.Id);
+                    var relation = place >= 0 ? (place + 1) + "-й в очереди" :
+                        age < Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears ? "Ребёнок" : "Член династии";
+                    AddDynastyPersonNode(tree, child, relation, place == 0);
+                }
+            }
+            mainPanel.Add(tree);
+
+            AddSection(mainPanel, "Линия престолонаследия");
+            if (candidates.Length == 0) AddMuted(mainPanel, "Среди живых членов династии нет допустимого наследника.");
+            var succession = Row();
+            succession.name = "dynasty-succession-line";
+            succession.style.flexWrap = Wrap.Wrap;
+            for (var index = 0; index < Math.Min(12, candidates.Length); index++)
+            {
+                var candidate = candidates[index];
+                var captured = candidate.Id;
+                var button = ActionButton((index + 1) + " · " + CharacterName(candidate.Id), () =>
+                {
+                    selectedDynastyPerson = captured;
+                    SelectResidentFromWorkspace(captured);
+                }, "dynasty-candidate-" + index);
+                SerenityUiDesign.SetSelected(button, index == 0);
+                succession.Add(button);
+            }
+            mainPanel.Add(succession);
+
             var pregnancies = context.Health.Pregnancies.Where(x => x.Status == PregnancyStatus.Active &&
                 context.Dynasty.Contains(x.MotherId)).OrderBy(x => x.DueCalendarTick).ToArray();
-            AddLine(mainPanel, F("ui.dynasty.pregnancies", pregnancies.Length));
-            foreach (var pregnancy in pregnancies.Take(4))
-                AddMuted(mainPanel, F("ui.dynasty.pregnancy", CharacterName(pregnancy.MotherId),
-                    FormatDuration(Math.Max(0, pregnancy.DueCalendarTick - context.Clock().State.CalendarTicks))));
-            var heir = context.Dynasty.CurrentMonarchId.HasValue
-                ? context.Family.GetOrderedSuccessionCandidates(context.Dynasty, context.Dynasty.CurrentMonarchId.Value).FirstOrDefault()
-                : null;
-            AddLine(mainPanel, F("ui.dynasty.heir", heir == null ? T("common.none") : RussianTextCatalog.PersonName(heir.Name.DisplayName)));
-            AddSection(mainPanel, T("ui.dynasty.candidates"));
-            if (context.Dynasty.CurrentMonarchId.HasValue)
-                foreach (var candidate in context.Family.GetOrderedSuccessionCandidates(context.Dynasty,
-                             context.Dynasty.CurrentMonarchId.Value).Take(8))
-                    AddLine(mainPanel, F("ui.dynasty.candidate", RussianTextCatalog.PersonName(candidate.Name.DisplayName),
-                        candidate.AgeInCompletedYears(context.Clock().State.BiologicalTicks)));
+            if (pregnancies.Length > 0)
+            {
+                AddSection(mainPanel, F("ui.dynasty.pregnancies", pregnancies.Length));
+                foreach (var pregnancy in pregnancies.Take(8))
+                    AddMuted(mainPanel, F("ui.dynasty.pregnancy", CharacterName(pregnancy.MotherId),
+                        FormatDuration(Math.Max(0, pregnancy.DueCalendarTick - context.Clock().State.CalendarTicks))));
+            }
             AddSection(mainPanel, T("ui.dynasty.history"));
+            if (context.Dynasty.History.Count == 0) AddMuted(mainPanel, "Смена правителя ещё не происходила.");
             foreach (var entry in context.Dynasty.History.Reverse().Take(6))
                 AddLine(mainPanel, F("ui.dynasty.history_line", CharacterName(entry.PreviousMonarchId),
                     CharacterName(entry.NewMonarchId), E(entry.Reason)));
         }
 
+        private void AddDynastyPersonNode(VisualElement parent, Character person, string role, bool emphasized)
+        {
+            var captured = person.Id;
+            var card = ActionButton(CharacterName(person.Id) + "\n" + role + " · " +
+                person.AgeInCompletedYears(context.Clock().State.BiologicalTicks) + " лет", () =>
+                {
+                    selectedDynastyPerson = captured;
+                    SelectResidentFromWorkspace(captured);
+                }, "dynasty-person-" + person.Id);
+            card.style.minWidth = 220;
+            card.style.minHeight = 62;
+            card.AddToClassList("serenity-card-action");
+            SerenityUiDesign.SetSelected(card, emphasized || selectedDynastyPerson == person.Id);
+            parent.Add(card);
+        }
+
         private void DrawDomesticPanel()
         {
-            AddTitle(mainPanel, "Люди");
+            AddTitle(mainPanel, "Люди · дом, семья и здоровье");
+            AddMuted(mainPanel, "Реестр жителей и подробности выбранного человека.");
             var search = new TextField("Поиск") { value = peopleSearch, name = "people-search" };
             StyleTextField(search);
             search.RegisterValueChangedCallback(evt =>
@@ -2416,7 +2518,7 @@ namespace Game.Presentation.UI
                     (string.IsNullOrWhiteSpace(peopleSearch) || resident.Name.DisplayName.IndexOf(peopleSearch,
                         StringComparison.OrdinalIgnoreCase) >= 0))
                 .OrderBy(resident => resident.Name.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
-            AddLine(mainPanel, "Жителей: " + residents.Count + " · список подгружает только видимые строки");
+            AddLine(mainPanel, "Жителей: " + residents.Count);
             var roster = new ListView(residents, 38,
                 () =>
                 {
@@ -2439,9 +2541,8 @@ namespace Game.Presentation.UI
                 name = "people-roster",
                 selectionType = SelectionType.None
             };
-            roster.style.height = 220;
+            roster.style.height = 150;
             mainPanel.Add(roster);
-            AddSection(mainPanel, "Дом, сон и семья");
             var id = context.Selection.SelectedCharacterId ?? context.Dynasty.CurrentMonarchId;
             if (!id.HasValue)
             {
@@ -2449,23 +2550,73 @@ namespace Game.Presentation.UI
                 return;
             }
             var character = context.Characters.Get(id.Value);
-            AddLine(mainPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
+            AddSection(mainPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
+            var detail = Row();
+            detail.name = "people-detail-cards";
+            detail.style.flexWrap = Wrap.Wrap;
+
+            var identityCard = SerenityUiDesign.Card();
+            identityCard.name = "people-identity-card";
+            identityCard.style.minWidth = 280;
+            identityCard.style.flexGrow = 1;
+            AddSection(identityCard, "Состояние");
+            AddLine(identityCard, character.AgeInCompletedYears(context.Clock().State.BiologicalTicks) + " лет · " +
+                ProfessionName(character.ProfessionId?.ToString()) + " · " + DynastyRole(id.Value));
+            var capabilities = context.Health.GetCapabilities(id.Value);
+            AddLine(identityCard, capabilities.IsIncapacitated ? "Недееспособен" : "Может выполнять приказы");
             if (context.AiAgents.TryGet(id.Value, out var agent))
-                AddLine(mainPanel, $"Голод: {agent.Needs.Hunger:P0} · энергия: {agent.Needs.Energy:P0} · настроение: {agent.Needs.Mood:P0}");
+                AddLine(identityCard, $"Голод {agent.Needs.Hunger:P0} · жажда {agent.Needs.Thirst:P0} · " +
+                    $"энергия {agent.Needs.Energy:P0} · настроение {agent.Needs.Mood:P0}");
+            else AddMuted(identityCard, T("ui.character.offcamera"));
+            var conditions = context.Health.Conditions.Where(x => x.TargetId == id.Value &&
+                x.State != HealthConditionState.Recovered).OrderByDescending(x => x.Severity).ToArray();
+            AddLine(identityCard, "Здоровье: " + (conditions.Length == 0 ? "без активных состояний" :
+                string.Join(", ", conditions.Select(x => Content("condition", x.DefinitionId.ToString()) +
+                    " · " + E(x.Severity)))));
+            detail.Add(identityCard);
+
+            var homeCard = SerenityUiDesign.Card();
+            homeCard.name = "people-home-card";
+            homeCard.style.minWidth = 280;
+            homeCard.style.flexGrow = 1;
+            AddSection(homeCard, "Дом и сон");
+            var home = context.Domestic.Homes.FirstOrDefault(value => value.Allows(id.Value));
+            var bed = context.Domestic.Beds.FirstOrDefault(value => value.AssignedResidentId == id.Value);
+            if (home == null) AddLine(homeCard, "Дом не назначен");
+            else
+            {
+                var homeName = context.Buildings.TryGet(home.BuildingId, out var homeBuilding)
+                    ? Content("building", homeBuilding.DefinitionId.ToString()) : "Жилой дом";
+                AddLine(homeCard, homeName + " · жильцов " + home.ResidentIds.Count);
+                AddMuted(homeCard, "Владелец: " + CharacterName(home.OwnerId));
+            }
             var sleep = context.Domestic.EvaluateSleep(id.Value);
-            AddLine(mainPanel, sleep.Allowed
-                ? "Спальное место назначено в закрытом обитаемом доме."
+            AddLine(homeCard, sleep.Allowed
+                ? "Кровать назначена и доступна."
                 : "Сон недоступен: " + SleepReason(sleep.Reason));
-            if (sleep.Bed != null)
-                AddMuted(mainPanel, "Кровать: " + sleep.Bed.Id + " · дом: " + sleep.Bed.HomeBuildingId);
+            if (bed != null) AddMuted(homeCard, bed.OccupiedResidentId.HasValue ? "Кровать занята" : "Кровать свободна");
             var sleepButton = ActionButton("Лечь спать", () => TrySleep(id.Value), "domestic-sleep");
             sleepButton.SetEnabled(sleep.Allowed);
-            mainPanel.Add(sleepButton);
+            homeCard.Add(sleepButton);
+            detail.Add(homeCard);
+
+            var familyCard = SerenityUiDesign.Card();
+            familyCard.name = "people-family-card";
+            familyCard.style.minWidth = 280;
+            familyCard.style.flexGrow = 1;
+            AddSection(familyCard, "Семья");
+            AddLine(familyCard, "Супруг(а): " + CharacterName(character.SpouseId));
+            AddLine(familyCard, "Родители: " + (character.Parents.Count == 0 ? "нет сведений" :
+                string.Join(", ", character.Parents.Select(value => CharacterName(value.ParentId)))));
+            var selectedChildren = context.Family.GetChildren(id.Value).ToArray();
+            AddLine(familyCard, "Дети: " + (selectedChildren.Length == 0 ? "нет" :
+                string.Join(", ", selectedChildren.Select(value => CharacterName(value.Id)))));
+            detail.Add(familyCard);
+            mainPanel.Add(detail);
 
             if (!character.SpouseId.HasValue) return;
             var spouseId = character.SpouseId.Value;
-            AddSection(mainPanel, "Взрослые отношения");
-            AddLine(mainPanel, "Партнёр: " + CharacterName(spouseId));
+            AddSection(mainPanel, "Семейные решения");
             var consent = context.Domestic.Consents.FirstOrDefault(x =>
                 x.FirstId == id.Value && x.SecondId == spouseId || x.FirstId == spouseId && x.SecondId == id.Value);
             AddLine(mainPanel, "Согласие: " + (consent != null && consent.IsMutual ? "взаимное" : "ожидается от обоих взрослых"));
@@ -2554,85 +2705,92 @@ namespace Game.Presentation.UI
 
         private void DrawMilitaryPanel()
         {
-            AddTitle(mainPanel, T("ui.military.title"));
+            AddTitle(mainPanel, "Военные");
+            AddMuted(mainPanel, "Состав, обучение, приказы, снабжение и состояние боя.");
             var hasSelectedCharacters = context.Selection.SelectedCharacterIds.Count > 0;
             var hasCaptain = context.Selection.SelectedCharacterIds.Any(id => context.Health.GetCapabilities(id).CanFight);
-            var createUnit = ActionButton(T("ui.military.create"), () => TryCommand(CreatePlayerUnit));
+            var createUnit = ActionButton("Сформировать отряд", () => TryCommand(CreatePlayerUnit),
+                "military-create-unit");
             createUnit.SetEnabled(hasSelectedCharacters && hasCaptain);
             mainPanel.Add(createUnit);
             if (!hasSelectedCharacters) AddMuted(mainPanel, T("ui.military.need_characters"));
             else if (!hasCaptain) AddMuted(mainPanel, T("ui.military.no_captain"));
-            AddSection(mainPanel, "Обучение в казармах");
-            var traineeId = context.Selection.SelectedCharacterId;
-            var barracks = context.Buildings.All.Where(x => x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId &&
-                    x.IsOperational && x.OwnerSideId.Value == "player").OrderBy(x => x.Id).FirstOrDefault();
-            if (!traineeId.HasValue) AddMuted(mainPanel, "Выберите одного взрослого жителя.");
-            else
-            {
-                var rank = context.MilitaryTraining.GetRank(traineeId.Value);
-                var next = context.MilitaryTraining.GetNextLevel(traineeId.Value);
-                AddLine(mainPanel, CharacterName(traineeId) + " · звание: " +
-                    (rank.HasValue ? MilitaryRankName(rank.Value) : "нет"));
-                if (context.MilitaryTraining.IsExternallyControlled(traineeId.Value))
+            var units = context.Military.Units.Where(x => x.OwnerSideId.Value == "player" &&
+                x.Status != MilitaryUnitStatus.Disbanded).OrderBy(x => x.Id).ToList();
+            if ((!selectedUnit.HasValue || units.All(x => x.Id != selectedUnit.Value)) && units.Count > 0)
+                selectedUnit = units[0].Id;
+            AddSection(mainPanel, "Отряды");
+            if (units.Count == 0) AddMuted(mainPanel, "Сформированных отрядов нет.");
+            var unitList = new ListView(units, 54,
+                () =>
                 {
-                    var active = context.MilitaryTraining.Active.Single(x => x.CharacterId == traineeId.Value);
-                    AddLine(mainPanel, "Обучение: " + MilitaryRankName(active.Rank) + " · осталось " +
-                        FormatDuration(Math.Max(0, active.CompletionTick - context.Clock().State.CalendarTicks)));
-                }
-                else if (next == null) AddMuted(mainPanel, "Достигнуто высшее утверждённое звание.");
-                else
+                    var button = ActionButton(string.Empty, () => { });
+                    button.clicked += () => { selectedUnit = (MilitaryUnitId)button.userData; RefreshPanel(); };
+                    button.AddToClassList("serenity-roster-row");
+                    return button;
+                },
+                (element, unitIndex) =>
                 {
-                    AddLine(mainPanel, "Следующий курс: " + MilitaryRankName(next.Rank) + " · " + FormatDuration(next.DurationTicks));
-                    if (next.MinimumServiceTicks > 0)
-                        AddMuted(mainPanel, "Требуемая выслуга после прошлого звания: " + FormatDuration(next.MinimumServiceTicks));
-                    if (next.RequiredBattleExperience > 0)
-                        AddMuted(mainPanel, "Требуемый боевой опыт: " + next.RequiredBattleExperience + " успешных атак после прошлого повышения.");
-                    AddMuted(mainPanel, "Цена: " + string.Join(", ", next.Cost.Select(x =>
-                        x.Quantity.Units + " " + Content("resource", x.ResourceId.ToString()))));
-                    var trainingAvailability = barracks == null
-                        ? MilitaryTrainingStartFailure.MissingBarracks
-                        : context.MilitaryTraining.CheckStart(traineeId.Value, barracks.Id,
-                            new CombatSideId("player"), context.Clock().State.CalendarTicks,
-                            context.Inventories.All.Select(x => x.Owner));
-                    var train = ActionButton("Начать обучение", () => TryCommand(() =>
-                    {
-                        if (barracks == null) throw new PlayerFacingException("Нет действующих казарм.");
-                        var result = context.MilitaryTraining.TryStart(traineeId.Value, barracks.Id,
-                            new CombatSideId("player"), context.Clock().State.CalendarTicks,
-                            context.Inventories.All.Select(x => x.Owner));
-                        if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " +
-                            MilitaryTrainingRequirementText(traineeId.Value, result.Failure));
-                    }), "military-train");
-                    train.SetEnabled(trainingAvailability == MilitaryTrainingStartFailure.None);
-                    mainPanel.Add(train);
-                    if (trainingAvailability != MilitaryTrainingStartFailure.None)
-                        AddMuted(mainPanel, "Недоступно: " +
-                            MilitaryTrainingRequirementText(traineeId.Value, trainingAvailability));
-                }
-            }
-            AddSection(mainPanel, "Армии");
-            if (context.Military.Armies.Count == 0)
-                AddMuted(mainPanel, "Армия формируется из отрядов: до 10 отрядов, отдельный командир армии.");
-            foreach (var army in context.Military.Armies)
-                AddLine(mainPanel, "Армия · командир " + CharacterName(army.CommanderId) +
-                    " · отрядов " + army.SquadIds.Count + "/10");
-            var index = 1;
-            foreach (var unit in context.Military.Units)
+                    var unit = units[unitIndex];
+                    var button = (Button)element;
+                    var unitSummary = context.Military.GetRosterSummary(unit.Id);
+                    button.userData = unit.Id;
+                    button.text = UnitLabel(unit, unitIndex + 1) + " · " + unitSummary.Active + " бойцов · " +
+                        E(unit.Status) + " · " + E(unit.Order.Kind);
+                    SerenityUiDesign.SetSelected(button, selectedUnit == unit.Id);
+                })
             {
-                var captured = unit.Id;
-                var label = UnitLabel(unit, index++);
-                mainPanel.Add(ActionButton((selectedUnit == unit.Id ? T("common.selected_marker") : string.Empty) + label,
-                    () => { selectedUnit = captured; RefreshPanel(); }));
-                var summary = context.Military.GetRosterSummary(unit.Id);
-                AddMuted(mainPanel, F("ui.military.summary", CharacterName(unit.CaptainId), summary.Active,
-                    summary.CombatCapable, summary.Injured, E(unit.Representation), E(unit.Order.Kind)));
-            }
+                name = "military-unit-roster",
+                selectionType = SelectionType.None
+            };
+            unitList.style.height = Mathf.Min(180, Math.Max(58, units.Count * 54));
+            mainPanel.Add(unitList);
             if (!selectedUnit.HasValue || !context.Military.TryGet(selectedUnit.Value, out var selected)) return;
-            AddSection(mainPanel, T("ui.military.actions"));
-            if (selected.Supply.Initialized) AddLine(mainPanel, F("ui.military.supply", selected.Supply.Initialized
-                ? selected.Supply.Get(context.Military.SupplySettings.FoodResourceId) + " " +
-                  Content("resource", context.Military.SupplySettings.FoodResourceId.ToString())
-                : T("ui.military.not_supplied")));
+            var selectedSummary = context.Military.GetRosterSummary(selected.Id);
+            var metrics = Row();
+            metrics.name = "military-readiness-summary";
+            metrics.style.flexWrap = Wrap.Wrap;
+            AddMetricCard(metrics, "ЧИСЛЕННОСТЬ", selectedSummary.Active + " / " + MilitaryUnitService.MaximumSquadMembers,
+                selectedSummary.CombatCapable + " боеспособны");
+            AddMetricCard(metrics, "МОРАЛЬ", RussianTextCatalog.Percent(selected.MoraleSummary / 1000d), E(selected.Status));
+            AddMetricCard(metrics, "СНАБЖЕНИЕ", selected.Supply.Initialized
+                    ? selected.Supply.Get(context.Military.SupplySettings.FoodResourceId) + " ед."
+                    : "Не загружено",
+                Content("resource", context.Military.SupplySettings.FoodResourceId.ToString()));
+            AddMetricCard(metrics, "ГОТОВНОСТЬ", E(selected.Order.Kind),
+                E(selected.Representation) + " · " + LocationName(selected.AbstractLocationId));
+            mainPanel.Add(metrics);
+
+            AddSection(mainPanel, "Состав");
+            var activeMembers = selected.ActiveMemberIds.Select(id => context.Characters.Get(id)).ToList();
+            var memberList = new ListView(activeMembers, 38,
+                () =>
+                {
+                    var button = ActionButton(string.Empty, () => { });
+                    button.clicked += () => SelectResidentFromWorkspace((StableEntityId)button.userData);
+                    button.AddToClassList("serenity-roster-row");
+                    return button;
+                },
+                (element, memberIndex) =>
+                {
+                    var person = activeMembers[memberIndex];
+                    var button = (Button)element;
+                    button.userData = person.Id;
+                    var rank = context.MilitaryTraining.GetRank(person.Id);
+                    var capability = context.Health.GetCapabilities(person.Id);
+                    button.text = CharacterName(person.Id) + " · " +
+                        (rank.HasValue ? MilitaryRankName(rank.Value) : "без звания") + " · " +
+                        (selected.CaptainId == person.Id ? "командир · " : string.Empty) +
+                        (capability.CanFight ? "готов" : "небоеспособен");
+                })
+            {
+                name = "military-member-roster",
+                selectionType = SelectionType.None
+            };
+            memberList.style.height = Mathf.Min(190, Math.Max(42, activeMembers.Count * 38));
+            mainPanel.Add(memberList);
+
+            AddSection(mainPanel, "Состав и командование");
             var roster = Row();
             roster.Add(ActionButton(T("ui.military.add_selected"), () => TryCommand(() =>
             {
@@ -2649,23 +2807,61 @@ namespace Game.Presentation.UI
                 if (result != CommanderAssignmentStatus.Assigned) throw PlayerError("ui.military.need_one_member");
             })));
             mainPanel.Add(roster);
+            if (context.Selection.SelectedCharacterIds.Count == 0)
+                AddMuted(mainPanel, "Выберите жителя, чтобы изменить состав или командира.");
+            AddSection(mainPanel, "Приказы");
             var orders = Row();
             orders.Add(ActionButton(T("ui.military.order.idle"), () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Idle))));
             orders.Add(ActionButton(T("ui.military.order.move"), () => TryCommand(() => context.MilitaryCommands.Move(selected.Id, new WorldPosition(0, 0, 10)))));
             orders.Add(ActionButton(T("ui.military.order.hold"), () => TryCommand(() => context.MilitaryCommands.Hold(selected.Id))));
-            orders.Add(ActionButton(T("ui.military.order.engage"), () => TryCommand(() => context.Military.SetOrder(selected.Id, MilitaryUnitOrderKind.Engage))));
+            var engage = ActionButton(T("ui.military.order.engage"), () => { }, "military-engage-disabled");
+            engage.SetEnabled(false);
+            engage.tooltip = "Выберите вражеский военный объект в мире и используйте «Напасть».";
+            orders.Add(engage);
             mainPanel.Add(orders);
+            AddMuted(mainPanel, "Для нападения выберите в мире вражеский военный объект; приказ проверит состав, сторону и путь.");
             var representations = Row();
             representations.Add(ActionButton(T("ui.military.detailed"), () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Detailed))));
             representations.Add(ActionButton(T("ui.military.aggregate"), () => TryCommand(() => context.MilitaryRepresentations.Transition(selected.Id, MilitaryUnitRepresentationMode.Aggregate))));
             mainPanel.Add(representations);
-            AddSection(mainPanel, T("ui.military.battles"));
-            foreach (var battle in context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active))
+
+            AddSection(mainPanel, "Снабжение");
+            var foodId = context.Military.SupplySettings.FoodResourceId;
+            var currentSupply = selected.Supply.Get(foodId);
+            var targetSupply = selectedSummary.Active * context.Military.SupplySettings.InitialFoodPerMember;
+            var availableSupply = context.Inventories.All.Where(x => !x.IssuanceLocked)
+                .Sum(x => x.GetAmount(foodId).Units);
+            AddLine(mainPanel, Content("resource", foodId.ToString()) + ": " + currentSupply + " / " + targetSupply);
+            var loadSupply = ActionButton("Пополнить снабжение", () => TryCommand(() =>
             {
-                AddLine(mainPanel, F("ui.military.battle", E(battle.Mode), BattleCounts(battle),
-                    SideMorale(battle, battle.SideA), SideMorale(battle, battle.SideB)));
+                var loaded = context.Military.LoadInitialSupply(selected.Id, context.Inventories,
+                    context.Inventories.All.Select(x => x.Owner));
+                if (loaded <= 0) throw new PlayerFacingException("Снабжение уже полное или на складах нет подходящих запасов.");
+                SetStatus("В отряд передано: " + loaded + " " + Content("resource", foodId.ToString()) + ".");
+            }), "military-load-supply");
+            loadSupply.SetEnabled(currentSupply < targetSupply && availableSupply > 0);
+            mainPanel.Add(loadSupply);
+            if (currentSupply >= targetSupply) AddMuted(mainPanel, "Отряд полностью снабжён.");
+            else if (availableSupply <= 0) AddMuted(mainPanel, "Пополнение недоступно: на доступных складах нет " +
+                Content("resource", foodId.ToString()) + ".");
+
+            DrawMilitaryTraining();
+            AddSection(mainPanel, T("ui.military.battles"));
+            var activeBattles = context.Battles.Battles.Where(x => x.Status == CombatEncounterStatus.Active)
+                .OrderBy(x => x.BattleId).ToArray();
+            if (activeBattles.Length == 0) AddMuted(mainPanel, "Активных боёв нет.");
+            foreach (var battle in activeBattles)
+            {
+                var battleCard = SerenityUiDesign.Card();
+                battleCard.name = "military-combat-status";
+                AddSection(battleCard, "Бой · " + E(battle.Mode));
+                AddLine(battleCard, BattleCounts(battle));
+                AddMuted(battleCard, "Мораль: " + SideName(battle.SideA) + " " +
+                    RussianTextCatalog.Percent(SideMorale(battle, battle.SideA) / 1000d) + " · " +
+                    SideName(battle.SideB) + " " + RussianTextCatalog.Percent(SideMorale(battle, battle.SideB) / 1000d));
                 if (battle.Mode == BattleMode.Abstract)
-                    mainPanel.Add(ActionButton(T("ui.military.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
+                    battleCard.Add(ActionButton(T("ui.military.enter_battle"), () => context.RequestEnterBattle(battle.BattleId)));
+                mainPanel.Add(battleCard);
             }
             AddSection(mainPanel, "Захват поселений");
             foreach (var capture in context.SettlementCapture.States)
@@ -2676,6 +2872,58 @@ namespace Game.Presentation.UI
                 AddMuted(mainPanel, "Главное здание: " + capture.MainBuildingId + " · главные казармы: " +
                     (capture.ActiveBarracksId?.ToString() ?? "нет — нужен только флаг главного здания"));
             }
+        }
+
+        private void DrawMilitaryTraining()
+        {
+            AddSection(mainPanel, "Обучение и звания");
+            var traineeId = context.Selection.SelectedCharacterId;
+            var barracks = context.Buildings.All.Where(x =>
+                    x.DefinitionId.FamilyId == MilitaryTrainingService.BarracksDefinitionId &&
+                    x.IsOperational && x.OwnerSideId.Value == "player")
+                .OrderBy(x => x.Id).FirstOrDefault();
+            if (!traineeId.HasValue)
+            {
+                AddMuted(mainPanel, "Выберите одного взрослого жителя.");
+                return;
+            }
+            var rank = context.MilitaryTraining.GetRank(traineeId.Value);
+            var next = context.MilitaryTraining.GetNextLevel(traineeId.Value);
+            AddLine(mainPanel, CharacterName(traineeId) + " · звание: " +
+                (rank.HasValue ? MilitaryRankName(rank.Value) : "нет"));
+            if (context.MilitaryTraining.IsExternallyControlled(traineeId.Value))
+            {
+                var active = context.MilitaryTraining.Active.Single(x => x.CharacterId == traineeId.Value);
+                AddLine(mainPanel, "Обучение: " + MilitaryRankName(active.Rank) + " · осталось " +
+                    FormatDuration(Math.Max(0, active.CompletionTick - context.Clock().State.CalendarTicks)));
+                return;
+            }
+            if (next == null)
+            {
+                AddMuted(mainPanel, "Достигнуто высшее утверждённое звание.");
+                return;
+            }
+            AddLine(mainPanel, "Следующий курс: " + MilitaryRankName(next.Rank) + " · " +
+                FormatDuration(next.DurationTicks));
+            AddMuted(mainPanel, "Цена: " + string.Join(", ", next.Cost.Select(x =>
+                x.Quantity.Units + " " + Content("resource", x.ResourceId.ToString()))));
+            var availability = barracks == null ? MilitaryTrainingStartFailure.MissingBarracks :
+                context.MilitaryTraining.CheckStart(traineeId.Value, barracks.Id, new CombatSideId("player"),
+                    context.Clock().State.CalendarTicks, context.Inventories.All.Select(x => x.Owner));
+            var train = ActionButton("Начать обучение", () => TryCommand(() =>
+            {
+                if (barracks == null) throw new PlayerFacingException("Нет действующих казарм.");
+                var result = context.MilitaryTraining.TryStart(traineeId.Value, barracks.Id,
+                    new CombatSideId("player"), context.Clock().State.CalendarTicks,
+                    context.Inventories.All.Select(x => x.Owner));
+                if (!result.Started) throw new PlayerFacingException("Обучение недоступно: " +
+                    MilitaryTrainingRequirementText(traineeId.Value, result.Failure));
+            }), "military-train");
+            train.SetEnabled(availability == MilitaryTrainingStartFailure.None);
+            mainPanel.Add(train);
+            if (availability != MilitaryTrainingStartFailure.None)
+                AddMuted(mainPanel, "Обучение недоступно: " +
+                    MilitaryTrainingRequirementText(traineeId.Value, availability));
         }
 
         private static string MilitaryTrainingFailureText(MilitaryTrainingStartFailure failure)
@@ -3153,6 +3401,15 @@ namespace Game.Presentation.UI
             AddSection(inspector, "Очередь приказов");
             if (queueProjection.TotalOrders == 0) AddMuted(inspector, "Очередь пуста");
             else foreach (var order in queueProjection.VisibleOrders) AddQueueOrder(inspector, order);
+            AddSection(inspector, "Дом и семья");
+            var assignedHome = context.Domestic.Homes.FirstOrDefault(value => value.Allows(id));
+            AddLine(inspector, assignedHome == null ? "Дом не назначен" :
+                "Дом: " + (context.Buildings.TryGet(assignedHome.BuildingId, out var assignedHomeBuilding)
+                    ? Content("building", assignedHomeBuilding.DefinitionId.ToString()) : "жилой дом"));
+            AddLine(inspector, "Супруг(а): " + CharacterName(character.SpouseId));
+            var familyChildren = context.Family.GetChildren(id).ToArray();
+            AddLine(inspector, "Дети: " + (familyChildren.Length == 0 ? "нет" :
+                string.Join(", ", familyChildren.Select(value => CharacterName(value.Id)))));
             AddLine(inspector, F("ui.character.dynasty_role", DynastyRole(id)));
             var militaryRank = context.MilitaryTraining.GetRank(id);
             var militaryStatus = context.MilitaryTraining.IsExternallyControlled(id)
@@ -4413,13 +4670,15 @@ namespace Game.Presentation.UI
         {
             if (mainPanel == null) return;
             var build = activePanel == GameplayPanel.Build;
+            var peopleRisk = IsPeopleRiskWorkspace(activePanel);
             mainPanel.EnableInClassList("is-build-palette", build);
-            mainPanel.style.left = 10;
-            mainPanel.style.top = build ? StyleKeyword.Auto : 142;
-            mainPanel.style.bottom = build ? 170 : 130;
+            mainPanel.EnableInClassList("is-people-risk-workspace", peopleRisk);
+            mainPanel.style.left = peopleRisk ? 22 : 10;
+            mainPanel.style.top = build ? StyleKeyword.Auto : peopleRisk ? 88 : 142;
+            mainPanel.style.bottom = build ? 170 : peopleRisk ? 94 : 130;
             mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
-            mainPanel.style.width = build ? StyleKeyword.Auto : 480;
-            mainPanel.style.right = build ? 374 : StyleKeyword.Auto;
+            mainPanel.style.width = build || peopleRisk ? StyleKeyword.Auto : 480;
+            mainPanel.style.right = build ? 374 : peopleRisk ? 22 : StyleKeyword.Auto;
             mainPanel.contentContainer.style.flexDirection = build ? FlexDirection.Row : FlexDirection.Column;
             mainPanel.contentContainer.style.flexWrap = build ? Wrap.Wrap : Wrap.NoWrap;
         }
@@ -4502,15 +4761,16 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedBuildingPresenter != null ||
                 context.Selection.SelectedWorldResourcePilePresenter != null ||
                 context.Selection.SelectedProductionSourcePresenter != null);
+            var peopleRisk = IsPeopleRiskWorkspace(activePanel);
             inspector.style.top = hasSelection ? 72 : onboarding.Visible ? 512 : 274;
-            inspector.style.display = strategic || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
-            notifications.style.display = strategic || hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
-            onboardingCard.style.display = !strategic && onboarding.Visible && !hasSelection
+            inspector.style.display = strategic || peopleRisk || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
+            notifications.style.display = strategic || peopleRisk || hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
+            onboardingCard.style.display = !strategic && !peopleRisk && onboarding.Visible && !hasSelection
                 ? DisplayStyle.Flex : DisplayStyle.None;
-            residentStrip.style.display = strategic ? DisplayStyle.None : DisplayStyle.Flex;
+            residentStrip.style.display = strategic || peopleRisk ? DisplayStyle.None : DisplayStyle.Flex;
             bottomDock.style.display = !strategic && (activePanel == GameplayPanel.Build ||
                 context.BuildingPlacement.IsActive) ? DisplayStyle.Flex : DisplayStyle.None;
-            if (commandRibbon != null && strategic) commandRibbon.style.display = DisplayStyle.None;
+            if (commandRibbon != null && (strategic || peopleRisk)) commandRibbon.style.display = DisplayStyle.None;
             placementFeedback.style.display = !strategic && context.BuildingPlacement.IsActive
                 ? DisplayStyle.Flex
                 : DisplayStyle.None;
@@ -4629,6 +4889,24 @@ namespace Game.Presentation.UI
             var label = new Label(text);
             label.AddToClassList(SerenityUiDesign.SectionClass);
             parent.Add(label);
+        }
+
+        private static void AddMetricCard(VisualElement parent, string kicker, string value, string detail)
+        {
+            var card = SerenityUiDesign.Card();
+            card.AddToClassList("serenity-metric-card");
+            card.style.minWidth = 210;
+            card.style.flexGrow = 1;
+            var kickerLabel = new Label(kicker);
+            kickerLabel.AddToClassList(SerenityUiDesign.MutedClass);
+            var valueLabel = new Label(value);
+            valueLabel.AddToClassList(SerenityUiDesign.TitleClass);
+            var detailLabel = new Label(detail);
+            detailLabel.AddToClassList(SerenityUiDesign.BodyClass);
+            card.Add(kickerLabel);
+            card.Add(valueLabel);
+            card.Add(detailLabel);
+            parent.Add(card);
         }
 
         private static void AddLine(VisualElement parent, string text)

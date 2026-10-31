@@ -1,5 +1,19 @@
 # DECISIONS.md
 
+## D-235 — UI05 people-and-risk workspaces are disposable canonical projections (2026-10-31)
+
+UI05 does not introduce a second family tree, event queue, army roster, supply ledger or combat model. People,
+dynasty, Attention and military workspaces rebuild their view from the existing registries/services and send every
+mutation through the corresponding canonical command path. Disabled and rejected actions show typed player-facing
+service reasons. `StableEntityId` remains the selection key across save/load and simulation tiers.
+
+Resident, unit and member collections use virtualized lists; bounded event/history projections prevent UI cost from
+growing without limit. Full UI05 workspaces temporarily hide the world-context ribbon, inspector, notifications and
+resident strip so the minimum 1280x720@125% layout has one scroll owner and no overlapping command surface. This is
+reversible Presentation behavior, not new game authority. Orders that require a hostile world target remain disabled
+with guidance until selection supplies one; Presentation does not fabricate a target or force an invalid engage
+state. UI06 owns strategic map/layers/routes and the honest diplomacy placeholder; UI07 owns final acceptance/polish.
+
 ## D-234 — Professional groups are canonical admission and queue boundaries (2026-10-31)
 
 UI04 centralizes profession/group transactions in `ProfessionGroupService`. One deterministic group exists for each

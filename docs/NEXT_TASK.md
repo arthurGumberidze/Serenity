@@ -1,26 +1,29 @@
 # NEXT_TASK.md
 
-## UI05 — implement people, risk, dynasty, events and military workspaces (2026-10-31)
+## UI06 — implement strategic world workspace and honest diplomacy placeholder (2026-10-31)
 
-UI04 is complete. In a separate UI05 chat, implement only the approved `UI01_INTERFACE_REDESIGN.md` people-and-risk
-slice: home/family detail, dynasty and succession, attention/events, military roster/training/orders/supply and combat
-status. Reuse UI03 stable selection/context surfaces and UI04 virtualized People/professional-group projections.
+UI05 is complete. In a separate UI06 chat, implement only the approved `UI01_INTERFACE_REDESIGN.md` world slice:
+the clickable local mini-map and combined `Держава` workspace with the strategic map, known-world layers/legend,
+settlements, armies, routes, fog/scouting and selected location/army detail. The route summary must show duration,
+weather, supply and risk, and returning must restore the local camera through the existing
+`GlobalMapRuntimeBridge`.
 
-All actions must call the existing canonical Domestic, Health/Family, Dynasty/Succession, Event, Military, Combat and
-work-command services. Do not invent relation, event, rank, army, supply or combat state in Presentation; do not add
-per-character Update loops or copy mutable rosters. Preserve StableEntityId, Save/Load and tier transitions. Do not
-pull forward UI06 Realm/diplomacy or UI07 final polish.
+Read known geography, campaign/travel state and selection only from existing ConnectedWorld, GlobalMap, Campaign,
+Military and camera/bridge services. The mini-map is not a second world and must not own discovery. Diplomacy is an
+honest placeholder only: do not invent foreign states, relations, treaties, demands or a mutable diplomacy model
+before a canonical diplomacy service exists. Preserve `StableEntityId`, Save/Load, fog/scouting and Local/Global/TPS
+transitions. Do not pull forward UI07 acceptance/polish or unrelated world/content work.
 
 Definition of Done:
 
-1. Home/family, dynasty, events/attention and military/combat workspaces match the approved player-facing hierarchy
-   at 1920x1080 and 1280x720@125%, with bounded/virtualized rosters where population can grow.
-2. Disabled actions display typed player reasons from canonical services; no internal invariant or design-note copy
-   appears as gameplay text.
-3. Focused UI05 plus affected UI03/UI04, domestic/dynasty/event/military/combat, Save/Load and tier tests pass.
+1. The local mini-map and `Держава` workspace match the approved hierarchy at 1920x1080 and 1280x720@125%, with
+   readable layers, known locations/armies and route detail while preserving the visible-world philosophy.
+2. Map interactions use existing camera, travel, enter-settlement/battle and bridge commands; blocked commands show
+   typed player reasons, and diplomacy clearly states its unavailable future contract without simulating state.
+3. Focused UI06 plus affected UI02/UI03/UI05, global map/campaign/travel/fog, Save/Load and tier tests pass.
 4. A Windows Development build and autonomous visible exact-binary smoke pass with locally reviewed captures at both
    required resolutions.
-5. Update the four task/state/decision documents, record exact evidence, and create a separate `UI05:` commit while
+5. Update the four task/state/decision documents, record exact evidence, and create a separate `UI06:` commit while
    preserving unrelated WM15/terrain/vendor changes.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)

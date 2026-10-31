@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## UI05 people, risk, dynasty, events and military workspaces — DONE (2026-10-31)
+
+Home/family/health detail, dynasty/succession, Attention decisions/journal and military roster/training/orders/
+supply/combat status now use the approved Black and Gold workspaces. Growing resident, unit and member rosters are
+virtualized. UI state remains a disposable projection: commands and typed failure reasons come from the existing
+Domestic, Health/Family, Dynasty, Event, Military, Training and Combat services; identity remains `StableEntityId`.
+
+Final validation passed compile 0/0, UI05 EditMode 4/4, affected EditMode 153/153, final full-world UI05 PlayMode
+1/1, Windows Development build 0/0 and exact-binary Player smoke exit 0 with all eleven assertions true. Four
+locally reviewed captures cover 1920x1080 and military at 1280x720@125%. The combined legacy affected PlayMode
+attempt passed 4/20; the 16 old-fixture world-readiness/timeout failures and exact passing routes are recorded
+without claiming a green combined run in `docs/validation/UI05.md`. UI06 is next and must remain a separate chat.
+
 ## UI04 management workspaces and professional work rules — DONE (2026-10-31)
 
 Settlement resources/storage, production and workforce summaries; a virtualized People roster; professional-group
