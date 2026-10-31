@@ -1,5 +1,20 @@
 # DECISIONS.md
 
+## D-231 — UI01 uses a quiet one-accent palette and two-role Cyrillic typography (2026-10-31)
+
+The user's follow-up rejects a traffic-light-like interface. Revision 6 therefore keeps warm near-black,
+bone and desaturated old gold as the normal UI vocabulary. Research categories, generic progress and ordinary
+cards no longer receive competing decorative hues. Desaturated sage, terracotta and slate remain limited to
+small semantic success, danger and information indicators, always reinforced by text or iconography. Verified
+contrast ratios on the darkest panel are 15.53:1 for primary text, 7.91:1 for secondary text and 8.20:1 for the
+gold accent; dark text on the primary gold button is 6.35:1.
+
+Typography has two roles: a reliable Cyrillic UI sans for dense controls, numbers and small text, plus a serif
+display face only for large screen/identity headings. The browser prototype represents these roles with Segoe UI
+and Georgia. UI02 must create local TextMeshPro assets from redistributable, Cyrillic-complete fonts selected to
+match those roles; the unrelated third-party Outfit font under the avatar package is not adopted as the game font.
+UI02 remains blocked until the user accepts the revision 6 renders.
+
 ## D-230 — UI01 uses a restrained Black and Gold visual shell (2026-10-31)
 
 The user pauses implementation for a final palette review. Warm near-black replaces blue-green panel surfaces;

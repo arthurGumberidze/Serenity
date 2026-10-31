@@ -23,6 +23,10 @@ control. Profession and group names remain aligned and no resident may remain un
 User revision 5 approves the information architecture but pauses implementation for a final color review. The
 prototype now uses a stronger Black and Gold shell while preserving natural world colors and semantic success,
 warning and danger colors. UI02 must not start until the user accepts this palette.
+User revision 6 quiets the palette and defines typography: normal UI uses near-black, bone, gray-beige and one
+desaturated gold accent; research categories no longer form a color rainbow; semantic hues are small and muted.
+Segoe UI represents dense Cyrillic UI text and Georgia is limited to large headings. Twenty regenerated renders,
+interaction checks and AA-or-better contrast checks pass. UI02 remains blocked for user visual acceptance.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

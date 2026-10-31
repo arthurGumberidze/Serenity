@@ -36,6 +36,14 @@ review. Revision 5 strengthens the presentation from Ash and Ember to Black and 
 surfaces, restrained old-gold borders/selection/primary actions, bone text and natural world/minimap colors.
 Implementation remains stopped until the user reviews this palette.
 
+Revision 6 responds to the request for less traffic-light color and a deliberate font system. Normal UI is now
+near-black, warm bone, gray-beige and one desaturated old-gold accent. Research category colors and generic green
+progress were removed; semantic sage/terracotta/slate survive only in small state indicators. Segoe UI represents
+dense Cyrillic interface text and Georgia is limited to large display headings. The existing avatar-package Outfit
+font was not adopted. Browser verification regenerated 20 renders at 1920x1080 and 1280x720 with no console/page
+errors or horizontal overflow. Primary, secondary, accent and primary-button text contrast measured 15.53:1,
+7.91:1, 8.20:1 and 6.35:1 respectively. Unity implementation remains paused for user review.
+
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 
 The shared work registry now maintains a sorted active-job index, so assignment, construction, production and
