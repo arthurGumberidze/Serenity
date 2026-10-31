@@ -55,7 +55,10 @@ namespace Game.Simulation.Work
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             this.work = work ?? throw new ArgumentNullException(nameof(work));
             canCommand = commandPermission ?? (_ => true);
+            ProfessionGroups = new ProfessionGroupService(characters, work, canCommand);
         }
+
+        public ProfessionGroupService ProfessionGroups { get; }
 
         public static WorkGroupRole RoleFor(WorkJobType type)
         {
@@ -78,11 +81,7 @@ namespace Game.Simulation.Work
 
         public IReadOnlyList<WorkGroup> EnsureRoleGroups()
         {
-            foreach (var role in RequiredRoles)
-            {
-                if (work.Groups.All.Any(x => x.Role == role)) continue;
-                work.CreateGroup(DeterministicGroupId(role), DisplayName(role), Array.Empty<StableEntityId>(), role);
-            }
+            ProfessionGroups.EnsureGroups();
             return work.Groups.All.Where(x => x.Role != WorkGroupRole.General).OrderBy(x => x.Role).ToArray();
         }
 
@@ -94,8 +93,8 @@ namespace Game.Simulation.Work
             if (work.TryGetOpenJobForTarget(target, out var existing))
                 throw new InvalidOperationException("Этот объект уже зарезервирован другим заданием.");
             var role = RoleFor(type);
-            var group = work.Groups.All.Single(x => x.Role == role);
-            var order = work.CreateDirectJob(type, null, target, priority, group.Members.Count > 0 ? group.Id : (WorkGroupId?)null, true);
+            var group = ProfessionGroups.Primary(role);
+            var order = work.CreateDirectJob(type, null, target, priority, group.Id, true);
             AssignBest(order, priority == WorkPriority.Immediate);
             return order;
         }
@@ -107,9 +106,9 @@ namespace Game.Simulation.Work
             var target = WorkTarget.ForEntity(WorkTargetKind.WorldPile, source.Id, sourcePosition);
             if (work.TryGetOpenJobForTarget(target, out _))
                 throw new InvalidOperationException("Эта куча уже зарезервирована другим заданием.");
-            var group = work.Groups.All.Single(x => x.Role == WorkGroupRole.Haulers);
+            var group = ProfessionGroups.Primary(WorkGroupRole.Haulers);
             var order = work.CreateHaulJob(null, source, destination, resourceId, quantity, priority,
-                group.Members.Count > 0 ? group.Id : (WorkGroupId?)null, sourcePosition, true);
+                group.Id, sourcePosition, true);
             AssignBest(order, priority == WorkPriority.Immediate);
             return order;
         }
@@ -121,10 +120,18 @@ namespace Game.Simulation.Work
                 AssignBest(job, job.Priority == WorkPriority.Immediate);
         }
 
+        public bool MakeUrgent(JobId jobId)
+        {
+            var job = work.Get(jobId);
+            job.SetPriority(WorkPriority.Immediate);
+            if (job.Status != WorkJobStatus.Queued) return true;
+            return AssignBest(job, true);
+        }
+
         public IReadOnlyList<WorkCandidateDiagnostic> GetCandidates(WorkJobType type, WorldPosition target)
         {
             var role = RoleFor(type);
-            var group = work.Groups.All.FirstOrDefault(x => x.Role == role);
+            var group = work.Groups.All.Where(x => x.Role == role).OrderBy(x => x.Id).FirstOrDefault();
             if (group == null) return Array.Empty<WorkCandidateDiagnostic>();
             return group.Members.Select(id => Diagnose(id, role, target))
                 .OrderBy(x => x.DistanceSquared).ThenByDescending(x => x.Suitability)
@@ -138,10 +145,6 @@ namespace Game.Simulation.Work
             if(job.GroupId.HasValue && !work.Groups.TryGet(job.GroupId.Value,out group))return false;
             if(group!=null)role=group.Role;
             var roster=group?.Members.ToArray() ?? Array.Empty<StableEntityId>();
-            if(group==null && role!=WorkGroupRole.Warriors)
-                roster=characters.GetAll().Where(x=>x.LifeState==CharacterLifeState.Alive &&
-                    (!work.Groups.TryGetForMember(x.Id,out var assignedGroup)||assignedGroup.Role==WorkGroupRole.General||assignedGroup.Role==role))
-                    .Select(x=>x.Id).ToArray();
             var candidates = roster.Where(canCommand).Where(id=>work.AssignmentScope?.Invoke(id,job)??true)
                 .Select(id => Diagnose(id, role, job.Target.Position))
                 .Where(x => allowSafeInterruption
@@ -155,9 +158,12 @@ namespace Game.Simulation.Work
             {
                 if (!allowSafeInterruption || !scheduler.TryInterruptForDirectWork(selected)) return false;
                 if (work.TryGetAssigned(selected, out var interrupted) && interrupted.Id != job.Id)
-                    work.Unassign(interrupted.Id);
+                {
+                    work.AssignUrgentAheadOf(job.Id, selected, interrupted.Id);
+                    return true;
+                }
             }
-            return work.Assign(job.Id, selected);
+            return work.Assign(job.Id, selected, allowSafeInterruption ? WorkQueuePlacement.Front : WorkQueuePlacement.RejectWhenBusy);
         }
 
         private WorkCandidateDiagnostic Diagnose(StableEntityId id, WorkGroupRole role, WorldPosition target)

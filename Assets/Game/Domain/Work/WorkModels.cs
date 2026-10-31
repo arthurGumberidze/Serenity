@@ -234,6 +234,31 @@ namespace Game.Domain.Work
             return true;
         }
 
+        public void MoveMember(WorkGroupId destinationGroupId, StableEntityId characterId)
+        {
+            var destination = Get(destinationGroupId);
+            if (membership.TryGetValue(characterId, out var sourceGroupId))
+            {
+                if (sourceGroupId == destinationGroupId) return;
+                var source = Get(sourceGroupId);
+                // Validate capacity before changing either side so the operation is atomic.
+                if (destination.Role == WorkGroupRole.Warriors && destination.MemberCount >= 50)
+                    throw new InvalidOperationException("A military squad may contain at most 50 residents including its commander.");
+                source.RemoveMember(characterId);
+                membership.Remove(characterId);
+            }
+            destination.AddMember(characterId);
+            membership.Add(characterId, destinationGroupId);
+        }
+
+        public bool Remove(WorkGroupId groupId)
+        {
+            var group = Get(groupId);
+            if (group.MemberCount != 0)
+                throw new InvalidOperationException("A non-empty work group must reassign its members before deletion.");
+            return groups.Remove(groupId);
+        }
+
         public void Clear()
         {
             groups.Clear();

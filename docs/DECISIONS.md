@@ -1,5 +1,24 @@
 # DECISIONS.md
 
+## D-234 — Professional groups are canonical admission and queue boundaries (2026-10-31)
+
+UI04 centralizes profession/group transactions in `ProfessionGroupService`. One deterministic group exists for each
+supported role, including `Разнорабочие`. Starting residents, newly admitted adults/recruits and children reaching
+adulthood enter the group mapped from their canonical profession; unknown or absent definitions become `worker` in
+`Разнорабочие`. Population-count and next-birthday gates avoid scanning the roster on every simulation callback.
+
+Manual reassignment changes group and profession in one transaction. Deleting a non-empty group requires an explicit
+replacement and reassigns every member before removal, so Presentation cannot create an ungrouped resident. Grouped
+work assignment checks membership both when querying and committing. `Срочно` uses the scheduler's existing safe
+interruptibility guard, preserves prior progress, assigns the urgent order at the front and keeps interrupted work
+immediately second. These rules persist through the existing WorkSaveState queue/group fields without a schema bump;
+StableEntityId remains the only identity across save and simulation tiers.
+
+UI04 workspaces are disposable reads and canonical command calls. People uses a virtualized list rather than a row or
+Update per resident. Research categories are Presentation grouping over the canonical technology catalog, and the
+construction drawer stays below the visible world. Exact wording/density remains reversible UI07 polish, not mutable
+game authority.
+
 ## D-233 — UI01 revision 7 is the approved implementation baseline (2026-10-31)
 
 The user approved the revised gameplay-interface direction and requested implementation. UI01 therefore closes

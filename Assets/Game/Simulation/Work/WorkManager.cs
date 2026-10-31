@@ -79,6 +79,14 @@ namespace Game.Simulation.Work
             Groups.AddMember(groupId, characterId);
         }
 
+        public void MoveMember(WorkGroupId groupId, StableEntityId characterId)
+        {
+            RequireCharacter(characterId);
+            Groups.MoveMember(groupId, characterId);
+        }
+
+        public bool DeleteEmptyGroup(WorkGroupId groupId) => Groups.Remove(groupId);
+
         public bool RemoveMember(WorkGroupId groupId, StableEntityId characterId) =>
             Groups.RemoveMember(groupId, characterId);
 
@@ -178,6 +186,11 @@ namespace Game.Simulation.Work
             var job = Get(jobId);
             if (job.Status != WorkJobStatus.Queued) return false;
             RequireEligible(characterId, job.Type);
+            if (job.GroupId.HasValue)
+            {
+                if (!Groups.TryGet(job.GroupId.Value, out var requiredGroup) || !requiredGroup.Contains(characterId))
+                    throw new InvalidOperationException("Grouped work may only be assigned to a member of its required group.");
+            }
             if (AssignmentScope != null && !AssignmentScope(characterId,job)) return false;
             if (queuePlacement == WorkQueuePlacement.RejectWhenBusy && HasOpenJob(characterId))
                 throw new InvalidOperationException("A character cannot execute incompatible exclusive jobs simultaneously.");
@@ -190,6 +203,7 @@ namespace Game.Simulation.Work
         {
             RequireCharacter(characterId);
             job = openJobs.Values.Where(x => x.Status == WorkJobStatus.Queued && IsEligible(characterId, x.Type) &&
+                    (!x.GroupId.HasValue || Groups.TryGet(x.GroupId.Value, out var group) && group.Contains(characterId)) &&
                     (AssignmentScope?.Invoke(characterId,x) ?? true))
                 .OrderByDescending(x => x.Priority).ThenBy(x => x.Id).FirstOrDefault();
             return job != null && Assign(job.Id, characterId, WorkQueuePlacement.Tail);
@@ -246,6 +260,28 @@ namespace Game.Simulation.Work
         public bool Unassign(JobId id) => Get(id).Unassign();
 
         public void SetPriority(JobId id, WorkPriority priority) => Get(id).SetPriority(priority);
+
+        public void AssignUrgentAheadOf(JobId urgentId, StableEntityId characterId, JobId interruptedId)
+        {
+            var urgent = Get(urgentId);
+            var interrupted = Get(interruptedId);
+            if (urgent.Status != WorkJobStatus.Queued || interrupted.IsTerminal ||
+                interrupted.AssigneeId != characterId)
+                throw new InvalidOperationException("Urgent reassignment requires a queued order and the worker's open order.");
+            RequireEligible(characterId, urgent.Type);
+            if (!urgent.GroupId.HasValue || !Groups.TryGet(urgent.GroupId.Value, out var required) ||
+                !required.Contains(characterId))
+                throw new InvalidOperationException("Urgent work may only interrupt a member of its required group.");
+
+            // Reserve the second slot first, then the urgent front slot. Queue ordering is ascending.
+            var interruptedOrder = nextFrontOrder--;
+            var urgentOrder = nextFrontOrder--;
+            interrupted.RequeueAssigned();
+            interrupted.SetQueueOrder(interruptedOrder);
+            if (!urgent.AssignTo(characterId))
+                throw new InvalidOperationException("Urgent order could not be assigned.");
+            urgent.SetQueueOrder(urgentOrder);
+        }
 
         public bool Complete(JobId id) => Finish(Get(id), WorkJobStatus.Completed);
         public bool Cancel(JobId id) => Finish(Get(id), WorkJobStatus.Cancelled);

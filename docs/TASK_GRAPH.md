@@ -1,5 +1,14 @@
 # TASK_GRAPH.md
 
+UI04 management workspaces and professional work rules (2026-10-31): **DONE**. Implemented Settlement,
+virtualized People, professional Work Groups, compact Construction and categorized Research workspaces. Added the
+canonical `ProfessionGroupService` for automatic adult/admission assignment and atomic edits; grouped eligibility
+is exclusive and safe `Срочно` queues urgent work first with preserved prior work second. No Presentation authority,
+per-NPC Update, alternate identity or UI05 scope was added. Validation: compile 0/0; UI04 EditMode 6/6; affected
+EditMode 36/36 + 22/22; UI04 PlayMode 1/1; P103 Save/Load/Tier PlayMode 1/1; Windows Development build 0/0; exact
+Player exit 0 with every assertion true and locally reviewed 1920x1080 plus 1280x720@125% captures. Evidence:
+`docs/validation/UI04.md`. UI05 is next and remains a separate chat.
+
 UI03 world HUD and stable selection surfaces (2026-10-31): **DONE**. Added the world-first settlement HUD,
 resident tracker, resident/building/multiple-selection sheets, disposable WorkManager queue projection and
 contextual command ribbon over the approved UI02 shell. Selection remains owned by `SelectionProbe` and

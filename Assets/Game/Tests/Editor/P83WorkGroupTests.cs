@@ -59,8 +59,10 @@ namespace Game.Tests
                 WorkPriority.Immediate);
 
             Assert.That(immediate.AssigneeId, Is.EqualTo(worker.Id));
-            Assert.That(old.Status, Is.EqualTo(WorkJobStatus.Queued));
-            Assert.That(old.AssigneeId.HasValue, Is.False);
+            Assert.That(old.Status, Is.EqualTo(WorkJobStatus.Assigned));
+            Assert.That(old.AssigneeId, Is.EqualTo(worker.Id));
+            Assert.That(fixture.Work.GetQueue(worker.Id).Select(value => value.Id),
+                Is.EqualTo(new[] { immediate.Id, old.Id }));
         }
 
         [Test]
@@ -134,7 +136,7 @@ namespace Game.Tests
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
 
             Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
-            Assert.That(restored.Work.Groups.Count, Is.EqualTo(10));
+            Assert.That(restored.Work.Groups.Count, Is.EqualTo(11));
             var savedBuilders = restored.Work.Groups.Single(x => x.Id == builders.Id);
             Assert.That(savedBuilders.MemberShifts.Single(x => x.CharacterId == worker.Id).Shift,
                 Is.EqualTo(WorkShiftKind.Day));

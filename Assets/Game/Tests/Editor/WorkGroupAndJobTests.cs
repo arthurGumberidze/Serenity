@@ -303,21 +303,22 @@ namespace Game.Tests
         }
 
         [Test]
-        public void UngroupedConstructionChoosesNearbyResidentAndEmptyRoleOrdersRemainRestorable()
+        public void ProfessionExclusiveConstructionWaitsForBuilderAndEmptyRoleOrdersRemainRestorable()
         {
             var fixture=CreateFixture(2,20,40,1d);
             var agents=new Tier1AiAgentRegistry();foreach(var agent in fixture.Agents)agents.Add(agent);
             fixture.Agents[1].UpdatePosition(new WorldPosition(500,0,0));
             var commands=new DirectWorkCommandService(fixture.CharacterRegistry,agents,fixture.Scheduler,fixture.Work);
             commands.EnsureRoleGroups();
+            commands.ProfessionGroups.ReconcileAdults(Character.BiologicalTicksPerYear * 20L);
             var build=fixture.Work.CreateDirectJob(WorkJobType.Build,null,
                 WorkTarget.ForEntity(WorkTargetKind.Building,StableEntityId.NewId(),new WorldPosition(501,0,0)),WorkPriority.Normal);
             commands.ReevaluateQueued();
-            Assert.That(build.AssigneeId,Is.EqualTo(fixture.Characters[1].Id),"A carrier already near a distant site should build it");
+            Assert.That(build.AssigneeId.HasValue,Is.False,"An unscoped legacy order must not borrow a worker from another professional group");
             var second=commands.Issue(WorkJobType.Build,
                 WorkTarget.ForEntity(WorkTargetKind.Building,StableEntityId.NewId(),new WorldPosition(2,0,0)),WorkPriority.Normal);
-            Assert.That(second.AssigneeId,Is.EqualTo(fixture.Characters[0].Id));
-            Assert.That(second.GroupId.HasValue,Is.False,"Fallback workers must not be assigned to a group they do not belong to");
+            Assert.That(second.AssigneeId.HasValue,Is.False);
+            Assert.That(second.GroupId,Is.EqualTo(commands.ProfessionGroups.Primary(WorkGroupRole.Builders).Id));
             Assert.DoesNotThrow(()=>new WorkManager(fixture.CharacterRegistry).RestoreState(fixture.Work.CaptureState()));
         }
 

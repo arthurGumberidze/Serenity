@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## UI04 management workspaces and professional work rules — DONE (2026-10-31)
+
+Settlement resources/storage, production and workforce summaries; a virtualized People roster; professional-group
+management; compact construction; categorized research; queues and priorities now use the approved Black and Gold
+shell. Presentation remains a disposable projection over canonical services and stable selection.
+
+`ProfessionGroupService` owns automatic starting/new-adult/recruit assignment, atomic profession/group
+reassignment and deletion with explicit replacement. Grouped orders reject foreign professions. Safe `Срочно`
+assignment preserves progress and places the urgent order first with the interrupted eligible order second. The
+central reconciliation is population-count/birthday gated, survives work save/load and has no per-NPC Update.
+
+Final validation passed compile with 0 errors/0 warnings; UI04 EditMode 6/6; affected EditMode 36/36 plus P103/U27
+22/22; UI04 PlayMode 1/1; and the P103 StableEntityId/queue/Save-Load/Tier route 1/1. The final Windows Development
+build passed with 0 errors/0 warnings. Its exact binary exited 0 with all assertions true, and three locally reviewed
+captures cover management workspaces at 1920x1080 and compact construction at 1280x720@125%. Evidence:
+`docs/validation/UI04.md`. UI05 is the next unblocked task and must start in a separate chat.
+
 ## UI03 world HUD and stable selection surfaces — DONE (2026-10-31)
 
 The approved world-first HUD is implemented over the UI02 Black and Gold foundation: settlement/status and

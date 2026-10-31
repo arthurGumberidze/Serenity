@@ -653,6 +653,7 @@ namespace Game.Infrastructure
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work, CanCommandResident);
             DirectWorkCommands.EnsureRoleGroups();
+            DirectWorkCommands.ProfessionGroups.ReconcileAdults(Clock.State.BiologicalTicks, true);
             ConstructionClearance = new ConstructionClearanceCoordinator(Buildings, Production, Work, Construction,
                 id => buildingCatalog.ResolveDefinition(id), FundingSources, ConstructionWorkTarget,
                 buildingGridSize, new WorldPosition(buildingGridOrigin.x, buildingGridOrigin.y, buildingGridOrigin.z),
@@ -1054,6 +1055,7 @@ namespace Game.Infrastructure
                 Domestic.SynchronizeHousing(Facilities.HomeAssignments,id=>buildingCatalog.ResolveDefinition(id),ConstructionWorkTarget);
             }
             industrialWork?.Advance(targetCalendarTick);
+            DirectWorkCommands?.ProfessionGroups.ReconcileAdults(Clock.State.BiologicalTicks);
             DirectWorkCommands?.ReevaluateQueued();
             PerformanceBenchmark?.BeginSimulationAllocationSample();
             var startCalendarTick = checked(targetCalendarTick - advance.CalendarDelta.Ticks);
@@ -1453,6 +1455,7 @@ namespace Game.Infrastructure
                     BuildingPresentations.TryGet(building.Id, out var cropView)) RegisterCropPlot(building, cropView);
             WorldPopulation?.RebindAfterLoad();
             DirectWorkCommands.EnsureRoleGroups();
+            DirectWorkCommands.ProfessionGroups.ReconcileAdults(Clock.State.BiologicalTicks, true);
             DirectWorkCommands.ReevaluateQueued();
             WeatherPresentation.Refresh(Clock.State.CalendarTicks);
             ApplyLocalLocationScope(GlobalMap.ActiveLocationId);

@@ -136,6 +136,8 @@ namespace Game.Presentation.UI
         private bool navigationExpanded;
         private bool resourcesExpanded;
         private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
+        private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
+        private string peopleSearch = string.Empty;
         private ContextCommandTarget? activeContextTarget;
         private StableEntityId[] activeContextSelectionIds = Array.Empty<StableEntityId>();
         private int lastUiPointerFrame = -2;
@@ -153,6 +155,15 @@ namespace Game.Presentation.UI
             Storage = 5,
             Defense = 6,
             Infrastructure = 7
+        }
+
+        private enum ResearchWorkspaceCategory
+        {
+            All = 0,
+            Survival = 1,
+            Production = 2,
+            Settlement = 3,
+            Society = 4
         }
 
         public bool DeveloperUiVisible { get; private set; }
@@ -2060,7 +2071,7 @@ namespace Game.Presentation.UI
 
         private void DrawEconomyPanel()
         {
-            AddTitle(mainPanel, T("ui.economy.title"));
+            AddTitle(mainPanel, "Поселение");
             var shelterReady = context.Buildings.All.Any(x =>
                 x.DefinitionId.FamilyId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
             var storageReady = context.Buildings.All.Any(x =>
@@ -2071,17 +2082,23 @@ namespace Game.Presentation.UI
                                                    person.LifeState == CharacterLifeState.Alive);
             var edibleUnits = context.Production.Food.EdibleResources.Sum(TotalResource);
             var foodDays = population == 0 ? 0d : edibleUnits * context.Production.Settings.FoodTicksPerPersonUnit.TotalDays / population;
-            AddSection(mainPanel, T("ui.economy.overview"));
+            AddSection(mainPanel, "Обзор и устойчивость");
             AddLine(mainPanel, F("ui.economy.ruler_population", CharacterName(context.Dynasty.CurrentMonarchId), population));
             AddLine(mainPanel, F("ui.economy.camp_ready", T(shelterReady ? "ui.economy.ready" : "ui.economy.missing"),
                 T(storageReady ? "ui.economy.ready" : "ui.economy.missing")));
             AddLine(mainPanel, F("ui.economy.food_days", edibleUnits, RussianTextCatalog.Decimal(foodDays, "0.#")));
             if (foodDays < 5d) AddMuted(mainPanel, T("ui.economy.food_warning"));
-            AddSection(mainPanel, T("ui.economy.starting_group"));
+            AddSection(mainPanel, "Рабочая сила");
+            var living = playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)
+                .Where(value => value != null && value.LifeState == CharacterLifeState.Alive).ToArray();
+            AddLine(mainPanel, "Свободно: " + living.Count(value => !context.Work.HasOpenJob(value.Id)) +
+                " · занято: " + living.Count(value => context.Work.HasOpenJob(value.Id)) +
+                " · групп: " + context.Work.Groups.Count);
             foreach (var person in playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)
                          .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(10))
                 AddLine(mainPanel, F("ui.economy.person", RussianTextCatalog.PersonName(person.Name.DisplayName),
                     person.AgeInCompletedYears(context.Clock().State.BiologicalTicks), ProfessionName(person.ProfessionId?.ToString())));
+            AddSection(mainPanel, "Ресурсы и склады");
             var storage = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray();
             AddLine(mainPanel, F("ui.economy.storage", storage.Sum(x => x.TotalUnits), storage.Sum(x => x.Capacity)));
             foreach (var definition in context.Resources.All)
@@ -2102,7 +2119,7 @@ namespace Game.Presentation.UI
             var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
             AddMuted(mainPanel, F("ui.economy.modifiers", Percent(weather.Modifiers.CropGrowthPerThousand),
                 Percent(weather.Modifiers.OutdoorWorkPerThousand), Percent(weather.Modifiers.WildFoodGatheringPerThousand)));
-            AddSection(mainPanel, T("ui.economy.sites"));
+            AddSection(mainPanel, "Производство");
             foreach (var site in context.Production.Sites)
             {
                 var status = site.Kind == ProductionSiteKind.PrimitiveCropPlot
@@ -2168,6 +2185,20 @@ namespace Game.Presentation.UI
         private void DrawResearchPanel()
         {
             AddTitle(mainPanel, T("ui.research.title"));
+            var categoryRow = Row();
+            foreach (ResearchWorkspaceCategory value in Enum.GetValues(typeof(ResearchWorkspaceCategory)))
+            {
+                var capturedCategory = value;
+                var categoryButton = ActionButton(ResearchCategoryName(value), () =>
+                {
+                    researchCategory = capturedCategory;
+                    RefreshPanel();
+                }, "research-category-" + value.ToString().ToLowerInvariant());
+                SerenityUiDesign.SetSelected(categoryButton, researchCategory == value);
+                categoryRow.Add(categoryButton);
+            }
+            mainPanel.Add(categoryRow);
+            AddMuted(mainPanel, "Зависимости показаны от требуемых открытий к следующему доступному исследованию.");
             var active = context.Research.ActiveProject;
             if (active == null) AddLine(mainPanel, T("ui.research.active_none"));
             else
@@ -2197,13 +2228,16 @@ namespace Game.Presentation.UI
             locked.AddToClassList("serenity-foldout");
             foreach (var technology in context.Research.Catalog.All)
             {
+                if (researchCategory != ResearchWorkspaceCategory.All &&
+                    ResearchCategoryFor(technology.Id.ToString()) != researchCategory) continue;
                 var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
                     active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
                     context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" : "enum.ResearchAvailability.Locked";
                 var card = SerenityUiDesign.Card();
                 AddSection(card, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
-                AddMuted(card, F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
-                    string.Join(", ", technology.Prerequisites.Select(x => Content("technology", x.ToString())))));
+                AddMuted(card, "Ветка: " + ResearchCategoryName(ResearchCategoryFor(technology.Id.ToString())) + " · " +
+                    F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
+                    string.Join(" → ", technology.Prerequisites.Select(x => Content("technology", x.ToString())))));
                 AddMuted(card, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
                     technology.Unlocks.Count == 0 ? T("ui.research.capability") :
                     string.Join(", ", technology.Unlocks.Select(UnlockName))));
@@ -2223,6 +2257,7 @@ namespace Game.Presentation.UI
         private void DrawWorkPanel()
         {
             AddTitle(mainPanel, T("ui.work.title"));
+            AddMuted(mainPanel, "Профессия, смена, приоритет, командир и состав каждой группы.");
             var groups = context.Work.Groups.All;
             foreach (var group in groups)
             {
@@ -2237,21 +2272,12 @@ namespace Game.Presentation.UI
                 button.AddToClassList("serenity-card-action");
                 SerenityUiDesign.SetSelected(button, selectedGroup == group.Id);
                 mainPanel.Add(button);
-                AddMuted(mainPanel, group.Role + " · " + group.Members.Count(id => !context.Work.HasOpenJob(id)) +
+                AddMuted(mainPanel, ProfessionGroupService.DisplayName(group.Role) + " · " +
+                    AllowedWorkLabel(group.Role) + " · " + group.Members.Count(id => !context.Work.HasOpenJob(id)) +
                     "/" + group.MemberCount + " доступно");
             }
-            var createGroup = ActionButton(T("ui.work.create"), () => TryCommand(() =>
-            {
-                if (context.Selection.SelectedCharacterIds.Count == 0) throw PlayerError("ui.work.need_selection");
-                foreach (var id in context.Selection.SelectedCharacterIds)
-                    if (context.Work.Groups.TryGetForMember(id, out var previous))
-                        context.Work.RemoveMember(previous.Id, id);
-                selectedGroup = context.Work.CreateGroup(F("ui.work.default_name", context.Work.Groups.Count + 1),
-                    context.Selection.SelectedCharacterIds).Id;
-            }));
-            createGroup.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
-            mainPanel.Add(createGroup);
-            if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.work.need_selection"));
+            mainPanel.Add(ActionButton("Восстановить отсутствующие профессиональные группы", () => TryCommand(() =>
+                context.DirectWork.ProfessionGroups.EnsureGroups()), "work-create-profession-group"));
             if (!selectedGroup.HasValue || !context.Work.Groups.TryGet(selectedGroup.Value, out var current))
             {
                 AddMuted(mainPanel, T("ui.work.select_group"));
@@ -2260,6 +2286,8 @@ namespace Game.Presentation.UI
             AddSection(mainPanel, current.DisplayName);
             AddLine(mainPanel, $"Дневная смена (06:00–18:00): {current.MembersForShift(WorkShiftKind.Day).Count}");
             AddLine(mainPanel, $"Ночная смена (18:00–06:00): {current.MembersForShift(WorkShiftKind.Night).Count}");
+            AddLine(mainPanel, "Профессия: " + ProfessionGroupService.ProfessionForRole(current.Role).Value +
+                " · допустимая работа: " + AllowedWorkLabel(current.Role));
             var shiftAssignments = Row();
             shiftAssignments.Add(ActionButton("Выбранных → день", () => TryCommand(() =>
             {
@@ -2282,19 +2310,10 @@ namespace Game.Presentation.UI
             mainPanel.Add(rename);
             mainPanel.Add(ActionButton(T("ui.work.rename"), () => TryCommand(() => context.Work.RenameGroup(current.Id, rename.value))));
             var membership = Row();
-            membership.Add(ActionButton(T("ui.work.add_selected"), () => TryCommand(() =>
+            membership.Add(ActionButton("Перевести выбранных", () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds)
-                    if (!current.Contains(id))
-                    {
-                        if (context.Work.Groups.TryGetForMember(id, out var previous))
-                            context.Work.RemoveMember(previous.Id, id);
-                        context.Work.AddMember(current.Id, id);
-                    }
-            })));
-            membership.Add(ActionButton(T("ui.work.remove_selected"), () => TryCommand(() =>
-            {
-                foreach (var id in context.Selection.SelectedCharacterIds.ToArray()) context.Work.RemoveMember(current.Id, id);
+                    if (!current.Contains(id)) context.DirectWork.ProfessionGroups.Reassign(id, current.Id);
             })));
             membership.Add(ActionButton(T("ui.work.commander_selected"), () => TryCommand(() =>
             {
@@ -2302,12 +2321,20 @@ namespace Game.Presentation.UI
                 context.Work.SetCommander(current.Id, context.Selection.SelectedCharacterIds[0]);
             })));
             mainPanel.Add(membership);
+            if (current.Role != WorkGroupRole.General)
+                mainPanel.Add(ActionButton("Удалить группу и перевести состав в Разнорабочие", () => TryCommand(() =>
+                {
+                    var fallback = context.DirectWork.ProfessionGroups.Primary(WorkGroupRole.General);
+                    context.DirectWork.ProfessionGroups.DeleteGroup(current.Id, fallback.Id);
+                    selectedGroup = fallback.Id;
+                }), "work-delete-group"));
             AddLine(mainPanel, F("ui.work.commander_priority", CharacterName(current.CommanderId), E(workPriority)));
             var priority = Row();
             foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
             {
                 var captured = value;
-                var priorityButton = ActionButton(E(value), () => { workPriority = captured; RefreshPanel(); });
+                var priorityButton = ActionButton(value == WorkPriority.Immediate ? "Срочно" : E(value),
+                    () => { workPriority = captured; RefreshPanel(); });
                 SerenityUiDesign.SetSelected(priorityButton, workPriority == value);
                 priority.Add(priorityButton);
             }
@@ -2326,7 +2353,7 @@ namespace Game.Presentation.UI
                 {
                     var captured = job.Id;
                     var jobActions = Row();
-                    jobActions.Add(ActionButton("Прямо сейчас", () => TryCommand(() => context.Work.SetPriority(captured, WorkPriority.Immediate))));
+                    jobActions.Add(ActionButton("Срочно", () => TryCommand(() => context.DirectWork.MakeUrgent(captured))));
                     jobActions.Add(ActionButton("Отменить", () => TryCommand(() => context.Work.Cancel(captured))));
                     mainPanel.Add(jobActions);
                 }
@@ -2374,7 +2401,47 @@ namespace Game.Presentation.UI
 
         private void DrawDomesticPanel()
         {
-            AddTitle(mainPanel, "Дом, сон и семья");
+            AddTitle(mainPanel, "Люди");
+            var search = new TextField("Поиск") { value = peopleSearch, name = "people-search" };
+            StyleTextField(search);
+            search.RegisterValueChangedCallback(evt =>
+            {
+                peopleSearch = evt.newValue ?? string.Empty;
+                RefreshPanel();
+            });
+            mainPanel.Add(search);
+            var residents = PlayerCharacterIds().Select(residentId =>
+                    context.Characters.TryGet(residentId, out var resident) ? resident : null)
+                .Where(resident => resident != null && resident.LifeState == CharacterLifeState.Alive &&
+                    (string.IsNullOrWhiteSpace(peopleSearch) || resident.Name.DisplayName.IndexOf(peopleSearch,
+                        StringComparison.OrdinalIgnoreCase) >= 0))
+                .OrderBy(resident => resident.Name.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
+            AddLine(mainPanel, "Жителей: " + residents.Count + " · список подгружает только видимые строки");
+            var roster = new ListView(residents, 38,
+                () =>
+                {
+                    var button = ActionButton(string.Empty, () => { });
+                    button.clicked += () => SelectResidentFromWorkspace((StableEntityId)button.userData);
+                    button.AddToClassList("serenity-roster-row");
+                    return button;
+                },
+                (element, index) =>
+                {
+                    var resident = residents[index];
+                    var button = (Button)element;
+                    button.userData = resident.Id;
+                    var groupName = context.Work.Groups.TryGetForMember(resident.Id, out var group)
+                        ? group.DisplayName : "Ожидает распределения";
+                    button.text = RussianTextCatalog.PersonName(resident.Name.DisplayName) + " · " +
+                        ProfessionName(resident.ProfessionId?.ToString()) + " · " + groupName;
+                })
+            {
+                name = "people-roster",
+                selectionType = SelectionType.None
+            };
+            roster.style.height = 220;
+            mainPanel.Add(roster);
+            AddSection(mainPanel, "Дом, сон и семья");
             var id = context.Selection.SelectedCharacterId ?? context.Dynasty.CurrentMonarchId;
             if (!id.HasValue)
             {
@@ -3825,6 +3892,13 @@ namespace Game.Presentation.UI
                 ? presenter : null).Where(x => x != null));
         }
 
+        private void SelectResidentFromWorkspace(StableEntityId characterId)
+        {
+            context.Selection.SelectCharacterIds(new[] { characterId });
+            if (context.AiAgents.TryGet(characterId, out var agent)) context.FocusWorld(agent.Position);
+            RefreshNow();
+        }
+
         private void IssueGroupHaul(WorkGroupId groupId)
         {
             var source = context.WorldPiles.All.OrderBy(x => x.Id).FirstOrDefault(x =>
@@ -3838,12 +3912,12 @@ namespace Game.Presentation.UI
 
         private void DrawDirectPriority()
         {
-            AddMuted(inspector, "Приоритет: " + (workPriority == WorkPriority.Immediate ? "Прямо сейчас" : E(workPriority)));
+            AddMuted(inspector, "Приоритет: " + (workPriority == WorkPriority.Immediate ? "Срочно" : E(workPriority)));
             var row = Row();
             foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
             {
                 var captured = value;
-                var button = ActionButton(value == WorkPriority.Immediate ? "Прямо сейчас" : E(value),
+                var button = ActionButton(value == WorkPriority.Immediate ? "Срочно" : E(value),
                     () => { workPriority = captured; RefreshInspector(); });
                 SerenityUiDesign.SetSelected(button, workPriority == value);
                 row.Add(button);
@@ -3868,6 +3942,33 @@ namespace Game.Presentation.UI
                 default: return null;
             }
         }
+
+        private static string AllowedWorkLabel(WorkGroupRole role)
+        {
+            var type = JobTypeForRole(role);
+            return type.HasValue ? E(type.Value) : "общие поручения";
+        }
+
+        private static ResearchWorkspaceCategory ResearchCategoryFor(string technologyId)
+        {
+            var id = (technologyId ?? string.Empty).ToLowerInvariant();
+            if (id.Contains("food") || id.Contains("hunt") || id.Contains("fire") || id.Contains("medicine"))
+                return ResearchWorkspaceCategory.Survival;
+            if (id.Contains("tool") || id.Contains("craft") || id.Contains("farm") || id.Contains("production"))
+                return ResearchWorkspaceCategory.Production;
+            if (id.Contains("build") || id.Contains("storage") || id.Contains("house") || id.Contains("settlement"))
+                return ResearchWorkspaceCategory.Settlement;
+            return ResearchWorkspaceCategory.Society;
+        }
+
+        private static string ResearchCategoryName(ResearchWorkspaceCategory category) => category switch
+        {
+            ResearchWorkspaceCategory.Survival => "Выживание",
+            ResearchWorkspaceCategory.Production => "Производство",
+            ResearchWorkspaceCategory.Settlement => "Поселение",
+            ResearchWorkspaceCategory.Society => "Общество",
+            _ => "Все"
+        };
 
         public WorkOrder IssuePierFishing(Building building, WorldPosition position)
         {
@@ -4315,7 +4416,7 @@ namespace Game.Presentation.UI
             mainPanel.EnableInClassList("is-build-palette", build);
             mainPanel.style.left = 10;
             mainPanel.style.top = build ? StyleKeyword.Auto : 142;
-            mainPanel.style.bottom = build ? 132 : 130;
+            mainPanel.style.bottom = build ? 170 : 130;
             mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
             mainPanel.style.width = build ? StyleKeyword.Auto : 480;
             mainPanel.style.right = build ? 374 : StyleKeyword.Auto;

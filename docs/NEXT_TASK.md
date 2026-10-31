@@ -1,29 +1,27 @@
 # NEXT_TASK.md
 
-## UI04 — implement management workspaces and group/profession/urgent rules (2026-10-31)
+## UI05 — implement people, risk, dynasty, events and military workspaces (2026-10-31)
 
-UI03 is complete. In a separate UI04 chat, implement the approved management slice from
-`docs/UI01_INTERFACE_REDESIGN.md`: Settlement, People and Work Groups workspaces; profession-aligned exclusive
-group eligibility; automatic starting/new-adult/recruit assignment; manual create/edit/delete/reassignment;
-urgent interruption limited to eligible group members with the prior eligible work requeued second; and the
-Construction and categorized dependency-tree Research workspaces.
+UI04 is complete. In a separate UI05 chat, implement only the approved `UI01_INTERFACE_REDESIGN.md` people-and-risk
+slice: home/family detail, dynasty and succession, attention/events, military roster/training/orders/supply and combat
+status. Reuse UI03 stable selection/context surfaces and UI04 virtualized People/professional-group projections.
 
-Preserve the UI03 `SelectionProbe`/`StableEntityId` selection path, disposable Presentation projections, context
-ribbon and canonical command/service routes. Do not cache canonical mutable collections in UI, add per-NPC Update
-loops, expose scheduling/design rationale as player copy, or pull forward UI05 dynasty/events/army and UI06
-realm/diplomacy work.
+All actions must call the existing canonical Domestic, Health/Family, Dynasty/Succession, Event, Military, Combat and
+work-command services. Do not invent relation, event, rank, army, supply or combat state in Presentation; do not add
+per-character Update loops or copy mutable rosters. Preserve StableEntityId, Save/Load and tier transitions. Do not
+pull forward UI06 Realm/diplomacy or UI07 final polish.
 
 Definition of Done:
 
-1. Settlement, People, group drill-down, Construction and Research workspaces match the approved player-facing
-   structure at 1920x1080 and 1280x720@125% without leaking internal invariant/design copy.
-2. Exclusive profession/group eligibility, auto-assignment and urgent interrupt/requeue ordering are enforced in
-   pure/testable Domain services and remain correct through save/load and simulation-tier changes.
-3. Existing UI/selection/work/construction/research tests plus focused UI04 EditMode and PlayMode tests pass.
-4. A Windows Development build and autonomous visible Player smoke pass with locally reviewed captures at both
+1. Home/family, dynasty, events/attention and military/combat workspaces match the approved player-facing hierarchy
+   at 1920x1080 and 1280x720@125%, with bounded/virtualized rosters where population can grow.
+2. Disabled actions display typed player reasons from canonical services; no internal invariant or design-note copy
+   appears as gameplay text.
+3. Focused UI05 plus affected UI03/UI04, domestic/dynasty/event/military/combat, Save/Load and tier tests pass.
+4. A Windows Development build and autonomous visible exact-binary smoke pass with locally reviewed captures at both
    required resolutions.
-5. Update the four task/state/decision documents, record exact evidence, and commit only UI04-scoped files with
-   a `UI04:` prefix while preserving unrelated dirty WM15/terrain/vendor work.
+5. Update the four task/state/decision documents, record exact evidence, and create a separate `UI05:` commit while
+   preserving unrelated WM15/terrain/vendor changes.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 
