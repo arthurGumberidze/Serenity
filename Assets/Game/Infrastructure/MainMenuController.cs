@@ -133,6 +133,7 @@ namespace Game.Infrastructure
             P108PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P109Stage1PlayerSmokeController.LaunchFromMenuIfRequested(this);
             P109Stage2PlayerSmokeController.LaunchFromMenuIfRequested(this);
+            UI02PlayerSmokeController.LaunchFromMenuIfRequested(this);
         }
 
         private void Update()
@@ -886,6 +887,7 @@ namespace Game.Infrastructure
             label.style.marginBottom = 12;
             label.style.color = SerenityUiDesign.Text;
             label.AddToClassList(SerenityUiDesign.TitleClass);
+            SerenityUiTypography.ApplyDisplay(label);
             content.Add(label);
         }
 

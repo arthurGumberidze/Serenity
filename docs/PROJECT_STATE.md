@@ -1,5 +1,30 @@
 # PROJECT_STATE.md
 
+## UI02 approved interface foundation — DONE (2026-10-31)
+
+The approved quiet Black and Gold visual foundation is now implemented in the Unity runtime: immutable colour,
+spacing and type tokens; reusable interaction/semantic states; a project-owned icon set; system-font resolution
+that prefers Segoe UI for dense Cyrillic interface text and Georgia for display headings without admitting new
+font files; and a horizontal bottom shell for Settlement, People, Work Groups, Construction, Knowledge,
+Dynasty, Military, Realm and Attention. Legacy stable element names and existing `GameplayPanel` command paths
+remain the compatibility boundary. Route/layout state is disposable Presentation state and no canonical game or
+save authority changed.
+
+Delivery validation on Unity 6000.6.4f1 passed: compile completed with 0 errors / 45 inherited warnings;
+UI02 EditMode passed 5/5; UI02 PlayMode passed 1/1 in 197.51 s after aligning its NUnit timeout with the existing
+600-second world-readiness deadline; and the immutable Windows Development build
+`Builds/UI02/Serenity.exe` completed with 0 errors / 0 warnings. The exact final Player exited 0 and its autonomous
+smoke reported every route/button, compatibility name, centre-world input region, Attention entry, 1920x1080
+frame and 1280x720@125% frame true. Both PNGs were inspected locally and show the real gameplay world rather
+than the loading overlay. The Player shutdown retains the known diagnostic report of two persistent allocations;
+no runtime exception or smoke error was recorded.
+
+An earlier visual-control attachment timed out at its internal approval boundary. It was not repeated and is not
+an acceptance gap: the command-line Player smoke starts through Main Menu/New Game, waits for actual gameplay
+readiness, drives the real UI Toolkit buttons, captures both required frames and fails its process exit code and
+JSON on any unmet assertion without CUA. Exact commands, failed-attempt diagnoses and evidence are in
+`docs/validation/UI02.md`. UI03 is the next unblocked task and must start in a separate chat.
+
 ## UI01 interface redesign — DONE / user approved (2026-10-31)
 
 The user accepted the optimized monthly Ollama build after a successful local retest. The WM16

@@ -1,40 +1,29 @@
 # NEXT_TASK.md
 
-## UI02 — implement the approved interface foundation (2026-10-31)
+## UI03 — implement world HUD and stable selection surfaces (2026-10-31)
 
-UI01 revision 7 is approved and complete. Implement the first Unity slice from
-`docs/UI01_INTERFACE_REDESIGN.md` and `docs/UI01_HANDOFF.md`: design tokens/theme resources, the bottom
-navigation shell and route model, the Attention entry point, compatible stable element names, and the approved
-typography asset strategy. Start from the current committed runtime UI; UI01 intentionally changed no Unity
-runtime source.
+UI02 is complete. In a separate UI03 chat, implement only the next approved Unity slice from
+`docs/UI01_INTERFACE_REDESIGN.md`: the world-first HUD hierarchy, contextual sheet for a selected resident or
+building, multiple-selection presentation and the context command ribbon above the bottom shell. Reuse the UI02
+tokens, typography, icons, route model and stable compatibility names.
 
-Keep every existing canonical command path working and keep navigation/layout state disposable. Do not create a
-second gameplay authority, cache canonical mutable collections in the UI, or add per-NPC update loops. Internal
-scheduling rules, design rationale, prototype watermarks and verification notes must not become visible labels.
-Profession-group exclusivity, urgent interruption/requeue semantics and automatic profession assignment remain
-future Domain/test work for UI04, not presentation text for UI02.
-
-Limit this slice to the foundation. Resident/group drill-down and selection belong to UI03/UI04; the compact
-construction drawer and categorized research tree belong to UI04; dynasty/events/army belong to UI05; realm map
-and diplomacy placeholder belong to UI06. Preserve the current dirty WM15/terrain/vendor work and keep it out of
-the UI02 commit.
+Keep selection identity in the existing `SelectionProbe`/`StableEntityId` path and send commands through the
+existing canonical services. UI03 may project current state but must not cache canonical mutable collections,
+create a second selection/command authority, add per-NPC update loops or expose internal scheduling/design copy.
+Resident group drill-down and profession/group rule changes remain UI04; construction/research restructuring
+remains UI04; dynasty/events/army remain UI05; realm/diplomacy remains UI06.
 
 Definition of Done:
 
-1. The approved quiet Black and Gold tokens and two-role typography are implemented without admitting font files
-   whose redistribution terms have not been reviewed.
-2. The bottom shell exposes the approved primary routes and Attention entry point while preserving stable element
-   names or explicit compatibility aliases for existing tests and command paths.
-3. Focused EditMode and PlayMode UI tests pass; the new shell is visually captured and reviewed at 1920×1080 and
-   1280×720 with 125% UI scale.
-4. A Windows Development build succeeds and a visible Player smoke confirms navigation/input without obscuring
-   the world unexpectedly.
-5. `PROJECT_STATE.md`, `TASK_GRAPH.md`, `DECISIONS.md` and `NEXT_TASK.md` record exact commands/results; commit only
-   the scoped files with an `UI02:` prefix.
-
-The optimized monthly Ollama build was successfully retested and accepted by the user on 2026-10-31. It no
-longer blocks development. UI02 should be performed in the separate implementation chat created from this
-handoff; this UI01 chat stops at the approved design boundary.
+1. HUD, resident card, building card, multi-selection and context ribbon match the approved world-first layout
+   at 1920x1080 and 1280x720@125% while retaining a usable centre-world input region.
+2. Stable selection survives ordinary presentation refresh/rebinding and every command continues through the
+   existing canonical command services.
+3. Existing UI/selection tests plus focused UI03 EditMode and PlayMode tests pass.
+4. A Windows Development build and autonomous visible Player smoke pass with locally reviewed captures at both
+   required resolutions.
+5. Update the four task/state/decision documents, record exact evidence, and commit only UI03-scoped files with
+   a `UI03:` prefix while preserving unrelated dirty WM15/terrain/vendor work.
 
 ## Historical — optimized monthly Ollama retest (accepted 2026-10-31)
 

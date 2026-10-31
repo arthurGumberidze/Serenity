@@ -2441,3 +2441,26 @@ bounded thread count from `Environment.ProcessorCount`, leaving at least two log
 model at eight threads on larger CPUs. `SERENITY_OLLAMA_THREADS` is an explicit 1–64 override. This trades some
 response latency for frame responsiveness; the deterministic game AI continues independently while the HTTP
 request is in flight.
+
+## D-227 — UI02 routes are disposable compatibility projections (2026-10-31)
+
+The staged interface implementation begins by treating `GameplayUiRouteId` as Presentation-only metadata over
+the existing `GameplayPanel` surfaces. The bottom shell may reorder and relabel entry points, but each button
+retains the established stable element name and reaches the same command implementation. Active route, layout,
+scale and selection styling are disposable; they do not enter save state or become a second gameplay authority.
+Attention projects the existing event/notification services and may not render scheduling invariants, design
+rationale, prototype watermarks or verification notes as player-facing copy.
+
+The visual language is data-like immutable Presentation code plus the shared runtime theme: near-black surfaces,
+bone text, one desaturated old-gold accent, and small muted semantic states. Dense Cyrillic UI prefers an
+installed Segoe UI-compatible sans family and display headings prefer an installed Georgia-compatible serif
+family. No font file is admitted until its redistribution terms are reviewed; unavailable OS families fall back
+to Unity's existing text rendering rather than blocking gameplay.
+
+`UI02PlayerSmokeController` is command-line-only acceptance instrumentation. It enters through Main Menu/New
+Game, waits until `WorldLoadingOverlay` is actually destroyed, invokes the real UI Toolkit route buttons, checks
+the centre-world input region and captures both target resolutions before returning a fail-closed JSON/process
+result. A visual-control tool's approval timeout does not weaken this deterministic Player proof and is not a
+reason to repeat CUA. The PlayMode test uses a 600-second NUnit timeout because its real-world initialization
+contract already permits 600 seconds; the prior 180-second framework default was shorter than the tested
+readiness contract.

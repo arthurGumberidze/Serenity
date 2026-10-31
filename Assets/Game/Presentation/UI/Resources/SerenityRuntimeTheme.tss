@@ -1,14 +1,257 @@
 @import url("unity-theme://default");
 
 /*
- * P8.5 presentation theme. The palette mirrors the natural stone, moss, bark and firelight
- * of the authored region. All selectors are presentation-only and preserve the stable element
- * names used by automated navigation.
+ * UI02 Black and Gold runtime theme. The final overrides at the end of this file are the
+ * authoritative token projection. All selectors are presentation-only and preserve stable
+ * element names used by automated navigation and command paths.
  */
 
 .serenity-root {
     color: rgb(243, 234, 216);
     font-size: 14px;
+}
+
+/*
+ * UI02 authoritative Black and Gold token projection.
+ * Warm near-black carries structure; old gold is reserved for focus, selection and primary actions.
+ */
+.serenity-root {
+    color: rgb(238, 231, 216);
+    font-size: 14px;
+}
+
+.serenity-main-menu,
+.serenity-menu-atmosphere {
+    background-color: rgb(13, 12, 10);
+}
+
+.serenity-surface,
+.serenity-menu-shell,
+.serenity-gameplay .serenity-surface,
+.serenity-gameplay .serenity-card,
+.serenity-gameplay .serenity-button,
+.serenity-gameplay .serenity-foldout > .unity-foldout__toggle {
+    color: rgb(238, 231, 216);
+    background-color: rgba(23, 21, 17, 0.96);
+    border-left-color: rgba(184, 154, 91, 0.46);
+    border-right-color: rgba(184, 154, 91, 0.26);
+    border-top-color: rgba(184, 154, 91, 0.26);
+    border-bottom-color: rgba(184, 154, 91, 0.26);
+}
+
+.serenity-surface-raised,
+.serenity-gameplay .serenity-surface-raised,
+.serenity-modal {
+    background-color: rgba(33, 30, 24, 0.98);
+}
+
+.serenity-card {
+    background-color: rgba(42, 38, 30, 0.96);
+    border-left-color: rgba(184, 154, 91, 0.72);
+}
+
+.serenity-card.is-selected,
+.serenity-card-action.is-selected {
+    color: rgb(238, 231, 216);
+    background-color: rgb(48, 43, 34);
+    border-left-color: rgb(210, 184, 117);
+    border-right-color: rgba(210, 184, 117, 0.7);
+    border-top-color: rgba(210, 184, 117, 0.7);
+    border-bottom-color: rgba(210, 184, 117, 0.7);
+}
+
+.serenity-button {
+    min-height: 40px;
+    color: rgb(238, 231, 216);
+    background-color: rgb(42, 38, 30);
+    border-left-color: rgba(184, 154, 91, 0.42);
+    border-right-color: rgba(184, 154, 91, 0.42);
+    border-top-color: rgba(184, 154, 91, 0.42);
+    border-bottom-color: rgba(184, 154, 91, 0.42);
+}
+
+.serenity-button:hover,
+.serenity-gameplay .serenity-button:hover {
+    color: rgb(238, 231, 216);
+    background-color: rgb(48, 43, 34);
+    border-left-color: rgb(210, 184, 117);
+    border-right-color: rgb(210, 184, 117);
+    border-top-color: rgb(210, 184, 117);
+    border-bottom-color: rgb(210, 184, 117);
+}
+
+.serenity-button:active {
+    color: rgb(238, 231, 216);
+    background-color: rgb(58, 49, 31);
+}
+
+.serenity-button:focus {
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgb(210, 184, 117);
+    border-right-color: rgb(210, 184, 117);
+    border-top-color: rgb(210, 184, 117);
+    border-bottom-color: rgb(210, 184, 117);
+}
+
+.serenity-button:disabled {
+    color: rgba(184, 174, 155, 0.52);
+    background-color: rgba(25, 23, 19, 0.9);
+    border-left-color: rgba(184, 174, 155, 0.16);
+    border-right-color: rgba(184, 174, 155, 0.16);
+    border-top-color: rgba(184, 174, 155, 0.16);
+    border-bottom-color: rgba(184, 174, 155, 0.16);
+}
+
+.serenity-button-primary,
+.serenity-gameplay .serenity-button-primary,
+.serenity-gameplay .serenity-time-button.is-selected,
+.serenity-gameplay #pause-button.is-selected {
+    color: rgb(23, 19, 13);
+    background-color: rgb(184, 154, 91);
+}
+
+.serenity-button-primary:hover {
+    color: rgb(23, 19, 13);
+    background-color: rgb(210, 184, 117);
+}
+
+.serenity-title {
+    color: rgb(210, 184, 117);
+    font-size: 24px;
+    letter-spacing: 0.35px;
+}
+
+.serenity-section-title,
+.serenity-body,
+.serenity-field,
+.serenity-field .unity-base-text-field__input,
+.serenity-field .unity-popup-field__input,
+.serenity-field .unity-slider__input {
+    color: rgb(238, 231, 216);
+}
+
+.serenity-muted,
+.serenity-field .unity-base-field__label {
+    color: rgb(184, 174, 155);
+}
+
+.serenity-field .unity-base-text-field__input,
+.serenity-field .unity-popup-field__input,
+.serenity-field .unity-slider__input,
+.serenity-root .unity-scroller,
+.serenity-root .unity-scroller .unity-base-slider__tracker {
+    background-color: rgb(13, 12, 10);
+}
+
+.serenity-top-hud,
+.serenity-resource-drawer,
+.serenity-inspector,
+.serenity-notifications,
+.serenity-main-panel.is-build-palette,
+.serenity-bottom-dock {
+    background-color: rgba(23, 21, 17, 0.96);
+    border-color: rgba(184, 154, 91, 0.56);
+}
+
+.serenity-resource-chip,
+.serenity-time-cluster,
+.serenity-resident-card,
+.serenity-build-card,
+.serenity-build-category {
+    background-color: rgba(42, 38, 30, 0.94);
+}
+
+.serenity-icon,
+.serenity-icon-button {
+    -unity-background-image-tint-color: rgb(210, 184, 117);
+}
+
+.serenity-bottom-navigation {
+    background-color: rgba(15, 14, 12, 0.98);
+    border-top-width: 1px;
+    border-top-color: rgba(210, 184, 117, 0.72);
+    overflow: hidden;
+}
+
+.serenity-bottom-navigation .unity-scroll-view__content-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.serenity-gameplay .serenity-bottom-navigation .serenity-nav-button {
+    width: 96px;
+    min-width: 82px;
+    height: 64px;
+    min-height: 64px;
+    margin-left: 2px;
+    margin-right: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 31px;
+    padding-bottom: 2px;
+    font-size: 11px;
+    white-space: normal;
+    -unity-text-align: lower-center;
+    background-size: 28px 28px;
+    background-position: 50% 3px;
+    border-left-width: 0;
+    border-bottom-width: 2px;
+    border-bottom-color: transparent;
+}
+
+.serenity-gameplay .serenity-bottom-navigation .serenity-nav-button.is-selected {
+    color: rgb(238, 231, 216);
+    background-color: rgb(48, 43, 34);
+    border-left-color: transparent;
+    border-bottom-color: rgb(210, 184, 117);
+}
+
+.serenity-navigation-divider {
+    width: 1px;
+    height: 44px;
+    margin-left: 5px;
+    margin-right: 5px;
+    background-color: rgba(184, 154, 91, 0.32);
+}
+
+.serenity-navigation-utility {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    margin-left: 2px;
+    margin-right: 2px;
+    padding-left: 2px;
+    padding-right: 2px;
+    font-size: 18px;
+}
+
+.serenity-badge {
+    min-height: 24px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-left-width: 2px;
+    border-left-color: rgb(102, 121, 133);
+    background-color: rgba(42, 38, 30, 0.94);
+    color: rgb(238, 231, 216);
+}
+
+.serenity-badge.is-success { border-left-color: rgb(113, 138, 114); }
+.serenity-badge.is-warning { border-left-color: rgb(167, 128, 85); }
+.serenity-badge.is-danger { border-left-color: rgb(164, 95, 80); }
+
+.serenity-attention-message {
+    border-left-color: rgb(102, 121, 133);
+}
+
+.serenity-compact .serenity-gameplay .serenity-bottom-navigation .serenity-nav-button,
+.serenity-compact .serenity-bottom-navigation .serenity-nav-button {
+    width: 84px;
+    min-width: 76px;
+    font-size: 10px;
 }
 
 .serenity-main-menu {
@@ -756,3 +999,58 @@
     background-size: 23px 23px;
     background-position: 3px 50%;
 }
+
+/* UI02 final cascade: keep this block last. */
+.serenity-root { color: rgb(238, 231, 216); }
+.serenity-main-menu, .serenity-menu-atmosphere { background-color: rgb(13, 12, 10); }
+.serenity-surface, .serenity-menu-shell,
+.serenity-gameplay .serenity-surface, .serenity-gameplay .serenity-card,
+.serenity-gameplay .serenity-button, .serenity-gameplay .serenity-foldout > .unity-foldout__toggle {
+    color: rgb(238, 231, 216);
+    background-color: rgba(23, 21, 17, 0.96);
+    border-left-color: rgba(184, 154, 91, 0.46);
+    border-right-color: rgba(184, 154, 91, 0.26);
+    border-top-color: rgba(184, 154, 91, 0.26);
+    border-bottom-color: rgba(184, 154, 91, 0.26);
+}
+.serenity-gameplay .serenity-surface-raised, .serenity-modal { background-color: rgba(33, 30, 24, 0.98); }
+.serenity-gameplay .serenity-button:hover {
+    color: rgb(238, 231, 216); background-color: rgb(48, 43, 34);
+    border-left-color: rgb(210, 184, 117); border-right-color: rgb(210, 184, 117);
+    border-top-color: rgb(210, 184, 117); border-bottom-color: rgb(210, 184, 117);
+}
+.serenity-gameplay .serenity-button-primary,
+.serenity-gameplay .serenity-time-button.is-selected,
+.serenity-gameplay #pause-button.is-selected { color: rgb(23, 19, 13); background-color: rgb(184, 154, 91); }
+.serenity-title { color: rgb(210, 184, 117); }
+.serenity-section-title, .serenity-body { color: rgb(238, 231, 216); }
+.serenity-muted { color: rgb(184, 174, 155); }
+.serenity-top-hud, .serenity-resource-drawer, .serenity-inspector, .serenity-notifications,
+.serenity-main-panel.is-build-palette, .serenity-bottom-dock {
+    background-color: rgba(23, 21, 17, 0.96); border-color: rgba(184, 154, 91, 0.56);
+}
+.serenity-resource-chip, .serenity-time-cluster, .serenity-resident-card,
+.serenity-build-card, .serenity-build-category { background-color: rgba(42, 38, 30, 0.94); }
+.serenity-icon, .serenity-icon-button { -unity-background-image-tint-color: rgb(210, 184, 117); }
+.serenity-gameplay .serenity-bottom-navigation {
+    background-color: rgba(15, 14, 12, 0.98);
+    border-top-width: 1px; border-top-color: rgba(210, 184, 117, 0.72); overflow: hidden;
+}
+.serenity-bottom-navigation .unity-scroll-view__content-container {
+    flex-direction: row; align-items: center; justify-content: center;
+}
+.serenity-gameplay .serenity-bottom-navigation .serenity-nav-button,
+.serenity-gameplay .serenity-bottom-navigation.is-expanded .serenity-nav-button {
+    width: 96px; min-width: 82px; height: 64px; min-height: 64px;
+    margin-left: 2px; margin-right: 2px; padding-left: 4px; padding-right: 4px;
+    padding-top: 31px; padding-bottom: 2px; font-size: 11px; white-space: normal;
+    -unity-text-align: lower-center; background-size: 28px 28px; background-position: 50% 3px;
+    border-left-width: 0; border-bottom-width: 2px; border-bottom-color: transparent;
+    background-color: rgba(23, 21, 17, 0.96);
+}
+.serenity-gameplay .serenity-bottom-navigation .serenity-nav-button.is-selected {
+    color: rgb(238, 231, 216); background-color: rgb(48, 43, 34);
+    border-left-color: transparent; border-bottom-color: rgb(210, 184, 117);
+}
+.serenity-navigation-utility { background-color: rgb(42, 38, 30); }
+.serenity-badge { background-color: rgba(42, 38, 30, 0.94); color: rgb(238, 231, 216); }

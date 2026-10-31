@@ -163,6 +163,9 @@ namespace Game.Presentation.UI
         public IReadOnlyDictionary<ContextActionKind, ContextActionAvailability> ContextActionStates => contextActionStates;
         public MilitaryAttackCommandResult LastMilitaryAttackResult { get; private set; }
         public DiagnosticExecutionResult LastDiagnosticResult { get; private set; }
+        public GameplayUiRouteId? ActiveRoute => GameplayUiRoutes.TryForPanel(activePanel, out var route)
+            ? route.Id
+            : null;
 
         public void SetUiScale(float value)
         {
@@ -221,6 +224,8 @@ namespace Game.Presentation.UI
             ApplyPanelLayout();
             RefreshNow();
         }
+
+        public void Navigate(GameplayUiRouteId routeId) => SetPanel(GameplayUiRoutes.Get(routeId).Panel);
 
         public void SetOnboardingVisible(bool visible)
         {
@@ -1272,36 +1277,41 @@ namespace Game.Presentation.UI
             residentStrip.pickingMode = PickingMode.Position;
             root.Add(residentStrip);
 
-            navigation = Panel("navigation");
+            var navigationScroll = new ScrollView(ScrollViewMode.Horizontal) { name = "navigation" };
+            navigationScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            navigationScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            navigation = navigationScroll;
             navigation.style.position = Position.Absolute;
-            navigation.style.left = 10; navigation.style.top = 72; navigation.style.bottom = 52; navigation.style.width = 58;
-            navigation.style.paddingTop = 8; navigation.style.paddingLeft = 7; navigation.style.paddingRight = 7;
+            navigation.style.left = 10; navigation.style.right = 10; navigation.style.bottom = 6; navigation.style.height = 78;
+            navigation.style.paddingTop = 6; navigation.style.paddingBottom = 6;
+            navigation.style.paddingLeft = 7; navigation.style.paddingRight = 7;
             SerenityUiDesign.StyleSurface(navigation);
             navigation.AddToClassList("serenity-navigation-rail");
+            navigation.AddToClassList("serenity-bottom-navigation");
             navigation.pickingMode = PickingMode.Position;
-            var navigationToggle = ActionButton("☰", ToggleNavigation, "navigation-toggle");
-            navigationToggle.tooltip = "Развернуть меню";
-            navigationToggle.AddToClassList("serenity-nav-toggle");
+            foreach (var route in GameplayUiRoutes.Ordered)
+            {
+                if (route.Id == GameplayUiRouteId.Attention && context.Events == null) continue;
+                AddNavigation(route);
+            }
+            var utilityDivider = new VisualElement { name = "navigation-utility-divider" };
+            utilityDivider.AddToClassList("serenity-navigation-divider");
+            navigation.Add(utilityDivider);
+            AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad, "save");
+            AddNavigation("Коды", GameplayPanel.Codes, "settings");
+            onboardingToggleButton = ActionButton("?", () => SetOnboardingVisible(!onboarding.Visible),
+                "onboarding-toggle");
+            onboardingToggleButton.tooltip = "Обучение первого часа";
+            onboardingToggleButton.AddToClassList("serenity-navigation-utility");
+            navigation.Add(onboardingToggleButton);
+            var navigationToggle = ActionButton("⋯", OpenSettings, "navigation-toggle");
+            navigationToggle.tooltip = "Настройки интерфейса";
+            navigationToggle.AddToClassList("serenity-navigation-utility");
             navigation.Add(navigationToggle);
             var leaveGame = ActionButton("⌂", RequestReturnToMainMenu, "navigation-main-menu");
             leaveGame.tooltip = "Главное меню";
+            leaveGame.AddToClassList("serenity-navigation-utility");
             navigation.Add(leaveGame);
-            onboardingToggleButton = ActionButton(T("ui.onboarding.hide"),
-                () => SetOnboardingVisible(!onboarding.Visible), "onboarding-toggle");
-            onboardingToggleButton.userData = T("ui.onboarding.hide");
-            onboardingToggleButton.tooltip = "Обучение первого часа";
-            navigation.Add(onboardingToggleButton);
-            AddNavigation(T("ui.nav.build"), GameplayPanel.Build, "build");
-            AddNavigation(T("ui.nav.settlement"), GameplayPanel.Economy, "settlement");
-            AddNavigation(T("ui.nav.research"), GameplayPanel.Research, "research");
-            AddNavigation(T("ui.nav.work"), GameplayPanel.Work, "work");
-            AddNavigation(T("ui.nav.dynasty"), GameplayPanel.Dynasty, "dynasty");
-            AddNavigation("Дом и семья", GameplayPanel.Domestic, "domestic");
-            AddNavigation(T("ui.nav.military"), GameplayPanel.Military, "military");
-            AddNavigation(T("ui.nav.saves"), GameplayPanel.SaveLoad, "save");
-            AddNavigation("Коды", GameplayPanel.Codes, "settings");
-            AddNavigation(T("ui.nav.world_map"), GameplayPanel.Global, "world");
-            if (context.Events != null) AddNavigation(T("ui.nav.events"), GameplayPanel.Events, "events");
             root.Add(navigation);
 
             var onboardingScroll = new ScrollView(ScrollViewMode.Vertical) { name = "onboarding-card" };
@@ -1357,7 +1367,7 @@ namespace Game.Presentation.UI
             bottomDock.style.position = Position.Absolute;
             bottomDock.style.left = new Length(19, LengthUnit.Percent);
             bottomDock.style.right = new Length(19, LengthUnit.Percent);
-            bottomDock.style.bottom = 48;
+            bottomDock.style.bottom = 90;
             bottomDock.style.height = 76;
             bottomDock.style.flexDirection = FlexDirection.Row;
             bottomDock.style.justifyContent = Justify.Center;
@@ -1375,7 +1385,9 @@ namespace Game.Presentation.UI
 
             statusBar = Panel("status-bar");
             statusBar.style.position = Position.Absolute;
-            statusBar.style.left = 10; statusBar.style.right = 10; statusBar.style.bottom = 6; statusBar.style.height = 36;
+            statusBar.style.left = new Length(20, LengthUnit.Percent);
+            statusBar.style.right = new Length(20, LengthUnit.Percent);
+            statusBar.style.bottom = 90; statusBar.style.height = 34;
             SerenityUiDesign.StyleSurface(statusBar, true);
             statusBar.style.flexDirection = FlexDirection.Row;
             statusBar.style.alignItems = Align.Center;
@@ -1392,7 +1404,7 @@ namespace Game.Presentation.UI
             tpsHud.style.position = Position.Absolute;
             tpsHud.style.left = new Length(36, LengthUnit.Percent);
             tpsHud.style.right = new Length(31, LengthUnit.Percent);
-            tpsHud.style.bottom = 58;
+            tpsHud.style.bottom = 94;
             SerenityUiDesign.StyleSurface(tpsHud, true);
             tpsHud.style.paddingLeft = 12; tpsHud.style.paddingRight = 12;
             tpsLabel = new Label();
@@ -1821,7 +1833,17 @@ namespace Game.Presentation.UI
 
         private void DrawEventsPanel()
         {
-            AddTitle(mainPanel, T("ui.events.title"));
+            AddTitle(mainPanel, "Центр внимания");
+            AddMuted(mainPanel, "Важные события, решения и последние сообщения поселения.");
+            AddSection(mainPanel, "Последние сообщения");
+            if (notificationFeed.Count == 0) AddMuted(mainPanel, "Новых сообщений нет.");
+            foreach (var message in notificationFeed.Take(8))
+            {
+                var card = SerenityUiDesign.Card();
+                card.AddToClassList("serenity-attention-message");
+                AddLine(card, message);
+                mainPanel.Add(card);
+            }
             if (context.Events == null)
             {
                 AddMuted(mainPanel, T("ui.events.unavailable"));
@@ -4002,19 +4024,11 @@ namespace Game.Presentation.UI
         private void RefreshNavigationAppearance()
         {
             if (navigation == null) return;
-            navigation.EnableInClassList("is-expanded", navigationExpanded);
-            var toggle = navigation.Q<Button>("navigation-toggle");
-            if (toggle != null)
-            {
-                toggle.text = navigationExpanded ? "‹" : "☰";
-                toggle.tooltip = navigationExpanded ? "Свернуть меню" : "Развернуть меню";
-            }
+            navigation.EnableInClassList("is-expanded", true);
             foreach (var button in navigation.Query<Button>(className: "serenity-nav-button").ToList())
-                button.text = navigationExpanded ? button.userData as string ?? button.tooltip : string.Empty;
+                button.text = button.userData as string ?? button.tooltip;
             if (onboardingToggleButton != null)
-                onboardingToggleButton.text = navigationExpanded
-                    ? T(onboarding.Visible ? "ui.onboarding.hide" : "ui.onboarding.show")
-                    : "?";
+                onboardingToggleButton.text = "?";
         }
 
         private void AddBuildCategory(string label, BuildPaletteCategory category, string icon)
@@ -4125,9 +4139,9 @@ namespace Game.Presentation.UI
             if (mainPanel == null) return;
             var build = activePanel == GameplayPanel.Build;
             mainPanel.EnableInClassList("is-build-palette", build);
-            mainPanel.style.left = navigationExpanded ? 190 : 78;
+            mainPanel.style.left = 10;
             mainPanel.style.top = build ? StyleKeyword.Auto : 142;
-            mainPanel.style.bottom = build ? 130 : 52;
+            mainPanel.style.bottom = build ? 132 : 130;
             mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
             mainPanel.style.width = build ? StyleKeyword.Auto : 480;
             mainPanel.style.right = build ? 374 : StyleKeyword.Auto;
@@ -4142,6 +4156,21 @@ namespace Game.Presentation.UI
             button.userData = label;
             button.tooltip = label;
             SerenityIconLibrary.Apply(button, icon ?? "settings", label);
+            navigation.Add(button);
+        }
+
+        private void AddNavigation(GameplayUiRoute route)
+        {
+            var captured = route.Id;
+            var button = ActionButton(route.Label, () => Navigate(captured), route.StableElementName);
+            SerenityUiDesign.StyleButton(button, navigation: true);
+            button.userData = route.Label;
+            button.tooltip = string.IsNullOrEmpty(route.Shortcut)
+                ? route.Label
+                : route.Label + " · " + route.Shortcut;
+            button.viewDataKey = "ui02-route-" + route.Id.ToString().ToLowerInvariant();
+            button.AddToClassList("serenity-route-" + route.Id.ToString().ToLowerInvariant());
+            SerenityIconLibrary.Apply(button, route.IconKey, button.tooltip);
             navigation.Add(button);
         }
 
@@ -4169,12 +4198,15 @@ namespace Game.Presentation.UI
             weatherLabel.style.width = compact ? 155 : 205;
             modeLabel.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
             alertLabel.style.width = compact ? 46 : 66;
-            navigation.style.width = navigationExpanded ? (compact ? 164 : 180) : 58;
-            residentStrip.style.left = navigationExpanded ? (compact ? 174 : 190) : 78;
+            navigation.style.left = 10;
+            navigation.style.right = 10;
+            navigation.style.width = StyleKeyword.Auto;
+            residentStrip.style.left = 10;
             residentStrip.style.right = compact ? 334 : 376;
             bottomDock.style.left = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
             bottomDock.style.right = compact ? new Length(13, LengthUnit.Percent) : new Length(19, LengthUnit.Percent);
             inspector.style.width = compact ? 322 : 354;
+            inspector.style.bottom = 90;
             notifications.style.width = compact ? 322 : 354;
             onboardingCard.style.width = compact ? 322 : 354;
             inspector.style.top = onboarding.Visible ? 512 : 274;
@@ -4183,9 +4215,8 @@ namespace Game.Presentation.UI
             if (strategic)
             {
                 // Leave the same right-hand viewport free as P102StrategicWorldView.
-                navigation.style.width = 126;
-                mainPanel.style.left = 146;
-                mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 156f);
+                mainPanel.style.left = 10;
+                mainPanel.style.width = Mathf.Max(170f, width * 0.32f - 20f);
             }
             var hasSelection = context != null && (context.Selection.InspectedCharacterId.HasValue ||
                 context.Selection.SelectedWildlife != null ||
@@ -4306,6 +4337,7 @@ namespace Game.Presentation.UI
         {
             var label = new Label(text);
             label.AddToClassList(SerenityUiDesign.TitleClass);
+            SerenityUiTypography.ApplyDisplay(label);
             parent.Add(label);
         }
 

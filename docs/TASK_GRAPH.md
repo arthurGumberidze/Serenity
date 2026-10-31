@@ -1,5 +1,15 @@
 # TASK_GRAPH.md
 
+UI02 approved interface foundation (2026-10-31): **DONE**. Implemented the approved quiet Black and Gold tokens,
+system-font strategy without new font assets, reusable theme states, project-owned route icons, horizontal bottom
+navigation, Attention entry point and the nine-route Presentation model over the existing `GameplayPanel`
+command surfaces. Legacy stable element names remain available; UI state owns no canonical mutable collection
+or save authority. Final validation passed compile (0 errors / 45 inherited warnings), EditMode 5/5, PlayMode
+1/1, immutable Windows Development build (0 errors / 0 warnings), and an exact-binary autonomous Player smoke
+at 1920x1080 and 1280x720@125% with all JSON assertions true and exit 0. Both gameplay PNGs were locally
+inspected. The prior visual-control approval timeout was not retried and does not limit the autonomous evidence.
+Evidence: `docs/validation/UI02.md`. UI03 is the next unblocked task and remains a separate chat.
+
 UI01 radical gameplay interface redesign (2026-10-31): **DONE / user approved**. The optimized
 monthly Ollama build has passed the user's retest and no longer blocks development. UI01 replaces the active
 task with a design-first rearchitecture of the player flow over the existing canonical services. Required
@@ -31,7 +41,7 @@ visual acceptance.
 User revision 7 removes internal rules and design rationale from player-facing copy. Exclusive scheduling,
 urgent-group ownership and requeue ordering remain Domain behavior/tests, while the visible group workspace shows
 only actionable settings and state. Browser verification now rejects leakage of those internal phrases. UI02
-is the next unblocked implementation task and receives the approved UI01 baseline through a separate chat.
+received the approved UI01 baseline through a separate chat and is now complete.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

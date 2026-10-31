@@ -10,17 +10,17 @@ namespace Game.Presentation.UI
     /// </summary>
     public static class SerenityUiDesign
     {
-        public static readonly Color Canvas = Hex("111820");
-        public static readonly Color Surface = Hex("1D242B", 0.94f);
-        public static readonly Color SurfaceRaised = Hex("29333D", 0.97f);
-        public static readonly Color SurfaceSoft = Hex("33414B", 0.94f);
-        public static readonly Color Accent = Hex("D5A66B");
-        public static readonly Color AccentBright = Hex("E8C58E");
-        public static readonly Color Text = Hex("F1EEE8");
-        public static readonly Color TextMuted = Hex("AAB4BE");
-        public static readonly Color Success = Hex("65B89A");
-        public static readonly Color Warning = Hex("E4AA60");
-        public static readonly Color Danger = Hex("CF6B69");
+        public static readonly Color Canvas = SerenityUiTokens.Canvas;
+        public static readonly Color Surface = SerenityUiTokens.Surface;
+        public static readonly Color SurfaceRaised = SerenityUiTokens.SurfaceRaised;
+        public static readonly Color SurfaceSoft = SerenityUiTokens.SurfaceSoft;
+        public static readonly Color Accent = SerenityUiTokens.Gold;
+        public static readonly Color AccentBright = SerenityUiTokens.GoldBright;
+        public static readonly Color Text = SerenityUiTokens.Bone;
+        public static readonly Color TextMuted = SerenityUiTokens.BoneMuted;
+        public static readonly Color Success = SerenityUiTokens.Success;
+        public static readonly Color Warning = SerenityUiTokens.Warning;
+        public static readonly Color Danger = SerenityUiTokens.Danger;
 
         public const string RootClass = "serenity-root";
         public const string SurfaceClass = "serenity-surface";
@@ -38,12 +38,18 @@ namespace Game.Presentation.UI
         public const string RowClass = "serenity-row";
         public const string ChipClass = "serenity-chip";
         public const string ModalClass = "serenity-modal";
+        public const string IconClass = "serenity-icon";
+        public const string BadgeClass = "serenity-badge";
+        public const string SemanticSuccessClass = "is-success";
+        public const string SemanticWarningClass = "is-warning";
+        public const string SemanticDangerClass = "is-danger";
 
         public static void ApplyRoot(VisualElement root, string variant)
         {
             if (root == null) return;
             root.AddToClassList(RootClass);
             if (!string.IsNullOrWhiteSpace(variant)) root.AddToClassList(variant);
+            SerenityUiTypography.ApplyRoot(root);
         }
 
         public static void ApplySafeArea(VisualElement root, Rect safeArea, int screenWidth, int screenHeight)
@@ -98,6 +104,14 @@ namespace Game.Presentation.UI
             var card = new VisualElement { name = name ?? string.Empty };
             StyleCard(card);
             return card;
+        }
+
+        public static Label Badge(string text, string semanticClass = null)
+        {
+            var badge = new Label(text ?? string.Empty);
+            badge.AddToClassList(BadgeClass);
+            if (!string.IsNullOrWhiteSpace(semanticClass)) badge.AddToClassList(semanticClass);
+            return badge;
         }
 
         public static float ContrastRatio(Color foreground, Color background)
