@@ -57,9 +57,12 @@ function ensure(condition, message) {
 
       await page.evaluate(() => show('workgroups'));
       const groupRules = await page.locator('.workspace').textContent();
-      ensure(groupRules.includes('Чужие задачи') && groupRules.includes('Запрещены') &&
-        groupRules.includes('Прерывает только строителей') && groupRules.includes('Автоматически по профессии'),
-        `${size.tag}: exclusive/urgent/automatic group contract is missing`);
+      ensure(groupRules.includes('Настроить работы') && groupRules.includes('Сменить командира') &&
+        groupRules.includes('06:00–18:00') && groupRules.includes('Высокий'),
+        `${size.tag}: player-facing group controls are incomplete`);
+      ensure(!groupRules.includes('Чужие задачи') && !groupRules.includes('Прерывает только строителей') &&
+        !groupRules.includes('Прерванная работа') && !groupRules.includes('Профессия и группа совпадают'),
+        `${size.tag}: internal scheduling rules leaked into player-facing copy`);
 
       await page.evaluate(() => show('research'));
       ensure(await page.locator('.tech-node').count() >= 12,

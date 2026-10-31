@@ -44,6 +44,13 @@ font was not adopted. Browser verification regenerated 20 renders at 1920x1080 a
 errors or horizontal overflow. Primary, secondary, accent and primary-button text contrast measured 15.53:1,
 7.91:1, 8.20:1 and 6.35:1 respectively. Unity implementation remains paused for user review.
 
+Revision 7 removes internal scheduling/design prose from gameplay surfaces after the user flagged the group
+screen. Exclusive group eligibility, urgent interruption and requeue ordering remain implementation/test
+contracts only. The visible group screen now contains profession, allowed work, shift, priority, commander,
+membership and edit controls; the resident card contains profession, group, shift and queue. The late-game scale
+annotation was replaced with a live-style group summary, and the diplomacy placeholder now uses player-facing
+discovery language. Browser verification explicitly fails if the removed internal phrases return.
+
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 
 The shared work registry now maintains a sorted active-job index, so assignment, construction, production and

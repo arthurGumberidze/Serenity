@@ -21,8 +21,10 @@ including urgent work; urgent work interrupts only eligible members and requeues
 residents and every new adult/recruit auto-join the group matching their profession, while the player can create,
 delete and edit groups and membership. Profession and group display names/definition keys must stay aligned.
 
-The structure is approved; revision 6 is awaiting the user's visual review of the quieter one-accent palette and
-two-role Cyrillic typography. Do not begin the full Unity implementation until the user approves this final visual pass. Critical bugs
+The structure is approved; revision 7 is awaiting the user's visual review of the quieter one-accent palette,
+two-role Cyrillic typography and player-facing copy cleanup. Internal scheduling/design requirements must remain
+behavior and tests, not permanent gameplay labels. Do not begin the full Unity implementation until the user
+approves this final visual pass. Critical bugs
 discovered during inspection may be fixed with focused checks, but general optimization and final polish stay
 deferred. Preserve the current dirty WM15/terrain/vendor work and keep it out of UI01 commits.
 

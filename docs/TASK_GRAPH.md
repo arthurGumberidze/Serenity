@@ -26,7 +26,11 @@ warning and danger colors. UI02 must not start until the user accepts this palet
 User revision 6 quiets the palette and defines typography: normal UI uses near-black, bone, gray-beige and one
 desaturated gold accent; research categories no longer form a color rainbow; semantic hues are small and muted.
 Segoe UI represents dense Cyrillic UI text and Georgia is limited to large headings. Twenty regenerated renders,
-interaction checks and AA-or-better contrast checks pass. UI02 remains blocked for user visual acceptance.
+interaction checks and the prototype contrast targets pass. UI02 remains blocked for user visual acceptance.
+User revision 7 removes internal rules and design rationale from player-facing copy. Exclusive scheduling,
+urgent-group ownership and requeue ordering remain Domain behavior/tests, while the visible group workspace shows
+only actionable settings and state. Browser verification now rejects leakage of those internal phrases. UI02
+remains blocked for user visual acceptance.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

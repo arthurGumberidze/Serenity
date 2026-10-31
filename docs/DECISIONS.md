@@ -1,5 +1,19 @@
 # DECISIONS.md
 
+## D-232 — Domain invariants are behavior, not permanent player-facing copy (2026-10-31)
+
+The user identified that revision 6 exposed scheduling requirements as if they were final group-screen labels.
+UI01 revision 7 removes phrases such as “foreign tasks are forbidden”, “urgent interrupts only builders” and
+“interrupted work goes second” from the player surface. Those remain mandatory Domain/scheduler behavior and
+test assertions. The group workspace instead shows actionable player data and controls: profession, allowed work
+types, shift, priority, commander, membership and edit actions. Resident cards likewise show profession, group,
+shift and queue rather than restating engine restrictions.
+
+No design rationale, implementation note, scale target, authority terminology, test contract or prototype-only
+status message may ship as normal gameplay copy. A rule appears in the UI only when it explains a current block,
+warning or consequence in player language. Prototype watermarks and documentation remain review artifacts and
+must not be recreated in Unity production views.
+
 ## D-231 — UI01 uses a quiet one-accent palette and two-role Cyrillic typography (2026-10-31)
 
 The user's follow-up rejects a traffic-light-like interface. Revision 6 therefore keeps warm near-black,
