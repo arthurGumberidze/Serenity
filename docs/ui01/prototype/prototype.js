@@ -10,27 +10,28 @@ const metric = (name,value,percent,kind='') => `<div class="metric"><span>${name
 const header = (title, subtitle, actions='') => `<header class="workspace-head"><div><h1>${title}</h1><p>${subtitle}</p></div><div>${actions}</div></header>`;
 
 const residents = {
-  doran:{initial:'Д',name:'Доран Серый',age:'31 год',profession:'строитель',now:'Строит каменный дом · 64%',health:'92%',group:'Строители · день'},
-  elda:{initial:'Э',name:'Эльда Серая',age:'29 лет',profession:'исследователь',now:'Исследует обработку камня · 62%',health:'100%',group:'Исследователи · день'},
-  mira:{initial:'М',name:'Мира Серая',age:'18 лет',profession:'переносчик',now:'Несёт древесину на склад',health:'96%',group:'Переносчики · весь день'},
-  neris:{initial:'Н',name:'Нерис Серая',age:'17 лет',profession:'исследователь',now:'Работает за столом знаний',health:'100%',group:'Исследователи · день'},
-  tarin:{initial:'Т',name:'Тарин Рыжий',age:'34 года',profession:'строитель',now:'Несёт камень к стройплощадке',health:'88%',group:'Строители · день'},
-  rovan:{initial:'Р',name:'Рован Тихий',age:'26 лет',profession:'рабочий',now:'Свободен · ожидает назначения',health:'100%',group:'Без группы'},
-  aren:{initial:'А',name:'Арен Следопыт',age:'37 лет',profession:'охотник',now:'Охотится у северного леса',health:'83%',group:'Охотники · утро'},
-  kael:{initial:'К',name:'Кейл Серый',age:'16 лет',profession:'ученик',now:'Лечится в доме · ранение',health:'74%',group:'Недоступен'},
-  lina:{initial:'Л',name:'Лина Полевая',age:'42 года',profession:'повар',now:'Готовит похлёбку · 3/8',health:'91%',group:'Повара · день'},
-  sava:{initial:'С',name:'Сава Младший',age:'14 лет',profession:'помощник',now:'Спит · восстановление 78%',health:'100%',group:'Без группы'}
+  doran:{initial:'Д',name:'Доран Серый',age:'31 год',profession:'Строители',now:'Строит каменный дом · 64%',health:'92%',group:'Строители'},
+  elda:{initial:'Э',name:'Эльда Серая',age:'29 лет',profession:'Исследователи',now:'Исследует обработку камня · 62%',health:'100%',group:'Исследователи'},
+  mira:{initial:'М',name:'Мира Серая',age:'18 лет',profession:'Переносчики',now:'Несёт древесину на склад',health:'96%',group:'Переносчики'},
+  neris:{initial:'Н',name:'Нерис Серая',age:'17 лет',profession:'Исследователи',now:'Работает за столом знаний',health:'100%',group:'Исследователи'},
+  tarin:{initial:'Т',name:'Тарин Рыжий',age:'34 года',profession:'Строители',now:'Несёт камень к стройплощадке',health:'88%',group:'Строители'},
+  rovan:{initial:'Р',name:'Рован Тихий',age:'26 лет',profession:'Разнорабочие',now:'Свободен · ожидает назначения',health:'100%',group:'Разнорабочие'},
+  aren:{initial:'А',name:'Арен Следопыт',age:'37 лет',profession:'Охотники',now:'Охотится у северного леса',health:'83%',group:'Охотники'},
+  kael:{initial:'К',name:'Кейл Серый',age:'16 лет',profession:'Военные',now:'Лечится в доме · ранение',health:'74%',group:'Военные'},
+  lina:{initial:'Л',name:'Лина Полевая',age:'42 года',profession:'Повара',now:'Готовит похлёбку · 3/8',health:'91%',group:'Повара'},
+  sava:{initial:'С',name:'Сава Младший',age:'14 лет',profession:'Разнорабочие',now:'Спит · восстановление 78%',health:'100%',group:'Разнорабочие'}
 };
 let activeResident = 'doran';
 let activeGroup = 'builders';
 
 const quickGroups = {
-  builders:{name:'Строители',total:3,members:['doran','tarin','rovan']},
+  builders:{name:'Строители',total:2,members:['doran','tarin']},
   researchers:{name:'Исследователи',total:2,members:['elda','neris']},
-  haulers:{name:'Переносчики',total:2,members:['mira','rovan']},
+  haulers:{name:'Переносчики',total:1,members:['mira']},
   hunters:{name:'Охотники',total:1,members:['aren']},
-  military:{name:'Военные',total:4,members:['doran','aren','kael','rovan']},
-  idle:{name:'Свободные',total:1,members:['rovan']},
+  military:{name:'Военные',total:1,members:['kael']},
+  cooks:{name:'Повара',total:1,members:['lina']},
+  laborers:{name:'Разнорабочие',total:2,members:['rovan','sava']},
   attention:{name:'Требуют внимания',total:1,members:['kael']}
 };
 
@@ -43,7 +44,7 @@ const residentSheet = () => { const r=residents[activeResident]; return `
   <div class="sheet-head"><div class="identity"><div class="portrait">${r.initial}</div><div><span class="eyebrow">Житель · Тихий Брод</span><h2>${r.name}</h2><p>${r.age} · ${r.profession}</p></div></div><div class="state-line"><span>Сейчас</span><strong>${r.now}</strong></div></div>
   <div class="tabs"><button class="active">Обзор</button><button>Работа</button><button>Семья</button><button>История</button></div>
   <div class="sheet-body"><h3>Состояние</h3>${metric('Здоровье',r.health,parseInt(r.health,10))}${metric('Голод','41%',41)}${metric('Жажда','68%',68,'warn')}${metric('Отдых','76%',76)}
-  <h3>Назначение</h3><div class="fact-list">${fact('Профессия',r.profession)}${fact('Группа',r.group)}${fact('Местоположение','Показано камерой')}${fact('Очередь',r.now)}</div>
+  <h3>Назначение</h3><div class="fact-list">${fact('Профессия и группа',r.profession)}${fact('Чужие задачи','Не выполняет')}${fact('Местоположение','Показано камерой')}${fact('Очередь',r.now)}</div>
   <h3>Сильные стороны</h3><span class="tag good">Строительство 7</span><span class="tag">Сила 6</span><span class="tag">Выносливость 5</span>
   <h3>Семья</h3><div class="fact-list">${fact('Супруга','Эльда')}${fact('Дети','Мира, Нерис')}${fact('Дом','Каменный дом')}</div></div>
   <div class="sheet-actions">${A('К жителю','primary')}${A('Назначить работу')}${A('Еще')}</div>`; };
@@ -80,8 +81,8 @@ const dynasty = () => `${header('Династия Серых','Правлени�
   <h3>Линия престолонаследия</h3><div class="succession"><span class="tag good">1 · Мира · назначена</span><span class="tag">2 · Нерис</span><span class="tag warn">3 · Кейл · возраст</span></div>
   <div class="grid" style="margin-top:20px"><div class="card"><span class="kicker">Правление</span><h2>18 дней</h2><p>Основано поселение, открыт огонь.</p></div><div class="card"><span class="kicker">Династия</span><h2>5 живых</h2><p>3 взрослых · 2 ребенка</p></div><div class="card"><span class="kicker">Риск</span><h2>Низкий</h2><p>Два допустимых наследника.</p></div></div></div>`;
 
-const workgroups = () => `${header('Рабочие группы','Назначение жителей, смен, территории и приоритетов',A('Создать группу','primary'))}
-  <div class="workspace-body groups-layout"><div class="group-list"><button class="group-card selected"><b>Строители</b><small>3 жителя · дневная смена · высокий приоритет</small></button><button class="group-card"><b>Переносчики</b><small>2 жителя · весь день · обычный приоритет</small></button><button class="group-card"><b>Собиратели</b><small>3 жителя · дневная смена · обычный приоритет</small></button><button class="group-card"><b>Охотники</b><small>2 жителя · утро · высокий приоритет</small></button></div><div><div class="card selected"><span class="kicker">Выбрана группа</span><h2>Строители</h2><p>Командир: Доран · территория: Тихий Брод · задача: строительство и ремонт</p><div class="fact-list">${fact('Смена','06:00–18:00')}${fact('Приоритет','Высокий')}${fact('Замена недоступных','Автоматически')}${fact('Текущая задача','Каменный дом · 64%')}</div></div><h3>Состав</h3><div class="member-grid"><button class="member"><b>Доран</b><small>Командир · строит</small></button><button class="member"><b>Тарин</b><small>Доставляет камень</small></button><button class="member"><b>Рован</b><small>Свободен</small></button></div><div style="margin-top:14px">${A('Добавить выбранных','primary')}${A('Изменить смену')}${A('Задать территорию')}${A('Распустить','danger')}</div></div></div></div>`;
+const workgroups = () => `${header('Рабочие группы','Профессия определяет группу и допустимые задачи',A('Добавить группу','primary'))}
+  <div class="workspace-body groups-layout"><div class="group-list"><button class="group-card selected"><b>Строители</b><small>2 жителя · дневная смена · высокий приоритет</small></button><button class="group-card"><b>Переносчики</b><small>1 житель · весь день · обычный приоритет</small></button><button class="group-card"><b>Исследователи</b><small>2 жителя · дневная смена · обычный приоритет</small></button><button class="group-card"><b>Охотники</b><small>1 житель · утро · высокий приоритет</small></button><button class="group-card"><b>Разнорабочие</b><small>2 жителя · резерв</small></button></div><div><div class="card selected"><span class="kicker">Профессия и группа совпадают</span><h2>Строители</h2><p>Командир: Доран · территория: Тихий Брод · допустимы только строительство и ремонт</p><div class="fact-list">${fact('Чужие задачи','Запрещены')}${fact('Режим «Срочно»','Прерывает только строителей')}${fact('Прерванная работа','Уходит на второй план')}${fact('Новые жители','Автоматически по профессии')}</div></div><h3>Состав</h3><div class="member-grid"><button class="member"><b>Доран</b><small>Командир · строит</small></button><button class="member"><b>Тарин</b><small>Доставляет камень</small></button></div><div style="margin-top:14px">${A('Добавить жителя','primary')}${A('Убрать в Разнорабочие')}${A('Изменить смену')}${A('Удалить группу','danger')}</div></div></div></div>`;
 
 const events = () => `${header('Центр внимания','Решения, угрозы и история уведомлений',A('Показать журнал'))}
   <div class="workspace-body"><div class="event-stage"><div class="event-art"></div><span class="kicker" style="display:block;margin-top:18px">Решение · осталось 2 дня</span><h1 style="font:34px Georgia,serif;margin:7px 0">Спор у нового колодца</h1><p style="color:var(--muted);line-height:1.5">Семьи Дорана и Тарина требуют первой очереди на воду. Решение повлияет на отношения и рабочее расписание.</p><div class="choices"><button class="choice"><b>Вода распределяется поровну</b><small>Стабильность + · обе семьи немного недовольны</small></button><button class="choice"><b>Сначала семья строителя</b><small>Строительство быстрее · отношения с Тарином −</small></button><button class="choice"><b>Пусть решит старейшина</b><small>Результат зависит от Influence и отношений</small></button></div></div></div>`;
@@ -118,8 +119,8 @@ function show(name){
 document.addEventListener('click',e=>{
   const resident=e.target.closest('.resident-chip[data-resident]');
   if(resident){activeResident=resident.dataset.resident;app.dataset.selectedResident=activeResident;show('resident');return}
-  const group=e.target.closest('.quick-group[data-group]');
-  if(group){activeGroup=group.dataset.group;app.dataset.selectedGroup=activeGroup;document.querySelectorAll('.quick-group').forEach(b=>b.classList.toggle('selected',b===group));renderGroupMembers();groupMembers.classList.add('open');return}
+  const group=e.target.closest('.quick-group[data-group],.quick-group[data-group-filter]');
+  if(group){activeGroup=group.dataset.group||group.dataset.groupFilter;app.dataset.selectedGroup=activeGroup;document.querySelectorAll('.quick-group').forEach(b=>b.classList.toggle('selected',b===group));renderGroupMembers();groupMembers.classList.add('open');return}
   if(e.target.closest('.close-members')){groupMembers.classList.remove('open');return}
   const filter=e.target.closest('.tech-filters [data-tech-filter]');
   if(filter){const value=filter.dataset.techFilter;document.querySelectorAll('[data-tech-filter]').forEach(b=>b.classList.toggle('active',b===filter));document.querySelector('.tech-map')?.setAttribute('data-filter',value);app.dataset.techFilter=value;return}

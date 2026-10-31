@@ -25,6 +25,12 @@ screen at both sizes with zero console/page errors and no horizontal overflow. `
 build was run for this approval-only slice. The next action is user review; UI02 implementation must not start
 without explicit approval.
 
+The fourth revision adds a required gameplay backlog contract behind the group UI. Work eligibility is exclusive
+to the profession-aligned group even under urgent priority; urgent work interrupts only eligible group members
+and requeues prior work second. New-game residents and every new adult/recruit are automatically assigned by
+profession, while manual group/member creation, reassignment and deletion remain available. Profession and group
+definition names stay aligned; no resident may remain ungrouped.
+
 ## WM16 neighbour/Ollama cumulative-stall optimization — DONE (2026-10-31)
 
 The shared work registry now maintains a sorted active-job index, so assignment, construction, production and

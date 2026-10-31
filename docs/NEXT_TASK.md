@@ -16,6 +16,11 @@ plus contextual command ribbon, and the Ash and Ember visual density. The bottom
 group and military entries, while Realm combines the strategic map and diplomacy. Reference PNGs at 1920x1080
 and 1280x720 are under the prototype's `screenshots` folder.
 
+The approved implementation backlog must also enforce profession-aligned work groups: no cross-group fallback,
+including urgent work; urgent work interrupts only eligible members and requeues their prior work second. Starting
+residents and every new adult/recruit auto-join the group matching their profession, while the player can create,
+delete and edit groups and membership. Profession and group display names/definition keys must stay aligned.
+
 Do not begin the full Unity implementation until the user explicitly approves the direction. Critical bugs
 discovered during inspection may be fixed with focused checks, but general optimization and final polish stay
 deferred. Preserve the current dirty WM15/terrain/vendor work and keep it out of UI01 commits.

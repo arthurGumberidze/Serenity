@@ -16,6 +16,10 @@ resident tracker whose selection opens and focuses any resident; overall visual 
 User revision 3 supersedes that per-resident tracker with group-first drill-down suitable for 1000–2000
 residents and makes research a dependency tree grouped by construction, defense, farming, crafting and
 medicine; overall visual approval remains open.
+User revision 4 adds mandatory implementation work: profession-aligned groups are exclusive work eligibility,
+urgent priority never recruits another group and only requeues eligible members' interrupted work second;
+starting and new adult/recruited residents auto-join by profession, while the player retains create/delete/edit
+control. Profession and group names remain aligned and no resident may remain ungrouped.
 
 WM16 neighbour/Ollama cumulative-stall optimization (2026-10-31): **DONE / user retest accepted**. Active work has a dedicated sorted
 index; completed history is O(1)-trimmed to 256; terminal production tasks are removed immediately; audit

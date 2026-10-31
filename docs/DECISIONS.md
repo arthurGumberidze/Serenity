@@ -1,5 +1,22 @@
 # DECISIONS.md
 
+## D-229 — Profession groups exclusively own work eligibility and assign every new adult (2026-10-31)
+
+The user's fourth correction makes work groups a canonical scheduling boundary, not merely a UI filter. A work
+order declares one required profession/group definition. Only residents in that group are eligible; idle time,
+worker scarcity and urgent priority never authorize cross-group fallback. Urgent priority preempts only eligible
+members at the next atomic-safe interruption point and places their preserved prior work immediately behind the
+urgent order. An unavailable group leaves the order waiting with a typed reason. Needs, treatment, direct control
+and non-interruptible atomic phases remain explicit blockers without widening eligibility.
+
+Profession and primary group share a data-driven key and display name. New-game composition creates the required
+groups and assigns all starting residents. Recruits join on admission; born residents join when they become adults;
+any other new adult follows the same profession mapping. Missing/invalid mappings fail into the defined
+`Разнорабочие` group, never an ungrouped state. Manual reassignment changes profession and group together. The
+player may create supported profession groups, edit membership/settings and delete a group only through an
+explicit reassignment transaction for remaining members. Automatic assignment affects arrivals and does not
+overwrite later manual choices. Domain work/profession/group services own these rules; UI projections own none.
+
 ## D-228 — UI01 selection is group-first and research is a categorized dependency tree (2026-10-31)
 
 The user's third prototype correction supersedes D-227's persistent per-resident tracker. The local-world rail

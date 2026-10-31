@@ -42,7 +42,8 @@ function ensure(condition, message) {
       }
 
       await page.evaluate(() => show('resident'));
-      ensure(await page.locator('.quick-group[data-group]').count() === 7,
+      ensure(await page.locator('.quick-group[data-group]').count() === 7 &&
+        await page.locator('.quick-group[data-group-filter]').count() === 1,
         `${size.tag}: scalable group tracker is incomplete`);
       await page.locator('[data-group=researchers]').click();
       ensure(await page.locator('.group-members').getAttribute('class').then(x => x.includes('open')),
@@ -53,6 +54,12 @@ function ensure(condition, message) {
         `${size.tag}: group member selection failed`);
       ensure((await page.locator('.context-sheet').textContent()).includes('Эльда Серая'),
         `${size.tag}: selected resident was not shown`);
+
+      await page.evaluate(() => show('workgroups'));
+      const groupRules = await page.locator('.workspace').textContent();
+      ensure(groupRules.includes('Чужие задачи') && groupRules.includes('Запрещены') &&
+        groupRules.includes('Прерывает только строителей') && groupRules.includes('Автоматически по профессии'),
+        `${size.tag}: exclusive/urgent/automatic group contract is missing`);
 
       await page.evaluate(() => show('research'));
       ensure(await page.locator('.tech-node').count() >= 12,
