@@ -1,5 +1,15 @@
 # NEXT_TASK.md
 
+## Next action — review UI08 second-review HTML prototype (2026-11-01)
+
+Open `docs/prototypes/ui-review-v2/dist/index.html` and review all four tabs: Research, Dynasty, Squads and
+Character. The proposed Stone Age research graph has one common root and five top-down specialization branches;
+Military shows a two-squad starting cap, a four-squad research unlock and military-profession-only recruitment;
+Dynasty includes spouses; Character is a full workspace rather than a map overlay or text wall.
+
+Do not implement any of these proposals in Unity until the user explicitly approves the prototype or requests
+specific changes. The HTML file owns no gameplay data and must not become a parallel authority.
+
 The recovered WM15 checkpoint audit is complete; see `docs/validation/WM15CheckpointAudit.md`. Its rejected
 vendor/winter/recovery experiments are not future work unless explicitly reopened. The latest UI08 feedback repair
 is also complete; the next unblocked action is the focused user retest below.

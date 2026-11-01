@@ -1,5 +1,10 @@
 # TASK_GRAPH.md
 
+UI08 second-review HTML prototype (2026-11-01): **AWAITING USER APPROVAL**. Prepared one local interactive
+prototype for the revised full-screen research, spouse-inclusive dynasty, research-gated military and structured
+Character surfaces. This is a design artifact only; no Unity, canonical gameplay or save authority changed.
+Source: `docs/prototypes/ui-review-v2/dist/index.html`. Implementation remains blocked on explicit user approval.
+
 WM15 recovered-checkpoint audit (2026-11-01): **DONE**. Audited the 184-file local checkpoint and retained only
 runner PlayMode support, unique-ruler P108 diagnostics/readiness/current-save acceptance, removal of dead
 AlpineRock references and stable Unity-generated import records. Rejected bulk vendor, recovery, duplicate snow,

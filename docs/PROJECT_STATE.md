@@ -1,5 +1,13 @@
 # PROJECT_STATE.md
 
+## UI08 second-review HTML prototype — AWAITING USER APPROVAL (2026-11-01)
+
+A local-only interactive HTML review artifact now covers the requested full-screen top-down research tree,
+spouse-inclusive dynasty tree, early two-squad/four-after-research military rules with military-only candidates,
+and a structured full-screen Character workspace. It is intentionally not connected to Domain, Simulation,
+save state or Unity Presentation. Source: `docs/prototypes/ui-review-v2/dist/index.html`. Unity implementation and
+the proposed research content remain unchanged until the user approves or revises the prototype.
+
 ## UI08 user-feedback workspace repair — DONE (2026-11-01)
 
 The user-reviewed research, dynasty, military, settlement and HUD surfaces were corrected without adding a new

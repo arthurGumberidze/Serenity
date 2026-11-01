@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Serenity — макет интерфейса</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #0b0c09;
+      --panel: #11120e;
+      --panel-2: #181812;
+      --panel-3: #222118;
+      --bone: #eee7d5;
+      --muted: #aca68f;
+      --gold: #c9a85b;
+      --gold-bright: #ecd58b;
+      --gold-dark: #6f5a29;
+      --green: #7e9c67;
+      --red: #a95e50;
+      --blue: #718fa1;
+      --line: rgba(217, 188, 111, .38);
+      --shadow: 0 18px 60px rgba(0, 0, 0, .45);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body {
+      color: var(--bone);
+      font: 15px/1.4 "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(130, 108, 49, .18), transparent 34%),
+        linear-gradient(rgba(8, 9, 7, .96), rgba(8, 9, 7, .99)),
+        repeating-linear-gradient(120deg, transparent 0 70px, rgba(255,255,255,.012) 71px 72px);
+    }
+
+    button { font: inherit; }
+    .app { height: 100%; display: grid; grid-template-rows: 64px 1fr; }
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 24px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--gold-dark);
+      background: rgba(12, 13, 10, .96);
+      box-shadow: 0 8px 30px rgba(0,0,0,.3);
+    }
+    .brand { font: 700 20px Georgia, serif; color: var(--gold-bright); letter-spacing: .04em; }
+    .prototype-note { color: var(--muted); font-size: 12px; }
+    .nav { display: flex; justify-content: center; gap: 8px; }
+    .nav button, .chip, .small-button {
+      color: var(--muted);
+      border: 1px solid transparent;
+      background: transparent;
+      border-radius: 5px;
+      padding: 9px 14px;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    .nav button:hover, .nav button.active, .chip:hover, .chip.active {
+      color: var(--bone);
+      border-color: var(--gold-dark);
+      background: rgba(201, 168, 91, .1);
+    }
+    .screen { display: none; min-height: 0; }
+    .screen.active { display: block; }
+
+    .section-title { font: 700 29px Georgia, serif; color: var(--gold-bright); margin: 0; }
+    .eyebrow { text-transform: uppercase; letter-spacing: .13em; font-size: 11px; color: var(--gold); }
+    .muted { color: var(--muted); }
+    .pill { border: 1px solid var(--gold-dark); border-radius: 99px; padding: 4px 9px; color: var(--gold-bright); font-size: 12px; }
+    .panel { border: 1px solid var(--gold-dark); background: rgba(17,18,14,.95); box-shadow: var(--shadow); }
+
+    /* Research */
+    #research { height: 100%; }
+    .research-shell { height: 100%; display: grid; grid-template-rows: 82px 1fr; }
+    .research-head {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 12px 24px;
+      border-bottom: 1px solid rgba(111,90,41,.8);
+      background: rgba(15,16,13,.9);
+    }
+    .research-head .title-block { text-align: center; }
+    .research-head .title-block p { margin: 2px 0 0; color: var(--muted); }
+    .research-filters { display: flex; gap: 6px; justify-self: end; flex-wrap: wrap; justify-content: flex-end; max-width: 620px; }
+    .research-legend { display: flex; gap: 12px; color: var(--muted); font-size: 12px; }
+    .research-legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+    .research-legend .done::before { background: var(--green); }
+    .research-legend .ready::before { background: var(--gold); }
+    .research-legend .locked::before { background: #4b4b42; }
+    .research-viewport { position: relative; overflow: auto; scrollbar-color: var(--gold-dark) #0b0c09; }
+    .research-canvas { position: relative; min-width: 1620px; min-height: 1110px; padding-top: 24px; }
+    .research-canvas::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 8%, rgba(201,168,91,.10), transparent 28%);
+      pointer-events: none;
+    }
+    .research-lines, .dynasty-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .research-lines path { fill: none; stroke: var(--line); stroke-width: 2; }
+    .research-lines path.ready { stroke: rgba(236,213,139,.82); stroke-width: 2.5; }
+    .research-lines path.done { stroke: rgba(126,156,103,.72); }
+    .tech {
+      position: absolute;
+      width: 218px;
+      min-height: 88px;
+      padding: 12px 14px 11px 56px;
+      border: 1px solid #4f4d42;
+      border-radius: 8px;
+      color: #c6c1af;
+      background: linear-gradient(135deg, rgba(28,29,23,.98), rgba(15,16,13,.98));
+      box-shadow: 0 8px 20px rgba(0,0,0,.35);
+      text-align: left;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .tech::before {
+      content: attr(data-icon);
+      position: absolute; left: 12px; top: 16px;
+      width: 32px; height: 32px; display: grid; place-items: center;
+      border: 1px solid #5e5a4b; border-radius: 50%; background: #171711;
+    }
+    .tech strong { display: block; color: var(--bone); margin-bottom: 5px; font-size: 14px; }
+    .tech small { display: block; color: var(--muted); font-size: 11px; }
+    .tech.done { border-color: #52684a; }
+    .tech.done::after { content: "✓"; position: absolute; right: 8px; top: 6px; color: var(--green); }
+    .tech.ready { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(201,168,91,.15), 0 8px 24px rgba(0,0,0,.42); }
+    .tech.ready::before { color: var(--gold-bright); border-color: var(--gold); }
+    .tech.locked { filter: saturate(.45); opacity: .7; }
+    .tech.branch-dim { opacity: .16; filter: grayscale(1); }
+    .tech.selected { outline: 2px solid var(--gold-bright); outline-offset: 3px; }
+    .tech.root { width: 260px; min-height: 96px; padding-left: 66px; border-radius: 48px; }
+    .tech.root::before { width: 40px; height: 40px; top: 16px; font-size: 19px; }
+    .branch-label {
+      position: absolute; top: 155px; width: 235px; text-align: center;
+      text-transform: uppercase; letter-spacing: .14em; color: var(--gold); font-size: 12px; z-index: 2;
+    }
+    .branch-label b { display: block; color: var(--bone); font: 700 20px Georgia, serif; letter-spacing: 0; text-transform: none; }
+    .research-detail {
+      position: absolute; right: 18px; top: 18px; z-index: 8;
+      width: 340px; padding: 20px;
+      border: 1px solid var(--gold-dark); border-radius: 8px;
+      background: rgba(11,12,9,.97); box-shadow: var(--shadow);
+      transform: translateX(calc(100% + 30px)); transition: .22s ease;
+    }
+    .research-detail.open { transform: translateX(0); }
+    .research-detail h3 { margin: 6px 0 8px; color: var(--gold-bright); font: 700 22px Georgia, serif; }
+    .research-detail ul { padding-left: 18px; color: var(--muted); }
+
+    /* Dynasty */
+    #dynasty { height: 100%; overflow: auto; }
+    .workspace { min-height: 100%; padding: 24px 28px 40px; background: rgba(8,9,7,.55); }
+    .workspace-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+    .workspace-head p { margin: 5px 0 0; color: var(--muted); }
+    .dynasty-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+    .metric { padding: 14px 16px; border: 1px solid rgba(111,90,41,.65); background: rgba(22,22,17,.85); }
+    .metric b { display: block; margin-top: 6px; font: 700 21px Georgia, serif; color: var(--gold-bright); }
+    .dynasty-tree { position: relative; min-width: 1180px; min-height: 690px; overflow: hidden; border: 1px solid var(--gold-dark); background: rgba(14,15,12,.92); }
+    .dynasty-tree::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 10%, rgba(201,168,91,.08), transparent 36%); }
+    .couple { position: absolute; display: flex; align-items: stretch; gap: 8px; z-index: 2; }
+    .couple::after { content: "♥"; position: absolute; left: 50%; top: 37px; transform: translate(-50%,-50%); width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: var(--gold); background: #12130f; border: 1px solid var(--gold-dark); font-size: 11px; }
+    .person-node { width: 176px; min-height: 82px; padding: 10px 12px; border: 1px solid #5e5537; border-radius: 6px; background: #1b1b15; cursor: pointer; }
+    .person-node.wife { border-color: #6e5d6c; background: linear-gradient(135deg,#201a20,#181714); }
+    .person-node.dead { opacity: .62; }
+    .person-node strong { display: block; color: var(--bone); font-size: 15px; }
+    .person-node span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .person-node .relation { color: var(--gold); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+    .dynasty-lines path { fill: none; stroke: rgba(201,168,91,.52); stroke-width: 2; }
+    .generation-label { position: absolute; left: 16px; color: #716b58; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; }
+    .dynasty-sidecard { position: absolute; right: 16px; top: 16px; width: 248px; padding: 15px; border: 1px solid var(--gold-dark); background: rgba(11,12,9,.96); z-index: 5; }
+    .dynasty-sidecard h3 { margin: 5px 0; color: var(--gold-bright); }
+
+    /* Military */
+    #military { height: 100%; overflow: auto; }
+    .military-grid { display: grid; grid-template-columns: 360px minmax(520px,1fr) 360px; gap: 14px; }
+    .mil-card { border: 1px solid var(--gold-dark); background: rgba(18,19,15,.93); padding: 16px; min-height: 580px; }
+    .mil-card h2, .mil-card h3 { margin: 0 0 12px; font-family: Georgia, serif; color: var(--gold-bright); }
+    .cap-box { display: flex; align-items: center; justify-content: space-between; padding: 12px; border: 1px solid rgba(111,90,41,.7); background: #181914; }
+    .cap-number { font: 700 28px Georgia,serif; color: var(--gold-bright); }
+    .research-lock { margin-top: 10px; padding: 10px; border-left: 3px solid var(--gold); background: rgba(201,168,91,.07); color: var(--muted); }
+    .squad { margin-top: 12px; padding: 12px; border: 1px solid #4a493f; background: #151611; }
+    .squad-head { display: flex; justify-content: space-between; gap: 8px; }
+    .squad-members { display: flex; gap: 6px; margin-top: 10px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #302b1e; border: 1px solid var(--gold-dark); }
+    .recruit-list { display: grid; gap: 7px; }
+    .recruit {
+      display: grid; grid-template-columns: 30px 44px 1fr auto; align-items: center; gap: 10px;
+      padding: 10px; border: 1px solid #45443a; background: #161712; cursor: pointer;
+    }
+    .recruit:hover, .recruit.selected { border-color: var(--gold); background: rgba(201,168,91,.08); }
+    .recruit input { accent-color: var(--gold); }
+    .recruit strong { display: block; }
+    .recruit small { color: var(--muted); }
+    .rank { color: var(--gold-bright); font-size: 12px; }
+    .excluded { opacity: .62; cursor: not-allowed; }
+    .reason { color: #c68a7d; font-size: 11px; }
+    .primary {
+      width: 100%; margin-top: 14px; padding: 12px 16px;
+      color: #15130c; font-weight: 700; border: 1px solid var(--gold-bright); border-radius: 4px;
+      background: linear-gradient(#e2c777,#b89548); cursor: pointer;
+    }
+    .primary:disabled { filter: grayscale(1); opacity: .4; cursor: not-allowed; }
+    .rule-list { display: grid; gap: 10px; }
+    .rule { padding: 11px; border: 1px solid #424137; }
+    .rule b { color: var(--gold-bright); }
+
+    /* Character */
+    #character { height: 100%; overflow: auto; }
+    .character-stage { min-height: 100%; padding: 24px; background: radial-gradient(circle at 18% 16%, rgba(119,91,40,.09), transparent 28%); }
+    .character-window { max-width: 1420px; margin: 0 auto; border: 1px solid var(--gold-dark); background: rgba(15,16,12,.98); box-shadow: var(--shadow); }
+    .character-hero { display: grid; grid-template-columns: 180px 1fr auto; gap: 22px; align-items: center; padding: 22px; border-bottom: 1px solid var(--gold-dark); background: linear-gradient(90deg,rgba(201,168,91,.08),transparent 50%); }
+    .portrait { width: 150px; height: 150px; border: 1px solid var(--gold); background: radial-gradient(circle at 50% 35%, #ad8c66 0 15%, transparent 16%), linear-gradient(145deg,#303124,#151610); display: grid; place-items: end center; color: var(--muted); padding-bottom: 10px; }
+    .character-hero h1 { margin: 3px 0 4px; font: 700 40px Georgia,serif; color: var(--gold-bright); }
+    .hero-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+    .hero-actions { display: grid; gap: 8px; min-width: 210px; }
+    .secondary { padding: 10px 12px; color: var(--bone); border: 1px solid var(--gold-dark); background: #1b1b15; cursor: pointer; }
+    .character-tabs { display: flex; gap: 0; border-bottom: 1px solid #403e32; background: #10110d; }
+    .character-tabs button { padding: 12px 22px; border: 0; border-right: 1px solid #353329; color: var(--muted); background: transparent; cursor: pointer; }
+    .character-tabs button.active { color: var(--gold-bright); box-shadow: inset 0 -2px var(--gold); background: rgba(201,168,91,.07); }
+    .character-body { padding: 18px; }
+    .character-pane { display: none; }
+    .character-pane.active { display: grid; grid-template-columns: 1.05fr 1.25fr 1fr; gap: 14px; }
+    .info-card { border: 1px solid #444235; background: #171813; padding: 15px; }
+    .info-card h3 { margin: 0 0 13px; color: var(--gold-bright); font: 700 18px Georgia,serif; }
+    .fact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fact { padding: 9px; background: #1d1e17; }
+    .fact small { display: block; color: var(--muted); }
+    .fact b { display: block; margin-top: 3px; }
+    .bar-row { display: grid; grid-template-columns: 95px 1fr 42px; gap: 8px; align-items: center; margin: 9px 0; }
+    .bar { height: 9px; background: #292a22; overflow: hidden; border-radius: 9px; }
+    .bar i { display: block; height: 100%; background: var(--gold); }
+    .bar.green i { background: var(--green); }
+    .bar.red i { background: var(--red); }
+    .skill-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .skill { padding: 10px; border: 1px solid #3b3a31; background: #1a1b15; }
+    .skill span { float: right; color: var(--gold-bright); font-weight: 700; }
+    .timeline { display: grid; gap: 10px; }
+    .timeline div { padding-left: 14px; border-left: 2px solid var(--gold-dark); }
+
+    @media (max-width: 1100px) {
+      .topbar { grid-template-columns: auto 1fr; }
+      .prototype-note { display: none; }
+      .military-grid { grid-template-columns: 1fr; }
+      .character-pane.active { grid-template-columns: 1fr; }
+      .character-hero { grid-template-columns: 130px 1fr; }
+      .hero-actions { grid-column: 1 / -1; grid-template-columns: repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">SERENITY</div>
+      <nav class="nav" aria-label="Экраны прототипа">
+        <button class="active" data-screen="research">Исследования</button>
+        <button data-screen="dynasty">Династия</button>
+        <button data-screen="military">Отряды</button>
+        <button data-screen="character">Персонаж</button>
+      </nav>
+      <div class="prototype-note">HTML-макет · игровая логика не изменена</div>
+    </header>
+
+    <section class="screen active" id="research">
+      <div class="research-shell">
+        <header class="research-head">
+          <div class="research-legend"><span class="done">Изучено</span><span class="ready">Доступно</span><span class="locked">Закрыто</span></div>
+          <div class="title-block"><h1 class="section-title">Древо знаний</h1><p>Каменный век · 4 исследователя · 126 знаний/день</p></div>
+          <div class="research-filters">
+            <button class="chip active" data-branch="all">Все</button>
+            <button class="chip" data-branch="survival">Выживание</button>
+            <button class="chip" data-branch="production">Производство</button>
+            <button class="chip" data-branch="military">Военное дело</button>
+            <button class="chip" data-branch="knowledge">Наука и медицина</button>
+            <button class="chip" data-branch="society">Общество</button>
+          </div>
+        </header>
+        <div class="research-viewport">
+          <div class="research-canvas" id="researchCanvas">
+            <svg class="research-lines" id="researchLines"></svg>
+            <div class="branch-label" style="left:52px"><b>Выживание</b>еда · жильё · природа</div>
+            <div class="branch-label" style="left:370px"><b>Производство</b>ремесло · добыча · склады</div>
+            <div class="branch-label" style="left:688px"><b>Военное дело</b>дружина · строй · снабжение</div>
+            <div class="branch-label" style="left:1006px"><b>Наука и медицина</b>наблюдение · лечение · обучение</div>
+            <div class="branch-label" style="left:1324px"><b>Общество</b>управление · торговля · право</div>
+
+            <button class="tech root done" data-id="basic_survival" data-branch="all" data-icon="🔥" style="left:680px;top:28px"><strong>Основы выживания</strong><small>Общий корень всех направлений</small></button>
+
+            <button class="tech done" data-id="foraging" data-parent="basic_survival" data-branch="survival" data-icon="🌿" style="left:60px;top:235px"><strong>Знание местности</strong><small>Сбор, рыбалка, безопасные тропы</small></button>
+            <button class="tech ready" data-id="shelter" data-parent="foraging" data-branch="survival" data-icon="⌂" style="left:60px;top:390px"><strong>Надёжные убежища</strong><small>Утепление, кровати, комфорт</small></button>
+            <button class="tech locked" data-id="preservation" data-parent="shelter" data-branch="survival" data-icon="◫" style="left:60px;top:545px"><strong>Сохранение пищи</strong><small>Копчение, сушка, зимние запасы</small></button>
+            <button class="tech locked" data-id="husbandry" data-parent="preservation" data-branch="survival" data-icon="🐾" style="left:60px;top:700px"><strong>Одомашнивание</strong><small>Пастбища, корм, разведение</small></button>
+            <button class="tech locked" data-id="seasons" data-parent="husbandry" data-branch="survival" data-icon="❄" style="left:60px;top:855px"><strong>Жизнь по сезонам</strong><small>Подготовка поселения к непогоде</small></button>
+
+            <button class="tech done" data-id="stone_tools" data-parent="basic_survival" data-branch="production" data-icon="⛏" style="left:378px;top:235px"><strong>Каменные орудия</strong><small>Базовая добыча и обработка</small></button>
+            <button class="tech ready" data-id="woodworking" data-parent="stone_tools" data-branch="production" data-icon="🪓" style="left:378px;top:390px"><strong>Деревообработка</strong><small>Верстак, брёвна, детали</small></button>
+            <button class="tech locked" data-id="organized_production" data-parent="woodworking" data-branch="production" data-icon="⚙" style="left:378px;top:545px"><strong>Разделение труда</strong><small>Цеха, приоритеты, рабочие смены</small></button>
+            <button class="tech locked" data-id="advanced_stone" data-parent="organized_production" data-branch="production" data-icon="◆" style="left:378px;top:700px"><strong>Точная каменная кладка</strong><small>Каменоломня, улучшенные склады</small></button>
+            <button class="tech locked" data-id="standardization" data-parent="advanced_stone" data-branch="production" data-icon="▦" style="left:378px;top:855px"><strong>Стандартизация</strong><small>Быстрее строительство и ремонт</small></button>
+
+            <button class="tech ready" data-id="militia" data-parent="basic_survival" data-branch="military" data-icon="⚔" style="left:696px;top:235px"><strong>Народное ополчение</strong><small>Профессия дружинника, учебный лагерь</small></button>
+            <button class="tech locked" data-id="formation" data-parent="militia" data-branch="military" data-icon="◈" style="left:696px;top:390px"><strong>Строевая подготовка</strong><small>2 отряда, строй и капитаны</small></button>
+            <button class="tech locked" data-id="military_org" data-parent="formation" data-branch="military" data-icon="♜" style="left:696px;top:545px"><strong>Военная организация</strong><small>Лимит отрядов: 2 → 4</small></button>
+            <button class="tech locked" data-id="logistics" data-parent="military_org" data-branch="military" data-icon="▣" style="left:696px;top:700px"><strong>Походная логистика</strong><small>Запасы, дальние походы, обоз</small></button>
+            <button class="tech locked" data-id="fortification" data-parent="logistics" data-branch="military" data-icon="♖" style="left:696px;top:855px"><strong>Укреплённые рубежи</strong><small>Частокол, караул, оборона</small></button>
+
+            <button class="tech ready" data-id="observation" data-parent="basic_survival" data-branch="knowledge" data-icon="◉" style="left:1014px;top:235px"><strong>Наблюдение</strong><small>Скорость исследований +10%</small></button>
+            <button class="tech locked" data-id="herbalism" data-parent="observation" data-branch="knowledge" data-icon="✚" style="left:1014px;top:390px"><strong>Травничество</strong><small>Лекарственные сборы и лечение</small></button>
+            <button class="tech locked" data-id="anatomy" data-parent="herbalism" data-branch="knowledge" data-icon="♥" style="left:1014px;top:545px"><strong>Практическая анатомия</strong><small>Меньше смертельных осложнений</small></button>
+            <button class="tech locked" data-id="record_keeping" data-parent="anatomy" data-branch="knowledge" data-icon="▤" style="left:1014px;top:700px"><strong>Хранение знаний</strong><small>Дом знаний, наставники</small></button>
+            <button class="tech locked" data-id="natural_philosophy" data-parent="record_keeping" data-branch="knowledge" data-icon="✦" style="left:1014px;top:855px"><strong>Натурфилософия</strong><small>Открывает следующий технологический век</small></button>
+
+            <button class="tech ready" data-id="kinship" data-parent="basic_survival" data-branch="society" data-icon="♛" style="left:1332px;top:235px"><strong>Родовая община</strong><small>Династия, наследование, семейные роли</small></button>
+            <button class="tech locked" data-id="council" data-parent="kinship" data-branch="society" data-icon="♟" style="left:1332px;top:390px"><strong>Совет поселения</strong><small>Помощники правителя, решения</small></button>
+            <button class="tech locked" data-id="exchange" data-parent="council" data-branch="society" data-icon="⇄" style="left:1332px;top:545px"><strong>Обмен и меры</strong><small>Рынок, оценка запасов, торговля</small></button>
+            <button class="tech locked" data-id="administration" data-parent="exchange" data-branch="society" data-icon="⚖" style="left:1332px;top:700px"><strong>Управление землями</strong><small>Больше рабочих групп и поселений</small></button>
+            <button class="tech locked" data-id="customary_law" data-parent="administration" data-branch="society" data-icon="◎" style="left:1332px;top:855px"><strong>Обычное право</strong><small>Устойчивость, приказы, преемственность</small></button>
+
+            <aside class="research-detail" id="researchDetail">
+              <div class="eyebrow">Доступное исследование</div><h3 id="detailTitle">Народное ополчение</h3>
+              <p class="muted" id="detailCopy">Подготовка жителей к организованной защите поселения.</p>
+              <ul id="detailUnlocks"><li>Открывает профессию «Дружинник»</li><li>Открывает учебный лагерь</li><li>Разрешает формировать первые 2 отряда</li></ul>
+              <button class="primary">Начать исследование · 3 дня</button>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="dynasty">
+      <div class="workspace">
+        <header class="workspace-head"><div><div class="eyebrow">Дом Серенити</div><h1 class="section-title">Династия и наследование</h1><p>Кровные родственники, супруги и линия престолонаследия</p></div><span class="pill">7 членов дома · 3 супруга</span></header>
+        <div class="dynasty-summary"><div class="metric"><span class="eyebrow">Правитель</span><b>Артур Серенити</b><span class="muted">20 лет · здоров</span></div><div class="metric"><span class="eyebrow">Наследник</span><b>Кейл Серенити</b><span class="muted">1-й в очереди</span></div><div class="metric"><span class="eyebrow">Закон дома</span><b>Первородство</b><span class="muted">Супруги показаны, но не входят в кровную очередь</span></div></div>
+        <div class="dynasty-tree" id="dynastyTree">
+          <svg class="dynasty-lines" id="dynastyLines"></svg>
+          <span class="generation-label" style="top:45px">Основатели</span><span class="generation-label" style="top:285px">Второе поколение</span><span class="generation-label" style="top:525px">Третье поколение</span>
+          <div class="couple" data-couple="founders" style="left:420px;top:36px">
+            <button class="person-node" data-person="Артур"><span class="relation">Правитель · кровь дома</span><strong>Артур</strong><span>20 лет · влияние 72</span></button>
+            <button class="person-node wife" data-person="Мира"><span class="relation">Жена правителя</span><strong>Мира</strong><span>20 лет · влияние 48</span></button>
+          </div>
+          <div class="couple" data-couple="kayle" data-parent-couple="founders" style="left:150px;top:276px">
+            <button class="person-node" data-person="Кейл"><span class="relation">Наследник · кровь дома</span><strong>Кейл</strong><span>20 лет · 1-й в очереди</span></button>
+            <button class="person-node wife" data-person="Села"><span class="relation">Жена наследника</span><strong>Села</strong><span>19 лет · травница</span></button>
+          </div>
+          <div class="couple" data-couple="doran" data-parent-couple="founders" style="left:665px;top:276px">
+            <button class="person-node" data-person="Доран"><span class="relation">Сын · кровь дома</span><strong>Доран</strong><span>18 лет · 2-й в очереди</span></button>
+            <button class="person-node wife" data-person="Элда"><span class="relation">Жена Дорана</span><strong>Элда</strong><span>20 лет · ремесленница</span></button>
+          </div>
+          <div class="couple" data-couple="rovan" data-parent-couple="kayle" style="left:150px;top:516px">
+            <button class="person-node" data-person="Рован"><span class="relation">Внук · кровь дома</span><strong>Рован</strong><span>2 года · 3-й в очереди</span></button>
+            <button class="person-node wife" disabled><span class="relation">Будущий супруг</span><strong>—</strong><span>Связь не установлена</span></button>
+          </div>
+          <aside class="dynasty-sidecard"><div class="eyebrow">Выбран</div><h3 id="dynastySelected">Артур</h3><p class="muted">Родство: основатель дома<br>Супруга: Мира<br>Дети: Кейл, Доран</p><button class="secondary">Открыть персонажа</button></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="military">
+      <div class="workspace">
+        <header class="workspace-head"><div><div class="eyebrow">Военное управление</div><h1 class="section-title">Отряды поселения</h1><p>В отряд принимаются только жители с действующей военной профессией</p></div><span class="pill">Военная организация: не изучено</span></header>
+        <div class="military-grid">
+          <section class="mil-card"><h2>Лимит отрядов</h2><div class="cap-box"><div><span class="eyebrow">Текущий этап</span><div>Раннее поселение</div></div><div class="cap-number">2 / 2</div></div><div class="research-lock"><b>Следующий рубеж: 4 отряда</b><br>Исследуйте «Военная организация» в военной ветке.</div><div class="squad"><div class="squad-head"><b>Северная дружина</b><span class="pill">4 / 6</span></div><div class="muted">Капитан: Тарин · охрана поселения</div><div class="squad-members"><span class="avatar">Т</span><span class="avatar">Н</span><span class="avatar">Р</span><span class="avatar">К</span></div></div><div class="squad"><div class="squad-head"><b>Следопыты</b><span class="pill">3 / 6</span></div><div class="muted">Капитан: Нерис · разведка</div><div class="squad-members"><span class="avatar">Н</span><span class="avatar">Л</span><span class="avatar">Д</span></div></div><button class="primary" disabled>Лимит отрядов достигнут</button></section>
+
+          <section class="mil-card"><h2>Сформировать отряд</h2><p class="muted">Сначала освободите слот или изучите увеличение лимита. Список уже отфильтрован по военной профессии.</p><div class="recruit-list" id="recruitList">
+            <label class="recruit"><input type="checkbox"><span class="avatar">К</span><span><strong>Кейл</strong><small>Дружинник · боевой навык 34</small></span><span class="rank">Рядовой</span></label>
+            <label class="recruit"><input type="checkbox"><span class="avatar">Э</span><span><strong>Элда</strong><small>Лучница · боевой навык 41</small></span><span class="rank">Стрелок</span></label>
+            <label class="recruit"><input type="checkbox"><span class="avatar">Р</span><span><strong>Рован</strong><small>Копейщик · боевой навык 38</small></span><span class="rank">Рядовой</span></label>
+          </div><button class="primary" disabled>Сформировать отряд · 0 / 6</button></section>
+
+          <section class="mil-card"><h3>Не допущены</h3><div class="recruit-list">
+            <div class="recruit excluded"><span>×</span><span class="avatar">С</span><span><strong>Села</strong><small>Строитель</small><span class="reason">Нет военной профессии</span></span><span></span></div>
+            <div class="recruit excluded"><span>×</span><span class="avatar">М</span><span><strong>Мира</strong><small>Исследователь</small><span class="reason">Нет военной профессии</span></span><span></span></div>
+            <div class="recruit excluded"><span>×</span><span class="avatar">А</span><span><strong>Артур</strong><small>Правитель</small><span class="reason">Не назначен на военную службу</span></span><span></span></div>
+          </div><h3 style="margin-top:20px">Правила</h3><div class="rule-list"><div class="rule"><b>Военная профессия</b><br><span class="muted">Дружинник, лучник, копейщик или старший военный чин.</span></div><div class="rule"><b>Один человек — один отряд</b><br><span class="muted">Уже назначенные бойцы не появляются среди кандидатов.</span></div><div class="rule"><b>Лимит зависит от знаний</b><br><span class="muted">2 отряда изначально, 4 после «Военной организации».</span></div></div></section>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="character">
+      <div class="character-stage">
+        <article class="character-window">
+          <header class="character-hero"><div class="portrait">портрет персонажа</div><div><div class="eyebrow">Житель поселения</div><h1>Села</h1><div class="muted">20 лет · женщина · дом Серенити</div><div class="hero-tags"><span class="pill">Строитель</span><span class="pill">Здорова</span><span class="pill">Готова к приказу</span><span class="pill">Настроение 100%</span></div></div><div class="hero-actions"><button class="secondary">Найти на карте</button><button class="secondary">Назначить работу</button><button class="secondary">Открыть семью</button></div></header>
+          <nav class="character-tabs"><button class="active" data-pane="overview">Обзор</button><button data-pane="health">Здоровье</button><button data-pane="family">Семья</button><button data-pane="skills">Навыки</button></nav>
+          <div class="character-body">
+            <div class="character-pane active" id="pane-overview">
+              <section class="info-card"><h3>Сейчас</h3><div class="fact-grid"><div class="fact"><small>Действие</small><b>Несёт шкуры на склад</b></div><div class="fact"><small>Следом</small><b>Строительство дома</b></div><div class="fact"><small>Местоположение</small><b>Южный склад</b></div><div class="fact"><small>Рабочая группа</small><b>Строители</b></div></div><h3 style="margin-top:16px">Дом и быт</h3><div class="fact-grid"><div class="fact"><small>Дом</small><b>Общий дом №1</b></div><div class="fact"><small>Кровать</small><b>Назначена</b></div><div class="fact"><small>Личная вещь</small><b>Костяной гребень</b></div><div class="fact"><small>Любимое занятие</small><b>Строительство</b></div></div></section>
+              <section class="info-card"><h3>Состояние</h3><div class="bar-row"><span>Здоровье</span><div class="bar green"><i style="width:100%"></i></div><b>100</b></div><div class="bar-row"><span>Энергия</span><div class="bar"><i style="width:74%"></i></div><b>74</b></div><div class="bar-row"><span>Сытость</span><div class="bar"><i style="width:80%"></i></div><b>80</b></div><div class="bar-row"><span>Жажда</span><div class="bar green"><i style="width:69%"></i></div><b>69</b></div><div class="bar-row"><span>Настроение</span><div class="bar green"><i style="width:100%"></i></div><b>100</b></div><h3 style="margin-top:18px">Лучшие навыки</h3><div class="skill-grid"><div class="skill">Строительство <span>50</span></div><div class="skill">Бой <span>27</span></div><div class="skill">Исследование <span>24</span></div><div class="skill">Переноска <span>42</span></div></div></section>
+              <section class="info-card"><h3>Отношения</h3><div class="fact-grid"><div class="fact"><small>Супруг</small><b>Кейл</b></div><div class="fact"><small>Династия</small><b>Жена наследника</b></div></div><h3 style="margin-top:16px">Последние события</h3><div class="timeline"><div><b>Сегодня · 18:40</b><br><span class="muted">Завершила доставку древесины</span></div><div><b>Сегодня · 16:15</b><br><span class="muted">Получила опыт строительства</span></div><div><b>Вчера</b><br><span class="muted">Провела время с Кейлом</span></div></div><button class="secondary" style="width:100%;margin-top:16px">Показать всю историю</button></section>
+            </div>
+            <div class="character-pane" id="pane-health"><section class="info-card"><h3>Общее состояние</h3><div class="bar-row"><span>Здоровье</span><div class="bar green"><i style="width:100%"></i></div><b>100</b></div><p class="muted">Травм, болезней и ограничений нет.</p></section><section class="info-card"><h3>Части тела</h3><div class="skill-grid"><div class="skill">Голова <span>100</span></div><div class="skill">Туловище <span>100</span></div><div class="skill">Руки <span>100</span></div><div class="skill">Ноги <span>100</span></div></div></section><section class="info-card"><h3>Уход</h3><p class="muted">Лечение не требуется. Медицинский приоритет: обычный.</p></section></div>
+            <div class="character-pane" id="pane-family"><section class="info-card"><h3>Ближайшая семья</h3><div class="fact-grid"><div class="fact"><small>Супруг</small><b>Кейл</b></div><div class="fact"><small>Свёкор</small><b>Артур</b></div><div class="fact"><small>Свекровь</small><b>Мира</b></div></div></section><section class="info-card"><h3>Положение в доме</h3><p>Жена наследника престола.</p><p class="muted">Не входит в кровную линию наследования, но отображается в семейном дереве как супруг.</p></section><section class="info-card"><h3>Семейные действия</h3><button class="secondary" style="width:100%">Провести время вместе</button></section></div>
+            <div class="character-pane" id="pane-skills"><section class="info-card"><h3>Ремесло</h3><div class="bar-row"><span>Строительство</span><div class="bar"><i style="width:50%"></i></div><b>50</b></div><div class="bar-row"><span>Ремесло</span><div class="bar"><i style="width:31%"></i></div><b>31</b></div></section><section class="info-card"><h3>Знания</h3><div class="bar-row"><span>Исследование</span><div class="bar"><i style="width:24%"></i></div><b>24</b></div><div class="bar-row"><span>Лечение</span><div class="bar"><i style="width:16%"></i></div><b>16</b></div></section><section class="info-card"><h3>Бой и движение</h3><div class="bar-row"><span>Бой</span><div class="bar red"><i style="width:27%"></i></div><b>27</b></div><p class="muted">Боевой навык сам по себе не делает персонажа военным. Для отряда нужна военная профессия.</p></section></div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const screens = document.querySelectorAll('.screen');
+    document.querySelectorAll('.nav button').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.nav button').forEach(x => x.classList.toggle('active', x === button));
+      screens.forEach(screen => screen.classList.toggle('active', screen.id === button.dataset.screen));
+      if (button.dataset.screen === 'research') requestAnimationFrame(drawResearchLines);
+      if (button.dataset.screen === 'dynasty') requestAnimationFrame(drawDynastyLines);
+    }));
+
+    const researchCopy = {
+      basic_survival: ['Основы выживания', 'Общий фундамент поселения и корень всех специализаций.', ['Открывает пять направлений развития', 'Уже изучено']],
+      militia: ['Народное ополчение', 'Подготовка жителей к организованной защите поселения.', ['Открывает профессию «Дружинник»', 'Открывает учебный лагерь', 'Разрешает формировать первые 2 отряда']],
+      military_org: ['Военная организация', 'Постоянная структура командования вместо временного ополчения.', ['Увеличивает лимит отрядов с 2 до 4', 'Открывает старшие военные чины', 'Ускоряет обучение новобранцев']],
+      organized_production: ['Разделение труда', 'Специализация мастерских и более предсказуемые производственные цепочки.', ['Открывает цеховые рабочие группы', 'Добавляет приоритеты производственных заказов', 'Снижает потери времени на смену работ']],
+      herbalism: ['Травничество', 'Систематическое использование лекарственных растений.', ['Открывает простые лекарства', 'Ускоряет лечение лёгких травм', 'Добавляет профессию травника']],
+      exchange: ['Обмен и меры', 'Единые меры запасов и организованный обмен между поселениями.', ['Открывает рынок', 'Даёт сводку дефицита и избытка', 'Подготавливает торговые маршруты']]
+    };
+    document.querySelectorAll('.tech').forEach(node => node.addEventListener('click', () => {
+      document.querySelectorAll('.tech').forEach(x => x.classList.toggle('selected', x === node));
+      const data = researchCopy[node.dataset.id] || [node.querySelector('strong').textContent, node.querySelector('small').textContent, ['Подробные эффекты будут показаны здесь', 'Стоимость и зависимости видны до начала исследования']];
+      document.getElementById('detailTitle').textContent = data[0];
+      document.getElementById('detailCopy').textContent = data[1];
+      document.getElementById('detailUnlocks').innerHTML = data[2].map(x => `<li>${x}</li>`).join('');
+      document.getElementById('researchDetail').classList.add('open');
+    }));
+    document.querySelectorAll('[data-branch]').forEach(filter => {
+      if (!filter.classList.contains('chip')) return;
+      filter.addEventListener('click', () => {
+        document.querySelectorAll('.research-filters .chip').forEach(x => x.classList.toggle('active', x === filter));
+        const branch = filter.dataset.branch;
+        document.querySelectorAll('.tech').forEach(node => node.classList.toggle('branch-dim', branch !== 'all' && node.dataset.branch !== branch && node.dataset.branch !== 'all'));
+      });
+    });
+
+    function drawResearchLines() {
+      const canvas = document.getElementById('researchCanvas');
+      const svg = document.getElementById('researchLines');
+      if (!canvas || !document.getElementById('research').classList.contains('active')) return;
+      const cr = canvas.getBoundingClientRect();
+      svg.setAttribute('viewBox', `0 0 ${canvas.offsetWidth} ${canvas.offsetHeight}`);
+      svg.innerHTML = '';
+      canvas.querySelectorAll('.tech[data-parent]').forEach(child => {
+        const parent = canvas.querySelector(`[data-id="${child.dataset.parent}"]`);
+        if (!parent) return;
+        const a = parent.getBoundingClientRect(), b = child.getBoundingClientRect();
+        const x1 = a.left - cr.left + a.width / 2, y1 = a.bottom - cr.top;
+        const x2 = b.left - cr.left + b.width / 2, y2 = b.top - cr.top;
+        const mid = y1 + (y2 - y1) * .48;
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`);
+        path.setAttribute('class', child.classList.contains('done') ? 'done' : child.classList.contains('ready') ? 'ready' : '');
+        svg.appendChild(path);
+      });
+    }
+
+    function drawDynastyLines() {
+      const tree = document.getElementById('dynastyTree'), svg = document.getElementById('dynastyLines');
+      if (!tree || !document.getElementById('dynasty').classList.contains('active')) return;
+      const tr = tree.getBoundingClientRect();
+      svg.setAttribute('viewBox', `0 0 ${tree.offsetWidth} ${tree.offsetHeight}`); svg.innerHTML = '';
+      tree.querySelectorAll('.couple[data-parent-couple]').forEach(child => {
+        const parent = tree.querySelector(`[data-couple="${child.dataset.parentCouple}"]`);
+        const a = parent.getBoundingClientRect(), b = child.getBoundingClientRect();
+        const x1 = a.left-tr.left+a.width/2, y1 = a.bottom-tr.top;
+        const x2 = b.left-tr.left+b.width/2, y2 = b.top-tr.top;
+        const mid = y1 + (y2-y1)/2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d', `M ${x1} ${y1} V ${mid} H ${x2} V ${y2}`); svg.appendChild(path);
+      });
+    }
+
+    document.querySelectorAll('.person-node[data-person]').forEach(node => node.addEventListener('click', () => {
+      document.getElementById('dynastySelected').textContent = node.dataset.person;
+      document.querySelectorAll('.person-node').forEach(x => x.style.outline = x === node ? '2px solid var(--gold-bright)' : '');
+    }));
+    document.querySelectorAll('.recruit input').forEach(box => box.addEventListener('change', () => box.closest('.recruit').classList.toggle('selected', box.checked)));
+    document.querySelectorAll('.character-tabs button').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('.character-tabs button').forEach(x => x.classList.toggle('active', x === button));
+      document.querySelectorAll('.character-pane').forEach(x => x.classList.toggle('active', x.id === `pane-${button.dataset.pane}`));
+    }));
+    window.addEventListener('resize', () => { drawResearchLines(); drawDynastyLines(); });
+    requestAnimationFrame(drawResearchLines);
+  </script>
+</body>
+</html>
