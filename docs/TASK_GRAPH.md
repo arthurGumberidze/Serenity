@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+UI08-R4 research proposal (2026-11-01): **AWAITING_USER_REVIEW**, supersedes R3's layout/dependency proposal.
+Anno-inspired circular hubs and top-down local trees replace horizontal OR rails. Each research has one
+predecessor, all edges remain visible, and cross-direction prerequisites are removed in the proposal data.
+51 nodes/33 retained IDs; graph, geometry, demo-controller checks and offline HTML bundling PASS. Browser
+rendering and Unity implementation remain unverified/not performed. See `docs/validation/UI08ResearchProposalR4.md`.
+
 UI08-R3 research overhaul (2026-11-01): **AWAITING_USER_REVIEW**. The user requires HTML approval before
 implementation. The offline 51-technology proposal, AND/OR graph, future-mechanic boundaries, balance and epoch
 routes are prepared. Syntax/catalog/controller-with-DOM-stub checks and standalone HTML build pass; rendered

@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## UI08-R4 — revised circular HTML proposal awaiting approval (2026-11-01)
+
+The user rejected the horizontal OR-link tangle and requested Anno-like circular research branches.
+New offline deliverable: `docs/prototypes/research-review-v4/Serenity-Research-Review.html`. It uses five large
+direction hubs, small thematic icons and top-down local trees. Actual proposed prerequisites now have one
+parent per technology; OR and cross-direction gates are removed, not hidden. Hover/focus reveals names;
+selection opens the full right-side detail. The epoch is a separate bottom strip, with no convergence edges.
+
+51 technologies and 33 existing IDs retained. Syntax, actual demo-controller checks with a DOM stub, geometric
+checks (no circle overlap, edge crossing or edge passing through another circle), and offline build pass.
+Rendered browser validation remains unavailable under the previously reported local-file policy restriction.
+No Unity changes or Unity build. Await user approval; character-control requests remain pending.
+
 ## UI08-R3 — HTML research proposal awaiting user approval (2026-11-01)
 
 New scope is design review first, explicitly requested before Unity implementation. A self-contained offline

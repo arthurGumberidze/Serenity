@@ -1,4 +1,4 @@
-# Research balance — UI08-R3 proposal, not measured gameplay
+# Research balance — UI08-R4 proposal, not measured gameplay
 
 The existing `Assets/Game/Simulation/Time/GameClock.cs` advances calendar ticks at 60x normal real time:
 one calendar day takes 24 real minutes. Work is still measured in equivalent researcher calendar days.
@@ -19,7 +19,7 @@ science bonuses. They do not include sleep, travel, material acquisition or wait
 | Peaceful | 17 | 54.5 | 5.0 |
 | Knowledge | 17 | 56 | 5.1 |
 | Military | 16 | 57 | 5.2 |
-| Mixed / shortest supplied | 14 | 43 | 3.9 |
+| Mixed / shortest supplied | 15 | 45.5 | 4.1 |
 
 The requested 3–6-hour target is a design target, not a validated playthrough. Science can shorten these
 estimates; interrupted work and settlement development can lengthen them beyond six hours. After approval,
@@ -30,4 +30,7 @@ Only selected technologies consume existing wood/stone, once at start. Other gat
 (hides/herbs/food), built shelter and military profession counts. No new resource or fake production-history
 counter is introduced in this prototype. All demo facts can be edited through «Условия поселения».
 
-Focused verification command: `node docs/prototypes/research-review-v3/verify.cjs`.
+R4's branch-local prerequisites add animal observation to the supplied mixed preset. Costs are unchanged;
+only the required dependency closure changes. The shorter theoretical 14-technology route is not timed here.
+
+Focused verification command: `node docs/prototypes/research-review-v4/verify.cjs`.

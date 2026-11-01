@@ -1,5 +1,17 @@
 # NEXT_TASK.md
 
+## Active — UI08-R4: approve the revised circular research map (2026-11-01)
+
+The user rejected R3's tangled horizontal OR connectors and requested the attached Anno format.
+Review `docs/prototypes/research-review-v4/Serenity-Research-Review.html`: large circular direction hubs,
+small icon nodes, top-down local branches, one prerequisite per technology, no OR/cross-direction gates.
+Dependencies were simplified in the proposal itself; none are merely concealed. All 51 technologies and
+33 legacy IDs remain. The user still requires HTML approval before Unity implementation.
+
+The character «Лечиться» rename and removal of personal priorities/tasks remain pending; task priorities and
+professional-group automatic assignment are retained requirements. Do not start game implementation until
+approval. R3 and the older retest instructions below are historical. Evidence: `docs/validation/UI08ResearchProposalR4.md`.
+
 ## Active — UI08-R3: await approval of HTML research proposal (2026-11-01)
 
 The user's latest instruction explicitly requires review before implementing the research overhaul.

@@ -2650,3 +2650,16 @@ unimplemented capability flags are not evidence of working bonuses. Later histor
 No Unity build is warranted or claimed for this HTML-only review slice; relevant persistent-runner checks remain
 mandatory for the subsequent Unity implementation. The Care rename and per-resident control removal remain
 pending user requests, recorded in NEXT_TASK rather than being silently dropped.
+
+## D-240 — Circular research branches simplify actual proposed dependencies (2026-11-01)
+
+The user's Anno reference and rejection of OR clutter supersede the attached brief's horizontal/OR preference.
+R4 presents large circular direction hubs and smaller top-down technology nodes. Each technology has one
+visible parent in its own direction (five hubs depend on the common root). This is an explicit proposal to
+change the dependency rules, not suppress mandatory lines. Cooking needs fire alone; the food-gathering
+specializations no longer gate cooking. Other branch-local choices are documented in the updated catalog.
+
+Hover/focus reveals names; selection exposes full effects/requirements in the right panel. All circles and
+segments are positioned from configuration, and a geometry check rejects crossings and node intersections.
+The milestone remains separate and military remains optional. The 51 IDs, including 33 existing IDs, are
+retained; future-only nodes cannot gate playable nodes. Approval boundary from D-239 remains in effect.
