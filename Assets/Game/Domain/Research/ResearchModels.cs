@@ -94,7 +94,7 @@ namespace Game.Domain.Research
 
         public TechnologyDefinition(TechnologyId id, string displayName, IEnumerable<TechnologyId> prerequisites,
             TimeSpan researchWorkRequired, IEnumerable<TechnologyUnlock> unlocks,
-            TechnologyEra era = TechnologyEra.StoneAge, string description = null, bool startingKnowledge = false)
+            TechnologyEra era = TechnologyEra.StoneAge, string description = null, bool startingKnowledge = false, ResearchTechnologyProfile profile = null)
         {
             if (!id.IsValid) throw new ArgumentException("Technology identity required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Technology name required.", nameof(displayName));
@@ -113,6 +113,7 @@ namespace Game.Domain.Research
             Era = era;
             Description = description?.Trim() ?? string.Empty;
             StartingKnowledge = startingKnowledge;
+            Profile = profile;
         }
 
         public TechnologyId Id { get; }
@@ -123,6 +124,7 @@ namespace Game.Domain.Research
         public TechnologyEra Era { get; }
         public string Description { get; }
         public bool StartingKnowledge { get; }
+        public ResearchTechnologyProfile Profile { get; }
     }
 
     public sealed class TechnologyUnlockTargets
@@ -203,231 +205,7 @@ namespace Game.Domain.Research
         public static TechnologyCatalog CreateStoneAge(ProductionCatalog production,
             IEnumerable<BuildingDefinitionId> buildingIds, bool startsWithStoneTools = false)
         {
-            if (production == null) throw new ArgumentNullException(nameof(production));
-            var availableBuildingIds = (buildingIds ?? throw new ArgumentNullException(nameof(buildingIds))).ToArray();
-            var capabilities = new[]
-            {
-                new CapabilityId("basic_survival"), new CapabilityId("controlled_fire"),
-                new CapabilityId("fiber_working"), new CapabilityId("hunting"),
-                new CapabilityId("food_preservation"), new CapabilityId("organized_labor"),
-                new CapabilityId("weaving"), new CapabilityId("advanced_stonecraft"),
-                new CapabilityId("industrial_extraction"), new CapabilityId("mine_restoration"),
-                new CapabilityId("seasonal_preparation"), new CapabilityId("standardization"),
-                new CapabilityId("militia"), new CapabilityId("formation_training"),
-                new CapabilityId("military_organization"), new CapabilityId("military_logistics"),
-                new CapabilityId("fortification"), new CapabilityId("observation"),
-                new CapabilityId("herbalism"), new CapabilityId("practical_anatomy"),
-                new CapabilityId("record_keeping"), new CapabilityId("natural_philosophy"),
-                new CapabilityId("kinship"), new CapabilityId("settlement_council"),
-                new CapabilityId("exchange_and_measures"), new CapabilityId("land_administration"),
-                new CapabilityId("customary_law"),
-                new CapabilityId("stone_age_completed")
-            };
-            TechnologyId T(string id) => new TechnologyId(id);
-            TechnologyUnlock C(string id) => TechnologyUnlock.Capability(new CapabilityId(id));
-            var stoneToolUnlocks = new List<TechnologyUnlock>
-            {
-                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_stone")),
-                TechnologyUnlock.Recipe(new ProductionRecipeId("chop_wood"))
-            };
-            if (availableBuildingIds.Contains(new BuildingDefinitionId("stone_tool_workshop")))
-                stoneToolUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("stone_tool_workshop")));
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_iron")))
-                stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_iron")));
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("gather_gold")))
-                stoneToolUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("gather_gold")));
-            foreach (var id in new[] { "gather_clay", "gather_flint" })
-            {
-                var recipeId = new ProductionRecipeId(id);
-                if (production.All.Any(x => x.Id == recipeId))
-                    stoneToolUnlocks.Add(TechnologyUnlock.Recipe(recipeId));
-            }
-            var gatheringUnlocks = new List<TechnologyUnlock>
-            {
-                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_berries")),
-                TechnologyUnlock.Recipe(new ProductionRecipeId("gather_fiber"))
-            };
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_water")))
-                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_water")));
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_camp")))
-                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_camp")));
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("fish_breed")))
-                gatheringUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("fish_breed")));
-            foreach (var id in new[] { "gather_branches", "gather_mushrooms", "gather_medicinal_plants" })
-            {
-                var recipeId = new ProductionRecipeId(id);
-                if (production.All.Any(x => x.Id == recipeId))
-                    gatheringUnlocks.Add(TechnologyUnlock.Recipe(recipeId));
-            }
-            foreach (var id in new[] { "fishing_camp", "fishing_pier", "gathering_area" })
-            {
-                var buildingId = new BuildingDefinitionId(id);
-                if (availableBuildingIds.Contains(buildingId)) gatheringUnlocks.Add(TechnologyUnlock.Building(buildingId));
-            }
-            var controlledFireUnlocks = new List<TechnologyUnlock> { C("controlled_fire") };
-            foreach (var recipeId in new[] { "cook_meat", "cook_fish", "cook_berries" })
-            {
-                var id = new ProductionRecipeId(recipeId);
-                if (production.All.Any(recipe => recipe.Id == id))
-                    controlledFireUnlocks.Add(TechnologyUnlock.Recipe(id));
-            }
-            if (availableBuildingIds.Contains(new BuildingDefinitionId("campfire")))
-                controlledFireUnlocks.Add(TechnologyUnlock.Building(new BuildingDefinitionId("campfire")));
-            controlledFireUnlocks.AddRange(availableBuildingIds.Where(id => id.ToString() == "ground_torch")
-                .Select(TechnologyUnlock.Building));
-            var huntingUnlocks = new List<TechnologyUnlock> { C("hunting") };
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("hunt_animal")))
-                huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("hunt_animal")));
-            if (production.All.Any(x => x.Id == new ProductionRecipeId("butcher_carcass")))
-                huntingUnlocks.Add(TechnologyUnlock.Recipe(new ProductionRecipeId("butcher_carcass")));
-            foreach (var id in new[] { "hunting_camp", "butcher_station" })
-            {
-                var buildingId = new BuildingDefinitionId(id);
-                if (availableBuildingIds.Contains(buildingId)) huntingUnlocks.Add(TechnologyUnlock.Building(buildingId));
-            }
-            var organizedLaborUnlocks = new List<TechnologyUnlock> { C("organized_labor") };
-            foreach (var id in new[] { "military_barracks", "clan_house", "healer_hut", "shrine", "chief_hut",
-                         "meeting_area", "training_ground", "palisade", "gate", "watchtower", "primitive_path",
-                         "communal_house", "central_storehouse", "crafting_hall" })
-            {
-                var buildingId = new BuildingDefinitionId(id);
-                if (availableBuildingIds.Contains(buildingId)) organizedLaborUnlocks.Add(TechnologyUnlock.Building(buildingId));
-            }
-            var foodPreservationUnlocks = new List<TechnologyUnlock> { C("food_preservation") };
-            foreach (var recipeId in new[] { "dry_meat", "cure_hide" })
-            {
-                var id = new ProductionRecipeId(recipeId);
-                if (production.All.Any(x => x.Id == id)) foodPreservationUnlocks.Add(TechnologyUnlock.Recipe(id));
-            }
-            foreach (var id in new[] { "food_storage", "drying_rack", "hide_workshop" })
-            {
-                var buildingId = new BuildingDefinitionId(id);
-                if (availableBuildingIds.Contains(buildingId))
-                    foodPreservationUnlocks.Add(TechnologyUnlock.Building(buildingId));
-            }
-            var definitions = new[]
-            {
-                new TechnologyDefinition(T("basic_survival"), "Basic Survival", null, TimeSpan.FromDays(1),
-                    new[] { C("basic_survival") }, description: "Shared survival practices.", startingKnowledge: true),
-                new TechnologyDefinition(T("gathering"), "Gathering", new[] { T("basic_survival") }, TimeSpan.FromDays(1),
-                    gatheringUnlocks, startingKnowledge: true),
-                new TechnologyDefinition(T("controlled_fire"), "Controlled Fire", new[] { T("gathering") }, TimeSpan.FromDays(2),
-                    controlledFireUnlocks),
-                new TechnologyDefinition(T("shelter_construction"), "Shelter Construction", new[] { T("gathering") }, TimeSpan.FromDays(2),
-                    availableBuildingIds.Contains(new BuildingDefinitionId("stone_age_hut"))
-                        ? new[] { TechnologyUnlock.Building(new BuildingDefinitionId("stone_age_hut")) }
-                        : new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_shelter")) }),
-                new TechnologyDefinition(T("stone_tools"), "Stone Tools", new[] { T("basic_survival") }, TimeSpan.FromDays(3),
-                    stoneToolUnlocks, startingKnowledge: startsWithStoneTools),
-                new TechnologyDefinition(T("fiber_working"), "Fiber Working", new[] { T("gathering") }, TimeSpan.FromDays(2),
-                    new[] { C("fiber_working") }),
-                new TechnologyDefinition(T("woodworking"), "Woodworking", new[] { T("stone_tools") }, TimeSpan.FromDays(3),
-                    new[] { TechnologyUnlock.Building(new BuildingDefinitionId("storage_basket")) }),
-                new TechnologyDefinition(T("hunting"), "Organized Hunting", new[] { T("stone_tools") }, TimeSpan.FromDays(3),
-                    huntingUnlocks),
-                new TechnologyDefinition(T("food_preservation"), "Food Preservation", new[] { T("controlled_fire"), T("hunting") }, TimeSpan.FromDays(4),
-                    foodPreservationUnlocks),
-                new TechnologyDefinition(T("organized_labor"), "Organized Labor", new[] { T("shelter_construction"), T("woodworking") }, TimeSpan.FromDays(4),
-                    organizedLaborUnlocks),
-                new TechnologyDefinition(T("primitive_agriculture"), "Primitive Agriculture",
-                    new[] { T("controlled_fire"), T("fiber_working"), T("stone_tools") }, TimeSpan.FromDays(5),
-                    new[] { TechnologyUnlock.Building(new BuildingDefinitionId("primitive_crop_plot")),
-                        availableBuildingIds.Contains(new BuildingDefinitionId("primitive_garden"))
-                            ? TechnologyUnlock.Building(new BuildingDefinitionId("primitive_garden"))
-                            : TechnologyUnlock.Capability(new CapabilityId("basic_survival")),
-                        TechnologyUnlock.Recipe(new ProductionRecipeId("cultivate_berries")) }
-                        .Concat(availableBuildingIds.Where(id=>id.ToString()=="animal_pasture").Select(TechnologyUnlock.Building))
-                        .Concat(production.All.Where(recipe => recipe.SiteKind == ProductionSiteKind.PrimitiveCropPlot &&
-                            recipe.Id != new ProductionRecipeId("cultivate_berries"))
-                            .Select(recipe => TechnologyUnlock.Recipe(recipe.Id)))),
-                new TechnologyDefinition(T("weaving"), "Weaving", new[] { T("fiber_working"), T("organized_labor") }, TimeSpan.FromDays(4),
-                    new[] { C("weaving") }),
-                new TechnologyDefinition(T("advanced_stonecraft"), "Advanced Stonecraft",
-                    new[] { T("stone_tools"), T("woodworking"), T("hunting") }, TimeSpan.FromDays(5),
-                    availableBuildingIds.Contains(new BuildingDefinitionId("well"))
-                        ? new[] { C("advanced_stonecraft"), TechnologyUnlock.Building(new BuildingDefinitionId("well")) }
-                        : new[] { C("advanced_stonecraft") }),
-                new TechnologyDefinition(T("industrial_extraction"), "Industrial Extraction",
-                    new[] { T("advanced_stonecraft"), T("organized_labor") }, TimeSpan.FromDays(5),
-                    new[] { C("industrial_extraction") }),
-                new TechnologyDefinition(T("restorative_mining"), "Restorative Mining",
-                    new[] { T("industrial_extraction") }, TimeSpan.FromDays(5),
-                    new[] { C("mine_restoration") }),
-                new TechnologyDefinition(T("seasonal_preparation"), "Seasonal Preparation",
-                    new[] { T("food_preservation"), T("primitive_agriculture") }, TimeSpan.FromDays(5),
-                    new[] { C("seasonal_preparation") },
-                    description: "Plan food, shelter and field work around the changing seasons."),
-                new TechnologyDefinition(T("standardization"), "Standardization",
-                    new[] { T("restorative_mining"), T("weaving") }, TimeSpan.FromDays(5),
-                    new[] { C("standardization") },
-                    description: "Shared measures and repeatable methods make workshops more dependable."),
-                new TechnologyDefinition(T("militia"), "Settlement Militia",
-                    new[] { T("basic_survival") }, TimeSpan.FromDays(3),
-                    new[] { C("militia") },
-                    description: "Separate trained defenders from the civilian workforce."),
-                new TechnologyDefinition(T("formation_training"), "Formation Training",
-                    new[] { T("militia") }, TimeSpan.FromDays(4),
-                    new[] { C("formation_training") },
-                    description: "Drill soldiers to move and fight as a disciplined squad."),
-                new TechnologyDefinition(T("military_organization"), "Military Organization",
-                    new[] { T("formation_training"), T("organized_labor") }, TimeSpan.FromDays(5),
-                    new[] { C("military_organization") },
-                    description: "A permanent command structure raises the active squad limit from two to four."),
-                new TechnologyDefinition(T("military_logistics"), "Military Logistics",
-                    new[] { T("military_organization"), T("food_preservation") }, TimeSpan.FromDays(5),
-                    new[] { C("military_logistics") },
-                    description: "Prepare food and equipment for forces operating away from the settlement."),
-                new TechnologyDefinition(T("fortification"), "Fortification",
-                    new[] { T("military_logistics"), T("advanced_stonecraft") }, TimeSpan.FromDays(6),
-                    new[] { C("fortification") },
-                    description: "Coordinate defended approaches, gates and hardened positions."),
-                new TechnologyDefinition(T("observation"), "Systematic Observation",
-                    new[] { T("basic_survival") }, TimeSpan.FromDays(2),
-                    new[] { C("observation") },
-                    description: "Compare repeated observations instead of relying on a single impression."),
-                new TechnologyDefinition(T("herbalism"), "Herbalism",
-                    new[] { T("observation"), T("gathering") }, TimeSpan.FromDays(3),
-                    new[] { C("herbalism") },
-                    description: "Identify useful plants and record safe ways to prepare them."),
-                new TechnologyDefinition(T("practical_anatomy"), "Practical Anatomy",
-                    new[] { T("herbalism"), T("hunting") }, TimeSpan.FromDays(4),
-                    new[] { C("practical_anatomy") },
-                    description: "Use practical knowledge of bodies to improve treatment and survival."),
-                new TechnologyDefinition(T("record_keeping"), "Record Keeping",
-                    new[] { T("practical_anatomy"), T("organized_labor") }, TimeSpan.FromDays(5),
-                    new[] { C("record_keeping") },
-                    description: "Preserve observations, obligations and results beyond a single memory."),
-                new TechnologyDefinition(T("natural_philosophy"), "Natural Philosophy",
-                    new[] { T("record_keeping"), T("advanced_stonecraft") }, TimeSpan.FromDays(6),
-                    new[] { C("natural_philosophy") },
-                    description: "Connect craft, nature and evidence into a shared body of knowledge."),
-                new TechnologyDefinition(T("kinship"), "Kinship Customs",
-                    new[] { T("basic_survival") }, TimeSpan.FromDays(2),
-                    new[] { C("kinship") },
-                    description: "Make family duties, protection and inheritance explicit."),
-                new TechnologyDefinition(T("settlement_council"), "Settlement Council",
-                    new[] { T("kinship"), T("shelter_construction") }, TimeSpan.FromDays(3),
-                    new[] { C("settlement_council") },
-                    description: "Resolve shared work and disputes through an acknowledged council."),
-                new TechnologyDefinition(T("exchange_and_measures"), "Exchange and Measures",
-                    new[] { T("settlement_council"), T("organized_labor") }, TimeSpan.FromDays(4),
-                    new[] { C("exchange_and_measures") },
-                    description: "Common measures make obligations and exchange understandable."),
-                new TechnologyDefinition(T("land_administration"), "Land Administration",
-                    new[] { T("exchange_and_measures"), T("record_keeping") }, TimeSpan.FromDays(5),
-                    new[] { C("land_administration") },
-                    description: "Track fields, homes and duties as the settlement grows."),
-                new TechnologyDefinition(T("customary_law"), "Customary Law",
-                    new[] { T("land_administration"), T("military_organization") }, TimeSpan.FromDays(6),
-                    new[] { C("customary_law") },
-                    description: "Turn accepted customs into predictable rules for the whole community."),
-                new TechnologyDefinition(T("stone_age_mastery"), "Stone Age Mastery",
-                    new[] { T("seasonal_preparation"), T("standardization"), T("fortification"),
-                        T("natural_philosophy"), T("customary_law") },
-                    TimeSpan.FromDays(6), new[] { C("stone_age_completed") })
-            };
-            return new TechnologyCatalog(definitions, new TechnologyUnlockTargets(availableBuildingIds,
-                production.All.Select(x => x.Id), capabilities));
+            return StoneAgeResearchPlan.Create(production, buildingIds, startsWithStoneTools);
         }
     }
 

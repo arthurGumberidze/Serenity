@@ -1,12 +1,19 @@
 # TASK_GRAPH.md
 
-UI08-R4 research proposal (2026-11-01): **AWAITING_USER_REVIEW**, supersedes R3's layout/dependency proposal.
+UI08-R4 runtime implementation (2026-11-02): **DONE**, approved by the user, including group-owned
+research and the 4 -> 5 -> 6 capacity rule. Actual single-parent graph, practice/material gates, science
+effects, resident control cleanup and circular Unity view are implemented. EditMode 28/28, research/group
+and inspector PlayMode checks pass. Final compile 0 errors / 139 warnings; immutable Windows build 0 errors /
+52 warnings; exact-binary native route PASS, exit 0, complete 1920x1080 graph verified and visually inspected.
+Evidence: `docs/validation/UI08ResearchR4.md`. Next is user retest on a new game, not old-save migration.
+
+Historical UI08-R4 research proposal (2026-11-01): **APPROVED AND IMPLEMENTED** above; supersedes R3.
 Anno-inspired circular hubs and top-down local trees replace horizontal OR rails. Each research has one
 predecessor, all edges remain visible, and cross-direction prerequisites are removed in the proposal data.
 51 nodes/33 retained IDs; graph, geometry, demo-controller checks and offline HTML bundling PASS. Browser
 rendering and Unity implementation remain unverified/not performed. See `docs/validation/UI08ResearchProposalR4.md`.
 
-UI08-R3 research overhaul (2026-11-01): **AWAITING_USER_REVIEW**. The user requires HTML approval before
+Historical UI08-R3 research overhaul (2026-11-01): **SUPERSEDED BY R4**. The user required HTML approval before
 implementation. The offline 51-technology proposal, AND/OR graph, future-mechanic boundaries, balance and epoch
 routes are prepared. Syntax/catalog/controller-with-DOM-stub checks and standalone HTML build pass; rendered
 visual verification remains pending after the browser rejected local-file navigation. No Unity changes or

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using Game.Infrastructure;
 using Game.Domain.Control;
+using Game.Domain.Buildings;
 using Game.Domain.Military;
 using Game.Domain.Work;
 using Game.Presentation.AI;
@@ -79,7 +80,7 @@ namespace Game.Tests.PlayMode
             ui.RefreshNow();
             var researchText = string.Join("\n", ui.RootVisual.Q("main-panel").Query<Label>().ToList()
                 .Select(x => x.text));
-            Assert.That(researchText, Does.Contain(RussianTextCatalog.Get("ui.research.title")));
+            Assert.That(researchText, Does.Contain("Дерево знаний"));
             Assert.That(researchText, Does.Contain(RussianTextCatalog.Content("technology", root.Technologies.All.First().Id.ToString())));
 
             ui.SetPanel(GameplayPanel.Build);
@@ -92,17 +93,21 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(900000)]
         public IEnumerator UserFeedbackWorkspacesRenderTreesRecruitmentAndBlockTheWorldPointer()
         {
             LocalSceneCompositionRoot root = null;
-            for (var frame = 0; frame < 2400; frame++)
+            var readyDeadline=Time.realtimeSinceStartup+780f;
+            while(Time.realtimeSinceStartup<readyDeadline)
             {
                 root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
-                if (root?.GameplayUi != null) break;
+                if (root?.IsInitialized == true) break;
                 yield return null;
             }
+            Assert.That(root?.IsInitialized,Is.True,"Wait for the canonical world/snow readiness gate, not just the early UI adapter.");
             Assert.That(root?.GameplayUi, Is.Not.Null);
             var ui = root.GameplayUi;
+            TestContext.WriteLine("R4 gameplay composition ready at "+Time.realtimeSinceStartup);
 
             Screen.SetResolution(1920, 1080, false);
             yield return null;
@@ -114,11 +119,8 @@ namespace Game.Tests.PlayMode
             Assert.That(ui.RootVisual.Q("research-node-controlled_fire"), Is.Not.Null);
             var connectorLayer = ui.RootVisual.Q("research-prerequisite-connectors");
             Assert.That(connectorLayer, Is.Not.Null);
-            Assert.That((int)connectorLayer.userData, Is.GreaterThanOrEqualTo(root.Technologies.All.Count - 1),
-                "Every node must remain connected to a readable branch path.");
-            Assert.That((int)connectorLayer.userData, Is.LessThan(root.Technologies.All.Sum(value =>
-                    value.Prerequisites.Count)),
-                "Secondary cross-branch requirements must stay in the detail card instead of creating line clutter.");
+            Assert.That((int)connectorLayer.userData, Is.EqualTo(root.Technologies.All.Sum(value =>
+                    value.Prerequisites.Count)), "All actual prerequisites must be visible.");
             Assert.That(connectorLayer.worldBound.width, Is.GreaterThan(100f));
             Assert.That(connectorLayer.worldBound.height, Is.GreaterThan(100f));
             Assert.That(ui.RootVisual.Q("research-node-basic_survival")
@@ -127,13 +129,45 @@ namespace Game.Tests.PlayMode
                 .ClassListContains("research-state-locked"), Is.True);
             var researchPanel = ui.RootVisual.Q<ScrollView>("main-panel");
             var researchViewport = researchPanel.contentViewport.worldBound;
-            var branches = ui.RootVisual.Q("research-branch-columns").worldBound;
+            var branches = ui.RootVisual.Q("research-dependency-tree").worldBound;
             var capstone = ui.RootVisual.Q("research-node-stone_age_mastery").worldBound;
             Assert.That(branches.xMin, Is.GreaterThanOrEqualTo(researchViewport.xMin - 1f));
             Assert.That(branches.xMax, Is.LessThanOrEqualTo(researchViewport.xMax + 1f),
                 "All five research branches must fit the 1920x1080 viewport without horizontal clipping.");
             Assert.That(capstone.yMax, Is.LessThanOrEqualTo(researchViewport.yMax + 1f),
                 "The full research tree must fit the 1920x1080 viewport without cutting descriptions.");
+            var fireNode=ui.RootVisual.Q<Button>("research-node-controlled_fire");
+            Submit(fireNode);
+            yield return null;
+            Assert.That(ui.RootVisual.Q("research-selected-detail").Query<Label>().ToList().Any(x=>x.text=="Управляемый огонь"),Is.True);
+            Assert.That(ui.RootVisual.Q<Button>("research-start-selected"),Is.Not.Null);
+            Assert.That(fireNode.resolvedStyle.borderTopLeftRadius,Is.GreaterThanOrEqualTo(fireNode.resolvedStyle.width/2));
+            var scientist=root.MaleDemoCharacter.Id;
+            var professions=root.DirectWorkCommands.ProfessionGroups;
+            var group=professions.Primary(WorkGroupRole.Scientists);
+            professions.Reassign(scientist,group.Id);
+            var hour=(int)(root.Clock.State.CalendarTicks%TimeSpan.TicksPerDay/TimeSpan.TicksPerHour);
+            root.Work.SetMemberShift(group.Id,scientist,hour>=6&&hour<18?WorkShiftKind.Day:WorkShiftKind.Night);
+            yield return new WaitForSecondsRealtime(.6f);
+            root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1));
+            Assert.That(root.Research.IsAssigned(scientist),Is.True,"Active professional-group shift supplies researchers automatically.");
+            Submit(ui.RootVisual.Q<Button>("research-start-selected"));
+            Assert.That(root.Research.ActiveProject.TechnologyId.ToString(),Is.EqualTo("controlled_fire"));
+            ui.RefreshNow();
+            yield return null;
+            TestContext.WriteLine("R4 research UI ready; actual render size="+Screen.width+"x"+Screen.height);
+            Directory.CreateDirectory("Artifacts/UI08R4");
+            yield return new WaitForEndOfFrame();
+            var capture=new Texture2D(Screen.width,Screen.height,TextureFormat.RGBA32,false);
+            capture.ReadPixels(new Rect(0,0,Screen.width,Screen.height),0,0);
+            capture.Apply();
+            File.WriteAllBytes("Artifacts/UI08R4/research-editor.png",capture.EncodeToPNG());
+            Object.Destroy(capture);
+            TestContext.WriteLine("R4 research capture saved");
+            professions.Reassign(scientist,professions.Primary(WorkGroupRole.General).Id);
+            yield return new WaitForSecondsRealtime(.6f);
+            root.AiRuntime.AdvanceForDebug(TimeSpan.FromSeconds(1));
+            Assert.That(root.Research.IsAssigned(scientist),Is.False,"Leaving the profession removes research assignment.");
 
             ui.SetPanel(GameplayPanel.Dynasty);
             ui.RefreshNow();
@@ -188,6 +222,10 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.RootVisual.Q("character-identity-metrics"), Is.Not.Null);
             Assert.That(root.GameplayUi.RootVisual.Q("character-wellbeing-card"), Is.Not.Null);
             Assert.That(root.GameplayUi.RootVisual.Q("character-activity-card"), Is.Not.Null);
+            Assert.That(root.GameplayUi.RootVisual.Q<Button>("character-seek-care").text,Is.EqualTo("Лечиться"));
+            Assert.That(root.GameplayUi.RootVisual.Q("command-toggle-research"),Is.Null);
+            Assert.That(root.GameplayUi.RootVisual.Q("selection-inspector").Query<Button>().ToList()
+                .Any(x=>new[]{"Обычный","Высокий","Срочно","Исследовать","Разведать","Военная задача"}.Contains(x.text)),Is.False);
             var characterProgress = root.GameplayUi.RootVisual.Q<ProgressBar>();
             Assert.That(characterProgress, Is.Not.Null);
             var progressBackground = characterProgress.Q(className: "unity-progress-bar__background");

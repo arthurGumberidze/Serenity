@@ -1,5 +1,20 @@
 # PROJECT_STATE.md
 
+## UI08-R4 — approved research implementation complete (2026-11-02)
+
+The user approved the circular HTML proposal for Unity and separately confirmed the group contribution cap.
+51 definitions now drive the runtime graph and actual single-parent prerequisites. Research reads practical
+facts and pays materials through canonical inventories; professional groups/shifts supply workers. Capacity
+is 4, then 5/6 via science, with retained individual skill/health rates. Future-only nodes cannot be started.
+The compact inspector now says «Лечиться» and has no personal priority/research/scout/military assignment
+controls; task/object priorities remain. All 28 focused EditMode cases passed; research/group PlayMode and
+inspector PlayMode passed. Final compile: 0 errors / 139 warnings; Windows build: 0 errors / 52 warnings.
+Exact-binary native qualification passed all predicates and exited 0, including save/load, map, military/TPS,
+victory/defeat and the complete 1920x1080 graph (612 physical pixels high). Screenshot visually inspected.
+Deliverable: `Builds/UI08R4/Serenity.exe`; evidence: `docs/validation/UI08ResearchR4.md`.
+No old-save migration. The 3–6-hour balance target is estimated, not a measured full playthrough.
+Next: user retest on a new game. The proposal-only statuses below are historical and superseded.
+
 ## UI08-R4 — revised circular HTML proposal awaiting approval (2026-11-01)
 
 The user rejected the horizontal OR-link tangle and requested Anno-like circular research branches.

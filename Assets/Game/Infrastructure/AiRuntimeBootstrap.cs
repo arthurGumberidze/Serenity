@@ -17,6 +17,7 @@ using Game.Simulation.AI;
 using Game.Simulation.Buildings;
 using Game.Simulation.Dynasties;
 using Game.Simulation.Health;
+using Game.Simulation.Military;
 using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Resources;
@@ -80,6 +81,13 @@ namespace Game.Infrastructure
             Seed(inventories.Get(new InventoryOwner(InventoryOwnerKind.Character, residentIds[0])), "stone", 20);
 
             var research = new ResearchService(technologies, new CharacterResearchRateProvider(characters, health));
+            research.SettlementContext = new ResearchSettlementContext(inventories, resources,
+                ()=>inventories.All.Select(x=>x.Owner), key=>key=="population"?
+                    residentIds.Count(id=>characters.TryGet(id,out var person)&&person.LifeState==CharacterLifeState.Alive):
+                    key=="soldiers"?residentIds.Count(id=>characters.TryGet(id,out var person)&&
+                        person.LifeState==CharacterLifeState.Alive&&MilitaryFormationRules.HasMilitaryProfession(person)):
+                    key=="shelter"?buildings.All.Count(x=>x.IsOperational && x.OwnerSideId==side &&
+                        new[]{"primitive_shelter","stone_age_hut","communal_house"}.Contains(x.DefinitionId.FamilyId.ToString())):0);
             var transfers = new ResourceTransferService(inventories);
             var worldPiles = new WorldPileService(resources, inventories);
             var production = new ProductionService(recipes, resources, inventories, buildings, transfers,

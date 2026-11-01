@@ -106,10 +106,76 @@ namespace Game.Simulation.Research
         private readonly Dictionary<StableEntityId, WorkerProgress> workers =
             new Dictionary<StableEntityId, WorkerProgress>();
         private ResearchUnlockSet unlocks;
+        private long rateCacheTick = -1;
+        private readonly Dictionary<StableEntityId,int> effectiveRates = new Dictionary<StableEntityId,int>();
+        public IResearchSettlementContext SettlementContext { get; set; }
+        public ResearchBalanceSettings Settings { get; }
+        public int EffectiveWorkerLimit => Settings.BaseWorkerLimit + (IsCompleted(new TechnologyId("record_keeping")) ? 1 : 0) +
+            (IsCompleted(new TechnologyId("knowledge_transfer")) ? 1 : 0);
+        public int ScienceBonusPercent => (IsCompleted(new TechnologyId("observation")) ? 5 : 0) +
+            (IsCompleted(new TechnologyId("season_calendar")) ? 5 : 0) +
+            (IsCompleted(new TechnologyId("natural_philosophy")) ? 10 : 0);
 
-        public ResearchService(TechnologyCatalog technologyCatalog, IResearchRateProvider rateProvider = null)
+        public long PracticalTarget(string key) => Settings.PracticalTargets[key];
+        public static string PracticalName(string key) => key=="food"?"Запасы пищи":key=="population"?"Живые жители":
+            key=="herbs"?"Лекарственные растения":key=="hides"?"Шкуры":key=="soldiers"?"Военные":"Построенное жильё";
+        public long PracticalValue(string key) => SettlementContext?.Fact(key) ?? 0;
+
+        public IReadOnlyList<string> GetBlockers(TechnologyId id)
+        {
+            var definition=catalog.Get(id);var result=new List<string>();var p=definition.Profile;
+            if(p?.IsFuture==true) { result.Add("Ожидает будущую игровую механику"); return result; }
+            foreach(var required in definition.Prerequisites)
+                if(!completed.Contains(required))result.Add("Сначала: "+catalog.Get(required).DisplayName);
+            if(p==null)return result;
+            foreach(var key in p.PracticalRequirements)
+                if(PracticalValue(key)<PracticalTarget(key))result.Add(PracticalName(key)+": "+PracticalValue(key)+" / "+PracticalTarget(key));
+            if((p.WoodCost>0||p.StoneCost>0) && (SettlementContext==null||!SettlementContext.CanPay(p)))
+                result.Add("Материалы: древесина "+p.WoodCost+", камень "+p.StoneCost);
+            if(p.Id=="stone_age_mastery")
+            {
+                var earned=catalog.All.Where(x=>completed.Contains(x.Id)&&!x.StartingKnowledge&&
+                    x.Profile!=null&&!x.Profile.IsFuture&&StoneAgeResearchPlan.Branches.Contains(x.Profile.Branch)).ToArray();
+                var developed=StoneAgeResearchPlan.Branches.Count(b=>earned.Count(x=>x.Profile.Branch==b)>=Settings.DiscoveriesPerDirection);
+                var keys=StoneAgeResearchPlan.Branches.Count(b=>earned.Any(x=>x.Profile.Branch==b&&x.Profile.IsKey));
+                if(earned.Length<Settings.EpochDiscoveries)result.Add("Изучено технологий: "+earned.Length+" / "+Settings.EpochDiscoveries);
+                if(developed<Settings.EpochDirections)result.Add("Развитые направления (открытий в каждом: "+Settings.DiscoveriesPerDirection+"): "+developed+" / "+Settings.EpochDirections);
+                if(keys<Settings.EpochDirections)result.Add("Направления с достижениями: "+keys+" / "+Settings.EpochDirections);
+                foreach(var foundation in new[]{"controlled_fire","stone_tools","shelter_construction"})
+                    if(!completed.Contains(new TechnologyId(foundation)))result.Add("Основа: "+catalog.Get(new TechnologyId(foundation)).DisplayName);
+                foreach(var key in new[]{"shelter","food","population"})
+                    if(PracticalValue(key)<PracticalTarget(key))result.Add(PracticalName(key)+": "+PracticalValue(key)+" / "+PracticalTarget(key));
+            }
+            return result;
+        }
+
+        public void SynchronizeWorkers(IEnumerable<StableEntityId> eligible, long? currentCalendarTick = null)
+        {
+            if(currentCalendarTick.HasValue)LastProcessedTick=Math.Max(LastProcessedTick,currentCalendarTick.Value);
+            var expected=new HashSet<StableEntityId>(eligible);
+            foreach(var id in workers.Keys.Where(x=>!expected.Contains(x)).ToArray())UnassignWorker(id);
+            foreach(var id in expected)if(!workers.ContainsKey(id))TryAssignWorker(id);
+        }
+
+        private int EffectiveRate(StableEntityId id,long tick)
+        {
+            if(rateCacheTick!=tick)
+            {
+                effectiveRates.Clear();
+                foreach(var worker in workers.Keys)effectiveRates[worker]=Math.Max(0,rates.GetRatePerThousand(worker));
+                var contributing=Math.Min(EffectiveWorkerLimit,workers.Count);
+                foreach(var worker in workers.Keys)
+                    effectiveRates[worker]=(int)(effectiveRates[worker]*(long)contributing*(100L+ScienceBonusPercent)/Math.Max(1,workers.Count)/100);
+                rateCacheTick=tick;
+            }
+            return effectiveRates.TryGetValue(id,out var value)?value:0;
+        }
+
+        public ResearchService(TechnologyCatalog technologyCatalog, IResearchRateProvider rateProvider = null,
+            ResearchBalanceSettings settings = null)
         {
             catalog = technologyCatalog ?? throw new ArgumentNullException(nameof(technologyCatalog));
+            Settings = settings ?? new ResearchBalanceSettings();
             rates = rateProvider ?? new ConstantResearchRateProvider();
             foreach (var technology in catalog.StartingKnowledge) completed.Add(technology.Id);
             RebuildUnlocks();
@@ -137,7 +203,7 @@ namespace Game.Simulation.Research
         {
             var definition = catalog.Get(id);
             return !completed.Contains(id) && (ActiveProject == null || ActiveProject.TechnologyId != id) &&
-                ArePrerequisitesMet(definition);
+                GetBlockers(id).Count == 0;
         }
 
         public IReadOnlyList<TechnologyDefinition> AvailableTechnologies => catalog.All.Where(x => IsAvailable(x.Id)).ToArray();
@@ -157,6 +223,16 @@ namespace Game.Simulation.Research
         public bool Start(TechnologyId id)
         {
             if (ActiveProject != null || !IsAvailable(id)) return false;
+            var profile=catalog.Get(id).Profile;
+            if(profile!=null && (profile.WoodCost>0||profile.StoneCost>0) &&
+                (SettlementContext==null||!SettlementContext.TryPay(profile)))return false;
+            // A professional group can remain assigned while no project exists. Its idle interval must
+            // never become work for the next project, including when a tier did not tick that interval.
+            foreach(var worker in workers.Values)
+            {
+                worker.LastProcessedTick=Math.Max(worker.LastProcessedTick,LastProcessedTick);
+                worker.Remainder=0;
+            }
             ActiveProject = ResearchProject.Create(catalog.Get(id), LastProcessedTick);
             return true;
         }
@@ -177,6 +253,7 @@ namespace Game.Simulation.Research
 
         public bool TryAssignWorker(StableEntityId workerId)
         {
+            rateCacheTick=-1;
             if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
             return workers.TryAdd(workerId, new WorkerProgress
                 { Id = workerId, LastProcessedTick = LastProcessedTick });
@@ -200,7 +277,7 @@ namespace Game.Simulation.Research
             return removed;
         }
 
-        public bool UnassignWorker(StableEntityId workerId) => workers.Remove(workerId);
+        public bool UnassignWorker(StableEntityId workerId) { rateCacheTick=-1; return workers.Remove(workerId); }
 
         public long AdvanceWorkerTo(StableEntityId workerId, long targetCalendarTick, bool activelyResearching)
         {
@@ -214,7 +291,7 @@ namespace Game.Simulation.Research
             worker.LastProcessedTick = targetCalendarTick;
             LastProcessedTick = Math.Max(LastProcessedTick, targetCalendarTick);
             if (!activelyResearching || elapsed == 0 || ActiveProject == null) return 0;
-            var rate = rates.GetRatePerThousand(workerId);
+            var rate = EffectiveRate(workerId,targetCalendarTick);
             if (rate <= 0) return 0;
             var numerator = checked(elapsed * (long)rate + worker.Remainder);
             var work = numerator / 1000;
@@ -283,6 +360,7 @@ namespace Game.Simulation.Research
                     throw new ArgumentException("Duplicate research worker.", nameof(state));
             completed.Clear(); foreach (var id in restoredCompleted) completed.Add(id);
             workers.Clear(); foreach (var pair in restoredWorkers) workers.Add(pair.Key, pair.Value);
+            rateCacheTick=-1;
             ActiveProject = restoredProject;
             LastProcessedTick = state.LastProcessedTick;
             LastCompletionTick = -1;
@@ -314,6 +392,7 @@ namespace Game.Simulation.Research
             if (ActiveProject == null || !completed.Add(ActiveProject.TechnologyId))
                 throw new InvalidOperationException("Research completion may be committed only once.");
             LastCompletionTick = completionTick;
+            rateCacheTick=-1;
             CompletionCount = checked(CompletionCount + 1);
             ActiveProject = null;
             RebuildUnlocks();

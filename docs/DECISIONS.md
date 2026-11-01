@@ -2663,3 +2663,34 @@ Hover/focus reveals names; selection exposes full effects/requirements in the ri
 segments are positioned from configuration, and a geometry check rejects crossings and node intersections.
 The milestone remains separate and military remains optional. The 51 IDs, including 33 existing IDs, are
 retained; future-only nodes cannot gate playable nodes. Approval boundary from D-239 remains in effect.
+
+## D-241 — Implement approved circular research with group-owned work (2026-11-02)
+
+The user explicitly approved R4 for Unity, then confirmed the explained effective contribution cap and
+professional-group assignment. D-239/D-240 approval gates are satisfied. One actual prerequisite per technology,
+local top-down branches, circle hubs and a separate aggregate epoch milestone replace the old catalog/UI graph.
+The 51-node immutable content/layout plan retains 33 legacy IDs and existing Domain/Simulation authority.
+
+ResearchService reads canonical practical facts and pays selected material costs through existing inventories.
+The cap is 4, raised by record keeping/knowledge transfer to 5/6. Each assigned worker's individual rate is scaled
+by min(capacity, assigned count)/assigned count, then by the 5+5+10 percent science upgrades; nonworking members
+do not contribute. The existing central callback reconciles the player scientist group's active shift. Worker
+admission starts at current calendar time so an unstaffed interval is never paid retroactively. No per-NPC loop,
+new work authority, mass-NPC redesign or external dependency is introduced. ResearchBalanceSettings holds
+epoch/practical/capacity thresholds; timing/layout/effects remain authored profile data.
+
+Eleven future-only technologies remain blocked previews and never gate playable nodes or the milestone.
+Audit correction: restorative_mining already has consumers through IsCompleted(RestorativeTechnology) in
+industrial extraction. Preserve that functioning integration; do not mistake a missing capability consumer
+for missing behavior. Later historical eras remain U38, not an invented transition to an unsupported era.
+
+The resident inspector remains compact. Care is renamed «Лечиться» without changing the existing care command's
+semantics. Personal priority/research/scout/military assignment buttons and the old selection-ribbon research
+shortcut are removed. Task/object priorities and professional-group membership remain the player's controls.
+Old saves are untouched and unmigrated per the user; validation uses isolated test states/new games.
+
+The render check also exposed stale world resource labels over the research menu. A presentation callback
+suppresses hover/work labels while a full-screen workspace is visible; simulation and selection authority are
+unchanged. Start aligns existing workers' checkpoints as well as newly admitted ones, preventing idle time
+between projects from becoming research. Native release qualification captures/checks the complete graph at
+1920x1080, because the Editor Game View does not honor Screen.SetResolution.

@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using Game.Domain;
 using Game.Domain.Campaign;
+using Game.Domain.Characters;
+using Game.Domain.Work;
 using Game.Domain.Dynasties;
 using Game.Domain.Military;
 using Game.Domain.World;
@@ -47,6 +49,9 @@ namespace Game.Infrastructure.Integration
             public float frame_p95_ms;
             public string menu_capture;
             public string management_capture;
+            public string research_capture;
+            public bool research_fullscreen_fits;
+            public float research_viewport_height_px;
             public string people_capture;
             public string realm_capture;
             public string tps_capture;
@@ -100,7 +105,8 @@ namespace Game.Infrastructure.Integration
                 result.save_load_stable_ids && result.pause_and_focus && result.victory_continues &&
                 result.defeat_recovery_actions && result.no_debug_shortcuts && result.resolution_1920x1080 &&
                 result.resolution_1280x720_125 && result.performance_measured &&
-                Existing(result.menu_capture, result.management_capture, result.people_capture,
+                result.research_fullscreen_fits &&
+                Existing(result.menu_capture, result.management_capture, result.research_capture, result.people_capture,
                     result.realm_capture, result.tps_capture, result.victory_capture, result.defeat_capture);
             var report = Path.Combine(output, "ui08-player-smoke.json");
             File.WriteAllText(report, JsonUtility.ToJson(result, true));
@@ -149,6 +155,7 @@ namespace Game.Infrastructure.Integration
             if (root == null) throw new TimeoutException("Local gameplay did not initialize within 600 seconds.");
             while (FindAnyObjectByType<WorldLoadingOverlay>() != null && Time.realtimeSinceStartup < deadline)
                 yield return null;
+            if(!root.IsInitialized)throw new TimeoutException("The canonical world preparation gate did not finish.");
 
             var ui = root.GameplayUi;
             ui.SetUiScale(1.25f);
@@ -200,6 +207,19 @@ namespace Game.Infrastructure.Integration
             result.management_capture = Path.Combine(output, "ui08-management-1280x720-125.png");
             ui.Navigate(GameplayUiRouteId.Knowledge); ui.RefreshNow();
             yield return Capture(result.management_capture);
+            yield return SetResolution(1920,1080);
+            ui.SetUiScale(1f);ui.RefreshNow();
+            for(var frame=0;frame<20;frame++)yield return null;
+            var researchViewport=ui.RootVisual.Q("research-viewport").worldBound;
+            var researchTree=ui.RootVisual.Q("research-dependency-tree").worldBound;
+            result.research_viewport_height_px=researchViewport.height*Screen.height/ui.RootVisual.worldBound.height;
+            result.research_fullscreen_fits=Screen.width==1920&&Screen.height==1080&&
+                result.research_viewport_height_px>=600&&
+                researchTree.xMin>=researchViewport.xMin-1&&researchTree.xMax<=researchViewport.xMax+1&&
+                researchTree.yMin>=researchViewport.yMin-1&&researchTree.yMax<=researchViewport.yMax+1;
+            result.research_capture=Path.Combine(output,"ui08-research-1920x1080.png");
+            yield return Capture(result.research_capture);
+            yield return SetResolution(1280,720);ui.SetUiScale(1.25f);ui.RefreshNow();
             result.people_capture = Path.Combine(output, "ui08-people-1280x720-125.png");
             ui.Navigate(GameplayUiRouteId.People); ui.RefreshNow();
             yield return Capture(result.people_capture);
@@ -316,6 +336,8 @@ namespace Game.Infrastructure.Integration
         {
             var members = root.PlayerCharacterIds.Where(id => root.HealthFamily.GetCapabilities(id).CanFight).ToArray();
             if (members.Length == 0) throw new InvalidOperationException("No combat-capable player resident is available.");
+            var warriors=root.DirectWorkCommands.ProfessionGroups.Primary(WorkGroupRole.Warriors);
+            foreach(var id in members)root.DirectWorkCommands.ProfessionGroups.Reassign(id,warriors.Id);
             var member = members[0];
             return root.MilitaryUnits.Create(new MilitaryUnitId(DeterministicStableId.Create(20261031, key)),
                 new MilitarySideId("player"), members, member,
@@ -325,6 +347,7 @@ namespace Game.Infrastructure.Integration
         private static MilitaryUnitState CreateEnemyUnit(LocalSceneCompositionRoot root, string key, string location)
         {
             var member = root.StarterEnemyAi.Residents[0];
+            root.Characters.Get(member).AssignProfession(new ProfessionId("military"));
             return root.MilitaryUnits.Create(new MilitaryUnitId(DeterministicStableId.Create(20261031, key)),
                 new MilitarySideId("enemy"), new[] { member }, member,
                 MilitaryUnitRepresentationMode.Aggregate, location);
@@ -333,6 +356,7 @@ namespace Game.Infrastructure.Integration
         private static void ReserveEnemyNonCombatants(LocalSceneCompositionRoot root, string key)
         {
             var roster = root.StarterEnemyAi.Residents.Skip(1).ToArray();
+            foreach(var id in roster)root.Characters.Get(id).AssignProfession(new ProfessionId("military"));
             root.MilitaryUnits.Create(new MilitaryUnitId(DeterministicStableId.Create(20261031, key)),
                 new MilitarySideId("enemy"), roster, roster[0], MilitaryUnitRepresentationMode.Aggregate, "local");
         }

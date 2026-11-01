@@ -23,6 +23,12 @@ namespace Game.Tests.Editor
     [Category("U16")]
     public sealed class ResearchFrameworkTests
     {
+        private sealed class SuppliedSettlement : IResearchSettlementContext
+        {
+            public long Fact(string key)=>1000;
+            public bool CanPay(ResearchTechnologyProfile profile)=>true;
+            public bool TryPay(ResearchTechnologyProfile profile)=>true;
+        }
         private sealed class Fixture
         {
             public readonly ResourceCatalog Resources;
@@ -31,12 +37,13 @@ namespace Game.Tests.Editor
             public readonly ResearchService Research;
             public readonly StableEntityId Worker = Id(100);
 
-            public Fixture(IResearchRateProvider rates = null)
+            public Fixture(IResearchRateProvider rates = null, bool startsWithStoneTools = false)
             {
                 Resources = CreateResources();
                 ProductionCatalog = ProductionCatalog.CreateStoneAge(Resources);
-                Technologies = TechnologyCatalog.CreateStoneAge(ProductionCatalog, BuildingIds);
+                Technologies = TechnologyCatalog.CreateStoneAge(ProductionCatalog, BuildingIds, startsWithStoneTools);
                 Research = new ResearchService(Technologies, rates);
+                Research.SettlementContext=new SuppliedSettlement();
                 Research.AssignWorker(Worker);
             }
         }
@@ -102,18 +109,18 @@ namespace Game.Tests.Editor
                          "kinship", "settlement_council", "exchange_and_measures", "land_administration",
                          "customary_law" })
                 CollectionAssert.Contains(ids, id);
-            CollectionAssert.AreEquivalent(new[] { "seasonal_preparation", "standardization", "fortification",
-                    "natural_philosophy", "customary_law" },
-                fixture.Technologies.Get(new TechnologyId("stone_age_mastery")).Prerequisites
-                    .Select(value => value.ToString()));
+            Assert.That(fixture.Technologies.All.Count,Is.EqualTo(51));
+            Assert.That(fixture.Technologies.Get(new TechnologyId("stone_age_mastery")).Prerequisites,Is.Empty);
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("stone_age_mastery")),Is.False);
             Assert.That(fixture.Technologies.Get(new TechnologyId("military_organization")).Unlocks
                 .Any(value => value.Kind == TechnologyUnlockKind.Capability &&
                     value.ContentId == "military_organization"), Is.True);
-            CollectionAssert.AreEquivalent(new[] { "gathering", "stone_tools", "militia", "observation", "kinship" },
+            CollectionAssert.AreEquivalent(new[] { "gathering", "stone_tools", "primitive_weapons", "observation", "kinship" },
                 fixture.Technologies.All.Where(value => value.Prerequisites.Count == 1 &&
                         value.Prerequisites[0] == new TechnologyId("basic_survival"))
                     .Select(value => value.Id.ToString()));
             Assert.That(fixture.Research.IsAvailable(new TechnologyId("formation_training")), Is.False);
+            Complete(fixture.Research, fixture.Worker, "primitive_weapons");
             Complete(fixture.Research, fixture.Worker, "militia");
             Assert.That(fixture.Research.IsAvailable(new TechnologyId("formation_training")), Is.True);
             Assert.That(fixture.Research.IsAvailable(new TechnologyId("military_organization")), Is.False);
@@ -123,14 +130,14 @@ namespace Game.Tests.Editor
         {
             var fixture = new Fixture();
             Assert.That(fixture.Research.Start(new TechnologyId("controlled_fire")), Is.True);
-            fixture.Research.AdvanceWorkerTo(fixture.Worker, TimeSpan.FromDays(1).Ticks, true);
+            fixture.Research.AdvanceWorkerTo(fixture.Worker, TimeSpan.FromDays(.75).Ticks, true);
             Assert.That(fixture.Research.ActiveProject.Progress, Is.EqualTo(0.5d).Within(0.000001d));
             fixture.Research.AdvanceWorkerTo(fixture.Worker, TimeSpan.FromDays(2).Ticks, true);
             Assert.That(fixture.Research.IsCompleted(new TechnologyId("controlled_fire")), Is.True);
             Assert.That(fixture.Research.CompletionCount, Is.EqualTo(1));
             fixture.Research.AdvanceWorkerTo(fixture.Worker, TimeSpan.FromDays(3).Ticks, true);
             Assert.That(fixture.Research.CompletionCount, Is.EqualTo(1));
-            Assert.That(fixture.Research.LastCompletionTick, Is.EqualTo(TimeSpan.FromDays(2).Ticks));
+            Assert.That(fixture.Research.LastCompletionTick, Is.EqualTo(TimeSpan.FromDays(1.5).Ticks));
         }
 
         [Test] public void ProductionAndBuildingDefinitionsRemainPresentButAreGatedUntilUnlock()
@@ -170,7 +177,7 @@ namespace Game.Tests.Editor
         {
             var fast = new Fixture(new ConstantResearchRateProvider(1500));
             Assert.That(fast.Research.Start(new TechnologyId("controlled_fire")), Is.True);
-            fast.Research.AdvanceWorkerTo(fast.Worker, TimeSpan.FromDays(1).Ticks, true);
+            fast.Research.AdvanceWorkerTo(fast.Worker, TimeSpan.FromDays(.75).Ticks, true);
             Assert.That(fast.Research.ActiveProject.Progress, Is.EqualTo(0.75d).Within(0.000001d));
             Assert.That(fast.Research.Cancel(), Is.True);
             Assert.That(fast.Research.UnassignWorker(fast.Worker), Is.True);
@@ -260,9 +267,9 @@ namespace Game.Tests.Editor
                 Complete(fixture.Research, fixture.Worker, next.Id.ToString());
             }
             Assert.That(fixture.Research.StoneAgeCompleted, Is.True);
-            Assert.That(fixture.Research.CompletedTechnologies.Count, Is.EqualTo(fixture.Technologies.All.Count));
+            Assert.That(fixture.Research.CompletedTechnologies.Count, Is.EqualTo(fixture.Technologies.All.Count(x=>!x.Profile.IsFuture)));
             Assert.That(fixture.Research.HasCapability(new CapabilityId("stone_age_completed")), Is.True);
-            Assert.That(fixture.Research.CompletionCount, Is.EqualTo(fixture.Technologies.All.Count - completedBefore));
+            Assert.That(fixture.Research.CompletionCount, Is.EqualTo(fixture.Technologies.All.Count(x=>!x.Profile.IsFuture) - completedBefore));
         }
 
         [Test] public void U15ProductionAndU16ResearchAdvanceTogetherForMultipleYears()
@@ -337,6 +344,114 @@ namespace Game.Tests.Editor
             Assert.That(research.ActiveProject, Is.Not.Null);
             Assert.That(timer.ElapsedMilliseconds, Is.LessThan(5000));
             Assert.That(allocated, Is.LessThan(128L * 1024L * 1024L));
+        }
+
+        [Test] public void ApprovedCircularGraphHasSingleLocalPredecessorsAndNoFutureGate()
+        {
+            var fixture=new Fixture();
+            foreach(var definition in fixture.Technologies.All)
+            {
+                var p=definition.Profile;
+                if(p.Branch=="root"||p.Branch=="epoch")continue;
+                Assert.That(definition.Prerequisites.Count,Is.EqualTo(1),p.Id);
+                var parent=fixture.Technologies.Get(definition.Prerequisites[0]);
+                Assert.That(parent.Profile.Branch=="root"||parent.Profile.Branch==p.Branch,Is.True,p.Id);
+                if(!p.IsFuture)Assert.That(parent.Profile.IsFuture,Is.False,p.Id);
+            }
+            Complete(fixture.Research,fixture.Worker,"controlled_fire");
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("cooking")),Is.True);
+            Assert.That(fixture.Research.IsCompleted(new TechnologyId("hunting")),Is.False);
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("pottery")),Is.False);
+        }
+
+        [Test] public void GroupContributionIsBoundedAndNewWorkersDoNotReceiveRetroactiveWork()
+        {
+            var id=new TechnologyId("long_project");
+            var catalog=new TechnologyCatalog(new[]{new TechnologyDefinition(id,"Long project",null,
+                TimeSpan.FromDays(20),null)},new TechnologyUnlockTargets(null,null,null));
+            var service=new ResearchService(catalog);
+            var ids=Enumerable.Range(1,100).Select(Id).ToArray();
+            service.SynchronizeWorkers(ids,TimeSpan.FromDays(10).Ticks);
+            Assert.That(service.Start(id),Is.True);
+            service.AdvanceWorkersTo(TimeSpan.FromDays(11).Ticks,ids);
+            Assert.That(service.ActiveProject.Progress,Is.EqualTo(.2d).Within(.000001));
+            var saved=service.CaptureState();
+            var restored=new ResearchService(catalog);restored.RestoreState(saved);
+            restored.SynchronizeWorkers(new[]{Id(200)},TimeSpan.FromDays(40).Ticks);
+            restored.AdvanceWorkerTo(Id(200),TimeSpan.FromDays(40).Ticks,true);
+            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.2d).Within(.000001));
+            restored.AdvanceWorkerTo(Id(200),TimeSpan.FromDays(41).Ticks,true);
+            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.25d).Within(.000001));
+        }
+
+        [Test] public void MaterialCostIsPaidOnceAndMissingPracticalFactsBlockTheEpoch()
+        {
+            var f=new Fixture();var inventories=new ResourceInventoryRegistry();
+            var owner=new InventoryOwner(InventoryOwnerKind.BuildingStorage,Id(700));
+            var inventory=new ResourceInventory(owner,f.Resources,100);inventories.Add(inventory);
+            inventory.TryAdd(new ResourceId("wood_log"),new ResourceQuantity(10));
+            long population=0;
+            f.Research.SettlementContext=new ResearchSettlementContext(inventories,f.Resources,()=>new[]{owner},key=>population);
+            Assert.That(f.Research.Start(new TechnologyId("controlled_fire")),Is.True);
+            Assert.That(inventory.GetAmount(new ResourceId("wood_log")).Units,Is.EqualTo(7));
+            Assert.That(f.Research.Start(new TechnologyId("controlled_fire")),Is.False);
+            Assert.That(inventory.GetAmount(new ResourceId("wood_log")).Units,Is.EqualTo(7));
+            Assert.That(f.Research.GetBlockers(new TechnologyId("stone_age_mastery")).Any(x=>x.Contains("Живые жители")),Is.True);
+        }
+
+        [Test] public void ExistingGroupDoesNotEarnIdleTimeBeforeANewProject()
+        {
+            var id=new TechnologyId("long_project");
+            var catalog=new TechnologyCatalog(new[]{new TechnologyDefinition(id,"Long project",null,
+                TimeSpan.FromDays(20),null)},new TechnologyUnlockTargets(null,null,null));
+            var service=new ResearchService(catalog);
+            var worker=Id(100);
+            service.AssignWorker(worker);
+            service.SynchronizeWorkers(new[]{worker},TimeSpan.FromDays(10).Ticks);
+            Assert.That(service.Start(id),Is.True);
+            service.AdvanceWorkerTo(worker,TimeSpan.FromDays(11).Ticks,true);
+            Assert.That(service.ActiveProject.Progress,Is.EqualTo(.05d).Within(.000001));
+            service.Cancel();
+            service.SynchronizeWorkers(new[]{worker},TimeSpan.FromDays(30).Ticks);
+            Assert.That(service.Start(id),Is.True);
+            service.AdvanceWorkerTo(worker,TimeSpan.FromDays(31).Ticks,true);
+            Assert.That(service.ActiveProject.Progress,Is.EqualTo(.05d).Within(.000001));
+        }
+
+        [TestCase("peaceful")]
+        [TestCase("scholar")]
+        [TestCase("military")]
+        [TestCase("mixed")]
+        public void ApprovedSpecializationsReachEpochWithoutResearchingTheWholeTree(string route)
+        {
+            var f=new Fixture(startsWithStoneTools:true);
+            var baseIds=new[]{"stone_tools","controlled_fire","shelter_construction","woodworking","organized_labor","advanced_stonecraft"};
+            var routes=new Dictionary<string,string[]> {
+                ["peaceful"]=new[]{"clay_working","hide_working","fishing","cooking","food_preservation","reliable_housing","seasonal_preparation","kinship","settlement_council","spiritual_tradition","shared_storage"},
+                ["scholar"]=new[]{"observation","plant_lore","animal_lore","herbalism","wound_care","season_calendar","record_keeping","knowledge_transfer","natural_philosophy","hunting","fishing"},
+                ["military"]=new[]{"primitive_weapons","militia","territory_guard","formation_training","throwing_weapons","military_organization","fortification","hunting","cooking","food_preservation"},
+                ["mixed"]=new[]{"fishing","cooking","food_preservation","observation","plant_lore","herbalism","wound_care","season_calendar"}
+            };
+            void Learn(string id)
+            {
+                var tech=f.Technologies.Get(new TechnologyId(id));
+                if(f.Research.IsCompleted(tech.Id))return;
+                foreach(var parent in tech.Prerequisites)Learn(parent.ToString());
+                Complete(f.Research,f.Worker,id);
+            }
+            foreach(var id in baseIds.Concat(routes[route]))Learn(id);
+            Assert.That(f.Research.IsAvailable(new TechnologyId("stone_age_mastery")),Is.True,
+                string.Join("; ",f.Research.GetBlockers(new TechnologyId("stone_age_mastery"))));
+            Assert.That(f.Research.CompletedTechnologies.Count,Is.LessThan(25));
+            if(route=="peaceful")Assert.That(f.Research.CompletedTechnologies.Any(id=>f.Technologies.Get(id).Profile.Branch=="military"),Is.False);
+            if(route=="scholar")
+            {
+                Assert.That(f.Research.EffectiveWorkerLimit,Is.EqualTo(6));
+                Assert.That(f.Research.ScienceBonusPercent,Is.EqualTo(20));
+            }
+            Learn("stone_age_mastery");
+            Assert.That(f.Research.StoneAgeCompleted,Is.True);
+            Assert.That(f.Research.AvailableTechnologies,Is.Not.Empty);
         }
 
         private static ulong Route(int[] cumulativeDays)

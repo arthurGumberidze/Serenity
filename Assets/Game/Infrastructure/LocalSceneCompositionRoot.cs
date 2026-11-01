@@ -458,6 +458,11 @@ namespace Game.Infrastructure
                 buildingCatalog.Entries.Select(entry => new BuildingDefinitionId(entry.DefinitionId)),
                 startsWithStoneTools: true);
             Research = new ResearchService(Technologies, new CharacterResearchRateProvider(Characters, HealthFamily));
+            Research.SettlementContext = new ResearchSettlementContext(Inventories, Resources, FundingSources, key =>
+                key=="population" ? Characters.GetAll().Count(x=>x.LifeState==CharacterLifeState.Alive && CanCommandResident(x.Id)) :
+                key=="soldiers" ? Characters.GetAll().Count(x=>x.LifeState==CharacterLifeState.Alive && CanCommandResident(x.Id) && MilitaryFormationRules.HasMilitaryProfession(x)) :
+                key=="shelter" ? Buildings.All.Count(x=>x.IsOperational && x.OwnerSideId==new CombatSideId("player") &&
+                    (x.DefinitionId.FamilyId.ToString()=="primitive_shelter" || x.DefinitionId.FamilyId.ToString()=="stone_age_hut" || x.DefinitionId.FamilyId.ToString()=="communal_house")) : 0);
             Construction = new ConstructionFundingService(BuildingPlacementService, Inventories, Resources, Storage,
                 Research);
             Construction.RequiresWorker = true;
@@ -565,7 +570,8 @@ namespace Game.Infrastructure
             DisableSupersededRouteStrips();
             resourceRespawnSurface = new P104ResourceRespawnSurface(FindAnyObjectByType<P102WorldPlacementSurface>());
             gameObject.AddComponent<ProductionDebugOverlay>().Initialize(Production, Resources, pointerRaycaster);
-            gameObject.AddComponent<P104ResourceHoverLabel>().Initialize(selectionProbe, Production);
+            gameObject.AddComponent<P104ResourceHoverLabel>().Initialize(selectionProbe, Production,
+                ()=>GameplayUi!=null && GameplayUi.FullScreenWorkspaceVisible);
 
             // Begin a new session in daylight; loading still restores the exact saved clock.
             Clock = new GameClock(new GameTimeState(TimeSpan.TicksPerHour * 10L,
@@ -1062,6 +1068,11 @@ namespace Game.Infrastructure
                 nextHousingReconcile=Time.unscaledTime+.5f;
                 Facilities.ReconcileHousing();
                 Domestic.SynchronizeHousing(Facilities.HomeAssignments,id=>buildingCatalog.ResolveDefinition(id),ConstructionWorkTarget);
+                var hour=(int)(Clock.State.CalendarTicks%TimeSpan.TicksPerDay/TimeSpan.TicksPerHour);
+                var researchShift=hour>=6&&hour<18?WorkShiftKind.Day:WorkShiftKind.Night;
+                Research.SynchronizeWorkers(Work.Groups.All.Where(x=>x.Role==WorkGroupRole.Scientists)
+                    .SelectMany(x=>x.MembersForShift(researchShift)).Where(id=>CanCommandResident(id) &&
+                        Characters.TryGet(id,out var resident) && resident.LifeState==CharacterLifeState.Alive), Clock.State.CalendarTicks);
             }
             industrialWork?.Advance(targetCalendarTick);
             DirectWorkCommands?.ProfessionGroups.ReconcileAdults(Clock.State.BiologicalTicks);

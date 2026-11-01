@@ -1,6 +1,17 @@
 # NEXT_TASK.md
 
-## Active — UI08-R4: approve the revised circular research map (2026-11-01)
+## Next — user retest of completed UI08-R4 (2026-11-02)
+
+Implementation and qualification are complete. Start a new game in `Builds/UI08R4/Serenity.exe` and review
+the approved circular research tree, its details and group/shift-driven researchers (effective cap 4 -> 5 -> 6).
+Care is labelled «Лечиться»; resident-level priority/research/scout/military controls are removed, with task
+priorities retained. No save migration. Evidence: `docs/validation/UI08ResearchR4.md`; actual full-HD image:
+`Artifacts/UI08R4/player-qualified/ui08-research-1920x1080.png`.
+Do not start future-only mechanics or another broad UI redesign without a new task. The user requested a
+one-time shutdown after this delivery; do not repeat that shutdown in subsequent chats.
+All proposal approval gates below are historical and satisfied.
+
+## Historical — UI08-R4 proposal (2026-11-01)
 
 The user rejected R3's tangled horizontal OR connectors and requested the attached Anno format.
 Review `docs/prototypes/research-review-v4/Serenity-Research-Review.html`: large circular direction hubs,
@@ -12,7 +23,7 @@ The character «Лечиться» rename and removal of personal priorities/tas
 professional-group automatic assignment are retained requirements. Do not start game implementation until
 approval. R3 and the older retest instructions below are historical. Evidence: `docs/validation/UI08ResearchProposalR4.md`.
 
-## Active — UI08-R3: await approval of HTML research proposal (2026-11-01)
+## Historical — UI08-R3: HTML research proposal (2026-11-01)
 
 The user's latest instruction explicitly requires review before implementing the research overhaul.
 Review `docs/prototypes/research-review-v3/Serenity-Research-Review.html`. This is a 51-technology horizontal

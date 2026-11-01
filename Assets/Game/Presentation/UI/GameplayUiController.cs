@@ -44,7 +44,7 @@ namespace Game.Presentation.UI
     /// selection and confirmation state; gameplay mutations are routed back through Simulation services.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GameplayUiController : MonoBehaviour, IWorldPointerUiBlocker, IWorldPointerUiRegionBlocker
+    public sealed partial class GameplayUiController : MonoBehaviour, IWorldPointerUiBlocker, IWorldPointerUiRegionBlocker
     {
         private const float AutomaticRefreshIntervalSeconds = 1f;
         private static readonly Color PanelColor = SerenityUiDesign.Surface;
@@ -151,7 +151,6 @@ namespace Game.Presentation.UI
         private bool compactLayout;
         private bool campaignOutcomeAcknowledged;
         private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
-        private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
         private TechnologyId? selectedResearchTechnology;
         private string peopleSearch = string.Empty;
         private StableEntityId? selectedDynastyPerson;
@@ -180,16 +179,6 @@ namespace Game.Presentation.UI
             Infrastructure = 7
         }
 
-        private enum ResearchWorkspaceCategory
-        {
-            All = 0,
-            Survival = 1,
-            Production = 2,
-            Military = 3,
-            Knowledge = 4,
-            Society = 5
-        }
-
         private static bool IsPeopleRiskWorkspace(GameplayPanel panel) =>
             panel == GameplayPanel.Domestic || panel == GameplayPanel.Dynasty ||
             panel == GameplayPanel.Events || panel == GameplayPanel.Military ||
@@ -197,6 +186,7 @@ namespace Game.Presentation.UI
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
+        public bool FullScreenWorkspaceVisible => IsPeopleRiskWorkspace(activePanel);
         public int SubscriptionCount => subscribed ? 4 : 0;
         public VisualElement RootVisual => root;
         public IReadOnlyList<string> Notifications => notificationFeed.AsReadOnly();
@@ -2236,13 +2226,6 @@ namespace Game.Presentation.UI
                     ? "Готовы к приказу"
                     : "Очередь: " + projection.TotalOrders + " · заняты: " + projection.BusyCount;
                 commandActions.Add(ActionButton("К выбранному", FocusPrimarySelection, "command-focus-selection"));
-                var researchAssigned = selectedIds.All(id => context.Research.AssignedWorkers.Contains(id));
-                commandActions.Add(ActionButton(researchAssigned ? "Снять с исследования" : "Назначить исследователями",
-                    () => TryCommand(() =>
-                    {
-                        if (researchAssigned) context.Research.UnassignWorkers(selectedIds);
-                        else context.Research.AssignWorkers(selectedIds);
-                    }), "command-toggle-research"));
                 if (selectedIds.Count == 1)
                 {
                     var id = selectedIds[0];
@@ -2334,6 +2317,8 @@ namespace Game.Presentation.UI
         private void RefreshPanel()
         {
             if (mainPanel == null || activePanel == GameplayPanel.None) return;
+            if (activePanel == GameplayPanel.Research && mainPanel.Q<VisualElement>("research-viewport") != null)
+            { UpdateResearchView(); return; }
             mainPanel.Clear();
             switch (activePanel)
             {
@@ -2664,300 +2649,6 @@ namespace Game.Presentation.UI
             if (context.BuildingPlacement.IsActive)
                 AddLine(mainPanel, F("ui.build.placement", Content("building", context.BuildingPlacement.ActiveDefinitionId.ToString()),
                     context.BuildingPlacement.IsPreviewValid ? T("ui.build.valid") : PlacementFailureText()));
-        }
-
-        private void DrawResearchPanel()
-        {
-            AddTitle(mainPanel, T("ui.research.title") + " · древо каменного века");
-            var categoryRow = Row();
-            foreach (ResearchWorkspaceCategory value in Enum.GetValues(typeof(ResearchWorkspaceCategory)))
-            {
-                var capturedCategory = value;
-                var categoryButton = ActionButton(ResearchCategoryName(value), () =>
-                {
-                    researchCategory = capturedCategory;
-                    RefreshPanel();
-                }, "research-category-" + value.ToString().ToLowerInvariant());
-                SerenityUiDesign.SetSelected(categoryButton, researchCategory == value);
-                categoryRow.Add(categoryButton);
-            }
-            mainPanel.Add(categoryRow);
-            var active = context.Research.ActiveProject;
-            var status = ResearchWorkerStatusQuery.Capture(context.Research, context.AiAgents);
-            var workerRow = Row();
-            var workerStatus = active == null ? "Текущее исследование: нет" :
-                "Исследуется: " + Content("technology", active.TechnologyId.ToString()) + " · " +
-                RussianTextCatalog.Percent(active.Progress) + " · исследователей " + status.ActiveCount + "/" +
-                status.AssignedCount;
-            if (context.Selection.SelectedCharacterIds.Count == 0)
-                workerStatus += " · для назначения выберите жителей";
-            AddMuted(workerRow, workerStatus);
-            var assign = ActionButton(T("ui.research.assign"), () => TryCommand(() =>
-                SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds)))));
-            var remove = ActionButton(T("ui.research.remove"), () => TryCommand(() =>
-                SetStatus(F("ui.research.removed_count", context.Research.UnassignWorkers(context.Selection.SelectedCharacterIds)))));
-            assign.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
-            remove.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
-            workerRow.Add(assign);
-            workerRow.Add(remove);
-            if (active != null) workerRow.Add(ActionButton(T("ui.research.cancel"), () => TryCommand(() =>
-            {
-                if (!context.Research.Cancel()) throw PlayerError("ui.research.no_active");
-            })));
-            mainPanel.Add(workerRow);
-            if (!selectedResearchTechnology.HasValue)
-                selectedResearchTechnology = new TechnologyId("basic_survival");
-
-            var depths = new Dictionary<TechnologyId, int>();
-            foreach (var technology in context.Research.Catalog.All)
-                GetResearchDepth(technology, depths);
-            var tree = new VisualElement();
-            tree.name = "research-dependency-tree";
-            tree.style.alignItems = Align.Center;
-            tree.style.flexGrow = 1;
-            tree.style.minWidth = 0;
-            tree.style.position = Position.Relative;
-            tree.style.overflow = Overflow.Visible;
-            var visibleNodes = new Dictionary<TechnologyId, VisualElement>();
-            var rootTechnology = context.Research.Catalog.Get(new TechnologyId("basic_survival"));
-            var rootNode = CreateResearchTreeNode(rootTechnology, active);
-            rootNode.style.width = 260;
-            rootNode.style.marginBottom = 6;
-            tree.Add(rootNode);
-            visibleNodes[rootTechnology.Id] = rootNode;
-
-            var branches = Row();
-            branches.name = "research-branch-columns";
-            branches.style.alignItems = Align.FlexStart;
-            branches.style.width = new Length(100, LengthUnit.Percent);
-            branches.style.marginBottom = 6;
-            var visibleCategories = researchCategory == ResearchWorkspaceCategory.All
-                ? new[] { ResearchWorkspaceCategory.Survival, ResearchWorkspaceCategory.Production,
-                    ResearchWorkspaceCategory.Military, ResearchWorkspaceCategory.Knowledge,
-                    ResearchWorkspaceCategory.Society }
-                : new[] { researchCategory };
-            foreach (var category in visibleCategories)
-            {
-                var column = SerenityUiDesign.Card();
-                column.name = "research-branch-" + category.ToString().ToLowerInvariant();
-                column.style.minWidth = researchCategory == ResearchWorkspaceCategory.All ? 145 : 420;
-                column.style.flexGrow = 1;
-                column.style.flexBasis = 0;
-                column.style.marginLeft = 4;
-                column.style.marginRight = 4;
-                AddSection(column, ResearchCategoryName(category));
-                column.tooltip = ResearchBranchSummary(category);
-                foreach (var technology in context.Research.Catalog.All
-                             .Where(value => value.Id != rootTechnology.Id &&
-                                 value.Id != new TechnologyId("stone_age_mastery") &&
-                                 ResearchCategoryFor(value.Id.ToString()) == category)
-                             .OrderBy(value => depths[value.Id]).ThenBy(value => value.Id))
-                {
-                    var node = CreateResearchTreeNode(technology, active);
-                    node.style.width = new Length(100, LengthUnit.Percent);
-                    column.Add(node);
-                    visibleNodes[technology.Id] = node;
-                }
-                branches.Add(column);
-            }
-            tree.Add(branches);
-            var capstone = CreateResearchTreeNode(context.Research.Catalog.Get(new TechnologyId("stone_age_mastery")), active);
-            capstone.style.width = 280;
-            tree.Add(capstone);
-            visibleNodes[new TechnologyId("stone_age_mastery")] = capstone;
-            var connectors = new ResearchPrerequisiteConnectorLayer();
-            foreach (var technology in context.Research.Catalog.All)
-            {
-                if (!visibleNodes.TryGetValue(technology.Id, out var child)) continue;
-                foreach (var prerequisite in technology.Prerequisites)
-                    if (ShouldDrawResearchConnector(technology, prerequisite) &&
-                        visibleNodes.TryGetValue(prerequisite, out var parent))
-                        connectors.AddEdge(parent, child, ResearchConnectorColor(technology, active));
-            }
-            connectors.userData = connectors.EdgeCount;
-            // Keep the dependency rails behind the cards. Cross-branch requirements are still
-            // enforced by the domain model and listed in the selected-node detail, but only the
-            // branch-leading edge is drawn so the full five-column tree remains readable.
-            tree.Insert(0, connectors);
-            tree.RegisterCallback<GeometryChangedEvent>(_ => connectors.RefreshGeometry());
-            foreach (var node in visibleNodes.Values)
-                node.RegisterCallback<GeometryChangedEvent>(_ => connectors.RefreshGeometry());
-            var workspace = Row();
-            workspace.name = "research-tree-workspace";
-            workspace.style.alignItems = Align.FlexStart;
-            workspace.style.width = new Length(100, LengthUnit.Percent);
-            workspace.Add(tree);
-            var detailHost = new VisualElement { name = "research-detail-host" };
-            detailHost.style.width = 330;
-            detailHost.style.flexShrink = 0;
-            detailHost.style.marginLeft = 8;
-            DrawResearchSelection(detailHost,
-                context.Research.Catalog.Get(selectedResearchTechnology.Value), active);
-            workspace.Add(detailHost);
-            mainPanel.Add(workspace);
-        }
-
-        private bool ShouldDrawResearchConnector(TechnologyDefinition technology, TechnologyId prerequisite)
-        {
-            var root = new TechnologyId("basic_survival");
-            if (prerequisite == root || technology.Id == new TechnologyId("stone_age_mastery")) return true;
-            var category = ResearchCategoryFor(technology.Id.ToString());
-            if (ResearchCategoryFor(prerequisite.ToString()) == category) return true;
-            return !technology.Prerequisites.Any(candidate => candidate != prerequisite &&
-                ResearchCategoryFor(candidate.ToString()) == category);
-        }
-
-        private Color ResearchConnectorColor(TechnologyDefinition technology, ResearchProject active)
-        {
-            var completed = context.Research.IsCompleted(technology.Id);
-            var open = active != null && active.TechnologyId == technology.Id ||
-                context.Research.IsAvailable(technology.Id);
-            var color = completed ? SerenityUiDesign.Success : open ? AccentColor : SerenityUiDesign.TextMuted;
-            color.a = completed ? .8f : open ? .72f : .24f;
-            return color;
-        }
-
-        private sealed class ResearchPrerequisiteConnectorLayer : VisualElement
-        {
-            private readonly List<Edge> edges = new List<Edge>();
-
-            public ResearchPrerequisiteConnectorLayer()
-            {
-                name = "research-prerequisite-connectors";
-                pickingMode = PickingMode.Ignore;
-                style.position = Position.Absolute;
-                style.left = 0;
-                style.right = 0;
-                style.top = 0;
-                style.bottom = 0;
-                generateVisualContent += DrawConnectors;
-            }
-
-            public int EdgeCount => edges.Count;
-
-            public void AddEdge(VisualElement parent, VisualElement child, Color color) =>
-                edges.Add(new Edge(parent, child, color));
-
-            public void RefreshGeometry() => MarkDirtyRepaint();
-
-            private void DrawConnectors(MeshGenerationContext context)
-            {
-                var painter = context.painter2D;
-                foreach (var edge in edges)
-                {
-                    if (edge.Parent.panel == null || edge.Child.panel == null) continue;
-                    var parentBounds = edge.Parent.worldBound;
-                    var childBounds = edge.Child.worldBound;
-                    var start = this.WorldToLocal(new Vector2(parentBounds.center.x, parentBounds.yMax));
-                    var end = this.WorldToLocal(new Vector2(childBounds.center.x, childBounds.yMin));
-                    if (float.IsNaN(start.x) || float.IsNaN(start.y) || float.IsNaN(end.x) || float.IsNaN(end.y))
-                        continue;
-                    var bend = Mathf.Max(10f, Mathf.Abs(end.y - start.y) * .45f);
-                    painter.strokeColor = edge.Color;
-                    painter.lineWidth = 2f;
-                    painter.BeginPath();
-                    painter.MoveTo(start);
-                    painter.BezierCurveTo(new Vector2(start.x, start.y + bend),
-                        new Vector2(end.x, end.y - bend), end);
-                    painter.Stroke();
-                }
-            }
-
-            private readonly struct Edge
-            {
-                public Edge(VisualElement parent, VisualElement child, Color color)
-                {
-                    Parent = parent;
-                    Child = child;
-                    Color = color;
-                }
-
-                public VisualElement Parent { get; }
-                public VisualElement Child { get; }
-                public Color Color { get; }
-            }
-        }
-
-        private int GetResearchDepth(TechnologyDefinition technology, IDictionary<TechnologyId, int> depths)
-        {
-            if (depths.TryGetValue(technology.Id, out var known)) return known;
-            var depth = technology.Prerequisites.Count == 0 ? 0 :
-                1 + technology.Prerequisites.Max(id => GetResearchDepth(context.Research.Catalog.Get(id), depths));
-            depths[technology.Id] = depth;
-            return depth;
-        }
-
-        private VisualElement CreateResearchTreeNode(TechnologyDefinition technology, ResearchProject active)
-        {
-            var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
-                active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
-                context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" :
-                "enum.ResearchAvailability.Locked";
-            var card = ActionButton(string.Empty, () =>
-            {
-                selectedResearchTechnology = technology.Id;
-                RefreshPanel();
-            });
-            card.name = "research-node-" + technology.Id;
-            card.AddToClassList("serenity-research-tree-node");
-            var stateClass = stateKey == "enum.ResearchAvailability.Completed" ? "completed" :
-                stateKey == "enum.ResearchAvailability.Active" ? "active" :
-                stateKey == "enum.ResearchAvailability.Available" ? "available" : "locked";
-            card.AddToClassList("research-state-" + stateClass);
-            card.style.height = 30;
-            card.style.minHeight = 30;
-            card.style.marginTop = 2;
-            card.style.marginBottom = 2;
-            card.style.paddingTop = 1;
-            card.style.paddingBottom = 1;
-            card.style.fontSize = 10;
-            card.style.whiteSpace = WhiteSpace.NoWrap;
-            var stateColor = stateClass == "completed" ? SerenityUiDesign.Success :
-                stateClass == "active" || stateClass == "available" ? AccentColor : SerenityUiDesign.TextMuted;
-            card.style.borderTopColor = stateColor;
-            card.style.borderRightColor = stateColor;
-            card.style.borderBottomColor = stateColor;
-            card.style.borderLeftColor = stateColor;
-            card.style.borderTopWidth = 1;
-            card.style.borderRightWidth = 1;
-            card.style.borderBottomWidth = 1;
-            card.style.borderLeftWidth = 1;
-            card.style.opacity = stateClass == "locked" ? .55f : 1f;
-            var marker = stateKey == "enum.ResearchAvailability.Completed" ? "✓" :
-                stateKey == "enum.ResearchAvailability.Active" ? "◉" :
-                stateKey == "enum.ResearchAvailability.Available" ? "○" : "◆";
-            card.text = marker + " " + ResearchNodeLabel(technology.Id.ToString());
-            card.tooltip = Content("technology", technology.Id.ToString()) + " · " + T(stateKey) + "\n" +
-                ResearchDescription(technology.Id.ToString());
-            SerenityUiDesign.SetSelected(card, selectedResearchTechnology == technology.Id);
-            return card;
-        }
-
-        private void DrawResearchSelection(VisualElement parent, TechnologyDefinition technology, ResearchProject active)
-        {
-            var detail = SerenityUiDesign.Card();
-            detail.name = "research-selected-detail";
-            var titleRow = Row();
-            AddSection(titleRow, Content("technology", technology.Id.ToString()));
-            AddMuted(titleRow, context.Research.IsCompleted(technology.Id) ? "Завершено" :
-                active != null && active.TechnologyId == technology.Id ? "Исследуется" :
-                context.Research.IsAvailable(technology.Id) ? "Доступно" : "Закрыто");
-            detail.Add(titleRow);
-            AddLine(detail, ResearchDescription(technology.Id.ToString()));
-            AddMuted(detail, technology.Prerequisites.Count == 0 ? "Общая основа дерева" :
-                "Требуется: " + string.Join(" + ", technology.Prerequisites.Select(id =>
-                    Content("technology", id.ToString()))));
-            AddMuted(detail, "Открывает: " + (technology.Unlocks.Count == 0 ? "новую возможность" :
-                string.Join(", ", technology.Unlocks.Select(UnlockName))));
-            if (context.Research.IsAvailable(technology.Id) && active == null)
-            {
-                var captured = technology.Id;
-                var start = ActionButton("Начать исследование", () => TryCommand(() => context.Research.Start(captured)),
-                    "research-start-selected");
-                start.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
-                detail.Add(start);
-            }
-            parent.Add(detail);
         }
 
         private void DrawWorkPanel()
@@ -4407,11 +4098,6 @@ namespace Game.Presentation.UI
             }
             var eligibility = context.PlayerControl.Evaluate(id);
             var actions = Row();
-            actions.Add(ActionButton(T(context.Research.AssignedWorkers.Contains(id) ? "ui.character.remove_research" : "ui.character.assign_research"), () => TryCommand(() =>
-            {
-                if (context.Research.AssignedWorkers.Contains(id)) context.Research.UnassignWorkers(new[] { id });
-                else context.Research.AssignWorkers(new[] { id });
-            })));
             var tps = ActionButton(T("ui.character.enter_tps"), () => TryCommand(() =>
             {
                 var result = context.ThirdPerson.TryEnter(id);
@@ -4420,18 +4106,11 @@ namespace Game.Presentation.UI
             tps.SetEnabled(eligibility.IsEligible);
             actions.Add(tps);
             inspector.Add(actions);
-            DrawDirectPriority();
-            var direct = Row();
             var targetPosition = context.AiAgents.TryGet(id, out var selectedAgent) ? selectedAgent.Position : default;
-            direct.Add(ActionButton("Уход", () => TryCommand(() => IssueDirect(WorkJobType.Care,
-                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
-            direct.Add(ActionButton("Исследовать", () => TryCommand(() => IssueDirect(WorkJobType.Research,
-                WorkTarget.ForEntity(WorkTargetKind.Research, id, targetPosition)))));
-            direct.Add(ActionButton("Разведать", () => TryCommand(() => IssueDirect(WorkJobType.Scout,
-                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
-            direct.Add(ActionButton("Военная задача", () => TryCommand(() => IssueDirect(WorkJobType.Military,
-                WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition)))));
-            inspector.Add(direct);
+            inspector.Add(ActionButton("Лечиться", () => TryCommand(() =>
+                context.DirectWork.Issue(WorkJobType.Care,
+                    WorkTarget.ForEntity(WorkTargetKind.Character, id, targetPosition), WorkPriority.High)),
+                "character-seek-care"));
             if (!eligibility.IsEligible) AddMuted(inspector, F("ui.character.tps_unavailable", EligibilityReason(eligibility.Failure)));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", id));
         }
@@ -5268,102 +4947,6 @@ namespace Game.Presentation.UI
             return type.HasValue ? E(type.Value) : "общие поручения";
         }
 
-        private static ResearchWorkspaceCategory ResearchCategoryFor(string technologyId)
-        {
-            var id = (technologyId ?? string.Empty).ToLowerInvariant();
-            if (new[] { "gathering", "controlled_fire", "shelter_construction", "hunting",
-                    "food_preservation", "primitive_agriculture", "seasonal_preparation" }.Contains(id))
-                return ResearchWorkspaceCategory.Survival;
-            if (new[] { "stone_tools", "fiber_working", "woodworking", "organized_labor", "weaving",
-                    "advanced_stonecraft", "industrial_extraction", "restorative_mining", "standardization" }.Contains(id))
-                return ResearchWorkspaceCategory.Production;
-            if (new[] { "militia", "formation_training", "military_organization", "military_logistics",
-                    "fortification" }.Contains(id))
-                return ResearchWorkspaceCategory.Military;
-            if (new[] { "observation", "herbalism", "practical_anatomy", "record_keeping",
-                    "natural_philosophy" }.Contains(id))
-                return ResearchWorkspaceCategory.Knowledge;
-            return ResearchWorkspaceCategory.Society;
-        }
-
-        private static string ResearchCategoryName(ResearchWorkspaceCategory category) => category switch
-        {
-            ResearchWorkspaceCategory.Survival => "Выживание",
-            ResearchWorkspaceCategory.Production => "Производство",
-            ResearchWorkspaceCategory.Military => "Военное дело",
-            ResearchWorkspaceCategory.Knowledge => "Знания и медицина",
-            ResearchWorkspaceCategory.Society => "Общество",
-            _ => "Все"
-        };
-
-        private static string ResearchBranchSummary(ResearchWorkspaceCategory category) => category switch
-        {
-            ResearchWorkspaceCategory.Survival => "Пища, жильё и подготовка к сезонам",
-            ResearchWorkspaceCategory.Production => "Орудия, ремесло и добыча",
-            ResearchWorkspaceCategory.Military => "Ополчение, строй и командование",
-            ResearchWorkspaceCategory.Knowledge => "Наблюдение, лечение и запись знаний",
-            ResearchWorkspaceCategory.Society => "Родство, совет и право",
-            _ => string.Empty
-        };
-
-        private static string ResearchNodeLabel(string id) => id switch
-        {
-            "shelter_construction" => "Надёжные укрытия",
-            "fiber_working" => "Работа с волокном",
-            "advanced_stonecraft" => "Обработка камня",
-            "restorative_mining" => "Восстановление шахт",
-            "seasonal_preparation" => "Сезонные запасы",
-            "formation_training" => "Строевая подготовка",
-            "military_organization" => "Военная организация",
-            "military_logistics" => "Военная логистика",
-            "observation" => "Наблюдение",
-            "practical_anatomy" => "Анатомия",
-            "record_keeping" => "Ведение записей",
-            "settlement_council" => "Совет поселения",
-            "exchange_and_measures" => "Обмен и меры",
-            "land_administration" => "Управление землёй",
-            "stone_age_mastery" => "Освоение каменного века",
-            _ => Content("technology", id)
-        };
-
-        private static string ResearchDescription(string id) => id switch
-        {
-            "basic_survival" => "Общие приёмы, без которых поселение не сможет развивать специализированные знания.",
-            "gathering" => "Организует сбор дикорастущей пищи, волокон, лекарственных растений и рыбы.",
-            "controlled_fire" => "Даёт безопасный очаг, приготовление пищи и основу для дальнейших ремёсел.",
-            "shelter_construction" => "Открывает надёжные жилища и защищает жителей от погоды.",
-            "stone_tools" => "Позволяет добывать камень и древесину каменными орудиями.",
-            "fiber_working" => "Превращает растительные волокна в полезный ремесленный материал.",
-            "woodworking" => "Открывает устойчивые деревянные конструкции и простые хранилища.",
-            "hunting" => "Организует охоту и разделку туш вместо случайной добычи.",
-            "food_preservation" => "Позволяет дольше хранить пищу и обрабатывать шкуры.",
-            "organized_labor" => "Разделяет труд по профессиям и открывает общественные и оборонные постройки.",
-            "primitive_agriculture" => "Даёт огороды, возделывание культур и основу животноводства.",
-            "weaving" => "Объединяет волокна и организованный труд в устойчивое текстильное ремесло.",
-            "advanced_stonecraft" => "Улучшает обработку камня и позволяет строить более сложные объекты.",
-            "industrial_extraction" => "Организует крупную добычу камня и руды на постоянных площадках.",
-            "restorative_mining" => "Даёт способы безопаснее и дольше использовать разработанное месторождение.",
-            "seasonal_preparation" => "Связывает запасы, жильё и полевые работы с предстоящим сезоном.",
-            "standardization" => "Общие меры и повторяемые методы делают ремесло надёжнее.",
-            "militia" => "Отделяет обученных защитников от гражданской рабочей силы.",
-            "formation_training" => "Учит военных двигаться и сражаться согласованным строем.",
-            "military_organization" => "Создаёт постоянную систему командования и повышает предел отрядов с двух до четырёх.",
-            "military_logistics" => "Готовит пищу и снаряжение для действий вдали от поселения.",
-            "fortification" => "Объединяет укреплённые подходы, ворота и защищённые позиции.",
-            "observation" => "Учит сравнивать повторяющиеся наблюдения вместо единичных впечатлений.",
-            "herbalism" => "Систематизирует полезные растения и безопасные способы их приготовления.",
-            "practical_anatomy" => "Использует знания о теле для лечения травм и сохранения жизни.",
-            "record_keeping" => "Сохраняет наблюдения, обязательства и результаты за пределами памяти одного человека.",
-            "natural_philosophy" => "Связывает природу, ремесло и проверяемые наблюдения в общее знание.",
-            "kinship" => "Закрепляет семейные обязанности, защиту рода и наследование.",
-            "settlement_council" => "Даёт признанный способ решать общие работы и споры поселения.",
-            "exchange_and_measures" => "Вводит понятные меры для обмена, запасов и повинностей.",
-            "land_administration" => "Позволяет учитывать поля, дома и обязанности растущего поселения.",
-            "customary_law" => "Превращает признанные обычаи в предсказуемые правила для всего общества.",
-            "stone_age_mastery" => "Объединяет достижения пяти ветвей и завершает развитие каменного века.",
-            _ => "Новое знание развивает возможности поселения."
-        };
-
         public WorkOrder IssuePierFishing(Building building, WorldPosition position)
         {
             if(building==null || !building.IsOperational || building.OwnerSideId.Value!="player" ||
@@ -5965,6 +5548,7 @@ namespace Game.Presentation.UI
             }
             ApplyPanelLayout();
             UpdateStrategicViewport();
+            ResizeResearchWorkspace();
             var strategic = context != null && context.GlobalMap.Mode != GameWorldMode.Local;
             if (strategic)
             {

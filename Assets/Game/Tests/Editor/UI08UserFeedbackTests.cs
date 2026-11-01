@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using Game.Domain.Buildings;
 using Game.Domain.Production;
+using Game.Domain.Research;
 using Game.Presentation.Buildings;
 using Game.Presentation.Resources;
 using NUnit.Framework;
@@ -14,19 +15,15 @@ namespace Game.Tests.Editor
     public sealed class UI08UserFeedbackTests
     {
         private static string Source => File.ReadAllText(Path.Combine(Application.dataPath,
-            "Game/Presentation/UI/GameplayUiController.cs"));
+            "Game/Presentation/UI/GameplayUiController.cs")) + File.ReadAllText(Path.Combine(Application.dataPath,
+            "Game/Presentation/UI/GameplayUiController.Research.cs"));
 
         [Test]
         public void ResearchAndDynastyAreRenderedAsDependencyAndGenerationTrees()
         {
             StringAssert.Contains("research-dependency-tree", Source);
-            StringAssert.Contains("GetResearchDepth", Source);
             StringAssert.Contains("research-prerequisite-connectors", Source);
-            StringAssert.Contains("BezierCurveTo", Source);
             StringAssert.Contains("research-state-", Source);
-            StringAssert.Contains("ShouldDrawResearchConnector", Source);
-            StringAssert.Contains("tree.Insert(0, connectors)", Source);
-            StringAssert.Contains("research-branch-columns", Source);
             StringAssert.Contains("research-selected-detail", Source);
             StringAssert.Contains("dynasty-generation-connector-", Source);
             StringAssert.Contains("dynasty-spouse-connector-", Source);
@@ -75,6 +72,23 @@ namespace Game.Tests.Editor
         {
             StringAssert.Contains("root.panel?.Pick(panelPoint)", Source);
             StringAssert.Contains("picked != null && picked != root", Source);
+        }
+
+        [Test]
+        public void EveryPlayableResearchHasARealCatalogUnlockOrAnImplementedResearchEffect()
+        {
+            var resources=AssetDatabase.LoadAssetAtPath<ResourceCatalogAsset>(
+                "Assets/Game/Art/Config/ResourceCatalog.asset").CreateCatalog();
+            var buildings=AssetDatabase.LoadAssetAtPath<BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var catalog=TechnologyCatalog.CreateStoneAge(ProductionCatalog.CreatePlayablePatch(resources),
+                buildings.Entries.Select(x=>new BuildingDefinitionId(x.DefinitionId)),true);
+            var serviceEffects=new[]{"observation","season_calendar","record_keeping","knowledge_transfer",
+                "natural_philosophy","restorative_mining"};
+            Assert.That(catalog.All.Count(x=>x.Profile.IsFuture),Is.EqualTo(11));
+            foreach(var technology in catalog.All.Where(x=>!x.Profile.IsFuture))
+                Assert.That(technology.Unlocks.Count>0||serviceEffects.Contains(technology.Id.ToString()),
+                    Is.True,technology.Id+" must not be a playable empty promise.");
         }
 
         [Test]

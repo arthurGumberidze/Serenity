@@ -14,12 +14,14 @@ namespace Game.Presentation.Production
         private SelectionProbe selection;
         private ProductionService production;
         private GUIStyle style;
+        private System.Func<bool> suppressWorldLabels;
 
-        public void Initialize(SelectionProbe probe, ProductionService service)
-        { selection = probe; production = service; }
+        public void Initialize(SelectionProbe probe, ProductionService service, System.Func<bool> suppress = null)
+        { selection = probe; production = service; suppressWorldLabels = suppress; }
 
         private void OnGUI()
         {
+            if(suppressWorldLabels?.Invoke()==true)return;
             DrawWorkProgress();
             var proxy = selection?.HoveredProxy;
             if (proxy == null || !proxy.IsBound || production == null) return;
