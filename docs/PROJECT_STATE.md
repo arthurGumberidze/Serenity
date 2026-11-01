@@ -1,12 +1,21 @@
 # PROJECT_STATE.md
 
-## UI08 second-review HTML prototype — AWAITING USER APPROVAL (2026-11-01)
+## UI08 second-review implementation — DONE (2026-11-01)
 
-A local-only interactive HTML review artifact now covers the requested full-screen top-down research tree,
-spouse-inclusive dynasty tree, early two-squad/four-after-research military rules with military-only candidates,
-and a structured full-screen Character workspace. It is intentionally not connected to Domain, Simulation,
-save state or Unity Presentation. Source: `docs/prototypes/ui-review-v2/dist/index.html`. Unity implementation and
-the proposed research content remain unchanged until the user approves or revises the prototype.
+The approved second-review prototype is implemented in the canonical Unity UI. Research is a full-screen,
+top-down 33-technology Stone Age tree with one common root, five specialization branches and a shared capstone;
+at 1920x1080 all five columns and the capstone fit the visible viewport while full descriptions remain in a
+fixed detail card. Dynasty now projects spouses explicitly. Military formation accepts only residents with a
+military profession and limits active squads to two until `military_organization` raises the cap to four.
+The character inspector remains a compact map-side surface, but now uses identity metrics, wellbeing/activity
+cards and progressive-detail foldouts rather than one text wall. The local mini-map yields to that inspector.
+
+Per explicit user direction, old research saves are not merged or migrated into the new graph. The new catalog
+is canonical for new games and unresolved obsolete IDs continue to fail honestly. Final evidence: compile with
+0 errors, focused EditMode 34/34, 1920x1080 research PlayMode 1/1, character-inspector PlayMode 1/1, and a stable
+Windows build with 0 errors / 0 warnings at `Builds/UI08SecondReview/Serenity.exe`. The first build correctly
+rejected deterministic Unity material/UMA normalization; the immediate second build was immutable. Exact
+commands and results: `docs/validation/UI08SecondReview.md`. User retest is next.
 
 ## UI08 user-feedback workspace repair — DONE (2026-11-01)
 

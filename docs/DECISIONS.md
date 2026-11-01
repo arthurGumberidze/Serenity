@@ -1,5 +1,25 @@
 # DECISIONS.md
 
+## D-238 — The second-review research graph is canonical and old research saves are not merged (2026-11-01)
+
+The user-approved Stone Age graph has one shared `basic_survival` root, five authored top-down specialization
+branches (Survival, Production, Military, Knowledge and Society) and one `stone_age_mastery` capstone requiring
+the endpoint of every branch. Catalog order is authored order so Presentation can project the intended graph
+without an alternate UI-owned model. The full graph uses compact state nodes plus a fixed detail card: at
+1920x1080 every branch and the capstone remain in the visible research viewport while the selected technology's
+complete description, prerequisites, unlocks and action remain readable.
+
+Per explicit user instruction, the new graph does not translate, combine or silently accept obsolete research
+save IDs. New-game catalog state is canonical; an incompatible old research payload fails honestly instead of
+inventing equivalent progress. This is an intentional compatibility break and does not add a second save path.
+
+Military formation policy is canonical Simulation behavior: only adults carrying a recognized military
+profession may enter a squad, at most two active squads exist initially, and capability
+`military_organization` raises that limit to four. Dynasty spouse connectors and the compact character
+identity/wellbeing/activity inspector are disposable Presentation projections of existing canonical state. The
+character inspector remains a right-side map surface, not a full-screen workspace, and the local mini-map yields
+while it is open to prevent overlap.
+
 ## D-237 — UI08 release qualification owns evidence, not gameplay authority (2026-11-01)
 
 UI08 adds an exact-binary qualification route and repairs only a demonstrated cross-surface render-order defect.

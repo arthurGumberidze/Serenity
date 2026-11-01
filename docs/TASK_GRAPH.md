@@ -1,9 +1,12 @@
 # TASK_GRAPH.md
 
-UI08 second-review HTML prototype (2026-11-01): **AWAITING USER APPROVAL**. Prepared one local interactive
-prototype for the revised full-screen research, spouse-inclusive dynasty, research-gated military and structured
-Character surfaces. This is a design artifact only; no Unity, canonical gameplay or save authority changed.
-Source: `docs/prototypes/ui-review-v2/dist/index.html`. Implementation remains blocked on explicit user approval.
+UI08 second-review implementation (2026-11-01): **DONE**. Implemented the approved full-screen top-down
+33-technology research tree, spouse-inclusive dynasty projection, military-profession-only recruitment with a
+two-squad start/four-squad research cap, and the structured compact character inspector. The full research graph
+and its fixed detail card fit the measured 1920x1080 viewport; full descriptions are not clipped. Old research
+saves are deliberately not merged or migrated, per user instruction. Final evidence: compile 0 errors, focused
+EditMode 34/34, research-layout PlayMode 1/1, character-inspector PlayMode 1/1 and immutable Windows build success
+with 0 errors / 0 warnings. Evidence: `docs/validation/UI08SecondReview.md`. User retest is next.
 
 WM15 recovered-checkpoint audit (2026-11-01): **DONE**. Audited the 184-file local checkpoint and retained only
 runner PlayMode support, unique-ruler P108 diagnostics/readiness/current-save acceptance, removal of dead

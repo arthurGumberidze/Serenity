@@ -7,6 +7,7 @@ using Game.Domain.Characters;
 using Game.Domain.Combat;
 using Game.Domain.Health;
 using Game.Domain.Military;
+using Game.Domain.Research;
 using Game.Domain.Work;
 using Game.Domain.Resources;
 using Game.Simulation.Combat;
@@ -15,6 +16,26 @@ using Game.Simulation.Work;
 
 namespace Game.Simulation.Military
 {
+    public static class MilitaryFormationRules
+    {
+        public const int InitialActiveUnitLimit = 2;
+        public const int OrganizedActiveUnitLimit = 4;
+        public static readonly CapabilityId MilitaryOrganization = new CapabilityId("military_organization");
+
+        public static int ActiveUnitLimit(IResearchUnlockView research) =>
+            research != null && research.HasCapability(MilitaryOrganization)
+                ? OrganizedActiveUnitLimit
+                : InitialActiveUnitLimit;
+
+        public static bool HasMilitaryProfession(Character character)
+        {
+            if (character == null || !character.ProfessionId.HasValue) return false;
+            var profession = character.ProfessionId.Value.ToString().ToLowerInvariant();
+            return profession == "military" || profession.Contains("soldier") ||
+                   profession.Contains("warrior") || profession.Contains("guard");
+        }
+    }
+
     public sealed class MilitarySupplySettings
     {
         public MilitarySupplySettings(ResourceId foodResourceId, long initialFoodPerMember,
@@ -121,6 +142,8 @@ namespace Game.Simulation.Military
             new Dictionary<StableEntityId, MilitaryUnitId>();
         private readonly Dictionary<StableEntityId, MilitaryArmyState> armies = new();
         private readonly MilitarySupplySettings supplySettings;
+        private Func<MilitarySideId, int> activeUnitLimit = _ => int.MaxValue;
+        private Func<MilitarySideId, StableEntityId, bool> memberEligibility = (_, _) => true;
 
         public MilitaryUnitService(CharacterRegistry characterRegistry, ICharacterCapabilityProvider capabilityProvider,
             MilitarySupplySettings settings = null)
@@ -131,6 +154,21 @@ namespace Game.Simulation.Military
         }
 
         public MilitarySupplySettings SupplySettings => supplySettings;
+
+        public void ConfigureFormationPolicy(Func<MilitarySideId, int> unitLimitProvider,
+            Func<MilitarySideId, StableEntityId, bool> eligibilityProvider)
+        {
+            activeUnitLimit = unitLimitProvider ?? throw new ArgumentNullException(nameof(unitLimitProvider));
+            memberEligibility = eligibilityProvider ?? throw new ArgumentNullException(nameof(eligibilityProvider));
+        }
+
+        public int GetActiveUnitLimit(MilitarySideId sideId) => Math.Max(0, activeUnitLimit(sideId));
+
+        public bool IsEligibleMilitaryMember(MilitarySideId sideId, StableEntityId characterId) =>
+            characters.TryGet(characterId, out var character) &&
+            character.LifeState == CharacterLifeState.Alive &&
+            capabilities.GetCapabilities(characterId).CanFight &&
+            memberEligibility(sideId, characterId);
 
         public IReadOnlyList<MilitaryUnitState> Units => units.Values.OrderBy(x => x.Id).Select(Capture).ToArray();
         public IReadOnlyList<MilitaryArmyState> Armies => armies.Values.OrderBy(x => x.Id).ToArray();
@@ -191,6 +229,9 @@ namespace Game.Simulation.Military
             if (!id.IsValid) throw new ArgumentException("Military unit ID required.", nameof(id));
             if (!sideId.IsValid) throw new ArgumentException("Military side ID required.", nameof(sideId));
             if (units.ContainsKey(id)) throw new InvalidOperationException("Military unit ID is already registered.");
+            if (units.Values.Count(unit => unit.Side == sideId && unit.Status != MilitaryUnitStatus.Disbanded) >=
+                GetActiveUnitLimit(sideId))
+                throw new InvalidOperationException("The active military unit limit has been reached.");
             if (!Enum.IsDefined(typeof(MilitaryUnitRepresentationMode), representation))
                 throw new ArgumentOutOfRangeException(nameof(representation));
             var members = OrderedDistinctRequired(roster);
@@ -200,6 +241,8 @@ namespace Game.Simulation.Military
             foreach (var memberId in members)
             {
                 characters.Get(memberId);
+                if (!IsEligibleMilitaryMember(sideId, memberId))
+                    throw new ArgumentException("Only military personnel may join an active unit.", nameof(roster));
                 if (activeMembership.ContainsKey(memberId))
                     throw new InvalidOperationException("A character cannot belong to two active military units.");
             }
@@ -354,7 +397,8 @@ namespace Game.Simulation.Military
             if (!units.TryGetValue(id, out var unit)) return CommanderAssignmentStatus.UnitNotFound;
             if (!unit.Roster.TryGetValue(captainId, out var member) || !member.IsActive)
                 return CommanderAssignmentStatus.NotMember;
-            if (!IsCaptainEligible(captainId)) return CommanderAssignmentStatus.Ineligible;
+            if (!IsCaptainEligible(captainId) || !IsEligibleMilitaryMember(unit.Side, captainId))
+                return CommanderAssignmentStatus.Ineligible;
             unit.CaptainId = captainId;
             unit.Status = unit.EncounterId.HasValue ? MilitaryUnitStatus.Engaged : MilitaryUnitStatus.Ready;
             unit.Revision++;
@@ -367,6 +411,8 @@ namespace Game.Simulation.Military
             if (unit.Roster.Values.Count(x => x.IsActive) >= MaximumSquadMembers)
                 throw new InvalidOperationException("A squad cannot contain more than 50 soldiers including its commander.");
             characters.Get(characterId);
+            if (!IsEligibleMilitaryMember(unit.Side, characterId))
+                throw new InvalidOperationException("Only military personnel may join an active unit.");
             if (activeMembership.ContainsKey(characterId))
                 throw new InvalidOperationException("A character cannot belong to two active military units.");
             unit.Revision++;
@@ -631,10 +677,12 @@ namespace Game.Simulation.Military
         private StableEntityId? RefreshCaptain(Unit unit)
         {
             if (unit.CaptainId.HasValue && unit.Roster.TryGetValue(unit.CaptainId.Value, out var current) &&
-                current.IsActive && IsCaptainEligible(unit.CaptainId.Value)) return unit.CaptainId;
+                current.IsActive && IsCaptainEligible(unit.CaptainId.Value) &&
+                IsEligibleMilitaryMember(unit.Side, unit.CaptainId.Value)) return unit.CaptainId;
             var oldCaptain = unit.CaptainId;
             var oldStatus = unit.Status;
-            unit.CaptainId = unit.Roster.Values.Where(x => x.IsActive && IsCaptainEligible(x.CharacterId))
+            unit.CaptainId = unit.Roster.Values.Where(x => x.IsActive && IsCaptainEligible(x.CharacterId) &&
+                    IsEligibleMilitaryMember(unit.Side, x.CharacterId))
                 .Select(x => characters.Get(x.CharacterId))
                 .OrderByDescending(x => x.Influence.Value)
                 .ThenBy(x => x.Id.ToString(), StringComparer.Ordinal)

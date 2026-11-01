@@ -92,6 +92,25 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Research.IsProductionRecipeUnlocked(new ProductionRecipeId("chop_wood")), Is.False);
         }
 
+        [Test] public void StoneAgeCatalogHasFiveSpecializationBranchesAndMilitaryOrganizationUnlock()
+        {
+            var fixture = new Fixture();
+            var ids = fixture.Technologies.All.Select(value => value.Id.ToString()).ToArray();
+            foreach (var id in new[] { "seasonal_preparation", "standardization", "militia",
+                         "formation_training", "military_organization", "military_logistics", "fortification",
+                         "observation", "herbalism", "practical_anatomy", "record_keeping", "natural_philosophy",
+                         "kinship", "settlement_council", "exchange_and_measures", "land_administration",
+                         "customary_law" })
+                CollectionAssert.Contains(ids, id);
+            CollectionAssert.AreEquivalent(new[] { "seasonal_preparation", "standardization", "fortification",
+                    "natural_philosophy", "customary_law" },
+                fixture.Technologies.Get(new TechnologyId("stone_age_mastery")).Prerequisites
+                    .Select(value => value.ToString()));
+            Assert.That(fixture.Technologies.Get(new TechnologyId("military_organization")).Unlocks
+                .Any(value => value.Kind == TechnologyUnlockKind.Capability &&
+                    value.ContentId == "military_organization"), Is.True);
+        }
+
         [Test] public void PartialProgressCompletionAndExactOnceCommitAreDeterministic()
         {
             var fixture = new Fixture();
@@ -251,7 +270,8 @@ namespace Game.Tests.Editor
             inventories.Add(productionInventory);
             var production = new ProductionService(fixture.ProductionCatalog, fixture.Resources, inventories,
                 buildings, new ResourceTransferService(inventories), researchUnlocks: fixture.Research);
-            production.Population = 20;
+            // One abstract worker can sustainably feed this fixture population after agriculture unlocks.
+            production.Population = 5;
             production.SetTarget(new ResourceId("berries"), 500);
             production.SetTarget(new ResourceId("plant_fiber"), 100);
             production.SetTarget(new ResourceId("wood_log"), 100);
@@ -269,6 +289,9 @@ namespace Game.Tests.Editor
                     fixture.Research.Start(fixture.Research.AvailableTechnologies.First().Id);
                 var tick = TimeSpan.FromDays(day).Ticks;
                 fixture.Research.AdvanceWorkerTo(fixture.Worker, tick, true);
+                // Keep this cross-system test focused on deterministic progression rather than a one-worker
+                // settlement's meal throughput; food balance has its own dedicated fixtures.
+                productionInventory.TryAdd(new ResourceId("cooked_berries"), new ResourceQuantity(10), true);
                 production.AdvanceTo(tick, new[] { productionWorker });
             }
             Assert.That(fixture.Research.StoneAgeCompleted, Is.True);

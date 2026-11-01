@@ -757,6 +757,12 @@ namespace Game.Infrastructure
             MilitaryTraining = new MilitaryTrainingService(Characters, HealthFamily, Buildings, Inventories,
                 MilitaryUnits, Appearances, worldSeed);
             MilitaryTraining.IsRuler = id => PlayerRealm.CurrentRulerId == id;
+            MilitaryUnits.ConfigureFormationPolicy(
+                side => MilitaryFormationRules.ActiveUnitLimit(side.Value == "enemy"
+                    ? StarterEnemyAi.Research
+                    : Research),
+                (side, id) => Characters.TryGet(id, out var candidate) &&
+                    MilitaryFormationRules.HasMilitaryProfession(candidate));
             AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.GetRank(id).HasValue);
             BuildingLifecycle.UpgradeWorkerAllowed = (id, building) => CanCommandResident(id) &&
                 building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.GetRank(id).HasValue &&

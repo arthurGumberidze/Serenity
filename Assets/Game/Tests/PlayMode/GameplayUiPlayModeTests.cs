@@ -104,11 +104,23 @@ namespace Game.Tests.PlayMode
             Assert.That(root?.GameplayUi, Is.Not.Null);
             var ui = root.GameplayUi;
 
+            Screen.SetResolution(1920, 1080, false);
+            yield return null;
+            yield return null;
             ui.SetPanel(GameplayPanel.Research);
             ui.RefreshNow();
             yield return null;
             Assert.That(ui.RootVisual.Q("research-dependency-tree"), Is.Not.Null);
             Assert.That(ui.RootVisual.Q("research-node-controlled_fire"), Is.Not.Null);
+            var researchPanel = ui.RootVisual.Q<ScrollView>("main-panel");
+            var researchViewport = researchPanel.contentViewport.worldBound;
+            var branches = ui.RootVisual.Q("research-branch-columns").worldBound;
+            var capstone = ui.RootVisual.Q("research-node-stone_age_mastery").worldBound;
+            Assert.That(branches.xMin, Is.GreaterThanOrEqualTo(researchViewport.xMin - 1f));
+            Assert.That(branches.xMax, Is.LessThanOrEqualTo(researchViewport.xMax + 1f),
+                "All five research branches must fit the 1920x1080 viewport without horizontal clipping.");
+            Assert.That(capstone.yMax, Is.LessThanOrEqualTo(researchViewport.yMax + 1f),
+                "The full research tree must fit the 1920x1080 viewport without cutting descriptions.");
 
             ui.SetPanel(GameplayPanel.Dynasty);
             ui.RefreshNow();
@@ -136,9 +148,17 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        [Timeout(300000)]
         public IEnumerator SelectionInspectorAndDeveloperToggleRemainAdapters()
         {
-            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            LocalSceneCompositionRoot root = null;
+            for (var frame = 0; frame < 2400; frame++)
+            {
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+                if (root?.GameplayUi != null) break;
+                yield return null;
+            }
+            Assert.That(root?.GameplayUi, Is.Not.Null);
             Assert.That(root.CharacterPresentations.TryGet(root.MaleDemoCharacter.Id, out var presenter), Is.True);
 
             root.SelectionProbe.SelectCharacters(new[] { presenter });
@@ -148,8 +168,9 @@ namespace Game.Tests.PlayMode
             var inspectorText = string.Join("\n", root.GameplayUi.RootVisual.Q("selection-inspector")
                 .Query<Label>().ToList().Select(x => x.text));
             Assert.That(inspectorText, Does.Contain(RussianTextCatalog.PersonName(root.MaleDemoCharacter.Name.DisplayName)));
-            Assert.That(inspectorText, Does.Contain("Состояние:"));
-            Assert.That(inspectorText, Does.Contain("Рабочая группа:"));
+            Assert.That(root.GameplayUi.RootVisual.Q("character-identity-metrics"), Is.Not.Null);
+            Assert.That(root.GameplayUi.RootVisual.Q("character-wellbeing-card"), Is.Not.Null);
+            Assert.That(root.GameplayUi.RootVisual.Q("character-activity-card"), Is.Not.Null);
             Assert.That(inspectorText, Does.Not.Contain(root.MaleDemoCharacter.Id.ToString()));
 
             root.GameplayUi.SetDeveloperUiVisible(true);

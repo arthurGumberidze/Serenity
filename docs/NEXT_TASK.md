@@ -1,14 +1,15 @@
 # NEXT_TASK.md
 
-## Next action — review UI08 second-review HTML prototype (2026-11-01)
+## Next action — UI08 second-review user retest (2026-11-01)
 
-Open `docs/prototypes/ui-review-v2/dist/index.html` and review all four tabs: Research, Dynasty, Squads and
-Character. The proposed Stone Age research graph has one common root and five top-down specialization branches;
-Military shows a two-squad starting cap, a four-squad research unlock and military-profession-only recruitment;
-Dynasty includes spouses; Character is a full workspace rather than a map overlay or text wall.
+Launch `Builds/UI08SecondReview/Serenity.exe` and start a new game. At 1920x1080 verify that the full Research
+tree fits on one screen, reads top-to-bottom across Survival, Production, Military, Knowledge and Society, and
+shows the complete selected description in the right detail card. Check spouse links in Dynasty, the initial
+two-squad cap and military-only candidates, then confirm `military_organization` raises the cap to four. Select a
+resident and review the compact right-side identity/wellbeing/activity inspector and its foldouts.
 
-Do not implement any of these proposals in Unity until the user explicitly approves the prototype or requests
-specific changes. The HTML file owns no gameplay data and must not become a parallel authority.
+Use a new game: old research saves are intentionally not merged or migrated. Exact automated evidence is in
+`docs/validation/UI08SecondReview.md`. Await explicit user feedback before another layout/content pass.
 
 The recovered WM15 checkpoint audit is complete; see `docs/validation/WM15CheckpointAudit.md`. Its rejected
 vendor/winter/recovery experiments are not future work unless explicitly reopened. The latest UI08 feedback repair

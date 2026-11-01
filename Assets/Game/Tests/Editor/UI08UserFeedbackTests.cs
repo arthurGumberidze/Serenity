@@ -22,7 +22,10 @@ namespace Game.Tests.Editor
             StringAssert.Contains("research-dependency-tree", Source);
             StringAssert.Contains("GetResearchDepth", Source);
             StringAssert.Contains("research-depth-connector-", Source);
+            StringAssert.Contains("research-branch-columns", Source);
+            StringAssert.Contains("research-selected-detail", Source);
             StringAssert.Contains("dynasty-generation-connector-", Source);
+            StringAssert.Contains("dynasty-spouse-connector-", Source);
             StringAssert.Contains("GetDynastyGeneration", Source);
         }
 
@@ -33,6 +36,18 @@ namespace Game.Tests.Editor
             StringAssert.Contains("ToggleMilitaryRecruit", Source);
             StringAssert.Contains("militaryDraftSelection", Source);
             StringAssert.DoesNotContain("var roster = context.Selection.SelectedCharacterIds.ToArray()", Source);
+            StringAssert.Contains("GetActiveUnitLimit", Source);
+            StringAssert.Contains("IsEligibleMilitaryMember", Source);
+        }
+
+        [Test]
+        public void CharacterInspectorIsCompactStructuredAndDoesNotCompeteWithTheMiniMap()
+        {
+            StringAssert.Contains("character-identity-metrics", Source);
+            StringAssert.Contains("character-wellbeing-card", Source);
+            StringAssert.Contains("character-skills-foldout", Source);
+            StringAssert.Contains("character-family-foldout", Source);
+            StringAssert.Contains("!peopleRisk && !hasSelection", Source);
         }
 
         [Test]

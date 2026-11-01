@@ -54,6 +54,30 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void FormationPolicyRequiresMilitaryProfessionAndRaisesLimitFromTwoToFour()
+        {
+            var fixture = Fixture.Create(5);
+            foreach (var id in fixture.MemberIds.Take(4))
+                fixture.Registry.Get(id).AssignProfession(new ProfessionId("military"));
+            var organized = false;
+            fixture.Units.ConfigureFormationPolicy(
+                _ => organized ? MilitaryFormationRules.OrganizedActiveUnitLimit :
+                    MilitaryFormationRules.InitialActiveUnitLimit,
+                (_, id) => MilitaryFormationRules.HasMilitaryProfession(fixture.Registry.Get(id)));
+
+            fixture.Units.Create(UnitId(540), new MilitarySideId("player"), new[] { fixture.MemberIds[0] }, fixture.MemberIds[0]);
+            fixture.Units.Create(UnitId(541), new MilitarySideId("player"), new[] { fixture.MemberIds[1] }, fixture.MemberIds[1]);
+            Assert.Throws<InvalidOperationException>(() => fixture.Units.Create(UnitId(542),
+                new MilitarySideId("player"), new[] { fixture.MemberIds[2] }, fixture.MemberIds[2]));
+
+            organized = true;
+            fixture.Units.Create(UnitId(542), new MilitarySideId("player"), new[] { fixture.MemberIds[2] }, fixture.MemberIds[2]);
+            Assert.Throws<ArgumentException>(() => fixture.Units.Create(UnitId(543),
+                new MilitarySideId("player"), new[] { fixture.MemberIds[4] }, fixture.MemberIds[4]));
+            Assert.That(fixture.Units.GetActiveUnitLimit(new MilitarySideId("player")), Is.EqualTo(4));
+        }
+
+        [Test]
         public void CaptainMustBeLivingAdultCapableMemberAndFallbackIsDeterministic()
         {
             var fixture = Fixture.Create(4, influences: new[] { 10, 90, 90, 20 });

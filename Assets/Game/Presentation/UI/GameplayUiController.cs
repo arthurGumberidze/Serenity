@@ -152,6 +152,7 @@ namespace Game.Presentation.UI
         private bool campaignOutcomeAcknowledged;
         private BuildPaletteCategory buildCategory = BuildPaletteCategory.All;
         private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
+        private TechnologyId? selectedResearchTechnology;
         private string peopleSearch = string.Empty;
         private StableEntityId? selectedDynastyPerson;
         private readonly HashSet<StableEntityId> militaryDraftSelection = new HashSet<StableEntityId>();
@@ -184,13 +185,15 @@ namespace Game.Presentation.UI
             All = 0,
             Survival = 1,
             Production = 2,
-            Settlement = 3,
-            Society = 4
+            Military = 3,
+            Knowledge = 4,
+            Society = 5
         }
 
         private static bool IsPeopleRiskWorkspace(GameplayPanel panel) =>
             panel == GameplayPanel.Domestic || panel == GameplayPanel.Dynasty ||
-            panel == GameplayPanel.Events || panel == GameplayPanel.Military;
+            panel == GameplayPanel.Events || panel == GameplayPanel.Military ||
+            panel == GameplayPanel.Research;
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -2665,7 +2668,7 @@ namespace Game.Presentation.UI
 
         private void DrawResearchPanel()
         {
-            AddTitle(mainPanel, T("ui.research.title"));
+            AddTitle(mainPanel, T("ui.research.title") + " · древо каменного века");
             var categoryRow = Row();
             foreach (ResearchWorkspaceCategory value in Enum.GetValues(typeof(ResearchWorkspaceCategory)))
             {
@@ -2679,21 +2682,14 @@ namespace Game.Presentation.UI
                 categoryRow.Add(categoryButton);
             }
             mainPanel.Add(categoryRow);
-            AddMuted(mainPanel, "Зависимости показаны от требуемых открытий к следующему доступному исследованию.");
+            AddMuted(mainPanel, "Выберите направление развития. Узлы идут сверху вниз от общих основ к специализации.");
             var active = context.Research.ActiveProject;
-            if (active == null) AddLine(mainPanel, T("ui.research.active_none"));
-            else
-            {
-                var definition = context.Research.Catalog.Get(active.TechnologyId);
-                AddLine(mainPanel, F("ui.research.active", Content("technology", definition.Id.ToString()), RussianTextCatalog.Percent(active.Progress)));
-                var status = ResearchWorkerStatusQuery.Capture(context.Research, context.AiAgents);
-                AddLine(mainPanel, F("ui.research.workers", status.ActiveCount, status.AssignedCount));
-                mainPanel.Add(ActionButton(T("ui.research.cancel"), () => TryCommand(() =>
-                {
-                    if (!context.Research.Cancel()) throw PlayerError("ui.research.no_active");
-                })));
-            }
+            var status = ResearchWorkerStatusQuery.Capture(context.Research, context.AiAgents);
             var workerRow = Row();
+            AddMuted(workerRow, active == null ? "Текущее исследование: нет" :
+                "Исследуется: " + Content("technology", active.TechnologyId.ToString()) + " · " +
+                RussianTextCatalog.Percent(active.Progress) + " · исследователей " + status.ActiveCount + "/" +
+                status.AssignedCount);
             var assign = ActionButton(T("ui.research.assign"), () => TryCommand(() =>
                 SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds)))));
             var remove = ActionButton(T("ui.research.remove"), () => TryCommand(() =>
@@ -2702,44 +2698,96 @@ namespace Game.Presentation.UI
             remove.SetEnabled(context.Selection.SelectedCharacterIds.Count > 0);
             workerRow.Add(assign);
             workerRow.Add(remove);
+            if (active != null) workerRow.Add(ActionButton(T("ui.research.cancel"), () => TryCommand(() =>
+            {
+                if (!context.Research.Cancel()) throw PlayerError("ui.research.no_active");
+            })));
             mainPanel.Add(workerRow);
             if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.research.need_selection"));
-            var visible = context.Research.Catalog.All.Where(technology =>
-                    researchCategory == ResearchWorkspaceCategory.All ||
-                    ResearchCategoryFor(technology.Id.ToString()) == researchCategory)
-                .ToArray();
+            if (!selectedResearchTechnology.HasValue)
+                selectedResearchTechnology = new TechnologyId("basic_survival");
+
             var depths = new Dictionary<TechnologyId, int>();
             foreach (var technology in context.Research.Catalog.All)
                 GetResearchDepth(technology, depths);
-            var treeScroll = new ScrollView(ScrollViewMode.Horizontal) { name = "research-tree-scroll" };
-            treeScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
-            var tree = Row();
+            var tree = new VisualElement();
             tree.name = "research-dependency-tree";
-            tree.style.alignItems = Align.FlexStart;
-            var maxDepth = visible.Length == 0 ? 0 : visible.Max(technology => depths[technology.Id]);
-            for (var depth = 0; depth <= maxDepth; depth++)
+            tree.style.alignItems = Align.Center;
+            tree.style.flexGrow = 1;
+            tree.style.minWidth = 0;
+            var rootTechnology = context.Research.Catalog.Get(new TechnologyId("basic_survival"));
+            var rootNode = CreateResearchTreeNode(rootTechnology, active);
+            rootNode.style.width = 260;
+            tree.Add(rootNode);
+            var rootConnector = new Label("↓") { name = "research-depth-connector-1" };
+            StyleCompactResearchConnector(rootConnector);
+            rootConnector.style.color = AccentColor;
+            tree.Add(rootConnector);
+
+            var branches = Row();
+            branches.name = "research-branch-columns";
+            branches.style.alignItems = Align.FlexStart;
+            branches.style.width = new Length(100, LengthUnit.Percent);
+            var visibleCategories = researchCategory == ResearchWorkspaceCategory.All
+                ? new[] { ResearchWorkspaceCategory.Survival, ResearchWorkspaceCategory.Production,
+                    ResearchWorkspaceCategory.Military, ResearchWorkspaceCategory.Knowledge,
+                    ResearchWorkspaceCategory.Society }
+                : new[] { researchCategory };
+            foreach (var category in visibleCategories)
             {
-                if (depth > 0)
+                var column = SerenityUiDesign.Card();
+                column.name = "research-branch-" + category.ToString().ToLowerInvariant();
+                column.style.minWidth = researchCategory == ResearchWorkspaceCategory.All ? 145 : 420;
+                column.style.flexGrow = 1;
+                column.style.flexBasis = 0;
+                column.style.marginLeft = 4;
+                column.style.marginRight = 4;
+                AddSection(column, ResearchCategoryName(category));
+                column.tooltip = ResearchBranchSummary(category);
+                foreach (var technology in context.Research.Catalog.All
+                             .Where(value => value.Id != rootTechnology.Id &&
+                                 value.Id != new TechnologyId("stone_age_mastery") &&
+                                 ResearchCategoryFor(value.Id.ToString()) == category)
+                             .OrderBy(value => depths[value.Id]).ThenBy(value => value.Id))
                 {
-                    var connector = new Label("→") { name = "research-depth-connector-" + depth };
-                    connector.style.fontSize = 28;
-                    connector.style.marginTop = 52;
-                    connector.style.marginLeft = 6;
-                    connector.style.marginRight = 6;
-                    connector.style.color = AccentColor;
-                    tree.Add(connector);
+                    var node = CreateResearchTreeNode(technology, active);
+                    node.style.width = new Length(100, LengthUnit.Percent);
+                    column.Add(node);
                 }
-                var column = new VisualElement { name = "research-depth-" + depth };
-                column.style.width = 300;
-                column.style.flexShrink = 0;
-                AddMuted(column, depth == 0 ? "ОСНОВЫ" : "ЭТАП " + (depth + 1));
-                foreach (var technology in visible.Where(value => depths[value.Id] == depth)
-                             .OrderBy(value => value.Id))
-                    column.Add(CreateResearchTreeNode(technology, active));
-                tree.Add(column);
+                branches.Add(column);
             }
-            treeScroll.Add(tree);
-            mainPanel.Add(treeScroll);
+            tree.Add(branches);
+            var capstoneConnector = new Label("↓") { name = "research-depth-connector-capstone" };
+            StyleCompactResearchConnector(capstoneConnector);
+            capstoneConnector.style.color = AccentColor;
+            tree.Add(capstoneConnector);
+            var capstone = CreateResearchTreeNode(context.Research.Catalog.Get(new TechnologyId("stone_age_mastery")), active);
+            capstone.style.width = 280;
+            tree.Add(capstone);
+            var workspace = Row();
+            workspace.name = "research-tree-workspace";
+            workspace.style.alignItems = Align.FlexStart;
+            workspace.style.width = new Length(100, LengthUnit.Percent);
+            workspace.Add(tree);
+            var detailHost = new VisualElement { name = "research-detail-host" };
+            detailHost.style.width = 330;
+            detailHost.style.flexShrink = 0;
+            detailHost.style.marginLeft = 8;
+            DrawResearchSelection(detailHost,
+                context.Research.Catalog.Get(selectedResearchTechnology.Value), active);
+            workspace.Add(detailHost);
+            mainPanel.Add(workspace);
+        }
+
+        private static void StyleCompactResearchConnector(VisualElement connector)
+        {
+            connector.style.height = 9;
+            connector.style.minHeight = 9;
+            connector.style.fontSize = 10;
+            connector.style.marginTop = 0;
+            connector.style.marginBottom = 0;
+            connector.style.paddingTop = 0;
+            connector.style.paddingBottom = 0;
         }
 
         private int GetResearchDepth(TechnologyDefinition technology, IDictionary<TechnologyId, int> depths)
@@ -2757,28 +2805,56 @@ namespace Game.Presentation.UI
                 active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
                 context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" :
                 "enum.ResearchAvailability.Locked";
-            var card = SerenityUiDesign.Card();
+            var card = ActionButton(string.Empty, () =>
+            {
+                selectedResearchTechnology = technology.Id;
+                RefreshPanel();
+            });
             card.name = "research-node-" + technology.Id;
             card.AddToClassList("serenity-research-tree-node");
-            card.style.minHeight = 138;
-            card.style.marginBottom = 10;
-            AddSection(card, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
-            AddMuted(card, technology.Prerequisites.Count == 0
-                ? "Корневая технология"
-                : "← " + string.Join(" + ", technology.Prerequisites.Select(id =>
+            card.style.height = 26;
+            card.style.minHeight = 26;
+            card.style.marginTop = 0;
+            card.style.marginBottom = 0;
+            card.style.paddingTop = 1;
+            card.style.paddingBottom = 1;
+            card.style.fontSize = 10;
+            card.style.whiteSpace = WhiteSpace.NoWrap;
+            var marker = stateKey == "enum.ResearchAvailability.Completed" ? "✓" :
+                stateKey == "enum.ResearchAvailability.Active" ? "◉" :
+                stateKey == "enum.ResearchAvailability.Available" ? "○" : "◆";
+            card.text = marker + " " + ResearchNodeLabel(technology.Id.ToString());
+            card.tooltip = Content("technology", technology.Id.ToString()) + " · " + T(stateKey) + "\n" +
+                ResearchDescription(technology.Id.ToString());
+            SerenityUiDesign.SetSelected(card, selectedResearchTechnology == technology.Id);
+            return card;
+        }
+
+        private void DrawResearchSelection(VisualElement parent, TechnologyDefinition technology, ResearchProject active)
+        {
+            var detail = SerenityUiDesign.Card();
+            detail.name = "research-selected-detail";
+            var titleRow = Row();
+            AddSection(titleRow, Content("technology", technology.Id.ToString()));
+            AddMuted(titleRow, context.Research.IsCompleted(technology.Id) ? "Завершено" :
+                active != null && active.TechnologyId == technology.Id ? "Исследуется" :
+                context.Research.IsAvailable(technology.Id) ? "Доступно" : "Закрыто");
+            detail.Add(titleRow);
+            AddLine(detail, ResearchDescription(technology.Id.ToString()));
+            AddMuted(detail, technology.Prerequisites.Count == 0 ? "Общая основа дерева" :
+                "Требуется: " + string.Join(" + ", technology.Prerequisites.Select(id =>
                     Content("technology", id.ToString()))));
-            AddMuted(card, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
-                technology.Unlocks.Count == 0 ? T("ui.research.capability") :
+            AddMuted(detail, "Открывает: " + (technology.Unlocks.Count == 0 ? "новую возможность" :
                 string.Join(", ", technology.Unlocks.Select(UnlockName))));
-            if (stateKey == "enum.ResearchAvailability.Available" && active == null)
+            if (context.Research.IsAvailable(technology.Id) && active == null)
             {
                 var captured = technology.Id;
-                var start = ActionButton(F("ui.research.start", Content("technology", captured.ToString())),
-                    () => TryCommand(() => context.Research.Start(captured)));
+                var start = ActionButton("Начать исследование", () => TryCommand(() => context.Research.Start(captured)),
+                    "research-start-selected");
                 start.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
-                card.Add(start);
+                detail.Add(start);
             }
-            return card;
+            parent.Add(detail);
         }
 
         private void DrawWorkPanel()
@@ -2916,6 +2992,9 @@ namespace Game.Presentation.UI
                 .Where(person => person != null)
                 .ToArray();
             var memberIds = members.Select(person => person.Id).ToHashSet();
+            var spouseIds = members.Where(person => person.SpouseId.HasValue &&
+                    !memberIds.Contains(person.SpouseId.Value) && context.Characters.TryGet(person.SpouseId.Value, out _))
+                .Select(person => person.SpouseId.Value).Distinct().ToHashSet();
             var generations = new Dictionary<StableEntityId, int>();
             foreach (var member in members) GetDynastyGeneration(member, memberIds, generations);
             foreach (var generation in members.GroupBy(member => generations[member.Id]).OrderBy(group => group.Key))
@@ -2939,7 +3018,24 @@ namespace Game.Presentation.UI
                     var role = member.Id == context.Dynasty.CurrentMonarchId ? "Правитель" :
                         place >= 0 ? (place + 1) + "-й в очереди" :
                         member.LifeState == CharacterLifeState.Alive ? "Член династии" : "Умер(ла)";
-                    AddDynastyPersonNode(generationRow, member, role, place == 0 || member.Id == context.Dynasty.CurrentMonarchId);
+                    var familyUnit = Row();
+                    familyUnit.name = "dynasty-couple-" + member.Id;
+                    familyUnit.style.alignItems = Align.Center;
+                    familyUnit.style.marginLeft = 6;
+                    familyUnit.style.marginRight = 6;
+                    AddDynastyPersonNode(familyUnit, member, role,
+                        place == 0 || member.Id == context.Dynasty.CurrentMonarchId);
+                    if (member.SpouseId.HasValue && spouseIds.Contains(member.SpouseId.Value) &&
+                        context.Characters.TryGet(member.SpouseId.Value, out var spouse))
+                    {
+                        var marriage = new Label("↔") { name = "dynasty-spouse-connector-" + member.Id };
+                        marriage.style.color = AccentColor;
+                        marriage.style.fontSize = 22;
+                        familyUnit.Add(marriage);
+                        AddDynastyPersonNode(familyUnit, spouse,
+                            member.Id == context.Dynasty.CurrentMonarchId ? "Супруг(а) правителя" : "Супруг(а)", false);
+                    }
+                    generationRow.Add(familyUnit);
                 }
                 generationBlock.Add(generationRow);
                 tree.Add(generationBlock);
@@ -3217,17 +3313,26 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, "Военные");
             AddMuted(mainPanel, "Состав, обучение, приказы, снабжение и состояние боя.");
+            var playerSide = new MilitarySideId("player");
+            var units = context.Military.Units.Where(x => x.OwnerSideId == playerSide &&
+                x.Status != MilitaryUnitStatus.Disbanded).OrderBy(x => x.Id).ToList();
+            var unitLimit = context.Military.GetActiveUnitLimit(playerSide);
             var activeMembers = context.Military.Units
                 .Where(unit => unit.Status != MilitaryUnitStatus.Disbanded)
                 .SelectMany(unit => unit.ActiveMemberIds).ToHashSet();
             var recruits = PlayerCharacterIds().Select(id =>
                     context.Characters.TryGet(id, out var person) ? person : null)
                 .Where(person => person != null && person.LifeState == CharacterLifeState.Alive &&
-                    context.Health.GetCapabilities(person.Id).CanFight && !activeMembers.Contains(person.Id))
+                    context.Military.IsEligibleMilitaryMember(playerSide, person.Id) &&
+                    !activeMembers.Contains(person.Id))
                 .OrderBy(person => person.Name.DisplayName, StringComparer.Ordinal).ToList();
             militaryDraftSelection.RemoveWhere(id => recruits.All(person => person.Id != id));
             AddSection(mainPanel, "Новый отряд");
-            AddMuted(mainPanel, "Выберите взрослых боеспособных жителей прямо здесь. Выходить на карту не требуется.");
+            AddMuted(mainPanel, "Выберите военных прямо здесь. Гражданские жители не могут входить в отряд.");
+            AddLine(mainPanel, "Активные отряды: " + units.Count + " / " + unitLimit +
+                (unitLimit == MilitaryFormationRules.InitialActiveUnitLimit
+                    ? " · ещё два открывает исследование «Военная организация»"
+                    : " · расширенная структура командования"));
             var recruitList = new ListView(recruits, 42,
                 () =>
                 {
@@ -3255,15 +3360,16 @@ namespace Game.Presentation.UI
             AddMuted(mainPanel, "Выбрано: " + militaryDraftSelection.Count + " / " +
                 MilitaryUnitService.MaximumSquadMembers);
             var hasSelectedCharacters = militaryDraftSelection.Count > 0;
-            var hasCaptain = militaryDraftSelection.Any(id => context.Health.GetCapabilities(id).CanFight);
+            var hasCaptain = militaryDraftSelection.Any(id => context.Military.IsEligibleMilitaryMember(playerSide, id));
             var createUnit = ActionButton("Сформировать отряд", () => TryCommand(CreatePlayerUnit),
                 "military-create-unit");
-            createUnit.SetEnabled(hasSelectedCharacters && hasCaptain);
+            createUnit.SetEnabled(hasSelectedCharacters && hasCaptain && units.Count < unitLimit);
             mainPanel.Add(createUnit);
-            if (!hasSelectedCharacters) AddMuted(mainPanel, T("ui.military.need_characters"));
+            if (units.Count >= unitLimit) AddMuted(mainPanel, "Достигнут текущий предел активных отрядов.");
+            else if (!hasSelectedCharacters) AddMuted(mainPanel, recruits.Count == 0
+                ? "Нет свободных военных. Сначала подготовьте жителя в казарме или назначьте военную профессию."
+                : T("ui.military.need_characters"));
             else if (!hasCaptain) AddMuted(mainPanel, T("ui.military.no_captain"));
-            var units = context.Military.Units.Where(x => x.OwnerSideId.Value == "player" &&
-                x.Status != MilitaryUnitStatus.Disbanded).OrderBy(x => x.Id).ToList();
             if ((!selectedUnit.HasValue || units.All(x => x.Id != selectedUnit.Value)) && units.Count > 0)
                 selectedUnit = units[0].Id;
             AddSection(mainPanel, "Отряды");
@@ -4075,73 +4181,120 @@ namespace Game.Presentation.UI
             var current = queueProjection.VisibleOrders.FirstOrDefault();
             AddInspectorHeader("Житель", RussianTextCatalog.PersonName(character.Name.DisplayName),
                 current == null ? "Готов к приказу" : E(current.Type) + " · " + E(current.Status));
-            AddSection(inspector, RussianTextCatalog.PersonName(character.Name.DisplayName));
-            AddLine(inspector, F("ui.character.age", character.AgeInCompletedYears(context.Clock().State.BiologicalTicks),
-                E(character.Sex), E(character.LifeState)));
-            AddLine(inspector, F("ui.character.profession", ProfessionName(character.ProfessionId?.ToString())));
-            AddLine(inspector, F("ui.character.health", capabilities.IsIncapacitated ? T("ui.character.incapacitated") : T("common.active"),
-                Percent(capabilities.WorkPerThousand), Percent(capabilities.ResearchPerThousand)));
+
+            var identity = Row();
+            identity.name = "character-identity-metrics";
+            identity.style.flexWrap = Wrap.Wrap;
+            AddInspectorMetric(identity, "ВОЗРАСТ",
+                character.AgeInCompletedYears(context.Clock().State.BiologicalTicks) + " лет");
+            AddInspectorMetric(identity, "ПРОФЕССИЯ", ProfessionName(character.ProfessionId?.ToString()));
+            AddInspectorMetric(identity, "СТАТУС", capabilities.IsIncapacitated ? "Недееспособен" : "Активен");
+            AddInspectorMetric(identity, "ДИНАСТИЯ", DynastyRole(id));
+            inspector.Add(identity);
+
             var body = character.Health;
             var hitPoints = new[] { body.Head.Value, body.Torso.Value, body.LeftArm.Value, body.RightArm.Value,
                 body.LeftLeg.Value, body.RightLeg.Value };
             var healthPoints = character.LifeState == CharacterLifeState.Dead ? 0 : hitPoints.Sum() / hitPoints.Length;
             var maximumHealth = context.MilitaryTraining.GetMaximumHealth(id);
-            AddLine(inspector, $"Жизнь: {healthPoints}/{maximumHealth} · минимум части тела {hitPoints.Min()}/{maximumHealth}");
-            AddLine(inspector, $"Любимое занятие: {CharacterSkillRules.Favorite(character)}");
-            AddMuted(inspector, "Навыки: " + string.Join(", ", character.CaptureState().Skills
-                .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
-                .OrderByDescending(x => x.Level.Value).ThenBy(x => x.Id.Value)
-                .Select(x => $"{x.Id} {x.Level.Value}")));
+            var wellbeing = SerenityUiDesign.Card();
+            wellbeing.name = "character-wellbeing-card";
+            AddSection(wellbeing, "Самочувствие");
+            AddInspectorBar(wellbeing, "Здоровье", maximumHealth <= 0 ? 0 : healthPoints * 100f / maximumHealth,
+                healthPoints + "/" + maximumHealth);
             if (context.AiAgents.TryGet(id, out var agent))
-                AddLine(inspector, F("ui.character.needs", RussianTextCatalog.Percent(agent.Needs.Hunger),
-                    RussianTextCatalog.Percent(agent.Needs.Energy), E(agent.CurrentAction), E(agent.Phase)) +
-                    $" · жажда {agent.Needs.Thirst:P0} · настроение {agent.Needs.Mood:P0}");
-            else AddMuted(inspector, T("ui.character.offcamera"));
-            var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
-                x.State != HealthConditionState.Recovered).ToArray();
-            AddLine(inspector, F("ui.character.conditions", conditions.Length == 0 ? T("common.none") : string.Join(", ", conditions.Select(x =>
-                Content("condition", x.DefinitionId.ToString()) + " · " + E(x.Severity)))));
-            var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.MotherId == id && x.Status == PregnancyStatus.Active);
-            if (pregnancy != null) AddLine(inspector, T("ui.character.pregnancy"));
-            var inventoryOwner = context.Inventories.WorkerOwner(id);
-            if (context.Inventories.TryGet(inventoryOwner, out var inventory) && inventory.TotalUnits > 0)
-                AddLine(inspector, "Несёт на склад: " + InventoryText(inventory));
-            var research = context.Research.AssignedWorkers.Contains(id) ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned");
-            AddLine(inspector, F("ui.character.research", research));
-            AddLine(inspector, F("ui.character.work_group", context.Work.Groups.TryGetForMember(id, out var group) ? group.DisplayName : T("common.none")));
-            AddLine(inspector, F("ui.character.current_job", context.MilitaryTraining.IsExternallyControlled(id)
-                ? "В казарме" : context.Work.TryGetAssigned(id, out var job)
-                    ? E(job.Type) + " · " + E(job.Status) : T("common.none")));
-            AddSection(inspector, "Очередь приказов");
-            if (queueProjection.TotalOrders == 0) AddMuted(inspector, "Очередь пуста");
-            else foreach (var order in queueProjection.VisibleOrders) AddQueueOrder(inspector, order);
-            AddSection(inspector, "Дом и семья");
-            var assignedHome = context.Domestic.Homes.FirstOrDefault(value => value.Allows(id));
-            AddLine(inspector, assignedHome == null ? "Дом не назначен" :
-                "Дом: " + (context.Buildings.TryGet(assignedHome.BuildingId, out var assignedHomeBuilding)
-                    ? Content("building", assignedHomeBuilding.DefinitionId.ToString()) : "жилой дом"));
-            AddLine(inspector, "Супруг(а): " + CharacterName(character.SpouseId));
-            var familyChildren = context.Family.GetChildren(id).ToArray();
-            AddLine(inspector, "Дети: " + (familyChildren.Length == 0 ? "нет" :
-                string.Join(", ", familyChildren.Select(value => CharacterName(value.Id)))));
-            AddLine(inspector, F("ui.character.dynasty_role", DynastyRole(id)));
+            {
+                AddInspectorBar(wellbeing, "Сытость", (1f - (float)agent.Needs.Hunger) * 100f,
+                    RussianTextCatalog.Percent(1d - agent.Needs.Hunger));
+                AddInspectorBar(wellbeing, "Энергия", (float)agent.Needs.Energy * 100f,
+                    RussianTextCatalog.Percent(agent.Needs.Energy));
+                AddInspectorBar(wellbeing, "Без жажды", (1f - (float)agent.Needs.Thirst) * 100f,
+                    RussianTextCatalog.Percent(1d - agent.Needs.Thirst));
+                AddInspectorBar(wellbeing, "Настроение", (float)agent.Needs.Mood * 100f,
+                    RussianTextCatalog.Percent(agent.Needs.Mood));
+                AddMuted(wellbeing, "Сейчас: " + E(agent.CurrentAction) + " · " + E(agent.Phase));
+            }
+            else AddMuted(wellbeing, T("ui.character.offcamera"));
+            inspector.Add(wellbeing);
+
+            var activity = SerenityUiDesign.Card();
+            activity.name = "character-activity-card";
+            AddSection(activity, "Занятость");
+            AddLine(activity, context.MilitaryTraining.IsExternallyControlled(id)
+                ? "Текущее дело: обучение в казарме"
+                : context.Work.TryGetAssigned(id, out var assignedJob)
+                    ? "Текущее дело: " + E(assignedJob.Type) + " · " + E(assignedJob.Status)
+                    : "Текущее дело: свободен");
+            AddLine(activity, "Группа: " + (context.Work.Groups.TryGetForMember(id, out var group)
+                ? group.DisplayName : T("common.none")));
+            AddLine(activity, "Исследования: " + (context.Research.AssignedWorkers.Contains(id)
+                ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned")));
             var militaryRank = context.MilitaryTraining.GetRank(id);
             var militaryStatus = context.MilitaryTraining.IsExternallyControlled(id)
                 ? "В казарме · курс " + MilitaryRankName(context.MilitaryTraining.Active.Single(x => x.CharacterId == id).Rank)
                 : militaryRank.HasValue
                     ? MilitaryRankName(militaryRank.Value) + (context.Military.TryGetForMember(id, out var unit) && unit.CaptainId == id
-                        ? ", " + T("ui.character.captain") : string.Empty)
+                        ? " · " + T("ui.character.captain") : string.Empty)
                     : T("ui.character.civilian");
-            AddLine(inspector, F("ui.character.military", militaryStatus));
+            AddLine(activity, "Военная служба: " + militaryStatus);
+            var inventoryOwner = context.Inventories.WorkerOwner(id);
+            if (context.Inventories.TryGet(inventoryOwner, out var inventory) && inventory.TotalUnits > 0)
+                AddMuted(activity, "Несёт: " + InventoryText(inventory));
+            inspector.Add(activity);
+
+            var skills = new Foldout { text = "Навыки и склонности", value = false,
+                name = "character-skills-foldout" };
+            AddLine(skills, "Любимое занятие: " + CharacterSkillRules.Favorite(character));
+            foreach (var skill in character.CaptureState().Skills
+                         .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
+                         .OrderByDescending(x => x.Level.Value).ThenBy(x => x.Id.Value).Take(8))
+                AddInspectorBar(skills, skill.Id.ToString(), skill.Level.Value, skill.Level.Value.ToString());
+            inspector.Add(skills);
+
+            var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
+                x.State != HealthConditionState.Recovered).ToArray();
+            var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.MotherId == id && x.Status == PregnancyStatus.Active);
+            var health = new Foldout { text = "Здоровье и состояния", value = conditions.Length > 0,
+                name = "character-health-foldout" };
+            AddLine(health, conditions.Length == 0 ? "Активных состояний нет" : string.Join("\n",
+                conditions.Select(x => Content("condition", x.DefinitionId.ToString()) + " · " + E(x.Severity))));
+            AddMuted(health, "Минимум части тела: " + hitPoints.Min() + "/" + maximumHealth +
+                " · работа " + Percent(capabilities.WorkPerThousand) +
+                " · исследования " + Percent(capabilities.ResearchPerThousand));
+            if (pregnancy != null) AddLine(health, T("ui.character.pregnancy"));
             if (context.Combat.TryGetCombatant(id, out var combatant))
-                AddLine(inspector, $"Оружие: {combatant.WeaponId} · прочность {combatant.WeaponDurability}/100");
+                AddLine(health, "Оружие: " + combatant.WeaponId + " · прочность " + combatant.WeaponDurability + "/100");
+            inspector.Add(health);
+
+            var orders = new Foldout { text = "Очередь приказов · " + queueProjection.TotalOrders,
+                value = queueProjection.TotalOrders > 0, name = "character-orders-foldout" };
+            if (queueProjection.TotalOrders == 0) AddMuted(orders, "Очередь пуста");
+            else foreach (var order in queueProjection.VisibleOrders) AddQueueOrder(orders, order);
+            inspector.Add(orders);
+
+            var family = new Foldout { text = "Дом и семья", value = false,
+                name = "character-family-foldout" };
+            var assignedHome = context.Domestic.Homes.FirstOrDefault(value => value.Allows(id));
+            AddLine(family, assignedHome == null ? "Дом не назначен" :
+                "Дом: " + (context.Buildings.TryGet(assignedHome.BuildingId, out var assignedHomeBuilding)
+                    ? Content("building", assignedHomeBuilding.DefinitionId.ToString()) : "жилой дом"));
+            AddLine(family, "Супруг(а): " + CharacterName(character.SpouseId));
+            var familyChildren = context.Family.GetChildren(id).ToArray();
+            AddLine(family, "Дети: " + (familyChildren.Length == 0 ? "нет" :
+                string.Join(", ", familyChildren.Select(value => CharacterName(value.Id)))));
+            inspector.Add(family);
+
             if (context.Events != null)
             {
                 var eventHistory = context.Events.History.Where(x => x.Targets.Any(target =>
                     target.Kind == EventTargetKind.Character && target.TryGetStableEntityId(out var targetId) && targetId == id))
                     .Reverse().Take(3).ToArray();
-                AddLine(inspector, F("ui.character.events", eventHistory.Length == 0 ? T("common.none") : string.Join(", ",
-                    eventHistory.Select(x => EventTitle(x.DefinitionId, context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Id)))));
+                var history = new Foldout { text = "Недавние события", value = false,
+                    name = "character-events-foldout" };
+                AddLine(history, eventHistory.Length == 0 ? T("common.none") : string.Join("\n",
+                    eventHistory.Select(x => EventTitle(x.DefinitionId,
+                        context.Events.Catalog.Get(x.DefinitionId).Nodes[0].Id))));
+                inspector.Add(history);
             }
             if (!context.PlayerCharacterIds().Contains(id))
             {
@@ -4177,6 +4330,35 @@ namespace Game.Presentation.UI
             inspector.Add(direct);
             if (!eligibility.IsEligible) AddMuted(inspector, F("ui.character.tps_unavailable", EligibilityReason(eligibility.Failure)));
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", id));
+        }
+
+        private static void AddInspectorMetric(VisualElement parent, string label, string value)
+        {
+            var card = SerenityUiDesign.Card();
+            card.style.minWidth = 136;
+            card.style.flexGrow = 1;
+            var kicker = new Label(label);
+            kicker.AddToClassList(SerenityUiDesign.MutedClass);
+            var text = new Label(value);
+            text.AddToClassList(SerenityUiDesign.BodyClass);
+            card.Add(kicker);
+            card.Add(text);
+            parent.Add(card);
+        }
+
+        private static void AddInspectorBar(VisualElement parent, string label, float value, string valueText)
+        {
+            var progress = new ProgressBar
+            {
+                title = label + " · " + valueText,
+                lowValue = 0f,
+                highValue = 100f,
+                value = Mathf.Clamp(value, 0f, 100f)
+            };
+            progress.style.height = 22;
+            progress.style.marginTop = 2;
+            progress.style.marginBottom = 2;
+            parent.Add(progress);
         }
 
         private void DrawBuildingInspector(Building building)
@@ -4951,12 +5133,18 @@ namespace Game.Presentation.UI
         private static ResearchWorkspaceCategory ResearchCategoryFor(string technologyId)
         {
             var id = (technologyId ?? string.Empty).ToLowerInvariant();
-            if (id.Contains("food") || id.Contains("hunt") || id.Contains("fire") || id.Contains("medicine"))
+            if (new[] { "gathering", "controlled_fire", "shelter_construction", "hunting",
+                    "food_preservation", "primitive_agriculture", "seasonal_preparation" }.Contains(id))
                 return ResearchWorkspaceCategory.Survival;
-            if (id.Contains("tool") || id.Contains("craft") || id.Contains("farm") || id.Contains("production"))
+            if (new[] { "stone_tools", "fiber_working", "woodworking", "organized_labor", "weaving",
+                    "advanced_stonecraft", "industrial_extraction", "restorative_mining", "standardization" }.Contains(id))
                 return ResearchWorkspaceCategory.Production;
-            if (id.Contains("build") || id.Contains("storage") || id.Contains("house") || id.Contains("settlement"))
-                return ResearchWorkspaceCategory.Settlement;
+            if (new[] { "militia", "formation_training", "military_organization", "military_logistics",
+                    "fortification" }.Contains(id))
+                return ResearchWorkspaceCategory.Military;
+            if (new[] { "observation", "herbalism", "practical_anatomy", "record_keeping",
+                    "natural_philosophy" }.Contains(id))
+                return ResearchWorkspaceCategory.Knowledge;
             return ResearchWorkspaceCategory.Society;
         }
 
@@ -4964,9 +5152,78 @@ namespace Game.Presentation.UI
         {
             ResearchWorkspaceCategory.Survival => "Выживание",
             ResearchWorkspaceCategory.Production => "Производство",
-            ResearchWorkspaceCategory.Settlement => "Поселение",
+            ResearchWorkspaceCategory.Military => "Военное дело",
+            ResearchWorkspaceCategory.Knowledge => "Знания и медицина",
             ResearchWorkspaceCategory.Society => "Общество",
             _ => "Все"
+        };
+
+        private static string ResearchBranchSummary(ResearchWorkspaceCategory category) => category switch
+        {
+            ResearchWorkspaceCategory.Survival => "Пища, жильё и подготовка к сезонам",
+            ResearchWorkspaceCategory.Production => "Орудия, ремесло и добыча",
+            ResearchWorkspaceCategory.Military => "Ополчение, строй и командование",
+            ResearchWorkspaceCategory.Knowledge => "Наблюдение, лечение и запись знаний",
+            ResearchWorkspaceCategory.Society => "Родство, совет и право",
+            _ => string.Empty
+        };
+
+        private static string ResearchNodeLabel(string id) => id switch
+        {
+            "shelter_construction" => "Надёжные укрытия",
+            "fiber_working" => "Работа с волокном",
+            "advanced_stonecraft" => "Обработка камня",
+            "restorative_mining" => "Восстановление шахт",
+            "seasonal_preparation" => "Сезонные запасы",
+            "formation_training" => "Строевая подготовка",
+            "military_organization" => "Военная организация",
+            "military_logistics" => "Военная логистика",
+            "observation" => "Наблюдение",
+            "practical_anatomy" => "Анатомия",
+            "record_keeping" => "Ведение записей",
+            "settlement_council" => "Совет поселения",
+            "exchange_and_measures" => "Обмен и меры",
+            "land_administration" => "Управление землёй",
+            "stone_age_mastery" => "Освоение каменного века",
+            _ => Content("technology", id)
+        };
+
+        private static string ResearchDescription(string id) => id switch
+        {
+            "basic_survival" => "Общие приёмы, без которых поселение не сможет развивать специализированные знания.",
+            "gathering" => "Организует сбор дикорастущей пищи, волокон, лекарственных растений и рыбы.",
+            "controlled_fire" => "Даёт безопасный очаг, приготовление пищи и основу для дальнейших ремёсел.",
+            "shelter_construction" => "Открывает надёжные жилища и защищает жителей от погоды.",
+            "stone_tools" => "Позволяет добывать камень и древесину каменными орудиями.",
+            "fiber_working" => "Превращает растительные волокна в полезный ремесленный материал.",
+            "woodworking" => "Открывает устойчивые деревянные конструкции и простые хранилища.",
+            "hunting" => "Организует охоту и разделку туш вместо случайной добычи.",
+            "food_preservation" => "Позволяет дольше хранить пищу и обрабатывать шкуры.",
+            "organized_labor" => "Разделяет труд по профессиям и открывает общественные и оборонные постройки.",
+            "primitive_agriculture" => "Даёт огороды, возделывание культур и основу животноводства.",
+            "weaving" => "Объединяет волокна и организованный труд в устойчивое текстильное ремесло.",
+            "advanced_stonecraft" => "Улучшает обработку камня и позволяет строить более сложные объекты.",
+            "industrial_extraction" => "Организует крупную добычу камня и руды на постоянных площадках.",
+            "restorative_mining" => "Даёт способы безопаснее и дольше использовать разработанное месторождение.",
+            "seasonal_preparation" => "Связывает запасы, жильё и полевые работы с предстоящим сезоном.",
+            "standardization" => "Общие меры и повторяемые методы делают ремесло надёжнее.",
+            "militia" => "Отделяет обученных защитников от гражданской рабочей силы.",
+            "formation_training" => "Учит военных двигаться и сражаться согласованным строем.",
+            "military_organization" => "Создаёт постоянную систему командования и повышает предел отрядов с двух до четырёх.",
+            "military_logistics" => "Готовит пищу и снаряжение для действий вдали от поселения.",
+            "fortification" => "Объединяет укреплённые подходы, ворота и защищённые позиции.",
+            "observation" => "Учит сравнивать повторяющиеся наблюдения вместо единичных впечатлений.",
+            "herbalism" => "Систематизирует полезные растения и безопасные способы их приготовления.",
+            "practical_anatomy" => "Использует знания о теле для лечения травм и сохранения жизни.",
+            "record_keeping" => "Сохраняет наблюдения, обязательства и результаты за пределами памяти одного человека.",
+            "natural_philosophy" => "Связывает природу, ремесло и проверяемые наблюдения в общее знание.",
+            "kinship" => "Закрепляет семейные обязанности, защиту рода и наследование.",
+            "settlement_council" => "Даёт признанный способ решать общие работы и споры поселения.",
+            "exchange_and_measures" => "Вводит понятные меры для обмена, запасов и повинностей.",
+            "land_administration" => "Позволяет учитывать поля, дома и обязанности растущего поселения.",
+            "customary_law" => "Превращает признанные обычаи в предсказуемые правила для всего общества.",
+            "stone_age_mastery" => "Объединяет достижения пяти ветвей и завершает развитие каменного века.",
+            _ => "Новое знание развивает возможности поселения."
         };
 
         public WorkOrder IssuePierFishing(Building building, WorldPosition position)
@@ -5021,9 +5278,10 @@ namespace Game.Presentation.UI
             var roster = militaryDraftSelection.Where(IsAvailableMilitaryRecruit)
                 .Take(MilitaryUnitService.MaximumSquadMembers).ToArray();
             if (roster.Length == 0) throw PlayerError("ui.military.need_characters");
-            var captain = roster.FirstOrDefault(id => context.Health.GetCapabilities(id).CanFight);
+            var side = new MilitarySideId("player");
+            var captain = roster.FirstOrDefault(id => context.Military.IsEligibleMilitaryMember(side, id));
             if (!captain.IsValid) throw PlayerError("ui.military.no_captain");
-            var unit = context.Military.Create(new MilitarySideId("player"), roster, captain);
+            var unit = context.Military.Create(side, roster, captain);
             context.Military.SetAbstractLocation(unit.Id, context.GlobalMap.ActiveLocationId.Value);
             selectedUnit = unit.Id;
             militaryDraftSelection.Clear();
@@ -5041,7 +5299,7 @@ namespace Game.Presentation.UI
         private bool IsAvailableMilitaryRecruit(StableEntityId id)
         {
             if (!context.Characters.TryGet(id, out var person) || person.LifeState != CharacterLifeState.Alive ||
-                !context.Health.GetCapabilities(id).CanFight) return false;
+                !context.Military.IsEligibleMilitaryMember(new MilitarySideId("player"), id)) return false;
             return context.Military.Units.Where(unit => unit.Status != MilitaryUnitStatus.Disbanded)
                 .All(unit => !unit.ActiveMemberIds.Contains(id));
         }
@@ -5587,6 +5845,8 @@ namespace Game.Presentation.UI
             var peopleRisk = IsPeopleRiskWorkspace(activePanel);
             inspector.style.top = hasSelection ? 72 : onboarding.Visible ? 512 : 274;
             inspector.style.display = strategic || peopleRisk || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
+            localMiniMap.style.display = !strategic && !peopleRisk && !hasSelection
+                ? DisplayStyle.Flex : DisplayStyle.None;
             notifications.style.display = strategic || peopleRisk || hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
             onboardingCard.style.display = !strategic && !peopleRisk && onboarding.Visible && !hasSelection
                 ? DisplayStyle.Flex : DisplayStyle.None;

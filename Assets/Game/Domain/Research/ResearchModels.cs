@@ -154,8 +154,9 @@ namespace Game.Domain.Research
         public TechnologyCatalog(IEnumerable<TechnologyDefinition> definitions, TechnologyUnlockTargets targets)
         {
             if (targets == null) throw new ArgumentNullException(nameof(targets));
+            var authoredOrder = (definitions ?? throw new ArgumentNullException(nameof(definitions))).ToArray();
             this.definitions = new Dictionary<TechnologyId, TechnologyDefinition>();
-            foreach (var definition in definitions ?? throw new ArgumentNullException(nameof(definitions)))
+            foreach (var definition in authoredOrder)
             {
                 if (definition == null || !this.definitions.TryAdd(definition.Id, definition))
                     throw new ArgumentException("Technologies must be non-null with unique IDs.", nameof(definitions));
@@ -174,7 +175,7 @@ namespace Game.Domain.Research
                         throw new ArgumentException("Technology unlock does not resolve: " + unlock.ContentId, nameof(definitions));
             }
             ValidateAcyclic();
-            ordered = this.definitions.Values.OrderBy(x => x.Id).ToArray();
+            ordered = authoredOrder;
         }
 
         public IReadOnlyList<TechnologyDefinition> All => Array.AsReadOnly(ordered);
@@ -211,6 +212,15 @@ namespace Game.Domain.Research
                 new CapabilityId("food_preservation"), new CapabilityId("organized_labor"),
                 new CapabilityId("weaving"), new CapabilityId("advanced_stonecraft"),
                 new CapabilityId("industrial_extraction"), new CapabilityId("mine_restoration"),
+                new CapabilityId("seasonal_preparation"), new CapabilityId("standardization"),
+                new CapabilityId("militia"), new CapabilityId("formation_training"),
+                new CapabilityId("military_organization"), new CapabilityId("military_logistics"),
+                new CapabilityId("fortification"), new CapabilityId("observation"),
+                new CapabilityId("herbalism"), new CapabilityId("practical_anatomy"),
+                new CapabilityId("record_keeping"), new CapabilityId("natural_philosophy"),
+                new CapabilityId("kinship"), new CapabilityId("settlement_council"),
+                new CapabilityId("exchange_and_measures"), new CapabilityId("land_administration"),
+                new CapabilityId("customary_law"),
                 new CapabilityId("stone_age_completed")
             };
             TechnologyId T(string id) => new TechnologyId(id);
@@ -343,9 +353,77 @@ namespace Game.Domain.Research
                 new TechnologyDefinition(T("restorative_mining"), "Restorative Mining",
                     new[] { T("industrial_extraction") }, TimeSpan.FromDays(5),
                     new[] { C("mine_restoration") }),
+                new TechnologyDefinition(T("seasonal_preparation"), "Seasonal Preparation",
+                    new[] { T("food_preservation"), T("primitive_agriculture") }, TimeSpan.FromDays(5),
+                    new[] { C("seasonal_preparation") },
+                    description: "Plan food, shelter and field work around the changing seasons."),
+                new TechnologyDefinition(T("standardization"), "Standardization",
+                    new[] { T("restorative_mining"), T("weaving") }, TimeSpan.FromDays(5),
+                    new[] { C("standardization") },
+                    description: "Shared measures and repeatable methods make workshops more dependable."),
+                new TechnologyDefinition(T("militia"), "Settlement Militia",
+                    new[] { T("stone_tools"), T("hunting") }, TimeSpan.FromDays(3),
+                    new[] { C("militia") },
+                    description: "Separate trained defenders from the civilian workforce."),
+                new TechnologyDefinition(T("formation_training"), "Formation Training",
+                    new[] { T("militia") }, TimeSpan.FromDays(4),
+                    new[] { C("formation_training") },
+                    description: "Drill soldiers to move and fight as a disciplined squad."),
+                new TechnologyDefinition(T("military_organization"), "Military Organization",
+                    new[] { T("formation_training"), T("organized_labor") }, TimeSpan.FromDays(5),
+                    new[] { C("military_organization") },
+                    description: "A permanent command structure raises the active squad limit from two to four."),
+                new TechnologyDefinition(T("military_logistics"), "Military Logistics",
+                    new[] { T("military_organization"), T("food_preservation") }, TimeSpan.FromDays(5),
+                    new[] { C("military_logistics") },
+                    description: "Prepare food and equipment for forces operating away from the settlement."),
+                new TechnologyDefinition(T("fortification"), "Fortification",
+                    new[] { T("military_logistics"), T("advanced_stonecraft") }, TimeSpan.FromDays(6),
+                    new[] { C("fortification") },
+                    description: "Coordinate defended approaches, gates and hardened positions."),
+                new TechnologyDefinition(T("observation"), "Systematic Observation",
+                    new[] { T("basic_survival") }, TimeSpan.FromDays(2),
+                    new[] { C("observation") },
+                    description: "Compare repeated observations instead of relying on a single impression."),
+                new TechnologyDefinition(T("herbalism"), "Herbalism",
+                    new[] { T("observation"), T("gathering") }, TimeSpan.FromDays(3),
+                    new[] { C("herbalism") },
+                    description: "Identify useful plants and record safe ways to prepare them."),
+                new TechnologyDefinition(T("practical_anatomy"), "Practical Anatomy",
+                    new[] { T("herbalism"), T("hunting") }, TimeSpan.FromDays(4),
+                    new[] { C("practical_anatomy") },
+                    description: "Use practical knowledge of bodies to improve treatment and survival."),
+                new TechnologyDefinition(T("record_keeping"), "Record Keeping",
+                    new[] { T("practical_anatomy"), T("organized_labor") }, TimeSpan.FromDays(5),
+                    new[] { C("record_keeping") },
+                    description: "Preserve observations, obligations and results beyond a single memory."),
+                new TechnologyDefinition(T("natural_philosophy"), "Natural Philosophy",
+                    new[] { T("record_keeping"), T("advanced_stonecraft") }, TimeSpan.FromDays(6),
+                    new[] { C("natural_philosophy") },
+                    description: "Connect craft, nature and evidence into a shared body of knowledge."),
+                new TechnologyDefinition(T("kinship"), "Kinship Customs",
+                    new[] { T("basic_survival") }, TimeSpan.FromDays(2),
+                    new[] { C("kinship") },
+                    description: "Make family duties, protection and inheritance explicit."),
+                new TechnologyDefinition(T("settlement_council"), "Settlement Council",
+                    new[] { T("kinship"), T("shelter_construction") }, TimeSpan.FromDays(3),
+                    new[] { C("settlement_council") },
+                    description: "Resolve shared work and disputes through an acknowledged council."),
+                new TechnologyDefinition(T("exchange_and_measures"), "Exchange and Measures",
+                    new[] { T("settlement_council"), T("organized_labor") }, TimeSpan.FromDays(4),
+                    new[] { C("exchange_and_measures") },
+                    description: "Common measures make obligations and exchange understandable."),
+                new TechnologyDefinition(T("land_administration"), "Land Administration",
+                    new[] { T("exchange_and_measures"), T("record_keeping") }, TimeSpan.FromDays(5),
+                    new[] { C("land_administration") },
+                    description: "Track fields, homes and duties as the settlement grows."),
+                new TechnologyDefinition(T("customary_law"), "Customary Law",
+                    new[] { T("land_administration"), T("military_organization") }, TimeSpan.FromDays(6),
+                    new[] { C("customary_law") },
+                    description: "Turn accepted customs into predictable rules for the whole community."),
                 new TechnologyDefinition(T("stone_age_mastery"), "Stone Age Mastery",
-                    new[] { T("food_preservation"), T("primitive_agriculture"), T("weaving"), T("advanced_stonecraft"),
-                        T("restorative_mining") },
+                    new[] { T("seasonal_preparation"), T("standardization"), T("fortification"),
+                        T("natural_philosophy"), T("customary_law") },
                     TimeSpan.FromDays(6), new[] { C("stone_age_completed") })
             };
             return new TechnologyCatalog(definitions, new TechnologyUnlockTargets(availableBuildingIds,
