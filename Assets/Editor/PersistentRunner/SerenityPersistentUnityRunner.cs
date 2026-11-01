@@ -192,9 +192,11 @@ public static class SerenityPersistentUnityRunner
 
         Directory.CreateDirectory(Path.GetDirectoryName(active.xml_path));
         RegisterTestCallbacks();
+        if (!Enum.TryParse(active.test_mode, true, out TestMode requestedMode))
+            requestedMode = TestMode.EditMode;
         var filter = new Filter
         {
-            testMode = TestMode.EditMode,
+            testMode = requestedMode,
             testNames = EmptyToNull(active.test_names),
             groupNames = EmptyToNull(active.group_names),
             categoryNames = EmptyToNull(active.category_names),
@@ -204,7 +206,7 @@ public static class SerenityPersistentUnityRunner
         var runId = testApi.Execute(settings);
         active.test_run_id = runId;
         WriteActive();
-        AppendLog($"EditMode test run scheduled; run_id={runId}.");
+        AppendLog($"{requestedMode} test run scheduled; run_id={runId}.");
     }
 
     private static string[] EmptyToNull(string[] value)
@@ -395,6 +397,7 @@ public static class SerenityPersistentUnityRunner
         public string[] group_names;
         public string[] category_names;
         public string[] assembly_names;
+        public string test_mode;
         public bool quit_editor;
         public bool compile_refresh_completed;
         public int editor_process_id;
@@ -463,7 +466,7 @@ public static class SerenityPersistentUnityRunner
                 {
                     status = succeeded ? "succeeded" : "failed",
                     exit_code = succeeded ? 0 : 1,
-                    message = $"EditMode tests finished; total={total}; passed={result.PassCount}; failed={result.FailCount}; skipped={result.SkipCount}; inconclusive={result.InconclusiveCount}.",
+                    message = $"{(string.IsNullOrWhiteSpace(active.test_mode) ? "EditMode" : active.test_mode)} tests finished; total={total}; passed={result.PassCount}; failed={result.FailCount}; skipped={result.SkipCount}; inconclusive={result.InconclusiveCount}.",
                     xml_path = Path.GetFullPath(active.xml_path),
                     passed = result.PassCount,
                     failed = result.FailCount,

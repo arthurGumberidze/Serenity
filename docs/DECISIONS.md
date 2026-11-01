@@ -2564,3 +2564,19 @@ foreign-state state. Route duration, weather, supply and risk are likewise proje
 weather, travel topology, unit supply and confirmed hostile facts. Exact-binary acceptance runs only when the
 `-ui06Smoke` flag is present; it enables background frames for deterministic automation, waits for rendered
 frames, rejects dark captures and does not change ordinary player runtime behavior.
+
+## D-232 — Recovery checkpoints are evidence sources, not merge units (2026-11-01)
+
+The recovered WM15 checkpoint is not a releasable branch. A checkpoint may contribute only individually
+justified changes that compile and pass the relevant current acceptance route. Bulk vendor reserialization,
+recovery scenes, duplicate implementations, one-off import scripts and visually unaccepted candidates remain
+discarded even when they allowed an earlier dirty-tree build to pass.
+
+The diagnostic army creates every approved non-ruler rank but never `Generalissimo`; that title remains the
+single canonical ruler rank. Full-world acceptance must wait for `LocalSceneCompositionRoot.IsInitialized`, use
+the active `StartupSaveProfile` rather than a historical fixed version, and assert the current military model:
+the private's approved combat skill is 18 and a colonel-general can be an army commander outside a squad.
+
+Persistent-runner test requests carry an explicit EditMode/PlayMode value. Immutable build provenance includes
+Unity-generated project assets: a missing folder meta or stale UMA index must be stabilized and committed when
+Unity deterministically rewrites it, rather than ignored by the provenance gate.

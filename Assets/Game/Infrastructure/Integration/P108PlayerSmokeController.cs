@@ -82,12 +82,21 @@ namespace Game.Infrastructure.Integration
                 result.menu_new_game = menu.CurrentView == MainMenuView.NewGame;
                 menu.StartNewGame(new NewGameConfiguration(10818, rulerName: "Мира", dynastyName: "Дом Тихой Реки"));
             });
-            var deadline = Time.realtimeSinceStartup + 45f;
+            var deadline = Time.realtimeSinceStartup + 900f;
             while (SceneManager.GetActiveScene().name != "LocalGameplay" && Time.realtimeSinceStartup < deadline)
                 yield return null;
-            yield return null;
             root = FindAnyObjectByType<LocalSceneCompositionRoot>();
-            if (root == null) { result.error = "LocalGameplay did not initialize."; Finish(result); yield break; }
+            while ((root == null || !root.IsInitialized) && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+                root = FindAnyObjectByType<LocalSceneCompositionRoot>();
+            }
+            if (root == null || !root.IsInitialized)
+            {
+                result.error = "LocalGameplay did not finish initialization within 900 seconds.";
+                Finish(result);
+                yield break;
+            }
 
             Dictionary<ResourceId, long> before = null;
             var trainingBefore = 0;
@@ -117,10 +126,13 @@ namespace Game.Infrastructure.Integration
                 result.exact_resources_and_repeat = root.Resources.All.All(x => Total(x.Id) == before[x.Id] + 20000);
                 Submit("army_serenity"); Submit("army_serenity");
                 var records = root.MilitaryTraining.Records.Skip(trainingBefore).ToArray();
-                result.rank_definition_count = root.MilitaryTraining.Catalog.All.Count;
+                var diagnosticRanks = root.MilitaryTraining.Catalog.All
+                    .Where(level => level.Rank != Game.Domain.Military.MilitaryRank.Generalissimo).ToArray();
+                result.rank_definition_count = diagnosticRanks.Length;
                 result.all_ranks_and_repeat_unique = records.Length == result.rank_definition_count * 2 &&
                     records.Select(x => x.CharacterId).Distinct().Count() == records.Length &&
-                    root.MilitaryTraining.Catalog.All.All(level => records.Count(x => x.Rank == level.Rank) == 2) &&
+                    diagnosticRanks.All(level => records.Count(x => x.Rank == level.Rank) == 2) &&
+                    records.All(x => x.Rank != Game.Domain.Military.MilitaryRank.Generalissimo) &&
                     records.All(x => root.Appearances.Get(x.CharacterId).ClothingId ==
                                      StoneAgeAppearanceProfiles.MilitaryClothing);
                 Invoke(root.GameplayUi.RootVisual.Q<Button>("family-diagnostic"));
@@ -155,7 +167,7 @@ namespace Game.Infrastructure.Integration
                 Invoke(root.GameplayUi.RootVisual.Q<VisualElement>("confirmation-modal").Query<Button>().ToList()
                     .First(x => x.text == "Загрузить"));
                 var snapshot = root.Saves.Capture();
-                result.save_load_v25 = snapshot.FormatVersion == Game.Domain.SaveSnapshot.DiagnosticVersion &&
+                result.save_load_v25 = snapshot.FormatVersion == StartupSaveProfile.ForWorld(root.WorldDefinition).FormatVersion &&
                     snapshot.Diagnostics != null && snapshot.Diagnostics.CheatsUsed;
                 result.achievements_irreversible = root.Diagnostics.CheatsUsed && !root.Diagnostics.AchievementsEnabled;
                 root.GameplayUi.SetPanel(GameplayPanel.Codes);

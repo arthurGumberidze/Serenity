@@ -43,6 +43,17 @@ Unity Test Framework filters. The asynchronous API is intentional: multi-frame E
 Every completed test command writes authoritative `test-results.xml`, `result.json` and `command.log`. A
 selection with zero test cases fails closed with exit code 1 and still writes XML with `total="0"`.
 
+PlayMode tests use the same persistent Editor and evidence contract by adding `-TestMode PlayMode`:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\Tools\UnityRunner.ps1 test `
+  -TestMode PlayMode -CategoryNames 'UI02' `
+  -OutputPath Artifacts\UI02\playmode
+```
+
+`-TestMode` defaults to `EditMode`, so existing commands remain unchanged. PlayMode requests are serialized
+with compile, EditMode and build requests and resume their callback after the ordinary play-mode domain reload.
+
 ## Build a Development Player
 
 ```powershell

@@ -195,13 +195,6 @@ namespace Game.Infrastructure
                     Shader.SetGlobalTexture("_WorldMapSnowNormal",winter.SnowNormal);
                     Shader.SetGlobalTexture("_WorldMapSnowHeight",winter.SnowHeight);
                 }
-                Shader.SetGlobalFloat("_WorldMapAlpineRockTextures",winter?.AlpineRockAlbedo!=null?1f:0f);
-                if(winter?.AlpineRockAlbedo!=null)
-                {
-                    Shader.SetGlobalTexture("_WorldMapAlpineRockAlbedo",winter.AlpineRockAlbedo);
-                    Shader.SetGlobalTexture("_WorldMapAlpineRockNormal",winter.AlpineRockNormal);
-                    Shader.SetGlobalTexture("_WorldMapAlpineRockAo",winter.AlpineRockAo);
-                }
                 if (natureCatalog.RuntimeLate?.WaterWaves != null) natureCatalog.WaterRipples = natureCatalog.RuntimeLate.WaterWaves;
                 natureCatalog.RuntimeWorldToDesign = ArtWorldToDesign;
                 var snowRegion = ArtDirection.regions[2];

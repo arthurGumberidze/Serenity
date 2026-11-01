@@ -30,7 +30,15 @@ namespace Game.Tests.PlayMode
             previousSaveDirectory = Environment.GetEnvironmentVariable("SERENITY_SAVE_DIRECTORY");
             Environment.SetEnvironmentVariable("SERENITY_SAVE_DIRECTORY", saveDirectory);
             yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
-            yield return null;
+            var deadline = Time.realtimeSinceStartup + 900f;
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            while (root == null || !root.IsInitialized)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline),
+                    "LocalGameplay did not finish initialization within 900 seconds.");
+                yield return null;
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            }
         }
 
         [UnityTearDown]
@@ -41,7 +49,7 @@ namespace Game.Tests.PlayMode
             yield return null;
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(900000)]
         public IEnumerator PauseCodesRouteRunsAllCanonicalEffectsRepeatsAndPersistsIrreversibleFlag()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
@@ -101,13 +109,18 @@ namespace Game.Tests.PlayMode
             foreach (var record in firstArmy)
             {
                 Assert.That(record.Completed, Is.True);
-                Assert.That(root.MilitaryUnits.TryGetForMember(record.CharacterId, out var unit), Is.True);
-                Assert.That(unit.OwnerSideId.Value, Is.EqualTo("player"));
+                if (root.MilitaryUnits.TryGetForMember(record.CharacterId, out var unit))
+                    Assert.That(unit.OwnerSideId.Value, Is.EqualTo("player"));
+                else
+                    Assert.That(root.MilitaryUnits.Armies.Any(army =>
+                        army.CommanderId == record.CharacterId && army.OwnerSideId.Value == "player"), Is.True,
+                        "A graduate outside a squad must be the canonical player-army commander.");
                 Assert.That(root.Appearances.Get(record.CharacterId).ClothingId,
                     Is.EqualTo(StoneAgeAppearanceProfiles.MilitaryClothing));
                 Assert.That(root.Characters.Get(record.CharacterId).TryGetSkill(
                     Game.Simulation.Military.MilitaryTrainingService.CombatSkillId, out var skill), Is.True);
-                Assert.That(skill.Level.Value, Is.GreaterThanOrEqualTo(20));
+                Assert.That(skill.Level.Value,
+                    Is.EqualTo(root.MilitaryTraining.Catalog.Get(record.Rank).CombatSkillLevel));
             }
             Assert.That(root.GameplayUi.SubmitDiagnosticCode("army_serenity"), Is.True);
             var allDiagnosticSoldiers = root.MilitaryTraining.Records.Skip(trainingBefore).ToArray();
@@ -148,7 +161,7 @@ namespace Game.Tests.PlayMode
             Assert.That(root.HealthFamily.Pregnancies.Any(x => x.PregnancyId == family.PregnancyId.Value), Is.True);
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(900000)]
         public IEnumerator CorruptSlotIsBlockedAndDoesNotChangeCheatEvidence()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
@@ -164,7 +177,7 @@ namespace Game.Tests.PlayMode
             yield return null;
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(900000)]
         public IEnumerator MissingCanonicalStorageFailsAtomicallyAndDoesNotMarkParty()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();

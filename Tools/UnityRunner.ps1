@@ -11,6 +11,8 @@ param(
     [string[]]$GroupNames,
     [string[]]$CategoryNames,
     [string[]]$AssemblyNames,
+    [ValidateSet('EditMode', 'PlayMode')]
+    [string]$TestMode = 'EditMode',
     [int]$TimeoutSeconds = 900,
     [switch]$QuitOwnedEditor
 )
@@ -149,6 +151,7 @@ function Submit-Command([string]$CommandName) {
         group_names = @($GroupNames)
         category_names = @($CategoryNames)
         assembly_names = @($AssemblyNames)
+        test_mode = $TestMode
         quit_editor = [bool]($CommandName -eq 'shutdown' -and $QuitOwnedEditor)
     }
     $tempPath = Join-Path $requestRoot ($id + '.tmp')

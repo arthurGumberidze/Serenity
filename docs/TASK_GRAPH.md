@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+WM15 recovered-checkpoint audit (2026-11-01): **DONE**. Audited the 184-file local checkpoint and retained only
+runner PlayMode support, unique-ruler P108 diagnostics/readiness/current-save acceptance, removal of dead
+AlpineRock references and stable Unity-generated import records. Rejected bulk vendor, recovery, duplicate snow,
+unaccepted winter/Terrain Sample presentation and authoring-script changes. Final evidence: compile 0 errors,
+P108 EditMode 10/10, runner PlayMode 1/1, all P108 PlayMode cases covered, immutable Windows build success and
+exact Player exit 0/`passed=true`. Evidence: `docs/validation/WM15CheckpointAudit.md`. UI08 user review remains
+the next explicit action.
+
 UI08 interface integration and release qualification (2026-11-01): **DONE**. Qualified one exact-binary route
 from Main Menu/New Game through all UI02-UI07 workspaces, TPS, pause, Save/Load, Realm/return and campaign outcomes
 at both required layouts. Fixed the demonstrated People -> Realm stale-frame bleed without new authority or

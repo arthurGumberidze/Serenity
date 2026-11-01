@@ -1,5 +1,9 @@
 # NEXT_TASK.md
 
+The recovered WM15 checkpoint audit is complete; see `docs/validation/WM15CheckpointAudit.md`. Its rejected
+vendor/winter/recovery experiments are not future work unless explicitly reopened. The next unblocked action
+remains the UI08 user review below.
+
 ## Next action — UI08 user review (2026-11-01)
 
 UI01-UI08 implementation and release qualification are complete. Candidate:

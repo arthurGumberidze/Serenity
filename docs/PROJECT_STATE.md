@@ -1,5 +1,16 @@
 # PROJECT_STATE.md
 
+## WM15 recovered-checkpoint audit and clean-tree closure — DONE (2026-11-01)
+
+The 184-file local WM15 recovery checkpoint was audited rather than merged. Rejected scope includes bulk vendor
+resaves, unaccepted winter/Terrain Sample shader/presentation experiments, duplicate snow trails, recovery scenes
+and one-off authoring tools. The retained closure is limited to runner PlayMode routing, unique-ruler P108
+diagnostics plus honest readiness/current-save-profile acceptance, removal of dead AlpineRock references, and
+the two generated import records required for immutable builds. No new dependency or gameplay authority was
+added. Final evidence: compile 0 errors; P108 EditMode 10/10; runner PlayMode probe 1/1; all three P108 PlayMode
+cases covered across the readiness run plus final targeted pass; Development build succeeded; exact Player
+exit 0/`passed=true`. Details: `docs/validation/WM15CheckpointAudit.md`. UI08 user review remains next.
+
 ## UI08 interface integration and release qualification — DONE (2026-11-01)
 
 The accepted UI01-UI07 interface now has one exact-binary release route from Main Menu/New Game through ruler and
