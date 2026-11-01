@@ -112,6 +112,19 @@ namespace Game.Tests.PlayMode
             yield return null;
             Assert.That(ui.RootVisual.Q("research-dependency-tree"), Is.Not.Null);
             Assert.That(ui.RootVisual.Q("research-node-controlled_fire"), Is.Not.Null);
+            var connectorLayer = ui.RootVisual.Q("research-prerequisite-connectors");
+            Assert.That(connectorLayer, Is.Not.Null);
+            Assert.That((int)connectorLayer.userData, Is.GreaterThanOrEqualTo(root.Technologies.All.Count - 1),
+                "Every node must remain connected to a readable branch path.");
+            Assert.That((int)connectorLayer.userData, Is.LessThan(root.Technologies.All.Sum(value =>
+                    value.Prerequisites.Count)),
+                "Secondary cross-branch requirements must stay in the detail card instead of creating line clutter.");
+            Assert.That(connectorLayer.worldBound.width, Is.GreaterThan(100f));
+            Assert.That(connectorLayer.worldBound.height, Is.GreaterThan(100f));
+            Assert.That(ui.RootVisual.Q("research-node-basic_survival")
+                .ClassListContains("research-state-completed"), Is.True);
+            Assert.That(ui.RootVisual.Q("research-node-fortification")
+                .ClassListContains("research-state-locked"), Is.True);
             var researchPanel = ui.RootVisual.Q<ScrollView>("main-panel");
             var researchViewport = researchPanel.contentViewport.worldBound;
             var branches = ui.RootVisual.Q("research-branch-columns").worldBound;
@@ -133,6 +146,10 @@ namespace Game.Tests.PlayMode
             ui.RefreshNow();
             yield return null;
             Assert.That(ui.RootVisual.Q("military-recruit-roster"), Is.Not.Null);
+            var militaryText = string.Join("\n", ui.RootVisual.Q("main-panel").Query<Label>().ToList()
+                .Select(label => label.text));
+            Assert.That(militaryText, Does.Not.Contain("List is empty"));
+            Assert.That(militaryText, Does.Not.Contain("ещё два открывает исследование"));
             Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(
                 new Vector2(Screen.width * .5f, Screen.height * .5f)), Is.True,
                 "A full-screen workspace must consume the wheel/pointer instead of allowing map zoom.");
@@ -171,6 +188,12 @@ namespace Game.Tests.PlayMode
             Assert.That(root.GameplayUi.RootVisual.Q("character-identity-metrics"), Is.Not.Null);
             Assert.That(root.GameplayUi.RootVisual.Q("character-wellbeing-card"), Is.Not.Null);
             Assert.That(root.GameplayUi.RootVisual.Q("character-activity-card"), Is.Not.Null);
+            var characterProgress = root.GameplayUi.RootVisual.Q<ProgressBar>();
+            Assert.That(characterProgress, Is.Not.Null);
+            var progressBackground = characterProgress.Q(className: "unity-progress-bar__background");
+            var progressFill = characterProgress.Q(className: "unity-progress-bar__progress");
+            Assert.That(progressBackground.style.backgroundColor.value, Is.EqualTo(SerenityUiDesign.Canvas));
+            Assert.That(progressFill.style.backgroundColor.value, Is.EqualTo(SerenityUiDesign.Accent));
             Assert.That(inspectorText, Does.Not.Contain(root.MaleDemoCharacter.Id.ToString()));
 
             root.GameplayUi.SetDeveloperUiVisible(true);

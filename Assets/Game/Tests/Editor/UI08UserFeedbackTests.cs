@@ -21,7 +21,11 @@ namespace Game.Tests.Editor
         {
             StringAssert.Contains("research-dependency-tree", Source);
             StringAssert.Contains("GetResearchDepth", Source);
-            StringAssert.Contains("research-depth-connector-", Source);
+            StringAssert.Contains("research-prerequisite-connectors", Source);
+            StringAssert.Contains("BezierCurveTo", Source);
+            StringAssert.Contains("research-state-", Source);
+            StringAssert.Contains("ShouldDrawResearchConnector", Source);
+            StringAssert.Contains("tree.Insert(0, connectors)", Source);
             StringAssert.Contains("research-branch-columns", Source);
             StringAssert.Contains("research-selected-detail", Source);
             StringAssert.Contains("dynasty-generation-connector-", Source);
@@ -38,6 +42,9 @@ namespace Game.Tests.Editor
             StringAssert.DoesNotContain("var roster = context.Selection.SelectedCharacterIds.ToArray()", Source);
             StringAssert.Contains("GetActiveUnitLimit", Source);
             StringAssert.Contains("IsEligibleMilitaryMember", Source);
+            StringAssert.DoesNotContain("ещё два открывает исследование", Source);
+            StringAssert.Contains("recruitList.style.display = DisplayStyle.None", Source);
+            StringAssert.Contains("unitList.style.display = DisplayStyle.None", Source);
         }
 
         [Test]
@@ -48,6 +55,9 @@ namespace Game.Tests.Editor
             StringAssert.Contains("character-skills-foldout", Source);
             StringAssert.Contains("character-family-foldout", Source);
             StringAssert.Contains("!peopleRisk && !hasSelection", Source);
+            StringAssert.Contains("serenity-inspector-progress", Source);
+            StringAssert.Contains("unity-progress-bar__background", Source);
+            StringAssert.Contains("unity-progress-bar__progress", Source);
         }
 
         [Test]

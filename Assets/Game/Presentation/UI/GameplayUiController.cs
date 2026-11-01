@@ -2682,14 +2682,16 @@ namespace Game.Presentation.UI
                 categoryRow.Add(categoryButton);
             }
             mainPanel.Add(categoryRow);
-            AddMuted(mainPanel, "Выберите направление развития. Узлы идут сверху вниз от общих основ к специализации.");
             var active = context.Research.ActiveProject;
             var status = ResearchWorkerStatusQuery.Capture(context.Research, context.AiAgents);
             var workerRow = Row();
-            AddMuted(workerRow, active == null ? "Текущее исследование: нет" :
+            var workerStatus = active == null ? "Текущее исследование: нет" :
                 "Исследуется: " + Content("technology", active.TechnologyId.ToString()) + " · " +
                 RussianTextCatalog.Percent(active.Progress) + " · исследователей " + status.ActiveCount + "/" +
-                status.AssignedCount);
+                status.AssignedCount;
+            if (context.Selection.SelectedCharacterIds.Count == 0)
+                workerStatus += " · для назначения выберите жителей";
+            AddMuted(workerRow, workerStatus);
             var assign = ActionButton(T("ui.research.assign"), () => TryCommand(() =>
                 SetStatus(F("ui.research.assigned_count", context.Research.AssignWorkers(context.Selection.SelectedCharacterIds)))));
             var remove = ActionButton(T("ui.research.remove"), () => TryCommand(() =>
@@ -2703,7 +2705,6 @@ namespace Game.Presentation.UI
                 if (!context.Research.Cancel()) throw PlayerError("ui.research.no_active");
             })));
             mainPanel.Add(workerRow);
-            if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.research.need_selection"));
             if (!selectedResearchTechnology.HasValue)
                 selectedResearchTechnology = new TechnologyId("basic_survival");
 
@@ -2715,19 +2716,21 @@ namespace Game.Presentation.UI
             tree.style.alignItems = Align.Center;
             tree.style.flexGrow = 1;
             tree.style.minWidth = 0;
+            tree.style.position = Position.Relative;
+            tree.style.overflow = Overflow.Visible;
+            var visibleNodes = new Dictionary<TechnologyId, VisualElement>();
             var rootTechnology = context.Research.Catalog.Get(new TechnologyId("basic_survival"));
             var rootNode = CreateResearchTreeNode(rootTechnology, active);
             rootNode.style.width = 260;
+            rootNode.style.marginBottom = 6;
             tree.Add(rootNode);
-            var rootConnector = new Label("↓") { name = "research-depth-connector-1" };
-            StyleCompactResearchConnector(rootConnector);
-            rootConnector.style.color = AccentColor;
-            tree.Add(rootConnector);
+            visibleNodes[rootTechnology.Id] = rootNode;
 
             var branches = Row();
             branches.name = "research-branch-columns";
             branches.style.alignItems = Align.FlexStart;
             branches.style.width = new Length(100, LengthUnit.Percent);
+            branches.style.marginBottom = 6;
             var visibleCategories = researchCategory == ResearchWorkspaceCategory.All
                 ? new[] { ResearchWorkspaceCategory.Survival, ResearchWorkspaceCategory.Production,
                     ResearchWorkspaceCategory.Military, ResearchWorkspaceCategory.Knowledge,
@@ -2753,17 +2756,32 @@ namespace Game.Presentation.UI
                     var node = CreateResearchTreeNode(technology, active);
                     node.style.width = new Length(100, LengthUnit.Percent);
                     column.Add(node);
+                    visibleNodes[technology.Id] = node;
                 }
                 branches.Add(column);
             }
             tree.Add(branches);
-            var capstoneConnector = new Label("↓") { name = "research-depth-connector-capstone" };
-            StyleCompactResearchConnector(capstoneConnector);
-            capstoneConnector.style.color = AccentColor;
-            tree.Add(capstoneConnector);
             var capstone = CreateResearchTreeNode(context.Research.Catalog.Get(new TechnologyId("stone_age_mastery")), active);
             capstone.style.width = 280;
             tree.Add(capstone);
+            visibleNodes[new TechnologyId("stone_age_mastery")] = capstone;
+            var connectors = new ResearchPrerequisiteConnectorLayer();
+            foreach (var technology in context.Research.Catalog.All)
+            {
+                if (!visibleNodes.TryGetValue(technology.Id, out var child)) continue;
+                foreach (var prerequisite in technology.Prerequisites)
+                    if (ShouldDrawResearchConnector(technology, prerequisite) &&
+                        visibleNodes.TryGetValue(prerequisite, out var parent))
+                        connectors.AddEdge(parent, child, ResearchConnectorColor(technology, active));
+            }
+            connectors.userData = connectors.EdgeCount;
+            // Keep the dependency rails behind the cards. Cross-branch requirements are still
+            // enforced by the domain model and listed in the selected-node detail, but only the
+            // branch-leading edge is drawn so the full five-column tree remains readable.
+            tree.Insert(0, connectors);
+            tree.RegisterCallback<GeometryChangedEvent>(_ => connectors.RefreshGeometry());
+            foreach (var node in visibleNodes.Values)
+                node.RegisterCallback<GeometryChangedEvent>(_ => connectors.RefreshGeometry());
             var workspace = Row();
             workspace.name = "research-tree-workspace";
             workspace.style.alignItems = Align.FlexStart;
@@ -2779,15 +2797,85 @@ namespace Game.Presentation.UI
             mainPanel.Add(workspace);
         }
 
-        private static void StyleCompactResearchConnector(VisualElement connector)
+        private bool ShouldDrawResearchConnector(TechnologyDefinition technology, TechnologyId prerequisite)
         {
-            connector.style.height = 9;
-            connector.style.minHeight = 9;
-            connector.style.fontSize = 10;
-            connector.style.marginTop = 0;
-            connector.style.marginBottom = 0;
-            connector.style.paddingTop = 0;
-            connector.style.paddingBottom = 0;
+            var root = new TechnologyId("basic_survival");
+            if (prerequisite == root || technology.Id == new TechnologyId("stone_age_mastery")) return true;
+            var category = ResearchCategoryFor(technology.Id.ToString());
+            if (ResearchCategoryFor(prerequisite.ToString()) == category) return true;
+            return !technology.Prerequisites.Any(candidate => candidate != prerequisite &&
+                ResearchCategoryFor(candidate.ToString()) == category);
+        }
+
+        private Color ResearchConnectorColor(TechnologyDefinition technology, ResearchProject active)
+        {
+            var completed = context.Research.IsCompleted(technology.Id);
+            var open = active != null && active.TechnologyId == technology.Id ||
+                context.Research.IsAvailable(technology.Id);
+            var color = completed ? SerenityUiDesign.Success : open ? AccentColor : SerenityUiDesign.TextMuted;
+            color.a = completed ? .8f : open ? .72f : .24f;
+            return color;
+        }
+
+        private sealed class ResearchPrerequisiteConnectorLayer : VisualElement
+        {
+            private readonly List<Edge> edges = new List<Edge>();
+
+            public ResearchPrerequisiteConnectorLayer()
+            {
+                name = "research-prerequisite-connectors";
+                pickingMode = PickingMode.Ignore;
+                style.position = Position.Absolute;
+                style.left = 0;
+                style.right = 0;
+                style.top = 0;
+                style.bottom = 0;
+                generateVisualContent += DrawConnectors;
+            }
+
+            public int EdgeCount => edges.Count;
+
+            public void AddEdge(VisualElement parent, VisualElement child, Color color) =>
+                edges.Add(new Edge(parent, child, color));
+
+            public void RefreshGeometry() => MarkDirtyRepaint();
+
+            private void DrawConnectors(MeshGenerationContext context)
+            {
+                var painter = context.painter2D;
+                foreach (var edge in edges)
+                {
+                    if (edge.Parent.panel == null || edge.Child.panel == null) continue;
+                    var parentBounds = edge.Parent.worldBound;
+                    var childBounds = edge.Child.worldBound;
+                    var start = this.WorldToLocal(new Vector2(parentBounds.center.x, parentBounds.yMax));
+                    var end = this.WorldToLocal(new Vector2(childBounds.center.x, childBounds.yMin));
+                    if (float.IsNaN(start.x) || float.IsNaN(start.y) || float.IsNaN(end.x) || float.IsNaN(end.y))
+                        continue;
+                    var bend = Mathf.Max(10f, Mathf.Abs(end.y - start.y) * .45f);
+                    painter.strokeColor = edge.Color;
+                    painter.lineWidth = 2f;
+                    painter.BeginPath();
+                    painter.MoveTo(start);
+                    painter.BezierCurveTo(new Vector2(start.x, start.y + bend),
+                        new Vector2(end.x, end.y - bend), end);
+                    painter.Stroke();
+                }
+            }
+
+            private readonly struct Edge
+            {
+                public Edge(VisualElement parent, VisualElement child, Color color)
+                {
+                    Parent = parent;
+                    Child = child;
+                    Color = color;
+                }
+
+                public VisualElement Parent { get; }
+                public VisualElement Child { get; }
+                public Color Color { get; }
+            }
         }
 
         private int GetResearchDepth(TechnologyDefinition technology, IDictionary<TechnologyId, int> depths)
@@ -2812,14 +2900,29 @@ namespace Game.Presentation.UI
             });
             card.name = "research-node-" + technology.Id;
             card.AddToClassList("serenity-research-tree-node");
-            card.style.height = 26;
-            card.style.minHeight = 26;
-            card.style.marginTop = 0;
-            card.style.marginBottom = 0;
+            var stateClass = stateKey == "enum.ResearchAvailability.Completed" ? "completed" :
+                stateKey == "enum.ResearchAvailability.Active" ? "active" :
+                stateKey == "enum.ResearchAvailability.Available" ? "available" : "locked";
+            card.AddToClassList("research-state-" + stateClass);
+            card.style.height = 30;
+            card.style.minHeight = 30;
+            card.style.marginTop = 2;
+            card.style.marginBottom = 2;
             card.style.paddingTop = 1;
             card.style.paddingBottom = 1;
             card.style.fontSize = 10;
             card.style.whiteSpace = WhiteSpace.NoWrap;
+            var stateColor = stateClass == "completed" ? SerenityUiDesign.Success :
+                stateClass == "active" || stateClass == "available" ? AccentColor : SerenityUiDesign.TextMuted;
+            card.style.borderTopColor = stateColor;
+            card.style.borderRightColor = stateColor;
+            card.style.borderBottomColor = stateColor;
+            card.style.borderLeftColor = stateColor;
+            card.style.borderTopWidth = 1;
+            card.style.borderRightWidth = 1;
+            card.style.borderBottomWidth = 1;
+            card.style.borderLeftWidth = 1;
+            card.style.opacity = stateClass == "locked" ? .55f : 1f;
             var marker = stateKey == "enum.ResearchAvailability.Completed" ? "✓" :
                 stateKey == "enum.ResearchAvailability.Active" ? "◉" :
                 stateKey == "enum.ResearchAvailability.Available" ? "○" : "◆";
@@ -3329,10 +3432,7 @@ namespace Game.Presentation.UI
             militaryDraftSelection.RemoveWhere(id => recruits.All(person => person.Id != id));
             AddSection(mainPanel, "Новый отряд");
             AddMuted(mainPanel, "Выберите военных прямо здесь. Гражданские жители не могут входить в отряд.");
-            AddLine(mainPanel, "Активные отряды: " + units.Count + " / " + unitLimit +
-                (unitLimit == MilitaryFormationRules.InitialActiveUnitLimit
-                    ? " · ещё два открывает исследование «Военная организация»"
-                    : " · расширенная структура командования"));
+            AddLine(mainPanel, "Активные отряды: " + units.Count + " / " + unitLimit);
             var recruitList = new ListView(recruits, 42,
                 () =>
                 {
@@ -3355,8 +3455,10 @@ namespace Game.Presentation.UI
                 name = "military-recruit-roster",
                 selectionType = SelectionType.None
             };
-            recruitList.style.height = Mathf.Min(252, Math.Max(46, recruits.Count * 42));
+            if (recruits.Count == 0) recruitList.style.display = DisplayStyle.None;
+            else recruitList.style.height = Mathf.Min(252, Math.Max(46, recruits.Count * 42));
             mainPanel.Add(recruitList);
+            SuppressTechnicalEmptyListLabel(recruitList);
             AddMuted(mainPanel, "Выбрано: " + militaryDraftSelection.Count + " / " +
                 MilitaryUnitService.MaximumSquadMembers);
             var hasSelectedCharacters = militaryDraftSelection.Count > 0;
@@ -3396,8 +3498,10 @@ namespace Game.Presentation.UI
                 name = "military-unit-roster",
                 selectionType = SelectionType.None
             };
-            unitList.style.height = Mathf.Min(180, Math.Max(58, units.Count * 54));
+            if (units.Count == 0) unitList.style.display = DisplayStyle.None;
+            else unitList.style.height = Mathf.Min(180, Math.Max(58, units.Count * 54));
             mainPanel.Add(unitList);
+            SuppressTechnicalEmptyListLabel(unitList);
             if (!selectedUnit.HasValue || !context.Military.TryGet(selectedUnit.Value, out var selected)) return;
             var selectedSummary = context.Military.GetRosterSummary(selected.Id);
             var metrics = Row();
@@ -4332,6 +4436,16 @@ namespace Game.Presentation.UI
             if (DeveloperUiVisible) AddMuted(inspector, F("ui.character.stable_id", id));
         }
 
+        private static void SuppressTechnicalEmptyListLabel(ListView listView)
+        {
+            foreach (var label in listView.Query<Label>().ToList())
+            {
+                if (!string.Equals(label.text, "List is empty", StringComparison.Ordinal)) continue;
+                label.text = string.Empty;
+                label.style.display = DisplayStyle.None;
+            }
+        }
+
         private static void AddInspectorMetric(VisualElement parent, string label, string value)
         {
             var card = SerenityUiDesign.Card();
@@ -4355,9 +4469,33 @@ namespace Game.Presentation.UI
                 highValue = 100f,
                 value = Mathf.Clamp(value, 0f, 100f)
             };
+            progress.name = "character-progress-" + (label ?? string.Empty).ToLowerInvariant().Replace(' ', '-');
+            progress.AddToClassList("serenity-inspector-progress");
             progress.style.height = 22;
             progress.style.marginTop = 2;
             progress.style.marginBottom = 2;
+            progress.style.backgroundColor = Color.clear;
+            var background = progress.Q(className: "unity-progress-bar__background");
+            if (background != null)
+            {
+                background.style.backgroundColor = SerenityUiDesign.Canvas;
+                background.style.borderTopColor = SerenityUiDesign.Accent;
+                background.style.borderRightColor = SerenityUiDesign.Accent;
+                background.style.borderBottomColor = SerenityUiDesign.Accent;
+                background.style.borderLeftColor = SerenityUiDesign.Accent;
+                background.style.borderTopWidth = 1;
+                background.style.borderRightWidth = 1;
+                background.style.borderBottomWidth = 1;
+                background.style.borderLeftWidth = 1;
+            }
+            var fill = progress.Q(className: "unity-progress-bar__progress");
+            if (fill != null) fill.style.backgroundColor = SerenityUiDesign.Accent;
+            var title = progress.Q(className: "unity-progress-bar__title");
+            if (title != null)
+            {
+                title.style.color = SerenityUiDesign.Text;
+                title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            }
             parent.Add(progress);
         }
 

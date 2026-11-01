@@ -2619,3 +2619,19 @@ World camera input is blocked by the actual UI Toolkit pick result, not only by 
 ensures wheel input over nested scroll views and menu controls is consumed by the interface. Unity 6 material and
 UMA index migrations produced during the first immutable build are retained only when an immediate second build
 does not rewrite them again; stable generated serialization is part of the clean source state.
+
+## D-234 — Research overview prioritizes readable branch rails without weakening prerequisites (2026-11-01)
+
+The research workspace is a disposable projection of the canonical `TechnologyCatalog`. It draws the common root,
+same-branch prerequisite rails, cross-branch edges only when no same-branch parent exists, and all five endpoint
+edges into the shared capstone. Additional cross-branch prerequisites remain fully enforced by `ResearchService`
+and are shown in the selected-node detail; suppressing their duplicate overview lines changes presentation only.
+Connector geometry is drawn behind separated technology cards so labels remain legible and branch order reads
+top-to-bottom at 1920x1080. Completed, active, available and locked styling likewise derives from canonical
+research state and is never saved as authority.
+
+Military empty `ListView` implementation labels are hidden rather than localized as game content, and the active
+unit-limit row reports only the current count/cap; the two-to-four capability rule remains Domain-owned. Character
+progress controls override Unity's default white internals with existing Serenity design tokens. These changes add
+no gameplay authority, dependency, save alias or migration. Old research saves remain intentionally unsupported by
+explicit user direction.

@@ -1,5 +1,18 @@
 # NEXT_TASK.md
 
+## Next action — UI08 research graph user retest (2026-11-01)
+
+Launch `Builds/UI08ResearchGraphFix/Serenity.exe` and start a **new game**. At 1920x1080 open Research and verify
+that the root fans into five readable top-to-bottom branches, node gaps expose the dependency rails, locked nodes
+remain visually distinct, and all branch endpoints converge on `Освоение каменного века`. Select nodes with
+secondary cross-branch requirements and confirm the complete requirements remain listed in the fixed right detail
+card. Also verify Military contains neither `List is empty` nor the squad-research hint, and character wellbeing /
+skill bars use the dark/gold palette rather than white controls.
+
+Do not load, merge or migrate an old research save; the user explicitly declined save migration. Exact automated
+and build evidence is in `docs/validation/UI08ResearchGraphFix.md`. Await explicit feedback before another visual
+or content pass.
+
 ## Next action — UI08 second-review user retest (2026-11-01)
 
 Launch `Builds/UI08SecondReview/Serenity.exe` and start a new game. At 1920x1080 verify that the full Research

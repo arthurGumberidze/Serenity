@@ -109,6 +109,14 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Technologies.Get(new TechnologyId("military_organization")).Unlocks
                 .Any(value => value.Kind == TechnologyUnlockKind.Capability &&
                     value.ContentId == "military_organization"), Is.True);
+            CollectionAssert.AreEquivalent(new[] { "gathering", "stone_tools", "militia", "observation", "kinship" },
+                fixture.Technologies.All.Where(value => value.Prerequisites.Count == 1 &&
+                        value.Prerequisites[0] == new TechnologyId("basic_survival"))
+                    .Select(value => value.Id.ToString()));
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("formation_training")), Is.False);
+            Complete(fixture.Research, fixture.Worker, "militia");
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("formation_training")), Is.True);
+            Assert.That(fixture.Research.IsAvailable(new TechnologyId("military_organization")), Is.False);
         }
 
         [Test] public void PartialProgressCompletionAndExactOnceCommitAreDeterministic()

@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+UI08 research graph readability closure (2026-11-01): **DONE**. Replaced the unreadable all-prerequisite
+foreground line tangle with behind-card branch rails, visible node spacing, explicit research-state styling and a
+five-endpoint capstone convergence. Canonical secondary cross-branch prerequisites remain enforced and appear in
+the selected detail card. Military no longer leaks `List is empty` or advertises the future squad increase, and
+character progress bars use the Black and Gold palette. Final evidence: compile 0/0; focused EditMode 34/34;
+research/military PlayMode 1/1; character PlayMode 1/1; final 1920x1080 spacing PlayMode 1/1; immutable Windows
+build 0/0. Evidence: `docs/validation/UI08ResearchGraphFix.md`. User retest with a new game is next.
+
 UI08 second-review implementation (2026-11-01): **DONE**. Implemented the approved full-screen top-down
 33-technology research tree, spouse-inclusive dynasty projection, military-profession-only recruitment with a
 two-squad start/four-squad research cap, and the structured compact character inspector. The full research graph

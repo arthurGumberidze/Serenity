@@ -1,5 +1,21 @@
 # PROJECT_STATE.md
 
+## UI08 research graph readability closure — DONE (2026-11-01)
+
+The second-review research workspace now draws real prerequisite rails behind the technology cards instead of
+decorative arrows or an all-edge foreground tangle. The common root fans into five readable specialization
+columns; intra-branch requirements remain visible between separated nodes and the five branch endpoints converge
+on the Stone Age capstone. Secondary cross-branch prerequisites remain canonical and are listed in the fixed
+detail card, but are deliberately suppressed from the overview when a same-branch path already exists. Completed,
+available, active and locked states remain explicit and domain availability is unchanged.
+
+The same closure removes technical `List is empty` labels and the research-limit hint from Military, and replaces
+the character inspector's white default progress bars with the Black and Gold palette. Old research saves are not
+migrated or merged. Final evidence: compile 0/0, focused EditMode 34/34, research/military PlayMode 1/1, character
+inspector PlayMode 1/1, final 1920x1080 spacing PlayMode 1/1, and an immutable Windows build at
+`Builds/UI08ResearchGraphFix/Serenity.exe` with 0 errors / 0 warnings. Details:
+`docs/validation/UI08ResearchGraphFix.md`.
+
 ## UI08 second-review implementation — DONE (2026-11-01)
 
 The approved second-review prototype is implemented in the canonical Unity UI. Research is a full-screen,
