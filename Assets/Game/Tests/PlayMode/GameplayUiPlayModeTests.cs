@@ -92,6 +92,50 @@ namespace Game.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator UserFeedbackWorkspacesRenderTreesRecruitmentAndBlockTheWorldPointer()
+        {
+            LocalSceneCompositionRoot root = null;
+            for (var frame = 0; frame < 2400; frame++)
+            {
+                root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+                if (root?.GameplayUi != null) break;
+                yield return null;
+            }
+            Assert.That(root?.GameplayUi, Is.Not.Null);
+            var ui = root.GameplayUi;
+
+            ui.SetPanel(GameplayPanel.Research);
+            ui.RefreshNow();
+            yield return null;
+            Assert.That(ui.RootVisual.Q("research-dependency-tree"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("research-node-controlled_fire"), Is.Not.Null);
+
+            ui.SetPanel(GameplayPanel.Dynasty);
+            ui.RefreshNow();
+            yield return null;
+            Assert.That(ui.RootVisual.Q("dynasty-family-tree"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("dynasty-generation-0"), Is.Not.Null);
+            Assert.That(ui.RootVisual.Q("dynasty-generation-1"), Is.Not.Null);
+
+            ui.SetPanel(GameplayPanel.Military);
+            ui.RefreshNow();
+            yield return null;
+            Assert.That(ui.RootVisual.Q("military-recruit-roster"), Is.Not.Null);
+            Assert.That(root.PointerRaycaster.IsPointerBlockedByUi(
+                new Vector2(Screen.width * .5f, Screen.height * .5f)), Is.True,
+                "A full-screen workspace must consume the wheel/pointer instead of allowing map zoom.");
+
+            ui.SetPanel(GameplayPanel.Economy);
+            ui.RefreshNow();
+            yield return null;
+            var economyText = string.Join("\n", ui.RootVisual.Q("main-panel").Query<Label>().ToList()
+                .Select(label => label.text));
+            Assert.That(economyText, Does.Not.Contain("Производство"));
+            Assert.That(ui.RootVisual.Q("resource-primary-chip-water"), Is.Null);
+            Assert.That(ui.RootVisual.Q("resident-roster-open"), Is.Not.Null);
+        }
+
+        [UnityTest]
         public IEnumerator SelectionInspectorAndDeveloperToggleRemainAdapters()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();

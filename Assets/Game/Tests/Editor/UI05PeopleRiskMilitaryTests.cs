@@ -38,7 +38,8 @@ namespace Game.Tests.Editor
         public void MilitaryWorkspaceUsesVirtualizedCanonicalRosterSupplyTrainingAndCombat()
         {
             StringAssert.Contains("new ListView(units", Source);
-            StringAssert.Contains("new ListView(activeMembers", Source);
+            StringAssert.Contains("new ListView(selectedMembers", Source);
+            StringAssert.Contains("new ListView(recruits", Source);
             StringAssert.Contains("context.Military.LoadInitialSupply", Source);
             StringAssert.Contains("context.MilitaryTraining.CheckStart", Source);
             StringAssert.Contains("context.MilitaryCommands.Hold", Source);

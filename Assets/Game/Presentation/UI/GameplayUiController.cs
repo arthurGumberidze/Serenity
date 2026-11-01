@@ -154,6 +154,7 @@ namespace Game.Presentation.UI
         private ResearchWorkspaceCategory researchCategory = ResearchWorkspaceCategory.All;
         private string peopleSearch = string.Empty;
         private StableEntityId? selectedDynastyPerson;
+        private readonly HashSet<StableEntityId> militaryDraftSelection = new HashSet<StableEntityId>();
         private bool showEventJournal;
         private bool showMapSettlements = true;
         private bool showMapArmies = true;
@@ -250,6 +251,10 @@ namespace Game.Presentation.UI
             if (lastUiPointerFrame >= Time.frameCount - 1) return true;
             var screenPoint = new Vector2(point.x, Screen.height - point.y);
             var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
+            // Geometry-only checks used to miss some nested ScrollView content. Picking asks UI Toolkit for the
+            // actual element under the cursor and therefore blocks camera zoom over every visible menu child.
+            var picked = root.panel?.Pick(panelPoint);
+            if (picked != null && picked != root) return true;
             if (Blocks(topBar, panelPoint) || Blocks(navigation, panelPoint) || Blocks(mainPanel, panelPoint) ||
                 Blocks(inspector, panelPoint) || Blocks(notifications, panelPoint) || Blocks(onboardingCard, panelPoint) ||
                 Blocks(commandRibbon, panelPoint) || Blocks(tpsHud, panelPoint) || Blocks(contextMenu, panelPoint) ||
@@ -268,6 +273,12 @@ namespace Game.Presentation.UI
                 return;
             }
             var closing = activePanel == panel;
+            if (panel == GameplayPanel.Military && !closing)
+            {
+                militaryDraftSelection.Clear();
+                foreach (var id in context.Selection.SelectedCharacterIds)
+                    if (IsAvailableMilitaryRecruit(id)) militaryDraftSelection.Add(id);
+            }
             if (panel == GameplayPanel.Global && !closing && context.GlobalMap.Mode == GameWorldMode.Local)
             {
                 if (!selectedLocation.HasValue && IsKnownLocation(context.GlobalMap.ActiveLocationId))
@@ -1336,7 +1347,6 @@ namespace Game.Presentation.UI
             resourcesLabel = populationLabel;
             AddPrimaryResourceChip("wood_log", "wood_log", "Древесина");
             AddPrimaryResourceChip("stone", "stone", "Камень");
-            AddPrimaryResourceChip("water", "water", "Вода");
             AddPrimaryResourceChip("meat", "meat", "Мясо");
             AddPrimaryResourceChip("fish", "fish", "Рыба");
             var resourceToggle = ActionButton("▾", ToggleResourceDrawer, "resource-drawer-toggle");
@@ -2103,11 +2113,10 @@ namespace Game.Presentation.UI
             populationLabel.text = F("ui.hud.population", alive) + " · свободны " + available;
             var playerBuildings = context.Buildings.All.Where(building => building.OwnerSideId.Value == "player").ToArray();
             var burning = playerBuildings.Count(building => building.FireStatus == BuildingFireStatus.Burning);
-            var shortage = alive > 0 && TotalResource(new ResourceId("water")) < alive * 2L;
             settlementLabel.text = "Поселение игрока";
-            settlementStatusLabel.text = burning > 0 ? "Пожар · " + burning : shortage ? "Дефицит воды" : "Спокойно";
+            settlementStatusLabel.text = burning > 0 ? "Пожар · " + burning : "Спокойно";
             settlementStatusLabel.EnableInClassList("is-danger", burning > 0);
-            settlementStatusLabel.EnableInClassList("is-warning", burning == 0 && shortage);
+            settlementStatusLabel.EnableInClassList("is-warning", false);
             foreach (var definition in context.Resources.All)
             {
                 var label = resourceStrip.Q<Label>("resource-primary-" + definition.Id);
@@ -2150,7 +2159,7 @@ namespace Game.Presentation.UI
             if (!resourcesExpanded) return;
             resourceDrawer.Clear();
             AddSection(resourceDrawer, "Ресурсы поселения");
-            foreach (var definition in context.Resources.All.OrderBy(x => x.Id))
+            foreach (var definition in context.Resources.All.Where(x => IsPlayerManagedResource(x.Id)).OrderBy(x => x.Id))
             {
                 var total = TotalResource(definition.Id);
                 var reserved = context.Work.Jobs.Where(x => !x.IsTerminal && x.ResourceId == definition.Id &&
@@ -2171,8 +2180,9 @@ namespace Game.Presentation.UI
         {
             if (residentStrip == null) return;
             residentStrip.Clear();
-            foreach (var person in PlayerCharacterIds().Select(id => context.Characters.TryGet(id, out var value) ? value : null)
-                         .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(12))
+            var selectedId = context.Selection.SelectedCharacterId;
+            if (selectedId.HasValue && context.Characters.TryGet(selectedId.Value, out var person) &&
+                person.LifeState == CharacterLifeState.Alive)
             {
                 var captured = person.Id;
                 var status = context.MilitaryTraining.IsExternallyControlled(person.Id) ? "В казарме" :
@@ -2184,9 +2194,14 @@ namespace Game.Presentation.UI
                 card.tooltip = RussianTextCatalog.PersonName(person.Name.DisplayName) + " · " + status +
                                "\nЛКМ — выбрать; повторный клик — переместить камеру";
                 SerenityIconLibrary.Apply(card, "population", card.tooltip);
-                SerenityUiDesign.SetSelected(card, context.Selection.SelectedCharacterId == person.Id);
+                SerenityUiDesign.SetSelected(card, true);
                 residentStrip.Add(card);
             }
+            var openRoster = ActionButton("Жители · " + PlayerAliveCount(), () => SetPanel(GameplayPanel.Domestic),
+                "resident-roster-open");
+            openRoster.tooltip = "Открыть масштабируемый реестр жителей";
+            SerenityIconLibrary.Apply(openRoster, "population", openRoster.tooltip);
+            residentStrip.Add(openRoster);
         }
 
         private void RefreshCommandRibbon()
@@ -2582,7 +2597,7 @@ namespace Game.Presentation.UI
             AddSection(mainPanel, "Ресурсы и склады");
             var storage = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray();
             AddLine(mainPanel, F("ui.economy.storage", storage.Sum(x => x.TotalUnits), storage.Sum(x => x.Capacity)));
-            foreach (var definition in context.Resources.All)
+            foreach (var definition in context.Resources.All.Where(x => IsPlayerManagedResource(x.Id)))
             {
                 var target = context.Production.GetTarget(definition.Id);
                 var total = context.Production.GetCanonicalTotal(definition.Id);
@@ -2600,21 +2615,6 @@ namespace Game.Presentation.UI
             var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
             AddMuted(mainPanel, F("ui.economy.modifiers", Percent(weather.Modifiers.CropGrowthPerThousand),
                 Percent(weather.Modifiers.OutdoorWorkPerThousand), Percent(weather.Modifiers.WildFoodGatheringPerThousand)));
-            AddSection(mainPanel, "Производство");
-            foreach (var site in context.Production.Sites)
-            {
-                var status = site.Kind == ProductionSiteKind.PrimitiveCropPlot
-                    ? F("ui.economy.crop", E(site.CropPhase), CropPercent(site))
-                    : F("ui.economy.source", site.RemainingAmount, site.SourceCapacity);
-                if (context.Buildings.TryGet(site.Id, out var building) && !building.IsOperational)
-                    status += " · " + F("ui.economy.disabled", E(building.StructuralStatus));
-                AddLine(mainPanel, Content("recipe", site.RecipeId.ToString()) + " · " + status);
-            }
-            AddSection(mainPanel, T("ui.economy.active_production"));
-            if (context.Production.ActiveTasks.Count == 0) AddMuted(mainPanel, T("ui.economy.no_tasks"));
-            foreach (var task in context.Production.ActiveTasks.Take(12))
-                AddLine(mainPanel, F("ui.economy.task", E(task.Kind), Content("recipe", task.RecipeId.ToString()),
-                    RussianTextCatalog.Percent((double)task.AccumulatedWorkTicks / task.RequiredWorkTicks)));
         }
 
         private void DrawBuildPanel()
@@ -2704,35 +2704,81 @@ namespace Game.Presentation.UI
             workerRow.Add(remove);
             mainPanel.Add(workerRow);
             if (context.Selection.SelectedCharacterIds.Count == 0) AddMuted(mainPanel, T("ui.research.need_selection"));
-            var locked = new Foldout { text = T("enum.ResearchAvailability.Locked"), value = false,
-                name = "locked-research-foldout" };
-            locked.AddToClassList("serenity-foldout");
+            var visible = context.Research.Catalog.All.Where(technology =>
+                    researchCategory == ResearchWorkspaceCategory.All ||
+                    ResearchCategoryFor(technology.Id.ToString()) == researchCategory)
+                .ToArray();
+            var depths = new Dictionary<TechnologyId, int>();
             foreach (var technology in context.Research.Catalog.All)
+                GetResearchDepth(technology, depths);
+            var treeScroll = new ScrollView(ScrollViewMode.Horizontal) { name = "research-tree-scroll" };
+            treeScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            var tree = Row();
+            tree.name = "research-dependency-tree";
+            tree.style.alignItems = Align.FlexStart;
+            var maxDepth = visible.Length == 0 ? 0 : visible.Max(technology => depths[technology.Id]);
+            for (var depth = 0; depth <= maxDepth; depth++)
             {
-                if (researchCategory != ResearchWorkspaceCategory.All &&
-                    ResearchCategoryFor(technology.Id.ToString()) != researchCategory) continue;
-                var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
-                    active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
-                    context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" : "enum.ResearchAvailability.Locked";
-                var card = SerenityUiDesign.Card();
-                AddSection(card, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
-                AddMuted(card, "Ветка: " + ResearchCategoryName(ResearchCategoryFor(technology.Id.ToString())) + " · " +
-                    F("ui.research.prerequisites", technology.Prerequisites.Count == 0 ? T("ui.research.no_prerequisites") :
-                    string.Join(" → ", technology.Prerequisites.Select(x => Content("technology", x.ToString())))));
-                AddMuted(card, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
-                    technology.Unlocks.Count == 0 ? T("ui.research.capability") :
-                    string.Join(", ", technology.Unlocks.Select(UnlockName))));
-                if (stateKey == "enum.ResearchAvailability.Available" && active == null)
+                if (depth > 0)
                 {
-                    var start = ActionButton(F("ui.research.start", Content("technology", technology.Id.ToString())),
-                        () => TryCommand(() => context.Research.Start(technology.Id)));
-                    start.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
-                    card.Add(start);
+                    var connector = new Label("→") { name = "research-depth-connector-" + depth };
+                    connector.style.fontSize = 28;
+                    connector.style.marginTop = 52;
+                    connector.style.marginLeft = 6;
+                    connector.style.marginRight = 6;
+                    connector.style.color = AccentColor;
+                    tree.Add(connector);
                 }
-                if (stateKey == "enum.ResearchAvailability.Locked") locked.Add(card);
-                else mainPanel.Add(card);
+                var column = new VisualElement { name = "research-depth-" + depth };
+                column.style.width = 300;
+                column.style.flexShrink = 0;
+                AddMuted(column, depth == 0 ? "ОСНОВЫ" : "ЭТАП " + (depth + 1));
+                foreach (var technology in visible.Where(value => depths[value.Id] == depth)
+                             .OrderBy(value => value.Id))
+                    column.Add(CreateResearchTreeNode(technology, active));
+                tree.Add(column);
             }
-            if (locked.childCount > 1) mainPanel.Add(locked);
+            treeScroll.Add(tree);
+            mainPanel.Add(treeScroll);
+        }
+
+        private int GetResearchDepth(TechnologyDefinition technology, IDictionary<TechnologyId, int> depths)
+        {
+            if (depths.TryGetValue(technology.Id, out var known)) return known;
+            var depth = technology.Prerequisites.Count == 0 ? 0 :
+                1 + technology.Prerequisites.Max(id => GetResearchDepth(context.Research.Catalog.Get(id), depths));
+            depths[technology.Id] = depth;
+            return depth;
+        }
+
+        private VisualElement CreateResearchTreeNode(TechnologyDefinition technology, ResearchProject active)
+        {
+            var stateKey = context.Research.IsCompleted(technology.Id) ? "enum.ResearchAvailability.Completed" :
+                active != null && active.TechnologyId == technology.Id ? "enum.ResearchAvailability.Active" :
+                context.Research.IsAvailable(technology.Id) ? "enum.ResearchAvailability.Available" :
+                "enum.ResearchAvailability.Locked";
+            var card = SerenityUiDesign.Card();
+            card.name = "research-node-" + technology.Id;
+            card.AddToClassList("serenity-research-tree-node");
+            card.style.minHeight = 138;
+            card.style.marginBottom = 10;
+            AddSection(card, Content("technology", technology.Id.ToString()) + " · " + T(stateKey));
+            AddMuted(card, technology.Prerequisites.Count == 0
+                ? "Корневая технология"
+                : "← " + string.Join(" + ", technology.Prerequisites.Select(id =>
+                    Content("technology", id.ToString()))));
+            AddMuted(card, F("ui.research.work_unlocks", technology.ResearchWorkRequiredTicks,
+                technology.Unlocks.Count == 0 ? T("ui.research.capability") :
+                string.Join(", ", technology.Unlocks.Select(UnlockName))));
+            if (stateKey == "enum.ResearchAvailability.Available" && active == null)
+            {
+                var captured = technology.Id;
+                var start = ActionButton(F("ui.research.start", Content("technology", captured.ToString())),
+                    () => TryCommand(() => context.Research.Start(captured)));
+                start.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
+                card.Add(start);
+            }
+            return card;
         }
 
         private void DrawWorkPanel()
@@ -2847,7 +2893,6 @@ namespace Game.Presentation.UI
             AddMuted(mainPanel, "Правление, семья и линия наследования.");
             var monarch = context.Dynasty.CurrentMonarchId.HasValue
                 ? context.Characters.Get(context.Dynasty.CurrentMonarchId.Value) : null;
-            var children = monarch == null ? Array.Empty<Character>() : context.Family.GetChildren(monarch.Id).ToArray();
             var biologicalTick = context.Clock().State.BiologicalTicks;
             var candidates = monarch == null ? Array.Empty<Character>() : context.Family
                 .GetOrderedSuccessionCandidates(context.Dynasty, monarch.Id).ToArray();
@@ -2863,22 +2908,41 @@ namespace Game.Presentation.UI
             mainPanel.Add(summary);
 
             AddSection(mainPanel, "Семейное дерево");
-            var tree = Row();
+            var tree = new VisualElement();
             tree.name = "dynasty-family-tree";
-            tree.style.flexWrap = Wrap.Wrap;
-            if (monarch != null)
+            tree.style.alignItems = Align.Center;
+            var members = context.Dynasty.MemberIds
+                .Select(id => context.Characters.TryGet(id, out var person) ? person : null)
+                .Where(person => person != null)
+                .ToArray();
+            var memberIds = members.Select(person => person.Id).ToHashSet();
+            var generations = new Dictionary<StableEntityId, int>();
+            foreach (var member in members) GetDynastyGeneration(member, memberIds, generations);
+            foreach (var generation in members.GroupBy(member => generations[member.Id]).OrderBy(group => group.Key))
             {
-                AddDynastyPersonNode(tree, monarch, "Правитель", true);
-                if (monarch.SpouseId.HasValue && context.Characters.TryGet(monarch.SpouseId.Value, out var spouse))
-                    AddDynastyPersonNode(tree, spouse, "Супруг(а)", false);
-                foreach (var child in children.OrderBy(x => x.BiologicalBirthTick).ThenBy(x => x.Id))
+                if (generation.Key > 0)
                 {
-                    var age = child.AgeInCompletedYears(biologicalTick);
-                    var place = Array.FindIndex(candidates, x => x.Id == child.Id);
-                    var relation = place >= 0 ? (place + 1) + "-й в очереди" :
-                        age < Game.Simulation.Health.HealthAndFamilyService.AdultAgeYears ? "Ребёнок" : "Член династии";
-                    AddDynastyPersonNode(tree, child, relation, place == 0);
+                    var branch = new Label("↓") { name = "dynasty-generation-connector-" + generation.Key };
+                    branch.style.fontSize = 28;
+                    branch.style.color = AccentColor;
+                    tree.Add(branch);
                 }
+                var generationBlock = new VisualElement { name = "dynasty-generation-" + generation.Key };
+                generationBlock.style.alignItems = Align.Center;
+                AddMuted(generationBlock, "ПОКОЛЕНИЕ " + (generation.Key + 1));
+                var generationRow = Row();
+                generationRow.style.flexWrap = Wrap.Wrap;
+                generationRow.style.justifyContent = Justify.Center;
+                foreach (var member in generation.OrderBy(value => value.BiologicalBirthTick).ThenBy(value => value.Id))
+                {
+                    var place = Array.FindIndex(candidates, value => value.Id == member.Id);
+                    var role = member.Id == context.Dynasty.CurrentMonarchId ? "Правитель" :
+                        place >= 0 ? (place + 1) + "-й в очереди" :
+                        member.LifeState == CharacterLifeState.Alive ? "Член династии" : "Умер(ла)";
+                    AddDynastyPersonNode(generationRow, member, role, place == 0 || member.Id == context.Dynasty.CurrentMonarchId);
+                }
+                generationBlock.Add(generationRow);
+                tree.Add(generationBlock);
             }
             mainPanel.Add(tree);
 
@@ -2931,6 +2995,19 @@ namespace Game.Presentation.UI
             card.AddToClassList("serenity-card-action");
             SerenityUiDesign.SetSelected(card, emphasized || selectedDynastyPerson == person.Id);
             parent.Add(card);
+        }
+
+        private int GetDynastyGeneration(Character person, ISet<StableEntityId> dynastyMembers,
+            IDictionary<StableEntityId, int> generations)
+        {
+            if (generations.TryGetValue(person.Id, out var known)) return known;
+            var parents = person.Parents.Where(link => dynastyMembers.Contains(link.ParentId) &&
+                    context.Characters.TryGet(link.ParentId, out _))
+                .Select(link => context.Characters.Get(link.ParentId)).ToArray();
+            var generation = parents.Length == 0 ? 0 :
+                1 + parents.Max(parent => GetDynastyGeneration(parent, dynastyMembers, generations));
+            generations[person.Id] = generation;
+            return generation;
         }
 
         private void DrawDomesticPanel()
@@ -3140,8 +3217,45 @@ namespace Game.Presentation.UI
         {
             AddTitle(mainPanel, "Военные");
             AddMuted(mainPanel, "Состав, обучение, приказы, снабжение и состояние боя.");
-            var hasSelectedCharacters = context.Selection.SelectedCharacterIds.Count > 0;
-            var hasCaptain = context.Selection.SelectedCharacterIds.Any(id => context.Health.GetCapabilities(id).CanFight);
+            var activeMembers = context.Military.Units
+                .Where(unit => unit.Status != MilitaryUnitStatus.Disbanded)
+                .SelectMany(unit => unit.ActiveMemberIds).ToHashSet();
+            var recruits = PlayerCharacterIds().Select(id =>
+                    context.Characters.TryGet(id, out var person) ? person : null)
+                .Where(person => person != null && person.LifeState == CharacterLifeState.Alive &&
+                    context.Health.GetCapabilities(person.Id).CanFight && !activeMembers.Contains(person.Id))
+                .OrderBy(person => person.Name.DisplayName, StringComparer.Ordinal).ToList();
+            militaryDraftSelection.RemoveWhere(id => recruits.All(person => person.Id != id));
+            AddSection(mainPanel, "Новый отряд");
+            AddMuted(mainPanel, "Выберите взрослых боеспособных жителей прямо здесь. Выходить на карту не требуется.");
+            var recruitList = new ListView(recruits, 42,
+                () =>
+                {
+                    var button = ActionButton(string.Empty, () => { });
+                    button.clicked += () => ToggleMilitaryRecruit((StableEntityId)button.userData);
+                    button.AddToClassList("serenity-roster-row");
+                    return button;
+                },
+                (element, recruitIndex) =>
+                {
+                    var recruit = recruits[recruitIndex];
+                    var button = (Button)element;
+                    button.userData = recruit.Id;
+                    var selected = militaryDraftSelection.Contains(recruit.Id);
+                    button.text = (selected ? "☑ " : "☐ ") + CharacterName(recruit.Id) + " · " +
+                                  ProfessionName(recruit.ProfessionId?.ToString());
+                    SerenityUiDesign.SetSelected(button, selected);
+                })
+            {
+                name = "military-recruit-roster",
+                selectionType = SelectionType.None
+            };
+            recruitList.style.height = Mathf.Min(252, Math.Max(46, recruits.Count * 42));
+            mainPanel.Add(recruitList);
+            AddMuted(mainPanel, "Выбрано: " + militaryDraftSelection.Count + " / " +
+                MilitaryUnitService.MaximumSquadMembers);
+            var hasSelectedCharacters = militaryDraftSelection.Count > 0;
+            var hasCaptain = militaryDraftSelection.Any(id => context.Health.GetCapabilities(id).CanFight);
             var createUnit = ActionButton("Сформировать отряд", () => TryCommand(CreatePlayerUnit),
                 "military-create-unit");
             createUnit.SetEnabled(hasSelectedCharacters && hasCaptain);
@@ -3195,8 +3309,8 @@ namespace Game.Presentation.UI
             mainPanel.Add(metrics);
 
             AddSection(mainPanel, "Состав");
-            var activeMembers = selected.ActiveMemberIds.Select(id => context.Characters.Get(id)).ToList();
-            var memberList = new ListView(activeMembers, 38,
+            var selectedMembers = selected.ActiveMemberIds.Select(id => context.Characters.Get(id)).ToList();
+            var memberList = new ListView(selectedMembers, 38,
                 () =>
                 {
                     var button = ActionButton(string.Empty, () => { });
@@ -3206,7 +3320,7 @@ namespace Game.Presentation.UI
                 },
                 (element, memberIndex) =>
                 {
-                    var person = activeMembers[memberIndex];
+                    var person = selectedMembers[memberIndex];
                     var button = (Button)element;
                     button.userData = person.Id;
                     var rank = context.MilitaryTraining.GetRank(person.Id);
@@ -3220,7 +3334,7 @@ namespace Game.Presentation.UI
                 name = "military-member-roster",
                 selectionType = SelectionType.None
             };
-            memberList.style.height = Mathf.Min(190, Math.Max(42, activeMembers.Count * 38));
+            memberList.style.height = Mathf.Min(190, Math.Max(42, selectedMembers.Count * 38));
             mainPanel.Add(memberList);
 
             AddSection(mainPanel, "Состав и командование");
@@ -4160,7 +4274,8 @@ namespace Game.Presentation.UI
                 }
                 inspector.Add(categoryFilters);
                 var resourceFilters = new Foldout { text = "Фильтр ресурсов", value = false };
-                foreach (var resource in context.Resources.All)
+                var playerResources = context.Resources.All.Where(x => IsPlayerManagedResource(x.Id)).ToArray();
+                foreach (var resource in playerResources)
                 {
                     var captured = resource.Id;
                     var accepted = storage.AcceptsAllResources || storage.AcceptedResources.Contains(captured);
@@ -4168,11 +4283,11 @@ namespace Game.Presentation.UI
                         () => TryCommand(() =>
                         {
                             var selected = storage.AcceptsAllResources
-                                ? context.Resources.All.Select(x => x.Id).ToHashSet()
+                                ? playerResources.Select(x => x.Id).ToHashSet()
                                 : storage.AcceptedResources.ToHashSet();
                             if (!selected.Add(captured)) selected.Remove(captured);
                             storage.ConfigureAcceptance(storage.AcceptsAllCategories ? null : storage.AcceptedCategories,
-                                selected.Count == context.Resources.All.Count ? null : selected);
+                                selected.Count == playerResources.Length ? null : selected);
                         }), "storage-resource-" + captured);
                     SerenityUiDesign.SetSelected(toggle, accepted);
                     resourceFilters.Add(toggle);
@@ -4903,13 +5018,32 @@ namespace Game.Presentation.UI
 
         private void CreatePlayerUnit()
         {
-            var roster = context.Selection.SelectedCharacterIds.ToArray();
+            var roster = militaryDraftSelection.Where(IsAvailableMilitaryRecruit)
+                .Take(MilitaryUnitService.MaximumSquadMembers).ToArray();
             if (roster.Length == 0) throw PlayerError("ui.military.need_characters");
             var captain = roster.FirstOrDefault(id => context.Health.GetCapabilities(id).CanFight);
             if (!captain.IsValid) throw PlayerError("ui.military.no_captain");
             var unit = context.Military.Create(new MilitarySideId("player"), roster, captain);
             context.Military.SetAbstractLocation(unit.Id, context.GlobalMap.ActiveLocationId.Value);
             selectedUnit = unit.Id;
+            militaryDraftSelection.Clear();
+        }
+
+        private void ToggleMilitaryRecruit(StableEntityId id)
+        {
+            if (!IsAvailableMilitaryRecruit(id)) return;
+            if (!militaryDraftSelection.Remove(id) &&
+                militaryDraftSelection.Count < MilitaryUnitService.MaximumSquadMembers)
+                militaryDraftSelection.Add(id);
+            RefreshPanel();
+        }
+
+        private bool IsAvailableMilitaryRecruit(StableEntityId id)
+        {
+            if (!context.Characters.TryGet(id, out var person) || person.LifeState != CharacterLifeState.Alive ||
+                !context.Health.GetCapabilities(id).CanFight) return false;
+            return context.Military.Units.Where(unit => unit.Status != MilitaryUnitStatus.Disbanded)
+                .All(unit => !unit.ActiveMemberIds.Contains(id));
         }
 
         private void StepSpeed(int direction)
@@ -4925,6 +5059,8 @@ namespace Game.Presentation.UI
             foreach (var inventory in context.Inventories.All) total = checked(total + inventory.GetAmount(id).Units);
             return total;
         }
+
+        private static bool IsPlayerManagedResource(ResourceId id) => id.ToString() != "water";
 
         private IReadOnlyList<StableEntityId> PlayerCharacterIds()
         {
@@ -4991,7 +5127,8 @@ namespace Game.Presentation.UI
 
         private string InventoryText(ResourceInventory inventory)
         {
-            var amounts = context.Resources.All.Select(x => new { DisplayName = Content("resource", x.Id.ToString()), Units = inventory.GetAmount(x.Id).Units })
+            var amounts = context.Resources.All.Where(x => IsPlayerManagedResource(x.Id))
+                .Select(x => new { DisplayName = Content("resource", x.Id.ToString()), Units = inventory.GetAmount(x.Id).Units })
                 .Where(x => x.Units > 0).ToArray();
             return amounts.Length == 0 ? T("common.empty") : string.Join(", ", amounts.Select(x => x.DisplayName + " " + x.Units));
         }

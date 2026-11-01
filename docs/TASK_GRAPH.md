@@ -8,6 +8,15 @@ P108 EditMode 10/10, runner PlayMode 1/1, all P108 PlayMode cases covered, immut
 exact Player exit 0/`passed=true`. Evidence: `docs/validation/WM15CheckpointAudit.md`. UI08 user review remains
 the next explicit action.
 
+UI08 user-feedback workspace repair (2026-11-01): **DONE**. Replaced the flat research and dynasty listings with
+dependency/generation trees, moved recruit selection inside the full-screen military workspace, removed the
+unbounded settlement production-source list and per-resident top-HUD strip, filtered internal water from managed
+stock UI, and consumed wheel input over nested UI Toolkit content. The existing campfire/kitchen cooked-fish
+recipe is regression-protected. Final evidence: relevant EditMode 19/19, full-world feedback PlayMode 1/1 and a
+stable Windows Development build with 0 errors / 0 warnings. The first build deliberately failed its immutable
+source gate while Unity wrote deterministic material/UMA migrations; the second pass was stable. Evidence:
+`docs/validation/UI08UserFeedback.md`. User retest is next.
+
 UI08 interface integration and release qualification (2026-11-01): **DONE**. Qualified one exact-binary route
 from Main Menu/New Game through all UI02-UI07 workspaces, TPS, pause, Save/Load, Realm/return and campaign outcomes
 at both required layouts. Fixed the demonstrated People -> Realm stale-frame bleed without new authority or

@@ -1,8 +1,19 @@
 # NEXT_TASK.md
 
 The recovered WM15 checkpoint audit is complete; see `docs/validation/WM15CheckpointAudit.md`. Its rejected
-vendor/winter/recovery experiments are not future work unless explicitly reopened. The next unblocked action
-remains the UI08 user review below.
+vendor/winter/recovery experiments are not future work unless explicitly reopened. The latest UI08 feedback repair
+is also complete; the next unblocked action is the focused user retest below.
+
+## Next action — UI08 feedback retest (2026-11-01)
+
+Launch `Builds/UI08UserFeedback/Serenity.exe` and start a normal game. Verify that research is a dependency tree,
+dynasty is a generation tree, residents can be selected inside Military before forming a unit, Settlement no
+longer shows the global Production source dump, the top HUD remains bounded, water is absent from managed stocks,
+and scrolling a menu does not zoom the world underneath. Cooked fish remains available at the campfire and
+stone-age kitchen. Exact evidence: `docs/validation/UI08UserFeedback.md`.
+
+Await user feedback before changing those layouts again. Do not remove the internal water identifier from saves,
+add alternate research/dynasty/military authority, or reopen rejected WM15/vendor work.
 
 ## Next action — UI08 user review (2026-11-01)
 

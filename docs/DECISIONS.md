@@ -2580,3 +2580,22 @@ the private's approved combat skill is 18 and a colonel-general can be an army c
 Persistent-runner test requests carry an explicit EditMode/PlayMode value. Immutable build provenance includes
 Unity-generated project assets: a missing folder meta or stale UMA index must be stabilized and committed when
 Unity deterministically rewrites it, rather than ignored by the provenance gate.
+
+## D-233 — Large UI workspaces use bounded projections and consume world input (2026-11-01)
+
+Research and dynasty presentation must preserve their graph meaning: research is laid out by prerequisite depth,
+and dynasty is laid out by parent-derived generation. Both remain disposable projections of canonical services;
+their connector and layout state is not saved and cannot become gameplay authority. A full-screen military
+workspace may own a transient recruit-selection set because the world is unavailable behind it, but unit creation
+still resolves `StableEntityId` members through the existing military service.
+
+Unbounded collections are never rendered as persistent HUD rows or recomputed world-wide source inventories.
+The HUD exposes the selected resident plus a bounded route to the virtualized People roster, and Settlement omits
+the diagnostic active-production-source enumeration. Water remains in the resource catalog for existing saves and
+internal needs accounting, but `IsPlayerManagedResource` excludes it from player stock chips, drawers, storage and
+target editors. The existing `cook_fish` recipe remains canonical for campfire and stone-age kitchen.
+
+World camera input is blocked by the actual UI Toolkit pick result, not only by top-level container bounds. This
+ensures wheel input over nested scroll views and menu controls is consumed by the interface. Unity 6 material and
+UMA index migrations produced during the first immutable build are retained only when an immediate second build
+does not rewrite them again; stable generated serialization is part of the clean source state.

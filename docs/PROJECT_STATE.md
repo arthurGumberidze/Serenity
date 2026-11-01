@@ -1,5 +1,22 @@
 # PROJECT_STATE.md
 
+## UI08 user-feedback workspace repair — DONE (2026-11-01)
+
+The user-reviewed research, dynasty, military, settlement and HUD surfaces were corrected without adding a new
+gameplay authority. Research is now a dependency tree, dynasty is grouped as a connected generation tree, and
+the full-screen military workspace owns a disposable recruit selection so residents can be chosen without
+clicking the obscured world. The settlement no longer enumerates every active production source, and the top HUD
+no longer creates one card per resident: it shows the current selection plus a bounded People entry. Water remains
+an internal compatibility resource but is excluded from player-managed stock presentation. UI Toolkit picking now
+consumes the pointer over nested menu content, preventing the world camera from zooming under scroll views.
+
+The existing `cook_fish` recipe was verified for both the campfire and stone-age kitchen and is now covered by a
+regression test. Relevant EditMode suites passed 19/19, the full-world feedback PlayMode route passed 1/1, and the
+stable Windows Development build succeeded with 0 errors / 0 warnings at
+`Builds/UI08UserFeedback/Serenity.exe`. The first build correctly rejected deterministic Unity 6 material/UMA
+serialization updates; retaining those one-time generated migrations made the second immutable build stable.
+Exact evidence: `docs/validation/UI08UserFeedback.md`. User retest is next.
+
 ## WM15 recovered-checkpoint audit and clean-tree closure — DONE (2026-11-01)
 
 The 184-file local WM15 recovery checkpoint was audited rather than merged. Rejected scope includes bulk vendor
