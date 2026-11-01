@@ -2635,3 +2635,18 @@ unit-limit row reports only the current count/cap; the two-to-four capability ru
 progress controls override Unity's default white internals with existing Serenity design tokens. These changes add
 no gameplay authority, dependency, save alias or migration. Old research saves remain intentionally unsupported by
 explicit user direction.
+
+## D-239 — Research overhaul requires HTML approval before implementation (2026-11-01)
+
+The user's latest instruction places an explicit review boundary before game changes. The new horizontal
+51-technology proposal is disposable offline HTML; it is not canonical research state and cannot write saves.
+It preserves existing IDs while proposing full AND/OR edges, five lanes, bounded worker contribution, honest
+future-mechanic states and a non-exhaustive epoch milestone reachable without military research. All thresholds,
+new dependencies, unlock redistribution and local science modifiers remain proposals until approved.
+
+This design supersedes D-234's suppressed cross-branch overview only after approval and implementation.
+Future-only research must not block playable technologies or epoch completion. Existing systems are reused;
+unimplemented capability flags are not evidence of working bonuses. Later historical eras remain U38.
+No Unity build is warranted or claimed for this HTML-only review slice; relevant persistent-runner checks remain
+mandatory for the subsequent Unity implementation. The Care rename and per-resident control removal remain
+pending user requests, recorded in NEXT_TASK rather than being silently dropped.

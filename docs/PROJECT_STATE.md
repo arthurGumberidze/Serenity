@@ -1,5 +1,18 @@
 # PROJECT_STATE.md
 
+## UI08-R3 — HTML research proposal awaiting user approval (2026-11-01)
+
+New scope is design review first, explicitly requested before Unity implementation. A self-contained offline
+HTML proposes 51 technologies in five left-to-right lanes, retains 33 existing IDs, shows every dependency,
+distinguishes AND/OR and unsupported future mechanics, and supports peaceful/knowledge/military/mixed epoch
+routes. File: `docs/prototypes/research-review-v3/Serenity-Research-Review.html`.
+
+Node syntax, catalog/DAG checks, actual demo-controller tests using a minimal DOM stub and HTML bundling pass.
+Browser policy rejected local-file preview and prohibited workarounds; rendered visual validation is pending.
+No Unity code or game saves changed, and no Unity build is claimed. This does not complete the research overhaul.
+The character «Лечиться» rename and removal of per-resident priorities/tasks remain pending implementation.
+See `docs/validation/UI08ResearchProposal.md` and the four `docs/RESEARCH_*.md` design documents.
+
 ## UI08 research graph readability closure — DONE (2026-11-01)
 
 The second-review research workspace now draws real prerequisite rails behind the technology cards instead of

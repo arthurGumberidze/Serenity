@@ -1,5 +1,21 @@
 # NEXT_TASK.md
 
+## Active — UI08-R3: await approval of HTML research proposal (2026-11-01)
+
+The user's latest instruction explicitly requires review before implementing the research overhaul.
+Review `docs/prototypes/research-review-v3/Serenity-Research-Review.html`. This is a 51-technology horizontal
+proposal with AND/OR dependencies, five lanes, future-mechanic states, four viable epoch routes and separate
+details. Design, catalog, future-feature and balance notes are in `docs/RESEARCH_*.md`.
+
+Do not apply this proposal to Unity until the user approves. After approval, implement only the approved
+research scope using existing services and persistent Unity runner. Also retain the user's pending requests:
+rename the character Care button to «Лечиться» and remove per-resident priorities/task assignment controls;
+priorities belong to tasks, with workers assigned through professional groups. Do not silently discard them.
+No save merging/migration was performed. The existing user's no-migration preference remains in effect
+unless a later explicit requirement changes it. Evidence/limitations: `docs/validation/UI08ResearchProposal.md`.
+
+The historical retest instructions below are superseded by this active review step.
+
 ## Next action — UI08 research graph user retest (2026-11-01)
 
 Launch `Builds/UI08ResearchGraphFix/Serenity.exe` and start a **new game**. At 1920x1080 open Research and verify

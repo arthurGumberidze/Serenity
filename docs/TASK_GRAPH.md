@@ -1,5 +1,12 @@
 # TASK_GRAPH.md
 
+UI08-R3 research overhaul (2026-11-01): **AWAITING_USER_REVIEW**. The user requires HTML approval before
+implementation. The offline 51-technology proposal, AND/OR graph, future-mechanic boundaries, balance and epoch
+routes are prepared. Syntax/catalog/controller-with-DOM-stub checks and standalone HTML build pass; rendered
+visual verification remains pending after the browser rejected local-file navigation. No Unity changes or
+Unity validation in this slice. Preserve pending Care→«Лечиться» and removal of per-resident priorities/tasks.
+Evidence: `docs/validation/UI08ResearchProposal.md`. Do not resume implementation without user approval.
+
 UI08 research graph readability closure (2026-11-01): **DONE**. Replaced the unreadable all-prerequisite
 foreground line tangle with behind-card branch rails, visible node spacing, explicit research-state styling and a
 five-endpoint capstone convergence. Canonical secondary cross-branch prerequisites remain enforced and appear in

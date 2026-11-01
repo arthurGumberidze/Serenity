@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Serenity — дерево исследований · макет для согласования</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<svg class="symbols" aria-hidden="true"><defs>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C1 8 12 3 21 3c0 10-5 17-13 15M5 21 17 7M9 15v-5m4 1h5"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="m4 21 12-14M6 4c5-2 10 0 14 5l-3 3C13 6 9 5 6 4ZM3 8l13 13m-1-6 5 5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v7c0 4-4 7-8 9-4-2-8-5-8-9V6ZM12 6v11m-4-7h8"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12c5-9 15-9 20 0-5 9-15 9-20 0Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M6 21v-4a6 6 0 0 1 12 0v4M4 8a3 3 0 0 0 0 6m16-6a3 3 0 0 1 0 6M2 21v-2m20 2v-2"/></symbol>
+<symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 2c3 6-3 7 2 11 2-2 3-4 3-6 8 10 1 15-5 15S1 17 5 10c0 4 2 5 3 5-2-6 5-7 4-13Z"/></symbol>
+<symbol id="i-house" viewBox="0 0 24 24"><path d="m2 11 10-8 10 8M5 10v11h14V10M10 21v-8h4v8"/></symbol>
+<symbol id="i-fish" viewBox="0 0 24 24"><path d="M3 12c5-8 10-7 14-2l5-4v12l-5-4c-4 5-9 6-14-2Z"/><circle cx="8" cy="11" r="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5C8 2 4 3 2 4v16c3-2 6-2 10 1 4-3 7-3 10-1V4c-2-1-6-2-10 1Zm0 0v16"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 6 4 5 5-8 5 8 4-5-3 13H6ZM6 16h12"/></symbol>
+<symbol id="i-cross" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z"/></symbol>
+</defs></svg>
+<header><div class="brand">SERENITY <span>Летопись открытий</span></div><div class="review"><span class="dot"></span> МАКЕТ ДЛЯ СОГЛАСОВАНИЯ <small>Данные демонстрационные · игра не изменена</small></div><button id="aboutOpen" class="quiet">О схеме</button></header>
+<section class="heading"><div><div class="eyebrow">ЭПОХА I · КАМЕННЫЙ ВЕК</div><h1>Дерево знаний</h1><p>Развивайте свой путь. Каждое открытие меняет возможности общины.</p></div><div class="researchNow"><span class="eyebrow">ТЕКУЩЕЕ ИССЛЕДОВАНИЕ</span><strong id="activeName"></strong><div class="progress"><i id="activeBar"></i></div><span id="activeMeta"></span></div></section>
+<section class="toolbar"><nav id="filters" aria-label="Направления"></nav><label class="search">⌕ <input id="search" placeholder="Найти исследование…" aria-label="Поиск исследований"><span id="searchCount"></span></label><button id="fit" title="Уместить всё дерево">Всё дерево</button><button id="center" title="Показать выбранное в читаемом масштабе">К выбранному</button><button id="minus" aria-label="Отдалить">−</button><span id="zoomText">100%</span><button id="plus" aria-label="Приблизить">+</button></section>
+<main><section id="viewport" aria-label="Интерактивная схема исследований"><div id="world"><svg id="edges" aria-hidden="true"></svg><div id="laneHeaders"></div><div id="nodes"></div><section id="epochCard"></section></div><div id="noResults" hidden>Ничего не найдено. Попробуйте другое название.</div></section><aside id="detail" aria-label="Подробности исследования"></aside></main>
+<footer><div class="legend"><span><b class="done"></b>Изучено</span><span><b class="available"></b>Доступно</span><span><b class="active"></b>Исследуется</span><span><b class="blocked"></b>Закрыто</span><span><b class="practical"></b>Нужна практика</span><span><b class="future"></b>Будущее</span></div><span>Тянуть фон — перемещение · колесо — масштаб</span></footer>
+<section class="demoBar"><span>ПРОВЕРИТЬ МАРШРУТ</span><select id="scenario" aria-label="Демонстрационный маршрут"><option value="early">Начало развития</option><option value="start">Новая община</option><option value="peaceful">Мирный: быт и ремесло</option><option value="scholar">Знания и медицина</option><option value="military">Военная специализация</option><option value="mixed">Смешанный путь</option></select><button id="conditionsOpen">Условия поселения</button><span id="routeSummary"></span><button id="reset" class="quiet">Сбросить демо</button></section>
+<dialog id="conditions"><div class="dialogTop"><h2>Условия демонстрационного поселения</h2><button data-close="conditions" aria-label="Закрыть">×</button></div><p>Меняйте значения и смотрите, какие исследования становятся доступны. В игре эти значения должны поступать из состояния поселения.</p><div id="conditionFields"></div><button id="conditionsApply" class="primary">Применить к макету</button></dialog>
+<dialog id="about"><div class="dialogTop"><h2>Предложение для Serenity</h2><button data-close="about" aria-label="Закрыть">×</button></div><div id="aboutContent"></div></dialog>
+<div id="toast" role="status"></div>
+<script src="catalog.js"></script><script src="app.js"></script>
+</body></html>

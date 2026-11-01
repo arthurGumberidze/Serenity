@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Serenity — дерево исследований · макет для согласования</title><style>:root{color-scheme:dark;--bg:#0d1112;--panel:#171c1d;--gold:#cfb77d;--text:#e7e6df;--muted:#9fa8a5;--line:#303735;--green:#99b281;--amber:#ce9e67}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px 'Segoe UI',sans-serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}button,input,select{font:inherit}button,select{border:1px solid #39413d;background:#1b2221;color:var(--text);border-radius:5px;padding:9px 12px;cursor:pointer}button:hover{background:#30392f;border-color:var(--gold)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}button:disabled{opacity:.45;cursor:default}button.quiet{background:transparent;border-color:transparent;color:var(--muted)}header{height:62px;flex-shrink:0;border-bottom:1px solid #454132;padding:0 26px;display:flex;align-items:center;justify-content:space-between;background:#111615}.brand{font:23px Georgia,serif;letter-spacing:3px;color:#e4c88b}.brand span{font:11px 'Segoe UI',sans-serif;letter-spacing:2px;color:var(--muted);margin-left:20px}.review{font-size:10px;letter-spacing:1.7px;color:var(--gold);display:flex;align-items:center;gap:9px}.review small{font-size:11px;letter-spacing:0;color:var(--muted);margin-left:12px}.dot{width:6px;height:6px;background:var(--gold);border-radius:50%}.heading{padding:19px 28px 18px;display:flex;justify-content:space-between;gap:30px;flex-shrink:0;background:radial-gradient(ellipse at 30% 0,#24291e55,transparent 65%)}h1{font:34px Georgia,serif;margin:6px 0;color:#e8dcc1}h2{font:25px Georgia,serif;color:#e8dcc1;margin:0 0 12px}p{line-height:1.55;color:var(--muted);margin:6px 0}.heading p{font-size:12px}.eyebrow{font-size:10px;color:var(--gold);letter-spacing:2px}.researchNow{width:300px;padding:2px 0;align-self:center}.researchNow strong{display:block;font-size:15px;margin:8px 0}.researchNow>span:last-child{font-size:11px;color:var(--muted)}.progress{height:4px;background:#30392f;border-radius:3px;overflow:hidden;margin:9px 0}.progress i{display:block;background:var(--gold);height:100%;transition:width .25s}.toolbar{display:flex;align-items:center;gap:7px;padding:9px 20px;border-block:1px solid var(--line);background:#141a19;flex-shrink:0}.toolbar nav{display:flex;gap:4px;margin-right:auto}.toolbar button{font-size:12px;padding:8px 11px}.toolbar nav button{background:transparent;border-color:transparent;color:var(--muted)}.toolbar nav button.selected{border-color:#7c704e;background:#302d21;color:#e9d7a7}.search{display:flex;align-items:center;gap:8px;color:var(--muted);padding:7px 10px;background:#0e1413;border:1px solid var(--line);border-radius:5px}.search input{width:150px;background:transparent;border:0;color:var(--text);outline:none;font-size:12px}.search span{font-size:10px;min-width:13px}#zoomText{min-width:34px;text-align:center;color:var(--muted);font-size:11px}main{display:flex;flex:1;min-height:0}#viewport{flex:1;min-width:0;overflow:hidden;position:relative;touch-action:none;cursor:grab;background:radial-gradient(ellipse at 48% 43%,#262d2044,transparent 65%),radial-gradient(#a7b59512 .7px,transparent .7px);background-size:auto,24px 24px}#viewport.dragging{cursor:grabbing}#world{position:absolute;width:1480px;height:820px;transform-origin:0 0}#edges{position:absolute;inset:0;width:1480px;height:820px;overflow:visible;pointer-events:none}#edges path{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s,opacity .15s}#edges path.highlight{stroke-width:2.6}#edges text{font:9px 'Segoe UI',sans-serif;fill:#e7c88b}.laneHeader{position:absolute;left:150px;right:234px;height:160px;border-top:1px solid #303b355e;pointer-events:none}.laneHeader h3{margin:7px 0 0;color:var(--lane);font:15px Georgia,serif;letter-spacing:.3px}.laneHeader h3 span{font:10px 'Segoe UI',sans-serif;color:#8b9990;letter-spacing:.4px;margin-left:12px}.node{position:absolute;width:156px;height:54px;background:#1a211e;border:1px solid #495249;border-radius:7px;text-align:left;padding:6px 7px;color:#dce2d9;display:flex;gap:7px;align-items:center;transition:background .15s,border-color .15s,box-shadow .15s;box-shadow:0 4px 14px #0003;z-index:2;cursor:pointer}.node:hover{background:#2b3328;border-color:#bca56c}.node .icon{width:23px;height:23px;flex:0 0 23px;color:var(--lane)}svg.icon{fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}.node .label{font-weight:600;font-size:12px;line-height:1.2;display:block;white-space:normal}.node .meta{display:block;font-size:9px;line-height:1.2;color:#9fa89e;margin-top:4px}.node.completed{border-color:#627453;background:#20291e}.node.completed .meta{color:#a5bb8f}.node.available{border-color:#a79158;background:linear-gradient(120deg,#302d20,#20251e)}.node.available .meta{color:#d4be88}.node.researching{border-color:#82b7bd;background:#1a3031;box-shadow:inset 0 -3px #83b7bd}.node.researching .meta{color:#9bd1d6}.node.locked{background:#141a18;border-color:#333f38;color:#9aa49a}.node.locked .icon{opacity:.6}.node.practice{border-color:#b48a57;background:#30271b}.node.practice .meta{color:#e5b77f}.node.future{background:#161a1c;border-color:#394046;color:#919b9c}.node.future .meta{color:#9ba3ad}.node.selected{outline:2px solid #e5cc93;outline-offset:3px;box-shadow:0 0 25px #d0b57b24}.node.dim{opacity:.17}.node.related{opacity:1}.node.root{width:112px;height:110px;flex-direction:column;text-align:center;justify-content:center;border-radius:50%}.node.root .icon{width:27px;height:27px}.node.root .label{font-size:13px}.node .star{position:absolute;top:-7px;right:8px;color:var(--lane);background:#151c17;padding:0 3px;font-size:12px}#detail{width:322px;flex:0 0 322px;overflow-y:auto;background:linear-gradient(150deg,#20261e,#151b19 65%);border-left:1px solid #3a4335;padding:24px 22px;scrollbar-width:thin;scrollbar-color:#6f7054 #151b19}#detail .detailIcon{width:48px;height:48px;border:1px solid #5b6348;border-radius:50%;padding:11px;color:var(--gold);margin-bottom:19px}#detail h2{font-size:27px;line-height:1.14;margin:9px 0 14px}#detail h3{font-size:10px;letter-spacing:1.5px;color:#d7c69c;text-transform:uppercase;margin:22px 0 10px}#detail p{font-size:13px;line-height:1.6;color:#bcc4b7}#detail .state{font-size:11px;display:inline-block;padding:5px 9px;border:1px solid #5b674c;border-radius:4px;color:#c8d6bb;background:#242e21}#detail ul{padding-left:16px;font-size:12px;line-height:1.65;color:#c3c9bd}#detail .requirement{display:flex;align-items:center;gap:7px;font-size:12px;margin:8px 0;color:#a8b09f}.check{color:var(--green);font-size:13px}.missing{color:#c49a72}.prereqButton{padding:0;background:transparent;border:0;color:inherit;text-align:left;font-size:12px}.orGroup{border-left:2px solid #988153;margin:9px 0;padding:5px 0 5px 10px}.orGroup small{font-size:10px;color:var(--gold);letter-spacing:1px}.primary{background:#c8ae75;color:#171c15;border:1px solid #d6c08d;font-weight:600}.primary:hover{background:#e0c789;color:#171c15}#detail .primary{width:100%;margin-top:20px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{padding:10px;border:1px solid #3a4535;background:#151c17;border-radius:5px}.metric b{display:block;color:#e4d4ad;font:19px Georgia,serif}.metric span{font-size:10px;color:#9eac99}.note{font-size:11px!important;color:#99a594!important}.futureNote{padding:10px;border-left:2px solid #7c8b95;background:#1c252a;color:#b7c0c5!important;font-size:12px!important}details{margin-top:24px;padding-top:12px;border-top:1px solid #3a4337;font-size:11px;color:var(--muted)}summary{cursor:pointer}details p{font-size:11px!important}#epochCard{position:absolute;left:1260px;top:160px;width:205px;min-height:470px;border:1px solid #958052;border-radius:9px;padding:22px 17px;background:linear-gradient(160deg,#302d20,#18211a);box-shadow:0 8px 50px #0004;z-index:2}#epochCard .icon{width:34px;height:34px;color:var(--gold);margin-bottom:20px}#epochCard h2{font-size:24px;line-height:1.2;margin:10px 0 15px}#epochCard .eyebrow{font-size:9px;letter-spacing:1.2px}#epochCard p{font-size:11px}#epochCard .gate{margin-top:20px;padding-top:12px;border-top:1px solid #4a4937;font-size:11px;line-height:1.5}#epochCard .gate b{color:#e2d2a5;font-size:15px;float:right}.epochAction{width:100%;margin-top:22px;font-size:11px;border-color:#7e704a;color:var(--gold)}#epochCard .progress{margin-top:22px}#epochCard .epochComplete{color:var(--green);font-size:12px}footer{height:35px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-top:1px solid #2a352c;color:#929e91;font-size:10px;background:#111814}.legend{display:flex;gap:17px}.legend span{display:flex;align-items:center;gap:6px}.legend b{width:6px;height:6px;border-radius:50%;background:#4c584e}.legend .done{background:var(--green)}.legend .available{background:var(--gold)}.legend .active{background:#83b7bd}.legend .practical{background:var(--amber)}.legend .future{background:#949ca5}.demoBar{height:47px;flex-shrink:0;background:#1c211e;display:flex;align-items:center;gap:13px;padding:0 22px;border-top:1px solid #3e4438}.demoBar>span:first-child{font-size:9px;letter-spacing:1.4px;color:var(--gold)}.demoBar select,.demoBar button{font-size:11px;padding:6px 10px}#routeSummary{font-size:11px;color:#a2ad9d}#reset{margin-left:auto}dialog{background:#1a211d;color:var(--text);border:1px solid #6c684c;border-radius:10px;padding:28px;width:620px;max-width:90vw;max-height:85vh;box-shadow:0 20px 100px #0009}dialog::backdrop{background:#050a08bb;backdrop-filter:blur(4px)}.dialogTop{display:flex;align-items:center;justify-content:space-between;gap:20px}.dialogTop button{font-size:21px;line-height:1;padding:5px 10px}dialog p,dialog li{font-size:13px;line-height:1.65;color:#b8c1b4}dialog h3{color:var(--gold);font-size:15px;margin-top:24px}dialog label{display:flex;justify-content:space-between;align-items:center;margin:12px 0;font-size:13px}dialog input{width:90px;padding:7px;background:#0f1712;border:1px solid #4a5645;color:var(--text);border-radius:4px}dialog .primary{margin-top:20px}#toast{position:fixed;bottom:104px;left:50%;transform:translateX(-50%);padding:12px 22px;border:1px solid #a49463;background:#2d3326;border-radius:6px;box-shadow:0 5px 30px #0008;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}#toast.show{opacity:1}#noResults{position:absolute;left:25%;top:40%;padding:25px;background:#1b251d;border:1px solid #6d7151;border-radius:8px}.symbols{position:absolute;width:0;height:0}a{color:var(--gold)}@media(max-width:1500px){.toolbar{flex-wrap:wrap}.toolbar nav{flex:1 0 60%}.brand span{display:none}#detail{width:285px;flex-basis:285px;padding:19px}.review small{display:none}.heading{padding-block:12px}h1{font-size:29px}}@media(max-width:1000px){header{padding-inline:14px}.review{font-size:8px;letter-spacing:.5px}.heading p{display:none}.researchNow{width:240px}#detail{width:250px;flex-basis:250px}.legend{gap:8px}footer>span{display:none}.demoBar{gap:8px;padding-inline:10px}.demoBar>span:first-child{display:none}#routeSummary{font-size:10px}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body>
+<svg class="symbols" aria-hidden="true"><defs>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C1 8 12 3 21 3c0 10-5 17-13 15M5 21 17 7M9 15v-5m4 1h5"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="m4 21 12-14M6 4c5-2 10 0 14 5l-3 3C13 6 9 5 6 4ZM3 8l13 13m-1-6 5 5"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v7c0 4-4 7-8 9-4-2-8-5-8-9V6ZM12 6v11m-4-7h8"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12c5-9 15-9 20 0-5 9-15 9-20 0Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="i-people" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M6 21v-4a6 6 0 0 1 12 0v4M4 8a3 3 0 0 0 0 6m16-6a3 3 0 0 1 0 6M2 21v-2m20 2v-2"/></symbol>
+<symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 2c3 6-3 7 2 11 2-2 3-4 3-6 8 10 1 15-5 15S1 17 5 10c0 4 2 5 3 5-2-6 5-7 4-13Z"/></symbol>
+<symbol id="i-house" viewBox="0 0 24 24"><path d="m2 11 10-8 10 8M5 10v11h14V10M10 21v-8h4v8"/></symbol>
+<symbol id="i-fish" viewBox="0 0 24 24"><path d="M3 12c5-8 10-7 14-2l5-4v12l-5-4c-4 5-9 6-14-2Z"/><circle cx="8" cy="11" r="1"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5C8 2 4 3 2 4v16c3-2 6-2 10 1 4-3 7-3 10-1V4c-2-1-6-2-10 1Zm0 0v16"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 6 4 5 5-8 5 8 4-5-3 13H6ZM6 16h12"/></symbol>
+<symbol id="i-cross" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z"/></symbol>
+</defs></svg>
+<header><div class="brand">SERENITY <span>Летопись открытий</span></div><div class="review"><span class="dot"></span> МАКЕТ ДЛЯ СОГЛАСОВАНИЯ <small>Данные демонстрационные · игра не изменена</small></div><button id="aboutOpen" class="quiet">О схеме</button></header>
+<section class="heading"><div><div class="eyebrow">ЭПОХА I · КАМЕННЫЙ ВЕК</div><h1>Дерево знаний</h1><p>Развивайте свой путь. Каждое открытие меняет возможности общины.</p></div><div class="researchNow"><span class="eyebrow">ТЕКУЩЕЕ ИССЛЕДОВАНИЕ</span><strong id="activeName"></strong><div class="progress"><i id="activeBar"></i></div><span id="activeMeta"></span></div></section>
+<section class="toolbar"><nav id="filters" aria-label="Направления"></nav><label class="search">⌕ <input id="search" placeholder="Найти исследование…" aria-label="Поиск исследований"><span id="searchCount"></span></label><button id="fit" title="Уместить всё дерево">Всё дерево</button><button id="center" title="Показать выбранное в читаемом масштабе">К выбранному</button><button id="minus" aria-label="Отдалить">−</button><span id="zoomText">100%</span><button id="plus" aria-label="Приблизить">+</button></section>
+<main><section id="viewport" aria-label="Интерактивная схема исследований"><div id="world"><svg id="edges" aria-hidden="true"></svg><div id="laneHeaders"></div><div id="nodes"></div><section id="epochCard"></section></div><div id="noResults" hidden>Ничего не найдено. Попробуйте другое название.</div></section><aside id="detail" aria-label="Подробности исследования"></aside></main>
+<footer><div class="legend"><span><b class="done"></b>Изучено</span><span><b class="available"></b>Доступно</span><span><b class="active"></b>Исследуется</span><span><b class="blocked"></b>Закрыто</span><span><b class="practical"></b>Нужна практика</span><span><b class="future"></b>Будущее</span></div><span>Тянуть фон — перемещение · колесо — масштаб</span></footer>
+<section class="demoBar"><span>ПРОВЕРИТЬ МАРШРУТ</span><select id="scenario" aria-label="Демонстрационный маршрут"><option value="early">Начало развития</option><option value="start">Новая община</option><option value="peaceful">Мирный: быт и ремесло</option><option value="scholar">Знания и медицина</option><option value="military">Военная специализация</option><option value="mixed">Смешанный путь</option></select><button id="conditionsOpen">Условия поселения</button><span id="routeSummary"></span><button id="reset" class="quiet">Сбросить демо</button></section>
+<dialog id="conditions"><div class="dialogTop"><h2>Условия демонстрационного поселения</h2><button data-close="conditions" aria-label="Закрыть">×</button></div><p>Меняйте значения и смотрите, какие исследования становятся доступны. В игре эти значения должны поступать из состояния поселения.</p><div id="conditionFields"></div><button id="conditionsApply" class="primary">Применить к макету</button></dialog>
+<dialog id="about"><div class="dialogTop"><h2>Предложение для Serenity</h2><button data-close="about" aria-label="Закрыть">×</button></div><div id="aboutContent"></div></dialog>
+<div id="toast" role="status"></div>
+<script>/* Design proposal only. Stable existing IDs retained; no Unity state is read or written. */
+(() => {
+const lanes = [
+ ['survival','Выживание','Еда, жильё, сезоны','#99b281','leaf'],
+ ['production','Производство','Материалы, ремёсла, запасы','#cba978','tools'],
+ ['military','Военное дело','Защита, обучение, организация','#c38576','shield'],
+ ['knowledge','Знания и медицина','Наблюдение, лечение, опыт','#83b7bd','eye'],
+ ['society','Общество','Род, община, управление','#ac9cc6','people']
+].map(([id,name,subtitle,color,icon])=>({id,name,subtitle,color,icon}));
+const nodes=[];
+function add(id,name,lane,col,row,all,days,effect,extra={}) {
+ nodes.push({id,name,lane,col,row,all:all?all.split(' '):[],any:[],days,effect,
+  status:'PARTIAL',future:'',practice:[],cost:{},key:false,...extra});
+}
+add('basic_survival','Основы выживания','root',-1,0,'',0,'Общие знания о пище, ночлеге и совместной жизни.',{status:'IMPLEMENTED'});
+add('gathering','Собирательство','survival',0,0,'basic_survival',0,'Сбор ягод, грибов, веток и растительных волокон.',{status:'IMPLEMENTED',hook:'Существующие рецепты gather_berries, gather_mushrooms, gather_branches, gather_fiber.'});
+add('shelter_construction','Простые укрытия','survival',1,0,'gathering',2,'Строительство примитивного укрытия. Первый безопасный ночлег.',{hook:'Существующее primitive_shelter; отделить от улучшенного жилья.'});
+add('controlled_fire','Управляемый огонь','survival',0,1,'basic_survival',2,'Костёр и наземный факел. Огонь становится доступным инструментом поселения.',{cost:{wood:3},hook:'Существующие campfire и ground_torch. Рецепты готовки вынесены в отдельное исследование.'});
+add('hunting','Организованная охота','survival',2,0,'gathering stone_tools',3,'Охотничий лагерь и разделка добычи. Мясо, шкуры и кости вместо зависимости от ягод.',{status:'IMPLEMENTED',key:true,hook:'hunting_camp, butcher_station, hunt_animal и рецепты разделки.'});
+add('fishing','Рыболовство','survival',1,1,'gathering',3,'Рыба как самостоятельный путь снабжения; рыбацкий лагерь и причал.',{key:true,hook:'Перенести существующие fish_water, fish_camp, fishing_camp, fishing_pier из gathering.'});
+add('primitive_agriculture','Первое земледелие','survival',2,1,'gathering stone_tools',5,'Грядки, сад и выращивание культур. Альтернатива охоте и рыболовству.',{status:'IMPLEMENTED',key:true,hook:'primitive_crop_plot, primitive_garden, существующие cultivate_*; пастбище вынесено в знание животных.'});
+add('cooking','Приготовление пищи','survival',3,1,'controlled_fire',3,'Жареная рыба, приготовленное мясо и ягоды; кухня для постоянного производства.',{any:['hunting','fishing','primitive_agriculture'],cost:{wood:4},hook:'Существующие cook_fish, cook_meat, cook_berries и stone_age_kitchen. Огонь И любой один продовольственный путь: охота, рыболовство ИЛИ земледелие.'});
+add('reliable_housing','Надёжные жилища','survival',3,0,'shelter_construction woodworking',5,'Хижины каменного века вместо временных укрытий.',{key:true,practice:['shelter'],hook:'Существующее stone_age_hut. Никаких новых бонусов комфорта в этом этапе.'});
+add('food_preservation','Сохранение пищи','survival',4,1,'cooking',5,'Сушильная стойка и пищевой склад; существующая сушка мяса.',{key:true,hook:'dry_meat, drying_rack, food_storage. Сушка рыбы и копчение пока не заявлены как работающие.'});
+add('seasonal_preparation','Сезонные запасы','survival',5,1,'',6,'Организация общего продовольственного склада перед сменой сезона.',{any:['food_preservation','primitive_agriculture'],practice:['food'],key:true,hook:'Перенести открытие central_storehouse сюда; условие — фактический запас съедобной пищи. Бонус погоды не добавляется.'});
+
+add('stone_tools','Каменные орудия','production',0,0,'basic_survival',3,'Добыча камня, рубка дерева, мастерская каменных орудий.',{status:'IMPLEMENTED',hook:'gather_stone, chop_wood, stone_tool_workshop. Позднюю руду выделить в добычу недр.'});
+add('fiber_working','Растительные волокна','production',0,1,'',2,'Подготовка волокон для верёвок и ткани.',{status:'PROPOSED',future:'Нет отдельного рецепта обработки волокна или верёвки. Не закрывает доступ к существующей добыче волокон и оружию.'});
+add('woodworking','Обработка древесины','production',1,0,'stone_tools',3,'Корзины для хранения и начало строительного ремесла.',{status:'IMPLEMENTED',cost:{wood:5},hook:'storage_basket; существующее открытие сохранено.'});
+add('clay_working','Работа с глиной','production',1,1,'stone_tools',3,'Добыча глины как основа будущего гончарства.',{hook:'Существующий gather_clay переносится из stone_tools; новых предметов не создаём.'});
+add('organized_labor','Организация труда','production',2,0,'woodworking',5,'Ремесленный зал и общинный дом. Работники распределяются через профессиональные группы.',{key:true,practice:['shelter'],hook:'crafting_hall, communal_house; группы уже существуют, исследование их не блокирует.'});
+add('pottery','Гончарное дело','production',2,1,'clay_working',5,'Сосуды для хранения и приготовления пищи.',{status:'PROPOSED',future:'Нужны рецепты керамики, ресурс-сосуд и рабочее место. Их нет в подтверждённом каталоге; технология недоступна.'});
+add('advanced_stonecraft','Точная обработка камня','production',3,0,'stone_tools woodworking',5,'Добыча кремня; подготовка к специализированной добыче недр.',{key:true,cost:{stone:8},hook:'Существующий gather_flint; текущий флаг advanced_stonecraft сам по себе бонуса не даёт.'});
+add('hide_working','Выделка шкур','production',3,1,'stone_tools',4,'Кожевенная мастерская, выделанная кожа и кожаная одежда.',{practice:['hides'],key:true,hook:'hide_workshop, cure_hide, make_leather_clothing. Шкуры проверяются в запасах, не нужна обязательная охота.'});
+add('industrial_extraction','Разработка недр','production',4,0,'advanced_stonecraft',6,'Добыча уже существующих железной и золотой руд. Выплавку металла это не открывает.',{key:true,hook:'gather_iron и gather_gold; перенос существующих открытий из stone_tools, без новых металлургических цепочек.'});
+add('weaving','Плетение и ткачество','production',4,1,'fiber_working',5,'Ткань, плетёные изделия и тёплая одежда из волокон.',{status:'PROPOSED',future:'Нужны рецепт ткани, ткацкое рабочее место и тканевая одежда. Существующая кожаная одежда открывается через выделку шкур.'});
+add('restorative_mining','Восстановление выработок','production',5,0,'industrial_extraction',7,'Повторное использование истощённых выработок.',{status:'PROPOSED',future:'Флаг mine_restoration есть, но потребитель в Simulation не найден. Требуется отдельная механика; не исследуется.'});
+add('standardization','Ремесленные стандарты','production',5,1,'organized_labor advanced_stonecraft',7,'Единые размеры и качество ремесленных изделий.',{status:'PROPOSED',future:'Нет подтверждённой системы качества и стандартизованных деталей. Не выдаём выдуманный бонус производства.'});
+
+add('primitive_weapons','Примитивное оружие','military',0,0,'basic_survival',3,'Изготовление каменных копий и деревянных щитов.',{cost:{wood:3,stone:3},hook:'Существующие craft_stone_spear, craft_wooden_shield; перенос открытия, не изменение боя.'});
+add('militia','Ополчение поселения','military',1,0,'primitive_weapons',4,'Казарма для подготовки военных. Гражданские не могут входить в отряд.',{key:true,hook:'military_barracks; военная профессия и начальный лимит 2 уже существуют. Самостоятельной новой боевой системы нет.'});
+add('territory_guard','Охрана территории','military',1,1,'primitive_weapons',3,'Сторожевая башня для организации защиты поселения.',{hook:'watchtower переносится из organized_labor. Автоматический патруль — отдельная будущая механика.',future:'Автоматические маршруты патрулирования не входят в эту технологию.'});
+add('formation_training','Строевая подготовка','military',2,0,'militia',5,'Тренировочная площадка. Подготовка постоянного войска.',{key:true,practice:['soldiers'],hook:'training_ground; существующее здание. Бонус строя не заявлен, поскольку потребитель флага formation_training не найден.'});
+add('throwing_weapons','Лук и стрелы','military',2,1,'primitive_weapons',4,'Изготовление боевых луков и стрел; отдельная специализация вооружения.',{key:true,hook:'Существующие craft_combat_bow, craft_arrows. Без изменения урона и дальности.'});
+add('military_organization','Военная организация','military',3,0,'formation_training organized_labor',7,'Увеличение максимального числа отрядов с двух до четырёх.',{status:'IMPLEMENTED',key:true,practice:['soldiers'],hook:'MilitaryUnitService действительно читает capability military_organization.'});
+add('fortification','Укрепление поселения','military',3,1,'territory_guard woodworking',6,'Частокол и ворота. Защитный строительный путь без обязательного расширения армии.',{key:true,cost:{wood:12},hook:'palisade и gate перенесены из organized_labor. Правила боя и разрушения не меняются.'});
+add('military_logistics','Военное снабжение','military',5,0,'military_organization food_preservation',7,'Организация походных запасов для дальних операций.',{status:'PROPOSED',future:'Система снабжения существует, но отдельного эффекта capability military_logistics нет. Конкретный модификатор и потребитель требуют отдельного решения.'});
+
+add('observation','Наблюдение природы','knowledge',0,0,'basic_survival',2,'Систематизация наблюдений: предложено +5% к эффективности исследовательской группы.',{hook:'Предложенная локальная интеграция в ResearchService; сейчас флаг observation не меняет скорость. Бонус только после реализации.'});
+add('plant_lore','Знание растений','knowledge',0,1,'',2,'Различать лекарственные растения и собирать их для будущего лечения.',{hook:'Существующий gather_medicinal_plants переносится из стартового gathering.'});
+add('animal_lore','Знание животных','knowledge',1,0,'observation',3,'Пастбище и приготовление корма. Прикладное изучение животных.',{key:true,hook:'animal_pasture, make_animal_feed; используются существующие системы.'});
+add('herbalism','Травничество','knowledge',1,1,'plant_lore',3,'Приготовление лекарственного средства из собранных растений.',{key:true,practice:['herbs'],hook:'Существующий prepare_medicine. Исследование открывает рецепт, не обещает новый алгоритм лечения.'});
+add('season_calendar','Календарь сезонов','knowledge',2,0,'observation',4,'Сопоставление повторяющихся сезонов: предложено ещё +5% к исследованиям.',{key:true,hook:'Локальный бонус ResearchService после реализации. Погода уже существует; предсказание погоды сюда не входит.'});
+add('wound_care','Уход за ранеными','knowledge',2,1,'herbalism',4,'Хижина лекаря как место медицинской работы.',{key:true,hook:'Существующее healer_hut; перенести открытие из organized_labor. Новые медицинские действия не добавляются.'});
+add('record_keeping','Учёт знаний','knowledge',3,0,'season_calendar',5,'Передача результатов внутри группы: предложено +1 эффективное место исследователя.',{key:true,hook:'Предлагаемый предел вклада группы 4 → 5 в ResearchService, без новой профессии или письменности.'});
+add('practical_anatomy','Практическая анатомия','knowledge',3,1,'wound_care animal_lore',5,'Понимание травм и устройства тела.',{status:'PROPOSED',future:'Нет подтверждённого потребителя исследовательского эффекта в лечении. Снижение осложнений пока не работает и не обещается.'});
+add('knowledge_transfer','Передача опыта','knowledge',4,0,'record_keeping',6,'Обучение внутри группы: предложено ещё +1 эффективное место исследователя.',{key:true,hook:'Предлагаемый предел вклада группы 5 → 6. Сохраняются личные навыки и ограничения здоровья.'});
+add('natural_philosophy','Систематизация знаний','knowledge',5,0,'knowledge_transfer',7,'Сравнение наблюдений и причин: предложено ещё +10% к исследованиям.',{key:true,hook:'Локальный, ограниченный модификатор ResearchService; суммарный предложенный бонус науки не выше +20%.'});
+
+add('kinship','Родовая община','society',0,0,'basic_survival',2,'Родовой дом. Семья и наследование продолжают работать с начала игры.',{hook:'clan_house переносится из organized_labor. Существующая династия не закрывается исследованием.'});
+add('shared_storage','Общинные пути','society',0,1,'',2,'Прокладка примитивных путей между жилищами, складами и местами работы.',{hook:'primitive_path переносится из organized_labor. Это строительное открытие, а не выдуманный бонус скорости доставки.'});
+add('settlement_council','Совет поселения','society',1,0,'kinship',4,'Место собраний и хижина вождя.',{key:true,practice:['shelter'],hook:'meeting_area, chief_hut. Назначение министров относится к будущему U33.',future:'Министры и ведомства — план U33; не часть действующего эффекта.'});
+add('spiritual_tradition','Общие традиции','society',1,1,'kinship',3,'Святилище как общественное здание.',{key:true,hook:'Существующее shrine. Новый религиозный симулятор и бонус веры не заявлены.'});
+add('land_administration','Управление землями','society',2,0,'settlement_council',5,'Назначение управляющих и распределение полномочий.',{status:'PLANNED',future:'U33: министры, губернаторы и ведомства. Нет работающей власти, которую можно открыть одним флагом.'});
+add('exchange_and_measures','Обмен и меры','society',2,1,'shared_storage',4,'Договорённости об обмене и оценке товаров.',{status:'PROPOSED',future:'Торговый рынок и обмен с ценами не подтверждены. Нужны отдельные правила торговли и интеграция.'});
+add('customary_law','Обычное право','society',3,0,'land_administration',6,'Обязательные для общины правила и разрешение споров.',{status:'PLANNED',future:'U35: законы и протесты; зависит от будущего U33, без влияния на условия эпохи.'});
+add('trade_contacts','Торговые связи','society',3,1,'exchange_and_measures',5,'Устойчивый обмен с соседними поселениями.',{status:'PROPOSED',future:'Нет подтверждённого API торговых договоров. Не создаём фиктивные дипломатические отношения.'});
+add('early_diplomacy','Посольства общин','society',4,1,'trade_contacts settlement_council',7,'Переговоры, обязательства и соглашения между общинами.',{status:'PLANNED',future:'U36: дипломатия. Технология остаётся превью до реализации договоров и AI-оценки условий.'});
+add('stone_age_mastery','Освоение каменного века','epoch',6,0,'',8,'Завершение каменного века. Изучение оставшихся технологий остаётся доступным.',{status:'PARTIAL',hook:'Существующий StoneAgeCompleted. Следующая эпоха — U38, ещё не реализована; макет не запускает выдуманный бронзовый век.'});
+const practice={shelter:{name:'Построено хотя бы одно укрытие',goal:1,unit:'укрытие'},food:{name:'В общих запасах не менее 40 единиц пищи',goal:40,unit:'ед. пищи'},hides:{name:'В запасах не менее 2 шкур',goal:2,unit:'шкуры'},herbs:{name:'В запасах не менее 5 лекарственных растений',goal:5,unit:'растений'},soldiers:{name:'В поселении есть 2 военных',goal:2,unit:'военных'},population:{name:'Не менее 10 живых жителей',goal:10,unit:'жителей'}};
+// Draft work-budget profile: 24 real minutes per game day, four effective workers.
+// Half-day steps keep the short route near four hours before practical delays.
+for (const n of nodes) if (n.days) n.days=Math.round(n.days*.8*2)/2;
+globalThis.SerenityResearchProposal={lanes,nodes,practice,epoch:{count:14,lanes:3,perLane:3,keys:3,foundations:['controlled_fire','stone_tools','shelter_construction'],practice:['shelter','food','population']}};
+})();
+</script><script>/* Standalone review simulation. It never connects to Unity or writes game saves. */
+(() => {
+'use strict';
+const {nodes,lanes,practice,epoch}=SerenityResearchProposal;
+const $=id=>document.getElementById(id), byId=new Map(nodes.map(n=>[n.id,n]));
+const category=new Map(lanes.map(l=>[l.id,l]));
+const W=1480,H=820,CW=156,CH=54;
+const labels={completed:'Изучено',available:'Доступно',researching:'Исследуется',locked:'Закрыто',practice:'Нужна практика',future:'Будущая механика'};
+const resources={wood:'древесина',stone:'камень'};
+let selected='woodworking',filter='all',query='',done=new Set(),active=null,progress=0;
+let facts={},stock={},scale=1,offset={x:0,y:0},drag=null,moved=false,toastTimer;
+const elms=new Map();
+const future=n=>['PLANNED','PROPOSED'].includes(n.status);
+const icon=name=>`<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function nodeIcon(n){return n.id==='basic_survival'?'fire':n.lane==='epoch'?'crown':/fire|cooking/.test(n.id)?'fire':/fish/.test(n.id)?'fish':/shelter|housing/.test(n.id)?'house':/herbal|wound|anatomy/.test(n.id)?'cross':/record|knowledge|philosophy/.test(n.id)?'book':category.get(n.lane)?.icon||'book'}
+function position(n){return n.lane==='root'?{x:13,y:351}: {x:150+n.col*180,y:lanes.findIndex(l=>l.id===n.lane)*160+40+n.row*66}}
+function prereqs(n){return n.all.every(id=>done.has(id))&&(!n.any.length||n.any.some(id=>done.has(id)))}
+function practical(n){return n.practice.every(k=>(facts[k]||0)>=practice[k].goal)}
+function affordable(n){return Object.entries(n.cost).every(([r,c])=>(stock[r]||0)>=c)}
+function epochProgress(){
+ const learned=nodes.filter(n=>!['root','epoch'].includes(n.lane)&&n.id!=='gathering'&&done.has(n.id)&&!future(n));
+ const developed=lanes.filter(l=>learned.filter(n=>n.lane===l.id).length>=epoch.perLane);
+ const achievements=lanes.filter(l=>learned.some(n=>n.lane===l.id&&n.key));
+ const base=epoch.foundations.filter(id=>done.has(id)).length;
+ const practicalCount=epoch.practice.filter(k=>facts[k]>=practice[k].goal).length;
+ const pieces=[Math.min(1,learned.length/epoch.count),Math.min(1,developed.length/epoch.lanes),Math.min(1,achievements.length/epoch.keys),base/epoch.foundations.length,practicalCount/epoch.practice.length];
+ return {learned,developed,achievements,base,practicalCount,ready:pieces.every(x=>x===1),percent:Math.round(pieces.reduce((a,b)=>a+b,0)/pieces.length*100)};
+}
+function state(n){
+ if(done.has(n.id))return 'completed'; if(active===n.id)return 'researching'; if(future(n))return 'future';
+ if(n.lane==='epoch')return epochProgress().ready?'available':'locked';
+ if(!prereqs(n))return 'locked'; return practical(n)&&affordable(n)?'available':'practice';
+}
+function notify(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3500)}
+function setScenario(which){
+ facts={shelter:1,food:24,hides:0,herbs:6,soldiers:0,population:10};stock={wood:30,stone:20};
+ done=new Set(['basic_survival','gathering']);active=null;progress=0;
+ const base=['stone_tools','controlled_fire','shelter_construction','woodworking','organized_labor','advanced_stonecraft'];
+ const sets={
+ early:['stone_tools','controlled_fire','shelter_construction','observation','plant_lore','kinship'],
+ peaceful:[...base,'clay_working','hide_working','fishing','cooking','food_preservation','reliable_housing','seasonal_preparation','kinship','settlement_council','spiritual_tradition','shared_storage'],
+ scholar:[...base,'observation','plant_lore','animal_lore','herbalism','wound_care','season_calendar','record_keeping','knowledge_transfer','natural_philosophy','hunting','fishing'],
+ military:[...base,'primitive_weapons','militia','territory_guard','formation_training','throwing_weapons','military_organization','fortification','hunting','cooking','food_preservation'],
+ mixed:[...base,'fishing','cooking','food_preservation','observation','plant_lore','herbalism','wound_care','season_calendar']
+ };
+ for(const id of sets[which]||[])done.add(id);
+ if(which==='start'){facts={shelter:0,food:12,hides:0,herbs:0,soldiers:0,population:10};}
+ else if(which==='early'){active='woodworking';progress=42;}
+ else{facts={shelter:3,food:64,hides:4,herbs:12,soldiers:which==='military'?6:0,population:14};}
+ $('scenario').value=which; render();
+}
+function choose(id,focus=false){selected=id;render();if(focus)centerOn(id)}
+function createNodes(){
+ for(const n of nodes){
+  if(n.lane==='epoch')continue;
+  const p=position(n),e=document.createElement('button');e.type='button';e.dataset.id=n.id;e.className='node';
+  e.style.left=p.x+'px';e.style.top=p.y+'px';e.style.setProperty('--lane',category.get(n.lane)?.color||'#cfb77d');
+  if(n.lane==='root')e.classList.add('root');
+  e.innerHTML=`${icon(nodeIcon(n))}<span><span class="label">${esc(n.name)}</span><span class="meta"></span></span>${n.key?'<span class="star" title="Ключевое достижение направления">✦</span>':''}`;
+  e.addEventListener('click',()=>{if(!moved)choose(n.id)});$('nodes').append(e);elms.set(n.id,e);
+ }
+ $('laneHeaders').innerHTML=lanes.map((l,i)=>`<div class="laneHeader" style="top:${i*160}px;--lane:${l.color}"><h3>${l.name}<span>${l.subtitle}</span></h3></div>`).join('');
+ $('filters').innerHTML=`<button data-filter="all">Все направления</button>`+lanes.map(l=>`<button data-filter="${l.id}" title="Подсветить направление; остальные связи остаются на схеме">${l.name}</button>`).join('');
+ $('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render()});
+}
+function drawEdges(){
+ let paths='';
+ for(const n of nodes){
+  if(n.lane==='epoch'||n.lane==='root')continue;
+  const end=position(n);
+  for(const id of [...n.all,...n.any]){
+   const parent=byId.get(id),start=position(parent),root=parent.lane==='root';
+   const isAlternative=n.any.includes(id);
+   const sx=start.x+(root?112:CW),sy=start.y+(root?55:CH/2),ex=end.x,
+    ey=end.y+CH/2+(n.any.length?(isAlternative?13:-13):0);
+   const hi=selected===id||selected===n.id;
+   let color=hi?'#e2c68b':done.has(id)?'#95a97c':'#536152';
+   let opacity=hi?1:done.has(id)?.65:.38;
+   if(filter!=='all'&&n.lane!==filter&&parent.lane!==filter&&!hi)opacity=.1;
+   let d;
+   if(root){d=`M${sx} ${sy} H135 V${ey} H${ex}`;}
+   else if(start.y===end.y && n.col===parent.col+1){d=`M${sx} ${sy} H${ex}`;}
+   else{
+    const routeY=Math.floor(start.y/160)*160+(parent.row===0?30:163);
+    // Horizontal travel uses lane gutters; vertical travel uses column gutters.
+    const gutter=ex-(n.any.length?(isAlternative?18:5):13);
+    d=`M${sx} ${sy} H${sx+9} V${routeY} H${gutter} V${ey} H${ex}`;
+   }
+   paths+=`<path d="${d}" stroke="${color}" opacity="${opacity}" class="${hi?'highlight':''}" data-from="${id}" data-to="${n.id}"/>`;
+  }
+  if(n.any.length){paths+=`<rect x="${end.x-24}" y="${end.y+CH/2+5}" width="23" height="16" rx="4" fill="#302e21" stroke="#a38b54"/><text x="${end.x-12}" y="${end.y+CH/2+16}" text-anchor="middle" style="font-size:8px">ИЛИ</text>`;}
+ }
+ $('edges').innerHTML=paths;
+}
+function render(){
+ let matches=0;
+ for(const n of nodes){
+  if(n.lane==='epoch')continue;
+  const e=elms.get(n.id),s=state(n),match=(!query||n.name.toLocaleLowerCase('ru').includes(query))&&(filter==='all'||n.lane===filter||n.lane==='root');
+  if(match)matches++;
+  const related=selected===n.id||byId.get(selected).all.includes(n.id)||byId.get(selected).any.includes(n.id)||n.all.includes(selected)||n.any.includes(selected);
+  e.className=`node ${n.lane==='root'?'root':''} ${s} ${selected===n.id?'selected':''} ${!match?'dim':''} ${related&&!query?'related':''}`;
+  e.querySelector('.meta').textContent=(s==='completed'?'✓ ':s==='locked'?'◇ ':'')+labels[s]+(n.any.length?' · ИЛИ':'');
+  e.title=n.name+' — '+labels[s]+(n.key?' · ключевое достижение':'');e.setAttribute('aria-pressed',String(selected===n.id));
+ }
+ $('searchCount').textContent=query?matches:'';$('noResults').hidden=!query||matches>0;
+ $('filters').querySelectorAll('button').forEach(b=>{b.classList.toggle('selected',b.dataset.filter===filter);b.setAttribute('aria-pressed',String(b.dataset.filter===filter))});
+ $('activeName').textContent=active?byId.get(active).name:'Выберите новое направление';
+ $('activeBar').style.width=(active?progress:0)+'%';
+ $('activeMeta').textContent=active?`${progress}% · 4 исследователя · демонстрация`:'Группа исследователей распределяется автоматически';
+ drawEdges();renderEpoch();renderDetail();
+ const ep=epochProgress();$('routeSummary').textContent=`${ep.learned.length} открытий · ${ep.developed.length}/3 развитых направлений · ${ep.ready?'условия эпохи выполнены':'можно проверить зависимости'}`;
+}
+function renderEpoch(){
+ const e=epochProgress(),complete=done.has('stone_age_mastery');
+ $('epochCard').innerHTML=`${icon('crown')}<div class="eyebrow">РУБЕЖ ЭПОХИ</div><h2>Освоение<br>каменного века</h2><p>Разные пути ведут к общей цели. Война не обязательна.</p><div class="gate">Изучено технологий<b>${e.learned.length} / 14</b></div><div class="gate">Развитые направления<b>${e.developed.length} / 3</b><p>По 3 открытия в каждом</p></div><div class="gate">Направления с достижениями<b>${e.achievements.length} / 3</b></div><div class="gate">Основы поселения<b>${e.base} / 3</b></div><div class="gate">Практические условия<b>${e.practicalCount} / 3</b></div><div class="progress"><i style="width:${e.percent}%"></i></div><p class="${complete?'epochComplete':''}">${complete?'✓ Каменный век освоен':e.percent+'% условий выполнено'}</p><button class="epochAction">${complete?'Посмотреть результат':'Условия завершения →'}</button><p style="margin-top:15px">Оставшиеся исследования доступны и после этого рубежа.</p>`;
+ $('epochCard').querySelector('button').onclick=()=>choose('stone_age_mastery');
+}
+function reqLine(text,met){return `<div class="requirement"><span class="${met?'check':'missing'}">${met?'✓':'○'}</span><span>${esc(text)}</span></div>`}
+function reqNode(id){return `<div class="requirement"><span class="${done.has(id)?'check':'missing'}">${done.has(id)?'✓':'○'}</span><button class="prereqButton" data-select="${id}">${esc(byId.get(id).name)} ↗</button></div>`}
+function researchRate(){return (4+(done.has('record_keeping')?1:0)+(done.has('knowledge_transfer')?1:0))*1.1*(1+(done.has('observation')?.05:0)+(done.has('season_calendar')?.05:0)+(done.has('natural_philosophy')?.1:0))}
+function renderDetail(){
+ const n=byId.get(selected),s=state(n),ep=n.lane==='epoch';
+ let body=`<div class="detailIcon">${icon(nodeIcon(n))}</div><div class="eyebrow">${ep?'РУБЕЖ ЭПОХИ':category.get(n.lane)?.name||'ОБЩИЙ КОРЕНЬ'}</div><h2>${esc(n.name)}</h2><span class="state">${labels[s]}</span><h3>Что это даёт</h3><p>${esc(n.effect)}</p>`;
+ if(n.key)body+='<p class="note">✦ Ключевое достижение направления. Учитывается при завершении эпохи.</p>';
+ if(ep){
+  const e=epochProgress();body+=`<h3>Все условия вместе</h3>`+reqLine(`14 технологий: ${e.learned.length}/14`,e.learned.length>=14)+reqLine(`По 3 технологии в 3 направлениях: ${e.developed.length}/3`,e.developed.length>=3)+reqLine(`Ключевые достижения в 3 направлениях: ${e.achievements.length}/3`,e.achievements.length>=3);
+  body+='<h3>Обязательные основы</h3>'+epoch.foundations.map(reqNode).join('');
+  body+='<h3>Практика поселения</h3>'+epoch.practice.map(k=>reqLine(practice[k].name+` · ${facts[k]}/${practice[k].goal}`,facts[k]>=practice[k].goal)).join('');
+  body+='<p class="note">Стартовые знания и будущие механики не считаются. Военная ветка необязательна; условия достижимы через мирное развитие.</p><p class="futureNote">Следующая историческая эпоха ещё не реализована (U38). Этот рубеж завершает каменный век и сохраняет доступ к его дереву; новый век не запускается.</p>';
+ }else{
+  body+='<h3>Зависимости</h3>';
+  if(!n.all.length&&!n.any.length)body+='<p class="note">Независимое исследование. Предшественники не нужны.</p>';
+  else{if(n.all.length)body+='<p class="note">Обязательны все:</p>'+n.all.map(reqNode).join('');if(n.any.length)body+='<div class="orGroup"><small>И ЛЮБОЕ ОДНО ИЗ:</small>'+n.any.map(reqNode).join('')+'</div>';}
+  if(n.practice.length)body+='<h3>Практические условия</h3>'+n.practice.map(k=>reqLine(practice[k].name+` · ${facts[k]}/${practice[k].goal}`,facts[k]>=practice[k].goal)).join('');
+ }
+ if(n.days){
+  const level=n.days<=2?'Начальное':n.days<=3?'Базовое':n.days<=5?'Развитое':ep?'Эпохальное':'Ключевое';
+  body+=`<h3>Стоимость · ${level}</h3><div class="metrics"><div class="metric"><b>${n.days} чел.-дн.</b><span>Работа исследователей</span></div><div class="metric"><b>≈ ${Math.ceil(n.days*24/researchRate())} мин</b><span>Нормальная скорость ×1</span></div></div><p class="note">Оценка при полностью занятой группе и навыке ×1,1. Сон, здоровье и другие дела увеличат время.</p>`;
+  if(Object.keys(n.cost).length)body+=Object.entries(n.cost).map(([r,c])=>reqLine(`${resources[r]}: ${c} (в демо ${stock[r]})`,stock[r]>=c)).join('')+'<p class="note">Материалы списываются один раз при старте.</p>';
+ }
+ if(n.future)body+=`<h3>Будущие возможности</h3><p class="futureNote">${esc(n.future)}</p>`;
+ if(s==='researching')body+=`<div class="progress"><i style="width:${progress}%"></i></div><p class="note">${progress}% · ускоренная проверка макета</p><button class="primary" id="finishDemo">Завершить в демо</button>`;
+ else if(!['completed','future'].includes(s))body+=`<button class="primary" id="startDemo" ${s!=='available'||active?'disabled':''}>${active?'Дождитесь текущего исследования':s==='available'?'Начать в демо':s==='practice'?'Не выполнены условия':'Сначала выполните зависимости'}</button>`;
+ else if(s==='future')body+='<p class="note">Эту технологию нельзя исследовать до появления указанной механики. Она не требуется для эпохи.</p>';
+ const children=nodes.filter(c=>c.all.includes(n.id)||c.any.includes(n.id));
+ if(children.length)body+='<h3>Следующие возможности</h3>'+children.map(c=>`<div class="requirement"><button class="prereqButton" data-select="${c.id}">${esc(c.name)} ↗${c.any.includes(n.id)?' · один из путей':''}</button></div>`).join('');
+ const statuses={IMPLEMENTED:'IMPLEMENTED · действующий эффект подтверждён',PARTIAL:'PARTIAL · существующая механика, привязка или часть эффекта требует реализации',PLANNED:'PLANNED · механика есть в планах проекта',PROPOSED:'PROPOSED · предложение, механика ещё не утверждена'};
+ body+=`<details><summary>Интеграция с текущей игрой</summary><p>${statuses[n.status]}</p><p>${esc(n.hook||n.future||'Существующее стартовое знание.')}</p><p>Идентификатор: <code>${n.id}</code>. Это проект схемы, а не отчёт о внесённых изменениях.</p></details>`;
+ const scroll=$('detail').scrollTop;$('detail').innerHTML=body;
+ if($('detail').dataset.selected!==selected){$('detail').scrollTop=0;$('detail').dataset.selected=selected;}else $('detail').scrollTop=scroll;
+ $('detail').querySelectorAll('[data-select]').forEach(b=>b.onclick=()=>choose(b.dataset.select,true));
+ if($('startDemo'))$('startDemo').onclick=()=>{if(state(n)!=='available'||active)return;for(const [r,c]of Object.entries(n.cost))stock[r]-=c;active=n.id;progress=1;render();notify('Исследование запущено только в макете')};
+ if($('finishDemo'))$('finishDemo').onclick=()=>{done.add(active);active=null;progress=0;render();notify(ep?'Каменный век освоен в демонстрации':'Изучено. Зависимые технологии обновлены')};
+}
+function transform(){ $('world').style.transform=`translate(${offset.x}px,${offset.y}px) scale(${scale})`;$('zoomText').textContent=Math.round(scale*100)+'%' }
+function fit(){const r=$('viewport').getBoundingClientRect();scale=Math.min((r.width-24)/W,(r.height-16)/H,1.25);offset={x:(r.width-W*scale)/2,y:(r.height-H*scale)/2};transform()}
+function zoom(next,x,y){const r=$('viewport').getBoundingClientRect();x??=r.width/2;y??=r.height/2;next=Math.max(.4,Math.min(2,next));offset={x:x-(x-offset.x)*next/scale,y:y-(y-offset.y)*next/scale};scale=next;transform()}
+function centerOn(id){const r=$('viewport').getBoundingClientRect(),n=byId.get(id),p=n.lane==='epoch'?{x:1260,y:160}:position(n);scale=Math.max(1,scale);offset={x:r.width/2-(p.x+(n.lane==='epoch'?102:78))*scale,y:r.height/2-(p.y+(n.lane==='epoch'?230:27))*scale};transform()}
+const vp=$('viewport');
+vp.addEventListener('wheel',e=>{e.preventDefault();e.stopPropagation();const r=vp.getBoundingClientRect();zoom(scale*Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+vp.addEventListener('pointerdown',e=>{moved=false;if(e.button!==0||e.target.closest('button'))return;drag={x:e.clientX,y:e.clientY,ox:offset.x,oy:offset.y};vp.setPointerCapture(e.pointerId);vp.classList.add('dragging')});
+vp.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;offset={x:drag.ox+dx,y:drag.oy+dy};transform()});
+function release(){drag=null;vp.classList.remove('dragging');setTimeout(()=>moved=false,0)}vp.addEventListener('pointerup',release);vp.addEventListener('pointercancel',release);
+let fitted=true;$('fit').onclick=()=>{fitted=true;fit()};$('center').onclick=()=>{fitted=false;centerOn(selected)};$('plus').onclick=()=>{fitted=false;zoom(scale*1.2)};$('minus').onclick=()=>{fitted=false;zoom(scale/1.2)};
+vp.addEventListener('wheel',()=>fitted=false);vp.addEventListener('pointermove',()=>{if(drag)fitted=false});
+window.addEventListener('resize',()=>{if(fitted)fit()});
+$('search').addEventListener('input',e=>{query=e.target.value.trim().toLocaleLowerCase('ru');render()});
+$('search').addEventListener('keydown',e=>{if(e.key==='Enter'){const n=nodes.find(n=>n.lane!=='epoch'&&n.name.toLocaleLowerCase('ru').includes(query)&&(filter==='all'||n.lane===filter));if(n)choose(n.id,true)}});
+$('scenario').onchange=e=>setScenario(e.target.value);$('reset').onclick=()=>{filter='all';query='';$('search').value='';selected='woodworking';setScenario('early');fitted=true;fit()};
+$('conditionsOpen').onclick=()=>{
+ $('conditionFields').innerHTML=Object.entries(practice).map(([k,v])=>`<label>${esc(v.name)}<input type="number" min="0" max="100000" step="1" value="${facts[k]}" data-fact="${k}"></label>`).join('')+Object.entries(resources).map(([k,v])=>`<label>Материал: ${v}<input type="number" min="0" max="100000" step="1" value="${stock[k]}" data-stock="${k}"></label>`).join('');$('conditions').showModal();
+};
+$('conditionsApply').onclick=()=>{const value=e=>Math.max(0,Math.min(100000,Math.floor(Number(e.value)||0)));$('conditions').querySelectorAll('[data-fact]').forEach(e=>facts[e.dataset.fact]=value(e));$('conditions').querySelectorAll('[data-stock]').forEach(e=>stock[e.dataset.stock]=value(e));$('conditions').close();render()};
+$('aboutOpen').onclick=()=>$('about').showModal();document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
+$('aboutContent').innerHTML=`<p>51 технология, пять горизонтальных направлений, общий корень и отдельный рубеж эпохи. Все 33 прежних идентификатора сохранены в проекте схемы. Новые зависимости и открытия пока не внесены в Unity.</p><h3>Как читать связи</h3><p>Все линии сплошные. Яркие — выполненные требования; золотые — связи выбранного исследования. «ИЛИ» означает, что достаточно одного из отмеченных предшественников. Остальные условия перечислены справа и обязательны вместе. Независимые знания не имеют входящих линий. ✦ — ключевое достижение.</p><h3>Разные пути развития</h3><p>Для рубежа нужны 14 не стартовых технологий, по 3 открытия в любых 3 направлениях и ключевые достижения в любых 3 направлениях. Дополнительно нужны огонь, каменные орудия, укрытия, живое поселение и запас пищи. Полностью проходить ветки и изучать военное дело не нужно.</p><h3>Что означает «будущее»</h3><p>Такие карточки доступны для просмотра, но не для исследования. У них нет обещанных работающих бонусов. Они не блокируют действующие технологии и не учитываются в условиях эпохи. Подробности интеграции раскрываются внизу правой панели.</p><h3>Предложение по длительности</h3><p>В текущем GameClock одна игровая минута проходит за реальную секунду: сутки — 24 минуты. В макете ранние открытия требуют 1,5–2,5 человеко-дня, развитые 3–4, ключевые 5–5,5, рубеж 6,5. При четырёх исследователях ×1,1 мирный маршрут из 17 открытий и рубеж занимает около 5 часов непрерывной работы; короткий смешанный путь — около 3,9 часа. Научные открытия могут сократить время, а сон и практические условия — увеличить. Целевые 3–6 часов нужно подтвердить игровым прохождением после реализации. Это расчёт, не замер прохождения.</p><p>Предлагается ограничить суммарный вклад группы четырьмя эффективными исследователями с развитием до шести. Навыки, здоровье и усталость продолжают влиять; сто жителей не дают стократного ускорения. Скорость игры ×2 примерно вдвое сокращает реальное время, ×4 — вчетверо.</p><h3>Граница реализации</h3><p>Сначала согласуем схему. Следующая эпоха — отдельный будущий этап U38. После одобрения: каталог, зависимости, локальные интеграции, интерфейс и целевые проверки. Переписывать NPC, экономику и сохранения целиком не требуется.</p>`;
+createNodes();setScenario('early');requestAnimationFrame(fit);
+// Read-only inspection surface for focused prototype verification.
+globalThis.researchReview={snapshot:()=>({selected,filter,scale,done:[...done],active,facts:{...facts},stock:{...stock},epoch:epochProgress(),states:Object.fromEntries(nodes.map(n=>[n.id,state(n)]))}),catalog:SerenityResearchProposal};
+})();
+</script>
+</body></html>
