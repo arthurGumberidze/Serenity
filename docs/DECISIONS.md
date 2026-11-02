@@ -1,5 +1,31 @@
 # DECISIONS.md
 
+## D-246 — Consolidated current state and sequential development after chat archival (2026-11-02)
+
+The user requests cleaning old project chats and a clear chain of further development. DOC01 archives
+15 accessible completed-turn Codex chats for C:\serenity_game, preserving the current chat. Archival is
+reversible and does not certify unresolved product/performance requirements as DONE. Exact titles,
+IDs, final reports and archive responses are retained in docs/archive/2026-11-02/chat-audit.json.
+
+The previous PROJECT_STATE/NEXT_TASK/TASK_GRAPH are preserved byte-for-byte before replacing their
+accumulated competing Next/IN_PROGRESS narratives with one current snapshot and task queue.
+DEVELOPMENT_ROADMAP_RU is the current product sequence; PRODUCT_ROADMAP_RU becomes a historical
+P-stage reference. Original U/P IDs, handoffs, decisions and acceptance evidence remain traceable.
+
+Next is DEV01: a normal new-game first-month route through real material acquisition, construction,
+research shifts and barracks admission. It is READY, not started. DEV02 validates economy/groups and
+research effects, DEV03 the campaign, DEV04 regression reliability/U29, DEV05 release/U30/U31.
+Future U32-U38 follow accepted Stone Age qualification. One stage per chat, no concurrent stages.
+Archiving old chats does not restart their automations, authorize another night run, or repeat shutdown.
+The previous separate-authorization boundary for a replacement eight-hour run is retained.
+
+UI08-R5a's 75-test/native-build proof remains scoped: its ready-building fixture does not establish
+an unassisted resource-to-building route. Historical P10.3/P10.4/P8.6/U29/U30/U31 debts remain open;
+old readiness failures and visual/performance observations must be rechecked against current code.
+No source/assets/saves are deleted and no gameplay changes are included in DOC01. Validation is
+document/archive integrity, links, Git diff and Codex archive inventory; Unity is not rerun for this
+documentation-only task. Future game changes retain mandatory relevant tests/build/Player evidence.
+
 ## D-238 — The second-review research graph is canonical and old research saves are not merged (2026-11-01)
 
 The user-approved Stone Age graph has one shared `basic_survival` root, five authored top-down specialization
