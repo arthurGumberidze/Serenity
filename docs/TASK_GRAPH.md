@@ -1,5 +1,13 @@
 # TASK_GRAPH.md
 
+UI08-R5 resource/stock proposal (2026-11-02): **AWAITING_USER_REVIEW**. HTML + all-resource plan prepared;
+six grouped HUD entries and independent notifications, preserved manual goals, resource priority/reserve,
+monthly unlocked-recipe menu (one dish/day, 3 portions/resident), near-term stock and recipe-input calculation.
+41 resource IDs audited, obsolete water omitted, future sword and hunter-bow binding explicitly distinguished.
+Calculator, catalog coverage, demo event-flow checks and standalone HTML build PASS. Browser rendering and
+Unity integration not verified/performed; implementation requires user approval. Evidence:
+`docs/validation/UI08ResourceStockProposal.md`.
+
 UI08-R4 runtime implementation (2026-11-02): **DONE**, approved by the user, including group-owned
 research and the 4 -> 5 -> 6 capacity rule. Actual single-parent graph, practice/material gates, science
 effects, resident control cleanup and circular Unity view are implemented. EditMode 28/28, research/group

@@ -2694,3 +2694,26 @@ suppresses hover/work labels while a full-screen workspace is visible; simulatio
 unchanged. Start aligns existing workers' checkpoints as well as newly admitted ones, preventing idle time
 between projects from becoming research. Native release qualification captures/checks the complete graph at
 1920x1080, because the Editor Game View does not honor Screen.SetResolution.
+
+## D-242 — Propose grouped resource HUD and menu-driven stock planning (2026-11-02)
+
+The user requires a reviewable HTML proposal before Unity changes. Group resources into six stable HUD
+buttons; reserve independent grid space for clock/time/notification/settings controls. Exact resource counts
+remain available through hover/focus/click breakdowns; large values never alter the number of group controls.
+Keep manual stock targets, add per-resource priority and reserve percentage, preview before applying automatic
+goals, and optionally recalculate applied automatic goals when settlement facts change. Priority orders work,
+not consumption quantities. A low manual input target is a visible constraint, never silently overwritten.
+
+Latest user steering replaces percentage-based diets: one unlocked dish each day, three portions per resident,
+monthly planning, fish then generic cooked meat (the user explicitly rejected a pork split). The HTML's 30-day
+window and three-day on-hand buffer are adjustable proposal settings. Monthly gross demand is distinct from
+near-term warehouse goals; inputs/fuel follow real recipe yields and net deficits, with shared inputs and
+co-products accounted once. Shelf life must constrain production batches during implementation.
+
+The current game consumes two portions/day and recognizes four prepared-food IDs. Changing the norm to three
+is proposed only. The catalog retains obsolete water but the UI proposal excludes it per user instruction.
+All other 41 IDs have explicit rules. Foods without edible recipes and resources without consumers have zero
+automatic targets but retain manual control. Existing combat_bow is not claimed to be a working hunter item;
+the requested hunter assignment needs integration. Swords do not exist in the current catalog and remain a
+future role/equipment rule. Medicine-course/equipment-assignment values are demo assumptions, not new authority.
+No Assets/save changes or new dependencies; the standalone HTML and `docs/RESOURCE_STOCK_PLAN.md` share data.

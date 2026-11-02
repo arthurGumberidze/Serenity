@@ -1,5 +1,19 @@
 # PROJECT_STATE.md
 
+## UI08-R5 — resource HUD and monthly stock proposal awaiting review (2026-11-02)
+
+The user reported resource disappearance/bell overlap and requested HTML before implementation. A portable
+interactive proposal is in `docs/prototypes/stock-review-v1/Serenity-Stock-Review.html`; it separates HUD
+controls from six resource groups and provides exact breakdowns, manual/automatic goals, priorities/reserves,
+calculation preview and optional updates. The per-resource plan covers all 41 retained resource IDs; water
+is excluded, unsupported consumers keep zero automatic goals, and future swords are described separately.
+User's revised nutrition rule: one unlocked dish per day, three portions per resident, monthly planning;
+generic cooked meat remains (no pork split). The example uses 48 residents and 30 days = 4,320 portions.
+Warehouse buffer is separately adjustable; recipe inputs/fuel derive from deficits, issued equipment counts
+against role needs, and manual target conflicts/capacity shortages are visible. All data are demonstration-only.
+Node calculator/event checks and standalone build pass. Rendered browser QA is not claimed; no Unity changes,
+Unity tests/build or save modifications. Await HTML approval. See `docs/validation/UI08ResourceStockProposal.md`.
+
 ## UI08-R4 — approved research implementation complete (2026-11-02)
 
 The user approved the circular HTML proposal for Unity and separately confirmed the group contribution cap.
