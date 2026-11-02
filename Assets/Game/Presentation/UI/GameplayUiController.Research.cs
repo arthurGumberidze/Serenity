@@ -21,6 +21,8 @@ namespace Game.Presentation.UI
         private Vector2 researchPan;
         private bool researchFit=true, researchDragging;
         private Vector2 researchDragStart, researchPanStart;
+        private static string ResearchProgressText(double progress) => progress > 0 && progress < .001
+            ? "<0,1%" : (progress * 100).ToString("0.0") + "%";
 
         private static string BranchName(string branch) => branch switch {
             "survival"=>"Выживание", "production"=>"Производство", "military"=>"Военное дело",
@@ -168,8 +170,9 @@ namespace Game.Presentation.UI
             ResizeResearchWorkspace();
             var active=context.Research.ActiveProject;
             var status=ResearchWorkerStatusQuery.Capture(context.Research,context.AiAgents);
-            researchStatus.text=(active==null?"Нет текущего исследования":context.Research.Catalog.Get(active.TechnologyId).DisplayName+" · "+Mathf.RoundToInt((float)active.Progress*100)+"%")+
+            researchStatus.text=(active==null?"Нет текущего исследования":context.Research.Catalog.Get(active.TechnologyId).DisplayName+" · "+ResearchProgressText(active.Progress))+
                 " · Исследователи: "+status.ActiveCount+" / "+status.AssignedCount+" · вклад группы до "+context.Research.EffectiveWorkerLimit+" работников";
+            if (!context.Research.HasWorkplace) researchStatus.text = "Сначала постройте Дом знаний: 80 брёвен и 50 камня. Затем назначьте группу исследователей.";
             foreach(var entry in researchNodes)
             {
                 var d=context.Research.Catalog.Get(entry.Key);var state=ResearchNodeState(d);var button=entry.Value;
@@ -187,7 +190,7 @@ namespace Game.Presentation.UI
             researchLinks.Refresh(context.Research,selectedResearchTechnology,researchFilter);
             var selected=context.Research.Catalog.Get(selectedResearchTechnology.Value);
             var blockers=context.Research.GetBlockers(selected.Id);
-            var key=selected.Id+"|"+ResearchNodeState(selected)+"|"+string.Join(";",blockers)+"|"+(active==null?"":active.TechnologyId+":"+(int)(active.Progress*100));
+            var key=selected.Id+"|"+ResearchNodeState(selected)+"|"+string.Join(";",blockers)+"|"+status.ActiveCount+"/"+status.AssignedCount+"|"+(active==null?"":active.TechnologyId+":"+ResearchProgressText(active.Progress));
             if(key!=researchDetailKey){researchDetailKey=key;DrawResearchDetail(selected,blockers);}
         }
         private void DrawResearchDetail(TechnologyDefinition d,IReadOnlyList<string> blockers)
@@ -211,7 +214,7 @@ namespace Game.Presentation.UI
             if(!d.StartingKnowledge){AddSection(card,"Стоимость");AddLine(card,TimeSpan.FromTicks(d.ResearchWorkRequiredTicks).TotalDays.ToString("0.#")+" человеко-дней");
                 if(p!=null&&(p.WoodCost>0||p.StoneCost>0))AddMuted(card,"Древесина: "+p.WoodCost+" · камень: "+p.StoneCost+" (списываются при старте)");}
             var active=context.Research.ActiveProject;
-            if(active?.TechnologyId==d.Id){AddInspectorBar(card,"Прогресс",(float)active.Progress*100,Mathf.RoundToInt((float)active.Progress*100)+"%");
+            if(active?.TechnologyId==d.Id){AddInspectorBar(card,"Прогресс",(float)active.Progress*100,ResearchProgressText(active.Progress));
                 var workers=ResearchWorkerStatusQuery.Capture(context.Research,context.AiAgents);
                 var rate=workers.ActiveWorkerIds.Sum(id=>(long)Math.Max(0,context.Research.GetRatePerThousand(id)))*
                     Math.Min(context.Research.EffectiveWorkerLimit,workers.AssignedCount)/Math.Max(1d,workers.AssignedCount)*

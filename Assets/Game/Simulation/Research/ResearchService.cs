@@ -109,6 +109,8 @@ namespace Game.Simulation.Research
         private long rateCacheTick = -1;
         private readonly Dictionary<StableEntityId,int> effectiveRates = new Dictionary<StableEntityId,int>();
         public IResearchSettlementContext SettlementContext { get; set; }
+        public Game.Simulation.Buildings.IndoorWorkplaceService Workplace { get; set; }
+        public bool HasWorkplace => Workplace == null || Workplace.HasResearchHouse;
         public ResearchBalanceSettings Settings { get; }
         public int EffectiveWorkerLimit => Settings.BaseWorkerLimit + (IsCompleted(new TechnologyId("record_keeping")) ? 1 : 0) +
             (IsCompleted(new TechnologyId("knowledge_transfer")) ? 1 : 0);
@@ -124,6 +126,7 @@ namespace Game.Simulation.Research
         public IReadOnlyList<string> GetBlockers(TechnologyId id)
         {
             var definition=catalog.Get(id);var result=new List<string>();var p=definition.Profile;
+            if (!HasWorkplace) result.Add("Сначала постройте Дом знаний");
             if(p?.IsFuture==true) { result.Add("Ожидает будущую игровую механику"); return result; }
             foreach(var required in definition.Prerequisites)
                 if(!completed.Contains(required))result.Add("Сначала: "+catalog.Get(required).DisplayName);
@@ -152,7 +155,7 @@ namespace Game.Simulation.Research
         public void SynchronizeWorkers(IEnumerable<StableEntityId> eligible, long? currentCalendarTick = null)
         {
             if(currentCalendarTick.HasValue)LastProcessedTick=Math.Max(LastProcessedTick,currentCalendarTick.Value);
-            var expected=new HashSet<StableEntityId>(eligible);
+            var expected=new HashSet<StableEntityId>(HasWorkplace ? eligible : Array.Empty<StableEntityId>());
             foreach(var id in workers.Keys.Where(x=>!expected.Contains(x)).ToArray())UnassignWorker(id);
             foreach(var id in expected)if(!workers.ContainsKey(id))TryAssignWorker(id);
         }
@@ -253,6 +256,7 @@ namespace Game.Simulation.Research
 
         public bool TryAssignWorker(StableEntityId workerId)
         {
+            if (!HasWorkplace) return false;
             rateCacheTick=-1;
             if (!workerId.IsValid) throw new ArgumentException("Worker identity required.", nameof(workerId));
             return workers.TryAdd(workerId, new WorkerProgress
@@ -277,7 +281,7 @@ namespace Game.Simulation.Research
             return removed;
         }
 
-        public bool UnassignWorker(StableEntityId workerId) { rateCacheTick=-1; return workers.Remove(workerId); }
+        public bool UnassignWorker(StableEntityId workerId) { rateCacheTick=-1; Workplace?.Release(workerId); return workers.Remove(workerId); }
 
         public long AdvanceWorkerTo(StableEntityId workerId, long targetCalendarTick, bool activelyResearching)
         {
@@ -290,7 +294,8 @@ namespace Game.Simulation.Research
             var elapsed = targetCalendarTick - startTick;
             worker.LastProcessedTick = targetCalendarTick;
             LastProcessedTick = Math.Max(LastProcessedTick, targetCalendarTick);
-            if (!activelyResearching || elapsed == 0 || ActiveProject == null) return 0;
+            if (!activelyResearching || elapsed == 0 || ActiveProject == null ||
+                Workplace != null && !Workplace.IsResearchingInside(workerId)) return 0;
             var rate = EffectiveRate(workerId,targetCalendarTick);
             if (rate <= 0) return 0;
             var numerator = checked(elapsed * (long)rate + worker.Remainder);
@@ -331,6 +336,7 @@ namespace Game.Simulation.Research
         public void RestoreState(ResearchSaveState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
+            Workplace?.Clear();
             var restoredCompleted = new HashSet<TechnologyId>();
             foreach (var id in state.Completed)
             {

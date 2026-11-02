@@ -596,6 +596,7 @@ namespace Game.Infrastructure
                 if(!Buildings.TryGet(owner.Id,out var building))return null;
                 return ConstructionWorkTarget(building);
             };
+            Research.Workplace = new IndoorWorkplaceService(Buildings, new CombatSideId("player"), ConstructionWorkTarget);
             var aiWorld = new Tier1AiWorld(haulJobs, HaulClaims, ResourceTransfers, Production, Research, Buildings,
                 owner =>
                 {
@@ -660,6 +661,7 @@ namespace Game.Infrastructure
                             new WorldPosition(-6 + i * 1.5f, 0, 4)),
                         default, false, "starter_settlement", Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             DirectWorkCommands = new DirectWorkCommandService(Characters, AiAgents, AiScheduler, Work, CanCommandResident);
+            DirectWorkCommands.ProfessionGroups.CanAssignRole = role => role != WorkGroupRole.Scientists || Research.HasWorkplace;
             DirectWorkCommands.EnsureRoleGroups();
             DirectWorkCommands.ProfessionGroups.ReconcileAdults(Clock.State.BiologicalTicks, true);
             ConstructionClearance = new ConstructionClearanceCoordinator(Buildings, Production, Work, Construction,
@@ -797,7 +799,8 @@ namespace Game.Infrastructure
                 trainingBuilding.OwnerSideId == record.SideId &&
                 Characters.TryGet(record.CharacterId, out var trainee) && trainee.LifeState == CharacterLifeState.Alive &&
                 !HealthFamily.GetCapabilities(record.CharacterId).IsIncapacitated;
-            MilitaryTraining.IsAtBarracks = canTrain;
+            MilitaryTraining.IsAtBarracks = record => canTrain(record) &&
+                Research.Workplace.IsInside(record.CharacterId, record.BarracksId);
             StarterEnemyAi.Training.IsAtBarracks = canTrain;
             MilitaryAttack = new MilitaryAttackCommandService(Characters, Buildings, MilitaryUnits,
                 MilitaryCommands, MilitaryCombat, BuildingDamage, AiAgents, MilitaryTraining, worldSeed, CanCommandResident);

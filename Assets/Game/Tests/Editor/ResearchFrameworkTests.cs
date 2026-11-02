@@ -16,6 +16,7 @@ using Game.Simulation.Production;
 using Game.Simulation.Research;
 using Game.Simulation.Resources;
 using Game.Simulation.Time;
+using Game.Presentation.AI;
 using NUnit.Framework;
 
 namespace Game.Tests.Editor
@@ -69,8 +70,67 @@ namespace Game.Tests.Editor
         private static readonly BuildingDefinitionId[] BuildingIds =
         {
             new BuildingDefinitionId("primitive_shelter"), new BuildingDefinitionId("storage_basket"),
-            new BuildingDefinitionId("primitive_crop_plot")
+            new BuildingDefinitionId("primitive_crop_plot"), new BuildingDefinitionId("research_house")
         };
+
+        private sealed class WalkingMovement : ITier1MovementDriver
+        {
+            public StableEntityId CharacterId { get; set; }
+            public WorldPosition CurrentPosition { get; set; }
+            public WorldPosition Target { get; private set; }
+            public MovementState State { get; set; }
+            public bool IsAvailable => true;
+            public void MoveTo(WorldPosition target, float stoppingDistance) { Target = target; State = MovementState.Moving; }
+            public void Stop() => State = MovementState.Idle;
+            public void Arrive() { CurrentPosition = Target; State = MovementState.Arrived; }
+        }
+
+        [Test] public void ResearchRequiresCompletedHouseAndPhysicalArrivalAndReleasesOnShiftEnd()
+        {
+            var fixture = new Fixture();
+            fixture.Research.UnassignWorker(fixture.Worker);
+            var buildings = new BuildingRegistry();
+            var workplace = new IndoorWorkplaceService(buildings, new Game.Domain.Combat.CombatSideId("player"),
+                _ => new WorldPosition(20, 0, 20));
+            fixture.Research.Workplace = workplace;
+            Assert.That(fixture.Research.IsBuildingUnlocked(IndoorWorkplaceService.ResearchHouse), Is.True);
+            Assert.That(fixture.Research.TryAssignWorker(fixture.Worker), Is.False);
+            Assert.That(fixture.Research.Start(new TechnologyId("controlled_fire")), Is.False);
+            var house = Building.Restore(new BuildingState(Id(700), IndoorWorkplaceService.ResearchHouse,
+                new GridCoordinate(20,20), (BuildingOrientation)0, ConstructionState.Completed));
+            buildings.Add(house);
+            Assert.That(fixture.Research.TryAssignWorker(fixture.Worker), Is.True);
+            Assert.That(fixture.Research.Start(new TechnologyId("controlled_fire")), Is.True);
+            var movement = new WalkingMovement { CharacterId = fixture.Worker };
+            Assert.That(workplace.Travel(fixture.Worker, house.Id, movement), Is.False);
+            Assert.That(workplace.IsInside(fixture.Worker), Is.False);
+            Assert.That(fixture.Research.AdvanceWorkerTo(fixture.Worker, TimeSpan.TicksPerHour, true), Is.Zero);
+            // A movement driver claiming arrival at the wrong position cannot grant indoor work.
+            movement.State = MovementState.Arrived;
+            Assert.That(workplace.Travel(fixture.Worker, house.Id, movement), Is.False);
+            movement.Arrive();
+            Assert.That(workplace.Travel(fixture.Worker, house.Id, movement), Is.True);
+            Assert.That(fixture.Research.AdvanceWorkerTo(fixture.Worker, 2 * TimeSpan.TicksPerHour, true), Is.GreaterThan(0));
+            Assert.That(fixture.Research.ActiveProject.AccumulatedWorkTicks, Is.EqualTo(TimeSpan.TicksPerHour));
+            fixture.Research.SynchronizeWorkers(Array.Empty<StableEntityId>(), 2 * TimeSpan.TicksPerHour);
+            Assert.That(workplace.IsInside(fixture.Worker), Is.False);
+            buildings.Remove(house);
+            Assert.That(fixture.Research.TryAssignWorker(fixture.Worker), Is.False);
+        }
+
+        [Test] public void ResearchHouseIsInitialCostlyBuildingAndItsMaterialsCanBeGatheredImmediately()
+        {
+            var catalog = UnityEditor.AssetDatabase.LoadAssetAtPath<Game.Presentation.Buildings.BuildingPresentationCatalog>(
+                "Assets/Game/Art/Config/BuildingPresentationCatalog.asset");
+            var definition = catalog.ResolveDefinition(IndoorWorkplaceService.ResearchHouse);
+            Assert.That(definition.RequiredTechnologies, Is.Empty);
+            Assert.That(definition.ConstructionCost.Single(x => x.ResourceId.ToString() == "wood_log").Quantity.Units, Is.EqualTo(80));
+            Assert.That(definition.ConstructionCost.Single(x => x.ResourceId.ToString() == "stone").Quantity.Units, Is.EqualTo(50));
+            Assert.That(catalog.ResolvePrefab(IndoorWorkplaceService.ResearchHouse), Is.Not.Null);
+            var research = new Fixture().Research;
+            Assert.That(research.IsProductionRecipeUnlocked(new ProductionRecipeId("gather_stone")), Is.True);
+            Assert.That(research.IsProductionRecipeUnlocked(new ProductionRecipeId("chop_wood")), Is.True);
+        }
 
         [Test] public void DefinitionsRejectDuplicateMissingSelfCycleAndInvalidUnlock()
         {
@@ -96,7 +156,7 @@ namespace Game.Tests.Editor
             CollectionAssert.Contains(fixture.Research.AvailableTechnologies.Select(x => x.Id.ToString()), "stone_tools");
             CollectionAssert.DoesNotContain(fixture.Research.AvailableTechnologies.Select(x => x.Id.ToString()), "woodworking");
             Assert.That(fixture.Research.IsProductionRecipeUnlocked(new ProductionRecipeId("gather_berries")), Is.True);
-            Assert.That(fixture.Research.IsProductionRecipeUnlocked(new ProductionRecipeId("chop_wood")), Is.False);
+            Assert.That(fixture.Research.IsProductionRecipeUnlocked(new ProductionRecipeId("chop_wood")), Is.True);
         }
 
         [Test] public void StoneAgeCatalogHasFiveSpecializationBranchesAndMilitaryOrganizationUnlock()
@@ -155,7 +215,8 @@ namespace Game.Tests.Editor
             production.AddSite(ProductionSite.Restore(new ProductionSiteState(Id(200),
                 new ProductionRecipeId("chop_wood"), ProductionSiteKind.NaturalSource, default,
                 20, 20, CropPlotPhase.Unplanted, 0, 0)));
-            Assert.That(production.TryReserve(fixture.Worker, default, out _), Is.False);
+            Assert.That(production.TryReserve(fixture.Worker, default, out var basicHarvest), Is.True);
+            production.Cancel(basicHarvest.Task.Id);
 
             var occupancy = new BuildingOccupancyGrid();
             var placement = new BuildingPlacementService(buildings, occupancy, new BuildingGridBounds(-10, -10, 10, 10));
@@ -253,6 +314,51 @@ namespace Game.Tests.Editor
             Assert.That(state.CurrentAction, Is.EqualTo(UtilityActionKind.Research));
             scheduler.Advance(new GameTimeAdvance(TimeSpan.FromDays(1), TimeSpan.Zero));
             Assert.That(fixture.Research.ActiveProject.Progress, Is.GreaterThan(0d));
+        }
+
+        [TestCase(10)]
+        [TestCase(22)]
+        public void RuntimeResearchUsesCanonicalDayOrNightClockAndResumesAfterLoad(int hour)
+        {
+            var fixture = new Fixture();
+            var characters = new CharacterRegistry(); var character = CreateCharacter(fixture.Worker);
+            characters.Add(character);
+            var inventories = new ResourceInventoryRegistry();
+            var piles = new WorldPileService(fixture.Resources, inventories);
+            var claims = new HaulClaimRegistry();
+            var world = new Tier1AiWorld(new HaulWorldQuery(inventories, piles, new BuildingRegistry(), claims),
+                claims, new ResourceTransferService(inventories), research: fixture.Research);
+            var settings = new Tier1AiSettings(TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1), TimeSpan.FromHours(1),
+                10, 10, 10, 1, 1f, 1, 0d, 0d, 0d, 1d);
+            var scheduler = new Tier1AiScheduler(characters, new Tier1AiAgentRegistry(), world, settings);
+            var host = new UnityEngine.GameObject("Research clock regression");
+            try
+            {
+                var runtime = host.AddComponent<Tier1AiRuntimeDriver>();
+                var tick = TimeSpan.FromHours(hour).Ticks;
+                var clock = new GameClock(new GameTimeState(tick, 0, 1, false));
+                runtime.Initialize(clock, scheduler);
+                var extra = new Tier1AiScheduler(characters, new Tier1AiAgentRegistry(), world, settings);
+                runtime.AddScheduler(extra);
+                scheduler.Register(character, new Tier1AiAgentState(character.Id, default), new InstantMovement(character.Id));
+                fixture.Research.SynchronizeWorkers(new[] { character.Id }, tick);
+                Assert.That(fixture.Research.Start(new TechnologyId("controlled_fire")), Is.True);
+                var saved = fixture.Research.CaptureState();
+                runtime.AdvanceForDebug(TimeSpan.FromSeconds(2));
+                runtime.AdvanceForDebug(TimeSpan.FromSeconds(2));
+                Assert.That(scheduler.CalendarTicks, Is.EqualTo(clock.State.CalendarTicks));
+                Assert.That(extra.CalendarTicks, Is.EqualTo(clock.State.CalendarTicks));
+                Assert.That(fixture.Research.ActiveProject.AccumulatedWorkTicks, Is.GreaterThan(0));
+                Assert.That(fixture.Research.ActiveProject.AccumulatedWorkTicks, Is.LessThanOrEqualTo(TimeSpan.FromMinutes(4).Ticks));
+                fixture.Research.RestoreState(saved);
+                var restored = new GameClock(new GameTimeState(tick, 0, 1, false));
+                runtime.RebindClock(restored);
+                runtime.AdvanceForDebug(TimeSpan.FromSeconds(2));
+                Assert.That(scheduler.CalendarTicks, Is.EqualTo(restored.State.CalendarTicks));
+                Assert.That(fixture.Research.ActiveProject.AccumulatedWorkTicks, Is.GreaterThan(0));
+                Assert.That(fixture.Research.ActiveProject.AccumulatedWorkTicks, Is.LessThanOrEqualTo(TimeSpan.FromMinutes(2).Ticks));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(host); }
         }
 
         [Test] public void CompleteStoneAgeTreeHasNoDeadlockAndReachesCapstone()

@@ -3437,5 +3437,51 @@ MonoBehaviour:
     fireDamagePerThousand: 1000
     combatDamagePerThousand: 1000
     capturable: 1
+  - definitionId: research_house
+    displayName: Research House
+    description: A house for shared knowledge. Researchers work indoors after reaching the entrance.
+    iconKey: building_research_house
+    category: 6
+    era: 0
+    requiredTechnologyIds: []
+    footprintWidth: 5
+    footprintDepth: 4
+    placementMode: 0
+    allowsOverlap: 0
+    spatialForm: 0
+    placementConstraints: 2
+    maximumHeightDeltaMillimetres: 750
+    approachClearanceMillimetres: 750
+    prefab: {fileID: 7502816724251572375, guid: f10f8b6be075806429c4e8771c58cfae, type: 3}
+    constructionCost:
+    - resourceId: wood_log
+      quantity: 80
+    - resourceId: stone
+      quantity: 50
+    constructionWorkMinutes: 240
+    constructionStageCount: 4
+    storageCapacity: 0
+    storageCategories: 000000000100000002000000i
+    housingCapacity: 0
+    maximumWorkers: 0
+    productionRecipeIds: []
+    productionInputCapacity: 0
+    productionOutputCapacity: 0
+    wearIntervalHours: 0
+    wearPerInterval: 0
+    repairCost:
+    - resourceId: wood_log
+      quantity: 3
+    - resourceId: cured_hide
+      quantity: 1
+    repairWorkMinutes: 45
+    upkeepCost: []
+    canDemolish: 1
+    demolitionReturnPerThousand: 500
+    upgrades: []
+    maxIntegrity: 1000
+    fireDamagePerThousand: 1000
+    combatDamagePerThousand: 1000
+    capturable: 1
   defaultDefinitionId: stone_age_hut
   resourceCatalog: {fileID: 11400000, guid: 3eaad5da612fe13489ff4dbb118b2eef, type: 2}

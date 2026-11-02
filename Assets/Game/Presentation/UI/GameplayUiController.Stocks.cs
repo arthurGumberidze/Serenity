@@ -113,6 +113,7 @@ namespace Game.Presentation.UI
             AddTitle(workspace, "Запасы поселения");
             stockSummary = new Label { name = "stock-summary" }; workspace.Add(stockSummary);
             AddMuted(workspace, "Ручные цели сохраняются. Расчёт меняет только строки, включённые в авторежим.");
+            workspace.Add(StockCalculationStatus("stock-calculation-status"));
             var tabs = Row();
             foreach (var group in StockConfig.groups)
             {
@@ -152,6 +153,7 @@ namespace Game.Presentation.UI
             actions.Add(ActionButton("Рассчитать автоматически", CalculateStockPreview, "stock-calculate"));
             var apply = ActionButton("Применить автоцели", ApplyStockPreview, "stock-apply"); apply.SetEnabled(false); actions.Add(apply);
             planner.Add(actions);
+            planner.Add(StockCalculationStatus("stock-planner-status"));
             AddMuted(planner, "Обновление — каждый игровой час. Нормы: лук и 20 стрел охотнику, копьё и щит военному, одежда жителям. " +
                 "Лекарства: 2 на текущий случай и 1 на 10 жителей. Это нормы запаса; фактическая выдача и лечение работают по своим правилам.");
             AddMuted(planner, "Месячный спрос включает сырьё и топливо. На склад применяется ближайший горизонт меню, а не весь месяц сразу.");
@@ -163,6 +165,26 @@ namespace Game.Presentation.UI
         {
             SerenityUiDesign.StyleField(field); field.style.width = width; field.style.minWidth = width;
             field.style.flexShrink = 0; field.style.marginRight = 8;
+        }
+        private static Label StockCalculationStatus(string name)
+        {
+            var label = new Label { name = name };
+            label.style.whiteSpace = WhiteSpace.Normal;
+            label.style.color = new Color(0.93f, 0.8f, 0.52f);
+            label.style.display = DisplayStyle.None;
+            return label;
+        }
+        private void UpdateStockCalculationStatus()
+        {
+            var blocked = stockPreview != null && !stockPreview.CanApply;
+            var reason = blocked ? string.Join("\n", stockPreview.Warnings) : string.Empty;
+            foreach (var name in new[] { "stock-calculation-status", "stock-planner-status" })
+            {
+                var label = mainPanel.Q<Label>(name);
+                if (label == null) continue;
+                label.text = reason;
+                label.style.display = blocked ? DisplayStyle.Flex : DisplayStyle.None;
+            }
         }
         private void RebuildStockRows()
         {
@@ -226,13 +248,19 @@ namespace Game.Presentation.UI
                 var id = new ResourceId(entry.id); var label = mainPanel.Q<Label>("stock-amount-" + entry.id);
                 if (label == null) continue;
                 label.text = "Склад " + context.StoredResources.GetStoredTotal(id).Units.ToString("N0") + " · всего " + TotalResource(id).ToString("N0");
-                mainPanel.Q<Label>("stock-calculated-" + entry.id).text = stockPreview == null ? "" : "Расчёт: " + StockPlanner.Get(stockPreview.Targets, id).ToString("N0");
+                var calculation = mainPanel.Q<Label>("stock-calculated-" + entry.id);
+                calculation.text = stockPreview == null ? "" : !stockPreview.CanApply ? "Расчёт: —" :
+                    "Расчёт: " + StockPlanner.Get(stockPreview.Targets, id).ToString("N0");
+                calculation.tooltip = stockPreview == null ? "" : !stockPreview.CanApply ? string.Join("\n", stockPreview.Warnings) :
+                    StockPlanner.Get(stockPreview.Targets, id) == 0 ?
+                    "На ближайшие " + stockDraft.StockDays + " дн. дополнительный запас не требуется: ресурс не нужен выбранному меню и текущим задачам либо потребность покрыта имеющимися продуктами." :
+                    "Предлагаемая цель запаса. Для автоматических строк применяется кнопкой «Применить автоцели».";
             }
         }
         private void InvalidateStockPreview()
         {
             stockPreview = null; mainPanel.Q<Button>("stock-apply")?.SetEnabled(false);
-            stockPreviewView?.Clear(); UpdateStockNumbers();
+            stockPreviewView?.Clear(); UpdateStockCalculationStatus(); UpdateStockNumbers();
         }
         private void CalculateStockPreview()
         {
@@ -240,7 +268,7 @@ namespace Game.Presentation.UI
                 stockDraft = new StockPlanningPolicy(stockDraft.StockDays, stockDraft.ReservePercent, stockDraft.AutoUpdate,
                     context.Clock().State.CalendarTicks / TimeSpan.TicksPerDay, stockDraft.Resources);
             stockPreview = context.Production.CalculateStockPlan(stockDraft);
-            DrawStockPreview(); UpdateStockNumbers();
+            DrawStockPreview(); UpdateStockCalculationStatus(); UpdateStockNumbers();
             mainPanel.Q<Button>("stock-apply").SetEnabled(stockPreview.CanApply);
         }
         private void DrawStockPreview()

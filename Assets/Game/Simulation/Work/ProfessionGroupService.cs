@@ -21,6 +21,7 @@ namespace Game.Simulation.Work
         private readonly Func<StableEntityId, bool> belongsToSettlement;
         private int knownCharacterCount = -1;
         private long nextAdultBiologicalTick = long.MinValue;
+        public Func<WorkGroupRole, bool> CanAssignRole { get; set; }
 
         public ProfessionGroupService(CharacterRegistry characters, WorkManager work,
             Func<StableEntityId, bool> belongsToSettlement = null)
@@ -81,6 +82,8 @@ namespace Game.Simulation.Work
             if (!characters.TryGet(characterId, out var character))
                 throw new InvalidOperationException("Profession reassignment requires a registered resident.");
             var destination = work.Groups.Get(destinationGroupId);
+            if (CanAssignRole != null && !CanAssignRole(destination.Role))
+                throw new InvalidOperationException("Сначала постройте Дом знаний, затем назначьте исследователей.");
             work.MoveMember(destinationGroupId, characterId);
             character.AssignProfession(ProfessionForRole(destination.Role));
         }

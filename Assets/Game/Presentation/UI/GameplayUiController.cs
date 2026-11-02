@@ -2641,11 +2641,15 @@ namespace Game.Presentation.UI
             mainPanel.Add(rename);
             mainPanel.Add(ActionButton(T("ui.work.rename"), () => TryCommand(() => context.Work.RenameGroup(current.Id, rename.value))));
             var membership = Row();
-            membership.Add(ActionButton("Перевести выбранных", () => TryCommand(() =>
+            var transferMembers = ActionButton("Перевести выбранных", () => TryCommand(() =>
             {
                 foreach (var id in context.Selection.SelectedCharacterIds)
                     if (!current.Contains(id)) context.DirectWork.ProfessionGroups.Reassign(id, current.Id);
-            })));
+            }));
+            transferMembers.SetEnabled(current.Role != WorkGroupRole.Scientists || context.Research.HasWorkplace);
+            membership.Add(transferMembers);
+            if (current.Role == WorkGroupRole.Scientists && !context.Research.HasWorkplace)
+                AddMuted(mainPanel, "Сначала постройте Дом знаний в разделе строительства «Общественные».");
             membership.Add(ActionButton(T("ui.work.commander_selected"), () => TryCommand(() =>
             {
                 if (context.Selection.SelectedCharacterIds.Count != 1) throw PlayerError("ui.work.need_one_member");
@@ -3906,10 +3910,19 @@ namespace Game.Presentation.UI
         {
             var character = context.Characters.Get(id);
             var capabilities = context.Health.GetCapabilities(id);
-            var queueProjection = GameplaySelectionQueueProjection.Build(new[] { id }, context.Work, 4);
-            var current = queueProjection.VisibleOrders.FirstOrDefault();
+            context.AiAgents.TryGet(id, out var agent);
+            var researching = context.Research.IsAssigned(id) && context.Research.ActiveProject != null &&
+                agent != null && agent.CurrentAction == UtilityActionKind.Research && agent.Phase == AiActionPhase.Researching;
+            var walkingToResearch = agent != null && agent.CurrentAction == UtilityActionKind.Research && agent.Phase == AiActionPhase.MoveToTarget;
+            var activityText = context.MilitaryTraining.IsExternallyControlled(id)
+                ? (context.Research.Workplace?.IsInside(id) == true ? "обучение в казарме" : "идёт в казарму") :
+                researching ? "исследует «" + context.Research.Catalog.Get(context.Research.ActiveProject.TechnologyId).DisplayName + "»" :
+                walkingToResearch ? "идёт в Дом знаний" :
+                context.Work.TryGetAssigned(id, out var assignedJob) ? E(assignedJob.Type) + " · " + E(assignedJob.Status) :
+                agent != null && agent.CurrentAction != UtilityActionKind.Idle && agent.CurrentAction != UtilityActionKind.Research
+                    ? E(agent.CurrentAction) + " · " + E(agent.Phase) : "свободен";
             AddInspectorHeader("Житель", RussianTextCatalog.PersonName(character.Name.DisplayName),
-                current == null ? "Готов к приказу" : E(current.Type) + " · " + E(current.Status));
+                activityText);
 
             var identity = Row();
             identity.name = "character-identity-metrics";
@@ -3931,17 +3944,15 @@ namespace Game.Presentation.UI
             AddSection(wellbeing, "Самочувствие");
             AddInspectorBar(wellbeing, "Здоровье", maximumHealth <= 0 ? 0 : healthPoints * 100f / maximumHealth,
                 healthPoints + "/" + maximumHealth);
-            if (context.AiAgents.TryGet(id, out var agent))
+            if (agent != null)
             {
                 AddInspectorBar(wellbeing, "Сытость", (1f - (float)agent.Needs.Hunger) * 100f,
                     RussianTextCatalog.Percent(1d - agent.Needs.Hunger));
                 AddInspectorBar(wellbeing, "Энергия", (float)agent.Needs.Energy * 100f,
                     RussianTextCatalog.Percent(agent.Needs.Energy));
-                AddInspectorBar(wellbeing, "Без жажды", (1f - (float)agent.Needs.Thirst) * 100f,
-                    RussianTextCatalog.Percent(1d - agent.Needs.Thirst));
                 AddInspectorBar(wellbeing, "Настроение", (float)agent.Needs.Mood * 100f,
                     RussianTextCatalog.Percent(agent.Needs.Mood));
-                AddMuted(wellbeing, "Сейчас: " + E(agent.CurrentAction) + " · " + E(agent.Phase));
+                AddMuted(wellbeing, "Сейчас: " + activityText);
             }
             else AddMuted(wellbeing, T("ui.character.offcamera"));
             inspector.Add(wellbeing);
@@ -3949,18 +3960,17 @@ namespace Game.Presentation.UI
             var activity = SerenityUiDesign.Card();
             activity.name = "character-activity-card";
             AddSection(activity, "Занятость");
-            AddLine(activity, context.MilitaryTraining.IsExternallyControlled(id)
-                ? "Текущее дело: обучение в казарме"
-                : context.Work.TryGetAssigned(id, out var assignedJob)
-                    ? "Текущее дело: " + E(assignedJob.Type) + " · " + E(assignedJob.Status)
-                    : "Текущее дело: свободен");
+            AddLine(activity, "Текущее дело: " + activityText);
             AddLine(activity, "Группа: " + (context.Work.Groups.TryGetForMember(id, out var group)
                 ? group.DisplayName : T("common.none")));
-            AddLine(activity, "Исследования: " + (context.Research.AssignedWorkers.Contains(id)
-                ? T("ui.character.research_assigned") : T("ui.character.research_not_assigned")));
+            AddLine(activity, "Исследования: " + (researching ? "работает" : context.Research.IsAssigned(id)
+                ? context.Research.ActiveProject == null ? "ожидает выбора исследования" : walkingToResearch ? "в пути к Дому знаний" : "назначен, сейчас занят другим делом"
+                : group != null && group.Role == WorkGroupRole.Scientists
+                    ? (context.Research.HasWorkplace ? "вне исследовательской смены" : "нужен готовый Дом знаний")
+                    : T("ui.character.research_not_assigned")));
             var militaryRank = context.MilitaryTraining.GetRank(id);
             var militaryStatus = context.MilitaryTraining.IsExternallyControlled(id)
-                ? "В казарме · курс " + MilitaryRankName(context.MilitaryTraining.Active.Single(x => x.CharacterId == id).Rank)
+                ? (context.Research.Workplace?.IsInside(id) == true ? "В казарме · курс " : "В пути в казарму · курс ") + MilitaryRankName(context.MilitaryTraining.Active.Single(x => x.CharacterId == id).Rank)
                 : militaryRank.HasValue
                     ? MilitaryRankName(militaryRank.Value) + (context.Military.TryGetForMember(id, out var unit) && unit.CaptainId == id
                         ? " · " + T("ui.character.captain") : string.Empty)
@@ -3995,6 +4005,7 @@ namespace Game.Presentation.UI
                 AddLine(health, "Оружие: " + combatant.WeaponId + " · прочность " + combatant.WeaponDurability + "/100");
             inspector.Add(health);
 
+            var queueProjection = GameplaySelectionQueueProjection.Build(new[] { id }, context.Work, 4);
             var orders = new Foldout { text = "Очередь приказов · " + queueProjection.TotalOrders,
                 value = queueProjection.TotalOrders > 0, name = "character-orders-foldout" };
             if (queueProjection.TotalOrders == 0) AddMuted(orders, "Очередь пуста");

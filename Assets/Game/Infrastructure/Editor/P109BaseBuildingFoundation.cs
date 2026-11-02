@@ -242,6 +242,9 @@ namespace Game.Infrastructure.Editor
                     "A simple training and mustering shelter.", "building_military_barracks", 120, 3,
                     new[] { Cost("wood_log", 12), Cost("stone", 6) }, "organized_labor")
                     .ConfigureStructure(1400, 900),
+                Entry("research_house", "Research House", BuildingCategory.Community, 5, 4, shelter,
+                    "A house for shared knowledge. Researchers work indoors after reaching the entrance.",
+                    "building_research_house", 240, 4, new[] { Cost("wood_log", 80), Cost("stone", 50) }),
                 Entry("clan_house", "Stone House", BuildingCategory.Shelter, 6, 5, Load<GameObject>(ClanHousePath),
                     "A large stone home with room for an extended family.", "building_clan_house", 150, 4,
                     new[] { Cost("wood_log", 26), Cost("stone", 12), Cost("cured_hide", 6) }, "organized_labor")

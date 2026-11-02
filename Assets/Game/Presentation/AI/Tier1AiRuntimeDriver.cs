@@ -62,7 +62,13 @@ namespace Game.Presentation.AI
         public Func<StableEntityId,Tier1AiScheduler> SchedulerForCharacter { get; set; }
         public event Action<StableEntityId> BeforeRegister;
         public event Action<GameTimeAdvance> BeforeSimulation;
-        public void AddScheduler(Tier1AiScheduler value) { if (!additionalSchedulers.Contains(value)) additionalSchedulers.Add(value); }
+        public void AddScheduler(Tier1AiScheduler value)
+        {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (additionalSchedulers.Contains(value)) return;
+            if (clock != null) value.RebaseCalendar(clock.State.CalendarTicks);
+            additionalSchedulers.Add(value);
+        }
         private Tier1AiScheduler For(StableEntityId id) => SchedulerForCharacter?.Invoke(id) ?? scheduler;
 
         private Func<int> movementModifierProvider;
@@ -99,6 +105,7 @@ namespace Game.Presentation.AI
             if (clock != null || scheduler != null) throw new InvalidOperationException("Tier 1 AI runtime is already initialized.");
             clock = gameClock ?? throw new ArgumentNullException(nameof(gameClock));
             scheduler = aiScheduler ?? throw new ArgumentNullException(nameof(aiScheduler));
+            RebaseSchedulers();
             movementModifierProvider = weatherMovementModifierProvider;
         }
 
@@ -183,7 +190,14 @@ namespace Game.Presentation.AI
         public void RebindClock(GameClock replacement)
         {
             clock = replacement ?? throw new ArgumentNullException(nameof(replacement));
+            RebaseSchedulers();
             RefreshMovementPresentation();
+        }
+
+        private void RebaseSchedulers()
+        {
+            scheduler.RebaseCalendar(clock.State.CalendarTicks);
+            foreach (var extra in additionalSchedulers) extra.RebaseCalendar(clock.State.CalendarTicks);
         }
 
         public GameTimeAdvance AdvanceForDebug(TimeSpan realDelta)
@@ -197,6 +211,7 @@ namespace Game.Presentation.AI
                 throw new InvalidOperationException("Tier 1 AI runtime is not initialized.");
             if (realDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(realDelta));
             var cursor = AllocationDiagnosticsEnabled ? GC.GetAllocatedBytesForCurrentThread() : 0L;
+            RebaseSchedulers();
             var advance = clock.Advance(realDelta);
             BeforeSimulation?.Invoke(advance);
             using (SchedulerMarker.Auto())
@@ -272,10 +287,11 @@ namespace Game.Presentation.AI
             for (var index = 0; index < movements.Count; index++)
             {
                 var movement = movements[index];
-                if (!movement.CrowdDetailEnabled || movement.Presenter == null) continue;
+                if (movement.Presenter == null) continue;
                 var indoors=For(movement.CharacterId).ShouldHideInsideBuilding(movement.CharacterId);
                 movement.Presenter.SetActivityHidden(indoors);
                 if(movement.Agent!=null)movement.Agent.radius=indoors?.01f:.32f;
+                if (!movement.CrowdDetailEnabled) continue;
                 var intent = ResolveAnimationIntent(movement.CharacterId);
                 movement.Presenter.SetAnimationIntent(intent);
                 movement.Presenter.RefreshActionPose(now);

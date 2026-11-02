@@ -4,6 +4,7 @@ using Game.Domain;
 using Game.Domain.Buildings;
 using Game.Domain.Production;
 using Game.Domain.Resources;
+using Game.Domain.Research;
 using Game.Domain.Time;
 using Game.Infrastructure;
 using Game.Presentation.Resources;
@@ -58,6 +59,29 @@ namespace Game.Tests.Editor
             Assert.That(StockPlanner.Get(plan.Targets, Id("fish")), Is.Zero);
             Assert.That(plan.Targets[Id("wood_log")], Is.EqualTo(25));
             Assert.That(plan.Monthly[Id("cooked_fish")], Is.EqualTo(240));
+        }
+        [Test] public void BlockedCalculationHasNoTargetsAndCannotOverwriteExistingGoals()
+        {
+            var inventories = new ResourceInventoryRegistry();
+            var service = new ProductionService(recipes, resources, inventories, new BuildingRegistry(),
+                new ResourceTransferService(inventories), researchUnlocks: new LockedFood());
+            service.StockFacts = () => new StockPlanningFacts { Residents = 10 };
+            service.SetTarget(Id("berries"), 40); service.SetTarget(Id("carcass"), 4);
+            var policy = service.StockPolicy;
+            var plan = service.CalculateStockPlan(Auto());
+            Assert.That(plan.CanApply, Is.False);
+            Assert.That(plan.Targets, Is.Empty);
+            Assert.That(plan.Warnings.Single(), Does.Contain("Приготовление пищи"));
+            Assert.That(service.ApplyStockPlan(Auto()), Is.False);
+            Assert.That(service.GetTarget(Id("berries")), Is.EqualTo(40));
+            Assert.That(service.GetTarget(Id("carcass")), Is.EqualTo(4));
+            Assert.That(service.StockPolicy, Is.SameAs(policy));
+        }
+        private sealed class LockedFood : IResearchUnlockView
+        {
+            public bool IsBuildingUnlocked(BuildingDefinitionId id) => false;
+            public bool IsProductionRecipeUnlocked(ProductionRecipeId id) => false;
+            public bool HasCapability(CapabilityId id) => false;
         }
         [Test] public void SharedFuelBatchesAndReserveAreNotCountedTwice()
         {

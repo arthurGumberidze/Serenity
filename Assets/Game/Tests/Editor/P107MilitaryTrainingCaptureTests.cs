@@ -89,18 +89,35 @@ namespace Game.Tests.Editor
         public void CourseClockStartsOnlyAfterArrivalAndSurvivesSaveRestore()
         {
             var fixture = Fixture.Create();
-            var arrived = false;
-            fixture.Training.IsAtBarracks = _ => arrived;
+            var buildings = new BuildingRegistry(); buildings.Add(fixture.Barracks);
+            var workplace = new IndoorWorkplaceService(buildings, new CombatSideId("player"), _ => new WorldPosition(25, 0, 0));
+            var movement = new TraineeMovement { CharacterId = fixture.Soldier.Id };
+            fixture.Training.IsAtBarracks = record => workplace.IsInside(record.CharacterId, record.BarracksId);
             var start = fixture.Training.TryStart(fixture.Soldier.Id, fixture.Barracks.Id,
                 new CombatSideId("player"), 0, fixture.Inventories.All.Select(x => x.Owner));
             Assert.That(start.Started, Is.True);
+            Assert.That(workplace.Travel(fixture.Soldier.Id, fixture.Barracks.Id, movement), Is.False);
+            Assert.That(workplace.IsInside(fixture.Soldier.Id), Is.False);
             fixture.Training.AdvanceTo(TimeSpan.FromHours(2).Ticks);
             var travelling = fixture.Training.CaptureState();
             fixture.Training.RestoreState(travelling);
             Assert.That(fixture.Training.GetRank(fixture.Soldier.Id), Is.Null);
-            arrived = true;
+            movement.Arrive();
+            Assert.That(workplace.Travel(fixture.Soldier.Id, fixture.Barracks.Id, movement), Is.True);
             Assert.That(fixture.Training.AdvanceTo(TimeSpan.FromHours(4).Ticks), Is.Zero);
             Assert.That(fixture.Training.AdvanceTo(TimeSpan.FromHours(6).Ticks), Is.EqualTo(1));
+        }
+
+        private sealed class TraineeMovement : Game.Simulation.AI.ITier1MovementDriver
+        {
+            public StableEntityId CharacterId { get; set; }
+            public WorldPosition CurrentPosition { get; private set; }
+            private WorldPosition target;
+            public Game.Simulation.AI.MovementState State { get; private set; }
+            public bool IsAvailable => true;
+            public void MoveTo(WorldPosition value, float stop) { target = value; State = Game.Simulation.AI.MovementState.Moving; }
+            public void Arrive() { CurrentPosition = target; State = Game.Simulation.AI.MovementState.Arrived; }
+            public void Stop() { State = Game.Simulation.AI.MovementState.Idle; }
         }
 
         [Test]

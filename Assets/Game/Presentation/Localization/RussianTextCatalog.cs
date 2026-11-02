@@ -564,6 +564,7 @@ namespace Game.Presentation.Localization
             ["content.building.hide_workshop"] = "Мастерская шкур",
             ["content.building.primitive_crop_plot"] = "Примитивный огород",
             ["content.building.military_barracks"] = "Военные казармы",
+            ["content.building.research_house"] = "Дом знаний",
             ["content.building.clan_house"] = "Каменный дом",
             ["content.building.healer_hut"] = "Хижина лекаря",
             ["content.building.shrine"] = "Святилище",

@@ -1,4 +1,5 @@
 using System;
+using Game.Domain;
 using Game.Domain.AI;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
@@ -575,6 +576,7 @@ namespace Game.Simulation.AI
         private readonly Tier1AiAgentState agent;
         private readonly ITier1MovementDriver movement;
         private readonly ResearchService research;
+        private StableEntityId workplace;
 
         public ResearchActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             ResearchService research)
@@ -582,25 +584,41 @@ namespace Game.Simulation.AI
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
             this.research = research ?? throw new ArgumentNullException(nameof(research));
-            movement.Stop();
-            agent.SetAction(UtilityActionKind.Research, AiActionPhase.Researching);
+            if (research.Workplace != null)
+            {
+                workplace = research.Workplace.FindResearchHouse(movement.CurrentPosition);
+                Phase = AiActionPhase.MoveToTarget;
+                research.Workplace.Travel(agent.CharacterId, workplace, movement);
+            }
+            else { movement.Stop(); Phase = AiActionPhase.Researching; }
+            agent.SetAction(UtilityActionKind.Research, Phase);
         }
 
         public UtilityActionKind Kind => UtilityActionKind.Research;
-        public AiActionPhase Phase => AiActionPhase.Researching;
+        public AiActionPhase Phase { get; private set; }
         public bool IsFinished { get; private set; }
         public bool Succeeded => IsFinished && research.ActiveProject == null;
         public bool IsInterruptible => true;
-        public bool IsValid => !IsFinished && research.ActiveProject != null && research.IsAssigned(agent.CharacterId);
+        public bool IsValid => !IsFinished && research.ActiveProject != null && research.IsAssigned(agent.CharacterId) && research.HasWorkplace;
 
         public void Tick(TimeSpan simulationDelta)
         {
-            if (!IsValid) IsFinished = true;
+            if (!IsValid) { Cancel(); return; }
+            agent.UpdatePosition(movement.CurrentPosition);
+            if (research.Workplace != null)
+            {
+                if (!research.Workplace.Operational(workplace))
+                    workplace = research.Workplace.FindResearchHouse(movement.CurrentPosition);
+                Phase = research.Workplace.Travel(agent.CharacterId, workplace, movement)
+                    ? AiActionPhase.Researching : AiActionPhase.MoveToTarget;
+                agent.SetAction(UtilityActionKind.Research, Phase);
+            }
         }
 
         public void Cancel()
         {
             IsFinished = true;
+            research.Workplace?.Release(agent.CharacterId);
             movement.Stop();
         }
     }

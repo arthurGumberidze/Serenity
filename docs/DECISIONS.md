@@ -2747,3 +2747,34 @@ UnityRunner now rejects that launch environment; the existing license works in t
 recovery is permitted only with no Editor process and an exclusive file open. No license/security/version
 changes are made. Qualification must explicitly compile before tests because runner test does not refresh
 changed scripts. Native Player stress data are isolated fixtures introduced after the normal menu route.
+
+## D-244 — Unavailable stock calculation is not zero demand (2026-11-02)
+
+A plan with no unlocked prepared-food recipe has no calculable targets and must not be rendered using
+the dictionary's numeric-zero fallback. Display a dash, put the named cooking prerequisite near both
+the table and Calculate action, and keep Apply disabled. ProductionService already rejects such an apply;
+regression coverage verifies the existing berry/carcass quotas and policy remain unchanged. A successful
+calculation may legitimately require zero extra raw ingredients because finished products cover demand
+or the resource is outside the selected horizon/current needs; explain that zero without inventing a quota.
+Native qualification now exercises the normal fresh-game state before adding unlocked research/stress stock.
+
+## D-245 — Physical research and barracks admission; canonical research clock (2026-11-02)
+
+User requires a costly initially available research building before researchers can be assigned, physical
+travel before disappearance/work, the same arrival rule for barracks, accurate day/night activity, and no
+thirst gauge. Research House uses the existing house presentation, costs 80 wood_log + 50 stone and 240
+construction minutes. Basic log/stone gathering moves to starting knowledge; stone_tools still unlocks
+its workshop. This prevents a circular dependency between constructing the first house and researching
+its construction materials. No new licensed assets or save migration.
+
+IndoorWorkplaceService is a pure simulation arrival authority shared by research and player training.
+A valid same-side operational building, movement arrival and distance to the approach are all required;
+renderer hiding reads this authority. Research actions travel via the existing movement driver; cancelling
+or ending the shift releases admission. Loading clears transient admission; residents must reach/confirm
+the workplace again. Destroyed/captured buildings cannot grant indoor work. Tier2/Tier3 cannot bypass the
+research admission gate. Existing lower-tier research arithmetic remains unchanged.
+
+Tier1 AI calendar is rebased to canonical GameClock at initialization, extra-scheduler registration and
+load. Rebasing does not simulate skipped time or grant retrospective work. The resident inspector uses
+one activity description in header/wellbeing/occupation, distinguishes travel from indoor work, and omits
+thirst. Small research progress uses decimals rather than appearing stuck at 0 percent.

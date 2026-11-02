@@ -27,7 +27,7 @@ namespace Game.Simulation.Production
             var fieldButchery = recipes.FirstOrDefault(x => x.Id.ToString() == "butcher_field_carcass");
             var dishes = DishOrder.Where(id => producers.ContainsKey(new ResourceId(id))).ToArray();
             if (dishes.Length == 0)
-            { result.Warnings.Add("Нет открытых рецептов готовой еды. Сначала изучите приготовление пищи."); return result; }
+            { result.Warnings.Add("Расчёт недоступен: нет открытых рецептов готовой еды. Изучите «Приготовление пищи» во вкладке «Знания», затем повторите расчёт. Текущие цели не изменены."); return result; }
             for (var day = 0; day < 30; day++)
             {
                 var selected = policy.Menu.Count == 30 ? policy.Menu[day] : null;

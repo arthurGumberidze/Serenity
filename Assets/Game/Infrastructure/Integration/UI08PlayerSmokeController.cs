@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Game.Domain;
+using Game.Domain.Buildings;
 using Game.Domain.Campaign;
 using Game.Domain.Characters;
 using Game.Domain.Work;
@@ -56,6 +57,10 @@ namespace Game.Infrastructure.Integration
             public bool stock_manual_preserved;
             public bool stock_month_menu;
             public bool stock_policy_saved;
+            public bool stock_locked_recipe_feedback;
+            public bool research_physical_workplace;
+            public bool barracks_physical_arrival;
+            public bool inspector_consistent_no_thirst;
             public string stock_capture;
             public string stock_hud_capture;
             public float research_viewport_height_px;
@@ -106,14 +111,15 @@ namespace Game.Infrastructure.Integration
                 yield return current;
             }
 
-            result.passed = string.IsNullOrEmpty(result.error) && result.normal_menu_new_game &&
+            result.passed = string.IsNullOrEmpty(result.error) && result.research_physical_workplace &&
+                result.barracks_physical_arrival && result.inspector_consistent_no_thirst && result.normal_menu_new_game &&
                 result.ruler_and_settings && result.hud_and_selection && result.management_routes &&
                 result.people_dynasty_events && result.military_and_tps && result.realm_and_local_return &&
                 result.save_load_stable_ids && result.pause_and_focus && result.victory_continues &&
                 result.defeat_recovery_actions && result.no_debug_shortcuts && result.resolution_1920x1080 &&
                 result.resolution_1280x720_125 && result.performance_measured &&
                 result.research_fullscreen_fits && result.stock_hud_full_hd && result.stock_hud_compact &&
-                result.stock_manual_preserved && result.stock_month_menu && result.stock_policy_saved &&
+                result.stock_manual_preserved && result.stock_month_menu && result.stock_policy_saved && result.stock_locked_recipe_feedback &&
                 Existing(result.menu_capture, result.management_capture, result.research_capture, result.people_capture,
                     result.realm_capture, result.tps_capture, result.victory_capture, result.defeat_capture);
             var report = Path.Combine(output, "ui08-player-smoke.json");
@@ -227,7 +233,22 @@ namespace Game.Infrastructure.Integration
                 researchTree.yMin>=researchViewport.yMin-1&&researchTree.yMax<=researchViewport.yMax+1;
             result.research_capture=Path.Combine(output,"ui08-research-1920x1080.png");
             yield return Capture(result.research_capture);
+            ui.Navigate(GameplayUiRouteId.Settlement); ui.RefreshNow();
+            yield return null; yield return null;
+            var berriesBefore = root.Production.GetTarget(new Game.Domain.Resources.ResourceId("berries"));
+            Submit(ui.RootVisual.Q<Button>("stock-calculate"));
+            yield return null; yield return null;
+            result.stock_locked_recipe_feedback =
+                ui.RootVisual.Q<Label>("stock-calculated-berries").text == "Расчёт: —" &&
+                ui.RootVisual.Q<Label>("stock-calculation-status").resolvedStyle.display == DisplayStyle.Flex &&
+                ui.RootVisual.Q<Label>("stock-planner-status").text.Contains("Приготовление пищи") &&
+                !ui.RootVisual.Q<Button>("stock-apply").enabledSelf &&
+                root.Production.GetTarget(new Game.Domain.Resources.ResourceId("berries")) == berriesBefore;
+            yield return Capture(Path.Combine(output,"ui08-stock-blocked-1920x1080.png"));
             InitializeStockStress(root);
+            var indoorRoute = QualifyIndoorWork(root, result);
+            while (indoorRoute.MoveNext()) yield return indoorRoute.Current;
+            ui.Navigate(GameplayUiRouteId.Knowledge); ui.RefreshNow();
             ui.Navigate(GameplayUiRouteId.Settlement); ui.RefreshNow();
             yield return null; yield return null;
             Submit(ui.RootVisual.Q<Button>("stock-enable-auto"));
@@ -418,6 +439,96 @@ namespace Game.Infrastructure.Integration
             while ((Screen.width != width || Screen.height != height) && Time.realtimeSinceStartup < deadline)
                 yield return null;
             yield return null;
+        }
+
+        private IEnumerator QualifyIndoorWork(LocalSceneCompositionRoot root, Result result)
+        {
+            var ui = root.GameplayUi;
+            if (root.Research.HasWorkplace) throw new InvalidOperationException("Fresh game unexpectedly contains a research house.");
+            var researchers = root.DirectWorkCommands.ProfessionGroups.Primary(WorkGroupRole.Scientists);
+            var worker = root.FemaleDemoCharacter.Id;
+            var movement = root.AiRuntime.Movements.Single(x => x.CharacterId == worker);
+            var house = SpawnIndoorFixture(root, "research_house", movement.CurrentPosition);
+            root.DirectWorkCommands.ProfessionGroups.Reassign(worker, researchers.Id);
+            root.Work.SetMemberShift(researchers.Id, worker, WorkShiftKind.Day);
+            root.Research.SynchronizeWorkers(new[] { worker }, root.Clock.State.CalendarTicks);
+            if (!root.Research.Start(new Game.Domain.Research.TechnologyId("observation")))
+                throw new InvalidOperationException("Research could not start after house completion.");
+            root.SelectionProbe.SelectCharacterIds(new[] { worker });
+            ui.SetPanel(GameplayPanel.None);
+            root.CameraController.FocusPosition(movement.Presenter.transform.position, 24f);
+            var origin = movement.CurrentPosition;
+            root.Clock.Resume();
+            var deadline = Time.realtimeSinceStartup + 120f;
+            var sawTravel = false;
+            while (!root.Research.Workplace.IsResearchingInside(worker) && Time.realtimeSinceStartup < deadline)
+            {
+                if (root.AiAgents.TryGet(worker, out var agent) && agent.CurrentAction == Game.Domain.AI.UtilityActionKind.Research)
+                {
+                    sawTravel |= agent.Phase == Game.Domain.AI.AiActionPhase.MoveToTarget && !movement.Presenter.IsActivityHidden;
+                    if (root.Research.ActiveProject.AccumulatedWorkTicks != 0)
+                        throw new InvalidOperationException("Research advanced while walking.");
+                }
+                yield return null;
+            }
+            var workDeadline = Time.realtimeSinceStartup + 4f;
+            while (root.Research.ActiveProject.AccumulatedWorkTicks == 0 && Time.realtimeSinceStartup < workDeadline) yield return null;
+            root.Clock.Pause(); ui.RefreshNow();
+            for (var frame = 0; frame < 3; frame++) yield return null;
+            result.research_physical_workplace = sawTravel && origin.DistanceSquared(movement.CurrentPosition) > 4f &&
+                root.Research.Workplace.IsInside(worker, house.Id) && movement.Presenter.IsActivityHidden &&
+                root.Research.ActiveProject.AccumulatedWorkTicks > 0;
+            var labels = ui.RootVisual.Q("selection-inspector").Query<Label>().ToList().Select(x => x.text ?? "").ToArray();
+            result.inspector_consistent_no_thirst = labels.Any(x => x.StartsWith("Текущее дело: исследует")) &&
+                !labels.Any(x => x.Contains("жажд") || x == "Текущее дело: свободен");
+            yield return Capture(Path.Combine(output, "ui08-researcher-inside.png"));
+            root.Research.Cancel(); root.Research.UnassignWorker(worker);
+            root.DirectWorkCommands.ProfessionGroups.Reassign(worker,
+                root.DirectWorkCommands.ProfessionGroups.Primary(WorkGroupRole.General).Id);
+            var barracks = SpawnIndoorFixture(root, "military_barracks", movement.CurrentPosition);
+            var start = root.MilitaryTraining.TryStart(worker, barracks.Id, new Game.Domain.Combat.CombatSideId("player"),
+                root.Clock.State.CalendarTicks, root.FundingSources());
+            if (!start.Started) throw new InvalidOperationException("Training fixture rejected: " + start.Failure);
+            origin = movement.CurrentPosition;
+            root.Clock.Resume();
+            sawTravel = false; deadline = Time.realtimeSinceStartup + 120f;
+            while (!root.Research.Workplace.IsInside(worker, barracks.Id) && Time.realtimeSinceStartup < deadline)
+            {
+                sawTravel |= movement.State == Game.Simulation.AI.MovementState.Moving && !movement.Presenter.IsActivityHidden;
+                if (root.MilitaryTraining.GetRank(worker).HasValue) throw new InvalidOperationException("Training finished before arrival.");
+                yield return null;
+            }
+            root.Clock.Pause();
+            for (var frame = 0; frame < 3; frame++) yield return null;
+            result.barracks_physical_arrival = sawTravel && origin.DistanceSquared(movement.CurrentPosition) > 4f &&
+                root.Research.Workplace.IsInside(worker, barracks.Id) && movement.Presenter.IsActivityHidden;
+            ui.RefreshNow();
+            yield return Capture(Path.Combine(output, "ui08-trainee-inside.png"));
+            if (!result.research_physical_workplace || !result.barracks_physical_arrival || !result.inspector_consistent_no_thirst)
+                throw new InvalidOperationException("Indoor work or resident inspector qualification failed.");
+        }
+
+        private static Game.Domain.Buildings.Building SpawnIndoorFixture(LocalSceneCompositionRoot root, string definitionId, Game.Domain.AI.WorldPosition from)
+        {
+            var definition = root.BuildingCatalog.ResolveDefinition(new Game.Domain.Buildings.BuildingDefinitionId(definitionId));
+            var center = root.DemoStorageBuilding.Coordinate;
+            for (var radius = 7; radius <= 40; radius++)
+            for (var dx = -radius; dx <= radius; dx++)
+            for (var dz = -radius; dz <= radius; dz++)
+            {
+                if (Math.Max(Math.Abs(dx), Math.Abs(dz)) != radius) continue;
+                var cell = new GridCoordinate(center.X + dx, center.Z + dz);
+                var facing = Game.Domain.Buildings.BuildingOrientation.South;
+                if (!root.BuildingPlacementService.Evaluate(definition, cell, facing).IsValid) continue;
+                var position = root.BuildingSpawner.GridToWorld(cell, definition, facing);
+                var target = new Game.Domain.AI.WorldPosition(position.x, position.y, position.z);
+                if (target.DistanceSquared(from) < 144f || target.DistanceSquared(from) > 1600f ||
+                    !root.WorldHeight.IsBuildable(position.x, position.z, 18f)) continue;
+                var building = root.BuildingPlacementService.Confirm(definition, cell, facing, new Game.Domain.Combat.CombatSideId("player"));
+                building.MarkCompleted(); root.BuildingSpawner.Spawn(building);
+                return building;
+            }
+            throw new InvalidOperationException("No reachable indoor fixture footprint for " + definitionId);
         }
 
         private static void InitializeStockStress(LocalSceneCompositionRoot root)

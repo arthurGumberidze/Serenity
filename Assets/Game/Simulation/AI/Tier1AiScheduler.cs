@@ -74,6 +74,19 @@ namespace Game.Simulation.AI
 
         public int Count => entries.Count;
         public long CalendarTicks => calendarTicks;
+        /// <summary>Align runtime checkpoints after startup/load without simulating the skipped interval.</summary>
+        public void RebaseCalendar(long targetCalendarTick)
+        {
+            if (targetCalendarTick < 0) throw new ArgumentOutOfRangeException(nameof(targetCalendarTick));
+            if (calendarTicks == targetCalendarTick) return;
+            foreach (var entry in entries)
+            {
+                entry.NextThinkTicks = checked(targetCalendarTick + Math.Max(0, entry.NextThinkTicks - calendarTicks));
+                entry.LastNeedTicks = targetCalendarTick;
+                entry.LastActionTicks = targetCalendarTick;
+            }
+            calendarTicks = targetCalendarTick;
+        }
         public Tier1AiSettings Settings => settings;
         public bool TryGetAssignedWorkType(StableEntityId characterId, out WorkJobType type)
         {
@@ -101,6 +114,7 @@ namespace Game.Simulation.AI
 
         public bool ShouldHideInsideBuilding(StableEntityId characterId)
         {
+            if (world.Research?.Workplace?.IsInside(characterId) == true) return true;
             if (!byId.TryGetValue(characterId, out var entry) || entry.Agent.Phase != AiActionPhase.Working)
                 return false;
             if (domestic?.IsSleepingInBed(characterId) == true) return true;
@@ -263,8 +277,9 @@ namespace Game.Simulation.AI
         {
             if (advance.CalendarDelta < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(advance));
             Metrics.LastDecisionBatch = 0;
-            if (advance.CalendarDelta == TimeSpan.Zero || entries.Count == 0) return;
+            if (advance.CalendarDelta == TimeSpan.Zero) return;
             calendarTicks = checked(calendarTicks + advance.CalendarDelta.Ticks);
+            if (entries.Count == 0) return;
             UpdateNeeds();
             UpdateActions();
             AdvanceResearch();
@@ -828,6 +843,7 @@ namespace Game.Simulation.AI
                 if (!world.Research.IsAssigned(entry.Agent.CharacterId)) continue;
                 world.Research.AdvanceWorkerTo(entry.Agent.CharacterId, calendarTicks,
                     entry.Action != null && entry.Action.Kind == UtilityActionKind.Research && entry.Action.IsValid &&
+                    entry.Action.Phase == AiActionPhase.Researching &&
                     (capabilities == null || capabilities.GetCapabilities(entry.Agent.CharacterId).CanResearch));
             }
         }

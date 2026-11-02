@@ -1,5 +1,25 @@
 # PROJECT_STATE.md
 
+## UI08-R5a — stock feedback and physical workplaces DONE (2026-11-02)
+
+75/75 EditMode tests PASS; Windows build PASS (0 errors, 85 existing warnings); full native Player
+qualification PASS/exit 0. Verified actual research/barracks travel while visible, arrival-only hiding and
+research progress, consistent inspector/no thirst, blocked stock calculation, manual targets, monthly
+menu, save/load and Full HD/compact HUD bounds. Build: `Builds/UI08R5/Serenity.exe`.
+Evidence: `docs/validation/UI08StockCalculationFeedbackR5a.md`. No new assets or old-save migration.
+
+User reports all-zero stock preview. The locked-recipe path returns an unavailable plan with no targets;
+the UI incorrectly projected missing values as zero and placed the reason below the long table. The fix
+renders a dash for unavailable results, surfaces the reason above the table and next to Calculate, and
+retains disabled Apply and unchanged goals. Valid zero demand remains numeric with explanatory tooltip.
+Both the normal fresh-game blocked path and the unlocked menu path passed native qualification.
+
+User expanded scope: canonical clock rebasing fixes research checkpoints starting at 00:00 against the
+game's 10:00 clock; unified resident activity labels and no thirst gauge. Initially unlocked Research House
+costs 80 logs/50 stone; basic gathering of those materials is initially available. A shared pure simulation
+arrival authority gates research and barracks training; travelling characters remain visible and do not
+contribute work. Research assignment requires an operational house. Qualification passed.
+
 ## UI08-R5 — grouped resource HUD and monthly stocks DONE (2026-11-02)
 
 HTML approval received. Runtime stock planning and grouped HUD are implemented; 42 focused EditMode tests

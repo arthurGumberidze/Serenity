@@ -1,5 +1,27 @@
 # NEXT_TASK.md
 
+## Next — user retest of UI08-R5a (2026-11-02)
+
+UI08-R5a is DONE: 75/75 EditMode tests, successful Windows build and full native Player route PASS.
+Build: `Builds/UI08R5/Serenity.exe`. In construction -> Community, build Research House (80 logs/50 stone),
+assign day/night researchers through their profession group, choose a technology, and observe physical
+travel/entry before progress. Barracks trainees also walk before entering. No thirst gauge; coherent
+resident activities; blocked automatic stock calculation shows its reason and preserves manual goals.
+See `docs/validation/UI08StockCalculationFeedbackR5a.md`. Await user feedback; no new task or shutdown.
+
+## Completed scope — UI08-R5a
+
+User reports Calculate Automatically produces zero everywhere. Reproduce the fresh-game locked-recipe
+case, distinguish unavailable calculation from valid zero demand, expose the reason near the table and
+action, preserve targets on blocked apply, qualify through persistent Unity runner, document and commit.
+
+Additional explicit user scope: repair day/night research clock/progress and conflicting resident activity
+labels; remove obsolete thirst bar. Add initially unlocked Research House (80 logs, 50 stone, 240 work
+minutes); require a completed house before assigning researchers or starting projects. Researchers and
+barracks trainees physically walk to the workplace entrance, remain visible in transit, disappear only on
+arrival, and contribute work only indoors. Keep basic log/stone harvesting initially open to prevent a
+research bootstrap deadlock. Test, build, run native qualification, update documentation and commit/push.
+
 ## Next — user retest of completed UI08-R5 (2026-11-02)
 
 The approved implementation is DONE. Launch `Builds/UI08R5/Serenity.exe` and start a new game. Check the

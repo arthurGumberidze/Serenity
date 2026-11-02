@@ -1,5 +1,11 @@
 # TASK_GRAPH.md
 
+UI08-R5a stock feedback and physical workplaces (2026-11-02): **DONE**. Unavailable stock plans show
+the reason instead of zeros; manual goals preserved. Canonical research clock, coherent resident status,
+no thirst gauge, initial Research House and physical arrival gating for researchers/barracks trainees.
+75/75 EditMode tests; Windows build 0 errors; native Player full-route PASS/exit 0 including physical
+travel/entry/progress and stock/HUD/save gates. Evidence: `docs/validation/UI08StockCalculationFeedbackR5a.md`.
+
 UI08-R5 resource/stock implementation (2026-11-02): **DONE**, HTML approved by the user.
 42 focused EditMode tests passed; final compile/Windows build 0 errors/warnings. Exact-binary native route
 PASS, exit 0, with stock/manual-policy/save gates and Full HD/compact bounds verified. Final screenshots
