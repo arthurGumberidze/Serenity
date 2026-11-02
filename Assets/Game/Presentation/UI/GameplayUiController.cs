@@ -182,7 +182,7 @@ namespace Game.Presentation.UI
         private static bool IsPeopleRiskWorkspace(GameplayPanel panel) =>
             panel == GameplayPanel.Domestic || panel == GameplayPanel.Dynasty ||
             panel == GameplayPanel.Events || panel == GameplayPanel.Military ||
-            panel == GameplayPanel.Research;
+            panel == GameplayPanel.Research || panel == GameplayPanel.Economy;
 
         public bool DeveloperUiVisible { get; private set; }
         public GameplayPanel ActivePanel => activePanel;
@@ -466,6 +466,8 @@ namespace Game.Presentation.UI
             if (!initialized) return;
             if (ContextMenuVisible && Mouse.current?.middleButton.wasPressedThisFrame == true) CloseContextMenu();
             var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && resourcesExpanded)
+            { CloseResourceDrawer(); return; }
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
                 modal != null && modal.resolvedStyle.display != DisplayStyle.None)
             {
@@ -1311,13 +1313,21 @@ namespace Game.Presentation.UI
         {
             topBar = Panel("top-hud");
             topBar.style.position = Position.Absolute;
-            topBar.style.left = 10; topBar.style.right = 10; topBar.style.top = 8; topBar.style.height = 58;
-            topBar.style.flexDirection = FlexDirection.Row;
-            topBar.style.alignItems = Align.Center;
+            topBar.style.left = 10; topBar.style.right = 10; topBar.style.top = 8; topBar.style.height = StyleKeyword.Auto;
+            topBar.style.flexDirection = FlexDirection.Column;
+            topBar.style.alignItems = Align.Stretch;
             topBar.style.paddingLeft = 8; topBar.style.paddingRight = 8;
             SerenityUiDesign.StyleSurface(topBar, true);
             topBar.AddToClassList("serenity-top-hud");
             topBar.pickingMode = PickingMode.Position;
+            topBar.RegisterCallback<GeometryChangedEvent>(evt =>
+            { if (Math.Abs(evt.oldRect.height - evt.newRect.height) > .5f && navigation != null) ApplyResponsiveLayout(); });
+            var hudControls = new VisualElement { name = "hud-controls" };
+            hudControls.style.flexDirection = FlexDirection.Row;
+            hudControls.style.flexWrap = Wrap.Wrap;
+            hudControls.style.alignItems = Align.Center;
+            hudControls.style.minHeight = 50;
+            topBar.Add(hudControls);
 
             var settlementIdentity = new VisualElement { name = "settlement-identity" };
             settlementIdentity.AddToClassList("serenity-settlement-identity");
@@ -1327,7 +1337,7 @@ namespace Game.Presentation.UI
             settlementStatusLabel.AddToClassList("serenity-settlement-status");
             settlementIdentity.Add(settlementLabel);
             settlementIdentity.Add(settlementStatusLabel);
-            topBar.Add(settlementIdentity);
+            hudControls.Add(settlementIdentity);
 
             resourceStrip = new VisualElement { name = "resource-strip" };
             resourceStrip.AddToClassList("serenity-resource-strip");
@@ -1335,18 +1345,9 @@ namespace Game.Presentation.UI
             resourceStrip.style.alignItems = Align.Center;
             populationLabel = new Label { name = "population-label" };
             populationLabel.AddToClassList("serenity-population-chip");
-            resourceStrip.Add(SerenityIconLibrary.Image("population", "Жители поселения"));
-            resourceStrip.Add(populationLabel);
+            hudControls.Add(populationLabel);
             resourcesLabel = populationLabel;
-            AddPrimaryResourceChip("wood_log", "wood_log", "Древесина");
-            AddPrimaryResourceChip("stone", "stone", "Камень");
-            AddPrimaryResourceChip("meat", "meat", "Мясо");
-            AddPrimaryResourceChip("fish", "fish", "Рыба");
-            var resourceToggle = ActionButton("▾", ToggleResourceDrawer, "resource-drawer-toggle");
-            resourceToggle.AddToClassList("serenity-compact-button");
-            resourceToggle.tooltip = "Все ресурсы и резервы";
-            resourceStrip.Add(resourceToggle);
-            topBar.Add(resourceStrip);
+            BuildResourceGroups();
 
             var timeCluster = new VisualElement { name = "time-cluster" };
             timeCluster.AddToClassList("serenity-time-cluster");
@@ -1360,40 +1361,49 @@ namespace Game.Presentation.UI
             timeCluster.Add(dateLabel);
             timeCluster.Add(weatherLabel);
             timeCluster.Add(modeLabel);
-            topBar.Add(timeCluster);
+            hudControls.Add(timeCluster);
+            timeCluster.style.flexGrow = 1;
 
             var attentionButton = ActionButton(string.Empty, () => SetPanel(GameplayPanel.Events), "attention-button");
             attentionButton.AddToClassList("serenity-attention-button");
             attentionButton.Add(SerenityIconLibrary.Image("alerts", "Центр внимания"));
-            alertLabel = HudLabel(66);
+            alertLabel = new Label();
+            alertLabel.style.width = 28; alertLabel.style.height = 24;
+            alertLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            alertLabel.style.whiteSpace = WhiteSpace.NoWrap;
             alertLabel.name = "alert-count";
             alertLabel.tooltip = "Непрочитанные уведомления";
             attentionButton.Add(alertLabel);
-            topBar.Add(attentionButton);
+            hudControls.Add(attentionButton);
+            attentionButton.style.width = 72; attentionButton.style.minWidth = 72; attentionButton.style.flexShrink = 0;
             var pause = ActionButton(T("ui.action.pause"), TogglePause, "pause-button");
             pause.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
             pause.tooltip = "Пауза или продолжение симуляции · Space";
-            topBar.Add(pause);
+            hudControls.Add(pause);
             foreach (var speed in Speeds)
             {
                 var captured = speed;
                 var speedButton = ActionButton("x" + (int)speed, () => context.SetSpeed(captured), "speed-" + (int)speed);
                 speedButton.AddToClassList("serenity-time-button");
                 speedButton.tooltip = "Скорость симуляции x" + (int)speed;
-                topBar.Add(speedButton);
+                hudControls.Add(speedButton);
             }
             var settings = ActionButton(string.Empty, OpenSettings, "settings-button");
             SerenityIconLibrary.Apply(settings, "settings", "Настройки интерфейса");
-            topBar.Add(settings);
+            hudControls.Add(settings);
+            topBar.Add(resourceStrip);
             root.Add(topBar);
 
             resourceDrawer = Panel("resource-drawer");
             resourceDrawer.AddToClassList("serenity-resource-drawer");
             resourceDrawer.style.position = Position.Absolute;
-            resourceDrawer.style.left = 10; resourceDrawer.style.top = 72; resourceDrawer.style.width = 510;
-            resourceDrawer.style.maxHeight = 310;
+            resourceDrawer.style.left = 10; resourceDrawer.style.top = 122; resourceDrawer.style.width = 570;
+            resourceDrawer.style.maxHeight = 480;
             resourceDrawer.style.display = DisplayStyle.None;
             resourceDrawer.pickingMode = PickingMode.Position;
+            resourceDrawer.RegisterCallback<PointerEnterEvent>(_ => resourceHover = true);
+            resourceDrawer.RegisterCallback<PointerLeaveEvent>(_ => { resourceHover = false; ScheduleResourceClose(); });
+            resourceDrawer.RegisterCallback<KeyDownEvent>(evt => { if (evt.keyCode == KeyCode.Escape) { CloseResourceDrawer(); evt.StopPropagation(); } });
             root.Add(resourceDrawer);
 
             residentStrip = new VisualElement { name = "resident-strip" };
@@ -2110,14 +2120,7 @@ namespace Game.Presentation.UI
             settlementStatusLabel.text = burning > 0 ? "Пожар · " + burning : "Спокойно";
             settlementStatusLabel.EnableInClassList("is-danger", burning > 0);
             settlementStatusLabel.EnableInClassList("is-warning", false);
-            foreach (var definition in context.Resources.All)
-            {
-                var label = resourceStrip.Q<Label>("resource-primary-" + definition.Id);
-                if (label == null) continue;
-                label.text = TotalResource(definition.Id).ToString("N0");
-                label.tooltip = Content("resource", definition.Id.ToString()) + ": всего " +
-                                TotalResource(definition.Id).ToString("N0");
-            }
+            RefreshResourceGroups();
             RefreshResourceDrawer();
             var ticks = clock.State.CalendarTicks;
             dateLabel.text = F("ui.hud.date", GameCalendar.Year(ticks), GameCalendar.DayOfYear(ticks),
@@ -2128,7 +2131,8 @@ namespace Game.Presentation.UI
             var pendingEvents = context.Events?.PendingPlayerEvents.Count ?? 0;
             var alertText = F("ui.hud.alerts", notificationFeed.Count) +
                             (pendingEvents > 0 ? F("ui.hud.pending_events", pendingEvents) : string.Empty);
-            alertLabel.text = pendingEvents > 0 ? pendingEvents.ToString() : notificationFeed.Count.ToString();
+            var alertCount = pendingEvents > 0 ? pendingEvents : notificationFeed.Count;
+            alertLabel.text = alertCount > 99 ? "99+" : alertCount.ToString();
             alertLabel.tooltip = alertText;
             var pauseButton = topBar.Q<Button>("pause-button");
             pauseButton.text = T(clock.IsPaused ? "ui.action.resume" : "ui.action.pause");
@@ -2145,29 +2149,7 @@ namespace Game.Presentation.UI
             RefreshNavigationSelection();
         }
 
-        private void RefreshResourceDrawer()
-        {
-            if (resourceDrawer == null) return;
-            resourceDrawer.style.display = resourcesExpanded ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!resourcesExpanded) return;
-            resourceDrawer.Clear();
-            AddSection(resourceDrawer, "Ресурсы поселения");
-            foreach (var definition in context.Resources.All.Where(x => IsPlayerManagedResource(x.Id)).OrderBy(x => x.Id))
-            {
-                var total = TotalResource(definition.Id);
-                var reserved = context.Work.Jobs.Where(x => !x.IsTerminal && x.ResourceId == definition.Id &&
-                    x.ClaimState == WorkClaimState.Reserved).Sum(x => x.Quantity.Units);
-                var row = Row();
-                row.Add(SerenityIconLibrary.Image(PrimaryResourceIcon(definition.Id.ToString()),
-                    Content("resource", definition.Id.ToString())));
-                var line = new Label(Content("resource", definition.Id.ToString()) + "   " + total.ToString("N0") +
-                                     "   доступно " + Math.Max(0, total - reserved).ToString("N0") +
-                                     "   зарезервировано " + reserved.ToString("N0"));
-                line.AddToClassList("serenity-resource-line");
-                row.Add(line);
-                resourceDrawer.Add(row);
-            }
-        }
+        private void RefreshResourceDrawer() => UpdateResourceDrawer();
 
         private void RefreshResidentStrip()
         {
@@ -2319,6 +2301,8 @@ namespace Game.Presentation.UI
             if (mainPanel == null || activePanel == GameplayPanel.None) return;
             if (activePanel == GameplayPanel.Research && mainPanel.Q<VisualElement>("research-viewport") != null)
             { UpdateResearchView(); return; }
+            if (activePanel == GameplayPanel.Economy && mainPanel.Q<VisualElement>("stock-workspace") != null)
+            { UpdateStockNumbers(); return; }
             mainPanel.Clear();
             switch (activePanel)
             {
@@ -2553,57 +2537,7 @@ namespace Game.Presentation.UI
             _ => "Решение не применено."
         };
 
-        private void DrawEconomyPanel()
-        {
-            AddTitle(mainPanel, "Поселение");
-            var shelterReady = context.Buildings.All.Any(x =>
-                x.DefinitionId.FamilyId == new BuildingDefinitionId("stone_age_hut") && x.IsOperational);
-            var storageReady = context.Buildings.All.Any(x =>
-                x.DefinitionId.FamilyId == new BuildingDefinitionId("storage_basket") && x.IsOperational &&
-                context.Inventories.TryGet(new InventoryOwner(InventoryOwnerKind.BuildingStorage, x.Id), out _));
-            var playerIds = PlayerCharacterIds();
-            var population = playerIds.Count(id => context.Characters.TryGet(id, out var person) &&
-                                                   person.LifeState == CharacterLifeState.Alive);
-            var edibleUnits = context.Production.Food.EdibleResources.Sum(TotalResource);
-            var foodDays = population == 0 ? 0d : edibleUnits * context.Production.Settings.FoodTicksPerPersonUnit.TotalDays / population;
-            AddSection(mainPanel, "Обзор и устойчивость");
-            AddLine(mainPanel, F("ui.economy.ruler_population", CharacterName(context.Dynasty.CurrentMonarchId), population));
-            AddLine(mainPanel, F("ui.economy.camp_ready", T(shelterReady ? "ui.economy.ready" : "ui.economy.missing"),
-                T(storageReady ? "ui.economy.ready" : "ui.economy.missing")));
-            AddLine(mainPanel, F("ui.economy.food_days", edibleUnits, RussianTextCatalog.Decimal(foodDays, "0.#")));
-            if (foodDays < 5d) AddMuted(mainPanel, T("ui.economy.food_warning"));
-            AddSection(mainPanel, "Рабочая сила");
-            var living = playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)
-                .Where(value => value != null && value.LifeState == CharacterLifeState.Alive).ToArray();
-            AddLine(mainPanel, "Свободно: " + living.Count(value => !context.Work.HasOpenJob(value.Id)) +
-                " · занято: " + living.Count(value => context.Work.HasOpenJob(value.Id)) +
-                " · групп: " + context.Work.Groups.Count);
-            foreach (var person in playerIds.Select(id => context.Characters.TryGet(id, out var value) ? value : null)
-                         .Where(x => x != null && x.LifeState == CharacterLifeState.Alive).Take(10))
-                AddLine(mainPanel, F("ui.economy.person", RussianTextCatalog.PersonName(person.Name.DisplayName),
-                    person.AgeInCompletedYears(context.Clock().State.BiologicalTicks), ProfessionName(person.ProfessionId?.ToString())));
-            AddSection(mainPanel, "Ресурсы и склады");
-            var storage = context.Inventories.All.Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage).ToArray();
-            AddLine(mainPanel, F("ui.economy.storage", storage.Sum(x => x.TotalUnits), storage.Sum(x => x.Capacity)));
-            foreach (var definition in context.Resources.All.Where(x => IsPlayerManagedResource(x.Id)))
-            {
-                var target = context.Production.GetTarget(definition.Id);
-                var total = context.Production.GetCanonicalTotal(definition.Id);
-                var row = Row();
-                SerenityUiDesign.StyleCard(row);
-                row.Add(new Label(F("ui.economy.resource_line", Content("resource", definition.Id.ToString()),
-                    context.StoredResources.GetStoredTotal(definition.Id).Units, total, target)));
-                row.Add(ActionButton("-5", () => TryCommand(() =>
-                    context.Production.SetTarget(definition.Id, Math.Max(0, target - 5)))));
-                row.Add(ActionButton("+5", () => TryCommand(() =>
-                    context.Production.SetTarget(definition.Id, checked(target + 5)))));
-                mainPanel.Add(row);
-            }
-            AddLine(mainPanel, F("ui.economy.food", context.Production.Food.TotalConsumed, context.Production.Food.TotalShortage));
-            var weather = context.Weather.GetWeatherAtCalendarTick(context.Clock().State.CalendarTicks);
-            AddMuted(mainPanel, F("ui.economy.modifiers", Percent(weather.Modifiers.CropGrowthPerThousand),
-                Percent(weather.Modifiers.OutdoorWorkPerThousand), Percent(weather.Modifiers.WildFoodGatheringPerThousand)));
-        }
+        private void DrawEconomyPanel() => DrawStockWorkspace();
 
         private void DrawBuildPanel()
         {
@@ -5436,7 +5370,7 @@ namespace Game.Presentation.UI
             mainPanel.EnableInClassList("is-build-palette", build);
             mainPanel.EnableInClassList("is-people-risk-workspace", peopleRisk);
             mainPanel.style.left = peopleRisk ? 22 : 10;
-            mainPanel.style.top = build ? StyleKeyword.Auto : peopleRisk ? 88 : 142;
+            mainPanel.style.top = build ? StyleKeyword.Auto : Math.Max(130, topBar.layout.yMax + 10);
             mainPanel.style.bottom = build ? 170 : peopleRisk ? 94 : 130;
             mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
             mainPanel.style.width = build || peopleRisk ? StyleKeyword.Auto : 480;
@@ -5490,13 +5424,17 @@ namespace Game.Presentation.UI
             compactLayout = compact;
             root.EnableInClassList("serenity-compact", compact);
             if (topBar == null) return;
-            resourceStrip.style.maxWidth = compact ? 515 : 650;
-            var fishChip = resourceStrip.Q("resource-primary-chip-fish");
-            if (fishChip != null) fishChip.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
+            resourceStrip.style.maxWidth = StyleKeyword.None;
             dateLabel.style.width = compact ? 126 : 156;
             weatherLabel.style.width = compact ? 155 : 205;
             modeLabel.style.display = compact ? DisplayStyle.None : DisplayStyle.Flex;
-            alertLabel.style.width = compact ? 46 : 66;
+            alertLabel.style.width = 28;
+            alertLabel.style.minWidth = 28;
+            populationLabel.style.fontSize = compact ? 12 : 14;
+            populationLabel.style.minWidth = 145;
+            modeLabel.style.display = DisplayStyle.None;
+            if (resourceDrawer != null) resourceDrawer.style.top = Math.Max(122, topBar.layout.yMax + 2);
+            if (residentStrip != null) residentStrip.style.top = Math.Max(130, topBar.layout.yMax + 10);
             navigation.style.left = 10;
             navigation.style.right = 10;
             navigation.style.width = StyleKeyword.Auto;
@@ -5510,6 +5448,7 @@ namespace Game.Presentation.UI
             inspector.style.width = compact ? 322 : 354;
             inspector.style.bottom = 90;
             notifications.style.width = compact ? 322 : 354;
+            notifications.style.top = Math.Max(130, topBar.layout.yMax + 10);
             onboardingCard.style.width = compact ? 322 : 354;
             localMiniMap.style.width = compact ? 184 : 220;
             localMiniMap.style.height = compact ? 154 : 184;
@@ -5565,7 +5504,7 @@ namespace Game.Presentation.UI
                 context.Selection.SelectedWorldResourcePilePresenter != null ||
                 context.Selection.SelectedProductionSourcePresenter != null);
             var peopleRisk = IsPeopleRiskWorkspace(activePanel);
-            inspector.style.top = hasSelection ? 72 : onboarding.Visible ? 512 : 274;
+            inspector.style.top = hasSelection ? Math.Max(130, topBar.layout.yMax + 10) : onboarding.Visible ? 512 : 274;
             inspector.style.display = strategic || peopleRisk || !hasSelection ? DisplayStyle.None : DisplayStyle.Flex;
             localMiniMap.style.display = !strategic && !peopleRisk && !hasSelection
                 ? DisplayStyle.Flex : DisplayStyle.None;

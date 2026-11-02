@@ -71,7 +71,7 @@ using UnityEngine.SceneManagement;
 
 namespace Game.Infrastructure
 {
-    public sealed class LocalSceneCompositionRoot : MonoBehaviour
+    public sealed partial class LocalSceneCompositionRoot : MonoBehaviour
     {
         private const float TierPolicyRefreshIntervalSeconds = 0.5f;
         private const long WeatherRosterRefreshIntervalTicks = TimeSpan.TicksPerMinute;
@@ -527,6 +527,8 @@ namespace Game.Infrastructure
 
             Production = new ProductionService(ProductionRecipes, Resources, Inventories, Buildings, ResourceTransfers,
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
+            Production.StockConfig = JsonUtility.FromJson<StockPlanningConfig>(UnityEngine.Resources.Load<TextAsset>("StockPlanningConfig").text);
+            Production.StockFacts = CaptureStockPlanningFacts;
             Production.BuildingWorkAllowed = (id, tick) =>
             {
                 var policy = Facilities.GetPolicy(id);
@@ -1127,6 +1129,7 @@ namespace Game.Infrastructure
             BuildingDamage.AdvanceFireTo(targetCalendarTick);
             BuildingLifecycle.AdvanceWearTo(targetCalendarTick);
             Production.Population = CountAbstractPlayerPopulation();
+            Production.RefreshAutomaticStocks(targetCalendarTick);
             Production.MaintainFisheryModes();
             Production.AdvanceHuntingPopulation(targetCalendarTick);
             Production.MaintainContinuousDeliveries(Work);

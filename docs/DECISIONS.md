@@ -2717,3 +2717,33 @@ automatic targets but retain manual control. Existing combat_bow is not claimed 
 the requested hunter assignment needs integration. Swords do not exist in the current catalog and remain a
 future role/equipment rule. Medicine-course/equipment-assignment values are demo assumptions, not new authority.
 No Assets/save changes or new dependencies; the standalone HTML and `docs/RESOURCE_STOCK_PLAN.md` share data.
+
+## D-243 — Implement approved monthly stock policy and grouped HUD (2026-11-02)
+
+The user approved D-242's HTML and requested runtime implementation. Six permanent category controls replace
+individual HUD resource chips, with independent notification controls and an exact scrollable breakdown.
+The settlement workspace retains manual targets and adds per-resource automatic mode, priority and buffer.
+Preview and explicit apply are separate; apply recomputes current facts and only writes automatic rows.
+Manual target edits switch that row back to manual. Saved policy includes 30 day choices, menu origin day,
+stock horizon, buffers and optional hourly automatic updates. No old-save migration is performed.
+
+StockPlanner is a pure Simulation service using immutable Domain policy/facts and actual unlocked recipes.
+The 30-day menu allocates three portions per living player resident/day, one unlocked prepared dish per day;
+generic cooked meat remains one dish. Monthly gross requirements remain distinct from net near-term stock
+goals (default three days with 25 percent final-product reserve). Inputs accumulate before batch rounding,
+physical stock is deducted and existing field carcasses can cover meat needs. Manual quotas are not buffered
+again. Existing eating/need simulation is unchanged: three/day is the requested planning allowance.
+
+Canonical adapters read player professional groups, physical inventories, remaining construction materials,
+health conditions and livestock pens. Role gear is a one-time stock need; medicine/arrow values are data-driven
+planning norms, not a new equipment-issue or treatment-course mechanic. Unsupported consumers have no invented
+automatic quota. Capacity and long-horizon perishability produce warnings, not a promise of feasible storage.
+Continuous production governed by stock goals finishes its current whole batch and then releases its worker;
+it resumes when below target. Resource priority is secondary to building/task priority. No personal resident
+priority controls or per-NPC Update loops are introduced.
+
+An Editor launch from Windows app-container sandbox lost licensing IPC and crashed in Mono socket setup.
+UnityRunner now rejects that launch environment; the existing license works in the host session. Stale lock
+recovery is permitted only with no Editor process and an exclusive file open. No license/security/version
+changes are made. Qualification must explicitly compile before tests because runner test does not refresh
+changed scripts. Native Player stress data are isolated fixtures introduced after the normal menu route.

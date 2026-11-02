@@ -1,6 +1,16 @@
 # NEXT_TASK.md
 
-## Active — UI08-R5: review resource HUD and monthly stock HTML (2026-11-02)
+## Next — user retest of completed UI08-R5 (2026-11-02)
+
+The approved implementation is DONE. Launch `Builds/UI08R5/Serenity.exe` and start a new game. Check the
+six resource groups and their exact breakdown, then Settlement -> stock goals. Retain or edit manual goals;
+enable automatic rows, choose horizon/buffer, calculate and apply. The menu plans 30 days at three portions
+per living resident/day using unlocked dishes; optional hourly updates preserve manual goals. No old-save
+merge/migration. No shutdown requested for this delivery and no new implementation task is inferred.
+Qualification: 42 EditMode tests passed; final compile/build 0 errors/warnings; native Player PASS with
+large stocks, Full HD/compact layouts, menu and policy save/load. Evidence: `docs/validation/UI08ResourceStocksR5.md`.
+
+## Historical — UI08-R5 proposal (approved and implemented above)
 
 The user requests HTML approval before any Unity implementation. Open
 `docs/prototypes/stock-review-v1/Serenity-Stock-Review.html`; the full per-resource plan is
@@ -12,7 +22,7 @@ adjustable near-term warehouse goals; show raw inputs/fuel and manual constraint
 41 catalog resources covered; obsolete water excluded; sword is future-only, not a current catalog resource.
 The hunter-only use of the existing combat_bow ID needs a future integration decision. Do not claim it works now.
 Calculator/controller checks and offline HTML build pass. Browser rendering is not verified.
-Await user approval; do not modify Assets, launch Unity or repeat the prior one-time shutdown.
+HTML approved; Unity implementation is authorized. Do not repeat the prior one-time shutdown.
 Evidence: `docs/validation/UI08ResourceStockProposal.md`.
 
 ## Next — user retest of completed UI08-R4 (2026-11-02)

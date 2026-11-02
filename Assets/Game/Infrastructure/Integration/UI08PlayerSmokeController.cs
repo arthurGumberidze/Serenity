@@ -51,6 +51,13 @@ namespace Game.Infrastructure.Integration
             public string management_capture;
             public string research_capture;
             public bool research_fullscreen_fits;
+            public bool stock_hud_full_hd;
+            public bool stock_hud_compact;
+            public bool stock_manual_preserved;
+            public bool stock_month_menu;
+            public bool stock_policy_saved;
+            public string stock_capture;
+            public string stock_hud_capture;
             public float research_viewport_height_px;
             public string people_capture;
             public string realm_capture;
@@ -105,7 +112,8 @@ namespace Game.Infrastructure.Integration
                 result.save_load_stable_ids && result.pause_and_focus && result.victory_continues &&
                 result.defeat_recovery_actions && result.no_debug_shortcuts && result.resolution_1920x1080 &&
                 result.resolution_1280x720_125 && result.performance_measured &&
-                result.research_fullscreen_fits &&
+                result.research_fullscreen_fits && result.stock_hud_full_hd && result.stock_hud_compact &&
+                result.stock_manual_preserved && result.stock_month_menu && result.stock_policy_saved &&
                 Existing(result.menu_capture, result.management_capture, result.research_capture, result.people_capture,
                     result.realm_capture, result.tps_capture, result.victory_capture, result.defeat_capture);
             var report = Path.Combine(output, "ui08-player-smoke.json");
@@ -219,7 +227,37 @@ namespace Game.Infrastructure.Integration
                 researchTree.yMin>=researchViewport.yMin-1&&researchTree.yMax<=researchViewport.yMax+1;
             result.research_capture=Path.Combine(output,"ui08-research-1920x1080.png");
             yield return Capture(result.research_capture);
+            InitializeStockStress(root);
+            ui.Navigate(GameplayUiRouteId.Settlement); ui.RefreshNow();
+            yield return null; yield return null;
+            Submit(ui.RootVisual.Q<Button>("stock-enable-auto"));
+            Submit(ui.RootVisual.Q<Button>("stock-tab-materials"));
+            ui.RootVisual.Q<LongField>("stock-target-wood_log").value = 777;
+            ui.RootVisual.Q<Toggle>("stock-auto-update").value = true;
+            Submit(ui.RootVisual.Q<Button>("stock-calculate"));
+            result.stock_month_menu = Enumerable.Range(0,30).All(day => ui.RootVisual.Q("stock-menu-day-"+day) != null);
+            Submit(ui.RootVisual.Q<Button>("stock-apply"));
+            result.stock_manual_preserved = root.Production.GetTarget(new Game.Domain.Resources.ResourceId("wood_log")) == 777 &&
+                !root.Production.StockPolicy.For(new Game.Domain.Resources.ResourceId("wood_log")).Automatic;
+            result.stock_capture = Path.Combine(output,"ui08-stocks-1920x1080.png");
+            yield return Capture(result.stock_capture);
+            var stocksScroll = ui.RootVisual.Q<ScrollView>("main-panel");
+            stocksScroll.ScrollTo(ui.RootVisual.Q("stock-planner"));
+            yield return Capture(Path.Combine(output,"ui08-stock-planner-1920x1080.png"));
+            stocksScroll.ScrollTo(ui.RootVisual.Q("stock-menu-day-0"));
+            yield return Capture(Path.Combine(output,"ui08-stock-menu-1920x1080.png"));
+            stocksScroll.scrollOffset = Vector2.zero;
+            result.stock_hud_full_hd = StockHudFits(ui);
+            Submit(ui.RootVisual.Q<Button>("resource-group-food"));
+            yield return null; yield return null;
+            result.stock_hud_full_hd &= ui.RootVisual.Q<Label>("stock-breakdown-fish").text.Contains("10");
+            result.stock_hud_capture = Path.Combine(output,"ui08-resource-groups-1920x1080.png");
+            yield return Capture(result.stock_hud_capture);
+            Submit(ui.RootVisual.Q<Button>("resource-drawer-close"));
             yield return SetResolution(1280,720);ui.SetUiScale(1.25f);ui.RefreshNow();
+            for(var frame=0;frame<10;frame++) yield return null;
+            result.stock_hud_compact = StockHudFits(ui);
+            yield return Capture(Path.Combine(output,"ui08-resource-groups-1280x720-125.png"));
             result.people_capture = Path.Combine(output, "ui08-people-1280x720-125.png");
             ui.Navigate(GameplayUiRouteId.People); ui.RefreshNow();
             yield return Capture(result.people_capture);
@@ -246,6 +284,8 @@ namespace Game.Infrastructure.Integration
             var focusPresent = ui.RootVisual.panel.focusController.focusedElement != null;
             ui.ConfirmLoadSlot(1);
             result.pause_and_focus = toggled && root.Clock.IsPaused == wasPaused && focusPresent;
+            result.stock_policy_saved = root.Production.StockPolicy.AutoUpdate && root.Production.StockPolicy.Menu.Count == 30 &&
+                root.Production.GetTarget(new Game.Domain.Resources.ResourceId("wood_log")) == 777;
             result.save_load_stable_ids = root.PlayerSaves.ListSlots().Single(slot => slot.Index == 1).Exists &&
                                           root.Saves.SessionId == session && root.Dynasty.CurrentMonarchId == monarchId &&
                                           root.Characters.TryGet(monarchId, out _);
@@ -378,6 +418,42 @@ namespace Game.Infrastructure.Integration
             while ((Screen.width != width || Screen.height != height) && Time.realtimeSinceStartup < deadline)
                 yield return null;
             yield return null;
+        }
+
+        private static void InitializeStockStress(LocalSceneCompositionRoot root)
+        {
+            // Controlled qualification fixture after the normal menu/research route. Do not enable cheats,
+            // or modify user saves: this process uses an isolated smoke save directory.
+            var storage = root.Inventories.All.First(x => x.Owner.Kind == Game.Domain.Resources.InventoryOwnerKind.BuildingStorage);
+            storage.ConfigureAcceptance(null, null);
+            storage.EnsureCapacity(storage.TotalUnits + root.Resources.All.Count * 10000L);
+            foreach (var resource in root.Resources.All.Where(x => x.Id.ToString() != "water"))
+                if (!storage.TryAdd(resource.Id, new Game.Domain.Resources.ResourceQuantity(10000)))
+                    throw new InvalidOperationException("Could not seed high stock fixture.");
+            var state = root.Research.CaptureState();
+            var completed = state.Completed.Concat(new[] { "basic_survival", "gathering", "controlled_fire", "cooking" }
+                .Select(id => new Game.Domain.Research.TechnologyId(id))).Distinct();
+            root.Research.RestoreState(new Game.Domain.Research.ResearchSaveState(state.LastProcessedTick,
+                completed, null, state.Workers));
+        }
+
+        private static void Submit(Button button)
+        {
+            if (button == null) throw new InvalidOperationException("Missing stock action.");
+            using var evt = NavigationSubmitEvent.GetPooled(); evt.target = button; button.SendEvent(evt);
+        }
+        private static bool StockHudFits(GameplayUiController ui)
+        {
+            var hud = ui.RootVisual.Q("top-hud").worldBound;
+            var groups = new[] { "food", "materials", "craft", "equipment", "health", "farm" }
+                .Select(id => ui.RootVisual.Q<Button>("resource-group-" + id)).ToArray();
+            bool Inside(Rect rect, Rect outer) => rect.width > 0 && rect.height > 0 && rect.xMin >= outer.xMin - 1 &&
+                rect.xMax <= outer.xMax + 1 && rect.yMin >= outer.yMin - 1 && rect.yMax <= outer.yMax + 1;
+            if (groups.Any(x => x == null || x.resolvedStyle.display == DisplayStyle.None || !Inside(x.worldBound, hud))) return false;
+            var controls = ui.RootVisual.Q("hud-controls").Children().Where(x => x.resolvedStyle.display != DisplayStyle.None).ToArray();
+            var bell = ui.RootVisual.Q("attention-button");
+            return Inside(bell.worldBound, hud) && controls.Where(x => x != bell).All(x => !x.worldBound.Overlaps(bell.worldBound)) &&
+                Inside(ui.RootVisual.Q("alert-count").worldBound, bell.worldBound);
         }
 
         private static IEnumerator Capture(string path)

@@ -658,6 +658,7 @@ namespace Game.Simulation.Production
                          x.Continuous && !x.Paused).OrderBy(x => x.OwnerBuildingId).ThenBy(x => x.Id))
             {
                 var recipe = recipes.Get(site.RecipeId);
+                if (ContinuousStockGoalMet(recipe)) continue;
                 var destination = InputOwner(site.OwnerBuildingId);
                 if (!inventories.TryGet(destination, out var input)) continue;
                 foreach (var amount in recipe.Inputs)
@@ -899,11 +900,37 @@ namespace Game.Simulation.Production
             return active.Length;
         }
         public long GetTarget(ResourceId id) => targets.TryGetValue(id, out var value) ? value : 0;
+        public StockPlanningPolicy StockPolicy { get; private set; } = new StockPlanningPolicy();
+        public StockPlanningConfig StockConfig { get; set; }
+        public Func<StockPlanningFacts> StockFacts { get; set; }
+        private long nextStockRefresh;
+        public void SetStockPolicy(StockPlanningPolicy policy) => StockPolicy = policy ?? throw new ArgumentNullException(nameof(policy));
+        public StockPlan CalculateStockPlan(StockPlanningPolicy policy = null) => StockPlanner.Calculate(recipes,
+            id => unlocks == null || unlocks.IsProductionRecipeUnlocked(id), policy ?? StockPolicy,
+            StockFacts?.Invoke() ?? new StockPlanningFacts { Residents = Population }, GetTarget);
+        public bool ApplyStockPlan(StockPlanningPolicy policy)
+        {
+            var plan = CalculateStockPlan(policy);
+            if (!plan.CanApply) return false;
+            StockPolicy = new StockPlanningPolicy(policy.StockDays, policy.ReservePercent, policy.AutoUpdate,
+                policy.FirstDay, policy.Resources, plan.Menu);
+            foreach (var rule in StockPolicy.Resources.Where(x => x.Automatic))
+                targets[rule.Resource] = StockPlanner.Get(plan.Targets, rule.Resource);
+            return true;
+        }
+        public void RefreshAutomaticStocks(long calendarTick)
+        {
+            if (!StockPolicy.AutoUpdate || StockFacts == null || calendarTick < nextStockRefresh) return;
+            nextStockRefresh = checked(calendarTick + TimeSpan.TicksPerHour);
+            ApplyStockPlan(StockPolicy);
+        }
         public void SetTarget(ResourceId id, long target)
         {
             resources.Get(id);
             if (target < 0) throw new ArgumentOutOfRangeException(nameof(target));
             targets[id] = target;
+            var rule = StockPolicy.For(id);
+            StockPolicy = StockPolicy.WithResource(new StockResourcePolicy(id, false, rule.Priority, rule.ReservePercent));
         }
 
         public long GetCanonicalTotal(ResourceId id)
@@ -1075,6 +1102,8 @@ namespace Game.Simulation.Production
                 if (site.Paused || !CanPlaceOutputs(task.WorkerId, recipe, site)) return default;
                 while (workTicks > 0 && CanPlaceOutputs(task.WorkerId, recipe, site))
                 {
+                    if (task.AccumulatedWorkTicks == 0 && ContinuousStockGoalMet(recipe))
+                    { Cancel(task.Id); break; }
                     workTicks -= task.AddWork(workTicks);
                     if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) break;
                     var cycle = Complete(task);
@@ -1204,11 +1233,13 @@ namespace Game.Simulation.Production
             producedTotals.Where(x => x.Value > 0).Select(x => new ResourceAmount(x.Key, new ResourceQuantity(x.Value))),
             inventories.CaptureStates(), Ecology?.CaptureState(), Industry?.CaptureState(), Animals.States,
             livestockPolicies.Values, huntingPolicies.Values,
-            foodSpoilage.Select(x => new FoodSpoilageState(x.Key.Item1, x.Key.Item2, x.Value)));
+            foodSpoilage.Select(x => new FoodSpoilageState(x.Key.Item1, x.Key.Item2, x.Value)), StockPolicy);
 
         public void RestoreState(ProductionSaveState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
+            StockPolicy = state.StockPlanning;
+            nextStockRefresh = 0;
             var restoredSites = new Dictionary<StableEntityId, ProductionSite>();
             foreach (var siteState in state.Sites)
             {
@@ -1498,7 +1529,8 @@ namespace Game.Simulation.Production
 
         private bool RecipeNeeded(ProductionRecipe recipe)
         {
-            if (recipe.Outputs.Any(x => preparedFoodResources.Contains(x.ResourceId)))
+            if (!StockPolicy.HasMealRules &&
+                recipe.Outputs.Any(x => preparedFoodResources.Contains(x.ResourceId)))
             {
                 var currentPrepared = preparedFoodResources.Sum(id =>
                     stepTotals != null ? stepTotals[id] : GetCanonicalTotal(id));
@@ -1513,6 +1545,13 @@ namespace Game.Simulation.Production
             }
             return false;
         }
+
+        private bool UsesStockGoal(ProductionRecipe recipe) => recipe.Outputs.Any(x => StockPolicy.IsAutomatic(x.ResourceId)) ||
+            StockPolicy.HasMealRules && recipe.Outputs.Any(x => preparedFoodResources.Contains(x.ResourceId));
+
+        private bool ContinuousStockGoalMet(ProductionRecipe recipe) => UsesStockGoal(recipe) &&
+            (recipe.Outputs.All(x => StockPolicy.PriorityFor(x.ResourceId) == 0) ||
+             recipe.Outputs.All(x => GetCanonicalTotal(x.ResourceId) >= GetTarget(x.ResourceId)));
 
         private bool TrySelectSite(StableEntityId workerId, WorldPosition workerPosition,
             out ProductionSite selected, out ProductionTaskKind selectedKind)
@@ -1536,6 +1575,7 @@ namespace Game.Simulation.Production
                      Animals.TryGet(site.Id, out var domestic) && domestic.Domestic)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
+                if (recipe.Outputs.All(x => StockPolicy.PriorityFor(x.ResourceId) == 0)) continue;
                 if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
                   if (!HasNaturalSourceCapacity(site)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
@@ -1543,13 +1583,14 @@ namespace Game.Simulation.Production
                 var kind = TaskKindFor(site);
                 if (site.Kind != ProductionSiteKind.BuildingWorkplace && !RecipeNeeded(recipe)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace && site.Continuous &&
-                    recipe.Outputs.Any(x => preparedFoodResources.Contains(x.ResourceId)) && !RecipeNeeded(recipe))
+                    (UsesStockGoal(recipe) || recipe.Outputs.Any(x => preparedFoodResources.Contains(x.ResourceId))) && !RecipeNeeded(recipe))
                     continue;
                 if (kind != ProductionTaskKind.Plant && !CanPlaceOutputs(workerId, recipe, site)) continue;
                 if (!InputsAvailable(recipe, site)) continue;
                 var distance = workerPosition.DistanceSquared(site.Position);
                 var priority = site.Kind == ProductionSiteKind.BuildingWorkplace
-                    ? BuildingWorkPriority?.Invoke(site.OwnerBuildingId) ?? 0 : 0;
+                    ? (BuildingWorkPriority?.Invoke(site.OwnerBuildingId) ?? 0) * 100 : 0;
+                priority += recipe.Outputs.Max(x => StockPolicy.PriorityFor(x.ResourceId)) * 10;
                 if (assignedWorkplace.HasValue && site.Kind == ProductionSiteKind.BuildingWorkplace &&
                     site.OwnerBuildingId == assignedWorkplace.Value) priority += 1000;
                 if (selected == null || priority > bestPriority || priority == bestPriority &&

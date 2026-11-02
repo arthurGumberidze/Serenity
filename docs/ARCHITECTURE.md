@@ -1,5 +1,16 @@
 # Architecture — U01
 
+## UI08-R5 stock planning boundary (2026-11-02)
+
+`LocalSceneCompositionRoot.Stocks -> StockPlanningFacts -> StockPlanner -> StockPlan` calculates demand
+without changing inventories or jobs. ProductionService owns saved StockPlanningPolicy and the applied
+resource targets. The UI edits a draft and previews a plan; apply recomputes canonical facts and writes only
+automatic targets. Optional hourly updates run from the existing central clock callback. SaveXmlCodec
+persists policy and menu with production state; no separate UI-owned save authority or migration is added.
+Resource priority supplements existing building/task ordering, and continuous stock-governed production
+finishes its current batch before stopping at the goal. Six HUD category controls are presentation only;
+their exact breakdown uses the same resource IDs, excluding obsolete water.
+
 ## U00 persistent Editor command boundary (2026-10-29)
 
 The local validation flow is `PowerShell client -> atomic Library request -> primary Unity Editor update ->

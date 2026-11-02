@@ -739,7 +739,7 @@ namespace Game.Domain.Production
             IndustrialSaveState industry = null, IEnumerable<Game.Domain.World.AnimalVitalState> animals = null,
             IEnumerable<LivestockPenPolicyState> livestockPolicies = null,
             IEnumerable<HuntingLodgePolicyState> huntingPolicies = null,
-            IEnumerable<FoodSpoilageState> foodSpoilage = null)
+            IEnumerable<FoodSpoilageState> foodSpoilage = null, StockPlanningPolicy stockPlanning = null)
         {
             if (lastCalendarTick < 0 || foodRemainderTicks < 0 || foodConsumed < 0 || foodShortage < 0)
                 throw new ArgumentOutOfRangeException(nameof(lastCalendarTick));
@@ -763,6 +763,7 @@ namespace Game.Domain.Production
                 .OrderBy(x => x.BuildingId).ToArray());
             FoodSpoilage = Array.AsReadOnly((foodSpoilage ?? Array.Empty<FoodSpoilageState>())
                 .OrderBy(x => x.Owner.Kind).ThenBy(x => x.Owner.Id).ThenBy(x => x.ResourceId).ToArray());
+            StockPlanning = stockPlanning ?? new StockPlanningPolicy();
         }
 
         public long LastCalendarTick { get; }
@@ -780,5 +781,6 @@ namespace Game.Domain.Production
         public IReadOnlyList<LivestockPenPolicyState> LivestockPolicies { get; }
         public IReadOnlyList<HuntingLodgePolicyState> HuntingPolicies { get; }
         public IReadOnlyList<FoodSpoilageState> FoodSpoilage { get; }
+        public StockPlanningPolicy StockPlanning { get; }
     }
 }

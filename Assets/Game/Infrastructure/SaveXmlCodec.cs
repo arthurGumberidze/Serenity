@@ -275,6 +275,15 @@ namespace Game.Infrastructure
                     new XElement("ownerId", item.Owner.Id.ToString()),
                     new XElement("resourceId", item.ResourceId.ToString()),
                     new XElement("ticks", item.AccumulatedTicks)))));
+            element.Add(new XElement("stockPlanning",
+                new XElement("days", state.StockPlanning.StockDays),
+                new XElement("reserve", state.StockPlanning.ReservePercent),
+                new XElement("auto", state.StockPlanning.AutoUpdate),
+                new XElement("firstDay", state.StockPlanning.FirstDay),
+                new XElement("rules", state.StockPlanning.Resources.Select(rule => new XElement("rule",
+                    new XElement("id", rule.Resource.ToString()), new XElement("auto", rule.Automatic),
+                    new XElement("priority", rule.Priority), new XElement("reserve", rule.ReservePercent)))),
+                new XElement("menu", state.StockPlanning.Menu.Select(id => new XElement("dish", id)))));
             if (includeNaturalResources)
             {
                 element.Add(new XElement("naturalLifecycles", state.NaturalLifecycles.Select(item =>
@@ -326,6 +335,7 @@ namespace Game.Infrastructure
             if (element.Element("livestockPolicies") != null) fields.Add("livestockPolicies");
             if (element.Element("huntingPolicies") != null) fields.Add("huntingPolicies");
             if (element.Element("foodSpoilage") != null) fields.Add("foodSpoilage");
+            if (element.Element("stockPlanning") != null) fields.Add("stockPlanning");
             RequireFields(element, fields.ToArray());
             var targets = Items(element.Element("targets"), "target", item =>
             {
@@ -461,7 +471,21 @@ namespace Game.Infrastructure
                     return new FoodSpoilageState(new InventoryOwner((InventoryOwnerKind)Int(item, "ownerKind"),
                         StableEntityId.Parse(Value(item, "ownerId"))), new ResourceId(Value(item, "resourceId")),
                         Long(item, "ticks"));
-                }));
+                }), DeserializeStockPlanning(element.Element("stockPlanning")));
+        }
+
+        private static StockPlanningPolicy DeserializeStockPlanning(XElement element)
+        {
+            if (element == null) return new StockPlanningPolicy();
+            RequireFields(element, new[] { "days", "reserve", "auto", "firstDay", "rules", "menu" });
+            return new StockPlanningPolicy(Int(element, "days"), Int(element, "reserve"),
+                bool.Parse(Value(element, "auto")), Long(element, "firstDay"),
+                Items(element.Element("rules"), "rule", item =>
+                {
+                    RequireFields(item, new[] { "id", "auto", "priority", "reserve" });
+                    return new StockResourcePolicy(new ResourceId(Value(item, "id")), bool.Parse(Value(item, "auto")),
+                        Int(item, "priority"), Int(item, "reserve"));
+                }), element.Element("menu").Elements("dish").Select(x => x.Value));
         }
 
         private static ResourceAmount DeserializeAmount(XElement item)

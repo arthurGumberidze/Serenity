@@ -1,6 +1,11 @@
 # TASK_GRAPH.md
 
-UI08-R5 resource/stock proposal (2026-11-02): **AWAITING_USER_REVIEW**. HTML + all-resource plan prepared;
+UI08-R5 resource/stock implementation (2026-11-02): **DONE**, HTML approved by the user.
+42 focused EditMode tests passed; final compile/Windows build 0 errors/warnings. Exact-binary native route
+PASS, exit 0, with stock/manual-policy/save gates and Full HD/compact bounds verified. Final screenshots
+visually inspected, including complete dish names and dark/gold controls. Build: `Builds/UI08R5/Serenity.exe`.
+Evidence: `docs/validation/UI08ResourceStocksR5.md`. Next: user retest, no old-save migration or new task.
+Historical proposal: HTML + all-resource plan prepared;
 six grouped HUD entries and independent notifications, preserved manual goals, resource priority/reserve,
 monthly unlocked-recipe menu (one dish/day, 3 portions/resident), near-term stock and recipe-input calculation.
 41 resource IDs audited, obsolete water omitted, future sword and hunter-bow binding explicitly distinguished.

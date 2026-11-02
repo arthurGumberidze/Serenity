@@ -1,6 +1,23 @@
 # PROJECT_STATE.md
 
-## UI08-R5 — resource HUD and monthly stock proposal awaiting review (2026-11-02)
+## UI08-R5 — grouped resource HUD and monthly stocks DONE (2026-11-02)
+
+HTML approval received. Runtime stock planning and grouped HUD are implemented; 42 focused EditMode tests
+passed. Final Windows compile/build: 0 errors / 0 warnings; exact-binary native route PASS, exit 0.
+Visual inspection confirms complete dish names, six visible resource groups and an independent bell at
+1920x1080 and 1280x720/125%. Manual targets are retained, policies/menu
+serialize with production state, and optional hourly recalculation reads canonical residents/groups,
+construction materials, physical inventories, current health conditions and livestock pens.
+Build: `Builds/UI08R5/Serenity.exe`. Evidence and limitations: `docs/validation/UI08ResourceStocksR5.md`.
+Planning is 30 days at 3 portions/resident/day; existing actual eating/need simulation is unchanged.
+Next action is user retest; no further implementation or repeated shutdown is scheduled.
+
+The initial Editor launch inside the Windows app-container sandbox failed licensing IPC and crashed in
+Mono socket initialization. UnityRunner now refuses that launch context and recovers only an exclusively
+accessible stale lock when no Editor process exists. Host launch restored licensing; an intermediate C#
+accessibility error was corrected and compilation succeeded. No license/version/security changes.
+
+Historical proposal below is approved, no longer awaiting review.
 
 The user reported resource disappearance/bell overlap and requested HTML before implementation. A portable
 interactive proposal is in `docs/prototypes/stock-review-v1/Serenity-Stock-Review.html`; it separates HUD

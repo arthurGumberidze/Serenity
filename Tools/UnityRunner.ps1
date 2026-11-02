@@ -77,6 +77,16 @@ function Start-Runner {
     if (Test-RunnerState $state) { return $state }
 
     $existing = Get-ProjectEditorInstance
+    if ($null -eq $existing -and $env:LOCALAPPDATA -match '\\Packages\\sandbox\.') {
+        throw 'Unity must be launched outside the Windows app-container sandbox. Re-run this runner with approved host access; licensing IPC and Mono sockets fail inside the sandbox.'
+    }
+    if ($null -eq $existing -and (Test-Path -LiteralPath $projectLockPath) -and
+        -not (Get-Process -Name Unity -ErrorAction SilentlyContinue)) {
+        # Only recover a crash lock when no Editor exists and the lock is exclusively accessible.
+        $crashLock = [IO.File]::Open($projectLockPath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+        $crashLock.Dispose()
+        Remove-Item -LiteralPath $projectLockPath
+    }
     if ($null -eq $existing -and -not (Test-Path -LiteralPath $projectLockPath)) {
         if (-not (Test-Path -LiteralPath $UnityPath)) { throw "Unity Editor was not found at '$UnityPath'." }
         $versionFile = Join-Path $ProjectPath 'ProjectSettings\ProjectVersion.txt'

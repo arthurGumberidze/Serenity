@@ -122,6 +122,25 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void AutomaticStockGoalStopsContinuousCookingAfterAWholeBatch()
+        {
+            var fixture = new Fixture(outputCapacity: 100);
+            var worker = fixture.AddWorker(20);
+            fixture.Site.SetContinuous(true);
+            fixture.Input.TryAdd(fixture.Berries, new ResourceQuantity(18));
+            fixture.Input.TryAdd(fixture.Wood, new ResourceQuantity(6));
+            fixture.Production.SetTarget(fixture.Cooked, 4);
+            fixture.Production.SetStockPolicy(new StockPlanningPolicy(resources: new[] { new StockResourcePolicy(fixture.Cooked, true) }));
+            Assert.That(fixture.Production.TryReserveAtSite(worker, fixture.Site.Id, out var job), Is.True);
+            fixture.Production.AdvanceTask(job.Task.Id, TimeSpan.FromDays(1));
+            Assert.That(fixture.Output.GetAmount(fixture.Cooked).Units, Is.EqualTo(6), "Finish two whole three-portion batches, then stop.");
+            Assert.That(fixture.Input.GetAmount(fixture.Berries).Units, Is.EqualTo(12));
+            Assert.That(fixture.Production.ActiveTasks, Is.Empty);
+            fixture.Output.TryRemove(fixture.Cooked, new ResourceQuantity(3));
+            Assert.That(fixture.Production.TryReserve(worker, default, out _), Is.True, "A later shortage should restart cooking.");
+        }
+
+        [Test]
         public void ContinuousDeliveriesPreferStableStorageOverRacingGroundPiles()
         {
             var fixture = new Fixture();
