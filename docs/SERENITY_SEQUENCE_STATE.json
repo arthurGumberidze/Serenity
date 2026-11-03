@@ -3,18 +3,20 @@
   "coordinatorThreadId": "01a179c0-04ef-7203-b3c8-55a35ec70a54",
   "hostId": "local",
   "projectId": "31e3de33-ca38-4c3b-b7fd-53991c5bbd9c",
-  "activeStage": "SR01",
+  "activeStage": "SR02",
   "stages": [
     {
       "id": "SR01",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "threadId": "01a1a228-19cd-7e33-9cd0-8d9753b8a6f4",
-      "hostId": "local"
+      "hostId": "local",
+      "commit": "58110412f190df7f601b8eddc354ba68c5e423d9"
     },
     {
       "id": "SR02",
-      "status": "TODO",
-      "threadId": null
+      "status": "IN_PROGRESS",
+      "threadId": "01a1a243-fbdd-7eb3-ad9e-63403390ac6b",
+      "hostId": "local"
     },
     {
       "id": "SR03",
