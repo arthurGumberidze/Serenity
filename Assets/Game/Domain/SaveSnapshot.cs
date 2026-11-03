@@ -57,6 +57,7 @@ namespace Game.Domain
         public const int CurrentVersion = NeedsMoodVersion;
         public const string StoneAgeBuildingSaveGenerationId = "p109-stone-age-buildings-v1";
         public const string WorldMapV2SaveGenerationId = TiledWorldDefinition.ProposedWorldMapGenerationId;
+        public const string SR02SampleSaveGenerationId = "serenity-sr02-sample-v1";
         public int FormatVersion { get; }
         public StableEntityId SessionId { get; }
         public long CalendarTicks { get; }

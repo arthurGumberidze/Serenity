@@ -202,6 +202,7 @@ namespace Game.Domain.World
 
         private readonly TiledWorldDefinition world;
         private readonly TiledWorldHeightSampler heights;
+        private readonly TiledWorldHeightSampler projectedHeights;
         private readonly WorldMapTerrainPaintSampler paint;
         private readonly long seed;
 
@@ -210,6 +211,8 @@ namespace Game.Domain.World
         {
             world = definition ?? throw new ArgumentNullException(nameof(definition));
             heights = heightSampler ?? throw new ArgumentNullException(nameof(heightSampler));
+            projectedHeights = heightSampler;
+            if (heights.Landscape != null) heights = new TiledWorldHeightSampler(world, worldSeed, false);
             if (!ReferenceEquals(world, heights.Definition) || world.MapData?.Wildlife == null)
                 throw new ArgumentException("World Map V2 wildlife requires the canonical shared definition.");
             paint = new WorldMapTerrainPaintSampler(world, heights);
@@ -253,6 +256,13 @@ namespace Game.Domain.World
                             Jitter(node.Position, species.Id, ordinal, individuals), CharacterSimulationTier.Tier3));
                     }
                 }
+            }
+            if(projectedHeights.Landscape!=null)
+            {
+                WorldPosition Ground(WorldPosition p)=>projectedHeights.Landscape.ProjectGround(projectedHeights,p);
+                graph=new WildlifeHabitatGraph(graph.Nodes.Select(n=>new WildlifeHabitatNode(n.Id,n.RegionId,
+                    n.Function,n.Tile,Ground(n.Position))),graph.Edges);
+                individuals=individuals.Select(v=>v.At(v.HabitatNodeId,Ground(v.Position))).ToList();
             }
             return new WildlifePopulationPlan(world.MapData.Wildlife, graph, capacities, individuals);
         }

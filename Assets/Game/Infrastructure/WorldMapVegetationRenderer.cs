@@ -28,6 +28,7 @@ namespace Game.Infrastructure
         private readonly Plane[] planes = new Plane[6];
         public int InstanceCount { get; private set; }
         public int LastDrawnInstances { get; private set; }
+        public int LastSubmittedDrawBatches { get; private set; }
         public double LastSubmissionMilliseconds { get; private set; }
         public bool DiagnosticDisableProbes { get; set; }
         private Bounds[] groundClearings = System.Array.Empty<Bounds>();
@@ -145,6 +146,7 @@ namespace Game.Infrastructure
             var started = System.Diagnostics.Stopwatch.GetTimestamp();
             GeometryUtility.CalculateFrustumPlanes(camera, planes);
             LastDrawnInstances = 0;
+            LastSubmittedDrawBatches = 0;
             foreach (var batch in batches)
             {
                 if (batch.Matrices.Length == 0) continue;
@@ -158,6 +160,7 @@ namespace Game.Infrastructure
                     batch.Matrices.Length, null, batch.Ground || distance > 250f ? ShadowCastingMode.Off : ShadowCastingMode.On,
                     true, gameObject.layer, camera, DiagnosticDisableProbes ? LightProbeUsage.Off : LightProbeUsage.BlendProbes);
                 LastDrawnInstances += batch.Matrices.Length;
+                LastSubmittedDrawBatches++;
             }
             LastSubmissionMilliseconds = (System.Diagnostics.Stopwatch.GetTimestamp() - started) *
                 1000d / System.Diagnostics.Stopwatch.Frequency;

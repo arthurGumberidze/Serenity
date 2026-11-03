@@ -78,6 +78,7 @@ namespace Game.Presentation.AI
         public bool CrowdDetailEnabled => crowdDetailEnabled;
         public CharacterPresenter Presenter => presenter;
         public Func<StableEntityId, WorldPosition, WorldPosition, bool> RouteValidator { get; set; }
+        public Action<string> FailureObserved { get; set; }
 
         public void SetCrowdDetail(bool enabled)
         {
@@ -97,7 +98,9 @@ namespace Game.Presentation.AI
                 if (state == MovementState.Moving && hasRequestedDestination)
                 {
                     agent.stoppingDistance = requestedStoppingDistance;
-                    state = agent.SetDestination(requestedDestination) ? MovementState.Moving : MovementState.Failed;
+                    state = agent.CalculatePath(requestedDestination,lightweightPath) &&
+                        lightweightPath.status==NavMeshPathStatus.PathComplete && agent.SetPath(lightweightPath)
+                        ? MovementState.Moving : MovementState.Failed;
                     // Camera movement may promote a resident back to a full NavMeshAgent while the
                     // simulation is paused. Rebuilding its path must never unpause physical motion.
                     agent.isStopped = simulationPaused;
@@ -119,18 +122,29 @@ namespace Game.Presentation.AI
         {
             get
             {
-                if (!IsAvailable) return MovementState.Failed;
+                if (!IsAvailable) { FailureObserved?.Invoke("Unavailable"); return MovementState.Failed; }
                 if (state != MovementState.Moving) return state;
-                if (!UsesNavMeshAgent) return state;
+                if (authority == Tier1MovementAuthority.DirectPlayer || !UsesNavMeshAgent) return state;
                 if (agent.pathPending) return MovementState.Moving;
-                if (agent.pathStatus != NavMeshPathStatus.PathComplete) return MovementState.Failed;
-                // SetDestination can briefly retain the previous path's zero remainingDistance.
-                // Arrival must refer to this request, not a previous job's endpoint.
                 var delta = presenter.transform.position-requestedDestination;
                 var actualDistance = new Vector2(delta.x,delta.z).magnitude;
                 if (hasRequestedDestination && actualDistance <= requestedStoppingDistance + .2f &&
-                    agent.remainingDistance <= agent.stoppingDistance + 0.05f)
+                    (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance + 0.05f))
                     return MovementState.Arrived;
+                if (!agent.hasPath || agent.pathStatus != NavMeshPathStatus.PathComplete)
+                {
+                    // Pooled tree obstacles can invalidate an active corridor when they carve the
+                    // navigation mesh. Rebuild to the same endpoint before abandoning carried cargo.
+                    // A genuinely disconnected destination still fails; never accept a partial path.
+                    if (hasRequestedDestination && agent.CalculatePath(requestedDestination, lightweightPath) &&
+                        lightweightPath.status == NavMeshPathStatus.PathComplete && agent.SetPath(lightweightPath))
+                    {
+                        agent.isStopped = simulationPaused;
+                        return MovementState.Moving;
+                    }
+                    FailureObserved?.Invoke("AgentPath:"+agent.pathStatus+" destination="+requestedDestination);
+                    return MovementState.Failed;
+                }
                 return MovementState.Moving;
             }
         }
@@ -141,14 +155,16 @@ namespace Game.Presentation.AI
             if(UsesNavMeshAgent && agent!=null && !agent.isOnNavMesh)EnableAgentAtPresenter();
             if (!IsAvailable || stoppingDistance < 0f ||
                 !ReachableNavMeshPoint.TryFind(presenter.transform.position,
-                    new Vector3(target.X, target.Y, target.Z), out var destination))
+                    new Vector3(target.X, target.Y, target.Z), out var destination, 3.1f, lightweightPath))
             {
+                FailureObserved?.Invoke("MoveToUnavailableOrUnreachable: available="+IsAvailable+" target="+target);
                 state = MovementState.Failed;
                 return;
             }
             var validatedDestination = new WorldPosition(destination.x, destination.y, destination.z);
             if (RouteValidator != null && !RouteValidator(characterId, CurrentPosition, validatedDestination))
             {
+                FailureObserved?.Invoke("RouteValidator: target="+validatedDestination);
                 state = MovementState.Failed;
                 return;
             }
@@ -157,12 +173,6 @@ namespace Game.Presentation.AI
             hasRequestedDestination = true;
             if (!UsesNavMeshAgent)
             {
-                if (!NavMesh.CalculatePath(presenter.transform.position, destination, NavMesh.AllAreas, lightweightPath) ||
-                    lightweightPath.status != NavMeshPathStatus.PathComplete)
-                {
-                    state = MovementState.Failed;
-                    return;
-                }
                 lightweightCornerCount = lightweightPath.GetCornersNonAlloc(lightweightCorners);
                 lightweightCornerIndex = lightweightCornerCount > 1 ? 1 : 0;
                 state = lightweightCornerCount > 0 ? MovementState.Moving : MovementState.Failed;
@@ -171,7 +181,9 @@ namespace Game.Presentation.AI
             }
             agent.stoppingDistance = stoppingDistance;
             agent.isStopped = false;
-            state = agent.SetDestination(destination) ? MovementState.Moving : MovementState.Failed;
+            // The resolver already calculated a complete path. Assign it synchronously: starting
+            // another asynchronous search exposes an empty path to multiple simulation ticks/frame.
+            state = agent.SetPath(lightweightPath) ? MovementState.Moving : MovementState.Failed;
             presenter.SetMovementSpeed(state == MovementState.Moving ? agent.speed : 0f);
         }
 

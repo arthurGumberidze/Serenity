@@ -24,10 +24,11 @@ namespace Game.Domain.World
         private readonly Dictionary<WorldMapSpline, float> splineTotals = new();
         private readonly Dictionary<object, float[]> waterBounds = new();
 
-        public TiledWorldHeightSampler(TiledWorldDefinition worldDefinition, long worldSeed)
+        public TiledWorldHeightSampler(TiledWorldDefinition worldDefinition, long worldSeed, bool applyLandscape = true)
         {
             definition = worldDefinition ?? throw new ArgumentNullException(nameof(worldDefinition));
             seed = worldSeed;
+            Landscape = applyLandscape ? definition.Landscape : null;
             authoredTerrain = definition.MapData?.Terrain;
             authoredHydrology = definition.MapData?.Hydrology;
             if (authoredHydrology != null)
@@ -58,18 +59,36 @@ namespace Game.Domain.World
         }
 
         public TiledWorldDefinition Definition => definition;
+        public SampleLandscapeDefinition Landscape { get; }
         public long WorldSeed => seed;
         public int HeightmapResolution => authoredTerrain?.TileResolution ?? 257;
         public float MaximumTerrainHeightMeters => authoredTerrain?.MaximumHeightMeters ?? TerrainHeightMeters;
+        public bool MeasureHeightQueries { get; set; }
+        private long heightQueryTicks, heightQueryCount;
+        public long HeightQueryTicks => System.Threading.Interlocked.Read(ref heightQueryTicks);
+        public long HeightQueryCount => System.Threading.Interlocked.Read(ref heightQueryCount);
 
         public float SampleHeight(float worldX, float worldZ)
+        {
+            if (!MeasureHeightQueries) return SampleHeightCore(worldX, worldZ);
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            try { return SampleHeightCore(worldX, worldZ); }
+            finally
+            {
+                System.Threading.Interlocked.Add(ref heightQueryTicks, System.Diagnostics.Stopwatch.GetTimestamp()-started);
+                System.Threading.Interlocked.Increment(ref heightQueryCount);
+            }
+        }
+
+        private float SampleHeightCore(float worldX, float worldZ)
         {
             if (!definition.ContainsClosed(worldX, worldZ))
                 throw new ArgumentOutOfRangeException(nameof(worldX), "World height samples must remain inside the tiled world.");
 
-            return authoredTerrain == null
+            var original = authoredTerrain == null
                 ? SampleLegacyHeight(worldX, worldZ)
                 : SampleAuthoredHeight(worldX, worldZ);
+            return Landscape == null ? original : Landscape.Height(definition, this, worldX, worldZ, original);
         }
 
         private float SampleLegacyHeight(float worldX, float worldZ)
@@ -354,14 +373,19 @@ namespace Game.Domain.World
         }
 
         /// <summary>Signed distance to the authored water union, in design metres, for clipped shore meshes.</summary>
-        public float WaterBoundaryDistance(float worldX, float worldZ, out float surfaceY)
+        public float WaterBoundaryDistance(float worldX, float worldZ, out float surfaceY,
+            float maximumDistance = float.PositiveInfinity)
         {
+            if (float.IsNaN(maximumDistance) || maximumDistance < 0f)
+                throw new ArgumentOutOfRangeException(nameof(maximumDistance));
             surfaceY = WaterLevelMeters;
-            if (authoredHydrology == null) return SampleHeight(worldX, worldZ) - WaterLevelMeters;
+            if (authoredHydrology == null) return Math.Min(maximumDistance, SampleHeight(worldX, worldZ) - WaterLevelMeters);
             var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
-            var best = float.PositiveInfinity;
+            var bounded = !float.IsPositiveInfinity(maximumDistance);
+            var best = maximumDistance;
             foreach (var lake in authoredHydrology.Lakes)
             {
+                if (bounded && !WithinWaterSearchBounds(lake, point, maximumDistance)) continue;
                 var distance = DistanceToPolygon(point, lake.Shoreline);
                 if (lake.Shoreline.Contains(point)) distance = -distance;
                 if (distance >= best) continue;
@@ -370,6 +394,7 @@ namespace Game.Domain.World
             }
             foreach (var course in EnumerateWaterCourses())
             {
+                if (bounded && !WithinWaterSearchBounds(course, point, maximumDistance)) continue;
                 var sample = SampleSpline(point, course.Spline);
                 var distance = sample.Distance - sample.WidthMeters * 0.5f;
                 if (distance >= best) continue;
@@ -377,8 +402,18 @@ namespace Game.Domain.World
                 surfaceY = course.SurfaceLevelPolicy.Sample(sample.Progress);
             }
             // Inside a lake its flat surface owns the confluence, as in TrySampleWaterSurface.
-            if (TrySampleWaterSurface(worldX, worldZ, out var canonical)) surfaceY = canonical;
+            if ((!bounded || best <= 0f) && TrySampleWaterSurface(worldX, worldZ, out var canonical)) surfaceY = canonical;
             return best;
+        }
+
+        private bool WithinWaterSearchBounds(object water, WorldMapPoint point, float distance)
+        {
+            // These bounds already enclose the complete water shape and its bank shoulder.
+            // Distance to the box is a conservative lower bound; rejection cannot omit near water.
+            var bounds = waterBounds[water];
+            var dx = Math.Max(0f, Math.Max(bounds[0] - point.X, point.X - bounds[1]));
+            var dz = Math.Max(0f, Math.Max(bounds[2] - point.Z, point.Z - bounds[3]));
+            return dx * dx + dz * dz <= distance * distance;
         }
 
         public string NearestWaterBodyId(float worldX,float worldZ)

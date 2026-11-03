@@ -47,7 +47,13 @@ namespace Game.Infrastructure
         /// <summary>The world selected by the normal New Game route.</summary>
         public static TiledWorldDefinition LoadActive()
         {
-            return LoadProposedWorldMap();
+            var world = LoadProposedWorldMap();
+            if (Environment.GetCommandLineArgs().Contains("-sr02Baseline")) return world;
+            var asset = UnityEngine.Resources.Load<TextAsset>("World/SR02Landscape");
+            if (asset == null) throw new InvalidOperationException("SR02 landscape definition is missing.");
+            var landscape = JsonUtility.FromJson<SampleLandscapeDefinition>(asset.text);
+            return new TiledWorldDefinition(world.GenerationId, world.Columns, world.Rows, world.TileSizeMeters,
+                world.Origin.X, world.Origin.Z, world.Zones, world.River, world.PlayerStart, world.MapData, landscape);
         }
 
         /// <summary>Loads and validates the isolated V2 design package without activating it.</summary>

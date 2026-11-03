@@ -108,12 +108,13 @@ namespace Game.Simulation
             expectedWorldGenerationId = connectedWorldService?.Layout.GenerationId ??
                 ConnectedWorldContract.GenerationId;
             expectedSaveGenerationId = requiredSaveGenerationId;
-            if (wildlife != null && !string.Equals(expectedSaveGenerationId,
-                    SaveSnapshot.WorldMapV2SaveGenerationId, StringComparison.Ordinal))
+            var usesV2Layout = string.Equals(expectedSaveGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
+                StringComparison.Ordinal) || string.Equals(expectedSaveGenerationId,
+                SaveSnapshot.SR02SampleSaveGenerationId, StringComparison.Ordinal);
+            if (wildlife != null && !usesV2Layout)
                 throw new ArgumentException("World Map V2 wildlife requires the isolated V2 save generation.",
                     nameof(requiredSaveGenerationId));
-            if (string.Equals(expectedSaveGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
-                    StringComparison.Ordinal) &&
+            if (usesV2Layout &&
                 (wildlife == null || connectedWorld == null ||
                  !string.Equals(expectedWorldGenerationId, TiledWorldDefinition.ProposedWorldMapGenerationId,
                      StringComparison.Ordinal)))

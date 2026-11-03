@@ -1,0 +1,13 @@
+{
+  "revision": "sr02-sample-v2",
+  "minX": -240, "maxX": -40, "minZ": 360, "maxZ": 580, "edgeBlend": 20,
+  "clearingX": -120, "clearingZ": 490, "clearingHalfX": 20, "clearingHalfZ": 15,
+  "clearingShoulder": 22, "clearingHeight": 18.77,
+  "groundScale": 0.35, "treeScale": 0.78,
+  "maxTreeProxies": 156,
+  "groves": [
+    {"x": -195, "z": 495, "radiusX": 23, "radiusZ": 42},
+    {"x": -128, "z": 545, "radiusX": 36, "radiusZ": 20},
+    {"x": -71, "z": 465, "radiusX": 15, "radiusZ": 30}
+  ]
+}

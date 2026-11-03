@@ -51,6 +51,14 @@ namespace Game.Domain.World
 
         private float[] SampleWeights(float worldX, float worldZ, float? preparedHeight, float? preparedSlope)
         {
+            if (heights.Landscape != null)
+            {
+                originalPaint ??= new WorldMapTerrainPaintSampler(definition,
+                    new TiledWorldHeightSampler(definition, heights.WorldSeed, false));
+                var original = originalPaint.SampleWeights(worldX, worldZ);
+                heights.Landscape.Paint(original, definition, heights, worldX, worldZ);
+                return original;
+            }
             if (!definition.ContainsClosed(worldX, worldZ))
                 throw new ArgumentOutOfRangeException(nameof(worldX));
             var point = definition.MapData.CoordinateTransform.ToDesign(new WorldPosition(worldX, 0f, worldZ));
@@ -88,6 +96,7 @@ namespace Game.Domain.World
             Normalize(result);
             return result;
         }
+        private WorldMapTerrainPaintSampler originalPaint;
 
         /// <summary>Edge-aligned alphamap samples; adjacent tiles evaluate identical global coordinates.</summary>
         public float[,,] CreateTileWeights(WorldTileId tile, int resolution)

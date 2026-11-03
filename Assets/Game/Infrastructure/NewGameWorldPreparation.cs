@@ -62,7 +62,8 @@ namespace Game.Infrastructure
         {
             var session = current;
             if (session != null && session.Sampler.WorldSeed == sampler.WorldSeed &&
-                session.Sampler.Definition.GenerationId == sampler.Definition.GenerationId)
+                session.Sampler.Definition.GenerationId == sampler.Definition.GenerationId &&
+                session.Sampler.Landscape?.revision == sampler.Landscape?.revision)
                 return session.Water.GetOrAdd(tile, id => new Lazy<Vector4[,]>(() => BuildWaterSamples(sampler, id))).Value;
             return BuildWaterSamples(sampler, tile);
         }
@@ -88,14 +89,16 @@ namespace Game.Infrastructure
             data = default;
             var session = current;
             return session != null && session.Sampler.WorldSeed == sampler.WorldSeed &&
-                session.Sampler.Definition.GenerationId == sampler.Definition.GenerationId && session.Tiles.TryGetValue(tile, out data);
+                session.Sampler.Definition.GenerationId == sampler.Definition.GenerationId &&
+                session.Sampler.Landscape?.revision == sampler.Landscape?.revision && session.Tiles.TryGetValue(tile, out data);
         }
 
         public static Task<TiledWorldPopulationPlan> Population(TiledWorldHeightSampler sampler)
         {
             var session=current;
             if(session!=null && session.Sampler.WorldSeed==sampler.WorldSeed &&
-               session.Sampler.Definition.GenerationId==sampler.Definition.GenerationId)return session.Population;
+               session.Sampler.Definition.GenerationId==sampler.Definition.GenerationId &&
+               session.Sampler.Landscape?.revision==sampler.Landscape?.revision)return session.Population;
             return Task.Run(()=>new TiledWorldPopulationPlanner(sampler.Definition,sampler,sampler.WorldSeed).Create());
         }
 

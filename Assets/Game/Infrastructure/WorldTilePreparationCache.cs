@@ -40,6 +40,7 @@ namespace Game.Infrastructure
             var contract = string.Join("|", new[]
             {
                 PreparationAlgorithmVersion.ToString(CultureInfo.InvariantCulture),
+                sampler.Landscape?.revision ?? "original",
                 definition.GenerationId,
                 definition.MapData?.SchemaVersion.ToString(CultureInfo.InvariantCulture) ?? "legacy",
                 definition.MapData?.MapVersion ?? "legacy",

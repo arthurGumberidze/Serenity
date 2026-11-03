@@ -7,11 +7,11 @@ namespace Game.Presentation.AI
     public static class ReachableNavMeshPoint
     {
         public static bool TryFind(Vector3 origin, Vector3 target, out Vector3 destination,
-            float maximumTargetDistance = 3.1f)
+            float maximumTargetDistance = 3.1f, NavMeshPath reusablePath = null)
         {
             destination = default;
             if (!NavMesh.SamplePosition(origin, out var start, 4f, NavMesh.AllAreas)) return false;
-            var path = new NavMeshPath();
+            var path = reusablePath ?? new NavMeshPath();
             if (TryCandidate(start.position, target, target, .35f, maximumTargetDistance, path, out destination)) return true;
             if (TryCandidate(start.position, target, target, 3f, maximumTargetDistance, path, out destination)) return true;
             // Search around narrow approaches, keeping the final endpoint within work range.

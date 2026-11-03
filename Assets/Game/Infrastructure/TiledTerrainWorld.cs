@@ -560,8 +560,12 @@ namespace Game.Infrastructure
                 }
                 return distance;
             }
+            var sampleCount = 0;
             var desired = selectableTrees.Where(value => Distance(value) <= 225f * 225f)
                     .OrderBy(Distance).ThenBy(value => value.StableId)
+                    .Where(value => HeightSampler.Landscape == null ||
+                        !HeightSampler.Landscape.Contains(value.Position.X, value.Position.Z) ||
+                        ++sampleCount <= HeightSampler.Landscape.maxTreeProxies)
                     .Take((int)Definition.MapData.Vegetation.Budget.ActiveTreeColliders.Maximum).ToArray();
             var ids = new HashSet<Game.Domain.StableEntityId>(desired.Select(value => value.StableId));
             desiredVegetationColliderIds.Clear();
@@ -993,8 +997,38 @@ namespace Game.Infrastructure
                 TiledWorldHeightSampler.TerrainHeightMeters * 0.5f, Definition.TileSizeMeters * 0.5f);
             surface.size = new Vector3(Definition.TileSizeMeters + 2f,
                 TiledWorldHeightSampler.TerrainHeightMeters + 20f, Definition.TileSizeMeters + 2f);
+            var origin = Definition.TileOrigin(tile.Id);
+            var sample = Definition.Landscape;
+            NavMeshSurface[] replacedSurfaces = Array.Empty<NavMeshSurface>();
+            if (sample != null && origin.X < sample.maxX && origin.X + Definition.TileSizeMeters > sample.minX &&
+                origin.Z < sample.maxZ && origin.Z + Definition.TileSizeMeters > sample.minZ)
+            {
+                // Direct Agent.Move cannot follow the off-mesh links used by RTS paths.
+                // Bake the terrain tiles touched by the sample into one continuous surface.
+                var members = loaded.Values.Where(value =>
+                {
+                    var p = Definition.TileOrigin(value.Id);
+                    return p.X < sample.maxX && p.X + Definition.TileSizeMeters > sample.minX &&
+                        p.Z < sample.maxZ && p.Z + Definition.TileSizeMeters > sample.minZ;
+                }).ToArray();
+                var minX=members.Min(v=>Definition.TileOrigin(v.Id).X);
+                var minZ=members.Min(v=>Definition.TileOrigin(v.Id).Z);
+                var maxX=members.Max(v=>Definition.TileOrigin(v.Id).X)+Definition.TileSizeMeters;
+                var maxZ=members.Max(v=>Definition.TileOrigin(v.Id).Z)+Definition.TileSizeMeters;
+                surface.center = new Vector3((minX+maxX)*.5f-origin.X,
+                    TiledWorldHeightSampler.TerrainHeightMeters*.5f,(minZ+maxZ)*.5f-origin.Z);
+                surface.size = new Vector3(maxX-minX+2f,TiledWorldHeightSampler.TerrainHeightMeters+20f,maxZ-minZ+2f);
+                replacedSurfaces=members.Select(member=>member.Navigation).Where(value=>value!=null).Distinct().ToArray();
+                foreach(var member in members)member.Navigation=surface;
+            }
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.BuildNavMesh();
+            foreach(var previous in replacedSurfaces)
+            {
+                previous.RemoveData();
+                if(previous.navMeshData!=null)Destroy(previous.navMeshData);
+                Destroy(previous);
+            }
             tile.Navigation = surface;
         }
 
@@ -1040,6 +1074,7 @@ namespace Game.Infrastructure
         private void AddLinks(LoadedTile from, WorldTileId toId, bool eastWest)
         {
             if (from.Navigation == null || !loaded.TryGetValue(toId, out var to) || to.Navigation == null) return;
+            if (from.Navigation == to.Navigation) return;
             var origin = Definition.TileOrigin(from.Id);
             for (var index = 0; index < 10; index++)
             {

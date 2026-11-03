@@ -58,7 +58,8 @@ namespace Game.Domain.World
         public const string ProposedWorldMapGenerationId = "p109-world-map-v2-proposed";
         public TiledWorldDefinition(string generationId, int columns, int rows, int tileSizeMeters,
             float originX, float originZ, IEnumerable<WorldZoneDefinition> zones,
-            IEnumerable<WorldPosition> river, WorldPosition playerStart, WorldMapDataDefinition mapData = null)
+            IEnumerable<WorldPosition> river, WorldPosition playerStart, WorldMapDataDefinition mapData = null,
+            SampleLandscapeDefinition landscape = null)
         {
             if (string.IsNullOrWhiteSpace(generationId)) throw new ArgumentException(nameof(generationId));
             if (columns <= 0 || rows <= 0 || tileSizeMeters <= 0 || columns > 128 || rows > 128)
@@ -78,6 +79,7 @@ namespace Game.Domain.World
             if (mapData != null && !string.Equals(mapData.GenerationId, generationId, StringComparison.Ordinal))
                 throw new ArgumentException("Map-data generation must match the tiled-world generation.", nameof(mapData));
             MapData = mapData;
+            Landscape = landscape;
             Tiles = Array.AsReadOnly(Enumerable.Range(0, rows).SelectMany(z =>
                 Enumerable.Range(0, columns).Select(x => new WorldTileId(x, z))).ToArray());
         }
@@ -94,6 +96,7 @@ namespace Game.Domain.World
         public IReadOnlyList<WorldZoneDefinition> Zones { get; }
         public IReadOnlyList<WorldPosition> River { get; }
         public WorldMapDataDefinition MapData { get; }
+        public SampleLandscapeDefinition Landscape { get; }
 
         public bool IsValid(WorldTileId tile) => tile.X >= 0 && tile.X < Columns && tile.Z >= 0 && tile.Z < Rows;
         public bool ContainsClosed(float x, float z) => !float.IsNaN(x) && !float.IsInfinity(x) &&

@@ -2960,3 +2960,118 @@ Its browser/link/layout and coordinate checks establish a documentation PASS onl
 Unity version, packages or saves changed, and no Unity compile/test/build/Player was run in SR01.
 Historical DEV01 PASS does not close the repeated feedback. Videos were not watched in this stage.
 The coordinator alone advances chats and writes SERENITY_SEQUENCE_STATE.json; SR07/SR08 wait for discussion.
+
+## D-247 — SR02 sample revision preserves identity space and isolates saves (2026-11-03)
+
+SR02 retains the 4×4 V2 layout and its legacy identity-generation salt. A separate data-driven
+`SampleLandscapeDefinition`, expressed in Unity metres, applies only inside the approved sample,
+with an inward 20 m blend and all authored POI circles excluded. The unmodified sampler remains
+available explicitly for baseline comparison. Terrain height, paint, collider and navigation projections
+consume the same selected sampler; there is no visual-only replacement of walking terrain.
+
+The original seeded vegetation planner runs before sample composition, preserving every non-ground
+StableEntityId. Resource trees are moved within the sample into forest groups rather than erased or
+replaced with unlimited decoration. Canonical resource declarations use the original sampling frame;
+quantity, depletion and save authority stay in Production. Ground details may be culled and scaled,
+without acquiring resource IDs or blocking colliders. The sample adds a local 180-proxy ceiling within
+the existing global ceiling; actor proximity remains part of ordering.
+
+This is an isolated new-game sample profile: `serenity-sr02-sample-v1`, schema v30, directory
+`Serenity/P109/SR02SampleV1/Saves`. Existing WorldMapV2 slots remain in their original directory and
+are neither migrated nor merged. SaveCoordinator requires exact profile equality before restore.
+The connected-world layout generation remains V2 because coordinates, extents and identity salts
+are unchanged. This is not the SR03 2 km generation. `-sr02Baseline` selects the original profile,
+sampler and save directory for a same-binary comparison. Diagnostic save runs must use an explicit
+artifact-local SERENITY_SAVE_DIRECTORY. Terrain caches include the sample revision; background
+preparation checks it before sharing results. Acceptance remains pending until actual Player evidence.
+
+## D-248 — SR02 projections preserve XZ identities and honor the no-free-crossing rule (2026-11-03)
+
+Canonical resource/wildlife candidates are generated in the original sampling frame so that a local
+height change cannot shift random rejection sequences elsewhere. After candidate generation, dry
+positions inside the sample are projected onto its current ground Y; XZ, source keys, stocks, habitat
+allocation and animal identities remain unchanged. Water interiors and protected areas retain their
+original positions. Preserving old Y on altered dry ground would produce floating/buried resources.
+
+SR02_HANDOFF's existing central bridge assumption is contradicted by D-204 and the current runtime:
+the authored crossing exists as data, but generated bridge models and water-crossing links are absent.
+SR02 does not restore a free bridge or claim successful passage through intentional water. Future route
+design must distinguish a proposed crossing from a player-built physical crossing.
+
+Player acceptance instrumentation declares its setup: independent route starting poses and, for
+construction only, unlocked research with unchanged inventories. Actual movement, material hauling,
+construction, harvesting, depletion and save/load still use canonical services. This is a physical
+integration fixture, not evidence of completing the normal research progression.
+
+## D-249 — User permits deleting previous gameplay saves (2026-11-03)
+
+During SR02 the user explicitly stated that previous saves are no longer needed and may be deleted.
+The three existing WorldMapV2 gameplay slots (2701, 2702, 2703) were removed from the verified
+`AppData/LocalLow/Serenity/Serenity/Serenity/P109/WorldMapV2/Saves` directory; it is now empty.
+No migration or merge was performed. This supersedes D-247's retention requirement for those slots.
+SR02 verification artifacts and historical evidence copies remain separate from live gameplay saves.
+
+## D-250 — Continuous navigation for the SR02 sample (2026-11-03)
+
+Actual Player evidence showed RTS crossing the terrain seam through off-mesh links while direct
+NavMeshAgent.Move stopped at the surface edge. Matching bake grid settings alone did not fix it.
+The terrain tiles intersecting the sample share one navigation surface, and internal seam links
+are omitted. This groups four existing 250 m tiles (500×500 m navigation bake footprint); it does
+not alter terrain, vegetation or canonical rules outside the 200×220 m landscape mask. Other tiles
+retain their previous surfaces. Newly loaded members replace older partial group surfaces and release
+their NavMeshData, avoiding duplicate overlapping navigation after warmup. All terrain remains resident.
+The eight seam-600 physical routes passed on review10; full route/work/performance acceptance is pending.
+
+## D-251 — Completed work keeps historical group attribution (2026-11-03)
+
+SR02's actual chop→builder→Save/Load sequence exposed validation of completed work against current
+profession membership. Terminal work (completed, cancelled, failed) may retain its former group and
+assignee after reassignment; it is historical attribution and does not authorize new work. Restore keeps
+membership validation for nonterminal work. Three terminal-status regressions and the work/save/sample
+suite passed 29/29 in review12. No inventory, job status or historical identifier is rewritten to load.
+
+## D-252 — Keep an active navigation corridor through obstacle changes (2026-11-03)
+
+The SR02 delivery replay repeatedly failed active hauls with NavMesh PathInvalid. The movement
+resolver now assigns its already validated complete path synchronously, including camera promotion,
+instead of discarding it for an asynchronous destination request. During travel, if the corridor is
+invalid or absent, the mover calculates a complete replacement to the same requested endpoint before
+failing the job. Partial/disconnected routes remain failures. Arrival uses actual endpoint distance;
+an explicit Stop clears the request and cannot restart movement. Pooled carving tree obstacles can
+change navigation during travel. PlayMode verifies initial assignment, LOD promotion, lost-path recovery
+and Stop; work15 completed the formerly stalled house with real materials. This does not promise that
+every unreachable route succeeds, or close the global M15 boundary matrix.
+
+## D-253 — Rebuild building projections after canonical restore (2026-11-03)
+
+BuildingRegistry.ReplaceAll creates new canonical objects. SR02's loaded unfinished house had no
+model in the fresh scene, and existing presenters retained old Building references. RebindAfterLoad
+now deactivates/removes old building projections, recreates all saved buildings with the proper owner
+inventory registry, refreshes starter/selection references and ground clearings, and then rebinds
+construction, pathing and crop presentation. Canonical quantities/progress are not reconstructed from
+scene objects. The focused PlayMode test passed (tests-buildings16, 1/1). Work16 Player also passed
+restored canonical bindings, visible model, material-funded completion, assigned-bed entry, exit and
+depletion Save/Load. Its entry fixture checks actual housing assignment rather than silently accepting
+a failed attempt to add a resident to a full home.
+
+## D-254 — User-approved sample resource budget exception (2026-11-04)
+
+The user explicitly chose to preserve all 462 choppable tree source records and their wood stock,
+and approved an exception to SR02_HANDOFF's limit of 250 interactive trees. The vegetation enum
+alone (234 InteractiveTree) undercounts choppable trees because some DecorativeTreeOrShrub instances
+also expose finite wood. Report both counts honestly. This exception applies to the SR02 sample;
+the sample's active tree collider cap remains 156 (within the 180 tree/stone proxy budget), and the
+global cap remains 650. It is not a blanket resource-density budget for the future 2 km map.
+
+## D-255 — Bound shoreline queries to the sample blend's support (2026-11-04)
+
+The matched review16 pair failed CPU delta (+8.202 ms median p95), with extra height-sampling time.
+An exact-coordinate cache trial also failed the measured budget (review17 +31.423 ms) and was removed.
+The sample height modifier now caps shoreline distance at 28 m, where both its bank and clearing
+blend factors have reached their constant values. Conservative water-shape bounds reject candidates
+outside that range. A known dry result avoids repeating the water-interior search. Unbounded callers
+retain the prior calculation. This preserves exact near-water distances/levels and does not quantize
+heights, move water or alter resource identities. Review18 passed 8/8 sample tests, including 17,956
+bounded/unbounded query comparisons. Actual candidate terrain/vegetation/geometry are byte-identical
+to review16. The fresh same-binary pair passed the declared median-of-three CPU/GPU/memory deltas;
+height-query p95 median overhead is 1.640 ms. Run variability and global performance debt remain documented.

@@ -139,6 +139,12 @@ namespace Game.Domain.World
 
         public WorldMapVegetationPlan Create()
         {
+            if (heights.Landscape != null)
+            {
+                // Preserve the original seed/ordinal/spacing authority before local composition.
+                var baseline = new WorldMapVegetationPlanner(world, new TiledWorldHeightSampler(world, seed, false), seed).Create();
+                return heights.Landscape.Compose(baseline, world, heights);
+            }
             interactiveGrid.Clear();
             var result = new List<WorldMapVegetationInstance>();
             var areas = definition.Zones.ToDictionary(value => value, EstimateUsableArea);

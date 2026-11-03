@@ -186,6 +186,32 @@ namespace Game.Tests.PlayMode
             yield return null;
         }
 
+        [UnityTest, Timeout(1200000)]
+        public IEnumerator RestoredBuildingsRecreateMissingViewsAndBindCanonicalInstances()
+        {
+            var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
+            var before = root.DemoStorageBuilding;
+            var states = root.Buildings.All.Select(b => b.CaptureState()).ToArray();
+            // A saved building may have no presenter in the freshly generated scene.
+            root.DemoStoragePresenter.gameObject.SetActive(false);
+            root.BuildingSpawner.Despawn(root.DemoStoragePresenter);
+            root.Buildings.ReplaceAll(states);
+            root.RebindAfterLoad(root.Clock);
+            yield return null;
+            Assert.That(root.DemoStorageBuilding, Is.Not.SameAs(before));
+            Assert.That(root.DemoStorageBuilding, Is.SameAs(root.Buildings.Get(before.Id)));
+            Assert.That(root.BuildingPresentations.Count, Is.EqualTo(root.Buildings.Count));
+            foreach (var building in root.Buildings.All)
+            {
+                Assert.That(root.BuildingPresentations.TryGet(building.Id, out var view), Is.True);
+                Assert.That(view.Building, Is.SameAs(building));
+                Assert.That(view.gameObject.activeInHierarchy, Is.True);
+            }
+            Assert.That(root.DemoStoragePresenter.GetComponentsInChildren<Renderer>().Any(r => r.enabled), Is.True);
+            Assert.That(root.DemoStoragePresenter.StorageInventory, Is.SameAs(root.Inventories.Get(
+                new InventoryOwner(InventoryOwnerKind.BuildingStorage, before.Id))));
+        }
+
         private static void CompleteTechnology(LocalSceneCompositionRoot root, string id)
         {
             var technologyId = new Game.Domain.Research.TechnologyId(id);

@@ -12,6 +12,7 @@ using Game.Infrastructure;
 using Game.Presentation.AI;
 using Game.Presentation.Localization;
 using Game.Simulation.Control;
+using Game.Simulation.AI;
 using Game.Simulation.Time;
 using Game.Simulation.Tiers;
 using NUnit.Framework;
@@ -292,6 +293,42 @@ namespace Game.Tests.PlayMode
             Assert.That(agent.transform.position.z, Is.GreaterThan(before.z));
             Assert.That(movement.Authority, Is.EqualTo(Tier1MovementAuthority.DirectPlayer));
             root.ThirdPersonControl.Exit();
+        }
+
+        [UnityTest, Timeout(600000)]
+        public IEnumerator AutonomousMoveHasCompletePathBeforeAnotherSimulationTick()
+        {
+            // This regression needs the initialized resident's local NavMesh, not all distant tiles.
+            while(!root.IsInitialized)yield return null;
+            root.Clock.Pause();
+            var id=root.MaleDemoCharacter.Id;
+            root.AiScheduler.ReplaceWithPlayerCommand(id);
+            Assert.That(root.AiRuntime.TryGetMovement(id,out var movement),Is.True);
+            movement.SetCrowdDetail(true);
+            var origin=movement.Presenter.transform.position;
+            Assert.That(ReachableNavMeshPoint.TryFind(origin,origin+Vector3.right*4,out var target),Is.True);
+            movement.MoveTo(new WorldPosition(target.x,target.y,target.z),.85f);
+            Assert.That(movement.Agent.hasPath,Is.True,"The next AI tick must not observe an empty async path.");
+            Assert.That(movement.Agent.pathStatus,Is.EqualTo(UnityEngine.AI.NavMeshPathStatus.PathComplete));
+            Assert.That(movement.State,Is.EqualTo(MovementState.Moving));
+            movement.SetCrowdDetail(false); movement.SetCrowdDetail(true);
+            Assert.That(movement.Agent.hasPath,Is.True,"Camera promotion must also restore a complete path immediately.");
+            Assert.That(movement.Agent.pathStatus,Is.EqualTo(UnityEngine.AI.NavMeshPathStatus.PathComplete));
+            Assert.That(movement.State,Is.EqualTo(MovementState.Moving));
+            movement.Agent.ResetPath();
+            Assert.That(movement.State,Is.EqualTo(MovementState.Moving),
+                "Losing an active corridor must replan before failing a haul and dropping its cargo.");
+            Assert.That(movement.Agent.hasPath,Is.True);
+            Assert.That(Vector3.Distance(movement.Agent.pathEndPosition,target),Is.LessThan(.1f));
+            movement.Stop();
+            Assert.That(movement.State,Is.EqualTo(MovementState.Idle),"An explicit stop must not restart the path.");
+            Assert.That(movement.Agent.hasPath,Is.False);
+            movement.BeginDirectControl();
+            movement.MoveDirect(Vector3.right,.05f,false,false,1,1000);
+            Assert.That(movement.Agent.hasPath,Is.False,"Direct control intentionally has no autonomous path.");
+            Assert.That(movement.State,Is.EqualTo(MovementState.Moving));
+            movement.EndDirectControl();
+            yield return null;
         }
 
         [UnityTest]

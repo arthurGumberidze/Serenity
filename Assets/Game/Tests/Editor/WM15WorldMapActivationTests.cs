@@ -16,11 +16,11 @@ namespace Game.Tests.Editor
 
             Assert.That(active.GenerationId, Is.EqualTo(TiledWorldDefinition.ProposedWorldMapGenerationId));
             Assert.That(active.MapData, Is.Not.Null);
-            Assert.That(StartupSaveProfile.Active, Is.SameAs(StartupSaveProfile.WorldMapV2Proposed));
+            Assert.That(StartupSaveProfile.Active, Is.SameAs(StartupSaveProfile.SR02Sample));
             Assert.That(StartupSaveProfile.Active.WorldGenerationId, Is.EqualTo(active.GenerationId));
             Assert.That(StartupSaveProfile.Active.FormatVersion, Is.EqualTo(SaveSnapshot.WorldMapV2Version));
             Assert.That(StartupSaveProfile.Active.ResolveDirectory("C:/profile"),
-                Does.EndWith("WorldMapV2\\Saves"));
+                Does.EndWith("SR02SampleV1\\Saves"));
             Assert.That(StartupSaveProfile.Current.ResolveDirectory("C:/profile"),
                 Is.Not.EqualTo(StartupSaveProfile.Active.ResolveDirectory("C:/profile")));
         }

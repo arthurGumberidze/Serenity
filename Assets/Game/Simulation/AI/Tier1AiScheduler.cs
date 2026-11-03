@@ -88,6 +88,7 @@ namespace Game.Simulation.AI
             calendarTicks = targetCalendarTick;
         }
         public Tier1AiSettings Settings => settings;
+        public IReadOnlyDictionary<string, long> HaulExecutionFailures => world.HaulExecutionFailures;
         public bool TryGetAssignedWorkType(StableEntityId characterId, out WorkJobType type)
         {
             type = default;

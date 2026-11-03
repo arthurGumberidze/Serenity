@@ -217,6 +217,30 @@ namespace Game.Tests
                 " elapsedMs=" + stopwatch.Elapsed.TotalMilliseconds.ToString("0.000"));
         }
 
+        [TestCase(WorkJobStatus.Completed)]
+        [TestCase(WorkJobStatus.Cancelled)]
+        [TestCase(WorkJobStatus.Failed)]
+        public void TerminalGroupJobRestoresAfterWorkerChangesProfession(WorkJobStatus status)
+        {
+            var registry = new CharacterRegistry();
+            var character = CreateCharacter("Worker"); registry.Add(character);
+            var manager = new WorkManager(registry);
+            var oldGroup = manager.CreateGroup("General", new[] { character.Id });
+            var builders = manager.CreateGroup("Builders", Array.Empty<StableEntityId>());
+            var job = manager.CreateMoveJob(character.Id, new WorldPosition(1,0,1), WorkPriority.Normal, oldGroup.Id);
+            manager.Start(job.Id);
+            if(status==WorkJobStatus.Completed) manager.Complete(job.Id);
+            else if(status==WorkJobStatus.Cancelled) manager.Cancel(job.Id);
+            else manager.Fail(job.Id);
+            manager.MoveMember(builders.Id,character.Id);
+            var restored = new WorkManager(registry);
+            Assert.DoesNotThrow(()=>restored.RestoreState(manager.CaptureState()));
+            Assert.That(restored.Get(job.Id).Status,Is.EqualTo(status));
+            Assert.That(restored.Get(job.Id).GroupId,Is.EqualTo(oldGroup.Id));
+            Assert.That(restored.Groups.Get(builders.Id).Contains(character.Id),Is.True);
+            Assert.That(restored.OpenJobs,Is.Empty);
+        }
+
         [Test]
         public void ManualMovePreemptsInterruptibleAutonomousHaulAndReleasesItsClaim()
         {

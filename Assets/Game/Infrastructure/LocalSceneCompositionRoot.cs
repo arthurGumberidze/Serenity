@@ -1478,6 +1478,7 @@ namespace Game.Infrastructure
             AiRuntime.RebindClock(Clock);
             Tier3Adapter.RebaseAfterLoad(new SimulationTimePoint(Clock.State.CalendarTicks,
                 Clock.State.BiologicalTicks));
+            RebuildBuildingPresentationsAfterLoad();
             RefreshTier1AppearanceAfterLoad();
             selectionProbe.RefreshSelectedPresentations();
             Production.Population = Characters.Count;
@@ -1508,6 +1509,38 @@ namespace Game.Infrastructure
             GlobalMapBridge.ReconcileAfterLoad();
             GameplayUi?.RefreshAfterStateRebind();
             TiledWorld?.RefreshNow(CameraStreamingFocus(), StreamingPhysicalPositions(), StreamingNavigationRoutes());
+        }
+
+        private void RebuildBuildingPresentationsAfterLoad()
+        {
+            // Restore replaces canonical Building objects. Old presenters would retain stale
+            // construction state, while buildings absent from the fresh scene would stay invisible.
+            var selected = selectionProbe.SelectedBuildingPresenter;
+            StableEntityId? selectedId = selected != null && selected.IsBound ? selected.BuildingId : null;
+            if (selectedId.HasValue) selectionProbe.ClearSelection();
+            productionPresenters.RemoveAll(view => view == null || view.GetComponentInParent<BuildingPresenter>() != null);
+            foreach (var view in BuildingPresentations.All)
+            {
+                view.gameObject.SetActive(false);
+                BuildingSpawner.Despawn(view);
+            }
+            foreach (var building in Buildings.All.OrderBy(x => x.Id))
+            {
+                var spawner = StarterEnemyAi != null && building.OwnerSideId == StarterEnemyAi.Strategic.SideId
+                    ? enemyBuildingSpawner : BuildingSpawner;
+                var view = spawner.Spawn(building);
+                if (building.OwnerSideId.Value == "player") RegisterBuildingWorkplace(building, view);
+                if (selectedId == building.Id) selectionProbe.SelectBuilding(view);
+            }
+            Building Canonical(Building previous) => previous != null && Buildings.TryGet(previous.Id, out var current)
+                ? current : null;
+            BuildingPresenter View(Building building) => building != null && BuildingPresentations.TryGet(building.Id, out var view)
+                ? view : null;
+            DemoStorageBuilding = Canonical(DemoStorageBuilding); DemoStoragePresenter = View(DemoStorageBuilding);
+            DemoShelterBuilding = Canonical(DemoShelterBuilding); DemoShelterPresenter = View(DemoShelterBuilding);
+            DemoBarracksBuilding = Canonical(DemoBarracksBuilding); DemoBarracksPresenter = View(DemoBarracksBuilding);
+            DemoCropPlotBuilding = Canonical(DemoCropPlotBuilding); DemoCropPlotPresenter = View(DemoCropPlotBuilding);
+            RefreshBuildingGroundClearings();
         }
 
         public void StartNewGame(long worldSeed)

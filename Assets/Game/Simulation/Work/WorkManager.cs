@@ -347,7 +347,10 @@ namespace Game.Simulation.Work
                 if (saved.AssigneeId.HasValue)
                 {
                     RequireEligible(saved.AssigneeId.Value, saved.Type);
-                    if (saved.GroupId.HasValue && !group.Contains(saved.AssigneeId.Value))
+                    // Terminal jobs retain historical attribution after a resident changes profession.
+                    var terminal = saved.Status == WorkJobStatus.Completed || saved.Status == WorkJobStatus.Cancelled ||
+                        saved.Status == WorkJobStatus.Failed;
+                    if (!terminal && saved.GroupId.HasValue && !group.Contains(saved.AssigneeId.Value))
                         throw new InvalidOperationException("Saved assignee is not a member of the job group.");
                 }
                 var restoredQueueOrder = saved.QueueOrder != 0 ? saved.QueueOrder : saved.Id;

@@ -121,6 +121,7 @@ namespace Game.Domain.World
     {
         private readonly TiledWorldDefinition definition;
         private readonly TiledWorldHeightSampler heights;
+        private readonly TiledWorldHeightSampler projectedHeights;
         private readonly long seed;
         private readonly List<WorldPosition> occupied = new List<WorldPosition>();
         private readonly WorldMapTerrainPaintSampler paint;
@@ -142,6 +143,8 @@ namespace Game.Domain.World
         {
             definition = worldDefinition ?? throw new ArgumentNullException(nameof(worldDefinition));
             heights = heightSampler ?? throw new ArgumentNullException(nameof(heightSampler));
+            projectedHeights = heightSampler;
+            if (heights.Landscape != null) heights = new TiledWorldHeightSampler(worldDefinition, worldSeed, false);
             if (!ReferenceEquals(definition, heights.Definition))
                 throw new ArgumentException("Population and height samplers must share one world definition.");
             seed = worldSeed;
@@ -152,9 +155,19 @@ namespace Game.Domain.World
         public static int StartGuarantee(string resourceTypeId) =>
             StartMinimums.TryGetValue(resourceTypeId, out var value) ? value : 0;
 
-        public TiledWorldPopulationPlan Create() => definition.MapData?.Resources == null
-            ? CreateLegacy()
-            : CreateWorldMapV2();
+        public TiledWorldPopulationPlan Create()
+        {
+            var plan=definition.MapData?.Resources==null?CreateLegacy():CreateWorldMapV2();
+            var sample=projectedHeights.Landscape;
+            if(sample==null)return plan;
+            WorldPosition Ground(WorldPosition p)=>sample.ProjectGround(projectedHeights,p);
+            return new TiledWorldPopulationPlan(plan.Resources.Select(n=>new TiledWorldResourceNode(
+                n.StableIndex,n.Tile,n.RecipeId,n.Biome,Ground(n.Position),n.Capacity,n.SourceZoneId,
+                Ground(n.VisualPosition),n.ResourceTypeId,n.Hidden,n.UnlockTechnologyId,n.DepletionPolicy,
+                n.RenewalPolicy,n.StableKey,n.CarryingCapacityGrowthPermillePerDay,n.MinimumRecoveryUnits)),
+                plan.Industry.Select(n=>new TiledWorldIndustrialNode(n.StableIndex,n.Tile,n.DefinitionId,
+                    n.ResourceId,Ground(n.Position),n.SourceZoneId)),plan.StartTerritory);
+        }
 
         private TiledWorldPopulationPlan CreateLegacy()
         {

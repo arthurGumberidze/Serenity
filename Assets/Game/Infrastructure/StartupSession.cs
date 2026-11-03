@@ -30,7 +30,12 @@ namespace Game.Infrastructure
             TiledWorldDefinition.ProposedWorldMapGenerationId, SaveSnapshot.WorldMapV2SaveGenerationId,
             SaveSnapshot.WorldMapV2Version, "WorldMapV2");
 
-        public static StartupSaveProfile Active => WorldMapV2Proposed;
+        public static StartupSaveProfile SR02Sample { get; } = new StartupSaveProfile(
+            TiledWorldDefinition.ProposedWorldMapGenerationId, SaveSnapshot.SR02SampleSaveGenerationId,
+            SaveSnapshot.WorldMapV2Version, "SR02SampleV1");
+
+        public static StartupSaveProfile Active => Environment.GetCommandLineArgs().Contains("-sr02Baseline")
+            ? WorldMapV2Proposed : SR02Sample;
 
         public string WorldGenerationId { get; }
         public string SaveGenerationId { get; }
@@ -47,6 +52,7 @@ namespace Game.Infrastructure
         public static StartupSaveProfile ForWorld(TiledWorldDefinition definition)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (definition.Landscape != null) return SR02Sample;
             if (string.Equals(definition.GenerationId, Current.WorldGenerationId, StringComparison.Ordinal))
                 return Current;
             if (string.Equals(definition.GenerationId, WorldMapV2Proposed.WorldGenerationId,
