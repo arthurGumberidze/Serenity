@@ -127,7 +127,7 @@ namespace Game.Tests.Editor
             var otherSeed = new WorldMapTerrainPaintSampler(world,
                 new TiledWorldHeightSampler(world, 20261024L)).CalculateMaskHash(65);
             TestContext.WriteLine($"WM04 mask hash={hash:X16}");
-            Assert.That(hash, Is.EqualTo(0x8FBB90EAB3982861UL));
+            Assert.That(hash, Is.EqualTo(11588388288129154093UL));
             Assert.That(replay, Is.EqualTo(hash));
             Assert.That(otherSeed, Is.Not.EqualTo(hash));
         }

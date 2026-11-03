@@ -36,7 +36,15 @@ $script:CommandExitCode = 2
 
 function Read-JsonFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json } catch { return $null }
+    $stateReader = $null
+    try {
+        # The Editor replaces heartbeat files atomically. A status reader must allow that replacement.
+        $stateStream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read,
+            ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete))
+        $stateReader = [IO.StreamReader]::new($stateStream)
+        return $stateReader.ReadToEnd() | ConvertFrom-Json
+    } catch { return $null }
+    finally { if ($null -ne $stateReader) { $stateReader.Dispose() } }
 }
 
 function Test-RunnerState($State) {

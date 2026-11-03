@@ -285,11 +285,14 @@ namespace Game.Domain.World
         public bool IsExcluded(WorldMapVegetationZone zone, WorldMapPoint design,
             WorldMapVegetationKind kind = WorldMapVegetationKind.InteractiveTree)
         {
-            foreach (var clearing in zone.Clearings)
-                if (Distance(design, clearing.Center) < clearing.RadiusMeters) return true;
-            var start = world.MapData.CoordinateTransform.ToDesign(world.PlayerStart);
-            if (Distance(design, start) < definition.Distribution.StartClearingExclusionRadiusMeters) return true;
-            if (world.MapData.StartTerritory.IsPrepared(design)) return true;
+            if (kind != WorldMapVegetationKind.GroundCover)
+            {
+                foreach (var clearing in zone.Clearings)
+                    if (Distance(design, clearing.Center) < clearing.RadiusMeters) return true;
+                var start = world.MapData.CoordinateTransform.ToDesign(world.PlayerStart);
+                if (Distance(design, start) < definition.Distribution.StartClearingExclusionRadiusMeters) return true;
+                if (world.MapData.StartTerritory.IsPrepared(design)) return true;
+            }
             foreach (var route in world.MapData.Routes)
             {
                 var clearance = route.Kind == "main_primitive_trail"
@@ -300,7 +303,7 @@ namespace Game.Domain.World
             foreach (var poi in world.MapData.PointsOfInterest)
                 if (Distance(design, poi.Position) < poi.ProtectionRadiusMeters) return true;
             foreach (var build in world.MapData.BuildabilityMasks)
-                if (build.Category != "restricted" && !build.RequiresClearing &&
+                if (kind != WorldMapVegetationKind.GroundCover && build.Category != "restricted" && !build.RequiresClearing &&
                     build.Shape.Contains(design)) return true;
 
             var unity = world.MapData.CoordinateTransform.ToUnity(design);

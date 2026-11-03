@@ -137,6 +137,34 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void DecayedGroundFoodSeparatesAndRoundTripsWithoutLossOrDuplicateWaste()
+        {
+            var berries = new ResourceId("berries");
+            var spoiled = new ResourceId("spoiled_food");
+            var catalog = new ResourceCatalog(new[] {
+                new ResourceDefinition(berries, "Berries", ResourceCategory.Food),
+                new ResourceDefinition(spoiled, "Spoiled food", ResourceCategory.Food) });
+            var registry = new ResourceInventoryRegistry();
+            var piles = new WorldPileService(catalog, registry);
+            var pile = piles.Create(berries, new ResourceQuantity(4), new GridCoordinate(7, 9));
+            var original = registry.Get(pile.InventoryOwner);
+            var beforeDecay = piles.CaptureStates();
+            original.TryRemove(berries, new ResourceQuantity(1));
+            original.TryAdd(spoiled, new ResourceQuantity(1));
+            Assert.DoesNotThrow(() => piles.RestoreStates(beforeDecay), "An actual decayed inventory remains loadable.");
+            var waste = piles.All.Single(x => x.ResourceId == spoiled);
+            Assert.That(waste.Coordinate, Is.EqualTo(pile.Coordinate));
+            Assert.That(original.GetAmount(berries).Units, Is.EqualTo(3));
+            Assert.That(original.GetAmount(spoiled).Units, Is.Zero);
+            Assert.That(registry.Get(waste.InventoryOwner).GetAmount(spoiled).Units, Is.EqualTo(1));
+            var snapshot = piles.CaptureStates();
+            piles.RestoreStates(snapshot);
+            piles.SeparateSpoiledFood();
+            Assert.That(piles.All.Count(), Is.EqualTo(2));
+            Assert.That(registry.All.Sum(x => x.TotalUnits), Is.EqualTo(4));
+        }
+
+        [Test]
         public void ConstructionRequiresAllCostsAndCommitsAtomically()
         {
             var setup = NewConstruction();

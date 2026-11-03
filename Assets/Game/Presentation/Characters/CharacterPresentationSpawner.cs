@@ -74,7 +74,7 @@ namespace Game.Presentation.Characters
                 residentStyles[character.Id] = resident;
                 if (resident != null)
                 {
-                    ProjectRoleVisual(instance, presenter, resident);
+                    ProjectRoleVisual(instance, presenter, resident, requested);
                 }
                 else if (catalog.UmaAvatarPrefab != null && detailedUmaCharacters.Count < MaximumDetailedUmaProjections)
                 {
@@ -84,7 +84,7 @@ namespace Game.Presentation.Characters
                 else if (catalog.UmaAvatarPrefab == null &&
                          catalog.TryResolveRoleVisual(character.Sex, requested.ClothingId, out var roleVisual))
                 {
-                    ProjectRoleVisual(instance, presenter, roleVisual);
+                    ProjectRoleVisual(instance, presenter, roleVisual, requested);
                 }
                 presenter.Bind(character, registry, requested);
                 if (resident != null) presenter.PreserveAuthoredVisualAtDistance();
@@ -101,12 +101,29 @@ namespace Game.Presentation.Characters
             }
         }
 
-        private static void ProjectRoleVisual(GameObject instance, CharacterPresenter presenter, GameObject rolePrefab)
+        private static void ProjectRoleVisual(GameObject instance, CharacterPresenter presenter, GameObject rolePrefab, AppearanceState appearance)
         {
             foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true)) renderer.enabled = false;
             var visual = UnityEngine.Object.Instantiate(rolePrefab, instance.transform, false);
             visual.name = "RoleVisual";
             ConfigureMilitaryArmorVariant(visual, rolePrefab);
+            // Stable saved DNA, no additional avatar/texture generation or per-resident Update.
+            var height = Mathf.Lerp(.92f, 1.08f, appearance.Parameter(StoneAgeAppearanceProfiles.Height) / 1000f);
+            var build = Mathf.Lerp(.91f, 1.10f, appearance.Parameter(StoneAgeAppearanceProfiles.Build) / 1000f);
+            visual.transform.localScale = Vector3.Scale(visual.transform.localScale, new Vector3(build, height, build));
+            if (rolePrefab.name.IndexOf("Peasant", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                uint seed = 2166136261;
+                foreach (var ch in appearance.CharacterId.ToString()) seed = (seed ^ ch) * 16777619;
+                var tint = Color.Lerp(new Color(.78f,.80f,.76f), new Color(1f,.94f,.84f), (seed % 101) / 100f);
+                var palette = new MaterialPropertyBlock();
+                foreach (var renderer in visual.GetComponentsInChildren<Renderer>())
+                {
+                    renderer.GetPropertyBlock(palette);
+                    palette.SetColor("_BaseColor", tint); palette.SetColor("_Color", tint);
+                    renderer.SetPropertyBlock(palette);
+                }
+            }
             SetLayerRecursively(visual, instance.layer);
             var roleAnimator = visual.GetComponentInChildren<Animator>(true);
             if (roleAnimator == null || !roleAnimator.isHuman)

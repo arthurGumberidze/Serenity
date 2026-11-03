@@ -242,8 +242,9 @@ namespace Game.Presentation.UI
             // the same physical release. Keep the pointer consumed through the following frame so that
             // clicking an action cannot fall through to the world and clear the stable selection.
             if (lastUiPointerFrame >= Time.frameCount - 1) return true;
-            var screenPoint = new Vector2(point.x, Screen.height - point.y);
-            var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, screenPoint);
+            // The raycaster already supplied top-left GUI coordinates. A second Y flip
+            // tested the opposite side of the screen and let scroll input reach the camera.
+            var panelPoint = root.panel == null ? point : RuntimePanelUtils.ScreenToPanel(root.panel, point);
             // Geometry-only checks used to miss some nested ScrollView content. Picking asks UI Toolkit for the
             // actual element under the cursor and therefore blocks camera zoom over every visible menu child.
             var picked = root.panel?.Pick(panelPoint);
@@ -284,6 +285,9 @@ namespace Game.Presentation.UI
                      context.GlobalMap.Mode != GameWorldMode.Local)
                 context.RequestEnterLocation(context.GlobalMap.ActiveLocationId);
             activePanel = closing ? GameplayPanel.None : panel;
+            // A new workspace starts at its heading, not at the previous workspace's scroll offset.
+            mainPanel.scrollOffset = Vector2.zero;
+            continuityRevision++;
             mainPanel.style.display = activePanel == GameplayPanel.None ? DisplayStyle.None : DisplayStyle.Flex;
             RefreshNavigationSelection();
             ApplyPanelLayout();
@@ -347,6 +351,7 @@ namespace Game.Presentation.UI
         public void RefreshNow()
         {
             if (context == null || root == null) return;
+            var continuity = CaptureUiContinuity();
             ObserveOnboardingSignals();
             RefreshHud();
             RefreshResidentStrip();
@@ -361,6 +366,7 @@ namespace Game.Presentation.UI
             RefreshTps();
             RefreshGameOver();
             ApplyResponsiveLayout();
+            RestoreUiContinuity(continuity);
             lastRefreshHash = ComputeRefreshHash();
         }
 
@@ -466,14 +472,8 @@ namespace Game.Presentation.UI
             if (!initialized) return;
             if (ContextMenuVisible && Mouse.current?.middleButton.wasPressedThisFrame == true) CloseContextMenu();
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && resourcesExpanded)
-            { CloseResourceDrawer(); return; }
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame &&
-                modal != null && modal.resolvedStyle.display != DisplayStyle.None)
-            {
-                CloseModal();
-                return;
-            }
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            { HandleEscape(); return; }
             if (keyboard != null && keyboard.f10Key.wasPressedThisFrame)
                 SetDeveloperUiVisible(!DeveloperUiVisible);
             HandleWorkGroupHotkeys(keyboard);
@@ -530,7 +530,7 @@ namespace Game.Presentation.UI
 
         private void OnPauseToggle()
         {
-            if (!DeveloperUiVisible && !IsTextInputFocused()) TogglePause();
+            if (!DeveloperUiVisible && !IsTextInputFocused() && Keyboard.current?.escapeKey.wasPressedThisFrame != true) TogglePause();
         }
 
         public void TogglePause() => context.SetPaused(!context.Clock().IsPaused);
@@ -572,7 +572,7 @@ namespace Game.Presentation.UI
                     target.ResourceClass == ContextResourceClass.Choppable ? ContextActionKind.Chop :
                     target.ResourceClass == ContextResourceClass.Mineable ? ContextActionKind.Mine : ContextActionKind.Gather :
                 (ContextActionKind?)null;
-            if (target.Kind == ContextTargetKind.Ground && primary.HasValue && Keyboard.current?.ctrlKey.isPressed != true &&
+            if ((target.Kind == ContextTargetKind.Ground || input.IsAdditiveSelectionPressed) && primary.HasValue && Keyboard.current?.ctrlKey.isPressed != true &&
                 EvaluateForSelection(primary.Value, target).Enabled)
             {
                 activeContextTarget = target;
@@ -1255,7 +1255,7 @@ namespace Game.Presentation.UI
             switch (reason)
             {
                 case ContextUnavailableReason.WrongTargetType: return "неподходящий тип цели";
-                case ContextUnavailableReason.WrongRole: return "требуется роль: " + RequiredRoleName(action, target);
+                case ContextUnavailableReason.WrongRole: return "нужна профессиональная группа: " + RequiredRoleName(action, target);
                 case ContextUnavailableReason.TooYoung: return "недопустимый возраст";
                 case ContextUnavailableReason.InvalidStatus: return "статус жителя не позволяет выполнить приказ";
                 case ContextUnavailableReason.MissingTool: return "нет подходящего инструмента";
@@ -1306,6 +1306,8 @@ namespace Game.Presentation.UI
             root.style.flexGrow = 1f;
             SerenityUiDesign.ApplyRoot(root, "serenity-gameplay");
             root.pickingMode = PickingMode.Ignore;
+            root.RegisterCallback<NavigationMoveEvent>(BlockNavigationDuringDirectControl, TrickleDown.TrickleDown);
+            root.RegisterCallback<NavigationSubmitEvent>(BlockSubmitDuringDirectControl, TrickleDown.TrickleDown);
             root.RegisterCallback<GeometryChangedEvent>(_ => ApplyResponsiveLayout());
         }
 
@@ -1497,7 +1499,7 @@ namespace Game.Presentation.UI
             placementFeedback.style.position = Position.Absolute;
             placementFeedback.style.left = new Length(31, LengthUnit.Percent);
             placementFeedback.style.right = new Length(31, LengthUnit.Percent);
-            placementFeedback.style.bottom = 130;
+            placementFeedback.style.bottom = 190;
             placementFeedback.style.display = DisplayStyle.None;
             placementFeedback.pickingMode = PickingMode.Ignore;
             root.Add(placementFeedback);
@@ -2112,6 +2114,7 @@ namespace Game.Presentation.UI
             var alive = PlayerAliveCount();
             var available = PlayerCharacterIds().Count(id => context.Characters.TryGet(id, out var person) &&
                 person.LifeState == CharacterLifeState.Alive && !context.Work.TryGetAssigned(id, out _) &&
+                (!context.AiAgents.TryGet(id, out var agent) || agent.CurrentAction == UtilityActionKind.Idle) &&
                 !context.MilitaryTraining.IsExternallyControlled(id));
             populationLabel.text = F("ui.hud.population", alive) + " · свободны " + available;
             var playerBuildings = context.Buildings.All.Where(building => building.OwnerSideId.Value == "player").ToArray();
@@ -2160,7 +2163,8 @@ namespace Game.Presentation.UI
                 person.LifeState == CharacterLifeState.Alive)
             {
                 var captured = person.Id;
-                var status = context.MilitaryTraining.IsExternallyControlled(person.Id) ? "В казарме" :
+                var status = context.MilitaryTraining.IsExternallyControlled(person.Id)
+                    ? (context.Research.Workplace?.IsInside(person.Id) == true ? "В казарме" : "Идёт в казарму") :
                     context.Work.TryGetAssigned(person.Id, out var job) ? E(job.Type) :
                     context.AiAgents.TryGet(person.Id, out var agent) ? E(agent.CurrentAction) : "ожидает";
                 var card = ActionButton(RussianTextCatalog.PersonName(person.Name.DisplayName) + "\n" + status,
@@ -2303,6 +2307,16 @@ namespace Game.Presentation.UI
             { UpdateResearchView(); return; }
             if (activePanel == GameplayPanel.Economy && mainPanel.Q<VisualElement>("stock-workspace") != null)
             { UpdateStockNumbers(); return; }
+            if (activePanel == GameplayPanel.Work && mainPanel.Q<VisualElement>("work-roster") != null)
+            { UpdateWorkRoster(); return; }
+            if (activePanel == GameplayPanel.Domestic && mainPanel.Q("people-details") != null)
+            {
+                refreshPeopleRoster?.Invoke();
+                var details = mainPanel.Q("people-details");
+                details.Clear();
+                DrawDomesticDetails(details);
+                return;
+            }
             mainPanel.Clear();
             switch (activePanel)
             {
@@ -2517,10 +2531,11 @@ namespace Game.Presentation.UI
                             context.Clock().State.CalendarTicks);
                         if (!result.Applied) throw new PlayerFacingException(EventChoiceFailureText(result.Status));
                         selectedEvent = null;
-                        SetStatus(T("ui.events.choice_applied"));
+                        SetStatus(EventEffectSummary(choice));
                     }), "attention-choice-" + choice.Id.Value);
                     choiceButton.AddToClassList("serenity-card-action");
                     sceneCard.Add(choiceButton);
+                    AddMuted(sceneCard, EventEffectSummary(choice));
                 }
                 mainPanel.Add(sceneCard);
             }
@@ -2542,157 +2557,59 @@ namespace Game.Presentation.UI
         private void DrawBuildPanel()
         {
             AddTitle(mainPanel, T("ui.build.title") + " · " + BuildCategoryLabel(buildCategory));
-            AddLine(mainPanel, T("ui.build.instructions"));
-            mainPanel.Add(ActionButton("Повернуть постройку на 90° (R)", () => context.BuildingPlacement.RotatePreview(), "rotate-building"));
+            var palette = Row(); palette.style.flexWrap = Wrap.Wrap;
+            var body = Row(); body.name = "build-palette-body";
+            body.style.flexWrap = Wrap.NoWrap; body.style.height = 210;
+            body.style.flexShrink = 0; body.style.alignItems = Align.Stretch;
+            var paletteScroll = new ScrollView(ScrollViewMode.Vertical) { name = "build-icons" };
+            paletteScroll.style.flexGrow = 1; paletteScroll.style.flexBasis = 0;
+            paletteScroll.style.minWidth = 0;
+            paletteScroll.style.height = 210; paletteScroll.style.minHeight = 0;
+            paletteScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            paletteScroll.Add(palette);
+            var details = SerenityUiDesign.Card(); details.name = "build-description";
+            details.style.flexShrink = 0;
+            var detailsScroll = new ScrollView(ScrollViewMode.Vertical) { name = "build-details" };
+            detailsScroll.style.width = 300; detailsScroll.style.flexShrink = 0;
+            detailsScroll.style.height = 210; detailsScroll.style.minHeight = 0;
+            detailsScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+            detailsScroll.Add(details);
+            void Describe(BuildingDefinition definition)
+            {
+                details.Clear(); AddSection(details, Content("building", definition.Id.ToString()));
+                AddMuted(details, BuildingPurpose(definition));
+                AddMuted(details, F("ui.build.cost", string.Join(" · ", definition.ConstructionCost.Select(x =>
+                    Content("resource", x.ResourceId.ToString()) + " " + x.Quantity.Units))));
+                if (!context.Research.IsBuildingUnlocked(definition.Id)) AddMuted(details, BuildingLockReason(definition.Id));
+                else { var shortage = BuildingResourceShortage(definition); if (!string.IsNullOrEmpty(shortage)) AddMuted(details, shortage + ". Можно разместить: стройка дождётся доставки."); }
+            }
             foreach (var entry in context.BuildingCatalog.Entries.OrderBy(x => x.DefinitionId, StringComparer.Ordinal))
             {
-                // Retain the legacy ID for existing scenes/saves, not as a second player option.
-                if (entry.DefinitionId == "primitive_crop_plot" || entry.DefinitionId == "primitive_shelter" || entry.DefinitionId=="clan_house") continue;
-                if (entry.DefinitionId.EndsWith("_level2",StringComparison.Ordinal)) continue;
+                if (entry.DefinitionId is "primitive_crop_plot" or "primitive_shelter" or "clan_house" || entry.DefinitionId.EndsWith("_level2",StringComparison.Ordinal)) continue;
                 var definition = entry.CreateDefinition();
                 if (!MatchesBuildCategory(definition, buildCategory)) continue;
                 var available = context.Research.IsBuildingUnlocked(definition.Id);
-                var cost = definition.ConstructionCost.Count == 0 ? T("ui.build.no_cost") : F("ui.build.cost", string.Join(", ",
-                    definition.ConstructionCost.Select(x => Content("resource", x.ResourceId.ToString()) + " " + x.Quantity.Units)));
-                var shortage = BuildingResourceShortage(definition);
-                var reason = !available ? BuildingLockReason(definition.Id) : shortage;
-                var card = SerenityUiDesign.Card();
-                card.AddToClassList("serenity-build-card");
-                AddSection(card, Content("building", definition.Id.ToString()));
-                var explanation = definition.Id.ToString() switch
-                {
-                    "training_ground" => "Тренировка боевого навыка выбранных жителей.",
-                    "palisade" => "Защитная стена, перекрывающая проход. Для входа нужны ворота. Зажмите ЛКМ и тяните.",
-                    "meeting_area" => "Площадка для общих собраний. Сценарий собраний и бонус настроения пока не подключены.",
-                    "gathering_area" => "Обозначенная площадка для организации сбора дикорастущих ресурсов.",
-                    "primitive_garden" => "Зажмите ЛКМ и растяните огород: от 2×2 до 8×8 клеток.",
-                    "primitive_path" => "Зажмите ЛКМ и протяните тропу, до 32 клеток за раз.",
-                    "fishing_camp" => "Ставится прямо у берега, входом на сушу. Рыбак работает внутри; до 30 рыб ждут переноса на склад.",
-                    _ => null
-                };
-                if (explanation != null) AddMuted(card, explanation);
-                AddMuted(card, cost);
-                var button = ActionButton(Content("building", definition.Id.ToString()) + " · " + cost,
-                    () => StartBuilding(definition.Id));
-                button.SetEnabled(available && string.IsNullOrEmpty(shortage));
-                button.AddToClassList(SerenityUiDesign.PrimaryButtonClass);
-                card.Add(button);
-                if (!string.IsNullOrEmpty(reason)) AddMuted(card, reason);
-                mainPanel.Add(card);
+                var button = ActionButton("", () => { if (available) StartBuilding(definition.Id); }, "build-" + definition.Id);
+                button.style.width = 112; button.style.height = 100; button.style.flexShrink = 0;
+                button.style.flexDirection = FlexDirection.Column; button.style.whiteSpace = WhiteSpace.Normal;
+                var iconKey = definition.Category switch {
+                    BuildingCategory.Shelter => "housing", BuildingCategory.Storage => "storage", BuildingCategory.Food => "food",
+                    BuildingCategory.Production => "production", BuildingCategory.Military => "defense", BuildingCategory.Medical => "domestic", _ => "settlement" };
+                iconKey = definition.Id.FamilyId.ToString() switch {
+                    "research_house" => "research", "campfire" or "ground_torch" => "production",
+                    "military_barracks" or "training_ground" => "military",
+                    "fishing_pier" or "fishing_camp" => "fish", "stone_tool_workshop" => "work",
+                    "chief_hut" => "dynasty", _ => iconKey };
+                var icon = SerenityIconLibrary.Image(iconKey); icon.style.width = 42; icon.style.height = 42; button.Add(icon);
+                var label = new Label(Content("building", definition.Id.ToString())); label.style.whiteSpace = WhiteSpace.Normal;
+                label.style.unityTextAlign = TextAnchor.MiddleCenter; label.style.fontSize = 13; button.Add(label);
+                button.style.opacity = available ? 1 : .45f;
+                button.RegisterCallback<PointerEnterEvent>(_ => Describe(definition));
+                button.RegisterCallback<FocusInEvent>(_ => Describe(definition));
+                palette.Add(button);
+                if (details.childCount == 0) Describe(definition);
             }
-            if (context.BuildingPlacement.IsActive)
-                AddLine(mainPanel, F("ui.build.placement", Content("building", context.BuildingPlacement.ActiveDefinitionId.ToString()),
-                    context.BuildingPlacement.IsPreviewValid ? T("ui.build.valid") : PlacementFailureText()));
-        }
-
-        private void DrawWorkPanel()
-        {
-            AddTitle(mainPanel, T("ui.work.title"));
-            AddMuted(mainPanel, "Профессия, смена, приоритет, командир и состав каждой группы.");
-            var groups = context.Work.Groups.All;
-            foreach (var group in groups)
-            {
-                var captured = group.Id;
-                var button = ActionButton((selectedGroup == group.Id ? T("common.selected_marker") : string.Empty) + group.DisplayName +
-                                          "  (" + group.MemberCount + ")", () =>
-                {
-                    selectedGroup = captured;
-                    SelectGroupPresenters();
-                    RefreshPanel();
-                });
-                button.AddToClassList("serenity-card-action");
-                SerenityUiDesign.SetSelected(button, selectedGroup == group.Id);
-                mainPanel.Add(button);
-                AddMuted(mainPanel, ProfessionGroupService.DisplayName(group.Role) + " · " +
-                    AllowedWorkLabel(group.Role) + " · " + group.Members.Count(id => !context.Work.HasOpenJob(id)) +
-                    "/" + group.MemberCount + " доступно");
-            }
-            mainPanel.Add(ActionButton("Восстановить отсутствующие профессиональные группы", () => TryCommand(() =>
-                context.DirectWork.ProfessionGroups.EnsureGroups()), "work-create-profession-group"));
-            if (!selectedGroup.HasValue || !context.Work.Groups.TryGet(selectedGroup.Value, out var current))
-            {
-                AddMuted(mainPanel, T("ui.work.select_group"));
-                return;
-            }
-            AddSection(mainPanel, current.DisplayName);
-            AddLine(mainPanel, $"Дневная смена (06:00–18:00): {current.MembersForShift(WorkShiftKind.Day).Count}");
-            AddLine(mainPanel, $"Ночная смена (18:00–06:00): {current.MembersForShift(WorkShiftKind.Night).Count}");
-            AddLine(mainPanel, "Профессия: " + ProfessionGroupService.ProfessionForRole(current.Role).Value +
-                " · допустимая работа: " + AllowedWorkLabel(current.Role));
-            var shiftAssignments = Row();
-            shiftAssignments.Add(ActionButton("Выбранных → день", () => TryCommand(() =>
-            {
-                foreach (var id in context.Selection.SelectedCharacterIds.Where(current.Contains))
-                    context.Work.SetMemberShift(current.Id, id, WorkShiftKind.Day);
-            }), "work-shift-day"));
-            shiftAssignments.Add(ActionButton("Выбранных → ночь", () => TryCommand(() =>
-            {
-                foreach (var id in context.Selection.SelectedCharacterIds.Where(current.Contains))
-                    context.Work.SetMemberShift(current.Id, id, WorkShiftKind.Night);
-            }), "work-shift-night"));
-            mainPanel.Add(shiftAssignments);
-            var diagnosticType = JobTypeForRole(current.Role);
-            if (diagnosticType.HasValue)
-                foreach (var candidate in context.DirectWork.GetCandidates(diagnosticType.Value, default))
-                    AddMuted(mainPanel, CharacterName(candidate.CharacterId) + " · пригодность " +
-                        candidate.Suitability + " · " + candidate.Reason);
-            var rename = new TextField(T("ui.work.name")) { value = current.DisplayName, name = "work-group-name" };
-            StyleTextField(rename);
-            mainPanel.Add(rename);
-            mainPanel.Add(ActionButton(T("ui.work.rename"), () => TryCommand(() => context.Work.RenameGroup(current.Id, rename.value))));
-            var membership = Row();
-            var transferMembers = ActionButton("Перевести выбранных", () => TryCommand(() =>
-            {
-                foreach (var id in context.Selection.SelectedCharacterIds)
-                    if (!current.Contains(id)) context.DirectWork.ProfessionGroups.Reassign(id, current.Id);
-            }));
-            transferMembers.SetEnabled(current.Role != WorkGroupRole.Scientists || context.Research.HasWorkplace);
-            membership.Add(transferMembers);
-            if (current.Role == WorkGroupRole.Scientists && !context.Research.HasWorkplace)
-                AddMuted(mainPanel, "Сначала постройте Дом знаний в разделе строительства «Общественные».");
-            membership.Add(ActionButton(T("ui.work.commander_selected"), () => TryCommand(() =>
-            {
-                if (context.Selection.SelectedCharacterIds.Count != 1) throw PlayerError("ui.work.need_one_member");
-                context.Work.SetCommander(current.Id, context.Selection.SelectedCharacterIds[0]);
-            })));
-            mainPanel.Add(membership);
-            if (current.Role != WorkGroupRole.General)
-                mainPanel.Add(ActionButton("Удалить группу и перевести состав в Разнорабочие", () => TryCommand(() =>
-                {
-                    var fallback = context.DirectWork.ProfessionGroups.Primary(WorkGroupRole.General);
-                    context.DirectWork.ProfessionGroups.DeleteGroup(current.Id, fallback.Id);
-                    selectedGroup = fallback.Id;
-                }), "work-delete-group"));
-            AddLine(mainPanel, F("ui.work.commander_priority", CharacterName(current.CommanderId), E(workPriority)));
-            var priority = Row();
-            foreach (var value in new[] { WorkPriority.Normal, WorkPriority.High, WorkPriority.Immediate })
-            {
-                var captured = value;
-                var priorityButton = ActionButton(value == WorkPriority.Immediate ? "Срочно" : E(value),
-                    () => { workPriority = captured; RefreshPanel(); });
-                SerenityUiDesign.SetSelected(priorityButton, workPriority == value);
-                priority.Add(priorityButton);
-            }
-            mainPanel.Add(priority);
-            var commands = Row();
-            commands.Add(ActionButton(T("ui.work.move_center"), () => TryCommand(() =>
-                context.ManualMoveCommands.IssueForGroup(current.Id, new WorldPosition(0f, 0f, 10f), workPriority))));
-            commands.Add(ActionButton(T("ui.work.haul"), () => TryCommand(() => IssueGroupHaul(current.Id))));
-            commands.Add(ActionButton(T("ui.work.cancel_jobs"), () => TryCommand(() => CancelGroupJobs(current.Id))));
-            mainPanel.Add(commands);
-            AddMuted(mainPanel, T("ui.work.help"));
-            foreach (var job in context.Work.Jobs.Where(x => x.GroupId == current.Id).OrderByDescending(x => x.Id).Take(10))
-            {
-                AddLine(mainPanel, F("ui.work.job", job.Id, E(job.Type), E(job.Priority), E(job.Status), E(job.ClaimState)));
-                if (!job.IsTerminal)
-                {
-                    var captured = job.Id;
-                    var jobActions = Row();
-                    jobActions.Add(ActionButton("Срочно", () => TryCommand(() => context.DirectWork.MakeUrgent(captured))));
-                    jobActions.Add(ActionButton("Отменить", () => TryCommand(() => context.Work.Cancel(captured))));
-                    mainPanel.Add(jobActions);
-                }
-            }
+            body.Add(paletteScroll); body.Add(detailsScroll); mainPanel.Add(body);
         }
 
         private void DrawDynastyPanel()
@@ -2838,25 +2755,27 @@ namespace Game.Presentation.UI
             return generation;
         }
 
+        private Action refreshPeopleRoster;
+
         private void DrawDomesticPanel()
         {
             AddTitle(mainPanel, "Люди · дом, семья и здоровье");
             AddMuted(mainPanel, "Реестр жителей и подробности выбранного человека.");
             var search = new TextField("Поиск") { value = peopleSearch, name = "people-search" };
             StyleTextField(search);
-            search.RegisterValueChangedCallback(evt =>
-            {
-                peopleSearch = evt.newValue ?? string.Empty;
-                RefreshPanel();
-            });
             mainPanel.Add(search);
-            var residents = PlayerCharacterIds().Select(residentId =>
+            List<Character> FilterResidents() => PlayerCharacterIds().Select(residentId =>
                     context.Characters.TryGet(residentId, out var resident) ? resident : null)
                 .Where(resident => resident != null && resident.LifeState == CharacterLifeState.Alive &&
-                    (string.IsNullOrWhiteSpace(peopleSearch) || resident.Name.DisplayName.IndexOf(peopleSearch,
-                        StringComparison.OrdinalIgnoreCase) >= 0))
-                .OrderBy(resident => resident.Name.DisplayName, StringComparer.OrdinalIgnoreCase).ToList();
-            AddLine(mainPanel, "Жителей: " + residents.Count);
+                    (string.IsNullOrWhiteSpace(peopleSearch) ||
+                        RussianTextCatalog.PersonName(resident.Name.DisplayName).IndexOf(peopleSearch,
+                            StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        resident.Name.DisplayName.IndexOf(peopleSearch, StringComparison.OrdinalIgnoreCase) >= 0))
+                .OrderBy(resident => RussianTextCatalog.PersonName(resident.Name.DisplayName),
+                    StringComparer.OrdinalIgnoreCase).ToList();
+            var residents = FilterResidents();
+            var countLabel = new Label("Жителей: " + residents.Count);
+            mainPanel.Add(countLabel);
             var roster = new ListView(residents, 38,
                 () =>
                 {
@@ -2881,14 +2800,48 @@ namespace Game.Presentation.UI
             };
             roster.style.height = 150;
             mainPanel.Add(roster);
+            search.RegisterValueChangedCallback(evt =>
+            {
+                peopleSearch = evt.newValue ?? string.Empty;
+                residents.Clear();
+                residents.AddRange(FilterResidents());
+                countLabel.text = "Жителей: " + residents.Count;
+                roster.Rebuild();
+            });
+            refreshPeopleRoster = () =>
+            {
+                var current = FilterResidents();
+                if (!current.Select(x => x.Id).SequenceEqual(residents.Select(x => x.Id)))
+                {
+                    residents.Clear(); residents.AddRange(current);
+                    countLabel.text = "Жителей: " + residents.Count;
+                    roster.Rebuild();
+                }
+                else roster.Query<Button>().ForEach(button =>
+                {
+                    if (button.userData is not StableEntityId residentId ||
+                        !context.Characters.TryGet(residentId, out var resident)) return;
+                    var groupName = context.Work.Groups.TryGetForMember(residentId, out var group)
+                        ? group.DisplayName : "Ожидает распределения";
+                    button.text = RussianTextCatalog.PersonName(resident.Name.DisplayName) + " · " +
+                        ProfessionName(resident.ProfessionId?.ToString()) + " · " + groupName;
+                });
+            };
+            var details = new VisualElement { name = "people-details" };
+            mainPanel.Add(details);
+            DrawDomesticDetails(details);
+        }
+
+        private void DrawDomesticDetails(VisualElement detailPanel)
+        {
             var id = context.Selection.SelectedCharacterId ?? context.Dynasty.CurrentMonarchId;
             if (!id.HasValue)
             {
-                AddMuted(mainPanel, "Выберите жителя.");
+                AddMuted(detailPanel, "Выберите жителя.");
                 return;
             }
             var character = context.Characters.Get(id.Value);
-            AddSection(mainPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
+            AddSection(detailPanel, RussianTextCatalog.PersonName(character.Name.DisplayName));
             var detail = Row();
             detail.name = "people-detail-cards";
             detail.style.flexWrap = Wrap.Wrap;
@@ -2903,7 +2856,7 @@ namespace Game.Presentation.UI
             var capabilities = context.Health.GetCapabilities(id.Value);
             AddLine(identityCard, capabilities.IsIncapacitated ? "Недееспособен" : "Может выполнять приказы");
             if (context.AiAgents.TryGet(id.Value, out var agent))
-                AddLine(identityCard, $"Голод {agent.Needs.Hunger:P0} · жажда {agent.Needs.Thirst:P0} · " +
+                AddLine(identityCard, $"Сытость {1d - agent.Needs.Hunger:P0} · " +
                     $"энергия {agent.Needs.Energy:P0} · настроение {agent.Needs.Mood:P0}");
             else AddMuted(identityCard, T("ui.character.offcamera"));
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id.Value &&
@@ -2950,31 +2903,31 @@ namespace Game.Presentation.UI
             AddLine(familyCard, "Дети: " + (selectedChildren.Length == 0 ? "нет" :
                 string.Join(", ", selectedChildren.Select(value => CharacterName(value.Id)))));
             detail.Add(familyCard);
-            mainPanel.Add(detail);
+            detailPanel.Add(detail);
 
             if (!character.SpouseId.HasValue) return;
             var spouseId = character.SpouseId.Value;
-            AddSection(mainPanel, "Семейные решения");
+            AddSection(detailPanel, "Семейные решения");
             var consent = context.Domestic.Consents.FirstOrDefault(x =>
                 x.FirstId == id.Value && x.SecondId == spouseId || x.FirstId == spouseId && x.SecondId == id.Value);
-            AddLine(mainPanel, "Согласие: " + (consent != null && consent.IsMutual ? "взаимное" : "ожидается от обоих взрослых"));
+            AddLine(detailPanel, "Согласие: " + (consent != null && consent.IsMutual ? "взаимное" : "ожидается от обоих взрослых"));
             var consentRow = Row();
             consentRow.Add(ActionButton("Согласие: " + CharacterName(id.Value), () =>
                 TryCommand(() => context.Domestic.SetConsent(id.Value, spouseId, true)), "domestic-consent-first"));
             consentRow.Add(ActionButton("Согласие: " + CharacterName(spouseId), () =>
                 TryCommand(() => context.Domestic.SetConsent(spouseId, id.Value, true)), "domestic-consent-second"));
-            mainPanel.Add(consentRow);
+            detailPanel.Add(consentRow);
             var eligibility = context.Domestic.EvaluateFamilyInteraction(id.Value, spouseId,
                 context.Clock().State.BiologicalTicks);
-            if (!eligibility.Allowed) AddMuted(mainPanel, "Семейное событие недоступно: " + FamilyReason(eligibility.Reason));
+            if (!eligibility.Allowed) AddMuted(detailPanel, "Семейное событие недоступно: " + FamilyReason(eligibility.Reason));
             var family = ActionButton("Провести время вместе", () => RequestFamilyInteraction(id.Value, spouseId),
                 "domestic-family-event");
             family.SetEnabled(eligibility.Allowed);
-            mainPanel.Add(family);
+            detailPanel.Add(family);
             var pregnancy = context.Health.Pregnancies.FirstOrDefault(x => x.Status == PregnancyStatus.Active &&
                 (x.MotherId == id.Value || x.MotherId == spouseId));
             if (pregnancy != null)
-                AddLine(mainPanel, "Беременность · до события: " +
+                AddLine(detailPanel, "Беременность · до события: " +
                     FormatDuration(Math.Max(0, pregnancy.DueCalendarTick - context.Clock().State.CalendarTicks)));
         }
 
@@ -3827,7 +3780,7 @@ namespace Game.Presentation.UI
                     AddLine(inspector, "Прогресс: " + RussianTextCatalog.Percent(
                         (double)harvest.AccumulatedWorkTicks / harvest.RequiredWorkTicks));
                 if (recipe.HarvestEntireSource)
-                    AddMuted(inspector, "Один приказ — весь источник. Добытое попадает в инвентарь работника или свободный склад.");
+                    AddMuted(inspector, "Один приказ — весь источник. Добытые ресурсы остаются у источника до переноса.");
                 DrawDirectPriority();
                 if(source.Site.Kind==ProductionSiteKind.PrimitiveCropPlot)
                 {
@@ -3953,6 +3906,13 @@ namespace Game.Presentation.UI
                 AddInspectorBar(wellbeing, "Настроение", (float)agent.Needs.Mood * 100f,
                     RussianTextCatalog.Percent(agent.Needs.Mood));
                 AddMuted(wellbeing, "Сейчас: " + activityText);
+                var nutrition = context.Health.NutritionFor(id);
+                if (nutrition.WorkPerThousand < 1000)
+                    AddLine(wellbeing, "Голод: работа и исследования " + Percent(nutrition.WorkPerThousand) +
+                        " · скорость " + Percent(nutrition.MovementPerThousand));
+                var starvationHours = context.Health.StarvationHoursRemaining(id, context.Clock().State.CalendarTicks);
+                if (starvationHours.HasValue) AddLine(wellbeing, "Угроза жизни: без еды осталось " +
+                    starvationHours.Value.ToString("0.0") + " ч. Сытость нужно поднять хотя бы до 10%.");
             }
             else AddMuted(wellbeing, T("ui.character.offcamera"));
             inspector.Add(wellbeing);
@@ -3983,11 +3943,11 @@ namespace Game.Presentation.UI
 
             var skills = new Foldout { text = "Навыки и склонности", value = false,
                 name = "character-skills-foldout" };
-            AddLine(skills, "Любимое занятие: " + CharacterSkillRules.Favorite(character));
+            AddLine(skills, "Любимое занятие: " + SkillDisplayName(CharacterSkillRules.Favorite(character).ToString()));
             foreach (var skill in character.CaptureState().Skills
                          .Where(x => !CharacterSkillRules.IsFavoriteMarker(x.Id))
                          .OrderByDescending(x => x.Level.Value).ThenBy(x => x.Id.Value).Take(8))
-                AddInspectorBar(skills, skill.Id.ToString(), skill.Level.Value, skill.Level.Value.ToString());
+                AddInspectorBar(skills, SkillDisplayName(skill.Id.ToString()), skill.Level.Value, skill.Level.Value.ToString());
             inspector.Add(skills);
 
             var conditions = context.Health.Conditions.Where(x => x.TargetId == id &&
@@ -3996,7 +3956,7 @@ namespace Game.Presentation.UI
             var health = new Foldout { text = "Здоровье и состояния", value = conditions.Length > 0,
                 name = "character-health-foldout" };
             AddLine(health, conditions.Length == 0 ? "Активных состояний нет" : string.Join("\n",
-                conditions.Select(x => Content("condition", x.DefinitionId.ToString()) + " · " + E(x.Severity))));
+                conditions.Select(x => (x.DefinitionId.ToString() switch { "starvation" => "Голодание", "encouraged" => "Воодушевление", "distressed" => "Переживания", _ => Content("condition", x.DefinitionId.ToString()) }) + " · " + E(x.Severity))));
             AddMuted(health, "Минимум части тела: " + hitPoints.Min() + "/" + maximumHealth +
                 " · работа " + Percent(capabilities.WorkPerThousand) +
                 " · исследования " + Percent(capabilities.ResearchPerThousand));
@@ -4395,7 +4355,7 @@ namespace Game.Presentation.UI
                     if (workplaceSite.Continuous)
                     {
                         var reason = context.Production.GetWaitingReason(workplaceSite);
-                        AddLine(inspector, (workplaceSite.RecipeId.ToString()=="fish_breed" ? "Разведение · " : "Ловля рыбы · ") + (reason == Game.Simulation.Production.ProductionWaitingReason.OutputFull ? "нет свободного запаса или места" :
+                        AddLine(inspector, Content("recipe", recipe.Id.ToString()) + " · " + (reason == Game.Simulation.Production.ProductionWaitingReason.OutputFull ? "нет свободного запаса или места" :
                             workplaceSite.Paused ? "пауза" : active == null ? "нет работника" : "работает"));
                         if (active != null) AddLine(inspector, $"Работник: {CharacterName(active.WorkerId)} · цикл {active.AccumulatedWorkTicks * 100 / active.RequiredWorkTicks}%");
                     }
@@ -4802,7 +4762,7 @@ namespace Game.Presentation.UI
 
         private void HandleWorkGroupHotkeys(Keyboard keyboard)
         {
-            if (DeveloperUiVisible || keyboard == null || context.Work.Groups.Count == 0 || IsTextInputFocused()) return;
+            if (DeveloperUiVisible || input.ThirdPersonActionsEnabled || keyboard == null || context.Work.Groups.Count == 0 || IsTextInputFocused()) return;
             var keys = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key,
                 keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key };
             for (var i = 0; i < keys.Length; i++)
@@ -5001,7 +4961,7 @@ namespace Game.Presentation.UI
                     unlock.Kind == TechnologyUnlockKind.Building && unlock.ContentId == id.ToString()))
                 .Select(x => x.Id).ToArray();
             return technologies.Length == 0 ? T("ui.build.locked_era") : F("ui.build.requires", string.Join(" или ",
-                technologies.Select(x => Content("technology", x.ToString()))));
+                technologies.Select(x => context.Research.Catalog.Get(x).DisplayName)));
         }
 
         private string BuildingResourceShortage(BuildingDefinition definition)
@@ -5111,7 +5071,8 @@ namespace Game.Presentation.UI
             ? F("common.days", RussianTextCatalog.Decimal(TimeSpan.FromTicks(ticks).TotalDays))
             : F("common.hours", RussianTextCatalog.Decimal(TimeSpan.FromTicks(ticks).TotalHours));
 
-        private bool IsTextInputFocused() => root?.panel?.focusController?.focusedElement is TextField;
+        private bool IsTextInputFocused() => root?.panel?.focusController?.focusedElement is VisualElement focused &&
+            (focused is TextField || focused.GetFirstAncestorOfType<TextField>() != null);
 
         private void TryCommand(Action action)
         {
@@ -5313,6 +5274,11 @@ namespace Game.Presentation.UI
         {
             modal.Clear();
             modal.style.display = DisplayStyle.Flex;
+            if (DrawSettingsContent != null)
+            {
+                DrawSettingsContent(modal, () => { if (pauseSession) OpenPauseMenu(); else CloseModal(); });
+                return;
+            }
             AddTitle(modal, "Настройки интерфейса");
             AddLine(modal, "Масштаб интерфейса");
             var scale = Row();
@@ -5386,8 +5352,9 @@ namespace Game.Presentation.UI
             mainPanel.style.height = build ? 292 : StyleKeyword.Auto;
             mainPanel.style.width = build || peopleRisk ? StyleKeyword.Auto : 480;
             mainPanel.style.right = build ? 374 : peopleRisk ? 22 : StyleKeyword.Auto;
-            mainPanel.contentContainer.style.flexDirection = build ? FlexDirection.Row : FlexDirection.Column;
-            mainPanel.contentContainer.style.flexWrap = build ? Wrap.Wrap : Wrap.NoWrap;
+            mainPanel.contentContainer.style.flexDirection = FlexDirection.Column;
+            mainPanel.contentContainer.style.flexWrap = Wrap.NoWrap;
+            mainPanel.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
         }
 
         private void AddNavigation(string label, GameplayPanel panel, string icon = null)
@@ -5576,6 +5543,8 @@ namespace Game.Presentation.UI
         private static string EventOutcome(string outcomeCode)
         {
             if (string.IsNullOrWhiteSpace(outcomeCode)) return T("common.none");
+            if (outcomeCode == "relationship_family_support") return "Отношения улучшились на 12. Воодушевление: работа и исследования +10% на 2 дня.";
+            if (outcomeCode == "relationship_family_dispute") return "Отношения ухудшились на 15. Переживания: работа и исследования −15% на 2 дня.";
             return RussianTextCatalog.TryGet("event.outcome." + outcomeCode, out var value) ? value : T("ui.event.completed");
         }
 
@@ -5604,7 +5573,8 @@ namespace Game.Presentation.UI
         private static string ProfessionName(string professionId)
         {
             if (string.IsNullOrWhiteSpace(professionId)) return T("ui.character.unassigned");
-            return RussianTextCatalog.TryGet("content.profession." + professionId, out var value) ? value : T("ui.profession.other");
+            return RussianTextCatalog.TryGet("content.profession." + professionId, out var value) ? value :
+                ProfessionGroupService.DisplayName(ProfessionGroupService.RoleForProfession(new ProfessionId(professionId)));
         }
 
         private static VisualElement Panel(string name)

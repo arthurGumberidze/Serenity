@@ -31,7 +31,7 @@ namespace Game.Tests.Editor
             var camp = Building.CreateNew(new BuildingDefinitionId("fishing_camp"), new GridCoordinate(10, 12), BuildingOrientation.North);
             camp.MarkCompleted();
             buildings.Add(camp);
-            inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, storage.Id), resources, 2));
+            inventories.Add(new ResourceInventory(new InventoryOwner(InventoryOwnerKind.BuildingStorage, storage.Id), resources, 1));
             var piles = new WorldPileService(resources, inventories);
             var production = new ProductionService(ProductionCatalog.CreatePlayablePatch(resources), resources,
                 inventories, buildings, new ResourceTransferService(inventories));
@@ -42,21 +42,21 @@ namespace Game.Tests.Editor
             for (var catchIndex = 0; catchIndex < 2; catchIndex++)
             {
                 Assert.That(production.TryReserveAtSite(worker, source.Id, out var work), Is.True);
-                var result = production.AdvanceTask(work.Task.Id, TimeSpan.FromMinutes(20));
-                Assert.That(result.Completed, Is.True);
-                Assert.That(result.OutputOwner.Kind, Is.EqualTo(InventoryOwnerKind.WorldPile));
+                var result = production.AdvanceTask(work.Task.Id, TimeSpan.FromTicks(work.Task.RequiredWorkTicks));
+                Assert.That(work.Task.IsTerminal, Is.False, "Fishing keeps the worker at the bank between catches");
+                Assert.That(piles.All.Count, Is.EqualTo(catchIndex + 1));
                 Assert.That(carrier.TotalUnits, Is.Zero);
             }
             Assert.That(piles.All.Count, Is.EqualTo(2));
             Assert.That(piles.All.All(x => x.Coordinate.Equals(bank)), Is.True);
             var fish = new ResourceId("fish");
-            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(8));
+            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(2));
             var query = new HaulWorldQuery(inventories, piles, buildings, new HaulClaimRegistry());
             Assert.That(query.TryClaim(new Tier1AiAgentState(worker, source.Position), 12, out var claim, out _), Is.True);
-            Assert.That(claim.Quantity.Units, Is.EqualTo(2));
+            Assert.That(claim.Quantity.Units, Is.EqualTo(1));
             Assert.That(new ResourceTransferService(inventories).TransferExact(claim.Source, carrier.Owner,
                 fish, claim.Quantity), Is.EqualTo(TransferFailureReason.None));
-            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(6));
+            Assert.That(piles.All.Sum(x => inventories.Get(x.InventoryOwner).GetAmount(fish).Units), Is.EqualTo(1));
         }
 
 
@@ -102,7 +102,7 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void WholeTreeIsReservedOnceAndCommitsExactQuantityOnce()
+        public void TwoWorkersShareWholeTreeProgressAndCommitExactQuantityOnce()
         {
             var resources = new ResourceCatalog(new[] { "wood_log", "stone", "plant_fiber", "berries" }
                 .Select(x => new ResourceDefinition(new ResourceId(x), x, ResourceCategory.Construction)));
@@ -117,13 +117,17 @@ namespace Game.Tests.Editor
             var tree = ProductionSite.CreateNatural(new ProductionRecipeId("chop_wood"), default(WorldPosition), 24);
             production.AddSite(tree);
             Assert.That(production.TryReserveAtSite(first, tree.Id, out var job), Is.True);
-            Assert.That(production.TryReserveAtSite(second, tree.Id, out _), Is.False);
+            Assert.That(production.TryReserveAtSite(second, tree.Id, out var colleague), Is.True);
+            production.WorkerIsAtWork = id => true;
             Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromMinutes(15)).Completed, Is.False);
             Assert.That(tree.RemainingAmount, Is.EqualTo(24));
-            var result = production.AdvanceTask(job.Task.Id, TimeSpan.FromMinutes(15));
+            Assert.That(production.AdvanceTask(colleague.Task.Id, TimeSpan.FromMinutes(15)).Completed, Is.False);
+            var result = production.AdvanceTask(job.Task.Id, TimeSpan.FromMinutes(10));
             Assert.That(result.Completed, Is.True);
             Assert.That(result.Units, Is.EqualTo(24));
             Assert.That(tree.IsDepleted, Is.True);
+            Assert.That(colleague.Task.Status, Is.EqualTo(ProductionTaskStatus.Completed));
+            Assert.That(production.AdvanceTask(colleague.Task.Id, TimeSpan.FromDays(1)).ProducedOutput, Is.False);
             Assert.That(production.AdvanceTask(job.Task.Id, TimeSpan.FromDays(1)).Completed, Is.False);
             Assert.That(production.GetProducedTotal(new ResourceId("wood_log")), Is.EqualTo(24));
             Assert.That(ProductionCatalog.CreateStoneAge(resources).Get(tree.RecipeId).HarvestEntireSource, Is.False,

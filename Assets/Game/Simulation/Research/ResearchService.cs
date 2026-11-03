@@ -166,9 +166,11 @@ namespace Game.Simulation.Research
             {
                 effectiveRates.Clear();
                 foreach(var worker in workers.Keys)effectiveRates[worker]=Math.Max(0,rates.GetRatePerThousand(worker));
-                var contributing=Math.Min(EffectiveWorkerLimit,workers.Count);
+                var present = workers.Keys.Count(worker => Workplace == null || Workplace.IsResearchingInside(worker));
+                var contributing=Math.Min(EffectiveWorkerLimit,present);
+                var groupRate = contributing == 0 ? 0 : 1000L + 600L * (contributing - 1);
                 foreach(var worker in workers.Keys)
-                    effectiveRates[worker]=(int)(effectiveRates[worker]*(long)contributing*(100L+ScienceBonusPercent)/Math.Max(1,workers.Count)/100);
+                    effectiveRates[worker]=(int)(effectiveRates[worker]*groupRate*(100L+ScienceBonusPercent)/Math.Max(1,present)/100000);
                 rateCacheTick=tick;
             }
             return effectiveRates.TryGetValue(id,out var value)?value:0;
@@ -186,6 +188,28 @@ namespace Game.Simulation.Research
 
         public TechnologyCatalog Catalog => catalog;
         public ResearchProject ActiveProject { get; private set; }
+        private readonly List<TechnologyId> queued = new();
+        public IReadOnlyList<TechnologyId> QueuedTechnologies => queued.AsReadOnly();
+        public bool CanEnqueue(TechnologyId id)
+        {
+            if (!HasWorkplace || completed.Contains(id) || ActiveProject?.TechnologyId == id || queued.Contains(id) ||
+                queued.Count + (ActiveProject == null ? 0 : 1) >= 3) return false;
+            var definition = catalog.Get(id);
+            if (definition.Profile?.IsFuture == true) return false;
+            return definition.Prerequisites.All(p => completed.Contains(p) || ActiveProject?.TechnologyId == p || queued.Contains(p));
+        }
+        public bool Enqueue(TechnologyId id)
+        {
+            if (!CanEnqueue(id)) return false;
+            queued.Add(id);
+            TryStartQueued();
+            return true;
+        }
+        public bool RemoveQueued(TechnologyId id) => queued.Remove(id);
+        private void TryStartQueued()
+        {
+            if (ActiveProject == null && queued.Count > 0 && Start(queued[0])) queued.RemoveAt(0);
+        }
         public IResearchUnlockView Unlocks => unlocks;
         public long LastProcessedTick { get; private set; }
         public long LastCompletionTick { get; private set; } = -1;
@@ -219,12 +243,14 @@ namespace Game.Simulation.Research
                 if (completed.Add(definition.Id)) added++;
             if (ActiveProject != null && completed.Contains(ActiveProject.TechnologyId))
                 ActiveProject = null;
+            queued.Clear();
             RebuildUnlocks();
             return added;
         }
 
         public bool Start(TechnologyId id)
         {
+            if (queued.Count > 0 && queued[0] != id) return false;
             if (ActiveProject != null || !IsAvailable(id)) return false;
             var profile=catalog.Get(id).Profile;
             if(profile!=null && (profile.WoodCost>0||profile.StoneCost>0) &&
@@ -286,6 +312,12 @@ namespace Game.Simulation.Research
         public long AdvanceWorkerTo(StableEntityId workerId, long targetCalendarTick, bool activelyResearching)
         {
             if (targetCalendarTick < 0) throw new ArgumentOutOfRangeException(nameof(targetCalendarTick));
+            // New projects start at this checkpoint, never consume an idle or previous project's interval.
+            if (ActiveProject == null && queued.Count > 0)
+            {
+                LastProcessedTick = Math.Max(LastProcessedTick, targetCalendarTick);
+                TryStartQueued();
+            }
             if (!workers.TryGetValue(workerId, out var worker)) return 0;
             // Tier transitions and scene teardown can leave a lower-tier caller with a stale
             // absolute checkpoint. It must not rewind or duplicate canonical research work.
@@ -331,7 +363,7 @@ namespace Game.Simulation.Research
 
         public ResearchSaveState CaptureState() => new ResearchSaveState(LastProcessedTick,
             completed, ActiveProject?.CaptureState(), workers.Values.Select(x =>
-                new ResearchWorkerState(x.Id, x.LastProcessedTick, x.Remainder)));
+                new ResearchWorkerState(x.Id, x.LastProcessedTick, x.Remainder)), queued);
 
         public void RestoreState(ResearchSaveState state)
         {
@@ -360,6 +392,9 @@ namespace Game.Simulation.Research
                 restoredProject = ResearchProject.Restore(projectState);
             }
             var restoredWorkers = new Dictionary<StableEntityId, WorkerProgress>();
+            foreach (var id in state.Queued)
+                if (catalog.Get(id).Profile?.IsFuture == true || restoredCompleted.Contains(id) || restoredProject?.TechnologyId == id)
+                    throw new ArgumentException("Invalid queued research project.", nameof(state));
             foreach (var worker in state.Workers)
                 if (!restoredWorkers.TryAdd(worker.WorkerId, new WorkerProgress
                     { Id = worker.WorkerId, LastProcessedTick = worker.LastProcessedTick, Remainder = worker.FractionalRemainder }))
@@ -368,6 +403,7 @@ namespace Game.Simulation.Research
             workers.Clear(); foreach (var pair in restoredWorkers) workers.Add(pair.Key, pair.Value);
             rateCacheTick=-1;
             ActiveProject = restoredProject;
+            queued.Clear(); queued.AddRange(state.Queued);
             LastProcessedTick = state.LastProcessedTick;
             LastCompletionTick = -1;
             CompletionCount = 0;
@@ -379,6 +415,7 @@ namespace Game.Simulation.Research
             var hash = 14695981039346656037UL;
             DeterministicKeyedRandom.Add(ref hash, unchecked((ulong)LastProcessedTick));
             foreach (var id in completed.OrderBy(x => x)) AddText(ref hash, id.ToString());
+            foreach (var id in queued) AddText(ref hash, "queued:" + id);
             if (ActiveProject != null)
             {
                 AddText(ref hash, ActiveProject.TechnologyId.ToString());
@@ -402,6 +439,7 @@ namespace Game.Simulation.Research
             CompletionCount = checked(CompletionCount + 1);
             ActiveProject = null;
             RebuildUnlocks();
+            TryStartQueued();
         }
 
         private void RebuildUnlocks() => unlocks = new ResearchUnlockSet(catalog, completed);

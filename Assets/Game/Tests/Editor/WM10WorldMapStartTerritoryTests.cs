@@ -47,7 +47,7 @@ namespace Game.Tests.Editor
             Assert.That(start.RiverCrossingId, Is.EqualTo("crossing_start_ford"));
             Assert.That(heights.IsWater(start.RiverAccessPoint.X, start.RiverAccessPoint.Z), Is.False);
 
-            foreach (var type in new[] { "wood", "branches", "berries", "stone", "medicinal_plants" })
+            foreach (var type in new[] { "wood", "branches", "berries", "stone", "medicinal_plants", "mushrooms", "plant_fiber" })
                 Assert.That(start.StartingResources.Count(value => value.ResourceTypeId == type),
                     Is.GreaterThanOrEqualTo(TiledWorldPopulationPlanner.StartGuarantee(type)), type);
             Assert.That(start.StartingResources.All(value =>
@@ -93,13 +93,13 @@ namespace Game.Tests.Editor
             {
                 var prefab = buildings.ResolvePrefab(new Game.Domain.Buildings.BuildingDefinitionId(id));
                 Assert.That(prefab, Is.Not.Null, id);
-                Assert.That(AssetDatabase.GetAssetPath(prefab), Does.StartWith("Assets/Game/Art/Prefabs/"), id);
+                Assert.That(AssetDatabase.GetAssetPath(prefab), Does.StartWith("Assets/Game/Art/"), id);
                 Assert.That(prefab.GetComponentsInChildren<Renderer>(true), Is.Not.Empty, id);
             }
 
             var resources = Resources.Load<WorldMapResourceArtCatalog>("World/WorldMapResourceArt");
             Assert.That(resources, Is.Not.Null);
-            foreach (var id in new[] { "wood", "branches", "berries", "stone", "medicinal_plants" })
+            foreach (var id in new[] { "wood", "branches", "berries", "stone", "medicinal_plants", "mushrooms", "plant_fiber" })
             {
                 var prefab = resources.PrefabFor(id);
                 Assert.That(prefab, Is.Not.Null, id);

@@ -228,6 +228,32 @@ namespace Game.Tests
             Assert.Throws<InvalidOperationException>(() => simulation.Advance(duplicate, AtDays(1)));
         }
 
+        [TestCase(0, false)]
+        [TestCase(0, true)]
+        [TestCase(10, false)]
+        [TestCase(10, true)]
+        public void CheckpointRestoreUsesSavedTimeWithoutReplayingDepartingSession(int currentDay, bool existing)
+        {
+            var character = CreateCharacter();
+            var characters = new CharacterRegistry(); characters.Add(character);
+            var time = AtDays(currentDay);
+            var records = new Tier3CharacterRegistry();
+            var simulation = Sim(Seed);
+            var tier3 = new Tier3CharacterAdapter(records, simulation, () => time);
+            var manager = new TierManager(characters, new MemoryAdapter(CharacterSimulationTier.Tier1),
+                new MemoryAdapter(CharacterSimulationTier.Tier2), tier3);
+            if (existing) manager.Materialize(character, CharacterSimulationTier.Tier3, Runtime(character.Id));
+            var saved = simulation.AdvanceState(Runtime(character.Id), AtDays(3));
+            manager.RestoreWorldState(new[] { new CharacterRuntimeSaveEntry(CharacterSimulationTier.Tier3, saved) });
+            Assert.That(records.Get(character.Id).State, Is.EqualTo(saved));
+            Assert.That(manager.CountActiveRepresentations(character.Id), Is.EqualTo(1));
+            time = AtDays(3);
+            tier3.RebaseAfterLoad(time);
+            Assert.That(records.Get(character.Id).State, Is.EqualTo(saved));
+            time = AtDays(4);
+            Assert.That(manager.GetRuntimeState(character.Id), Is.EqualTo(simulation.AdvanceState(saved, time)));
+        }
+
         private static CharacterRuntimeState RunRoute(CharacterRegistry registry, Character character, Route route)
         {
             var time = new TimeBox();

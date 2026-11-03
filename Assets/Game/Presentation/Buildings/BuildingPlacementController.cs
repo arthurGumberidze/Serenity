@@ -150,7 +150,7 @@ namespace Game.Presentation.Buildings
                 if (snapped.HasValue)
                 {
                     worldPoint = snapped.Value.point; orientation = snapped.Value.orientation;
-                    for (var turn = 0; turn < shoreRotationOffset; turn++) orientation = orientation.RotateClockwise();
+                    for (var turn = 0; turn < shoreRotationOffset; turn++) orientation = orientation.RotateStep45();
                 }
             }
             if (zoneDragActive)
@@ -209,8 +209,8 @@ namespace Game.Presentation.Buildings
             if (!IsActive) return;
             if (zoneDragActive) return; // An active drag owns its world-grid direction.
             var center = previewObject != null ? previewObject.transform.position : spawner.GridToWorld(previewCoordinate);
-            orientation = orientation.RotateClockwise();
-            if (IsShoreFacility()) shoreRotationOffset = (shoreRotationOffset + 1) % 4;
+            orientation = orientation.RotateStep45();
+            if (IsShoreFacility()) shoreRotationOffset = (shoreRotationOffset + 1) % 8;
             TryMovePreviewToWorldPoint(center);
         }
 
@@ -371,8 +371,16 @@ namespace Game.Presentation.Buildings
         }
         private void OnBuildConfirmed()
         {
+            if (!IsActive) return;
             if (inputSource != null && raycaster != null && raycaster.IsPointerBlockedByUi(inputSource.PointerPosition))
                 return;
+            // Input callbacks run before Update: committing the previous frame's preview can
+            // place a building where the pointer was before the click.
+            if (inputSource != null && raycaster != null)
+            {
+                if (!raycaster.TryGetGroundHit(inputSource.PointerPosition, out var clickedGround)) return;
+                TryMovePreviewToWorldPoint(clickedGround.point);
+            }
             if ((IsVariableGarden() || IsDragSegment()) && raycaster != null && inputSource != null &&
                 raycaster.TryGetGroundHit(inputSource.PointerPosition, out var hit))
             {

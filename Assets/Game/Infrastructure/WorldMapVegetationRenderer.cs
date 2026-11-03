@@ -30,6 +30,7 @@ namespace Game.Infrastructure
         public int LastDrawnInstances { get; private set; }
         public double LastSubmissionMilliseconds { get; private set; }
         public bool DiagnosticDisableProbes { get; set; }
+        private Bounds[] groundClearings = System.Array.Empty<Bounds>();
         private readonly HashSet<StableEntityId> hidden = new HashSet<StableEntityId>();
 
         public void SetHidden(IEnumerable<StableEntityId> ids)
@@ -37,11 +38,31 @@ namespace Game.Infrastructure
             var next = new HashSet<StableEntityId>(ids);
             if (hidden.SetEquals(next)) return;
             hidden.Clear(); hidden.UnionWith(next);
-            foreach (var batch in batches)
-                batch.Matrices = batch.OriginalMatrices.Where((_, index) => !hidden.Contains(batch.Ids[index])).ToArray();
+            RefreshVisibleMatrices();
         }
 
-        public void Initialize(WorldMapVegetationPlan plan, StarterNatureCatalog catalog)
+        public void SetGroundClearings(IEnumerable<Bounds> bounds)
+        {
+            var next = bounds.ToArray();
+            if (groundClearings.SequenceEqual(next)) return;
+            groundClearings = next;
+            RefreshVisibleMatrices();
+        }
+
+        private void RefreshVisibleMatrices()
+        {
+            foreach (var batch in batches)
+                batch.Matrices = batch.OriginalMatrices.Where((matrix, index) =>
+                {
+                    if (hidden.Contains(batch.Ids[index])) return false;
+                    if (!batch.Ground) return true;
+                    var position = matrix.GetColumn(3);
+                    return !groundClearings.Any(bounds => position.x >= bounds.min.x && position.x <= bounds.max.x &&
+                        position.z >= bounds.min.z && position.z <= bounds.max.z);
+                }).ToArray();
+        }
+
+        public void Initialize(WorldMapVegetationPlan plan, StarterNatureCatalog catalog, System.Func<float,float,float> groundHeight = null)
         {
             var worldShader = Resources.Load<Material>("World/WorldMapVegetation")?.shader;
             if (worldShader == null) throw new System.InvalidOperationException("World vegetation shader is missing.");
@@ -53,6 +74,10 @@ namespace Game.Infrastructure
             {
                 var prefab = group.Key.Prefab;
                 var instances = group.ToArray();
+                // Ground-cover records intentionally omit Y. GPU instances must project it explicitly;
+                // unlike the old Terrain detail renderer, DrawMeshInstanced never follows the terrain.
+                var positions = instances.Select(v => new Vector3(v.Position.X,
+                    group.Key.Ground && groundHeight != null ? groundHeight(v.Position.X,v.Position.Z) : v.Position.Y, v.Position.Z)).ToArray();
                 InstanceCount += instances.Length;
                 var lodGroup = prefab.GetComponent<LODGroup>();
                 var lods = lodGroup != null ? lodGroup.GetLODs() : new[]
@@ -64,8 +89,8 @@ namespace Game.Infrastructure
                     var mesh = renderer.GetComponent<MeshFilter>()?.sharedMesh;
                     if (mesh == null) continue;
                     var local = prefab.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
-                    var matrices = instances.Select(v => Matrix4x4.TRS(
-                        new Vector3(v.Position.X, v.Position.Y, v.Position.Z),
+                    var matrices = instances.Select((v,index) => Matrix4x4.TRS(
+                        positions[index],
                         Quaternion.Euler(0f, v.RotationDegrees, 0f),
                         prefab.transform.localScale * v.UniformScale) * local).ToArray();
                     for (var sub = 0; sub < mesh.subMeshCount && sub < renderer.sharedMaterials.Length; sub++)
@@ -92,6 +117,9 @@ namespace Game.Infrastructure
                             }
                             if (!keepAuthored)
                             {
+                                // Grass meshes do not carry the tree shader's blue leaf/bark mask.
+                                // Sampling their absent bark texture produced opaque white polygons.
+                                material.SetFloat("_ForceFoliage", group.Key.Ground && foliage ? 1f : 0f);
                                 material.SetFloat("_Flowering", group.Key.Flowering ? 1f : 0f);
                                 material.SetFloat("_BiomeStrength", group.Key.Ground ? .38f : .72f);
                             }
@@ -101,7 +129,7 @@ namespace Game.Infrastructure
                             batches.Add(new Batch { Mesh = mesh, Material = material, Submesh = sub,
                                 Lod = level, Ground = group.Key.Ground,
                                 Center = new Vector3(group.Key.X * 64f + 32f,
-                                    instances.Average(v => v.Position.Y), group.Key.Z * 64f + 32f),
+                                    positions.Average(v => v.y), group.Key.Z * 64f + 32f),
                                 Matrices = matrices.Skip(offset).Take(1023).ToArray(),
                                 OriginalMatrices = matrices.Skip(offset).Take(1023).ToArray(),
                                 Ids = instances.Skip(offset).Take(1023).Select(value => value.StableId).ToArray() });
@@ -148,7 +176,8 @@ namespace Game.Infrastructure
                 var point = new Vector2(value.Position.X*map.z+map.x,value.Position.Z*map.w+map.y);
                 var distance = new Vector2((point.x-snow.x)/snow.z,(point.y-snow.y)/snow.w).magnitude;
                 if (IsTree(value) && late.SnowTree != null && distance < .78f) return late.SnowTree;
-                if (value.Kind == WorldMapVegetationKind.GroundCover && distance > 1f && Index(value.StableId,100)<45)
+                if (value.Kind == WorldMapVegetationKind.GroundCover && distance > 1f && Index(value.StableId,100)<18 &&
+                    Mathf.PerlinNoise(value.Position.X * .055f + 17f, value.Position.Z * .055f) > .57f)
                 {
                     var pool = value.ClassId == "marsh_vegetation" ? late.MarshPlants : late.Flowers;
                     if (pool != null && pool.Length>0) return pool[Index(value.StableId,pool.Length)];
@@ -166,8 +195,19 @@ namespace Game.Infrastructure
                 (value.ClassId == "meadow" || value.ClassId == "open_woodland" || value.ClassId == "deciduous_grove"))
             {
                 var patch = Mathf.PerlinNoise(value.Position.X * .035f, value.Position.Z * .035f);
-                if (patch > .49f && Index(value.StableId, 100) < 65)
+                if (patch > .62f && Index(value.StableId, 100) < 28)
                     return catalog.WorldMapFlowers[Index(value.StableId, catalog.WorldMapFlowers.Length)];
+            }
+            // Small non-colliding stones and low shrubs provide a readable meadow edge.
+            // They share the ground-cover batch/culling budget, not a MonoBehaviour per prop.
+            if (value.Kind == WorldMapVegetationKind.GroundCover)
+            {
+                var detail = Index(value.StableId, 100);
+                var patch = Mathf.PerlinNoise(value.Position.X * .055f + 91f, value.Position.Z * .055f);
+                if (detail < 4 && catalog.WorldMapSmallProps?.Length > 0)
+                    return catalog.WorldMapSmallProps[Index(value.StableId, catalog.WorldMapSmallProps.Length)];
+                if (detail >= 4 && detail < 10 && patch > .60f && catalog.WorldMapShrubs?.Length > 0)
+                    return catalog.WorldMapShrubs[Index(value.StableId, catalog.WorldMapShrubs.Length)];
             }
             var prefabs = value.Kind == WorldMapVegetationKind.GroundCover ? catalog.WorldMapGroundCover :
                 IsTree(value)

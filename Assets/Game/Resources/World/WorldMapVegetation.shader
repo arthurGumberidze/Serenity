@@ -13,6 +13,7 @@ Shader "Serenity/World Map Vegetation"
         _AtlasMode("Atlas material", Float) = 0
         _Flowering("Deciduous seasonal crown", Float) = 1
         _BiomeStrength("Regional foliage", Range(0,1)) = 0.68
+        _ForceFoliage("Ground foliage without tree vertex mask", Float) = 0
     }
     SubShader
     {
@@ -27,7 +28,7 @@ Shader "Serenity/World Map Vegetation"
         CBUFFER_START(UnityPerMaterial)
         float4 _LeafTex_ST, _TunkTex_ST;
         half4 _LeafBaseColour, _TrunkBaseColour, _LeafNoiseColour, _TrunkNoiseColour;
-        float _TotalWindAmount, _AlphaCutoff, _AtlasMode, _Flowering, _BiomeStrength;
+        float _TotalWindAmount, _AlphaCutoff, _AtlasMode, _Flowering, _BiomeStrength, _ForceFoliage;
         CBUFFER_END
         struct Attributes
         {
@@ -62,7 +63,7 @@ Shader "Serenity/World Map Vegetation"
             output.normal = TransformObjectToWorldNormal(input.normalOS);
             output.positionCS = TransformWorldToHClip(world);
             output.uv = input.uv;
-            output.leafFog = half2(step(.5h, input.color.b), ComputeFogFactor(output.positionCS.z));
+            output.leafFog = half2(max(step(.5h, input.color.b), _ForceFoliage), ComputeFogFactor(output.positionCS.z));
             output.biome = WorldMapFoliage(world.xz, _Flowering);
             return output;
         }

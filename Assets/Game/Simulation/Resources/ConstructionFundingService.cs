@@ -260,7 +260,9 @@ namespace Game.Simulation.Resources
                 if (remaining != 0)
                 {
                     missingResource = cost.ResourceId;
-                    return ConstructionFailureReason.InsufficientResources;
+                    // Physical construction accepts a blueprint and delivers whatever is available now.
+                    // Legacy instant-funded simulations still require the complete bill atomically.
+                    if (sites == null || work == null || piles == null) return ConstructionFailureReason.InsufficientResources;
                 }
             }
             return ConstructionFailureReason.None;

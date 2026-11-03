@@ -7,6 +7,15 @@ namespace Game.Simulation.Tiers
     /// Structural boundary for one representation tier. ValidateMaterialization must not activate
     /// a representation; TierManager calls it before releasing the current source.
     /// </summary>
+    // Save restoration installs an exact checkpoint before the session clock is rebound.
+    // Adapters that normally catch up must not advance against the departing session's clock.
+    public interface ICharacterCheckpointAdapter
+    {
+        CharacterRuntimeState CaptureCheckpoint(StableEntityId characterId);
+        void ValidateCheckpoint(Character character, CharacterRuntimeState state);
+        void MaterializeCheckpoint(Character character, CharacterRuntimeState state);
+    }
+
     public interface ICharacterTierAdapter
     {
         CharacterSimulationTier Tier { get; }

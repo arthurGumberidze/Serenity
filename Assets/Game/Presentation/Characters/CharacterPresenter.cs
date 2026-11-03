@@ -98,6 +98,9 @@ namespace Game.Presentation.Characters
         {
             if (prefab == null) return null;
             var holder = new GameObject(label);
+            // Disable before cloning: non-readable decorative meshes must never enter PhysX
+            // under the non-uniformly scaled character skeleton. The body capsule owns collision.
+            holder.SetActive(false);
             holder.transform.SetParent(hand, false);
             var visual = Instantiate(prefab, holder.transform, false);
             var bounds = new Bounds();

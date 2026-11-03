@@ -161,8 +161,35 @@ namespace Game.Simulation.Resources
             }
         }
 
-        public WorldResourcePileState[] CaptureStates() => piles.Values.Select(x => x.State)
-            .OrderBy(x => x.Id).ToArray();
+        public WorldResourcePileState[] CaptureStates()
+        {
+            SeparateSpoiledFood();
+            return piles.Values.Select(x => x.State).OrderBy(x => x.Id).ToArray();
+        }
+
+        // Decay changes the inventory, not the original resource identity. Keep its byproduct
+        // in a separate stable pile at the same location so presentation, hauling and saves agree.
+        public void SeparateSpoiledFood()
+        {
+            var spoiled = new ResourceId("spoiled_food");
+            if (!catalog.Contains(spoiled)) return;
+            foreach (var pile in piles.Values.OrderBy(x => x.Id).ToArray())
+            {
+                if (pile.ResourceId == spoiled || catalog.Get(pile.ResourceId).Category != ResourceCategory.Food ||
+                    !inventories.TryGet(pile.InventoryOwner, out var source)) continue;
+                var quantity = source.GetAmount(spoiled);
+                if (!quantity.IsPositive) continue;
+                var id = SpillPileId(pile.Id, spoiled);
+                if (piles.TryGetValue(id, out var destination))
+                {
+                    if (!inventories.Get(destination.InventoryOwner).TryAdd(spoiled, quantity, true))
+                        throw new InvalidOperationException("Unable to preserve spoiled ground food.");
+                }
+                else Create(spoiled, quantity, pile.Coordinate, id);
+                if (!source.TryRemove(spoiled, quantity, true))
+                    throw new InvalidOperationException("Ground food changed during decay separation.");
+            }
+        }
 
         public void RestoreStates(IEnumerable<WorldResourcePileState> states)
         {
@@ -172,12 +199,14 @@ namespace Game.Simulation.Resources
                 catalog.Get(state.ResourceId);
                 var pile = WorldResourcePile.Restore(state);
                 if (!inventories.TryGet(pile.InventoryOwner, out var inventory) ||
-                    inventory.CaptureState().Amounts.Any(x => x.Quantity.Units > 0 && x.ResourceId != state.ResourceId) ||
+                    inventory.CaptureState().Amounts.Any(x => x.Quantity.Units > 0 && x.ResourceId != state.ResourceId &&
+                        !(x.ResourceId.ToString() == "spoiled_food" && catalog.Get(state.ResourceId).Category == ResourceCategory.Food)) ||
                     !replacement.TryAdd(pile.Id, pile))
                     throw new ArgumentException("World-pile state has no matching canonical inventory.", nameof(states));
             }
             piles.Clear();
             foreach (var pair in replacement.OrderBy(x => x.Key)) piles.Add(pair.Key, pair.Value);
+            SeparateSpoiledFood();
         }
 
         public bool TryGet(StableEntityId id, out WorldResourcePile pile) => piles.TryGetValue(id, out pile);

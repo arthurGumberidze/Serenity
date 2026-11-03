@@ -17,7 +17,7 @@ namespace Game.Tests.Editor
     public sealed class P109FoodIntegrationTests
     {
         [Test]
-        public void AggregateConsumptionUsesOnlyCookedFoodAndChargesExactlyOnce()
+        public void AggregateConsumptionPrefersCookedFoodAndChargesExactlyOnce()
         {
             var fixture = new Fixture(cookedUnits: 2);
             fixture.Production.Food.Advance(TimeSpan.FromDays(15), 2);
@@ -43,18 +43,40 @@ namespace Game.Tests.Editor
         }
 
         [Test]
-        public void Tier1CannotRecoverHungerFromRawFoodWhenCookedFoodIsMissing()
+        public void Tier1CanEatGatheredBerriesBeforeCookingIsAvailable()
         {
             var fixture = new Fixture(cookedUnits: 0);
             var agent = fixture.AddHungryTier1();
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < 6; i++)
                 fixture.Scheduler.Advance(new Game.Simulation.Time.GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
 
-            Assert.That(agent.Needs.Hunger, Is.EqualTo(0.95d));
-            Assert.That(agent.CurrentAction, Is.Not.EqualTo(UtilityActionKind.Eat),
-                "A failed Eat loop must not prevent shortage-recovery work.");
-            Assert.That(fixture.Storage.GetAmount(fixture.Raw).Units, Is.EqualTo(5));
-            Assert.That(fixture.Production.Food.TotalConsumed, Is.Zero);
+            Assert.That(agent.Needs.Hunger, Is.LessThanOrEqualTo(Tier1AiScheduler.CriticalHungerCompletion));
+            Assert.That(fixture.Storage.GetAmount(fixture.Raw).Units, Is.EqualTo(4));
+            Assert.That(fixture.Production.Food.TotalConsumed, Is.EqualTo(1));
+            Assert.That(fixture.Production.PreparedFoodTotal, Is.Zero);
+        }
+
+        [Test]
+        public void GroundFoodFeedsResidentsWhenStorageIsUnavailableWithoutConsumingCarryLoads()
+        {
+            var fixture = new Fixture(cookedUnits: 0);
+            fixture.Storage.TryRemove(fixture.Raw, new ResourceQuantity(5));
+            var ground = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.WorldPile,
+                StableEntityId.NewId()), fixture.Resources, 4);
+            ground.TryAdd(fixture.Raw, new ResourceQuantity(1));
+            fixture.Inventories.Add(ground);
+            var carry = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.CarryLoad,
+                StableEntityId.NewId()), fixture.Resources, 4);
+            carry.TryAdd(fixture.Raw, new ResourceQuantity(2));
+            fixture.Inventories.Add(carry);
+            var agent = fixture.AddHungryTier1();
+            for (var i = 0; i < 6; i++)
+                fixture.Scheduler.Advance(new Game.Simulation.Time.GameTimeAdvance(TimeSpan.FromMinutes(1), TimeSpan.Zero));
+            Assert.That(agent.Needs.Hunger, Is.LessThanOrEqualTo(Tier1AiScheduler.CriticalHungerCompletion));
+            Assert.That(ground.TotalUnits, Is.Zero);
+            Assert.That(carry.GetAmount(fixture.Raw).Units, Is.EqualTo(2));
+            Assert.That(fixture.Production.Food.TotalConsumed, Is.EqualTo(1));
+            Assert.That(fixture.Production.Food.HasAvailableMeal, Is.False);
         }
 
         private sealed class Fixture

@@ -19,6 +19,8 @@ namespace Game.Tests.Editor
                 Assert.That(Catalog.Find("pile_"+id),Is.Not.Null,id);
             }
             Assert.That(Catalog.Entries.Select(x=>x.Key).Distinct().Count(),Is.EqualTo(Catalog.Entries.Length));
+            Assert.That(Catalog.Find("pile_spoiled_food"), Is.Not.Null,
+                "Food decay creates a real ground pile, including when loading a later-day save.");
         }
         [Test] public void ViewsHaveRealMeshesAndValidUrpMaterialsWithoutVendorLogicOrCollision()
         {

@@ -18,8 +18,20 @@ namespace Game.Tests.PlayMode
         [UnitySetUp]
         public IEnumerator LoadLocalScene()
         {
-            yield return SceneManager.LoadSceneAsync("LocalGameplay", LoadSceneMode.Single);
+            Application.runInBackground = true;
+            yield return SceneManager.LoadSceneAsync("MainMenu", LoadSceneMode.Single);
             yield return null;
+            var menu = Object.FindAnyObjectByType<MainMenuController>();
+            menu.OpenNewGame();
+            menu.StartNewGame(1380062136);
+            var deadline = Time.realtimeSinceStartup + 600f;
+            LocalSceneCompositionRoot root;
+            while ((root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>()) == null || !root.IsInitialized)
+            {
+                Assert.That(Time.realtimeSinceStartup, Is.LessThan(deadline), "Local world initialization timed out");
+                yield return null;
+            }
+            root.Clock.Pause();
         }
 
         [UnityTest]
@@ -136,8 +148,8 @@ namespace Game.Tests.PlayMode
             Assert.That(controller.LastPlacedPresenter.transform.Find("Construction frame").gameObject.activeSelf, Is.False);
         }
 
-        [UnityTest]
-        public IEnumerator StarterStorageProvidesCookedRationsAndRawFoodIsNotDirectlyEdible()
+        [UnityTest, Timeout(1200000)]
+        public IEnumerator StarterStorageProvidesCookedRationsAndBerriesBridgeEarlyResearch()
         {
             var root = Object.FindAnyObjectByType<LocalSceneCompositionRoot>();
             var storage = root.Inventories.Get(new InventoryOwner(InventoryOwnerKind.BuildingStorage,
@@ -146,7 +158,9 @@ namespace Game.Tests.PlayMode
 
             Assert.That(storage.GetAmount(cookedBerries).Units, Is.GreaterThanOrEqualTo(8));
             CollectionAssert.Contains(root.Production.Food.EdibleResources.ToArray(), cookedBerries);
-            CollectionAssert.DoesNotContain(root.Production.Food.EdibleResources.ToArray(), new ResourceId("berries"));
+            CollectionAssert.Contains(root.Production.Food.EdibleResources.ToArray(), new ResourceId("berries"));
+            CollectionAssert.DoesNotContain(root.Production.Food.EdibleResources.ToArray(), new ResourceId("meat"));
+            CollectionAssert.DoesNotContain(root.Production.Food.EdibleResources.ToArray(), new ResourceId("fish"));
             yield return null;
         }
 

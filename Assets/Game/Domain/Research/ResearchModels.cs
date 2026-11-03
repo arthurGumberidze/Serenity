@@ -281,18 +281,22 @@ namespace Game.Domain.Research
     public sealed class ResearchSaveState
     {
         public ResearchSaveState(long lastProcessedTick, IEnumerable<TechnologyId> completed,
-            ResearchProjectState? activeProject, IEnumerable<ResearchWorkerState> workers)
+            ResearchProjectState? activeProject, IEnumerable<ResearchWorkerState> workers, IEnumerable<TechnologyId> queued = null)
         {
             if (lastProcessedTick < 0) throw new ArgumentOutOfRangeException(nameof(lastProcessedTick));
             LastProcessedTick = lastProcessedTick;
             Completed = Array.AsReadOnly((completed ?? Array.Empty<TechnologyId>()).Distinct().OrderBy(x => x).ToArray());
             ActiveProject = activeProject;
             Workers = Array.AsReadOnly((workers ?? Array.Empty<ResearchWorkerState>()).OrderBy(x => x.WorkerId).ToArray());
+            Queued = Array.AsReadOnly((queued ?? Array.Empty<TechnologyId>()).ToArray());
+            if (Queued.Count + (activeProject.HasValue ? 1 : 0) > 3 || Queued.Distinct().Count() != Queued.Count)
+                throw new ArgumentException("Research queue must contain at most three distinct projects including the active project.");
         }
 
         public long LastProcessedTick { get; }
         public IReadOnlyList<TechnologyId> Completed { get; }
         public ResearchProjectState? ActiveProject { get; }
         public IReadOnlyList<ResearchWorkerState> Workers { get; }
+        public IReadOnlyList<TechnologyId> Queued { get; }
     }
 }

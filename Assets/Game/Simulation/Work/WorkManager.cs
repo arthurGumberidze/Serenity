@@ -87,6 +87,21 @@ namespace Game.Simulation.Work
 
         public bool DeleteEmptyGroup(WorkGroupId groupId) => Groups.Remove(groupId);
 
+        public void MergeGroup(WorkGroupId sourceId, WorkGroupId destinationId)
+        {
+            if (sourceId == destinationId) return;
+            var source = Groups.Get(sourceId);
+            Groups.Get(destinationId);
+            foreach (var member in source.Members.ToArray())
+            {
+                var shift = source.ShiftFor(member);
+                MoveMember(destinationId, member);
+                SetMemberShift(destinationId, member, shift);
+            }
+            foreach (var job in jobs.Values) job.RebindGroup(sourceId, destinationId);
+            Groups.Remove(sourceId);
+        }
+
         public bool RemoveMember(WorkGroupId groupId, StableEntityId characterId) =>
             Groups.RemoveMember(groupId, characterId);
 
@@ -148,7 +163,8 @@ namespace Game.Simulation.Work
         {
             if (type == WorkJobType.Move || type == WorkJobType.Haul)
                 throw new ArgumentException("Use the specialized move/haul factory.", nameof(type));
-            return Create(type, priority, target, null, assigneeId, groupId, null, default, exclusiveTarget,
+            return Create(type, priority, target, null, assigneeId, groupId, null, default,
+                exclusiveTarget && type != WorkJobType.Build,
                 queuePlacement);
         }
 

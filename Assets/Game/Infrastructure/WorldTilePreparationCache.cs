@@ -16,7 +16,7 @@ namespace Game.Infrastructure
         private const int TileMagic = 0x574D5431; // WMT1
         private const int TileFormatVersion = 1;
         private const int OverviewMagic = 0x574D4F31; // WMO1
-        private const int PreparationAlgorithmVersion = 1;
+        private const int PreparationAlgorithmVersion = 3; // DEV01: camp relief, worn paths and meadow patches invalidate cached terrain.
         private readonly string directory;
         private readonly int heightResolution;
         private readonly int paintResolution;

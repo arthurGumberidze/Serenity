@@ -154,6 +154,9 @@ MonoBehaviour:
   - Key: pile_cooked_berries
     Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
     Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_spoiled_food
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
   - Key: pile_dried_meat
     Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
     Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
@@ -205,3 +208,48 @@ MonoBehaviour:
   - Key: fish_swimming
     Prefab: {fileID: 8597353877994938740, guid: 06f401c86e76bd8449b9c5c546bc1d6d, type: 3}
     Source: Fish by joyfulsquirrel, CC0, Swim animation
+  - Key: pile_dressed_carcass
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_field_dressed_carcass
+    Prefab: {fileID: 2963822781802509481, guid: 6928a4b1de4fad44498f346da9d6f89c, type: 3}
+    Source: Assets/Synty/PolygonGeneric/Prefabs/Props/SM_Gen_Prop_Food_Meat_01.prefab
+  - Key: pile_raw_hide
+    Prefab: {fileID: 6816199963068569836, guid: 5b994e24718f9ec4798ed2aeeea2ff8a, type: 3}
+    Source: Animal Hide by Zsky, CC BY
+  - Key: pile_wheat
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_wool
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_milk
+    Prefab: {fileID: 383213265765825071, guid: 63858fd58a80f0f449748a3cd356782d, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Bucket_01.prefab
+  - Key: pile_eggs
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_feathers
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_animal_feed
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_medicine
+    Prefab: {fileID: 3066454858534540839, guid: fd637c6e7e5c9744fa11693304c7d6bd, type: 3}
+    Source: Assets/LowPolyFarm/Prefabs/Props/Basket_01.prefab
+  - Key: pile_leather_clothing
+    Prefab: {fileID: 6816199963068569836, guid: 5b994e24718f9ec4798ed2aeeea2ff8a, type: 3}
+    Source: Animal Hide by Zsky, CC BY
+  - Key: pile_stone_spear
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_wooden_shield
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_combat_bow
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab
+  - Key: pile_arrows
+    Prefab: {fileID: 4885648774481419770, guid: 6d7846e4f4438854cb2fd0d73c30cf14, type: 3}
+    Source: Assets/RTSToonBuildings/Prefabs/Props/Sack.prefab

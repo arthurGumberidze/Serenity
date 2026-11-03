@@ -1,6 +1,7 @@
 using System;
 using Game.Domain;
 using Game.Domain.AI;
+using Game.Domain.Production;
 using Game.Domain.Resources;
 using Game.Simulation.Resources;
 using Game.Simulation.Production;
@@ -63,14 +64,16 @@ namespace Game.Simulation.AI
         private TimeSpan moveElapsed;
         private WorldPosition lastProgressPosition;
         private bool occupying;
+        private readonly Func<bool> scheduledSleep;
 
         public SleepActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
-            Tier1AiSettings settings, DomesticService domestic, BedState bed)
+            Tier1AiSettings settings, DomesticService domestic, BedState bed, Func<bool> scheduledSleep = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
             this.domestic = domestic ?? throw new ArgumentNullException(nameof(domestic));
+            this.scheduledSleep = scheduledSleep;
             if (bed == null) throw new ArgumentNullException(nameof(bed));
             Phase = AiActionPhase.MoveToTarget;
             agent.SetAction(UtilityActionKind.Rest, Phase);
@@ -108,7 +111,7 @@ namespace Game.Simulation.AI
             if (Phase != AiActionPhase.Resting) return;
             agent.Needs.RecoverEnergy(settings.RestRecoveryPerDay * simulationDelta.TotalDays);
             agent.Needs.AdjustMood(0.08d * simulationDelta.TotalDays);
-            if (agent.Needs.Energy < settings.RestCompletionEnergy) return;
+            if (agent.Needs.Energy < settings.RestCompletionEnergy || scheduledSleep?.Invoke() == true) return;
             Finish();
         }
 
@@ -448,11 +451,12 @@ namespace Game.Simulation.AI
         public bool Succeeded { get; private set; }
         public bool IsInterruptible => Phase == AiActionPhase.MoveToSource ||
             production.TryGetSite(job.Task.SiteId, out var site) && site.Continuous;
-        public bool IsValid => !IsFinished && (completion.Completed || production.IsTaskActive(job.Task.Id));
+        public bool IsValid => !IsFinished && (completion.Completed || job.Task.Status == ProductionTaskStatus.Completed || production.IsTaskActive(job.Task.Id));
 
         public void Tick(TimeSpan simulationDelta)
         {
             if (IsFinished) return;
+            if (job.Task.Status == ProductionTaskStatus.Completed && !completion.Completed) { Finish(); return; }
             agent.UpdatePosition(movement.CurrentPosition);
             phaseElapsed += simulationDelta;
             if (Hunting && !completion.Completed && production.TryGetSite(job.Task.SiteId, out var prey))

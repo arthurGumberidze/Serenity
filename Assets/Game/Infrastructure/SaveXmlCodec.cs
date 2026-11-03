@@ -500,6 +500,7 @@ namespace Game.Infrastructure
             if (state == null) return element;
             element.Add(new XElement("lastProcessedTick", state.LastProcessedTick),
                 new XElement("completed", state.Completed.Select(id => new XElement("technology", id.ToString()))),
+                new XElement("queued", state.Queued.Select(id => new XElement("technology", id.ToString()))),
                 new XElement("activeProject", state.ActiveProject.HasValue
                     ? new[]
                     {
@@ -524,7 +525,9 @@ namespace Game.Infrastructure
                 if (!string.IsNullOrWhiteSpace(element.Value)) throw new FormatException("Invalid empty research state.");
                 return null;
             }
-            RequireFields(element, new[] { "lastProcessedTick", "completed", "activeProject", "workers" });
+            RequireFields(element, element.Element("queued") == null
+                ? new[] { "lastProcessedTick", "completed", "activeProject", "workers" }
+                : new[] { "lastProcessedTick", "completed", "queued", "activeProject", "workers" });
             var completed = Items(element.Element("completed"), "technology",
                 item => new TechnologyId(Scalar(item)));
             var activeElement = element.Element("activeProject");
@@ -544,7 +547,8 @@ namespace Game.Infrastructure
                 return new ResearchWorkerState(StableEntityId.Parse(Value(item, "id")),
                     Long(item, "lastProcessedTick"), Int(item, "remainder"));
             });
-            return new ResearchSaveState(Long(element, "lastProcessedTick"), completed, active, workers);
+            return new ResearchSaveState(Long(element, "lastProcessedTick"), completed, active, workers,
+                element.Element("queued")?.Elements("technology").Select(x => new TechnologyId(Scalar(x))));
         }
 
         private static XElement SerializeDynastyWorld(DynastyWorldSaveState state)

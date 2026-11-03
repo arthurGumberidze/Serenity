@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Game.Infrastructure
 {
     // One bounded presentation scheduler; resource quantities always come from the domain.
-    public sealed class WorksitePresentation : MonoBehaviour
+    public sealed partial class WorksitePresentation : MonoBehaviour
     {
         private LocalSceneCompositionRoot root;
         private IEnumerable<WorldResourcePile> AllPiles => root.StarterEnemyAi == null ? root.WorldPiles.All :
@@ -33,6 +33,7 @@ namespace Game.Infrastructure
         private float nextFishRefresh;
         private sealed class FishSchool
         {
+            public bool River;
             public Transform Parent;
             public Transform[] Fish;
             public Animator[] Animators;
@@ -63,22 +64,24 @@ namespace Game.Infrastructure
         {
             var timer=System.Diagnostics.Stopwatch.StartNew();
             var world = root.WorldDefinition;
+            var river = world.MapData?.Hydrology.MainRiver.Id == waterId || world.MapData?.Hydrology.Tributaries.Any(x => x.Id == waterId) == true;
+            var spacing = river ? 10 : 16;
             var seed = new System.Random(sourceId.GetHashCode());
             // Each school owns a disjoint swimming cell. Coverage is uniform; motions are independently phased.
-            for (var x = world.Origin.X + 8; x < world.Origin.X + world.Columns * world.TileSizeMeters; x += 16)
-            for (var z = world.Origin.Z + 8; z < world.Origin.Z + world.Rows * world.TileSizeMeters; z += 16)
+            for (var x = world.Origin.X + 8; x < world.Origin.X + world.Columns * world.TileSizeMeters; x += spacing)
+            for (var z = world.Origin.Z + 8; z < world.Origin.Z + world.Rows * world.TileSizeMeters; z += spacing)
             {
                 if(timer.Elapsed.TotalMilliseconds>2){yield return null;timer.Restart();}
                 if (root.WorldHeight.NearestWaterBodyId(x,z)!=waterId ||
-                    root.WorldHeight.WaterBoundaryDistance(x,z,out var surface)>-8f) continue;
+                    root.WorldHeight.WaterBoundaryDistance(x,z,out var surface)>(river ? -3f : -8f)) continue;
                 var holder = new GameObject("Free swimming school").transform;
                 holder.SetParent(transform,false);
                 var center = new Vector3(x,surface-.08f,z);
                 holder.gameObject.SetActive(false);
                 var school = new FishSchool { Parent=holder,Center=center,
-                    Phase=(float)seed.NextDouble()*6.28f,SourceId=sourceId,SchoolSize=seed.Next(6,16) };
+                    Phase=(float)seed.NextDouble()*6.28f,SourceId=sourceId,River=river,SchoolSize=river?seed.Next(12,22):seed.Next(6,16) };
                 schools.Add(school); RefreshFish(school);
-                if (seed.Next(0,3)==0)
+                if (!river && seed.Next(0,3)==0)
                 {
                     var singleHolder = new GameObject("Solitary silver fish").transform;
                     singleHolder.SetParent(transform,false); singleHolder.gameObject.SetActive(false);
@@ -149,9 +152,9 @@ namespace Game.Infrastructure
                 // Independent centres, radii and periods prevent rows or a shared rectangular formation.
                 var phase=school.Phase+i*2.399963f;
                 var orbit=fishTime*(.12f+.055f*(.5f+.5f*Mathf.Sin(phase*7f)))+phase;
-                var spread=school.Solitary?0f:Mathf.Sqrt((i+.5f)/school.SchoolSize)*4.5f;
+                var spread=school.Solitary?0f:Mathf.Sqrt((i+.5f)/school.SchoolSize)*(school.River?1.4f:4.5f);
                 var centre=school.Center+new Vector3(Mathf.Cos(phase)*spread,-.12f-.12f*Mathf.Sin(phase*3f),Mathf.Sin(phase)*spread);
-                var travelRadius=1.1f+.7f*(.5f+.5f*Mathf.Sin(phase));
+                var travelRadius=(school.River?.35f:1.1f)+(school.River?.35f:.7f)*(.5f+.5f*Mathf.Sin(phase));
                 school.Fish[i].position=centre+new Vector3(Mathf.Sin(orbit)*travelRadius,Mathf.Sin(orbit*.5f)*.04f,
                     Mathf.Cos(orbit*.83f+phase)*travelRadius);
                 var desired=new Vector3(Mathf.Cos(orbit),0,-.83f*Mathf.Sin(orbit*.83f+phase));
@@ -181,6 +184,7 @@ namespace Game.Infrastructure
             if (Time.unscaledTime < nextRefresh) return;
             nextRefresh = Time.unscaledTime + 0.25f;
             RefreshPiles();
+            RefreshConstructionMaterials();
             RefreshCarriedLoads();
         }
 

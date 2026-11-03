@@ -13,7 +13,10 @@ namespace Game.Domain.Production
         public int arrowsPerHunter = 20;
         public int medicinesPerCase = 2;
         public int residentsPerReserveMedicine = 10;
+        public HeatingStockRule[] heating = Array.Empty<HeatingStockRule>();
     }
+    [Serializable]
+    public sealed class HeatingStockRule { public string building; public int logsPerDay; }
     [Serializable]
     public sealed class StockGroupDefinition { public string id; public string name; public string icon; }
     [Serializable]

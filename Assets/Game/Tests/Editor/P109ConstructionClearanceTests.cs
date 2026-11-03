@@ -65,10 +65,11 @@ namespace Game.Tests.Editor
 
             fixture.Clearance.Register(fixture.Building, Array.Empty<StableEntityId>(), WorkPriority.Normal);
 
-            Assert.That(fixture.Work.Jobs.Any(x => !x.IsTerminal &&
-                (x.Type == WorkJobType.Haul || x.Type == WorkJobType.Build)), Is.False);
+            Assert.That(fixture.Work.Jobs.Any(x => !x.IsTerminal && x.Type == WorkJobType.Haul), Is.True,
+                "Available materials are delivered while the rest are still being gathered.");
+            Assert.That(fixture.Work.Jobs.Any(x => !x.IsTerminal && x.Type == WorkJobType.Build), Is.False);
             Assert.That(fixture.Clearance.TryGetStatus(fixture.Building.Id, out var status), Is.True);
-            Assert.That(status.DeliveriesScheduled, Is.False);
+            Assert.That(status.DeliveriesScheduled, Is.True);
             Assert.That(status.BuildScheduled, Is.False);
         }
 

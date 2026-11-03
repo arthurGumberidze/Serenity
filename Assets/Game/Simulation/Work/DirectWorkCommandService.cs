@@ -64,7 +64,9 @@ namespace Game.Simulation.Work
         {
             switch (type)
             {
-                case WorkJobType.Gather: return WorkGroupRole.Gatherers;
+                case WorkJobType.Gather:
+                case WorkJobType.Chop:
+                case WorkJobType.Mine: return WorkGroupRole.General;
                 case WorkJobType.Demolish:
                 case WorkJobType.Upgrade:
                 case WorkJobType.Build: return WorkGroupRole.Builders;
@@ -82,7 +84,7 @@ namespace Game.Simulation.Work
         public IReadOnlyList<WorkGroup> EnsureRoleGroups()
         {
             ProfessionGroups.EnsureGroups();
-            return work.Groups.All.Where(x => x.Role != WorkGroupRole.General).OrderBy(x => x.Role).ToArray();
+            return work.Groups.All.OrderBy(x => x.Role).ToArray();
         }
 
         public WorkOrder Issue(WorkJobType type, WorkTarget target, WorkPriority priority)

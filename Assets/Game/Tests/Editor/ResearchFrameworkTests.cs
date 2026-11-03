@@ -24,6 +24,30 @@ namespace Game.Tests.Editor
     [Category("U16")]
     public sealed class ResearchFrameworkTests
     {
+        [Test, Category("DEV01")]
+        public void ThreeProjectQueuePreservesOrderDependenciesAndNoRetroactiveWorkAfterLoad()
+        {
+            var ids = Enumerable.Range(1,4).Select(n => new TechnologyId("queue_"+n)).ToArray();
+            var catalog = new TechnologyCatalog(ids.Select((id,n) => new TechnologyDefinition(id,id.ToString(),
+                n==0?null:new[]{ids[n-1]},TimeSpan.FromHours(1),null)),new TechnologyUnlockTargets(null,null,null));
+            var service = new ResearchService(catalog); var worker = Id(1); service.AssignWorker(worker);
+            Assert.That(service.Enqueue(ids[1]),Is.False,"A successor needs its predecessor in the plan");
+            Assert.That(service.Enqueue(ids[0]),Is.True); Assert.That(service.Enqueue(ids[1]),Is.True);
+            Assert.That(service.Enqueue(ids[2]),Is.True); Assert.That(service.Enqueue(ids[3]),Is.False);
+            service.AdvanceWorkerTo(worker,TimeSpan.FromHours(1).Ticks,true);
+            Assert.That(service.IsCompleted(ids[0]),Is.True);
+            Assert.That(service.ActiveProject.TechnologyId,Is.EqualTo(ids[1]));
+            Assert.That(service.ActiveProject.AccumulatedWorkTicks,Is.Zero);
+            var restored = new ResearchService(catalog); restored.RestoreState(service.CaptureState());
+            Assert.That(restored.QueuedTechnologies,Is.EqualTo(new[]{ids[2]}));
+            Assert.That(restored.ComputeStateHash(),Is.EqualTo(service.ComputeStateHash()));
+            restored.AdvanceWorkerTo(worker,TimeSpan.FromHours(2).Ticks,true);
+            Assert.That(restored.ActiveProject.TechnologyId,Is.EqualTo(ids[2]));
+            Assert.That(restored.ActiveProject.AccumulatedWorkTicks,Is.Zero);
+            restored.AdvanceWorkerTo(worker,TimeSpan.FromHours(3).Ticks,true);
+            Assert.That(restored.ActiveProject,Is.Null); Assert.That(restored.QueuedTechnologies,Is.Empty);
+        }
+
         private sealed class SuppliedSettlement : IResearchSettlementContext
         {
             public long Fact(string key)=>1000;
@@ -108,6 +132,7 @@ namespace Game.Tests.Editor
             // A movement driver claiming arrival at the wrong position cannot grant indoor work.
             movement.State = MovementState.Arrived;
             Assert.That(workplace.Travel(fixture.Worker, house.Id, movement), Is.False);
+            Assert.That(movement.State, Is.EqualTo(MovementState.Moving), "A projected arrival outside the entrance must retry travel");
             movement.Arrive();
             Assert.That(workplace.Travel(fixture.Worker, house.Id, movement), Is.True);
             Assert.That(fixture.Research.AdvanceWorkerTo(fixture.Worker, 2 * TimeSpan.TicksPerHour, true), Is.GreaterThan(0));
@@ -116,6 +141,25 @@ namespace Game.Tests.Editor
             Assert.That(workplace.IsInside(fixture.Worker), Is.False);
             buildings.Remove(house);
             Assert.That(fixture.Research.TryAssignWorker(fixture.Worker), Is.False);
+        }
+
+        [Test] public void WorkplaceResolvesAnotherEntranceAfterConstructionBlocksTheOldRoute()
+        {
+            var buildings = new BuildingRegistry();
+            var house = Building.Restore(new BuildingState(Id(702), IndoorWorkplaceService.ResearchHouse,
+                new GridCoordinate(20, 20), (BuildingOrientation)0, ConstructionState.Completed));
+            buildings.Add(house);
+            var entrance = new WorldPosition(20, 0, 18);
+            var workplace = new IndoorWorkplaceService(buildings, new Game.Domain.Combat.CombatSideId("player"), _ => entrance);
+            var movement = new WalkingMovement { CharacterId = Id(703) };
+            Assert.That(workplace.Travel(movement.CharacterId, house.Id, movement), Is.False);
+            entrance = new WorldPosition(24, 0, 20);
+            movement.State = MovementState.Failed;
+            Assert.That(workplace.Travel(movement.CharacterId, house.Id, movement), Is.False);
+            Assert.That(movement.Target, Is.EqualTo(entrance));
+            Assert.That(workplace.IsInside(movement.CharacterId), Is.False);
+            movement.Arrive();
+            Assert.That(workplace.Travel(movement.CharacterId, house.Id, movement), Is.True);
         }
 
         [Test] public void ResearchHouseIsInitialCostlyBuildingAndItsMaterialsCanBeGatheredImmediately()
@@ -480,14 +524,14 @@ namespace Game.Tests.Editor
             service.SynchronizeWorkers(ids,TimeSpan.FromDays(10).Ticks);
             Assert.That(service.Start(id),Is.True);
             service.AdvanceWorkersTo(TimeSpan.FromDays(11).Ticks,ids);
-            Assert.That(service.ActiveProject.Progress,Is.EqualTo(.2d).Within(.000001));
+            Assert.That(service.ActiveProject.Progress,Is.EqualTo(.14d).Within(.000001));
             var saved=service.CaptureState();
             var restored=new ResearchService(catalog);restored.RestoreState(saved);
             restored.SynchronizeWorkers(new[]{Id(200)},TimeSpan.FromDays(40).Ticks);
             restored.AdvanceWorkerTo(Id(200),TimeSpan.FromDays(40).Ticks,true);
-            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.2d).Within(.000001));
+            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.14d).Within(.000001));
             restored.AdvanceWorkerTo(Id(200),TimeSpan.FromDays(41).Ticks,true);
-            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.25d).Within(.000001));
+            Assert.That(restored.ActiveProject.Progress,Is.EqualTo(.19d).Within(.000001));
         }
 
         [Test] public void MaterialCostIsPaidOnceAndMissingPracticalFactsBlockTheEpoch()

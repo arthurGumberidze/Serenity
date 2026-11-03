@@ -31,7 +31,7 @@ namespace Game.Tests.Editor
             public readonly Building Building;
             public readonly BuildingDefinition Definition;
 
-            public Fixture(long outputCapacity = 12)
+            public Fixture(long outputCapacity = 12, bool completed = true)
             {
                 Resources = new ResourceCatalog(new[]
                 {
@@ -44,7 +44,8 @@ namespace Game.Tests.Editor
                 var recipes = ProductionCatalog.CreateStoneAge(Resources);
                 var buildingId = Id(10);
                 Building = Building.Restore(new BuildingState(buildingId, new BuildingDefinitionId("campfire"),
-                    new GridCoordinate(2, 3), BuildingOrientation.North, ConstructionState.Completed));
+                    new GridCoordinate(2, 3), BuildingOrientation.North,
+                    completed ? ConstructionState.Completed : ConstructionState.Planned));
                 Buildings.Add(Building);
                 Definition = new BuildingDefinition(new BuildingDefinitionId("campfire"), "Campfire",
                     BuildingCategory.Food, BuildingEra.StoneAge, string.Empty, string.Empty, null,
@@ -160,6 +161,55 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Production.MaintainContinuousDeliveries(work), Is.EqualTo(2));
             Assert.That(work.Jobs.All(value => value.Target.Kind == WorkTargetKind.BuildingStorage &&
                 value.Target.EntityId == storageOwner.Id), Is.True);
+        }
+
+        [Test]
+        public void UnfinishedKitchenDoesNotFloodWorkQueueBeforeConstructionCompletes()
+        {
+            var fixture = new Fixture(completed: false);
+            fixture.Site.SetContinuous(true);
+            var source = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.WorldPile, Fixture.Id(31)),
+                fixture.Resources, 20);
+            source.TryAdd(fixture.Berries, new ResourceQuantity(9));
+            source.TryAdd(fixture.Wood, new ResourceQuantity(3));
+            fixture.Inventories.Add(source);
+            var work = new WorkManager(new CharacterRegistry());
+            for (var tick = 0; tick < 10; tick++)
+                Assert.That(fixture.Production.MaintainContinuousDeliveries(work), Is.Zero);
+            Assert.That(work.OpenJobs, Is.Empty);
+            fixture.Building.RequireConstructionWork(TimeSpan.FromMinutes(1));
+            fixture.Building.AdvanceConstruction(TimeSpan.FromMinutes(1));
+            Assert.That(fixture.Production.MaintainContinuousDeliveries(work), Is.EqualTo(2));
+            Assert.That(source.TotalUnits, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void CookingDeliveryKeepsRecipeFuelAfterHeatingConsumesItsLog()
+        {
+            var fixture = new Fixture();
+            fixture.Site.SetContinuous(true);
+            fixture.Production.SetTarget(fixture.Cooked, 30);
+            var worker = fixture.AddWorker(22);
+            var source = new ResourceInventory(new InventoryOwner(InventoryOwnerKind.WorldPile, Fixture.Id(31)),
+                fixture.Resources, 20);
+            source.TryAdd(fixture.Berries, new ResourceQuantity(3));
+            source.TryAdd(fixture.Wood, new ResourceQuantity(2));
+            fixture.Inventories.Add(source);
+            var work = new WorkManager(new CharacterRegistry());
+            Assert.That(fixture.Production.MaintainContinuousDeliveries(work), Is.EqualTo(2));
+            Assert.That(work.Jobs.Single(x => x.ResourceId == fixture.Wood).Quantity.Units, Is.EqualTo(2));
+            foreach (var delivery in work.Jobs)
+            {
+                Assert.That(source.TryRemove(delivery.ResourceId.Value, delivery.Quantity), Is.True);
+                Assert.That(fixture.Input.TryAdd(delivery.ResourceId.Value, delivery.Quantity), Is.True);
+            }
+            fixture.Production.AdvanceFireFuel(0, 5);
+            fixture.Production.AdvanceFireFuel(TimeSpan.FromHours(6).Ticks, 5);
+            Assert.That(fixture.Production.TryReserveAtSite(worker, fixture.Site.Id, out var job), Is.True);
+            fixture.Production.AdvanceTask(job.Task.Id, TimeSpan.FromMinutes(20));
+            Assert.That(fixture.Output.GetAmount(fixture.Cooked).Units, Is.EqualTo(3));
+            Assert.That(source.TotalUnits, Is.Zero);
+            Assert.That(fixture.Input.TotalUnits, Is.Zero);
         }
 
         [Test]

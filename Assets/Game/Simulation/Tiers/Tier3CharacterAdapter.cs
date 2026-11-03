@@ -5,7 +5,7 @@ using Game.Simulation.Research;
 
 namespace Game.Simulation.Tiers
 {
-    public sealed class Tier3CharacterAdapter : ICharacterTierAdapter
+    public sealed class Tier3CharacterAdapter : ICharacterTierAdapter, ICharacterCheckpointAdapter
     {
         private readonly Tier3CharacterRegistry records;
         private readonly OffCameraSimulationService simulation;
@@ -36,14 +36,27 @@ namespace Game.Simulation.Tiers
             return advanced;
         }
 
+        public CharacterRuntimeState CaptureCheckpoint(StableEntityId characterId) => records.Get(characterId).State;
+
         public void ValidateMaterialization(Character character, CharacterRuntimeState state)
+        {
+            ValidateCheckpoint(character, state);
+            if (simulation != null) simulation.ValidateTarget(state, currentTime());
+        }
+
+        public void ValidateCheckpoint(Character character, CharacterRuntimeState state)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));
             if (character.Id != state.CharacterId)
                 throw new ArgumentException("Character and Tier 3 state must share one identity.", nameof(state));
             if (IsActive(character.Id))
                 throw new InvalidOperationException("Tier 3 representation is already active.");
-            if (simulation != null) simulation.ValidateTarget(state, currentTime());
+        }
+
+        public void MaterializeCheckpoint(Character character, CharacterRuntimeState state)
+        {
+            ValidateCheckpoint(character, state);
+            records.Add(new Tier3CharacterRecord(state));
         }
 
         public void Materialize(Character character, CharacterRuntimeState state)
@@ -89,12 +102,9 @@ namespace Game.Simulation.Tiers
         /// </summary>
         public void RebaseAfterLoad(SimulationTimePoint restoredTime)
         {
-            foreach (var record in records.All)
-            {
-                var state = record.State;
-                record.Replace(state.WithOffCameraSimulation(restoredTime.CalendarTicks,
-                    restoredTime.BiologicalTicks, 0, 0, 0));
-            }
+            // Saved cursors and deterministic accumulators are authoritative; do not erase them.
+            if (simulation != null)
+                foreach (var record in records.All) simulation.ValidateTarget(record.State, restoredTime);
             lastAutomaticStepIndex = long.MinValue;
         }
     }

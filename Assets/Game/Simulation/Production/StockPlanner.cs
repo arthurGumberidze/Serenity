@@ -11,6 +11,17 @@ namespace Game.Simulation.Production
     {
         public static readonly string[] DishOrder = { "cooked_fish", "cooked_meat", "cooked_berries", "dried_meat" };
 
+        public static Dictionary<ResourceId,long> ConstructionRequirements(ProductionCatalog catalog,
+            Func<ProductionRecipeId,bool> unlocked, Dictionary<ResourceId,long> requirements, IReadOnlyDictionary<ResourceId,long> available)
+        {
+            var producers = new Dictionary<ResourceId,ProductionRecipe>();
+            foreach(var recipe in catalog.All.Where(x => x.Enabled && unlocked(x.Id) && x.Inputs.Count > 0).OrderBy(x => x.Id))
+                foreach(var output in recipe.Outputs) if(!producers.ContainsKey(output.ResourceId)) producers.Add(output.ResourceId,recipe);
+            var result = new Dictionary<ResourceId,long>();
+            Expand(requirements,result,producers,available,null,null,null);
+            return result;
+        }
+
         public static StockPlan Calculate(ProductionCatalog catalog, Func<ProductionRecipeId, bool> unlocked,
             StockPlanningPolicy policy, StockPlanningFacts facts, Func<ResourceId, long> manualTarget)
         {

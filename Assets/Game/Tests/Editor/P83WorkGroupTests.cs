@@ -22,6 +22,17 @@ namespace Game.Tests
     public sealed class P83WorkGroupTests
     {
         [Test]
+        public void MultipleBuildersCanShareOneConstructionTarget()
+        {
+            var f = new Fixture();
+            var target = WorkTarget.ForEntity(WorkTargetKind.Building, StableEntityId.NewId(), default);
+            var first = f.Work.CreateDirectJob(WorkJobType.Build, null, target, WorkPriority.Normal);
+            var second = f.Work.CreateDirectJob(WorkJobType.Build, null, target, WorkPriority.Normal);
+            Assert.That(first.ExclusiveTarget || second.ExclusiveTarget, Is.False);
+            Assert.That(f.Work.OpenJobs.Count(), Is.EqualTo(2));
+        }
+
+        [Test]
         public void TenRoleGroupsIncludeHuntersAndNearestSuitableAssignmentIsDeterministic()
         {
             var fixture = new Fixture();
@@ -30,7 +41,7 @@ namespace Game.Tests
             var groups = fixture.Commands.EnsureRoleGroups();
             Assert.That(groups.Select(x => x.Role).Distinct().Count(), Is.EqualTo(10));
             Assert.That(groups.Select(x => x.Role), Does.Contain(WorkGroupRole.Hunters));
-            var gatherers = groups.Single(x => x.Role == WorkGroupRole.Gatherers);
+            var gatherers = groups.Single(x => x.Role == WorkGroupRole.General);
             fixture.Work.AddMember(gatherers.Id, far.Id);
             fixture.Work.AddMember(gatherers.Id, near.Id);
 
@@ -49,7 +60,7 @@ namespace Game.Tests
         {
             var fixture = new Fixture();
             var worker = fixture.Add("Worker", default, 50);
-            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Gatherers);
+            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.General);
             fixture.Work.AddMember(gatherers.Id, worker.Id);
             var old = fixture.Work.CreateMoveJob(worker.Id, new WorldPosition(5, 0, 0), WorkPriority.Normal,
                 gatherers.Id);
@@ -70,7 +81,7 @@ namespace Game.Tests
         {
             var fixture = new Fixture();
             var exhausted = fixture.Add("Exhausted", default, 50, 0.05);
-            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Gatherers);
+            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.General);
             fixture.Work.AddMember(gatherers.Id, exhausted.Id);
 
             var order = fixture.Commands.Issue(WorkJobType.Gather,
@@ -86,7 +97,7 @@ namespace Game.Tests
         {
             var fixture = new Fixture();
             var resident = fixture.Add("Future soldier", default, 50);
-            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Gatherers);
+            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.General);
             fixture.Work.AddMember(gatherers.Id, resident.Id);
             var order = fixture.Commands.Issue(WorkJobType.Gather,
                 WorkTarget.ForEntity(WorkTargetKind.ProductionSite, StableEntityId.NewId(), default),
@@ -105,7 +116,7 @@ namespace Game.Tests
         {
             var fixture = new Fixture();
             var worker = fixture.Add("Worker", default, 50);
-            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.Gatherers);
+            var gatherers = fixture.Commands.EnsureRoleGroups().Single(x => x.Role == WorkGroupRole.General);
             fixture.Work.AddMember(gatherers.Id, worker.Id);
             var target = WorkTarget.ForEntity(WorkTargetKind.ProductionSite, StableEntityId.NewId(), default);
             var first = fixture.Commands.Issue(WorkJobType.Gather, target, WorkPriority.Normal);
@@ -136,7 +147,7 @@ namespace Game.Tests
             var restored = new SaveXmlCodec().Deserialize(new SaveXmlCodec().Serialize(snapshot));
 
             Assert.That(restored.FormatVersion, Is.EqualTo(SaveSnapshot.CurrentVersion));
-            Assert.That(restored.Work.Groups.Count, Is.EqualTo(11));
+            Assert.That(restored.Work.Groups.Count, Is.EqualTo(10));
             var savedBuilders = restored.Work.Groups.Single(x => x.Id == builders.Id);
             Assert.That(savedBuilders.MemberShifts.Single(x => x.CharacterId == worker.Id).Shift,
                 Is.EqualTo(WorkShiftKind.Day));

@@ -359,6 +359,7 @@ namespace Game.Infrastructure
                     ? new Vector3(2.4f, 0.22f, 1.2f) : new Vector3(1.2f, 1.8f, 1.2f);
             }
             view.SetActive(true);
+            if (node.RecipeId == "gather_berries") BerryPatchVisual.Decorate(view, node.StableIndex);
             if (node.RecipeId == "chop_wood")
                 terrainWorld.GetComponent<StableEnvironmentLodController>()?.ConfigureTree(view);
             view.transform.position = new Vector3(site.Position.X,

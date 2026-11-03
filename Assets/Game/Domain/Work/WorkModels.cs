@@ -374,7 +374,11 @@ namespace Game.Domain.Work
         public WorkTarget Target { get; }
         public WorkTarget? Destination { get; }
         public StableEntityId? AssigneeId { get; private set; }
-        public WorkGroupId? GroupId { get; }
+        public WorkGroupId? GroupId { get; private set; }
+        public void RebindGroup(WorkGroupId source, WorkGroupId destination)
+        {
+            if (GroupId == source) GroupId = destination;
+        }
         public ResourceId? ResourceId { get; }
         public ResourceQuantity Quantity { get; }
         public bool ExclusiveTarget { get; }

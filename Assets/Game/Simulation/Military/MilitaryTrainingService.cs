@@ -120,6 +120,13 @@ namespace Game.Simulation.Military
         public bool IsExternallyControlled(StableEntityId characterId) =>
             records.Any(x => x.CharacterId == characterId && !x.Completed);
 
+        // Rank is historical (and the ruler has an honorary rank). Civilian work follows
+        // the current profession; an unfinished course still owns the resident.
+        public bool IsOnMilitaryDuty(StableEntityId characterId) =>
+            IsExternallyControlled(characterId) ||
+            (characters.TryGet(characterId, out var character) &&
+             MilitaryFormationRules.HasMilitaryProfession(character));
+
         public MilitaryTrainingStartResult TryStart(StableEntityId characterId, StableEntityId barracksId,
             CombatSideId sideId, long calendarTick, IEnumerable<InventoryOwner> fundingSources)
         {

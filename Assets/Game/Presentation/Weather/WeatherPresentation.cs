@@ -204,6 +204,10 @@ namespace Game.Presentation.Weather
             rainParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = rainParticles.main;
             main.loop = true;
+            main.prewarm = true;
+            main.useUnscaledTime = true;
+            main.simulationSpeed = 1f;
+            main.startDelay = 0f;
             main.startLifetime = 1.4f;
             main.startSpeed = 0f;
             main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.05f);
@@ -212,6 +216,8 @@ namespace Game.Presentation.Weather
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.gravityModifier = 2.4f;
             var emission = rainParticles.emission;
+            emission.enabled = true;
+            emission.SetBursts(Array.Empty<ParticleSystem.Burst>());
             emission.rateOverTime = 680f;
             var shape = rainParticles.shape;
             shape.shapeType = ParticleSystemShapeType.Box;

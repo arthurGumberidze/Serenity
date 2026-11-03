@@ -67,6 +67,7 @@ namespace Game.Infrastructure
         // UMA 3.0 bodies are taller than the legacy fallback wrappers. Start far enough away to keep
         // head and feet visible; the player can still zoom in with the existing control.
         private float previewZoom = 4.2f;
+        private float previewHeight = 1.05f;
 
         public VisualElement RootVisual => root;
         public MainMenuView CurrentView { get; private set; }
@@ -249,6 +250,10 @@ namespace Game.Infrastructure
             zoom.RegisterValueChangedCallback(change => SetPreviewZoom(change.newValue));
             previewControls.Add(zoom);
             previewCard.Add(previewControls);
+            var height = new Slider("Высота обзора", .25f, 1.85f) { value = previewHeight, name = "preview-height" };
+            height.RegisterValueChangedCallback(change => { previewHeight = change.newValue; SetPreviewZoom(previewZoom); });
+            previewCard.Add(height);
+            previewImage.RegisterCallback<WheelEvent>(evt => { SetPreviewZoom(previewZoom + evt.delta.y * .08f); zoom.SetValueWithoutNotify(previewZoom); evt.StopPropagation(); });
             identityColumn.Add(previewCard);
 
             appearanceParts = Card();
@@ -344,7 +349,11 @@ namespace Game.Infrastructure
         public void SetPreviewZoom(float distance)
         {
             previewZoom = Mathf.Clamp(distance, 2.2f, 5.2f);
-            if (previewCamera != null) previewCamera.transform.position = new Vector3(1000f, 1.05f, -previewZoom);
+            if (previewCamera != null)
+            {
+                previewCamera.transform.position = new Vector3(1000f, previewHeight, -previewZoom);
+                previewCamera.transform.LookAt(new Vector3(1000f, previewHeight, 0f));
+            }
         }
 
         public void OpenLoad()

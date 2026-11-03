@@ -115,9 +115,9 @@ namespace Game.Simulation.AI
         public bool ShouldHideInsideBuilding(StableEntityId characterId)
         {
             if (world.Research?.Workplace?.IsInside(characterId) == true) return true;
+            if (domestic?.IsSleepingInBed(characterId) == true) return true;
             if (!byId.TryGetValue(characterId, out var entry) || entry.Agent.Phase != AiActionPhase.Working)
                 return false;
-            if (domestic?.IsSleepingInBed(characterId) == true) return true;
             return world.Production != null &&
                 world.Production.TryGetActiveWorkplace(characterId, out var building) &&
                 building.DefinitionId.FamilyId != new Game.Domain.Buildings.BuildingDefinitionId("campfire");
@@ -408,7 +408,7 @@ namespace Game.Simulation.AI
             var hour=(calendarTicks / TimeSpan.TicksPerHour)%24;
             var scheduledRest=domestic!=null && (hour>=22||hour<6) && (work==null || work.IsOnShift(entry.Agent.CharacterId,calendarTicks)==false ||
                 !work.Groups.TryGetForMember(entry.Agent.CharacterId,out _));
-            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || scheduledRest && entry.Agent.Needs.Energy < .85d)
+            if (entry.Agent.Needs.Energy <= CriticalRestEnergy || scheduledRest && entry.Agent.Needs.Hunger < CriticalHunger)
             {
                 if (entry.Action == null || entry.Action.Kind != UtilityActionKind.Rest)
                 {
@@ -545,6 +545,14 @@ namespace Game.Simulation.AI
                 return;
             }
 
+            if (work != null && !work.IsOnShift(entry.Agent.CharacterId, calendarTicks))
+            {
+                if (entry.Action?.Kind == UtilityActionKind.Produce || entry.Action?.Kind == UtilityActionKind.Research || entry.Action?.Kind == UtilityActionKind.Haul)
+                { entry.Action.Cancel(); entry.Action = null; }
+                if (entry.Action == null) { entry.Movement.Stop(); entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle); }
+                return;
+            }
+
             var idle = new UtilityCandidate(UtilityActionKind.Idle, new UtilityScore(0.05d), true, 3);
             var rest = new UtilityCandidate(UtilityActionKind.Rest,
                 new UtilityScore(1d - entry.Agent.Needs.Energy), true, 0);
@@ -599,7 +607,9 @@ namespace Game.Simulation.AI
                         var eligibility = domestic.EvaluateSleep(entry.Agent.CharacterId);
                         if (eligibility.Allowed)
                             entry.Action = new SleepActionExecution(entry.Agent, entry.Movement, settings, domestic,
-                                eligibility.Bed);
+                                eligibility.Bed, () => ((calendarTicks / TimeSpan.TicksPerHour) % 24 >= 22 ||
+                                    (calendarTicks / TimeSpan.TicksPerHour) % 24 < 6) &&
+                                    (work == null || !work.IsOnShift(entry.Agent.CharacterId, calendarTicks)) && entry.Agent.Needs.Hunger < CriticalHunger);
                         else
                         {
                             entry.Movement.Stop();
@@ -726,8 +736,14 @@ namespace Game.Simulation.AI
                 }
                 else
                 {
-                    work.Fail(job.Id);
-                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Failed);
+                    // A depleted source or demolished building cannot become executable by delivery.
+                    // Only transient shortages keep the command queued.
+                    var targetExists = job.Target.Kind == WorkTargetKind.Building
+                        ? world.Buildings != null && world.Buildings.TryGet(job.Target.EntityId, out var workplace) && !workplace.IsDestroyed
+                        : world.Production != null && world.Production.TryGetSite(job.Target.EntityId, out var source) && !source.IsDepleted;
+                    if (targetExists) work.RequeueAssigned(job.Id); else work.Fail(job.Id);
+                    entry.Movement.Stop();
+                    entry.Agent.SetAction(UtilityActionKind.Idle, AiActionPhase.Idle);
                 }
             }
             else if (!entry.Movement.IsAvailable)
@@ -767,7 +783,11 @@ namespace Game.Simulation.AI
                 entry.Action = new ManualDirectActionExecution(entry.Agent, entry.Movement, work, job,
                     settings.MovementTimeout, completion, construction,
                     CharacterSkillRules.WorkRatePerThousand(character, skill),
-                    () => GainExperience(entry, character, skill), advanceWork);
+                    () => GainExperience(entry, character, skill), advanceWork,
+                    () => work.OpenJobs.Count(other => other.Type == WorkJobType.Build && other.Target.EntityId == job.Target.EntityId &&
+                        other.AssigneeId.HasValue && byId.TryGetValue(other.AssigneeId.Value, out var colleague) &&
+                        colleague.Agent.Phase == AiActionPhase.Working),
+                    () => capabilities?.GetCapabilities(entry.Agent.CharacterId).WorkPerThousand ?? 1000);
             }
             entry.LastActionTicks = calendarTicks;
         }

@@ -1157,6 +1157,23 @@
     border-top-color: rgb(238, 205, 132);
     border-bottom-color: rgb(238, 205, 132);
 }
+.serenity-root .unity-collection-view__item:hover,
+.serenity-root .unity-collection-view__item--selected {
+    background-color: rgba(184, 154, 91, 0.12);
+}
+.unity-base-dropdown__container-outer,
+.unity-base-dropdown__container-inner {
+    background-color: rgb(28, 27, 20);
+    color: rgb(238, 231, 216);
+}
+.unity-base-dropdown__item {
+    color: rgb(238, 231, 216);
+}
+.unity-base-dropdown__item:hover,
+.unity-base-dropdown__item:checked {
+    background-color: rgb(70, 62, 39);
+    color: rgb(255, 235, 186);
+}
 .serenity-root .serenity-button:disabled {
     opacity: 0.58;
 }

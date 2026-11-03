@@ -346,7 +346,7 @@ public static class SerenityPersistentUnityRunner
     private static void WriteState()
     {
         if (!File.Exists(EnabledPath)) return;
-        WriteJsonAtomic(StatePath, new RunnerState
+        try { WriteJsonAtomic(StatePath, new RunnerState
         {
             runner_version = RunnerVersion,
             project_path = Path.GetFullPath(Path.Combine(Application.dataPath, "..")),
@@ -357,7 +357,13 @@ public static class SerenityPersistentUnityRunner
             active_command_id = active?.id,
             active_command = active?.command,
             heartbeat_utc = DateTime.UtcNow.ToString("O")
-        });
+        }); }
+        catch (IOException exception) when ((exception.HResult & 0xffff) is 32 or 33 or 1175)
+        {
+            // Windows reports a denied replacement as sharing/lock violation or ERROR_UNABLE_TO_REMOVE_REPLACED.
+            // A short-lived reader may deny replacement. Keep the previous complete
+            // heartbeat and retry on the next tick; this must not abort an unrelated game test.
+        }
     }
 
     private static void WriteJsonAtomic<T>(string path, T value)
@@ -366,9 +372,30 @@ public static class SerenityPersistentUnityRunner
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
         var temp = path + ".tmp-" + Guid.NewGuid().ToString("N");
-        File.WriteAllText(temp, JsonUtility.ToJson(value, true), new UTF8Encoding(false));
-        if (File.Exists(path)) File.Delete(path);
-        File.Move(temp, path);
+        try
+        {
+            File.WriteAllText(temp, JsonUtility.ToJson(value, true), new UTF8Encoding(false));
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(path)) File.Replace(temp, path, null);
+                    else File.Move(temp, path);
+                    break;
+                }
+                catch (IOException exception) when (attempt < 5 &&
+                    (exception.HResult & 0xffff) is 32 or 33 or 1175)
+                {
+                    // Antivirus/indexer readers can briefly deny replacement of active/result files too.
+                    // Retain atomicity and fail normally if the bounded retry does not release the lock.
+                    System.Threading.Thread.Sleep(25 * (attempt + 1));
+                }
+            }
+        }
+        finally
+        {
+            if (File.Exists(temp)) File.Delete(temp);
+        }
     }
 
     private static DateTime ParseUtc(string value, DateTime fallback)
@@ -444,8 +471,14 @@ public static class SerenityPersistentUnityRunner
         public int warnings;
     }
 
-    private sealed class RunnerCallbacks : ICallbacks
+    private sealed class RunnerCallbacks : IErrorCallbacks
     {
+        public void OnError(string message)
+        {
+            if (active == null || active.command != "test") return;
+            FinishFailure("Unity Test Framework aborted the run: " + message, 1);
+        }
+
         public void RunStarted(ITestAdaptor testsToRun)
         {
             if (active == null || active.command != "test") return;

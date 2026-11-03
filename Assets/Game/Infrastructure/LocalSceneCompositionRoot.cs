@@ -322,6 +322,7 @@ namespace Game.Infrastructure
                 yield return null;
             }
             loadingOverlay.SetProgress(1f);
+            RefreshBuildingGroundClearings();
             IsInitialized = true;
             Destroy(loadingOverlay);
             if (!loadedSavedGame) AiRuntime.SetPaused(false);
@@ -529,6 +530,7 @@ namespace Game.Infrastructure
                 researchUnlocks: Research, capabilityProvider: HealthFamily, weatherModifierProvider: Weather);
             Production.StockConfig = JsonUtility.FromJson<StockPlanningConfig>(UnityEngine.Resources.Load<TextAsset>("StockPlanningConfig").text);
             Production.StockFacts = CaptureStockPlanningFacts;
+            Production.ConstructionTarget = ConstructionStockTarget;
             Production.BuildingWorkAllowed = (id, tick) =>
             {
                 var policy = Facilities.GetPolicy(id);
@@ -615,13 +617,25 @@ namespace Game.Infrastructure
                 .OrderBy(x => x.DistanceSquared(origin)).Cast<WorldPosition?>().FirstOrDefault();
             AiScheduler = new Tier1AiScheduler(Characters, AiAgents, aiWorld, workManager: Work,
                 capabilityProvider: HealthFamily, domesticService: Domestic);
-            AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.NeedsOnly);
+            AiScheduler.SetAutonomousWorkMode(Tier1AiScheduler.AutonomousWorkMode.LegacyUtility);
+            Production.WorkerIsAtWork = id => AiAgents.TryGet(id, out var agent) ? agent.Phase == AiActionPhase.Working :
+                Tiers != null && Tiers.TryGetTier(id, out var tier) && tier != CharacterSimulationTier.Tier1;
+            Production.WorkerCanUseSite = (id, site) =>
+            {
+                if (!CanCommandResident(id)) return StarterEnemyAi?.Residents.Contains(id) == true;
+                if (!Work.Groups.TryGetForMember(id, out var group) || !Work.IsOnShift(id, Clock.State.CalendarTicks)) return false;
+                if (site.RecipeId.ToString() == "hunt_animal") return group.Role == WorkGroupRole.Hunters;
+                if (site.Kind == ProductionSiteKind.PrimitiveCropPlot) return group.Role == WorkGroupRole.FarmersGatherers;
+                if (site.Kind == ProductionSiteKind.NaturalSource) return group.Role == WorkGroupRole.General;
+                return group.Role == WorkGroupRole.Crafters || group.Role == WorkGroupRole.FarmersGatherers && site.RecipeId.ToString().StartsWith("fish",StringComparison.Ordinal);
+            };
             AiRuntime = gameObject.AddComponent<Tier1AiRuntimeDriver>();
             AiRuntime.Initialize(Clock, AiScheduler, () =>
                 Weather.GetWeatherAtCalendarTick(Clock.State.CalendarTicks).Modifiers.MovementPerThousand);
             Production.ReconcileHorseRiders(Characters.GetAll().Where(x => x.LifeState == CharacterLifeState.Alive)
                 .Select(x => x.Id));
-            AiRuntime.SetIndividualMovementModifierProvider(Production.GetResidentMovementPerThousand);
+            AiRuntime.SetIndividualMovementModifierProvider(id => Production.GetResidentMovementPerThousand(id) *
+                HealthFamily.GetCapabilities(id).MovementPerThousand / 1000);
             AiRuntime.Register(MaleDemoCharacter, demoPresenters[0]);
             AiRuntime.Register(FemaleDemoCharacter, demoPresenters[1], new Tier1Needs(0d, 0.8d));
             ResearchDebug = gameObject.AddComponent<ResearchDebugOverlay>();
@@ -653,6 +667,8 @@ namespace Game.Infrastructure
             Tier3Adapter = new Tier3CharacterAdapter(Tier3Characters, OffCameraSimulation,
                 () => new SimulationTimePoint(Clock.State.CalendarTicks, Clock.State.BiologicalTicks));
             Tiers = new TierManager(Characters, Tier1Adapter, tier2, Tier3Adapter);
+            HealthFamily.HungerForCharacter = id => AiAgents.TryGet(id, out var agent) ? agent.Needs.Hunger :
+                Tiers.TryGetTier(id, out _) ? Tiers.GetRuntimeState(id).Hunger : (double?)null;
             Tiers.RegisterExisting(MaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             Tiers.RegisterExisting(FemaleDemoCharacter.Id, CharacterSimulationTier.Tier1);
             for (var i = 2; i < playerCharacters.Length; i++)
@@ -773,12 +789,13 @@ namespace Game.Infrastructure
                     : Research),
                 (side, id) => Characters.TryGet(id, out var candidate) &&
                     MilitaryFormationRules.HasMilitaryProfession(candidate));
-            AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.GetRank(id).HasValue);
+            AiScheduler.BindOrdinaryWorkEligibility(id => !MilitaryTraining.IsOnMilitaryDuty(id));
             BuildingLifecycle.UpgradeWorkerAllowed = (id, building) => CanCommandResident(id) &&
-                building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.GetRank(id).HasValue &&
+                building.OwnerSideId==new CombatSideId("player") && !MilitaryTraining.IsOnMilitaryDuty(id) &&
                 (!Work.Groups.TryGetForMember(id,out var group) || group.Role==WorkGroupRole.Builders || group.Role==WorkGroupRole.General);
             Work.AssignmentScope = (id, order) =>
             {
+                if (NeighbourEconomy?.CanAssignWork(id, order) == false) return false;
                 // WorkManager is shared by both physical economies. Keep faction ownership in the final
                 // composition predicate; otherwise this later player-policy assignment silently replaces
                 // NeighbourEconomyRuntime's scope and the neighbour can never claim its own logistics.
@@ -790,7 +807,8 @@ namespace Game.Infrastructure
                     : (CanCommandResident(id) || order.Type==WorkJobType.Move || order.Type==WorkJobType.Guard || order.Type==WorkJobType.Military) &&
                       (order.Type != WorkJobType.Build || !Buildings.TryGet(order.Target.EntityId,out var site) ||
                        site.ConstructionStageCount == 0 || site.ConstructionPhase == ConstructionPhase.Building) &&
-                      (!MilitaryTraining.GetRank(id).HasValue || order.Type == WorkJobType.Move ||
+                      (order.Type != WorkJobType.Build || !Work.Groups.TryGetForMember(id, out var builderGroup) || builderGroup.Role == WorkGroupRole.Builders) &&
+                      (!MilitaryTraining.IsOnMilitaryDuty(id) || order.Type == WorkJobType.Move ||
                        order.Type == WorkJobType.Guard || order.Type == WorkJobType.Military);
             };
             Appearances.AppearanceChanged += OnAppearanceChanged;
@@ -917,6 +935,8 @@ namespace Game.Infrastructure
 
             var userSettings = UserSettingsStore.CreateDefault().Load().Settings;
             UserSettingsRuntime.ApplyGameplay(userSettings, input, cameraController, GameplayUi);
+            GameplayUi.DrawSettingsContent = (container, close) => GameplaySettingsPanel.Draw(container, close,
+                input, cameraController, GameplayUi);
             RulerStrategies = gameObject.AddComponent<RulerStrategyRuntime>();
             RulerStrategies.Initialize(StrategicAi, userSettings.rulerAiMode,
                 () => Clock.State.CalendarTicks, () => Clock.IsPaused, userSettings.rulerAiIntervalMonths);
@@ -1005,7 +1025,7 @@ namespace Game.Infrastructure
         private void OnAppearanceChanged(StableEntityId characterId)
         {
             if (Characters == null || !Characters.TryGet(characterId, out var character)) return;
-            if (MilitaryTraining?.GetRank(characterId).HasValue == true)
+            if (MilitaryTraining?.IsOnMilitaryDuty(characterId) == true)
             {
                 foreach (var order in Work.GetQueue(characterId).Where(x => x.Type != WorkJobType.Move &&
                              x.Type != WorkJobType.Guard && x.Type != WorkJobType.Military).ToArray())
@@ -1311,7 +1331,7 @@ namespace Game.Infrastructure
                     // A dry bank can belong to a disconnected navigation island. A construction
                     // landing must be reachable from the settlement, not only locally walkable.
                     var resident=CharacterPresentations.Active.Where(x=>x!=null && x.IsBound && CanCommandResident(x.CharacterId) &&
-                            (MilitaryTraining==null || !MilitaryTraining.GetRank(x.CharacterId).HasValue))
+                            (MilitaryTraining==null || !MilitaryTraining.IsOnMilitaryDuty(x.CharacterId)))
                         .OrderBy(x=>new Vector2(x.transform.position.x-buildingGridOrigin.x,x.transform.position.z-buildingGridOrigin.z).sqrMagnitude)
                         .FirstOrDefault();
                     if(resident!=null && !Game.Presentation.AI.ReachableNavMeshPoint.TryFind(
@@ -1779,8 +1799,26 @@ namespace Game.Infrastructure
             RegisterCropPlot(DemoCropPlotBuilding, DemoCropPlotPresenter);
         }
 
+        private void RefreshBuildingGroundClearings()
+        {
+            if (TiledWorld == null || Buildings == null) return;
+            var clearings = Buildings.All.Where(b => !b.IsDestroyed && b.PlacementCells.Count > 0)
+                .OrderBy(b => b.Id).Select(b =>
+                {
+                    var cells = b.PlacementCells;
+                    var min = new Vector3(buildingGridOrigin.x + (cells.Min(c => c.X) - .8f) * buildingGridSize, 0,
+                        buildingGridOrigin.z + (cells.Min(c => c.Z) - .8f) * buildingGridSize);
+                    var max = new Vector3(buildingGridOrigin.x + (cells.Max(c => c.X) + .8f) * buildingGridSize, 0,
+                        buildingGridOrigin.z + (cells.Max(c => c.Z) + .8f) * buildingGridSize);
+                    return new Bounds((min + max) * .5f, max - min);
+                });
+            TiledWorld.SetGroundClearings(clearings);
+        }
+
         private void OnBuildingPlaced(Building building, BuildingPresenter presenter)
         {
+            RefreshBuildingGroundClearings();
+            constructionStockTick = -1;
             if(building?.DefinitionId.FamilyId.ToString()=="gate")
             {
                 foreach(var wallView in BuildingPresentations.All.Where(x=>x.IsBound && x.Building.DefinitionId.FamilyId.ToString()=="palisade").ToArray())
@@ -1842,6 +1880,9 @@ namespace Game.Infrastructure
 
         private void OnBuildingChanged(Building building)
         {
+            if (building != null && (building.IsDestroyed || BuildingPresentations.TryGet(building.Id, out var footprintView) &&
+                footprintView.PresentedDefinitionId != building.DefinitionId)) RefreshBuildingGroundClearings();
+            constructionStockTick = -1;
             if (building != null && BuildingPresentations.TryGet(building.Id,out var oldView) &&
                 oldView.PresentedDefinitionId != building.DefinitionId)
             {
@@ -1873,8 +1914,10 @@ namespace Game.Infrastructure
 
         private void OnBuildingDemolished(StableEntityId buildingId)
         {
+            constructionStockTick = -1;
             Facilities?.RemoveBuildingAssignments(buildingId);
             if (BuildingPresentations.TryGet(buildingId, out var presenter)) BuildingSpawner.Despawn(presenter);
+            RefreshBuildingGroundClearings();
         }
 
         private void RegisterCropPlot(Building building, BuildingPresenter buildingPresenter)

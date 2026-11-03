@@ -38,6 +38,7 @@ namespace Game.Infrastructure
         public NeighbourEconomyRuntime(LocalSceneCompositionRoot world,float gridSize,Vector3 gridOrigin)
         {
             root=world; faction=root.StarterEnemyAi; grid=gridSize; origin=gridOrigin;
+            faction.Research.Workplace = new IndoorWorkplaceService(root.Buildings, faction.Strategic.SideId, Approach);
             sites=new ConstructionSiteService(root.Resources,faction.Inventories);
             EnsureCarryLoads();
             GroundStartingMaterials();
@@ -55,6 +56,7 @@ namespace Game.Infrastructure
             faction.Production.UseGroundOutputs(faction.WorldPiles,p=>new GridCoordinate(
                 Mathf.RoundToInt((p.X-origin.x)/grid),Mathf.RoundToInt((p.Z-origin.z)/grid)));
             faction.Production.WorkPosition=WorkPosition;
+            faction.Production.WorkerIsAtWork=id => root.AiAgents.TryGet(id,out var agent) && agent.Phase==AiActionPhase.Working;
             faction.Construction.ConfigureLogistics(sites,root.Work,faction.WorldPiles,
                 faction.Strategic.HomeSettlementId,root.HaulClaims);
             clearance=new ConstructionClearanceCoordinator(root.Buildings,faction.Production,root.Work,

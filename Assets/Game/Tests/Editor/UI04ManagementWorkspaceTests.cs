@@ -139,10 +139,11 @@ namespace Game.Tests.Editor
             var source = File.ReadAllText(Path.Combine(Application.dataPath,
                 "Game/Presentation/UI/GameplayUiController.cs"));
             StringAssert.Contains("new ListView(residents", source);
-            StringAssert.Contains("ProfessionGroups.Reassign", source);
-            StringAssert.Contains("ProfessionGroups.DeleteGroup", source);
-            StringAssert.Contains("DirectWork.MakeUrgent", source);
-            StringAssert.Contains("ResearchWorkspaceCategory", source);
+            var roster = File.ReadAllText(Path.Combine(Application.dataPath,
+                "Game/Presentation/UI/GameplayUiController.WorkRoster.cs"));
+            StringAssert.Contains("ProfessionGroups.Reassign", roster);
+            StringAssert.Contains("SetMemberShift", roster);
+            StringAssert.Contains("CollectionVirtualizationMethod.FixedHeight", roster);
             StringAssert.DoesNotContain("foreign tasks are forbidden", source);
         }
 

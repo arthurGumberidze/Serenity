@@ -61,8 +61,14 @@ namespace Game.Simulation.Buildings
                 movement.Stop();
                 return true;
             }
-            if (movement.State == MovementState.Idle || movement.State == MovementState.Failed)
+            if (movement.State == MovementState.Idle || movement.State == MovementState.Failed ||
+                movement.State == MovementState.Arrived)
+            {
+                // New construction can carve away the previously selected entrance. Resolve it
+                // again after a failed route or arrival at a projected point outside the entrance.
+                visit.Entrance = entrance(buildings.Get(building));
                 movement.MoveTo(visit.Entrance, .35f);
+            }
             return false;
         }
         public void Release(StableEntityId worker)

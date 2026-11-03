@@ -14,7 +14,7 @@ namespace Game.Simulation.Work
     public sealed class ProfessionGroupService
     {
         private static readonly WorkGroupRole[] Roles = Enum.GetValues(typeof(WorkGroupRole))
-            .Cast<WorkGroupRole>().OrderBy(value => value).ToArray();
+            .Cast<WorkGroupRole>().Where(value => value != WorkGroupRole.Gatherers).OrderBy(value => value).ToArray();
 
         private readonly CharacterRegistry characters;
         private readonly WorkManager work;
@@ -36,6 +36,8 @@ namespace Game.Simulation.Work
             foreach (var role in Roles)
                 if (!work.Groups.All.Any(group => group.Role == role))
                     work.CreateGroup(DeterministicGroupId(role), DisplayName(role), Array.Empty<StableEntityId>(), role);
+            foreach (var old in work.Groups.All.Where(group => group.Role == WorkGroupRole.Gatherers).ToArray())
+                work.MergeGroup(old.Id, Primary(WorkGroupRole.General).Id);
             return work.Groups.All.OrderBy(group => group.Role).ThenBy(group => group.Id).ToArray();
         }
 
@@ -71,6 +73,7 @@ namespace Game.Simulation.Work
 
         public WorkGroup CreateGroup(WorkGroupRole role, string displayName)
         {
+            role = NormalizeRole(role);
             if (!Enum.IsDefined(typeof(WorkGroupRole), role)) throw new ArgumentOutOfRangeException(nameof(role));
             if (work.Groups.All.Any(group => group.Role == role))
                 throw new InvalidOperationException("A professional group for this profession already exists.");
@@ -98,7 +101,7 @@ namespace Game.Simulation.Work
         }
 
         public WorkGroup Primary(WorkGroupRole role) => work.Groups.All
-            .Where(group => group.Role == role).OrderBy(group => group.Id).FirstOrDefault()
+            .Where(group => group.Role == NormalizeRole(role)).OrderBy(group => group.Id).FirstOrDefault()
             ?? throw new InvalidOperationException("Required professional group is missing.");
 
         public static WorkGroupRole RoleForProfession(ProfessionId? profession)
@@ -113,13 +116,13 @@ namespace Game.Simulation.Work
             if (value.Contains("war") || value.Contains("soldier") || value.Contains("military")) return WorkGroupRole.Warriors;
             if (value.Contains("heal") || value.Contains("medic") || value.Contains("care")) return WorkGroupRole.Caregivers;
             if (value.Contains("scout")) return WorkGroupRole.Scouts;
-            if (value.Contains("gather") || value.Contains("miner") || value.Contains("fisher")) return WorkGroupRole.Gatherers;
+            if (value.Contains("gather") || value.Contains("miner") || value.Contains("fisher")) return WorkGroupRole.General;
             return WorkGroupRole.General;
         }
 
         public static ProfessionId ProfessionForRole(WorkGroupRole role) => new ProfessionId(role switch
         {
-            WorkGroupRole.Gatherers => "gatherer",
+            WorkGroupRole.Gatherers => "worker",
             WorkGroupRole.Builders => "builder",
             WorkGroupRole.Haulers => "hauler",
             WorkGroupRole.Crafters => "crafter",
@@ -137,7 +140,7 @@ namespace Game.Simulation.Work
 
         public static string DisplayName(WorkGroupRole role) => role switch
         {
-            WorkGroupRole.Gatherers => "Сборщики",
+            WorkGroupRole.Gatherers => "Разнорабочие",
             WorkGroupRole.Builders => "Строители",
             WorkGroupRole.Haulers => "Переносчики",
             WorkGroupRole.Crafters => "Ремесленники",
@@ -149,5 +152,8 @@ namespace Game.Simulation.Work
             WorkGroupRole.Hunters => "Охотники",
             _ => "Разнорабочие"
         };
+
+        public static WorkGroupRole NormalizeRole(WorkGroupRole role) =>
+            role == WorkGroupRole.Gatherers ? WorkGroupRole.General : role;
     }
 }

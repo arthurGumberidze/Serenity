@@ -96,6 +96,23 @@ namespace Game.Tests.Editor
             public static StableEntityId Id(int value) => StableEntityId.Parse(value.ToString("x32"));
         }
 
+        [Test]
+        public void JointWorkCountsArrivedWorkersOnlyAndUsesPointSixAdditionalContribution()
+        {
+            var f = new Fixture();
+            var a = f.AddWorker(); var b = f.AddWorker();
+            var site = f.AddNatural("gather_berries", 700, 100);
+            Assert.That(f.Production.TryReserveAtSite(a, site.Id, out var first), Is.True);
+            Assert.That(f.Production.TryReserveAtSite(b, site.Id, out var second), Is.True);
+            f.Production.WorkerIsAtWork = id => id == a;
+            f.Production.AdvanceTask(first.Task.Id, TimeSpan.FromTicks(1000));
+            Assert.That(first.Task.AccumulatedWorkTicks, Is.EqualTo(1000), "An en-route colleague adds no penalty or work");
+            f.Production.WorkerIsAtWork = id => true;
+            f.Production.AdvanceTask(first.Task.Id, TimeSpan.FromTicks(1000));
+            f.Production.AdvanceTask(second.Task.Id, TimeSpan.FromTicks(1000));
+            Assert.That(first.Task.AccumulatedWorkTicks + second.Task.AccumulatedWorkTicks, Is.EqualTo(2600));
+        }
+
         [Test] public void ProductionRecipeValidationAndDeclaredOutputAreDataDriven()
         {
             var fixture = new Fixture();
@@ -180,6 +197,23 @@ namespace Game.Tests.Editor
             Assert.That(fixture.Production.Food.TotalConsumed, Is.EqualTo(3));
             Assert.That(fixture.Production.Food.TotalShortage, Is.EqualTo(2));
             Assert.That(fixture.Production.Food.IsShortage, Is.True);
+        }
+
+        [Test] public void GatheredBerriesFeedEarlySettlementWithoutBecomingPreparedDishes()
+        {
+            var fixture = new Fixture();
+            fixture.Storage.TryAdd(fixture.Berries, new ResourceQuantity(2));
+            fixture.Storage.TryAdd(fixture.CookedBerries, new ResourceQuantity(1));
+            Assert.That(fixture.Production.PreparedFoodTotal, Is.EqualTo(1));
+            Assert.That(fixture.Production.Food.TryConsumeMeal(), Is.True);
+            Assert.That(fixture.Storage.GetAmount(fixture.CookedBerries).Units, Is.Zero);
+            Assert.That(fixture.Storage.GetAmount(fixture.Berries).Units, Is.EqualTo(2));
+            Assert.That(fixture.Production.PreparedFoodTotal, Is.Zero);
+            Assert.That(fixture.Production.Food.HasAvailableMeal, Is.True);
+            Assert.That(fixture.Production.Food.TryConsumeMeal(), Is.True);
+            Assert.That(fixture.Production.Food.TryConsumeMeal(), Is.True);
+            Assert.That(fixture.Production.Food.TryConsumeMeal(), Is.False);
+            Assert.That(fixture.Production.Food.TotalConsumed, Is.EqualTo(3));
         }
 
         [Test] public void TargetPolicyCreatesWorkBelowTargetAndStopsAtTarget()

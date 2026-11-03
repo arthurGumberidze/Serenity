@@ -198,7 +198,7 @@ namespace Game.Presentation.UI
                 var title = new Label(entry.name); title.style.fontSize = 17; identity.Add(title);
                 var amount = new Label { name = "stock-amount-" + entry.id }; amount.style.fontSize = 12; identity.Add(amount);
                 identity.tooltip = entry.consumer + ". " + entry.rule; row.Add(identity);
-                var target = new LongField("Цель") { value = context.Production.GetTarget(id), isDelayed = true, name = "stock-target-" + entry.id };
+                var target = new LongField("Цель") { value = context.Production.GetManualTarget(id), isDelayed = true, name = "stock-target-" + entry.id };
                 var mode = new Toggle("Авто") { value = rule.Automatic, name = "stock-mode-" + entry.id };
                 mode.AddToClassList("serenity-stock-auto");
                 var priority = new PopupField<string>(StockPriorities, rule.Priority) { name = "stock-priority-" + entry.id };
@@ -209,7 +209,7 @@ namespace Game.Presentation.UI
                 target.RegisterValueChangedCallback(evt =>
                 {
                     context.Production.SetTarget(id, Math.Max(0, evt.newValue));
-                    target.SetValueWithoutNotify(context.Production.GetTarget(id));
+                    target.SetValueWithoutNotify(context.Production.GetManualTarget(id));
                     var r = stockDraft.For(id); stockDraft = stockDraft.WithResource(new StockResourcePolicy(id, false, r.Priority, r.ReservePercent));
                     mode.SetValueWithoutNotify(false); InvalidateStockPreview();
                 });
@@ -248,6 +248,8 @@ namespace Game.Presentation.UI
                 var id = new ResourceId(entry.id); var label = mainPanel.Q<Label>("stock-amount-" + entry.id);
                 if (label == null) continue;
                 label.text = "Склад " + context.StoredResources.GetStoredTotal(id).Units.ToString("N0") + " · всего " + TotalResource(id).ToString("N0");
+                var construction = context.Production.ConstructionTarget?.Invoke(id) ?? 0;
+                if (construction > 0) label.text += " · на стройки " + construction.ToString("N0");
                 var calculation = mainPanel.Q<Label>("stock-calculated-" + entry.id);
                 calculation.text = stockPreview == null ? "" : !stockPreview.CanApply ? "Расчёт: —" :
                     "Расчёт: " + StockPlanner.Get(stockPreview.Targets, id).ToString("N0");
@@ -307,7 +309,7 @@ namespace Game.Presentation.UI
                     .OrderByDescending(x => stockDraft.For(new ResourceId(x.id)).Priority))
                 {
                     var id = new ResourceId(entry.id); var target = StockPlanner.Get(stockPreview.Targets, id);
-                    AddLine(changes, entry.name + ": " + context.Production.GetTarget(id).ToString("N0") + " → " + target.ToString("N0"));
+                    AddLine(changes, entry.name + ": " + context.Production.GetManualTarget(id).ToString("N0") + " → " + target.ToString("N0"));
                 }
                 stockPreviewView.Add(changes);
             }

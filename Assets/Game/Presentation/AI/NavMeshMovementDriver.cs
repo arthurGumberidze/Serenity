@@ -222,11 +222,13 @@ namespace Game.Presentation.AI
             direction.Normalize();
             var runMultiplier = running ? 1.65f : 1f;
             var speed = baseSpeed * Math.Max(1, speedMultiplier) * movementPerThousand / 1000f * runMultiplier;
-            agent.Move(PhysicalStep(presenter.transform.position,direction * (speed * unscaledDeltaTime)));
+            var before = agent.nextPosition;
+            agent.Move(PhysicalStep(before,direction * (speed * unscaledDeltaTime)));
             presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
                 Quaternion.LookRotation(direction, Vector3.up), 720f * unscaledDeltaTime);
             presenter.SetSimulationPaused(false);
-            presenter.SetMovementSpeed(speed);
+            var actualSpeed = unscaledDeltaTime > 0 ? Vector3.ProjectOnPlane(agent.nextPosition - before, Vector3.up).magnitude / unscaledDeltaTime : 0;
+            presenter.SetMovementSpeed(actualSpeed);
             presenter.RefreshAnimation(Time.unscaledTime);
             state = MovementState.Moving;
         }
@@ -281,7 +283,7 @@ namespace Game.Presentation.AI
             presenter.transform.position = next;
             presenter.transform.rotation = Quaternion.RotateTowards(presenter.transform.rotation,
                 Quaternion.LookRotation(direction, Vector3.up), 540f * unscaledDeltaTime);
-            presenter.SetMovementSpeed(lightweightSpeed);
+            presenter.SetMovementSpeed(unscaledDeltaTime > 0 ? step.magnitude / unscaledDeltaTime : 0f);
         }
 
         private readonly RaycastHit[] solidHits=new RaycastHit[24];
@@ -299,7 +301,30 @@ namespace Game.Presentation.AI
                    collider.GetComponentInParent<CharacterPresenter>()!=null)continue;
                 length=Mathf.Min(length,Mathf.Max(0,solidHits[i].distance-.03f));
             }
-            return direction*length;
+            if(length >= step.magnitude - .001f) return step;
+            // Slide along a wall rather than cancelling both WASD axes when one axis touches it.
+            var normal = Vector3.zero;
+            for(var i=0;i<count;i++)
+            {
+                var collider=solidHits[i].collider;
+                if(collider==null || collider is TerrainCollider || collider.transform.IsChildOf(presenter.transform) ||
+                    collider.GetComponentInParent<CharacterPresenter>()!=null) continue;
+                if(solidHits[i].distance <= length + .04f) { normal=Vector3.ProjectOnPlane(solidHits[i].normal,Vector3.up).normalized; break; }
+            }
+            var slide = Vector3.ProjectOnPlane(step-direction*length,normal);
+            if(normal.sqrMagnitude < .5f || slide.magnitude < .001f) return direction*length;
+            var slideStart = position+direction*length;
+            var slideLength = slide.magnitude;
+            var slideCount = Physics.CapsuleCastNonAlloc(slideStart+Vector3.up*.45f,slideStart+Vector3.up*1.45f,
+                .28f,slide.normalized,solidHits,slideLength+.03f,Physics.DefaultRaycastLayers,QueryTriggerInteraction.Ignore);
+            for(var i=0;i<slideCount;i++)
+            {
+                var collider=solidHits[i].collider;
+                if(collider==null || collider is TerrainCollider || collider.transform.IsChildOf(presenter.transform) ||
+                    collider.GetComponentInParent<CharacterPresenter>()!=null)continue;
+                slideLength=Mathf.Min(slideLength,Mathf.Max(0,solidHits[i].distance-.03f));
+            }
+            return direction*length+slide.normalized*slideLength;
         }
 
         public void UpdatePresentation(bool paused, int speedMultiplier, int movementPerThousand = 1000)
@@ -330,7 +355,9 @@ namespace Game.Presentation.AI
             presenter.SetSimulationPaused(false);
             if (!UsesNavMeshAgent)
             {
-                presenter.SetMovementSpeed(state == MovementState.Moving ? lightweightSpeed : 0f);
+                // AdvanceLightweight already measured displacement after collision resolution.
+                // Replacing that measurement with desired speed makes blocked feet skate in place.
+                if (state != MovementState.Moving) presenter.SetMovementSpeed(0f);
                 return;
             }
             if (state == MovementState.Moving && agent.hasPath)

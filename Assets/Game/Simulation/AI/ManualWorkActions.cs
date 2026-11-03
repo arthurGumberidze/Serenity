@@ -21,11 +21,13 @@ namespace Game.Simulation.AI
         private readonly int workRatePerThousand;
         private readonly Action onWorkExperience;
         private readonly Func<TimeSpan, bool> advanceWork;
+        private readonly Func<int> participants;
+        private readonly Func<int> capabilityRate;
 
         public ManualDirectActionExecution(Tier1AiAgentState agent, ITier1MovementDriver movement,
             WorkManager work, WorkOrder job, TimeSpan timeout, Action onCompleted = null,
             Game.Domain.Buildings.Building construction = null, int workRatePerThousand = 1000,
-            Action onWorkExperience = null, Func<TimeSpan, bool> advanceWork = null)
+            Action onWorkExperience = null, Func<TimeSpan, bool> advanceWork = null, Func<int> participants = null, Func<int> capabilityRate = null)
         {
             this.agent = agent ?? throw new ArgumentNullException(nameof(agent));
             this.movement = movement ?? throw new ArgumentNullException(nameof(movement));
@@ -38,6 +40,8 @@ namespace Game.Simulation.AI
             this.workRatePerThousand = workRatePerThousand;
             this.onWorkExperience = onWorkExperience;
             this.advanceWork = advanceWork;
+            this.participants = participants;
+            this.capabilityRate = capabilityRate;
             lastProgressPosition = movement.CurrentPosition;
             if (!work.Start(job.Id)) throw new InvalidOperationException("Direct work order cannot start.");
             agent.SetAction(UtilityActionKind.ManualTask, AiActionPhase.MoveToTarget);
@@ -80,6 +84,7 @@ namespace Game.Simulation.AI
                 movement.Stop();
                 agent.SetAction(Kind, AiActionPhase.Working);
             }
+            simulationDelta = TimeSpan.FromTicks(simulationDelta.Ticks * (capabilityRate?.Invoke() ?? 1000) / 1000L);
             workElapsed += simulationDelta;
             if (advanceWork != null)
             {
@@ -87,8 +92,10 @@ namespace Game.Simulation.AI
             }
             else if (construction != null && construction.ConstructionRequiredTicks > 0)
             {
+                var count = Math.Max(1, participants?.Invoke() ?? 1);
+                var cooperation = (1000L + 600L * (count - 1)) / count;
                 construction.AdvanceConstruction(TimeSpan.FromTicks(checked(
-                    simulationDelta.Ticks * workRatePerThousand / 1000L)));
+                    simulationDelta.Ticks * workRatePerThousand / 1000L * cooperation / 1000L)));
                 if (!construction.IsOperational) return;
             }
             else if (workElapsed < TimeSpan.FromMinutes(10)) return;

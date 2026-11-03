@@ -26,7 +26,7 @@ namespace Game.Simulation.Health
     /// Canonical engine-free authority for U18 conditions, narrow character events and pregnancy.
     /// It advances in deterministic batches and never owns a GameObject/ECS identity.
     /// </summary>
-    public sealed class HealthAndFamilyService : ICharacterCapabilityProvider
+    public sealed partial class HealthAndFamilyService : ICharacterCapabilityProvider
     {
         public const int AdultAgeYears = 16;
         public const int MaximumMaternalAgeYears = 50;
@@ -169,7 +169,9 @@ namespace Game.Simulation.Health
         {
             characters.Get(targetId);
             var recovered = 0;
-            foreach (var value in activeConditions.Values.Where(x => x.TargetId == targetId && IsTemporaryActive(x.State)).ToArray())
+            foreach (var value in activeConditions.Values.Where(x => x.TargetId == targetId && !x.DefinitionId.Equals(StarvationId) &&
+                x.DefinitionId.ToString() != "encouraged" && x.DefinitionId.ToString() != "distressed" &&
+                x.DefinitionId.ToString() != "focused_work" && IsTemporaryActive(x.State)).ToArray())
             {
                 conditions[value.InstanceId] = CopyCondition(value, state: HealthConditionState.Recovered);
                 activeConditions.Remove(value.InstanceId);
@@ -202,6 +204,18 @@ namespace Game.Simulation.Health
             secondary.SetRelationship(new RelationshipState(primaryId, new RelationshipScore(reverseUpdated)));
             events.Add(instanceId, new CharacterEventInstanceState(instanceId, definitionId, primaryId,
                 secondaryId, calendarTick, appliedDelta, true));
+            if (definition.RelationshipDelta != 0)
+            {
+                var effect = new HealthConditionId(definition.RelationshipDelta > 0 ? "encouraged" : "distressed");
+                var opposite = new HealthConditionId(definition.RelationshipDelta > 0 ? "distressed" : "encouraged");
+                if (catalog.All.Any(x => x.Id.Equals(effect)))
+                    foreach (var id in new[] { primaryId, secondaryId })
+                    {
+                        foreach (var old in activeConditions.Values.Where(x => x.TargetId == id && x.DefinitionId.Equals(opposite)).ToArray())
+                        { conditions[old.InstanceId] = CopyCondition(old, state: HealthConditionState.Recovered); activeConditions.Remove(old.InstanceId); }
+                        if (!HasActiveCondition(id, effect)) ApplyCondition(id, effect, Math.Max(LastCalendarTick, calendarTick));
+                    }
+            }
             return true;
         }
 
@@ -246,6 +260,7 @@ namespace Game.Simulation.Health
         {
             if (calendarTick < LastCalendarTick || biologicalTick < LastBiologicalTick)
                 throw new ArgumentOutOfRangeException(nameof(calendarTick), "Health/family time cannot move backwards.");
+            SynchronizeNutrition(calendarTick);
             var transitions = 0;
             var deaths = 0;
             var conditionSnapshot = activeConditions.Count == 0
@@ -354,6 +369,10 @@ namespace Game.Simulation.Health
                 incapacitated |= effect.Incapacitated;
                 fertility &= effect.FertilityEligible;
             }
+            var nutrition = NutritionFor(characterId);
+            work = Multiply(work, nutrition.WorkPerThousand);
+            research = Multiply(research, nutrition.WorkPerThousand);
+            movement = Multiply(movement, nutrition.MovementPerThousand);
             if (character.LifeState != CharacterLifeState.Alive)
             {
                 work = movement = research = combat = 0;
@@ -400,6 +419,7 @@ namespace Game.Simulation.Health
                 if (IsActive(pair.Value.State)) activeConditions.Add(pair.Key, pair.Value);
             events.Clear(); foreach (var pair in restoredEvents) events.Add(pair.Key, pair.Value);
             pregnancies.Clear(); foreach (var pair in restoredPregnancies) pregnancies.Add(pair.Key, pair.Value);
+            nextNutritionTick = 0;
             LastCalendarTick = state.LastCalendarTick;
             LastBiologicalTick = state.LastBiologicalTick;
         }

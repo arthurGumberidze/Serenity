@@ -65,7 +65,7 @@ namespace Game.Simulation.Production
         {
             this.inventories = inventories ?? throw new ArgumentNullException(nameof(inventories));
             edibleResources = (edibleResourceIds ?? throw new ArgumentNullException(nameof(edibleResourceIds)))
-                .OrderBy(x => x).Distinct().ToArray();
+                .Distinct().ToArray();
             if (edibleResources.Any(x => !x.IsValid))
                 throw new ArgumentException("Edible resource identities must be valid.", nameof(edibleResourceIds));
             if (ticksPerPersonUnit <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(ticksPerPersonUnit));
@@ -80,7 +80,7 @@ namespace Game.Simulation.Production
 
         public bool HasAvailableMeal => inventories.All
             .Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ||
-                x.Owner.Kind == InventoryOwnerKind.Character)
+                x.Owner.Kind == InventoryOwnerKind.Character || x.Owner.Kind == InventoryOwnerKind.WorldPile)
             .Any(inventory => edibleResources.Any(resourceId =>
                 inventory.CanRemove(resourceId, new ResourceQuantity(1))));
 
@@ -88,8 +88,9 @@ namespace Game.Simulation.Production
         {
             foreach (var inventory in inventories.All
                          .Where(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ||
-                             x.Owner.Kind == InventoryOwnerKind.Character)
-                         .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 : 1)
+                             x.Owner.Kind == InventoryOwnerKind.Character || x.Owner.Kind == InventoryOwnerKind.WorldPile)
+                         .OrderBy(x => x.Owner.Kind == InventoryOwnerKind.BuildingStorage ? 0 :
+                             x.Owner.Kind == InventoryOwnerKind.Character ? 1 : 2)
                          .ThenBy(x => x.Owner.Id))
             foreach (var resourceId in edibleResources)
             {
@@ -228,7 +229,12 @@ namespace Game.Simulation.Production
             var edible = new[] { "cooked_berries", "cooked_fish", "cooked_meat", "dried_meat" }
                 .Select(id => new ResourceId(id)).Where(resources.Contains).ToArray();
             preparedFoodResources = edible;
-            Food = new FoodConsumptionService(inventories, edible, settings.FoodTicksPerPersonUnit);
+            // Gathered berries bridge the ordinary start before fire/cooking research.
+            // They are edible, but never counted as prepared dishes by the monthly menu.
+            var berry = new ResourceId("berries");
+            Food = new FoodConsumptionService(inventories,
+                resources.Contains(berry) ? edible.Concat(new[] { berry }) : edible,
+                settings.FoodTicksPerPersonUnit);
         }
 
         public ProductionCatalog Recipes => recipes;
@@ -288,6 +294,7 @@ namespace Game.Simulation.Production
         public Func<StableEntityId,bool> ManualFishingAccess { get; set; }
         public readonly Dictionary<StableEntityId,StableEntityId> RequestedFishingPiers = new();
         public Func<StableEntityId, long, bool> BuildingWorkAllowed { get; set; }
+        public Func<StableEntityId, ProductionSite, bool> WorkerCanUseSite { get; set; }
         public Func<StableEntityId, int> BuildingWorkPriority { get; set; }
         public Func<StableEntityId, bool> BuildingHasAssignedWorker { get; set; }
         public Func<StableEntityId, StableEntityId?> AssignedWorkplace { get; set; }
@@ -657,6 +664,9 @@ namespace Game.Simulation.Production
             foreach (var site in orderedSites.Where(x => x.Kind == ProductionSiteKind.BuildingWorkplace &&
                          x.Continuous && !x.Paused).OrderBy(x => x.OwnerBuildingId).ThenBy(x => x.Id))
             {
+                // A blueprint has buffers already, but cannot receive production inputs until built.
+                // Otherwise impossible high-priority deliveries starve its builders and researchers.
+                if (!IsSiteOperational(site.Id)) continue;
                 var recipe = recipes.Get(site.RecipeId);
                 if (ContinuousStockGoalMet(recipe)) continue;
                 var destination = InputOwner(site.OwnerBuildingId);
@@ -667,7 +677,14 @@ namespace Game.Simulation.Production
                         job.ResourceId == amount.ResourceId && job.Destination.HasValue &&
                         job.Destination.Value.Kind == WorkTargetKind.ProductionInput &&
                         job.Destination.Value.EntityId == site.OwnerBuildingId).Sum(job => job.Quantity.Units);
-                    var missing = Math.Max(0, amount.Quantity.Units - input.GetAmount(amount.ResourceId).Units - pendingDestination);
+                    // The fire's six-hour heating consumption shares this buffer with cooking.
+                    // Keep one extra log so heating cannot repeatedly steal the only recipe fuel
+                    // between delivery and the cook's physical arrival.
+                    var fireReserve = amount.ResourceId.ToString() == "wood_log" &&
+                        buildings.TryGet(site.OwnerBuildingId, out var fireBuilding) &&
+                        (fireBuilding.DefinitionId.FamilyId.ToString() == "campfire" ||
+                         fireBuilding.DefinitionId.FamilyId.ToString() == "stone_age_kitchen") ? 1L : 0L;
+                    var missing = Math.Max(0, amount.Quantity.Units + fireReserve - input.GetAmount(amount.ResourceId).Units - pendingDestination);
                     // Stable storage is preferred over ground piles. Autonomous pile cleanup and queued
                     // workplace deliveries otherwise race for the same pile between reservation ticks,
                     // leaving a stream of failed WorldPile -> ProductionInput orders even though the
@@ -899,7 +916,11 @@ namespace Game.Simulation.Production
             for (var i = 0; i < active.Length; i++) Cancel(active[i]);
             return active.Length;
         }
-        public long GetTarget(ResourceId id) => targets.TryGetValue(id, out var value) ? value : 0;
+        public Func<ResourceId, long> ConstructionTarget { get; set; }
+        public Dictionary<ResourceId,long> CalculateConstructionRequirements(Dictionary<ResourceId,long> needs, IReadOnlyDictionary<ResourceId,long> available) =>
+            StockPlanner.ConstructionRequirements(recipes, id => unlocks == null || unlocks.IsProductionRecipeUnlocked(id), needs, available);
+        public long GetManualTarget(ResourceId id) => targets.TryGetValue(id, out var value) ? value : 0;
+        public long GetTarget(ResourceId id) => Math.Max(GetManualTarget(id), ConstructionTarget?.Invoke(id) ?? 0);
         public StockPlanningPolicy StockPolicy { get; private set; } = new StockPlanningPolicy();
         public StockPlanningConfig StockConfig { get; set; }
         public Func<StockPlanningFacts> StockFacts { get; set; }
@@ -949,7 +970,8 @@ namespace Game.Simulation.Production
 
         public bool NeedsProduction(ResourceId id)
         {
-            if (!targets.TryGetValue(id, out var target) || target <= 0) return false;
+            var target = GetTarget(id);
+            if (target <= 0) return false;
             return checked(GetCanonicalTotal(id) + ReservedOutput(id)) < target;
         }
 
@@ -1025,9 +1047,10 @@ namespace Game.Simulation.Production
             if (site.Kind == ProductionSiteKind.PrimitiveCropPlot &&
                 tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
             var recipe = recipes.Get(site.RecipeId);
+            if (WorkerCanUseSite?.Invoke(workerId, site) == false) return false;
             if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id, true)) return false;
             if(site.RecipeId.ToString()=="fish_water" && ManualFishingAccess!=null && !ManualFishingAccess(site.Id))return false;
-            if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == siteId)) return false;
+            // Whole-source tasks share progress and produce the resource pile only once.
               if (!HasNaturalSourceCapacity(site)) return false;
             if (site.Kind == ProductionSiteKind.BuildingWorkplace && ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers)
                 return false;
@@ -1119,6 +1142,18 @@ namespace Game.Simulation.Production
                     Animals.AdvanceHunt(task.SiteId, task.WorkerId, work.Ticks);
                     return default;
                 }
+            }
+            if (recipes.Get(task.RecipeId).HarvestEntireSource)
+            {
+                var colleagues = tasks.Values.Where(x => !x.IsTerminal && x.SiteId == task.SiteId).ToArray();
+                var progress = Math.Min(task.RequiredWorkTicks, colleagues.Max(x => x.AccumulatedWorkTicks) + workTicks);
+                foreach (var colleague in colleagues) colleague.AddWork(Math.Max(0, progress - colleague.AccumulatedWorkTicks));
+                if (progress < task.RequiredWorkTicks) return default;
+                var result = Complete(task);
+                if (result.Completed)
+                    foreach (var colleague in colleagues)
+                        if (!colleague.IsTerminal) { colleague.Complete(); Release(colleague); }
+                return result;
             }
             task.AddWork(workTicks);
             if (task.AccumulatedWorkTicks < task.RequiredWorkTicks) return default;
@@ -1316,6 +1351,7 @@ namespace Game.Simulation.Production
                 }
                 foodSpoilage[key] = accumulated;
             }
+            outputPiles?.SeparateSpoiledFood();
         }
 
         public ulong ComputeStateHash()
@@ -1399,9 +1435,19 @@ namespace Game.Simulation.Production
             }
         }
 
+        public Func<StableEntityId, bool> WorkerIsAtWork { get; set; }
+        private int CooperationRate(ProductionTask task)
+        {
+            var site = sites[task.SiteId];
+            var count = tasks.Values.Count(x => !x.IsTerminal &&
+                (x.SiteId == task.SiteId || site.OwnerBuildingId.IsValid && sites[x.SiteId].OwnerBuildingId == site.OwnerBuildingId) &&
+                (WorkerIsAtWork?.Invoke(x.WorkerId) ?? true));
+            return count <= 1 ? 1000 : (1000 + 600 * (count - 1)) / count;
+        }
+
         private long GetEffectiveWorkTicks(ProductionTask task, long rawTicks, long calendarTick)
         {
-            var workTicks = rawTicks;
+            var workTicks = ApplyPerThousand(rawTicks, CooperationRate(task));
             if (capabilities != null)
                 workTicks = ApplyPerThousand(workTicks, capabilities.GetCapabilities(task.WorkerId).WorkPerThousand);
             var recipe = recipes.Get(task.RecipeId);
@@ -1429,7 +1475,7 @@ namespace Game.Simulation.Production
             }
             if (capabilities != null)
                 rawTicks = InvertPerThousand(rawTicks, capabilities.GetCapabilities(task.WorkerId).WorkPerThousand);
-            return rawTicks;
+            return InvertPerThousand(rawTicks, CooperationRate(task));
         }
 
         private static long ApplyPerThousand(long ticks, int modifier) => checked(ticks * modifier / 1000L);
@@ -1564,6 +1610,7 @@ namespace Game.Simulation.Production
             foreach (var site in orderedSites)
             {
                 if (!site.IsWorkAvailable || !IsSiteOperational(site.Id)) continue;
+                if (WorkerCanUseSite?.Invoke(workerId, site) == false) continue;
                 if (site.Kind == ProductionSiteKind.PrimitiveCropPlot &&
                     tasks.Values.Any(task => !task.IsTerminal && task.SiteId == site.Id)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace && BuildingWorkAllowed != null &&
@@ -1576,7 +1623,7 @@ namespace Game.Simulation.Production
                 var recipe = recipes.Get(site.RecipeId);
                 if (!recipe.Enabled || !IsRecipeAvailable(recipe.Id)) continue;
                 if (recipe.Outputs.All(x => StockPolicy.PriorityFor(x.ResourceId) == 0)) continue;
-                if (recipe.HarvestEntireSource && tasks.Values.Any(x => !x.IsTerminal && x.SiteId == site.Id)) continue;
+                // Multiple arrived workers can cooperate on one whole-source harvest.
                   if (!HasNaturalSourceCapacity(site)) continue;
                 if (site.Kind == ProductionSiteKind.BuildingWorkplace &&
                     ActiveWorkersAt(site.OwnerBuildingId) >= site.MaximumWorkers) continue;

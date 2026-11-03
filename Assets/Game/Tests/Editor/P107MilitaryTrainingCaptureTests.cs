@@ -24,6 +24,30 @@ namespace Game.Tests.Editor
     public sealed class P107MilitaryTrainingCaptureTests
     {
         [Test]
+        public void HonoraryRulerRankDoesNotBlockCivilianProfessionButTrainingStillDoes()
+        {
+            var fixture = Fixture.Create();
+            var resident = fixture.Soldier;
+            resident.AssignProfession(new ProfessionId("crafter"));
+            fixture.Training.IsRuler = id => id == resident.Id;
+            Assert.That(fixture.Training.GetRank(resident.Id), Is.EqualTo(MilitaryRank.Generalissimo));
+            Assert.That(fixture.Training.IsOnMilitaryDuty(resident.Id), Is.False);
+            fixture.Training.IsRuler = _ => false;
+            var start = fixture.Training.TryStart(resident.Id, fixture.Barracks.Id,
+                new CombatSideId("player"), 0, fixture.Inventories.All.Select(x => x.Owner));
+            Assert.That(start.Started, Is.True);
+            resident.AssignProfession(new ProfessionId("crafter"));
+            Assert.That(fixture.Training.IsOnMilitaryDuty(resident.Id), Is.True,
+                "Reassigning a group cannot bypass an unfinished barracks course.");
+            fixture.Training.AdvanceTo(start.Record.CompletionTick);
+            Assert.That(fixture.Training.IsOnMilitaryDuty(resident.Id), Is.True);
+            resident.AssignProfession(new ProfessionId("crafter"));
+            Assert.That(fixture.Training.GetRank(resident.Id), Is.Not.Null);
+            Assert.That(fixture.Training.IsOnMilitaryDuty(resident.Id), Is.False,
+                "A former soldier can return to a civilian profession without erasing service history.");
+        }
+
+        [Test]
         public void BarracksTrainsExistingAdultRepeatedlyWithIncreasingCurveAndMilitaryClothing()
         {
             var fixture = Fixture.Create();

@@ -86,7 +86,10 @@ namespace Game.Simulation.Tiers
             Revision = checked(Revision + 1);
         }
 
-        public void Materialize(Character character, CharacterSimulationTier tier, CharacterRuntimeState state)
+        public void Materialize(Character character, CharacterSimulationTier tier, CharacterRuntimeState state) =>
+            Materialize(character, tier, state, false);
+
+        private void Materialize(Character character, CharacterSimulationTier tier, CharacterRuntimeState state, bool checkpoint)
         {
             if (character == null) throw new ArgumentNullException(nameof(character));
             ValidateTier(tier);
@@ -95,8 +98,16 @@ namespace Game.Simulation.Tiers
             RequireMatchingIdentity(character.Id, state);
             if (tiers.ContainsKey(character.Id) || CountActiveRepresentations(character.Id) != 0)
                 throw new InvalidOperationException("Character already has a managed or active representation.");
-            adapters[tier].ValidateMaterialization(character, state);
-            adapters[tier].Materialize(character, state);
+            if (checkpoint)
+            {
+                ValidateCheckpoint(adapters[tier], character, state);
+                MaterializeCheckpoint(adapters[tier], character, state);
+            }
+            else
+            {
+                adapters[tier].ValidateMaterialization(character, state);
+                adapters[tier].Materialize(character, state);
+            }
             if (!adapters[tier].IsActive(character.Id))
                 throw new InvalidOperationException("Tier adapter did not activate the requested representation.");
             tiers.Add(character.Id, tier);
@@ -136,7 +147,7 @@ namespace Game.Simulation.Tiers
             {
                 var id = entry.State.CharacterId;
                 if (tiers.ContainsKey(id)) RestoreRepresentationState(id, entry.Tier, entry.State);
-                else Materialize(characters.Get(id), entry.Tier, entry.State);
+                else Materialize(characters.Get(id), entry.Tier, entry.State, true);
             }
         }
 
@@ -173,7 +184,7 @@ namespace Game.Simulation.Tiers
             var character = characters.Get(characterId);
             var source = adapters[sourceTier];
             var target = adapters[targetTier];
-            var rollbackState = source.Capture(characterId);
+            var rollbackState = source is ICharacterCheckpointAdapter checkpoint ? checkpoint.CaptureCheckpoint(characterId) : source.Capture(characterId);
             RequireMatchingIdentity(characterId, rollbackState);
 
             try
@@ -187,26 +198,26 @@ namespace Game.Simulation.Tiers
                         // projection is active. Same-tier checkpoint restore therefore validates
                         // only after releasing that projection, while retaining rollbackState for
                         // the transactional recovery path below.
-                        source.ValidateMaterialization(character, checkpointState);
-                        source.Materialize(character, checkpointState);
+                        ValidateCheckpoint(source, character, checkpointState);
+                        MaterializeCheckpoint(source, character, checkpointState);
                         AssertExactlyOneActive(characterId, sourceTier);
                         return;
                     }
                     catch (Exception restoreFailure)
                     {
                         if (source.IsActive(characterId)) source.Dematerialize(characterId);
-                        source.Materialize(character, rollbackState);
+                        MaterializeCheckpoint(source, character, rollbackState);
                         AssertExactlyOneActive(characterId, sourceTier);
                         throw new TierTransitionException(characterId, sourceTier, targetTier, true,
                             restoreFailure);
                     }
                 }
 
-                target.ValidateMaterialization(character, checkpointState);
+                ValidateCheckpoint(target, character, checkpointState);
                 source.Dematerialize(characterId);
                 try
                 {
-                    target.Materialize(character, checkpointState);
+                    MaterializeCheckpoint(target, character, checkpointState);
                     tiers[characterId] = targetTier;
                     Revision = checked(Revision + 1);
                     AssertExactlyOneActive(characterId, targetTier);
@@ -214,7 +225,7 @@ namespace Game.Simulation.Tiers
                 catch (Exception restoreFailure)
                 {
                     if (target.IsActive(characterId)) target.Dematerialize(characterId);
-                    source.Materialize(character, rollbackState);
+                    MaterializeCheckpoint(source, character, rollbackState);
                     tiers[characterId] = sourceTier;
                     AssertExactlyOneActive(characterId, sourceTier);
                     throw new TierTransitionException(characterId, sourceTier, targetTier, true,
@@ -225,6 +236,18 @@ namespace Game.Simulation.Tiers
             {
                 transitioning.Remove(characterId);
             }
+        }
+
+        private static void ValidateCheckpoint(ICharacterTierAdapter adapter, Character character, CharacterRuntimeState state)
+        {
+            if (adapter is ICharacterCheckpointAdapter checkpoint) checkpoint.ValidateCheckpoint(character, state);
+            else adapter.ValidateMaterialization(character, state);
+        }
+
+        private static void MaterializeCheckpoint(ICharacterTierAdapter adapter, Character character, CharacterRuntimeState state)
+        {
+            if (adapter is ICharacterCheckpointAdapter checkpoint) checkpoint.MaterializeCheckpoint(character, state);
+            else adapter.Materialize(character, state);
         }
 
         public TierTransitionResult Transition(StableEntityId characterId, CharacterSimulationTier targetTier)

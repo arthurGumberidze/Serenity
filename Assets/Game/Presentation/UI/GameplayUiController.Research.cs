@@ -190,7 +190,7 @@ namespace Game.Presentation.UI
             researchLinks.Refresh(context.Research,selectedResearchTechnology,researchFilter);
             var selected=context.Research.Catalog.Get(selectedResearchTechnology.Value);
             var blockers=context.Research.GetBlockers(selected.Id);
-            var key=selected.Id+"|"+ResearchNodeState(selected)+"|"+string.Join(";",blockers)+"|"+status.ActiveCount+"/"+status.AssignedCount+"|"+(active==null?"":active.TechnologyId+":"+ResearchProgressText(active.Progress));
+            var key=selected.Id+"|"+ResearchNodeState(selected)+"|"+string.Join(";",blockers)+"|"+string.Join(",",context.Research.QueuedTechnologies)+"|"+status.ActiveCount+"/"+status.AssignedCount+"|"+(active==null?"":active.TechnologyId+":"+ResearchProgressText(active.Progress));
             if(key!=researchDetailKey){researchDetailKey=key;DrawResearchDetail(selected,blockers);}
         }
         private void DrawResearchDetail(TechnologyDefinition d,IReadOnlyList<string> blockers)
@@ -217,12 +217,16 @@ namespace Game.Presentation.UI
             if(active?.TechnologyId==d.Id){AddInspectorBar(card,"Прогресс",(float)active.Progress*100,ResearchProgressText(active.Progress));
                 var workers=ResearchWorkerStatusQuery.Capture(context.Research,context.AiAgents);
                 var rate=workers.ActiveWorkerIds.Sum(id=>(long)Math.Max(0,context.Research.GetRatePerThousand(id)))*
-                    Math.Min(context.Research.EffectiveWorkerLimit,workers.AssignedCount)/Math.Max(1d,workers.AssignedCount)*
+                    (1d+.6d*(Math.Min(context.Research.EffectiveWorkerLimit,workers.ActiveWorkerIds.Count)-1))/Math.Max(1d,workers.ActiveWorkerIds.Count)*
                     (100+context.Research.ScienceBonusPercent)/100;
                 AddMuted(card,rate>0?"При текущей работе группы: ещё ≈ "+
                     ((active.RequiredWorkTicks-active.AccumulatedWorkTicks)/(double)TimeSpan.TicksPerDay*1000/rate).ToString("0.0")+" игровых дней":"Ожидает работающих исследователей.");
                 card.Add(ActionButton("Отменить исследование",()=>TryCommand(()=>context.Research.Cancel()),"research-cancel"));AddMuted(card,"Потраченные материалы и работа при отмене не возвращаются.");}
-            else if(!context.Research.IsCompleted(d.Id)&&p?.IsFuture!=true){var start=ActionButton("Начать исследование",()=>TryCommand(()=>{if(!context.Research.Start(d.Id))throw new InvalidOperationException("Условия исследования изменились.");}),"research-start-selected");start.SetEnabled(blockers.Count==0&&active==null);card.Add(start);if(active!=null)AddMuted(card,"Сначала завершите или отмените текущее исследование.");}
+            else if(!context.Research.IsCompleted(d.Id)&&p?.IsFuture!=true){var start=ActionButton(active==null?"Начать исследование":"Добавить в очередь",()=>TryCommand(()=>{if(!context.Research.Enqueue(d.Id))throw new InvalidOperationException("Очередь заполнена или сначала нужно выбрать предшествующее исследование.");}),"research-start-selected");start.SetEnabled(context.Research.CanEnqueue(d.Id));card.Add(start);}
+            AddSection(card,"Очередь · "+(context.Research.QueuedTechnologies.Count+(active==null?0:1))+" / 3");
+            if(active!=null)AddMuted(card,"Сейчас: "+context.Research.Catalog.Get(active.TechnologyId).DisplayName);
+            foreach(var queuedId in context.Research.QueuedTechnologies){var captured=queuedId;card.Add(ActionButton("×  "+context.Research.Catalog.Get(queuedId).DisplayName,()=>TryCommand(()=>context.Research.RemoveQueued(captured)),"research-remove-"+queuedId));}
+            if(active==null&&context.Research.QueuedTechnologies.Count>0)foreach(var reason in context.Research.GetBlockers(context.Research.QueuedTechnologies[0]))AddMuted(card,reason);
             AddMuted(card,"Состав и смены задаются в группе «Исследователи». Работники распределяются автоматически.");
             researchDetails.scrollOffset=scroll;
         }

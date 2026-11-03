@@ -92,7 +92,7 @@ namespace Game.Tests.PlayMode
 
         private static void AssignGatherer(LocalSceneCompositionRoot root)
         {
-            var group = root.Work.Groups.All.Single(x => x.Role == WorkGroupRole.Gatherers);
+            var group = root.Work.Groups.All.Single(x => x.Role == WorkGroupRole.General);
             if (root.Work.Groups.TryGetForMember(root.MaleDemoCharacter.Id, out var previous))
                 root.Work.RemoveMember(previous.Id, root.MaleDemoCharacter.Id);
             root.Work.AddMember(group.Id, root.MaleDemoCharacter.Id);

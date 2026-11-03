@@ -34,6 +34,35 @@ namespace Game.Tests.Editor
         }
 
         [Test]
+        public void StoryChoicesChangeCanonicalWorkAndExpireAfterRestore()
+        {
+            var catalog = StoneAgeEventCatalog.Create();
+            Assert.That(catalog.All.SelectMany(x => x.Nodes).SelectMany(x => x.Choices)
+                .All(x => x.Effects.Any(e => e.Kind != EventEffectKind.None)), Is.True);
+            var fixture = Fixture.Create(21, catalog);
+            var executor = new CanonicalEventEffectExecutor(fixture.Registry, fixture.Health);
+            var targets = new[] { EventTargetRef.Character(fixture.PlayerA.Id), EventTargetRef.Character(fixture.PlayerB.Id) };
+            Assert.That(executor.TryApply(new EventEffectDefinition(EventEffectKind.RelationshipEvent,
+                "family_dispute", 0, 1), targets, 0, out _), Is.True);
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).WorkPerThousand, Is.EqualTo(850));
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerB.Id).ResearchPerThousand, Is.EqualTo(850));
+            fixture.Health.AdvanceTo(Day, Character.BiologicalTicksPerYear * 20L);
+            Assert.That(executor.TryApply(new EventEffectDefinition(EventEffectKind.RelationshipEvent,
+                "family_support", 0, 1), targets, Day, out _), Is.True);
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).WorkPerThousand, Is.EqualTo(1100));
+            fixture.Health.RestoreState(fixture.Health.CaptureState());
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).ResearchPerThousand, Is.EqualTo(1100));
+            fixture.Health.AdvanceTo(Day * 3, Character.BiologicalTicksPerYear * 20L);
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).WorkPerThousand, Is.EqualTo(1000));
+            Assert.That(executor.TryApply(new EventEffectDefinition(EventEffectKind.HealthCondition,
+                "focused_work"), targets, Day * 3, out _), Is.True);
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).WorkPerThousand, Is.EqualTo(1200));
+            fixture.Health.RestoreState(fixture.Health.CaptureState());
+            fixture.Health.AdvanceTo(Day * 4, Character.BiologicalTicksPerYear * 20L);
+            Assert.That(fixture.Health.GetCapabilities(fixture.PlayerA.Id).WorkPerThousand, Is.EqualTo(1000));
+        }
+
+        [Test]
         public void CatalogRejectsDuplicateMissingAndImmediateCycleDefinitions()
         {
             var valid = Definition("valid", EventAudience.Player, EventTargetSelector.PlayerCouple,

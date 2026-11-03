@@ -21,6 +21,57 @@ namespace Game.Tests.Editor
         private static readonly long AdultTick = Character.BiologicalTicksPerYear * 20L;
 
         [Test]
+        public void HungerPenaltiesRecoverAndFortyEightHourTimerSurvivesSaveLoad()
+        {
+            var fixture = Fixture.Create(2501);
+            var hunger = .71d;
+            fixture.Health.HungerForCharacter = id => id == fixture.Father.Id ? hunger : 0;
+            fixture.Health.AdvanceTo(0, AdultTick);
+            Assert.That(fixture.Health.GetCapabilities(fixture.Father.Id).WorkPerThousand, Is.EqualTo(750));
+            hunger = .81;
+            Assert.That(fixture.Health.GetCapabilities(fixture.Father.Id).WorkPerThousand, Is.EqualTo(500));
+            Assert.That(fixture.Health.GetCapabilities(fixture.Father.Id).MovementPerThousand, Is.EqualTo(800));
+            hunger = .95;
+            var start = TimeSpan.FromHours(1).Ticks;
+            fixture.Health.AdvanceTo(start, AdultTick + start * 400);
+            Assert.That(fixture.Health.GetCapabilities(fixture.Father.Id).WorkPerThousand, Is.EqualTo(250));
+            var beforeDeath = start + TimeSpan.FromHours(47).Ticks;
+            fixture.Health.AdvanceTo(beforeDeath, AdultTick + beforeDeath * 400);
+            Assert.That(fixture.Father.LifeState, Is.EqualTo(CharacterLifeState.Alive));
+            var saved = fixture.Health.CaptureState();
+            fixture.Health.RestoreState(saved);
+            // Medicine is not food; healing must not reset the starvation clock.
+            fixture.Health.RecoverAll(fixture.Father.Id);
+            Assert.That(fixture.Health.StarvationHoursRemaining(fixture.Father.Id, beforeDeath), Is.EqualTo(1));
+            var fatal = start + TimeSpan.FromHours(48).Ticks;
+            fixture.Health.AdvanceTo(fatal, AdultTick + fatal * 400);
+            Assert.That(fixture.Father.LifeState, Is.EqualTo(CharacterLifeState.Dead));
+            Assert.That(fixture.Health.Conditions.Single(x => x.DefinitionId.ToString() == "starvation").DeathProcessed, Is.True);
+        }
+
+        [Test]
+        public void FeedingAtTenPercentCancelsStarvationAndNewEpisodeStartsFresh()
+        {
+            var fixture = Fixture.Create(2502);
+            var hunger = .99d;
+            fixture.Health.HungerForCharacter = id => id == fixture.Mother.Id ? hunger : 0;
+            fixture.Health.AdvanceTo(0, AdultTick);
+            hunger = .90;
+            var fed = TimeSpan.FromHours(47).Ticks;
+            fixture.Health.AdvanceTo(fed, AdultTick + fed * 400);
+            Assert.That(fixture.Health.StarvationHoursRemaining(fixture.Mother.Id, fed), Is.Null);
+            hunger = .99;
+            var restart = TimeSpan.FromHours(48).Ticks;
+            fixture.Health.AdvanceTo(restart, AdultTick + restart * 400);
+            Assert.That(fixture.Health.StarvationHoursRemaining(fixture.Mother.Id, restart), Is.EqualTo(48));
+            hunger = .2;
+            var recovered = TimeSpan.FromHours(49).Ticks;
+            fixture.Health.AdvanceTo(recovered, AdultTick + recovered * 400);
+            Assert.That(fixture.Health.GetCapabilities(fixture.Mother.Id).WorkPerThousand, Is.EqualTo(1000));
+            Assert.That(fixture.Mother.LifeState, Is.EqualTo(CharacterLifeState.Alive));
+        }
+
+        [Test]
         public void ExternalDeathBeforeHealthClockAdvanceImmediatelyDisablesWork()
         {
             var fixture = Fixture.Create(2510);
@@ -60,7 +111,7 @@ namespace Game.Tests.Editor
         public void HealthDefinitionsValidateAndStoneAgeCatalogIsSmallDataDrivenSet()
         {
             var catalog = HealthConditionCatalog.CreateStoneAge();
-            Assert.That(catalog.All.Count, Is.InRange(6, 12));
+            Assert.That(catalog.All.Count, Is.InRange(6, 15));
             Assert.That(catalog.Get(new HealthConditionId("minor_cut")).Type, Is.EqualTo(HealthConditionType.Injury));
             Assert.That(catalog.Get(new HealthConditionId("infection")).Type, Is.EqualTo(HealthConditionType.Disease));
             Assert.Throws<ArgumentOutOfRangeException>(() => new HealthEffect(-1, 1000, 1000, 1000, false, true, 0));

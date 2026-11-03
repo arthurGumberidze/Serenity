@@ -94,7 +94,8 @@ namespace Game.Domain.Buildings
         North = 0,
         East = 1,
         South = 2,
-        West = 3
+        West = 3,
+        NorthEast = 4, SouthEast = 5, SouthWest = 6, NorthWest = 7
     }
 
     public enum ConstructionState
@@ -140,6 +141,7 @@ namespace Game.Domain.Buildings
         public int Depth { get; }
 
         public BuildingFootprint Rotate(BuildingOrientation orientation) =>
+            (int)orientation >= 4 ? new BuildingFootprint((int)Math.Ceiling((Width + Depth) / Math.Sqrt(2)), (int)Math.Ceiling((Width + Depth) / Math.Sqrt(2))) :
             orientation == BuildingOrientation.East || orientation == BuildingOrientation.West
                 ? new BuildingFootprint(Depth, Width)
                 : this;
@@ -185,8 +187,19 @@ namespace Game.Domain.Buildings
     public static class BuildingOrientationExtensions
     {
         public static BuildingOrientation RotateClockwise(this BuildingOrientation orientation) =>
-            (BuildingOrientation)(((int)orientation + 1) % 4);
+            FromDegrees(orientation.Degrees() + 90);
 
-        public static int Degrees(this BuildingOrientation orientation) => (int)orientation * 90;
+        public static BuildingOrientation RotateStep45(this BuildingOrientation orientation) => FromDegrees(orientation.Degrees() + 45);
+
+        private static BuildingOrientation FromDegrees(int degrees) => (degrees % 360) switch
+        {
+            0 => BuildingOrientation.North, 45 => BuildingOrientation.NorthEast,
+            90 => BuildingOrientation.East, 135 => BuildingOrientation.SouthEast,
+            180 => BuildingOrientation.South, 225 => BuildingOrientation.SouthWest,
+            270 => BuildingOrientation.West, _ => BuildingOrientation.NorthWest
+        };
+
+        public static int Degrees(this BuildingOrientation orientation) => (int)orientation < 4
+            ? (int)orientation * 90 : ((int)orientation - 4) * 90 + 45;
     }
 }

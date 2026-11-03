@@ -233,7 +233,7 @@ namespace Game.Infrastructure
             {
                 selectableTrees = vegetationPlan.Instances.Where(WorldMapVegetationRenderer.IsTree).ToArray();
                 vegetationRenderer = gameObject.AddComponent<WorldMapVegetationRenderer>();
-                vegetationRenderer.Initialize(vegetationPlan, natureCatalog);
+                vegetationRenderer.Initialize(vegetationPlan, natureCatalog, (x,z) => heightSampler.SampleHeight(x,z));
             }
             progress?.Invoke("Подготавливаем обзор карты…");
             yield return null;
@@ -647,6 +647,8 @@ namespace Game.Infrastructure
                 root.SetActive(site?.IsDepleted != true);
             }
         }
+
+        public void SetGroundClearings(IEnumerable<Bounds> bounds) => vegetationRenderer?.SetGroundClearings(bounds);
 
         private void RefreshVegetationViews(WorldPosition cameraFocus)
         {

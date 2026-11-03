@@ -111,7 +111,9 @@
         "branches",
         "berries",
         "stone",
-        "medicinal_plants"
+        "medicinal_plants",
+        "mushrooms",
+        "plant_fiber"
       ],
       "shape": {
         "type": "ring",

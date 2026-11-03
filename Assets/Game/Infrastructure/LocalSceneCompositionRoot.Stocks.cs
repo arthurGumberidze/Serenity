@@ -13,6 +13,26 @@ namespace Game.Infrastructure
 {
     public sealed partial class LocalSceneCompositionRoot
     {
+        private long constructionStockTick = -1;
+        private System.Collections.Generic.Dictionary<ResourceId,long> constructionStockTargets = new();
+        private long ConstructionStockTarget(ResourceId id)
+        {
+            if (constructionStockTick != Clock.State.CalendarTicks)
+            {
+                var needs = new System.Collections.Generic.Dictionary<ResourceId,long>();
+                var available = new System.Collections.Generic.Dictionary<ResourceId,long>();
+                foreach(var building in Buildings.All.Where(x => x.OwnerSideId == new CombatSideId("player") && !x.IsDestroyed &&
+                    !x.IsOperational && x.ConstructionPhase != ConstructionPhase.Cancelled))
+                    foreach(var material in building.ConstructionMaterials) StockPlanner.Add(needs,material.ResourceId,material.RemainingUnits);
+                foreach(var inventory in Inventories.All.Where(x =>
+                    (x.Owner.Kind != InventoryOwnerKind.Character && x.Owner.Kind != InventoryOwnerKind.CarryLoad || CanCommandResident(x.Owner.Id)) &&
+                    (!Buildings.TryGet(x.Owner.Id,out var owner) || owner.OwnerSideId == new CombatSideId("player"))))
+                    foreach(var amount in inventory.CaptureState().Amounts) StockPlanner.Add(available,amount.ResourceId,amount.Quantity.Units);
+                constructionStockTargets = Production.CalculateConstructionRequirements(needs,available);
+                constructionStockTick = Clock.State.CalendarTicks;
+            }
+            return StockPlanner.Get(constructionStockTargets,id);
+        }
         private StockPlanningFacts CaptureStockPlanningFacts()
         {
             var living = Characters.GetAll().Where(x => CanCommandResident(x.Id) && x.LifeState == CharacterLifeState.Alive)
@@ -44,6 +64,8 @@ namespace Game.Infrastructure
             // Character inventories are included above: carried equipment reduces the total need; appearance
             // clothing is cosmetic and cannot be counted as a physical resource.
             var cases = HealthFamily.Conditions.Count(x => living.Contains(x.TargetId) &&
+                x.DefinitionId.ToString() != "encouraged" && x.DefinitionId.ToString() != "distressed" &&
+                x.DefinitionId.ToString() != "starvation" && x.DefinitionId.ToString() != "focused_work" &&
                 (x.State == HealthConditionState.Active || x.State == HealthConditionState.Improving ||
                  x.State == HealthConditionState.Worsening || x.State == HealthConditionState.Critical));
             Need("medicine", checked(cases * Production.StockConfig.medicinesPerCase +
@@ -52,6 +74,14 @@ namespace Game.Infrastructure
                     Buildings.TryGet(x.Home, out var pen) && pen.OwnerSideId == new CombatSideId("player"))
                 .GroupBy(x => x.Home).Sum(x => (x.Count() + 2L) / 3);
             facts.DailyNeeds[new ResourceId("animal_feed")] = feed;
+            var fuel = 0L;
+            foreach(var building in Buildings.All.Where(x => x.IsOperational && x.OwnerSideId == new CombatSideId("player")))
+            {
+                var rule = Production.StockConfig.heating.FirstOrDefault(x => x.building == building.DefinitionId.ToString()) ??
+                    Production.StockConfig.heating.FirstOrDefault(x => x.building == building.DefinitionId.FamilyId.ToString());
+                if(rule != null) fuel += rule.logsPerDay;
+            }
+            facts.DailyNeeds[new ResourceId("wood_log")] = fuel;
             return facts;
         }
     }

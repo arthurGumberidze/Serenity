@@ -26,6 +26,29 @@ namespace Game.Tests.Editor
         private static readonly ResourceId Stone = new ResourceId("stone");
 
         [Test]
+        public void EmptyStocksPermitBlueprintWithoutCreatingMaterialsOrBuildWork()
+        {
+            var f = CreateLogisticsFixture();
+            foreach (var source in f.Sources)
+                foreach (var amount in source.CaptureState().Amounts)
+                    source.TryRemove(amount.ResourceId, amount.Quantity);
+            var result = f.Funding.TryConfirm(Definition(), new GridCoordinate(3,4), BuildingOrientation.NorthEast,
+                f.Sources.Select(x => x.Owner), out var building);
+            Assert.That(result.IsValid, Is.True);
+            Assert.That(building.IsOperational, Is.False);
+            Assert.That(building.ConstructionMaterials.Sum(x => x.RemainingUnits), Is.GreaterThan(0));
+            Assert.That(f.Inventories.All.Sum(x => x.TotalUnits), Is.Zero);
+            Assert.That(f.Work.Jobs, Is.Empty);
+            var restored = Building.Restore(building.CaptureState());
+            Assert.That(restored.Orientation.Degrees(), Is.EqualTo(45));
+            var orientation = BuildingOrientation.North;
+            var directions = new System.Collections.Generic.HashSet<int>();
+            for (var i=0;i<8;i++) { directions.Add(orientation.Degrees()); orientation=orientation.RotateStep45(); }
+            Assert.That(directions, Is.EquivalentTo(new[] {0,45,90,135,180,225,270,315}));
+            Assert.That(orientation, Is.EqualTo(BuildingOrientation.North));
+        }
+
+        [Test]
         public void ConstructionBuffer_AcceptsEveryCategoryDeclaredByItsContract()
         {
             var hide = new ResourceId("cured_hide");

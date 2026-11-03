@@ -131,7 +131,15 @@ namespace Game.Domain.Health
             new HealthConditionDefinition(new HealthConditionId("cold_stress"), "Cold stress", HealthConditionType.TemporaryCondition,
                 HealthSeverity.Moderate, TimeSpan.FromDays(3), new HealthEffect(700, 800, 800, 650, false, false, 0), 25),
             new HealthConditionDefinition(new HealthConditionId("heat_stress"), "Heat stress", HealthConditionType.TemporaryCondition,
-                HealthSeverity.Moderate, TimeSpan.FromDays(2), new HealthEffect(750, 850, 800, 700, false, false, 0), 20)
+                HealthSeverity.Moderate, TimeSpan.FromDays(2), new HealthEffect(750, 850, 800, 700, false, false, 0), 20),
+            new HealthConditionDefinition(new HealthConditionId("starvation"), "Голодание", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Critical, TimeSpan.FromDays(2), new HealthEffect(1000, 1000, 1000, 1000, false, true, 1000)),
+            new HealthConditionDefinition(new HealthConditionId("encouraged"), "Воодушевление", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Minor, TimeSpan.FromDays(2), new HealthEffect(1100, 1000, 1100, 1000, false, true, 0)),
+            new HealthConditionDefinition(new HealthConditionId("focused_work"), "Рабочий настрой", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Minor, TimeSpan.FromDays(1), new HealthEffect(1200, 1000, 1000, 1000, false, true, 0)),
+            new HealthConditionDefinition(new HealthConditionId("distressed"), "Переживания", HealthConditionType.TemporaryCondition,
+                HealthSeverity.Minor, TimeSpan.FromDays(2), new HealthEffect(850, 1000, 850, 1000, false, true, 0))
         });
     }
 

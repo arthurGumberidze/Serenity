@@ -196,6 +196,17 @@ namespace Game.Domain.World
             }
 
             height = ApplyAuthoredHydrology(height, design);
+            // Gentle relief around the camp, with a level central building pad. Apply the
+            // authored corridors afterwards so their walkability remains authoritative.
+            if (plateau != null)
+            {
+                var dx = design.X - plateau.Position.X;
+                var dz = design.Z - plateau.Position.Z;
+                var radius = (float)Math.Sqrt(dx * dx + dz * dz);
+                var envelope = Smooth01((radius - 18f) / 22f) * (1f - Smooth01((radius - 95f) / 65f));
+                height += envelope * (ValueNoise(design.X / 32f, design.Z / 32f, 142) * .65f +
+                    ValueNoise(design.X / 67f, design.Z / 67f, 143) * .45f);
+            }
             height = ApplyPreparedExpansionCorridors(height, design, plateau);
 
             // Prepared dry construction corridors remain authoritative; water cannot be filled by them.

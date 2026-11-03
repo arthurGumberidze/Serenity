@@ -119,6 +119,8 @@ namespace Game.Simulation.Buildings
                 if (!buildings.TryGet(entry.Key, out var building) || building.IsOperational ||
                     building.ConstructionPhase == ConstructionPhase.Cancelled)
                 {
+                    foreach (var job in LinkedOpenJobs(entry.Key, entry.Value).ToArray())
+                        work.Cancel(job.Id);
                     plans.Remove(entry.Key);
                     continue;
                 }
@@ -168,11 +170,13 @@ namespace Game.Simulation.Buildings
             // before the final stage is committed only plays a work animation while the domain
             // correctly rejects progress. Wait for the construction phase to become workable.
             if (building.ConstructionPhase != ConstructionPhase.Building) return;
-            if (!HasBuildJob(building.Id))
+            var workers = Math.Max(1, work.Groups.All.Where(g => g.Role == WorkGroupRole.Builders).Sum(g => g.Members.Count));
+            var open = work.OpenJobs.Count(j => j.Type == WorkJobType.Build && j.Target.EntityId == building.Id);
+            if (open < workers)
             {
-                work.CreateDirectJob(WorkJobType.Build, null,
-                    WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, buildTarget(building)),
-                    plan.Priority);
+                for (var slot = open; slot < workers; slot++)
+                    work.CreateDirectJob(WorkJobType.Build, null,
+                        WorkTarget.ForEntity(WorkTargetKind.Building, building.Id, buildTarget(building)), plan.Priority, exclusiveTarget: false);
                 plan.BuildScheduled = true;
             }
             else if (HasBuildJob(building.Id)) plan.BuildScheduled = true;

@@ -2,6 +2,14 @@
   "arrowsPerHunter": 20,
   "medicinesPerCase": 2,
   "residentsPerReserveMedicine": 10,
+  "heating": [
+    { "building": "primitive_shelter", "logsPerDay": 4 },
+    { "building": "stone_age_hut", "logsPerDay": 3 },
+    { "building": "stone_age_hut_level2", "logsPerDay": 2 },
+    { "building": "chief_hut", "logsPerDay": 4 },
+    { "building": "chief_hut_level2", "logsPerDay": 3 },
+    { "building": "clan_house", "logsPerDay": 5 }
+  ],
   "groups": [
     {
       "id": "food",

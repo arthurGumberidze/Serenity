@@ -185,6 +185,28 @@ namespace Game.Domain.World
             weights[(int)WorldMapTerrainPaintLayer.ForestMoss] *= 0.9f + micro * 0.2f;
             weights[(int)WorldMapTerrainPaintLayer.Soil] *= 1.08f - micro * 0.16f;
             weights[(int)WorldMapTerrainPaintLayer.Scrub] *= 0.9f + (1f - micro) * 0.2f;
+            // Broad meadow patches break the uniform clearing without altering shore/snow/forest authority.
+            var meadow = (1f - rock) * (1f - shore) * (1f - highland) *
+                Math.Min(1f, weights[(int)WorldMapTerrainPaintLayer.Grass] * 1.6f);
+            var patch = SmoothRange(micro, .28f, .72f);
+            weights[(int)WorldMapTerrainPaintLayer.Grass] *= 1f + meadow * (patch * .8f - .25f);
+            weights[(int)WorldMapTerrainPaintLayer.Soil] += meadow * (1f - patch) * 1.65f;
+            weights[(int)WorldMapTerrainPaintLayer.ForestMoss] += meadow * patch * .55f;
+            // The camp grows from narrow worn paths, not a bare circular clearing.
+            var start = definition.MapData.StartTerritory;
+            if (start != null)
+            {
+                var dx = point.X - start.DesignPosition.X;
+                var dz = point.Z - start.DesignPosition.Z;
+                var distance = (float)Math.Sqrt(dx * dx + dz * dz);
+                var camp = 1f - SmoothRange(distance, 35f, 85f);
+                var trail = start.ExpansionDirections.Min(value => value.DistanceTo(point));
+                var worn = (1f - SmoothRange(trail, .65f, 2.2f)) * camp * meadow;
+                weights[(int)WorldMapTerrainPaintLayer.Soil] += worn * 4f;
+                weights[(int)WorldMapTerrainPaintLayer.Grass] *= 1f - worn * .65f;
+                var gravel = 1f - SmoothRange(micro, .22f, .40f);
+                weights[(int)WorldMapTerrainPaintLayer.Rock] += gravel * camp * meadow * .45f;
+            }
         }
 
         private static float[] BuildRegionalProfile(WorldMapBiomeRegion region)

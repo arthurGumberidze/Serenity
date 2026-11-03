@@ -67,5 +67,19 @@ namespace Game.Tests
             Assert.That(RussianTextCatalog.Get("test.missing.key"), Is.EqualTo(RussianTextCatalog.MissingText));
             Assert.That(RussianTextCatalog.MissingKeys, Does.Contain("test.missing.key"));
         }
+
+        [Test]
+        public void StoneAgeResearchUnlockContentHasRussianLabels()
+        {
+            foreach (var key in Game.Domain.Research.StoneAgeResearchPlan.All
+                .SelectMany(profile => profile.UnlockIds).Distinct())
+            {
+                var parts = key.Split(':');
+                if (parts[0] != "recipe" && parts[0] != "building") continue;
+                Assert.That(RussianTextCatalog.Content(parts[0], parts[1]),
+                    Is.Not.EqualTo(RussianTextCatalog.MissingText), key);
+            }
+            Assert.That(RussianTextCatalog.MissingKeys, Is.Empty);
+        }
     }
 }

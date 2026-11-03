@@ -184,15 +184,15 @@ namespace Game.Simulation.Events
                         "The household gathers again after a day of reflection.", new[]
                         {
                             new EventChoiceDefinition(new EventChoiceId("share_meal"), "Share a meal", 70,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) }),
+                                new[] { new EventEffectDefinition(EventEffectKind.RelationshipEvent, "family_support", 0, 1) }),
                             new EventChoiceDefinition(new EventChoiceId("return_to_work"), "Return to work", 30,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) })
+                                new[] { new EventEffectDefinition(EventEffectKind.HealthCondition, "focused_work") })
                         }),
                     new EventNodeDefinition(new EventNodeId("lingering_tension"), "Lingering tension",
                         "The disagreement remains, but the household must move forward.", new[]
                         {
                             new EventChoiceDefinition(new EventChoiceId("let_time_pass"), "Let time pass", 50,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) })
+                                new[] { new EventEffectDefinition(EventEffectKind.RelationshipEvent, "family_dispute", 0, 1) })
                         })
                 }, spouses, InvalidEventTargetPolicy.Expire),
 
@@ -208,7 +208,7 @@ namespace Game.Simulation.Events
                             new EventChoiceDefinition(new EventChoiceId("offer_support"), "Offer support", 90,
                                 new[] { new EventEffectDefinition(EventEffectKind.RelationshipEvent, "family_support", 0, 1) }),
                             new EventChoiceDefinition(new EventChoiceId("keep_distance"), "Keep some distance", 10,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) })
+                                new[] { new EventEffectDefinition(EventEffectKind.RelationshipEvent, "family_dispute", 0, 1) })
                         })
                 }, spouses, InvalidEventTargetPolicy.Expire),
 
@@ -236,9 +236,9 @@ namespace Game.Simulation.Events
                         "A familiar tale steadies the remote camp after sunset.", new[]
                         {
                             new EventChoiceDefinition(new EventChoiceId("remember_ancestors"), "Remember the ancestors", 60,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) }),
+                                new[] { new EventEffectDefinition(EventEffectKind.HealthCondition, "encouraged") }),
                             new EventChoiceDefinition(new EventChoiceId("plan_tomorrow"), "Plan tomorrow", 40,
-                                new[] { new EventEffectDefinition(EventEffectKind.None) })
+                                new[] { new EventEffectDefinition(EventEffectKind.HealthCondition, "focused_work") })
                         })
                 }, alive, InvalidEventTargetPolicy.Cancel)
             });

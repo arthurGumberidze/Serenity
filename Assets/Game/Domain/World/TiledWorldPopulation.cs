@@ -130,9 +130,11 @@ namespace Game.Domain.World
             {
                 ["wood"] = 8,
                 ["branches"] = 6,
-                ["berries"] = 6,
+                ["berries"] = 10,
                 ["stone"] = 5,
-                ["medicinal_plants"] = 4
+                ["medicinal_plants"] = 4,
+                ["mushrooms"] = 5,
+                ["plant_fiber"] = 5
             };
 
         public TiledWorldPopulationPlanner(TiledWorldDefinition worldDefinition,
@@ -219,7 +221,7 @@ namespace Game.Domain.World
                 var type = definition.MapData.Resources.Type(resourceId);
                 var count = zone.Id == "res_start_basics"
                     ? StartGuarantee(resourceId)
-                    : CountForDensity(zone.Density);
+                    : CountForDensity(zone.Density) * (resourceId == "berries" || resourceId == "mushrooms" ? 2 : 1);
                 for (var ordinal = 0; ordinal < count; ordinal++)
                 {
                     if (!TryFindWorldMapPoint(zone, type, ordinal, out var design, out var position))
