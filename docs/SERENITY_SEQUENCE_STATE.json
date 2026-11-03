@@ -5,13 +5,47 @@
   "projectId": "31e3de33-ca38-4c3b-b7fd-53991c5bbd9c",
   "activeStage": "SR01",
   "stages": [
-    {"id":"SR01","status":"READY","threadId":null},
-    {"id":"SR02","status":"TODO","threadId":null},
-    {"id":"SR03","status":"TODO","threadId":null},
-    {"id":"SR04","status":"TODO","threadId":null},
-    {"id":"SR05","status":"TODO","threadId":null},
-    {"id":"SR06","status":"TODO","threadId":null},
-    {"id":"SR07","status":"WAITING_DISCUSSION","threadId":null},
-    {"id":"SR08","status":"WAITING_DISCUSSION","threadId":null}
-  ]
+    {
+      "id": "SR01",
+      "status": "IN_PROGRESS",
+      "threadId": "01a1a228-19cd-7e33-9cd0-8d9753b8a6f4",
+      "hostId": "local"
+    },
+    {
+      "id": "SR02",
+      "status": "TODO",
+      "threadId": null
+    },
+    {
+      "id": "SR03",
+      "status": "TODO",
+      "threadId": null
+    },
+    {
+      "id": "SR04",
+      "status": "TODO",
+      "threadId": null
+    },
+    {
+      "id": "SR05",
+      "status": "TODO",
+      "threadId": null
+    },
+    {
+      "id": "SR06",
+      "status": "TODO",
+      "threadId": null
+    },
+    {
+      "id": "SR07",
+      "status": "WAITING_DISCUSSION",
+      "threadId": null
+    },
+    {
+      "id": "SR08",
+      "status": "WAITING_DISCUSSION",
+      "threadId": null
+    }
+  ],
+  "automationId": "serenity-sr01-sr06"
 }
