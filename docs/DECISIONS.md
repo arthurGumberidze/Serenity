@@ -2932,3 +2932,31 @@ Tier1 AI calendar is rebased to canonical GameClock at initialization, extra-sch
 load. Rebasing does not simulate skipped time or grant retrospective work. The resident inspector uses
 one activity description in header/wellbeing/occupation, distinguishes travel from indoor work, and omits
 thirst. Small research progress uses decimals rather than appearing stuck at 0 percent.
+
+## D-246 — SR01 whole-map plan and user-authorized 2 km expansion (2026-11-03)
+
+The user explicitly allowed a 2×2 km map during SR01. The documentation plan places the existing
+1×1 km world in the middle, adding 500 m on each side: 8×8 tiles of 250 m, unchanged 257 height samples
+per tile, 2049 samples across the entire extent. New design coordinates D2 equal old D1 plus (500,500);
+Unity origin becomes (−1070,−620). Existing mountain, mountain lake, sakura and settlement positions
+remain unchanged in Unity. Coordinates must not be scaled by two. Region A–H composition is reworked,
+and I–P covers the entire outer ring, including southern sea/shore; geometry work occurs in SR03.
+
+SR02 is limited to one 200×220 m sample at old design X 330…530 / Z 480…700 on the current 4×4 world.
+It tests shore, clearing, forest, slope, central crossing and the X=500 tile seam before replication.
+The sample excludes existing protected POIs and uses an inward blend, with no change outside its mask.
+Preserve actual current mountain geometry and sakura placement; the new user request supersedes the
+old lower-snow appearance freeze only for smoother snow transition and fewer floes. The illustrated
+mountain protection ellipse is a planning locator, not the complete measured alpine influence boundary.
+
+Expanded geometry requires a separate generation version, legacy seed/identity space in the central
+kilometre and explicit save compatibility. Existing slots are neither deleted nor silently reinterpreted.
+The initial 64-tile preparation/memory cost must be measured before accepting it; no automatic fourfold
+vegetation/object budget or camera-triggered navigation bake is authorized by the size increase alone.
+Canonical simulation/resource/ownership authorities and stable entity identities remain unchanged.
+
+The deliverable is docs/world_map/SR01/map-plan.html with plan-data.json and docs/SR02_HANDOFF.md.
+Its browser/link/layout and coordinate checks establish a documentation PASS only. No runtime files,
+Unity version, packages or saves changed, and no Unity compile/test/build/Player was run in SR01.
+Historical DEV01 PASS does not close the repeated feedback. Videos were not watched in this stage.
+The coordinator alone advances chats and writes SERENITY_SEQUENCE_STATE.json; SR07/SR08 wait for discussion.

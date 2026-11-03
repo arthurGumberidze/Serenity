@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-03",
+  "checks": [
+    "16 unique regions cover 4,000,000 square metres without interior overlap",
+    "64 tiles, preserved resolution and landmark Unity coordinates",
+    "Source inputs unchanged since documentation generation",
+    "Sample intersects tile seam and stays outside sakura footprint",
+    "All HTML and SVG IDs are unique",
+    "All 16 region selectors change the visible specification",
+    "All 6 layer toggles show and hide their real SVG group",
+    "18 local links/anchors resolve; 3 external source links inventoried",
+    "All 6 local reference images load",
+    "No horizontal page overflow at 1440px",
+    "No horizontal page overflow at 900px",
+    "No horizontal page overflow at 390px",
+    "No browser console errors or uncaught JavaScript exceptions"
+  ],
+  "errors": [],
+  "screenshots": [
+    "atlas-desktop.png",
+    "full-desktop.png",
+    "camera-route.png",
+    "atlas-mobile.png",
+    "sample-desktop.png"
+  ],
+  "externalLinks": [
+    "https://polyhaven.com/a/rock_ground",
+    "https://polyhaven.com/license",
+    "https://docs.ambientcg.com/license/"
+  ],
+  "status": "PASS"
+}
